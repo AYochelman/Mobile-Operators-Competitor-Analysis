@@ -58,3 +58,23 @@ def send_notification(message, config):
         return resp.status_code == 200
     except requests.RequestException:
         return False
+
+
+def send_whatsapp(message, config):
+    base_url = config.get("greenapi_url", "")
+    instance = config.get("greenapi_instance", "")
+    token = config.get("greenapi_token", "")
+    phone = config.get("whatsapp_phone", "")
+    if not all([base_url, instance, token, phone]):
+        return False
+    url = f"{base_url}/waInstance{instance}/sendMessage/{token}"
+    chat_id = f"{phone}@c.us"
+    try:
+        resp = requests.post(
+            url,
+            json={"chatId": chat_id, "message": message},
+            timeout=10
+        )
+        return resp.status_code == 200
+    except requests.RequestException:
+        return False
