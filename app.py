@@ -65,8 +65,19 @@ def api_scrape_now():
 if __name__ == "__main__":
     from apscheduler.schedulers.background import BackgroundScheduler
     from change_detector import detect_changes
-    from notifier import format_message, send_notification, send_whatsapp
+    from notifier import format_message, send_notification, send_whatsapp, send_email_report
+    from excel_report import build_excel_report
     import scraper
+
+    def run_email_report_job():
+        logger.info("Sending daily email report...")
+        config = load_config()
+        try:
+            excel_bytes = build_excel_report()
+            ok = send_email_report(excel_bytes, config)
+            logger.info(f"Email report sent: {ok}")
+        except Exception as e:
+            logger.error(f"Email report job failed: {e}", exc_info=True)
 
     def run_scrape_job():
         logger.info("Starting scheduled scrape...")
@@ -96,6 +107,9 @@ if __name__ == "__main__":
     for time_str in config.get("schedule_times", ["10:00", "16:00"]):
         hour, minute = map(int, time_str.split(":"))
         scheduler.add_job(run_scrape_job, "cron", hour=hour, minute=minute)
+    report_time = config.get("email_report_time", "09:00")
+    rh, rm = map(int, report_time.split(":"))
+    scheduler.add_job(run_email_report_job, "cron", hour=rh, minute=rm)
     scheduler.start()
     logger.info("Flask starting → http://localhost:5000")
     try:
