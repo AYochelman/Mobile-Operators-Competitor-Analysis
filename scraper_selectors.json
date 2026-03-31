@@ -1,0 +1,47 @@
+{
+  "partner": {
+    "url": "https://www.partner.co.il/n/cellularsale/lobby",
+    "card": ".plan-wrapper",
+    "name": "h3.title",
+    "price": ".plan-banner .price",
+    "gb": ".plan-banner .size",
+    "extras": ".plan-advantages p",
+    "notes": "Angular SPA. Each .plan-wrapper contains: h3.title (plan name), .plan-banner (.size=GB number, span after=unit 'GB', .price=price digits like '34.9'), .plan-advantages (p tags = extras). Price is numeric only — the '₪ לחודש' label is in adjacent spans. wait_until=networkidle works. 5 plan cards found."
+  },
+  "pelephone": {
+    "url": "https://www.pelephone.co.il/ds/heb/packages/mobile-packages/join-pelephone-online/",
+    "card": ".border_5 .item",
+    "name": ".superlative",
+    "price": ".c",
+    "gb": ".only_gb",
+    "extras": ".item > ul > li, span[class='']",
+    "notes": "Legacy HTML page. Cards are .item.item1/.item2/etc inside .border_5 container. Price: .c contains numeric price (e.g. '39.90'), .d contains '₪' symbol, .e contains period label ('לחודש'). GB: .only_gb contains full string like '1000 GB' (also .a1=number, .a2='GB'). Name: .superlative. Extras are span elements with no class inside the item. .reg_price contains regular/after-promo price. wait_until=networkidle works. 5 plan items found (item1-item5)."
+  },
+  "hotmobile": {
+    "url": "https://www.hotmobile.co.il/saleslobby",
+    "card": ".package-wrap.js-plan-filter",
+    "name": "h1.name",
+    "price": ".current-price",
+    "gb": ".feature-name",
+    "extras": ".list-item",
+    "notes": "Server-rendered HTML. Each card is .package-wrap.js-plan-filter containing an inner .container.plan{ID} div. Name: h1.name (e.g. '5G ULTRA ∙ 2500GB ∙ Plus Protect 2025'). Price: .current-price contains full string like '₪69.9' (symbol in .symbol span + number as text). GB: FIRST .feature-name that contains 'GB' — multiple .feature-name elements exist per card (some show minutes/SMS count). Extras: .list-item elements. Also .additional-info for extra features list. Cards are filtered by JS — default shows 3-4 featured plans. Additional plans shown via category filter buttons. wait_until=networkidle works. Price also has .old-price for crossed-out previous price."
+  },
+  "cellcom": {
+    "url": "https://cellcom.co.il/production/Private/Cellular/",
+    "card": ".package",
+    "name": ".package .header .title p",
+    "price": ".package .body-package .content",
+    "gb": ".package .header .title p",
+    "extras": ".package .body-package .header-feature .text",
+    "notes": "SSR page (brand is Selcom/Cellcom). 3 plan cards found: 4G Basic (500GB, ₪44.9), 5G (800GB, ₪39.9 promo), 5G Pro Care (1500GB, ₪69.9). Card: .package with data-saletype='cellular' and id=SOC_*. Name+GB are BOTH in .header .title p — the <p> contains 'PlanName<br>NNNgb' so split on newline: line[0]=name, line[1]=GB. Price: .body-package .content innerText first line is full price string like '₪44.9'. Extras: .bottom-header .header-feature .text — repeated feature icons. Some cards have .benefit (top badge like 'כולל שירות תיקונים') and .banner (speed label). Regular/promo price note in .router-text. Use wait_until=domcontentloaded + wait_for_timeout(3000). UpgradeItemBlock elements are add-on services — NOT plan cards, ignore them."
+  },
+  "mobile019": {
+    "url": "https://019mobile.co.il/\u05d7\u05d1\u05d9\u05dc\u05d5\u05ea-\u05e1\u05dc\u05d5\u05dc\u05e8/",
+    "card": ".list .item",
+    "name": "h3.title",
+    "price": ".price",
+    "gb": ".blist li strong:first-child",
+    "extras": ".blist li",
+    "notes": "Static WordPress-like page. Many .item elements (11 total): first 8 are regular plans, last 2 (.item.item_hor) are filtered Netfree plans. Filter with :not(.item_hor) for regular plans, or use .list .item. Name: h3.title (plan name like 'BIG DATA', '\u05dc\u05db\u05dc \u05d4\u05d7\u05d9\u05d9\u05dd'). Price: .price contains full text '₪39.90' — structured as <span class='nis'>₪</span>39.<span class='small'>90</span> so .price innerText = full price string. GB: .blist li strong:first-child — first <strong> in benefits list contains GB amount (e.g. '300GB'). Extras: all .blist li items. wait_until=networkidle works."
+  }
+}
