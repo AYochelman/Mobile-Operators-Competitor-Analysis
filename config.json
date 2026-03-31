@@ -7,8 +7,8 @@
   "greenapi_instance": "7107569664",
   "greenapi_token": "7538a29c287a42359016621d434566a6115b43c6685043889a",
   "whatsapp_phone": "",
-  "email_sender": "",
-  "email_password": "",
-  "email_recipient": "",
+  "sendgrid_api_key": "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",
+  "email_sender": "alon.yoch@gmail.com",
+  "email_recipient": "alonyoch@pelephone.co.il",
   "email_report_time": "09:00"
 }
