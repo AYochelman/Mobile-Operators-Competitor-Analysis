@@ -1,5 +1,330 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
-<head><meta charset="UTF-8"><title>השוואת סלולר</title></head>
-<body><h1>טוען...</h1></body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>השוואת חבילות סלולר</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #e0e0e0; direction: rtl; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* Header */
+  .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .header h1 { font-size: 18px; color: #f0f6fc; }
+  .header .sub { font-size: 12px; color: #8b949e; margin-top: 2px; }
+  .update-info { font-size: 11px; color: #8b949e; text-align: left; direction: ltr; line-height: 1.6; }
+  .update-info .time { color: #3fb950; font-weight: 600; }
+
+  /* Layout */
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* Sidebar */
+  .sidebar { width: 200px; background: #161b22; border-left: 1px solid #30363d; padding: 16px; overflow-y: auto; flex-shrink: 0; }
+  .sidebar-section { margin-bottom: 22px; }
+  .sidebar-title { font-size: 10px; font-weight: bold; color: #8b949e; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+  .carrier-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; margin-bottom: 4px; background: transparent; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 13px; cursor: pointer; text-align: right; font-family: inherit; transition: border-color 0.15s, background 0.15s; }
+  .carrier-btn:hover { border-color: #8b949e; }
+  .carrier-btn.active { background: #1f2d3d; border-color: #388bfd; color: #f0f6fc; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-partner   { background: #e91e63; }
+  .dot-pelephone { background: #2196f3; }
+  .dot-hotmobile { background: #ff5722; }
+  .dot-cellcom   { background: #4caf50; }
+  .dot-mobile019 { background: #9c27b0; }
+  .dot-all       { background: linear-gradient(135deg,#e91e63,#2196f3); }
+
+  .tag-group { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag { padding: 3px 9px; border-radius: 12px; font-size: 11px; background: #21262d; border: 1px solid #30363d; color: #8b949e; cursor: pointer; transition: all 0.15s; }
+  .tag:hover { border-color: #8b949e; color: #c9d1d9; }
+  .tag.active { background: #1f2d3d; border-color: #388bfd; color: #58a6ff; }
+
+  .count-badge { margin-right: auto; background: #21262d; color: #8b949e; border-radius: 10px; padding: 1px 6px; font-size: 10px; }
+
+  /* Content */
+  .content { flex: 1; overflow-y: auto; padding: 20px; }
+  .content-header { margin-bottom: 16px; display: flex; align-items: baseline; gap: 10px; }
+  .content-header h2 { font-size: 16px; color: #f0f6fc; }
+  .content-sub { font-size: 12px; color: #8b949e; }
+
+  /* Plan cards grid */
+  .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+
+  /* Plan card */
+  .plan-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 16px; position: relative; transition: border-color 0.15s; }
+  .plan-card:hover { border-color: #58a6ff; }
+  .carrier-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-bottom: 10px; }
+  .badge-partner   { color: #e91e63; background: rgba(233,30,99,0.15); }
+  .badge-pelephone { color: #2196f3; background: rgba(33,150,243,0.15); }
+  .badge-hotmobile { color: #ff5722; background: rgba(255,87,34,0.15); }
+  .badge-cellcom   { color: #4caf50; background: rgba(76,175,80,0.15); }
+  .badge-mobile019 { color: #9c27b0; background: rgba(156,39,176,0.15); }
+
+  .price { font-size: 30px; font-weight: 700; color: #f0f6fc; line-height: 1; }
+  .price sup { font-size: 14px; vertical-align: super; font-weight: 400; }
+  .price-note { font-size: 11px; color: #8b949e; margin: 4px 0 12px; }
+  .details { border-top: 1px solid #21262d; padding-top: 10px; }
+  .detail-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; }
+  .detail-label { color: #8b949e; }
+  .detail-value { color: #c9d1d9; font-weight: 500; }
+  .extras { margin-top: 8px; font-size: 11px; color: #3fb950; line-height: 1.7; }
+  .extras span { display: block; }
+  .extras span::before { content: "✦ "; }
+
+  .change-badge { position: absolute; top: 10px; left: 10px; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+  .badge-new     { background: #1a4731; color: #3fb950; border: 1px solid #2ea043; }
+  .badge-changed { background: #341a00; color: #f0883e; border: 1px solid #d29922; }
+
+  .no-plans { color: #8b949e; padding: 60px 20px; text-align: center; font-size: 14px; }
+  .loading  { color: #8b949e; padding: 60px 20px; text-align: center; font-size: 14px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>📱 השוואת חבילות סלולר</h1>
+    <div class="sub">פלאפון · פרטנר · הוט מובייל · סלקום · 019</div>
+  </div>
+  <div class="update-info" id="updateInfo">טוען...</div>
+</div>
+
+<div class="main">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">חברה</div>
+      <button class="carrier-btn active" data-carrier="all">
+        <span class="dot dot-all"></span> כולן
+        <span class="count-badge" id="cnt-all">—</span>
+      </button>
+      <button class="carrier-btn" data-carrier="partner">
+        <span class="dot dot-partner"></span> פרטנר
+        <span class="count-badge" id="cnt-partner">—</span>
+      </button>
+      <button class="carrier-btn" data-carrier="pelephone">
+        <span class="dot dot-pelephone"></span> פלאפון
+        <span class="count-badge" id="cnt-pelephone">—</span>
+      </button>
+      <button class="carrier-btn" data-carrier="hotmobile">
+        <span class="dot dot-hotmobile"></span> הוט מובייל
+        <span class="count-badge" id="cnt-hotmobile">—</span>
+      </button>
+      <button class="carrier-btn" data-carrier="cellcom">
+        <span class="dot dot-cellcom"></span> סלקום
+        <span class="count-badge" id="cnt-cellcom">—</span>
+      </button>
+      <button class="carrier-btn" data-carrier="mobile019">
+        <span class="dot dot-mobile019"></span> 019
+        <span class="count-badge" id="cnt-mobile019">—</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">גלישה</div>
+      <div class="tag-group">
+        <span class="tag active" data-gb="all">הכל</span>
+        <span class="tag" data-gb="0-100">עד 100GB</span>
+        <span class="tag" data-gb="100-500">100–500GB</span>
+        <span class="tag" data-gb="500+">500GB+</span>
+        <span class="tag" data-gb="unlimited">ללא הגבלה</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">מיון</div>
+      <div class="tag-group">
+        <span class="tag active" data-sort="price_asc">מחיר ↑</span>
+        <span class="tag" data-sort="price_desc">מחיר ↓</span>
+        <span class="tag" data-sort="gb_desc">GB ↓</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">שינויים אחרונים</div>
+      <div id="changesList" style="font-size:11px;color:#8b949e;">—</div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <div class="content-header">
+      <h2 id="contentTitle">כל החבילות</h2>
+      <span class="content-sub" id="contentSub"></span>
+    </div>
+    <div id="plansGrid" class="plans-grid">
+      <div class="loading">⏳ טוען נתונים...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const CARRIER_LABELS = {
+  partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל',
+  cellcom: 'סלקום', mobile019: '019'
+};
+
+let allPlans = [];
+let recentChangeKeys = new Set();
+let recentChangeTypes = {};   // "carrier|plan_name" -> change_type
+let state = { carrier: 'all', gb: 'all', sort: 'price_asc' };
+
+async function loadData() {
+  const [plans, changes] = await Promise.all([
+    fetch('/api/plans').then(r => r.json()),
+    fetch('/api/changes?limit=100').then(r => r.json())
+  ]);
+  allPlans = plans;
+
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  recentChangeKeys = new Set();
+  recentChangeTypes = {};
+  changes.filter(c => c.changed_at > cutoff).forEach(c => {
+    const key = `${c.carrier}|${c.plan_name}`;
+    recentChangeKeys.add(key);
+    recentChangeTypes[key] = c.change_type;
+  });
+
+  updateCountBadges();
+  updateHeader(plans);
+  renderChangesList(changes.slice(0, 6));
+  render();
+}
+
+function updateHeader(plans) {
+  if (!plans.length) return;
+  const times = plans.map(p => p.scraped_at).filter(Boolean).sort();
+  const latest = times.at(-1);
+  const timeStr = latest ? latest.slice(11, 16) : '—';
+  document.getElementById('updateInfo').innerHTML =
+    `עדכון אחרון: <span class="time">${timeStr}</span><br>מתוזמן: 10:00 ו-16:00`;
+}
+
+function updateCountBadges() {
+  const counts = {};
+  allPlans.forEach(p => { counts[p.carrier] = (counts[p.carrier] || 0) + 1; });
+  document.getElementById('cnt-all').textContent = allPlans.length;
+  ['partner','pelephone','hotmobile','cellcom','mobile019'].forEach(c => {
+    const el = document.getElementById(`cnt-${c}`);
+    if (el) el.textContent = counts[c] || 0;
+  });
+}
+
+function renderChangesList(changes) {
+  const el = document.getElementById('changesList');
+  if (!changes.length) { el.textContent = 'אין שינויים אחרונים'; return; }
+  el.innerHTML = changes.map(c => {
+    const name = CARRIER_LABELS[c.carrier] || c.carrier;
+    const type = c.change_type === 'price_change' ? '💰' :
+                 c.change_type === 'new_plan'     ? '✨' :
+                 c.change_type === 'removed_plan' ? '❌' : '🔄';
+    return `<div style="margin-bottom:5px;padding:4px 6px;background:#0d1117;border-radius:4px;">
+      ${type} <b style="color:#c9d1d9">${name}</b><br>
+      <span style="color:#6e7681">${c.plan_name}</span>
+    </div>`;
+  }).join('');
+}
+
+function filterAndSort(plans) {
+  let r = plans;
+  if (state.carrier !== 'all')     r = r.filter(p => p.carrier === state.carrier);
+  if (state.gb === '0-100')        r = r.filter(p => p.data_gb !== null && p.data_gb <= 100);
+  if (state.gb === '100-500')      r = r.filter(p => p.data_gb !== null && p.data_gb > 100 && p.data_gb <= 500);
+  if (state.gb === '500+')         r = r.filter(p => p.data_gb !== null && p.data_gb > 500);
+  if (state.gb === 'unlimited')    r = r.filter(p => p.data_gb === null);
+  if (state.sort === 'price_asc')  r = [...r].sort((a,b) => (a.price ?? 9999) - (b.price ?? 9999));
+  if (state.sort === 'price_desc') r = [...r].sort((a,b) => (b.price ?? 0) - (a.price ?? 0));
+  if (state.sort === 'gb_desc')    r = [...r].sort((a,b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999));
+  return r;
+}
+
+function renderCard(plan) {
+  const key = `${plan.carrier}|${plan.plan_name}`;
+  const ct  = recentChangeTypes[key];
+  let badge = '';
+  if (ct === 'new_plan')     badge = '<span class="change-badge badge-new">חדש</span>';
+  else if (ct === 'price_change') badge = '<span class="change-badge badge-changed">שינוי מחיר</span>';
+  else if (ct === 'removed_plan') badge = '<span class="change-badge badge-changed">הוסרה</span>';
+
+  const gb      = plan.data_gb === null ? 'ללא הגבלה' : `${plan.data_gb}GB`;
+  const price   = plan.price !== null   ? `<sup>₪</sup>${plan.price}` : '—';
+  const extrasHtml = plan.extras?.length
+    ? `<div class="extras">${plan.extras.slice(0,4).map(e => `<span>${e}</span>`).join('')}</div>`
+    : '';
+
+  return `
+    <div class="plan-card">
+      ${badge}
+      <span class="carrier-badge badge-${plan.carrier}">${CARRIER_LABELS[plan.carrier] || plan.carrier}</span>
+      <div class="price">${price}</div>
+      <div class="price-note">₪ לחודש</div>
+      <div class="details">
+        <div class="detail-row">
+          <span class="detail-label">גלישה</span>
+          <span class="detail-value">${gb}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">שיחות</span>
+          <span class="detail-value">ללא הגבלה</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">תוכנית</span>
+          <span class="detail-value" title="${plan.plan_name}">${plan.plan_name.slice(0,22)}${plan.plan_name.length>22?'…':''}</span>
+        </div>
+      </div>
+      ${extrasHtml}
+    </div>`;
+}
+
+function render() {
+  const filtered = filterAndSort(allPlans);
+  const grid  = document.getElementById('plansGrid');
+  const title = document.getElementById('contentTitle');
+  const sub   = document.getElementById('contentSub');
+
+  title.textContent = state.carrier === 'all' ? 'כל החבילות' : CARRIER_LABELS[state.carrier] || state.carrier;
+  sub.textContent   = `${filtered.length} חבילות`;
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="no-plans">אין חבילות תואמות את הסינון</div>';
+    return;
+  }
+  grid.innerHTML = filtered.map(renderCard).join('');
+}
+
+// Sidebar events
+document.querySelectorAll('.carrier-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.carrier-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.carrier = btn.dataset.carrier;
+    render();
+  });
+});
+document.querySelectorAll('.tag[data-gb]').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag[data-gb]').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    state.gb = tag.dataset.gb;
+    render();
+  });
+});
+document.querySelectorAll('.tag[data-sort]').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag[data-sort]').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    state.sort = tag.dataset.sort;
+    render();
+  });
+});
+
+loadData();
+</script>
+</body>
 </html>
