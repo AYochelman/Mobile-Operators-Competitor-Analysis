@@ -67,43 +67,43 @@ def send_notification(message, config):
 
 
 def send_email_report(excel_bytes: bytes, config: dict) -> bool:
-    """Send daily Excel report as email attachment via Outlook SMTP."""
+    """Send daily Excel report as email attachment via SendGrid API."""
+    import base64
+    api_key   = config.get("sendgrid_api_key", "")
     sender    = config.get("email_sender", "")
-    password  = config.get("email_password", "")
     recipient = config.get("email_recipient", "")
-    if not all([sender, password, recipient]):
+    if not all([api_key, sender, recipient]):
         return False
 
-    today = datetime.now().strftime("%d.%m.%Y")
+    today    = datetime.now().strftime("%d.%m.%Y")
     filename = f"cellular_report_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
-
-    msg = MIMEMultipart()
-    msg["From"]    = sender
-    msg["To"]      = recipient
-    msg["Subject"] = f'דו"ח סריקת מתחרים – {today}'
-
     body = (
         f"שלום,\n\n"
         f"מצורף דו\"ח חבילות הסלולר של {today}.\n"
         f"שורות המסומנות בצהוב עברו שינוי ב-24 השעות האחרונות.\n\n"
-        f"📊 http://localhost:5000"
+        f"http://localhost:5000"
     )
-    msg.attach(MIMEText(body, "plain", "utf-8"))
-
-    part = MIMEBase("application", "octet-stream")
-    part.set_payload(excel_bytes)
-    encoders.encode_base64(part)
-    part.add_header("Content-Disposition", f'attachment; filename="{filename}"')
-    msg.attach(part)
-
+    payload = {
+        "personalizations": [{"to": [{"email": recipient}]}],
+        "from": {"email": sender},
+        "subject": f'דו"ח סריקת מתחרים - {today}',
+        "content": [{"type": "text/plain; charset=utf-8", "value": body}],
+        "attachments": [{
+            "content":     base64.b64encode(excel_bytes).decode(),
+            "filename":    filename,
+            "type":        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "disposition": "attachment",
+        }],
+    }
     try:
-        context = ssl.create_default_context()
-        with smtplib.SMTP("smtp.office365.com", 587, timeout=20) as server:
-            server.starttls(context=context)
-            server.login(sender, password)
-            server.sendmail(sender, recipient, msg.as_string())
-        return True
-    except Exception:
+        resp = requests.post(
+            "https://api.sendgrid.com/v3/mail/send",
+            json=payload,
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=20,
+        )
+        return resp.status_code == 202
+    except requests.RequestException:
         return False
 
 
