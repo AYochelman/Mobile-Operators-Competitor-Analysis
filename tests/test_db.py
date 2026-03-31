@@ -1,6 +1,4 @@
-import os
 import pytest
-import tempfile
 from db import init_db, save_plans, get_plans, save_changes, get_changes
 
 @pytest.fixture
