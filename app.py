@@ -41,6 +41,27 @@ def api_changes():
     return jsonify(changes)
 
 
+@app.route("/api/scrape-now")
+def api_scrape_now():
+    """Manual trigger for testing. Debug endpoint."""
+    try:
+        import scraper as sc
+        from db import save_plans, save_changes
+        from change_detector import detect_changes
+        from notifier import format_message
+
+        new_plans = sc.scrape_all()
+        old_plans = get_plans(db_path=_db_path())
+        changes = detect_changes(old_plans, new_plans)
+        save_plans(new_plans, db_path=_db_path())
+        if changes:
+            save_changes(changes, db_path=_db_path())
+        return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
+    except Exception as e:
+        logger.error(f"scrape-now failed: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     from apscheduler.schedulers.background import BackgroundScheduler
     from change_detector import detect_changes
