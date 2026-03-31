@@ -6,5 +6,9 @@
   "greenapi_url": "https://7107.api.greenapi.com",
   "greenapi_instance": "7107569664",
   "greenapi_token": "7538a29c287a42359016621d434566a6115b43c6685043889a",
-  "whatsapp_phone": ""
+  "whatsapp_phone": "",
+  "email_sender": "",
+  "email_password": "",
+  "email_recipient": "",
+  "email_report_time": "09:00"
 }

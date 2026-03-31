@@ -3,3 +3,4 @@ playwright
 apscheduler
 requests
 pytest
+openpyxl
