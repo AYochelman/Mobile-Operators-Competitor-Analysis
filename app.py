@@ -65,7 +65,7 @@ def api_scrape_now():
 if __name__ == "__main__":
     from apscheduler.schedulers.background import BackgroundScheduler
     from change_detector import detect_changes
-    from notifier import format_message, send_notification
+    from notifier import format_message, send_notification, send_whatsapp
     import scraper
 
     def run_scrape_job():
@@ -80,8 +80,10 @@ if __name__ == "__main__":
             if changes:
                 save_changes(changes)
                 msg = format_message(changes)
-                ok = send_notification(msg, config)
-                logger.info(f"Telegram sent: {ok}")
+                ok_tg = send_notification(msg, config)
+                logger.info(f"Telegram sent: {ok_tg}")
+                ok_wa = send_whatsapp(msg, config)
+                logger.info(f"WhatsApp sent: {ok_wa}")
             else:
                 logger.info("No changes.")
             logger.info(f"Done. {len(new_plans)} plans, {len(changes)} changes.")
