@@ -81,7 +81,18 @@ def scrape_pelephone(page):
         name_el  = card.query_selector(".superlative")
         price_el = card.query_selector(".c")
         gb_el    = card.query_selector(".only_gb")
-        extras   = [el.inner_text().strip() for el in card.query_selector_all("ul > li") if el.inner_text().strip()]
+        # Extras: deduplicated feature spans + free apps line
+        inc_texts = list(dict.fromkeys(
+            s.inner_text().strip()
+            for s in card.query_selector_all(".mid_white .inc span > span")
+            if s.inner_text().strip()
+        ))
+        free_el = card.query_selector(".free_apps span")
+        if free_el:
+            fa = free_el.inner_text().strip()
+            if fa and fa not in inc_texts:
+                inc_texts.append(fa)
+        extras = inc_texts
         name  = name_el.inner_text().strip()  if name_el  else "לא ידוע"
         price = _parse_price(price_el.inner_text()) if price_el else None
         gb    = _parse_gb(gb_el.inner_text())       if gb_el    else None
@@ -92,13 +103,13 @@ def scrape_pelephone(page):
 
 
 def scrape_hotmobile(page):
+    import json as _json
     page.goto("https://www.hotmobile.co.il/saleslobby", timeout=30000, wait_until="networkidle")
     page.wait_for_selector(".package-wrap.js-plan-filter", timeout=15000)
     plans = []
     for card in page.query_selector_all(".package-wrap.js-plan-filter"):
         name_el  = card.query_selector("h1.name")
         price_el = card.query_selector(".current-price")
-        extras   = [el.inner_text().strip() for el in card.query_selector_all(".list-item") if el.inner_text().strip()]
         # GB: first .feature-name containing "GB"
         gb_text = None
         for feat in card.query_selector_all(".feature-name"):
@@ -106,6 +117,18 @@ def scrape_hotmobile(page):
             if "GB" in t or "gb" in t.lower():
                 gb_text = t
                 break
+        # Extras: parse hidden planDetails JSON (most complete source)
+        extras = []
+        details_el = card.query_selector("input[id^='planDetails-']")
+        if details_el:
+            try:
+                details = _json.loads(details_el.get_attribute("value") or "[]")
+                extras = [d.strip() for d in details if d and d.strip()]
+            except Exception:
+                pass
+        # Fallback: .additional-features .feature inner text
+        if not extras:
+            extras = [el.inner_text().strip() for el in card.query_selector_all(".additional-features .feature") if el.inner_text().strip()]
         name  = name_el.inner_text().strip()  if name_el  else "לא ידוע"
         price = _parse_price(price_el.inner_text()) if price_el else None
         gb    = _parse_gb(gb_text)
