@@ -25,14 +25,22 @@ def _parse_price(text):
 
 
 def _parse_gb(text):
-    """Extract GB as int from string like '60GB', '1000 GB', '400'. Returns None if unlimited."""
+    """Extract GB from string. Returns None if unlimited, float for MB (<1), int for GB."""
     if not text:
         return None
     text_lower = text.lower().strip()
     if any(w in text_lower for w in ["ללא", "unlimit", "∞"]):
         return None
-    match = re.search(r"(\d+)", text_lower)
-    return int(match.group(1)) if match else None
+    # MB values → store as fraction of GB (e.g. 100MB → 0.098)
+    mb_match = re.search(r"(\d+(?:\.\d+)?)\s*mb", text_lower)
+    if mb_match:
+        return round(float(mb_match.group(1)) / 1024, 4)
+    # GB values
+    match = re.search(r"(\d+(?:\.\d+)?)", text_lower)
+    if not match:
+        return None
+    val = float(match.group(1))
+    return int(val) if val == int(val) else val
 
 
 def scrape_all():
@@ -171,11 +179,17 @@ def scrape_019(page):
     for card in page.query_selector_all(".list .item:not(.item_hor)"):
         name_el  = card.query_selector("h3.title")
         price_el = card.query_selector(".price")
-        gb_el    = card.query_selector(".blist li strong")
         extras   = [el.inner_text().strip() for el in card.query_selector_all(".blist li") if el.inner_text().strip()]
+        # Find data (GB/MB) specifically from the "גלישה" line in extras
+        gb = None
+        for item_el in card.query_selector_all(".blist li"):
+            text = item_el.inner_text().strip()
+            if "גלישה" in text or ("GB" in text and "גלישה" not in text) or "MB" in text.upper():
+                if "גלישה" in text or re.search(r"\d+\s*(GB|MB|gb|mb)", text):
+                    gb = _parse_gb(text)
+                    break
         name  = name_el.inner_text().strip()  if name_el  else "לא ידוע"
         price = _parse_price(price_el.inner_text()) if price_el else None
-        gb    = _parse_gb(gb_el.inner_text())       if gb_el    else None
         if name and name != "לא ידוע":
             plans.append({"carrier": "mobile019", "plan_name": name, "price": price,
                           "data_gb": gb, "minutes": "unlimited", "extras": extras})
