@@ -60,7 +60,7 @@ def scrape_partner(page):
         name_el  = card.query_selector("h3.title")
         price_el = card.query_selector(".plan-banner .price")
         gb_el    = card.query_selector(".plan-banner .size")
-        extras   = [el.inner_text().strip() for el in card.query_selector_all(".plan-advantages p") if el.inner_text().strip()]
+        extras   = list(dict.fromkeys(el.inner_text().strip() for el in card.query_selector_all(".plan-advantages p") if el.inner_text().strip()))
         name  = name_el.inner_text().strip()  if name_el  else "לא ידוע"
         price = _parse_price(price_el.inner_text()) if price_el else None
         gb    = _parse_gb(gb_el.inner_text())       if gb_el    else None
