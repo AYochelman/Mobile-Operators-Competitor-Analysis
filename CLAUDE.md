@@ -101,6 +101,14 @@ Note: VAPID keys are auto-generated on first run if missing. Do not delete them 
 - Pelephone extras: `.mid_white .inc span > span` deduplicated + `.free_apps span`
 - Hot Mobile extras: parsed from hidden `input[id^="planDetails-"]` JSON field
 - 019 extras: `.blist li` elements
+- 019 data_gb: searches all `.blist li` for "גלישה"/"GB"/"MB" line specifically (not first li)
+
+## data_gb Format
+- `None` → "ללא הגבלה" (unlimited)
+- `>= 1` → "X GB"
+- `0 < x < 1` → "X MB" (e.g. 100MB stored as 100/1024 ≈ 0.0977)
+- `_parse_gb()` handles MB via regex `(\d+)\s*mb` → divides by 1024
+- UI: `plan.data_gb < 1 ? Math.round(data_gb * 1024) + "MB" : data_gb + "GB"`
 
 ## Key Technical Details
 - Playwright sync API (headless Chromium) for JS-rendered carrier sites
