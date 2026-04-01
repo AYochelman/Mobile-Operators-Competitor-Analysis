@@ -1,3 +1,4 @@
+import json
 import requests
 import smtplib
 import ssl
@@ -105,6 +106,44 @@ def send_email_report(excel_bytes: bytes, config: dict) -> bool:
         return resp.status_code == 202
     except requests.RequestException:
         return False
+
+
+def send_push_notifications(changes, config, db_path=None):
+    """Send Web Push notifications to all subscribed devices."""
+    from db import get_push_subscriptions, delete_push_subscription
+    try:
+        from pywebpush import webpush, WebPushException
+    except ImportError:
+        return 0
+    vapid_private_key = config.get("vapid_private_key")
+    if not vapid_private_key:
+        return 0
+    subscriptions = get_push_subscriptions(db_path)
+    if not subscriptions:
+        return 0
+    n_carriers = len({c["carrier"] for c in changes})
+    body = f"זוהו {len(changes)} שינויים ב-{n_carriers} חברות"
+    payload = json.dumps({"title": "השוואת סלולר", "body": body}, ensure_ascii=False)
+    vapid_email = config.get("vapid_email", "mailto:alon.yoch@gmail.com")
+    sent, stale = 0, []
+    for sub in subscriptions:
+        try:
+            webpush(
+                subscription_info=sub,
+                data=payload,
+                vapid_private_key=vapid_private_key,
+                vapid_claims={"sub": vapid_email},
+            )
+            sent += 1
+        except WebPushException as e:
+            status = getattr(e.response, "status_code", None) if hasattr(e, "response") and e.response else None
+            if status in (404, 410):
+                stale.append(sub["endpoint"])
+        except Exception:
+            pass
+    for ep in stale:
+        delete_push_subscription(ep, db_path)
+    return sent
 
 
 def send_whatsapp(message, config):
