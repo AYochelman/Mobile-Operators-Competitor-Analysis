@@ -13,11 +13,15 @@ logger = logging.getLogger(__name__)
 
 
 def _parse_price(text):
-    """Extract integer price from string like '₪49', '34.9', '49.90'. Returns rounded int or None."""
+    """Extract price from string like '₪49', '34.9', '39.90'. Returns float or None (no rounding)."""
     if not text:
         return None
     match = re.search(r"(\d+(?:\.\d+)?)", text.replace(",", ""))
-    return round(float(match.group(1))) if match else None
+    if not match:
+        return None
+    val = float(match.group(1))
+    # Return int if whole number, float otherwise
+    return int(val) if val == int(val) else val
 
 
 def _parse_gb(text):

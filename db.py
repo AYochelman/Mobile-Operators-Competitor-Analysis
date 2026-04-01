@@ -20,7 +20,7 @@ def init_db(db_path=None):
                 id         INTEGER PRIMARY KEY,
                 carrier    TEXT NOT NULL,
                 plan_name  TEXT NOT NULL,
-                price      INTEGER,
+                price      REAL,
                 data_gb    INTEGER,
                 minutes    TEXT,
                 extras     TEXT,

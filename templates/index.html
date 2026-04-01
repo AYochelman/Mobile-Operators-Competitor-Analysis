@@ -267,7 +267,8 @@ function renderCard(plan) {
   else if (ct === 'removed_plan') badge = '<span class="change-badge badge-changed">הוסרה</span>';
 
   const gb      = plan.data_gb === null ? 'ללא הגבלה' : `${plan.data_gb}GB`;
-  const price   = plan.price !== null   ? `<sup>₪</sup>${plan.price}` : '—';
+  const priceNum = plan.price !== null ? (Number.isInteger(plan.price) ? plan.price : plan.price.toFixed(2)) : null;
+  const price   = priceNum !== null ? `<sup>₪</sup>${priceNum}` : '—';
   const extrasHtml = plan.extras?.length
     ? `<div class="extras">${plan.extras.slice(0,4).map(e => `<span>${e}</span>`).join('')}</div>`
     : '';
