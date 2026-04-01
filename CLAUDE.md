@@ -9,7 +9,7 @@ Flask app that scrapes 5 Israeli carriers twice daily, shows a Hebrew RTL compar
 ## Architecture
 - **app.py** — Flask server + APScheduler (scrape at 10:00 + 16:00, email report at 09:00)
 - **scraper.py** — Playwright sync scraper for all 5 carriers
-- **db.py** — SQLite (data/plans.db): `plans` table + `changes` history
+- **db.py** — SQLite (data/plans.db): `plans` table (price REAL) + `changes` history
 - **change_detector.py** — Pure function: detect_changes(old, new) → change list
 - **notifier.py** — format_message(), send_notification() (Telegram), send_whatsapp() (Green API), send_email_report() (SendGrid)
 - **excel_report.py** — Builds daily Excel workbook (1 sheet/carrier, yellow rows = changed in 24h)
@@ -56,6 +56,23 @@ Flask app that scrapes 5 Israeli carriers twice daily, shows a Hebrew RTL compar
 - Task name: `CellularComparison`
 - Trigger: At logon
 - Action: `python "D:\השוואת MASS MARKET\app.py"`
+- **Note**: After code changes, kill all python.exe processes and restart manually:
+  `taskkill /F /IM python.exe` then `python "D:/השוואת MASS MARKET/app.py"`
+
+## UI Features (templates/index.html)
+- Plan name shown at TOP of each card (blue, bold)
+- Carrier badge + price + details below
+- Sidebar filters: חברה, גלישה, דור רשת (5G בלבד), מיון
+- 5G filter: matches plan_name or extras containing "5G"
+- No-cache headers to prevent browser caching issues
+
+## Scraper Details
+- `_parse_price()` returns float (no rounding) — e.g. 39.90 not 40
+- `plans.price` column is REAL in SQLite
+- Partner extras: `.mid_white .inc span > span` deduplicated + `.free_apps span`
+- Pelephone extras: `.mid_white .inc span > span` deduplicated + `.free_apps span`
+- Hot Mobile extras: parsed from hidden `input[id^="planDetails-"]` JSON field
+- 019 extras: `.blist li` elements
 
 ## Key Technical Details
 - Playwright sync API (headless Chromium) for JS-rendered carrier sites
@@ -64,13 +81,19 @@ Flask app that scrapes 5 Israeli carriers twice daily, shows a Hebrew RTL compar
 - Excel: openpyxl, RTL sheets, header #4472C4, changed rows #FFFF00
 - SendGrid Single Sender verified: alon.yoch@gmail.com (Mass Market)
 - Green API WhatsApp: currently disabled (whatsapp_phone is empty)
+- Flask: SEND_FILE_MAX_AGE_DEFAULT=0, no-cache headers on index route
 
 ## Run
 ```bash
-cd "D:/השוואת MASS MARKET"
-python app.py
+python "D:/השוואת MASS MARKET/app.py"
 # → http://localhost:5000
 ```
+
+## After Code Changes — Restart Procedure
+1. `taskkill /F /IM python.exe`
+2. `python "D:/השוואת MASS MARKET/app.py"`
+3. Browse to `http://localhost:5000/api/scrape-now`
+4. Hard refresh browser: Ctrl+Shift+R
 
 ## Tests
 ```bash
