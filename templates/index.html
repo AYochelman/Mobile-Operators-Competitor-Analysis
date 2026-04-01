@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#161b22">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mass Market">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
 <title>השוואת חבילות סלולר</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -76,6 +82,12 @@
 
   .plan-name { font-size: 13px; font-weight: 700; color: #58a6ff; margin-bottom: 8px; line-height: 1.3; }
 
+  /* Bell notification button */
+  .bell-btn { background: transparent; border: 1px solid #30363d; border-radius: 8px; color: #8b949e; cursor: pointer; font-size: 18px; padding: 6px 10px; transition: all 0.15s; flex-shrink: 0; }
+  .bell-btn:hover { border-color: #8b949e; color: #c9d1d9; }
+  .bell-btn.subscribed { border-color: #3fb950; color: #3fb950; }
+  .bell-btn.unsupported { opacity: 0.3; cursor: not-allowed; }
+
   .no-plans { color: #8b949e; padding: 60px 20px; text-align: center; font-size: 14px; }
   .loading  { color: #8b949e; padding: 60px 20px; text-align: center; font-size: 14px; }
 
@@ -92,6 +104,7 @@
     <h1>📱 השוואת חבילות סלולר</h1>
     <div class="sub">פלאפון · פרטנר · הוט מובייל · סלקום · 019</div>
   </div>
+  <button class="bell-btn" id="bellBtn" title="הפעל התראות" aria-label="הפעל התראות">🔔</button>
   <div class="update-info" id="updateInfo">טוען...</div>
 </div>
 
@@ -345,6 +358,75 @@ document.querySelectorAll('.tag[data-gen]').forEach(tag => {
 });
 
 loadData();
+
+// ── Service Worker + Web Push ──────────────────────────────────────────────
+const bellBtn = document.getElementById('bellBtn');
+let swReg = null;
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function getVapidKey() {
+  const r = await fetch('/api/push/vapid-public-key');
+  const j = await r.json();
+  return j.publicKey;
+}
+
+async function initServiceWorker() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    bellBtn.classList.add('unsupported');
+    bellBtn.title = 'דפדפן זה לא תומך בהתראות';
+    return;
+  }
+  try {
+    swReg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    await navigator.serviceWorker.ready;
+    const existing = await swReg.pushManager.getSubscription();
+    if (existing) {
+      bellBtn.classList.add('subscribed');
+      bellBtn.title = 'התראות פעילות — לחץ לביטול';
+    }
+  } catch (err) {
+    console.warn('SW registration failed:', err);
+  }
+}
+
+async function togglePush() {
+  if (!swReg) return;
+  const existing = await swReg.pushManager.getSubscription();
+  if (existing) {
+    await existing.unsubscribe();
+    await fetch('/api/push/unsubscribe', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: existing.endpoint })
+    });
+    bellBtn.classList.remove('subscribed');
+    bellBtn.title = 'הפעל התראות';
+  } else {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+    const vapidKey = await getVapidKey();
+    const sub = await swReg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidKey)
+    });
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sub.toJSON())
+    });
+    bellBtn.classList.add('subscribed');
+    bellBtn.title = 'התראות פעילות — לחץ לביטול';
+  }
+}
+
+bellBtn.addEventListener('click', togglePush);
+initServiceWorker();
 </script>
 </body>
 </html>

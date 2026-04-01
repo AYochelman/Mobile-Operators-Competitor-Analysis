@@ -36,6 +36,13 @@ def init_db(db_path=None):
                 new_val     TEXT,
                 changed_at  TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+                id         INTEGER PRIMARY KEY,
+                endpoint   TEXT NOT NULL UNIQUE,
+                p256dh     TEXT NOT NULL,
+                auth       TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
         """)
         conn.commit()
     finally:
@@ -108,6 +115,42 @@ def save_changes(changes, db_path=None):
                  now)
             )
         conn.commit()
+    finally:
+        conn.close()
+
+
+def save_push_subscription(endpoint, p256dh, auth, db_path=None):
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT OR REPLACE INTO push_subscriptions (endpoint, p256dh, auth, created_at) "
+            "VALUES (?, ?, ?, ?)",
+            (endpoint, p256dh, auth, datetime.now().isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def delete_push_subscription(endpoint, db_path=None):
+    conn = _connect(db_path)
+    try:
+        conn.execute("DELETE FROM push_subscriptions WHERE endpoint=?", (endpoint,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_push_subscriptions(db_path=None):
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT endpoint, p256dh, auth FROM push_subscriptions"
+        ).fetchall()
+        return [
+            {"endpoint": r[0], "keys": {"p256dh": r[1], "auth": r[2]}}
+            for r in rows
+        ]
     finally:
         conn.close()
 
