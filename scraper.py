@@ -24,11 +24,24 @@ def _parse_price(text):
     return int(val) if val == int(val) else val
 
 
+def _parse_minutes(text):
+    """Extract minutes count from string like '7,000 דקות שיחה/SMS בארץ'.
+    Returns int or None (None = not included / no calls)."""
+    if not text:
+        return None
+    text_clean = text.replace(",", "")
+    if any(w in text for w in ["ללא הגבלה", "unlimit", "∞"]):
+        return -1  # -1 = unlimited
+    match = re.search(r"(\d+)", text_clean)
+    return int(match.group(1)) if match else None
+
+
 def _parse_gb(text):
     """Extract GB from string. Returns None if unlimited, float for MB (<1), int for GB."""
     if not text:
         return None
-    text_lower = text.lower().strip()
+    text_clean = text.replace(",", "")  # handle 2,500 → 2500
+    text_lower = text_clean.lower().strip()
     if any(w in text_lower for w in ["ללא", "unlimit", "∞"]):
         return None
     # MB values → store as fraction of GB (e.g. 100MB → 0.098)
@@ -74,7 +87,7 @@ def scrape_partner(page):
         gb    = _parse_gb(gb_el.inner_text())       if gb_el    else None
         if name and name != "לא ידוע":
             plans.append({"carrier": "partner", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": "unlimited", "extras": extras})
+                          "data_gb": gb, "minutes": None, "extras": extras})
     return plans
 
 
@@ -89,7 +102,6 @@ def scrape_pelephone(page):
         name_el  = card.query_selector(".superlative")
         price_el = card.query_selector(".c")
         gb_el    = card.query_selector(".only_gb")
-        # Extras: deduplicated feature spans + free apps line
         inc_texts = list(dict.fromkeys(
             s.inner_text().strip()
             for s in card.query_selector_all(".mid_white .inc span > span")
@@ -101,12 +113,12 @@ def scrape_pelephone(page):
             if fa and fa not in inc_texts:
                 inc_texts.append(fa)
         extras = inc_texts
-        name  = name_el.inner_text().strip()  if name_el  else "לא ידוע"
+        name  = name_el.inner_text().strip() if name_el else "לא ידוע"
         price = _parse_price(price_el.inner_text()) if price_el else None
         gb    = _parse_gb(gb_el.inner_text())       if gb_el    else None
         if name and name != "לא ידוע":
             plans.append({"carrier": "pelephone", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": "unlimited", "extras": extras})
+                          "data_gb": gb, "minutes": None, "extras": extras})
     return plans
 
 
@@ -115,40 +127,72 @@ def scrape_hotmobile(page):
     page.goto("https://www.hotmobile.co.il/saleslobby", timeout=30000, wait_until="networkidle")
     page.wait_for_selector(".package-wrap.js-plan-filter", timeout=15000)
     plans = []
+    # query_selector_all returns ALL elements including display:none (hidden tabs)
     for card in page.query_selector_all(".package-wrap.js-plan-filter"):
+        # Prefer data-* attributes on the hidden input — always populated, tab-independent
+        details_el = card.query_selector("input[id^='planDetails-']")
+        data_name  = details_el.get_attribute("data-poname")  if details_el else None
+        data_price = details_el.get_attribute("data-saleprice") if details_el else None
+
         name_el  = card.query_selector("h1.name")
         price_el = card.query_selector(".current-price")
-        # GB: first .feature-name containing "GB"
+        name  = (data_name or (name_el.inner_text().strip() if name_el else "")).strip() or "לא ידוע"
+        price = _parse_price(data_price) if data_price else (_parse_price(price_el.inner_text()) if price_el else None)
+
+        # GB: read planDetails JSON, pick "גלישה סלולרית בארץ" line (domestic data)
+        # Ignores "גלישה בחו"ל" (abroad) lines
         gb_text = None
-        for feat in card.query_selector_all(".feature-name"):
-            t = feat.inner_text()
-            if "GB" in t or "gb" in t.lower():
-                gb_text = t
-                break
-        # Extras: parse hidden planDetails JSON (most complete source)
-        extras = []
-        details_el = card.query_selector("input[id^='planDetails-']")
+        extras  = []
         if details_el:
             try:
                 details = _json.loads(details_el.get_attribute("value") or "[]")
-                extras = [d.strip() for d in details if d and d.strip()]
+                extras  = [d.strip() for d in details if d and d.strip()]
+                for d in extras:
+                    has_number = bool(re.search(r"\d", d))
+                    if not has_number:
+                        continue
+                    if ("גלישה סלולרית בארץ" in d or "גלישה בארץ" in d or
+                            "גלישה כל חודש" in d or
+                            ("גלישה" in d and "חו" not in d)):
+                        gb_text = d
+                        break
+                # Fallback: any line with GB
+                if not gb_text:
+                    for d in extras:
+                        if "GB" in d and re.search(r"\d", d):
+                            gb_text = d
+                            break
             except Exception:
                 pass
-        # Fallback: .additional-features .feature inner text
+        # Fallback: largest GB from .feature-name visible text
+        if not gb_text:
+            best_gb, best_text = -1, None
+            for feat in card.query_selector_all(".feature-name"):
+                t = feat.inner_text()
+                parsed = _parse_gb(t)
+                if parsed is not None and parsed > best_gb:
+                    best_gb, best_text = parsed, t
+            gb_text = best_text
+        # Fallback extras
         if not extras:
             extras = [el.inner_text().strip() for el in card.query_selector_all(".additional-features .feature") if el.inner_text().strip()]
-        name  = name_el.inner_text().strip()  if name_el  else "לא ידוע"
-        price = _parse_price(price_el.inner_text()) if price_el else None
-        gb    = _parse_gb(gb_text)
+
+        gb = _parse_gb(gb_text)
+        # Parse minutes from planDetails JSON
+        minutes = None
+        for d in extras:
+            if re.search(r"\d", d) and ("דקות שיחה" in d or "דקות" in d) and "חו" not in d and "לחו" not in d:
+                minutes = _parse_minutes(d)
+                break
         if name and name != "לא ידוע":
             plans.append({"carrier": "hotmobile", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": "unlimited", "extras": extras})
+                          "data_gb": gb, "minutes": minutes, "extras": extras})
     return plans
 
 
 def scrape_cellcom(page):
-    page.goto("https://cellcom.co.il/production/Private/Cellular/", timeout=30000, wait_until="domcontentloaded")
-    page.wait_for_timeout(3000)
+    page.goto("https://cellcom.co.il/production/Private/Cellular/Packages/", timeout=30000, wait_until="networkidle")
+    page.wait_for_timeout(4000)
     plans = []
     for card in page.query_selector_all(".package"):
         # Only cellular plan cards
@@ -157,18 +201,26 @@ def scrape_cellcom(page):
             continue
         title_el  = card.query_selector(".header .title p")
         price_el  = card.query_selector(".body-package .content")
-        extras    = [el.inner_text().strip() for el in card.query_selector_all(".body-package .header-feature .text") if el.inner_text().strip()]
-        # Name and GB share the same element — split on newline
+        feat_els  = card.query_selector_all(".body-package .header-feature .text")
+        extras    = [el.inner_text().strip() for el in feat_els if el.inner_text().strip()]
+        # Name and GB are in same element separated by newline
         name, gb_text = "לא ידוע", None
         if title_el:
             parts = [p.strip() for p in title_el.inner_text().split("\n") if p.strip()]
             name    = parts[0] if parts else "לא ידוע"
             gb_text = parts[1] if len(parts) > 1 else None
+        # Price: first line only (ignore promo text like "לחודשיים הראשונים")
         price = _parse_price(price_el.inner_text().split("\n")[0]) if price_el else None
         gb    = _parse_gb(gb_text)
+        # Minutes: look for "דק' /SMS" feature line
+        minutes = None
+        for feat in extras:
+            if "דק" in feat and "חו" not in feat:
+                minutes = _parse_minutes(feat)
+                break
         if name and name != "לא ידוע":
             plans.append({"carrier": "cellcom", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": "unlimited", "extras": extras})
+                          "data_gb": gb, "minutes": minutes, "extras": extras})
     return plans
 
 
@@ -192,5 +244,5 @@ def scrape_019(page):
         price = _parse_price(price_el.inner_text()) if price_el else None
         if name and name != "לא ידוע":
             plans.append({"carrier": "mobile019", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": "unlimited", "extras": extras})
+                          "data_gb": gb, "minutes": None, "extras": extras})
     return plans
