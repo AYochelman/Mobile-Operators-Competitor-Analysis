@@ -169,6 +169,14 @@
     </div>
 
     <div class="sidebar-section">
+      <div class="sidebar-title">חידושים</div>
+      <div class="tag-group">
+        <span class="tag active" data-changes="all">הכל</span>
+        <span class="tag" data-changes="recent">שינויים אחרונים <span id="cnt-changes" style="background:#21262d;border-radius:8px;padding:1px 5px;font-size:10px;color:#8b949e;margin-right:2px;"></span></span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
       <div class="sidebar-title">שינויים אחרונים</div>
       <div id="changesList" style="font-size:11px;color:#8b949e;">—</div>
     </div>
@@ -196,7 +204,7 @@ const CARRIER_LABELS = {
 let allPlans = [];
 let recentChangeKeys = new Set();
 let recentChangeTypes = {};   // "carrier|plan_name" -> change_type
-let state = { carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all' };
+let state = { carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', changes: 'all' };
 
 async function loadData() {
   const [plans, changes] = await Promise.all([
@@ -213,6 +221,9 @@ async function loadData() {
     recentChangeKeys.add(key);
     recentChangeTypes[key] = c.change_type;
   });
+
+  const cntEl = document.getElementById('cnt-changes');
+  if (cntEl) cntEl.textContent = recentChangeKeys.size || '';
 
   updateCountBadges();
   updateHeader(plans);
@@ -265,6 +276,7 @@ function filterAndSort(plans) {
     (p.plan_name && p.plan_name.includes('5G')) ||
     (p.extras && p.extras.some(e => e.includes('5G')))
   );
+  if (state.changes === 'recent')  r = r.filter(p => recentChangeKeys.has(`${p.carrier}|${p.plan_name}`));
   if (state.sort === 'price_asc')  r = [...r].sort((a,b) => (a.price ?? 9999) - (b.price ?? 9999));
   if (state.sort === 'price_desc') r = [...r].sort((a,b) => (b.price ?? 0) - (a.price ?? 0));
   if (state.sort === 'gb_desc')    r = [...r].sort((a,b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999));
@@ -288,6 +300,14 @@ function renderCard(plan) {
     ? `<div class="extras">${plan.extras.slice(0,4).map(e => `<span>${e}</span>`).join('')}</div>`
     : '';
 
+  // minutes: -1 = unlimited, positive int = specific count, null = unknown (don't show)
+  const minutesVal = plan.minutes === -1 ? 'ללא הגבלה'
+                   : plan.minutes > 0    ? `${plan.minutes.toLocaleString()} דקות`
+                   : null;
+  const minutesRow = minutesVal
+    ? `<div class="detail-row"><span class="detail-label">שיחות</span><span class="detail-value">${minutesVal}</span></div>`
+    : '';
+
   return `
     <div class="plan-card">
       ${badge}
@@ -300,10 +320,7 @@ function renderCard(plan) {
           <span class="detail-label">גלישה</span>
           <span class="detail-value">${gb}</span>
         </div>
-        <div class="detail-row">
-          <span class="detail-label">שיחות</span>
-          <span class="detail-value">ללא הגבלה</span>
-        </div>
+        ${minutesRow}
       </div>
       ${extrasHtml}
     </div>`;
@@ -358,6 +375,14 @@ document.querySelectorAll('.tag[data-gen]').forEach(tag => {
     render();
   });
 });
+document.querySelectorAll('.tag[data-changes]').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag[data-changes]').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    state.changes = tag.dataset.changes;
+    render();
+  });
+});
 
 loadData();
 
@@ -382,48 +407,72 @@ async function initServiceWorker() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     bellBtn.classList.add('unsupported');
     bellBtn.title = 'דפדפן זה לא תומך בהתראות';
+    console.warn('Push not supported in this browser');
     return;
   }
   try {
     swReg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    console.log('SW registered:', swReg.scope);
     await navigator.serviceWorker.ready;
+    console.log('SW ready');
     const existing = await swReg.pushManager.getSubscription();
     if (existing) {
       bellBtn.classList.add('subscribed');
       bellBtn.title = 'התראות פעילות — לחץ לביטול';
+      console.log('Existing push subscription found');
+    } else {
+      console.log('No existing push subscription');
     }
   } catch (err) {
-    console.warn('SW registration failed:', err);
+    console.error('SW registration failed:', err);
+    bellBtn.classList.add('unsupported');
+    bellBtn.title = 'שגיאה: ' + err.message;
   }
 }
 
 async function togglePush() {
-  if (!swReg) return;
-  const existing = await swReg.pushManager.getSubscription();
-  if (existing) {
-    await existing.unsubscribe();
-    await fetch('/api/push/unsubscribe', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint: existing.endpoint })
-    });
-    bellBtn.classList.remove('subscribed');
-    bellBtn.title = 'הפעל התראות';
-  } else {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
-    const vapidKey = await getVapidKey();
-    const sub = await swReg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidKey)
-    });
-    await fetch('/api/push/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sub.toJSON())
-    });
-    bellBtn.classList.add('subscribed');
-    bellBtn.title = 'התראות פעילות — לחץ לביטול';
+  if (!swReg) {
+    alert('Service Worker לא נטען. בדוק את ה-Console.');
+    return;
+  }
+  try {
+    const existing = await swReg.pushManager.getSubscription();
+    if (existing) {
+      await existing.unsubscribe();
+      await fetch('/api/push/unsubscribe', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: existing.endpoint })
+      });
+      bellBtn.classList.remove('subscribed');
+      bellBtn.title = 'הפעל התראות';
+      console.log('Unsubscribed from push');
+    } else {
+      const permission = await Notification.requestPermission();
+      console.log('Notification permission:', permission);
+      if (permission !== 'granted') {
+        alert('הרשאת התראות נדחתה. אפשר בהגדרות הדפדפן.');
+        return;
+      }
+      const vapidKey = await getVapidKey();
+      console.log('VAPID key received:', vapidKey ? 'OK' : 'MISSING');
+      const sub = await swReg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey)
+      });
+      console.log('Subscribed:', sub.endpoint);
+      const resp = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sub.toJSON())
+      });
+      console.log('Server response:', resp.status);
+      bellBtn.classList.add('subscribed');
+      bellBtn.title = 'התראות פעילות — לחץ לביטול';
+    }
+  } catch (err) {
+    console.error('Push toggle error:', err);
+    alert('שגיאה: ' + err.message);
   }
 }
 
