@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>בחירת סגנון דשבורד</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0f; color: #fff; direction: rtl; padding: 30px 20px; }
+h1 { text-align: center; font-size: 22px; color: #fff; margin-bottom: 8px; }
+.subtitle { text-align: center; color: #888; font-size: 13px; margin-bottom: 40px; }
+
+.styles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; max-width: 1200px; margin: 0 auto; }
+.style-section { border-radius: 16px; overflow: hidden; }
+.style-label { text-align: center; padding: 12px; font-weight: 700; font-size: 15px; letter-spacing: 0.5px; }
+
+/* ── STYLE 1: Modern Dark Pro ─────────────────────────── */
+.s1 { background: #0d1117; border: 1px solid #21262d; }
+.s1 .style-label { background: #161b22; color: #58a6ff; border-bottom: 1px solid #21262d; }
+.s1 .preview { padding: 20px; }
+.s1 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.s1 .header-title { font-size: 14px; color: #f0f6fc; font-weight: 600; }
+.s1 .header-sub { font-size: 11px; color: #8b949e; }
+.s1 .badge { background: #388bfd22; color: #58a6ff; border: 1px solid #388bfd44; border-radius: 20px; padding: 2px 10px; font-size: 11px; }
+.s1 .cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.s1 .card { background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 12px; }
+.s1 .card-carrier { font-size: 10px; color: #8b949e; margin-bottom: 4px; }
+.s1 .card-name { font-size: 11px; color: #58a6ff; font-weight: 600; margin-bottom: 8px; }
+.s1 .card-price { font-size: 20px; font-weight: 700; color: #f0f6fc; }
+.s1 .card-price sup { font-size: 11px; color: #8b949e; }
+.s1 .card-gb { font-size: 10px; color: #3fb950; margin-top: 4px; }
+.s1 .card.hot { border-color: #f78166; }
+.s1 .sidebar-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.s1 .filter-btn { background: #21262d; border: 1px solid #30363d; border-radius: 6px; color: #8b949e; font-size: 11px; padding: 4px 10px; }
+.s1 .filter-btn.active { background: #1f2d3d; border-color: #388bfd; color: #58a6ff; }
+
+/* ── STYLE 2: Glassmorphism ───────────────────────────── */
+.s2-wrap { border-radius: 16px; overflow: hidden; background: linear-gradient(135deg, #1a0533 0%, #0d1b4b 50%, #001a33 100%); border: 1px solid rgba(255,255,255,0.1); }
+.s2 .style-label { background: rgba(255,255,255,0.05); color: #c084fc; border-bottom: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(10px); }
+.s2 .preview { padding: 20px; }
+.s2 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.s2 .header-title { font-size: 14px; color: #fff; font-weight: 600; }
+.s2 .badge { background: rgba(192,132,252,0.2); color: #c084fc; border: 1px solid rgba(192,132,252,0.3); border-radius: 20px; padding: 2px 10px; font-size: 11px; }
+.s2 .cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.s2 .card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px; backdrop-filter: blur(16px); }
+.s2 .card-carrier { font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+.s2 .card-name { font-size: 11px; color: #c084fc; font-weight: 600; margin-bottom: 8px; }
+.s2 .card-price { font-size: 20px; font-weight: 700; color: #fff; }
+.s2 .card-price sup { font-size: 11px; color: rgba(255,255,255,0.5); }
+.s2 .card-gb { font-size: 10px; color: #34d399; margin-top: 4px; }
+.s2 .card.hot { border-color: rgba(251,146,60,0.4); background: rgba(251,146,60,0.08); }
+.s2 .sidebar-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.s2 .filter-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: rgba(255,255,255,0.5); font-size: 11px; padding: 4px 10px; }
+.s2 .filter-btn.active { background: rgba(192,132,252,0.15); border-color: rgba(192,132,252,0.5); color: #c084fc; }
+
+/* ── STYLE 3: Minimal Clean ───────────────────────────── */
+.s3 { background: #ffffff; border: 1px solid #e5e7eb; }
+.s3 .style-label { background: #f9fafb; color: #111827; border-bottom: 1px solid #e5e7eb; }
+.s3 .preview { padding: 20px; background: #f3f4f6; }
+.s3 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.s3 .header-title { font-size: 14px; color: #111827; font-weight: 700; }
+.s3 .badge { background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; border-radius: 20px; padding: 2px 10px; font-size: 11px; }
+.s3 .cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.s3 .card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.s3 .card-carrier { font-size: 10px; color: #9ca3af; margin-bottom: 4px; }
+.s3 .card-name { font-size: 11px; color: #3b82f6; font-weight: 600; margin-bottom: 8px; }
+.s3 .card-price { font-size: 20px; font-weight: 700; color: #111827; }
+.s3 .card-price sup { font-size: 11px; color: #9ca3af; }
+.s3 .card-gb { font-size: 10px; color: #10b981; margin-top: 4px; }
+.s3 .card.hot { border-color: #fca5a5; border-right: 3px solid #ef4444; }
+.s3 .sidebar-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.s3 .filter-btn { background: #fff; border: 1px solid #d1d5db; border-radius: 6px; color: #6b7280; font-size: 11px; padding: 4px 10px; }
+.s3 .filter-btn.active { background: #eff6ff; border-color: #3b82f6; color: #3b82f6; }
+
+/* ── STYLE 4: Data Dashboard Pro ─────────────────────── */
+.s4 { background: #060b14; border: 1px solid #0f2040; }
+.s4 .style-label { background: #091020; color: #00d4ff; border-bottom: 1px solid #0f2040; }
+.s4 .preview { padding: 20px; }
+.s4 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.s4 .header-title { font-size: 14px; color: #e2f0ff; font-weight: 600; letter-spacing: 0.3px; }
+.s4 .badge { background: rgba(0,212,255,0.1); color: #00d4ff; border: 1px solid rgba(0,212,255,0.3); border-radius: 4px; padding: 2px 10px; font-size: 11px; font-family: monospace; }
+.s4 .cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.s4 .card { background: #091020; border: 1px solid #0f2040; border-radius: 6px; padding: 10px; border-right: 2px solid #0f2040; }
+.s4 .card-carrier { font-size: 9px; color: #4a7a9b; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; font-family: monospace; }
+.s4 .card-name { font-size: 10px; color: #00d4ff; font-weight: 600; margin-bottom: 6px; }
+.s4 .card-price { font-size: 22px; font-weight: 700; color: #e2f0ff; font-family: monospace; }
+.s4 .card-price sup { font-size: 11px; color: #4a7a9b; }
+.s4 .card-gb { font-size: 10px; color: #00ff88; margin-top: 4px; font-family: monospace; }
+.s4 .card.hot { border-right-color: #ff4444; border-color: #ff444422; }
+.s4 .sidebar-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.s4 .filter-btn { background: #091020; border: 1px solid #0f2040; border-radius: 4px; color: #4a7a9b; font-size: 11px; padding: 4px 10px; font-family: monospace; }
+.s4 .filter-btn.active { background: rgba(0,212,255,0.08); border-color: #00d4ff; color: #00d4ff; }
+
+.pick-btn { display: block; text-align: center; margin-top: 10px; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; width: 100%; }
+.s1 .pick-btn { background: #388bfd; color: #fff; }
+.s2-wrap .pick-btn { background: #7c3aed; color: #fff; }
+.s3 .pick-btn { background: #3b82f6; color: #fff; }
+.s4 .pick-btn { background: #00d4ff; color: #060b14; }
+</style>
+</head>
+<body>
+
+<h1>בחירת סגנון דשבורד</h1>
+<p class="subtitle">השווה בין 4 סגנונות — כולם מבוססים על הדשבורד הנוכחי שלך</p>
+
+<div class="styles-grid">
+
+  <!-- STYLE 1 -->
+  <div class="s1 style-section">
+    <div class="style-label">1 · Modern Dark Pro</div>
+    <div class="preview">
+      <div class="header">
+        <div>
+          <div class="header-title">השוואת חבילות סלולר</div>
+          <div class="header-sub" style="font-size:10px;color:#8b949e;margin-top:2px;">עדכון אחרון: 16:00 · מתוזמן 10:00 ו-16:00</div>
+        </div>
+        <span class="badge">17 חבילות</span>
+      </div>
+      <div class="cards">
+        <div class="card hot">
+          <div class="card-carrier">פרטנר</div>
+          <div class="card-name">Partner King 5G</div>
+          <div class="card-price"><sup>₪</sup>59.90</div>
+          <div class="card-gb">800GB</div>
+        </div>
+        <div class="card">
+          <div class="card-carrier">פלאפון</div>
+          <div class="card-name">5G Max VIP All NEW</div>
+          <div class="card-price"><sup>₪</sup>49.90</div>
+          <div class="card-gb">2000GB</div>
+        </div>
+        <div class="card">
+          <div class="card-carrier">סלקום</div>
+          <div class="card-name">5G Pro 1000GB</div>
+          <div class="card-price"><sup>₪</sup>59.90</div>
+          <div class="card-gb">1000GB</div>
+        </div>
+      </div>
+      <div class="sidebar-row">
+        <span class="filter-btn active">הכל</span>
+        <span class="filter-btn">פרטנר</span>
+        <span class="filter-btn">פלאפון</span>
+        <span class="filter-btn">5G בלבד</span>
+        <span class="filter-btn">מחיר ↑</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STYLE 2 -->
+  <div class="s2-wrap style-section">
+    <div class="s2">
+      <div class="style-label">2 · Glassmorphism</div>
+      <div class="preview">
+        <div class="header">
+          <div>
+            <div class="header-title">השוואת חבילות סלולר</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;">עדכון אחרון: 16:00</div>
+          </div>
+          <span class="badge">17 חבילות</span>
+        </div>
+        <div class="cards">
+          <div class="card hot">
+            <div class="card-carrier">פרטנר</div>
+            <div class="card-name">Partner King 5G</div>
+            <div class="card-price"><sup>₪</sup>59.90</div>
+            <div class="card-gb">800GB</div>
+          </div>
+          <div class="card">
+            <div class="card-carrier">פלאפון</div>
+            <div class="card-name">5G Max VIP All NEW</div>
+            <div class="card-price"><sup>₪</sup>49.90</div>
+            <div class="card-gb">2000GB</div>
+          </div>
+          <div class="card">
+            <div class="card-carrier">סלקום</div>
+            <div class="card-name">5G Pro 1000GB</div>
+            <div class="card-price"><sup>₪</sup>59.90</div>
+            <div class="card-gb">1000GB</div>
+          </div>
+        </div>
+        <div class="sidebar-row">
+          <span class="filter-btn active">הכל</span>
+          <span class="filter-btn">פרטנר</span>
+          <span class="filter-btn">פלאפון</span>
+          <span class="filter-btn">5G בלבד</span>
+          <span class="filter-btn">מחיר ↑</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STYLE 3 -->
+  <div class="s3 style-section">
+    <div class="style-label">3 · Minimal Clean (בהיר)</div>
+    <div class="preview">
+      <div class="header">
+        <div>
+          <div class="header-title">השוואת חבילות סלולר</div>
+          <div style="font-size:10px;color:#9ca3af;margin-top:2px;">עדכון אחרון: 16:00</div>
+        </div>
+        <span class="badge">17 חבילות</span>
+      </div>
+      <div class="cards">
+        <div class="card hot">
+          <div class="card-carrier">פרטנר</div>
+          <div class="card-name">Partner King 5G</div>
+          <div class="card-price"><sup style="font-size:11px;color:#9ca3af;">₪</sup>59.90</div>
+          <div class="card-gb">800GB</div>
+        </div>
+        <div class="card">
+          <div class="card-carrier">פלאפון</div>
+          <div class="card-name">5G Max VIP All NEW</div>
+          <div class="card-price"><sup style="font-size:11px;color:#9ca3af;">₪</sup>49.90</div>
+          <div class="card-gb">2000GB</div>
+        </div>
+        <div class="card">
+          <div class="card-carrier">סלקום</div>
+          <div class="card-name">5G Pro 1000GB</div>
+          <div class="card-price"><sup style="font-size:11px;color:#9ca3af;">₪</sup>59.90</div>
+          <div class="card-gb">1000GB</div>
+        </div>
+      </div>
+      <div class="sidebar-row">
+        <span class="filter-btn active">הכל</span>
+        <span class="filter-btn">פרטנר</span>
+        <span class="filter-btn">פלאפון</span>
+        <span class="filter-btn">5G בלבד</span>
+        <span class="filter-btn">מחיר ↑</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STYLE 4 -->
+  <div class="s4 style-section">
+    <div class="style-label">4 · Data Dashboard Pro</div>
+    <div class="preview">
+      <div class="header">
+        <div>
+          <div class="header-title">השוואת חבילות סלולר</div>
+          <div style="font-size:10px;color:#4a7a9b;margin-top:2px;font-family:monospace;">LAST SCAN · 16:00</div>
+        </div>
+        <span class="badge">17 PLANS</span>
+      </div>
+      <div class="cards">
+        <div class="card hot">
+          <div class="card-carrier">PARTNER</div>
+          <div class="card-name">King 5G</div>
+          <div class="card-price"><sup>₪</sup>59.90</div>
+          <div class="card-gb">800GB</div>
+        </div>
+        <div class="card">
+          <div class="card-carrier">PELEPHONE</div>
+          <div class="card-name">5G Max VIP</div>
+          <div class="card-price"><sup>₪</sup>49.90</div>
+          <div class="card-gb">2000GB</div>
+        </div>
+        <div class="card">
+          <div class="card-carrier">CELLCOM</div>
+          <div class="card-name">5G Pro</div>
+          <div class="card-price"><sup>₪</sup>59.90</div>
+          <div class="card-gb">1000GB</div>
+        </div>
+      </div>
+      <div class="sidebar-row">
+        <span class="filter-btn active">ALL</span>
+        <span class="filter-btn">PARTNER</span>
+        <span class="filter-btn">PELEPHONE</span>
+        <span class="filter-btn">5G ONLY</span>
+        <span class="filter-btn">PRICE ↑</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p style="text-align:center;color:#555;font-size:12px;margin-top:30px;">פתח את הקישור הזה בדפדפן: <code style="color:#888;">http://localhost:5000/static/style-preview.html</code></p>
+
+</body>
+</html>
