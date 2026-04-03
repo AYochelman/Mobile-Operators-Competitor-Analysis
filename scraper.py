@@ -316,37 +316,91 @@ def scrape_pelephone_abroad(page):
 
 
 def scrape_cellcom_abroad(page):
-    page.goto("https://cellcom.co.il/AbroadMain/lobby/", timeout=30000, wait_until="networkidle")
-    page.wait_for_timeout(3000)
+    """Scrape Cellcom abroad packages via their internal API (returns all 8+ plans)
+       plus the Silent Roamers page for additional packages."""
+    import urllib.request, urllib.error, json as _json
+
     plans = []
-    for card in page.query_selector_all(".abroad-package-client"):
-        name_el     = card.query_selector(".abroad-package-client__title")
-        duration_el = card.query_selector(".abroad-package-client__duration")
-        data_el     = card.query_selector(".abroad-package-client__data--bank")
-        voice_sms   = card.query_selector_all(".abroad-package-voice-sms__value")
-        price_el    = card.query_selector(".abroad-package-client__price-real--bank--container")
-        name = name_el.inner_text().strip() if name_el else "לא ידוע"
-        days = _parse_days(duration_el.inner_text() if duration_el else "")
-        gb   = _parse_gb(data_el.inner_text())       if data_el else None
-        minutes = _parse_minutes(voice_sms[0].inner_text()) if len(voice_sms) > 0 else None
-        sms     = _parse_sms(voice_sms[1].inner_text())     if len(voice_sms) > 1 else None
-        price = None
-        if price_el:
-            for span in price_el.query_selector_all("span"):
-                t = span.inner_text().strip()
-                if re.match(r'^\d', t):
-                    price = _parse_price(t)
-                    break
-        extras = []
-        app_el = card.query_selector(".abroad-package-client__data--bank-unlimited-app--text")
-        if app_el:
-            t = app_el.inner_text().strip()
-            if t:
-                extras.append(t)
-        if name and name != "לא ידוע":
+    seen_names = set()
+
+    # ── Source 1: API (lobby packages) ────────────────────────────────────
+    SOC_IDS = ["FMWH998","FMWH267","FMWH0047","FMWH717","FMWH720",
+               "HUL4209","FMWH995","HUL4539"]
+    try:
+        payload = _json.dumps({"SocIdList": SOC_IDS, "BlockId": 20557}).encode()
+        req = urllib.request.Request(
+            "https://digital-api.cellcom.co.il/api/abroad/GetPackagePopular",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Origin": "https://cellcom.co.il",
+                "Referer": "https://cellcom.co.il/AbroadMain/lobby/",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = _json.loads(resp.read())
+        for pkg in data.get("Body", []):
+            name = (pkg.get("titleEpi") or "").strip()
+            if not name or name in seen_names:
+                continue
+            seen_names.add(name)
+            price   = pkg.get("price")
+            days    = pkg.get("packageDuration")
+            details = (pkg.get("packageDetailsList") or [{}])[0]
+            d_data  = details.get("data") or {}
+            d_voice = details.get("voice") or {}
+            d_sms   = details.get("sms") or {}
+            gb      = float(d_data["value"]) if d_data.get("value") is not None else None
+            if d_data.get("isUnlimited"):
+                gb = None
+            minutes = int(d_voice["value"]) if d_voice.get("value") is not None else None
+            sms     = int(d_sms["value"])   if d_sms.get("value")   is not None else None
+            extras  = []
+            tag = (pkg.get("tagTextSecondary") or "").strip()
+            if tag:
+                extras.append(tag)
+            app_info = pkg.get("dataForApp") or {}
+            if app_info.get("hasDataForApp"):
+                extras.append("גלישה חופשית באפליקציות נבחרות")
             plans.append({"carrier": "cellcom", "plan_name": name, "price": price,
                           "days": days, "data_gb": gb, "minutes": minutes,
                           "sms": sms, "extras": extras})
+    except Exception as e:
+        logger.error(f"Cellcom abroad API failed: {e}")
+
+    # ── Source 2: Silent Roamers page (DOM) ───────────────────────────────
+    try:
+        page.goto("https://cellcom.co.il/AbroadMain/Silent_roamers-old/",
+                  timeout=30000, wait_until="networkidle")
+        page.wait_for_timeout(2000)
+        for card in page.query_selector_all(".abroad-package-client"):
+            name_el     = card.query_selector(".abroad-package-client__title")
+            duration_el = card.query_selector(".abroad-package-client__duration")
+            data_el     = card.query_selector(".abroad-package-client__data--bank")
+            voice_sms   = card.query_selector_all(".abroad-package-voice-sms__value")
+            price_el    = card.query_selector(".abroad-package-client__price-real--bank--container")
+            name = name_el.inner_text().strip() if name_el else ""
+            if not name or name in seen_names:
+                continue
+            seen_names.add(name)
+            days    = _parse_days(duration_el.inner_text() if duration_el else "")
+            gb      = _parse_gb(data_el.inner_text()) if data_el else None
+            minutes = _parse_minutes(voice_sms[0].inner_text()) if len(voice_sms) > 0 else None
+            sms     = _parse_sms(voice_sms[1].inner_text())     if len(voice_sms) > 1 else None
+            price   = None
+            if price_el:
+                for span in price_el.query_selector_all("span"):
+                    t = span.inner_text().strip()
+                    if re.match(r'^\d', t):
+                        price = _parse_price(t)
+                        break
+            plans.append({"carrier": "cellcom", "plan_name": name, "price": price,
+                          "days": days, "data_gb": gb, "minutes": minutes,
+                          "sms": sms, "extras": []})
+    except Exception as e:
+        logger.error(f"Cellcom silent roamers scrape failed: {e}")
+
     return plans
 
 
