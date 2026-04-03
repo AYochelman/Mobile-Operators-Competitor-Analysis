@@ -14,7 +14,7 @@ Flask app that scrapes 5 Israeli carriers twice daily, shows a Hebrew RTL compar
 - **notifier.py** — format_message(), send_notification() (Telegram), send_whatsapp() (Green API), send_email_report() (SendGrid), send_push_notifications() (Web Push)
 - **excel_report.py** — Builds daily Excel workbook (1 sheet/carrier, yellow rows = changed in 24h)
 - **config.json** — All credentials and settings (including auto-generated VAPID keys)
-- **templates/index.html** — RTL Hebrew dark UI with PWA support + bell button 🔔
+- **templates/index.html** — RTL Hebrew **Minimal Clean** light UI with PWA support + bell button 🔔
 - **static/sw.js** — Service worker for Web Push notifications
 - **static/manifest.json** — PWA manifest (RTL Hebrew, standalone display)
 - **static/icon-192.png** / **icon-512.png** — App icons (Pillow-generated)
@@ -26,7 +26,7 @@ Flask app that scrapes 5 Israeli carriers twice daily, shows a Hebrew RTL compar
 | partner | פרטנר | 5 |
 | pelephone | פלאפון | 5 |
 | hotmobile | הוט מובייל | 6 |
-| cellcom | סלקום | 3 |
+| cellcom | סלקום | 6 |
 | mobile019 | 019 | 8 |
 
 ## Schedule
@@ -86,9 +86,13 @@ Note: VAPID keys are auto-generated on first run if missing. Do not delete them 
   `taskkill /F /IM python.exe` then `python "D:/השוואת MASS MARKET/app.py"`
 
 ## UI Features (templates/index.html)
+- **Design**: Minimal Clean light theme (white cards, gray background, blue accents, pastel carrier badges)
 - Plan name shown at TOP of each card (blue, bold)
 - Carrier badge + price + details below
-- Sidebar filters: חברה, גלישה, דור רשת (5G בלבד), מיון
+- Creator credit: "נוצר ע"י אלון יוכלמן" in header
+- **Sidebar filters**: חברה, גלישה, גלישה בחו"ל, דור רשת (5G בלבד), שינויים אחרונים, מיון
+- Roaming filter: checks extras for "חו"ל" + digit + GB/גלישה pattern
+- Recent changes filter: shows plans changed in last 24h/48h/7 days
 - 5G filter: matches plan_name or extras containing "5G"
 - No-cache headers to prevent browser caching issues
 - Bell button 🔔 in header: green when subscribed, grey when not
