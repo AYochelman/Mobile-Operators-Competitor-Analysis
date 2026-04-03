@@ -91,6 +91,12 @@
   .no-plans { color: #9ca3af; padding: 60px 20px; text-align: center; font-size: 14px; }
   .loading  { color: #9ca3af; padding: 60px 20px; text-align: center; font-size: 14px; }
 
+  /* Tab switcher in sidebar */
+  .sidebar-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .sidebar-tab { flex: 1; padding: 7px 4px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid #e5e7eb; background: #f9fafb; color: #6b7280; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .sidebar-tab.active { background: #eff6ff; border-color: #3b82f6; color: #2563eb; }
+  .sidebar-tab:hover:not(.active) { border-color: #93c5fd; }
+
   /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -113,6 +119,13 @@
 
   <!-- Sidebar -->
   <div class="sidebar">
+
+    <!-- Tab switcher -->
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" data-tab="domestic">📱 ארץ</button>
+      <button class="sidebar-tab" data-tab="abroad">✈️ חו"ל</button>
+    </div>
+
     <div class="sidebar-section">
       <div class="sidebar-title">חברה</div>
       <button class="carrier-btn active" data-carrier="all">
@@ -141,7 +154,8 @@
       </button>
     </div>
 
-    <div class="sidebar-section">
+    <!-- Domestic-only sections -->
+    <div class="sidebar-section domestic-section">
       <div class="sidebar-title">גלישה</div>
       <div class="tag-group">
         <span class="tag active" data-gb="all">הכל</span>
@@ -152,7 +166,7 @@
       </div>
     </div>
 
-    <div class="sidebar-section">
+    <div class="sidebar-section domestic-section">
       <div class="sidebar-title">גלישה בחו"ל</div>
       <div class="tag-group">
         <span class="tag active" data-roaming="all">הכל</span>
@@ -160,7 +174,7 @@
       </div>
     </div>
 
-    <div class="sidebar-section">
+    <div class="sidebar-section domestic-section">
       <div class="sidebar-title">דור רשת</div>
       <div class="tag-group">
         <span class="tag active" data-gen="all">הכל</span>
@@ -168,7 +182,7 @@
       </div>
     </div>
 
-    <div class="sidebar-section">
+    <div class="sidebar-section domestic-section">
       <div class="sidebar-title">מיון</div>
       <div class="tag-group">
         <span class="tag active" data-sort="price_asc">מחיר ↑</span>
@@ -177,7 +191,7 @@
       </div>
     </div>
 
-    <div class="sidebar-section">
+    <div class="sidebar-section domestic-section">
       <div class="sidebar-title">חידושים</div>
       <div class="tag-group">
         <span class="tag active" data-changes="all">הכל</span>
@@ -185,21 +199,69 @@
       </div>
     </div>
 
-    <div class="sidebar-section">
+    <div class="sidebar-section domestic-section">
       <div class="sidebar-title">שינויים אחרונים</div>
       <div id="changesList" style="font-size:11px;color:#8b949e;">—</div>
+    </div>
+
+    <!-- Abroad-only sections -->
+    <div class="sidebar-section abroad-section" style="display:none">
+      <div class="sidebar-title">גלישה</div>
+      <div class="tag-group">
+        <span class="tag active" data-abroad-gb="all">הכל</span>
+        <span class="tag" data-abroad-gb="0-5">עד 5GB</span>
+        <span class="tag" data-abroad-gb="5-15">5–15GB</span>
+        <span class="tag" data-abroad-gb="15+">15GB+</span>
+        <span class="tag" data-abroad-gb="unlimited">ללא הגבלה</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section abroad-section" style="display:none">
+      <div class="sidebar-title">תקופה</div>
+      <div class="tag-group">
+        <span class="tag active" data-abroad-days="all">הכל</span>
+        <span class="tag" data-abroad-days="1-7">עד שבוע</span>
+        <span class="tag" data-abroad-days="8-30">8–30 ימים</span>
+        <span class="tag" data-abroad-days="30+">30+ ימים</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section abroad-section" style="display:none">
+      <div class="sidebar-title">מיון</div>
+      <div class="tag-group">
+        <span class="tag active" data-abroad-sort="price_asc">מחיר ↑</span>
+        <span class="tag" data-abroad-sort="price_desc">מחיר ↓</span>
+        <span class="tag" data-abroad-sort="gb_desc">GB ↓</span>
+        <span class="tag" data-abroad-sort="days_asc">ימים ↑</span>
+      </div>
     </div>
   </div>
 
   <!-- Content -->
   <div class="content">
-    <div class="content-header">
-      <h2 id="contentTitle">כל החבילות</h2>
-      <span class="content-sub" id="contentSub"></span>
+
+    <!-- Domestic content -->
+    <div id="domesticContent">
+      <div class="content-header">
+        <h2 id="contentTitle">כל החבילות</h2>
+        <span class="content-sub" id="contentSub"></span>
+      </div>
+      <div id="plansGrid" class="plans-grid">
+        <div class="loading">⏳ טוען נתונים...</div>
+      </div>
     </div>
-    <div id="plansGrid" class="plans-grid">
-      <div class="loading">⏳ טוען נתונים...</div>
+
+    <!-- Abroad content -->
+    <div id="abroadContent" style="display:none">
+      <div class="content-header">
+        <h2 id="abroadTitle">חבילות חו"ל</h2>
+        <span class="content-sub" id="abroadSub"></span>
+      </div>
+      <div id="abroadGrid" class="plans-grid">
+        <div class="loading">⏳ טוען נתונים...</div>
+      </div>
     </div>
+
   </div>
 
 </div>
@@ -211,10 +273,32 @@ const CARRIER_LABELS = {
 };
 
 let allPlans = [];
+let allAbroadPlans = [];
 let recentChangeKeys = new Set();
-let recentChangeTypes = {};   // "carrier|plan_name" -> change_type
-let state = { carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', changes: 'all', roaming: 'all' };
+let recentChangeTypes = {};
+let currentTab = 'domestic';
+let state        = { carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', changes: 'all', roaming: 'all' };
+let abroadState  = { carrier: 'all', gb: 'all', days: 'all', sort: 'price_asc' };
 
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.domestic-section').forEach(s => s.style.display = tab === 'domestic' ? '' : 'none');
+  document.querySelectorAll('.abroad-section').forEach(s => s.style.display = tab === 'abroad' ? '' : 'none');
+  document.getElementById('domesticContent').style.display = tab === 'domestic' ? '' : 'none';
+  document.getElementById('abroadContent').style.display   = tab === 'abroad'   ? '' : 'none';
+  updateCountBadges();
+  if (tab === 'abroad' && allAbroadPlans.length === 0) {
+    loadAbroadData();
+  }
+}
+
+document.querySelectorAll('.sidebar-tab').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+// ── Domestic data ──────────────────────────────────────────────────────────
 async function loadData() {
   const [plans, changes] = await Promise.all([
     fetch('/api/plans').then(r => r.json()),
@@ -250,9 +334,10 @@ function updateHeader(plans) {
 }
 
 function updateCountBadges() {
+  const plans = currentTab === 'domestic' ? allPlans : allAbroadPlans;
   const counts = {};
-  allPlans.forEach(p => { counts[p.carrier] = (counts[p.carrier] || 0) + 1; });
-  document.getElementById('cnt-all').textContent = allPlans.length;
+  plans.forEach(p => { counts[p.carrier] = (counts[p.carrier] || 0) + 1; });
+  document.getElementById('cnt-all').textContent = plans.length;
   ['partner','pelephone','hotmobile','cellcom','mobile019'].forEach(c => {
     const el = document.getElementById(`cnt-${c}`);
     if (el) el.textContent = counts[c] || 0;
@@ -299,20 +384,18 @@ function renderCard(plan) {
   const key = `${plan.carrier}|${plan.plan_name}`;
   const ct  = recentChangeTypes[key];
   let badge = '';
-  if (ct === 'new_plan')     badge = '<span class="change-badge badge-new">חדש</span>';
+  if (ct === 'new_plan')          badge = '<span class="change-badge badge-new">חדש</span>';
   else if (ct === 'price_change') badge = '<span class="change-badge badge-changed">שינוי מחיר</span>';
   else if (ct === 'removed_plan') badge = '<span class="change-badge badge-changed">הוסרה</span>';
 
-  const gb      = plan.data_gb === null ? 'ללא הגבלה'
-                : plan.data_gb < 1    ? `${Math.round(plan.data_gb * 1024)}MB`
-                :                       `${plan.data_gb}GB`;
+  const gb = plan.data_gb === null ? 'ללא הגבלה'
+           : plan.data_gb < 1    ? `${Math.round(plan.data_gb * 1024)}MB`
+           :                       `${plan.data_gb}GB`;
   const priceNum = plan.price !== null ? (Number.isInteger(plan.price) ? plan.price : plan.price.toFixed(2)) : null;
-  const price   = priceNum !== null ? `<sup>₪</sup>${priceNum}` : '—';
+  const price    = priceNum !== null ? `<sup>₪</sup>${priceNum}` : '—';
   const extrasHtml = plan.extras?.length
     ? `<div class="extras">${plan.extras.slice(0,4).map(e => `<span>${e}</span>`).join('')}</div>`
     : '';
-
-  // minutes: -1 = unlimited, positive int = specific count, null = unknown (don't show)
   const minutesVal = plan.minutes === -1 ? 'ללא הגבלה'
                    : plan.minutes > 0    ? `${plan.minutes.toLocaleString()} דקות`
                    : null;
@@ -328,10 +411,7 @@ function renderCard(plan) {
       <div class="price">${price}</div>
       <div class="price-note">₪ לחודש</div>
       <div class="details">
-        <div class="detail-row">
-          <span class="detail-label">גלישה</span>
-          <span class="detail-value">${gb}</span>
-        </div>
+        <div class="detail-row"><span class="detail-label">גלישה</span><span class="detail-value">${gb}</span></div>
         ${minutesRow}
       </div>
       ${extrasHtml}
@@ -343,24 +423,102 @@ function render() {
   const grid  = document.getElementById('plansGrid');
   const title = document.getElementById('contentTitle');
   const sub   = document.getElementById('contentSub');
-
   title.textContent = state.carrier === 'all' ? 'כל החבילות' : CARRIER_LABELS[state.carrier] || state.carrier;
   sub.textContent   = `${filtered.length} חבילות`;
-
-  if (!filtered.length) {
-    grid.innerHTML = '<div class="no-plans">אין חבילות תואמות את הסינון</div>';
-    return;
-  }
-  grid.innerHTML = filtered.map(renderCard).join('');
+  grid.innerHTML = filtered.length
+    ? filtered.map(renderCard).join('')
+    : '<div class="no-plans">אין חבילות תואמות את הסינון</div>';
 }
 
-// Sidebar events
+// ── Abroad data ────────────────────────────────────────────────────────────
+async function loadAbroadData() {
+  document.getElementById('abroadGrid').innerHTML = '<div class="loading">⏳ טוען חבילות חו"ל...</div>';
+  const plans = await fetch('/api/abroad-plans').then(r => r.json());
+  allAbroadPlans = plans;
+  updateCountBadges();
+  renderAbroad();
+}
+
+function filterAndSortAbroad(plans) {
+  let r = plans;
+  const s = abroadState;
+  if (s.carrier !== 'all') r = r.filter(p => p.carrier === s.carrier);
+  if (s.gb === '0-5')       r = r.filter(p => p.data_gb !== null && p.data_gb <= 5);
+  if (s.gb === '5-15')      r = r.filter(p => p.data_gb !== null && p.data_gb > 5 && p.data_gb <= 15);
+  if (s.gb === '15+')       r = r.filter(p => p.data_gb !== null && p.data_gb > 15);
+  if (s.gb === 'unlimited') r = r.filter(p => p.data_gb === null);
+  if (s.days === '1-7')     r = r.filter(p => p.days !== null && p.days <= 7);
+  if (s.days === '8-30')    r = r.filter(p => p.days !== null && p.days > 7 && p.days <= 30);
+  if (s.days === '30+')     r = r.filter(p => p.days !== null && p.days > 30);
+  if (s.sort === 'price_asc')  r = [...r].sort((a,b) => (a.price ?? 9999) - (b.price ?? 9999));
+  if (s.sort === 'price_desc') r = [...r].sort((a,b) => (b.price ?? 0) - (a.price ?? 0));
+  if (s.sort === 'gb_desc')    r = [...r].sort((a,b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999));
+  if (s.sort === 'days_asc')   r = [...r].sort((a,b) => (a.days ?? 9999) - (b.days ?? 9999));
+  return r;
+}
+
+function renderAbroadCard(plan) {
+  const gb = plan.data_gb === null ? 'ללא הגבלה'
+           : plan.data_gb < 1    ? `${Math.round(plan.data_gb * 1024)}MB`
+           :                       `${plan.data_gb}GB`;
+  const priceNum = plan.price !== null ? (Number.isInteger(plan.price) ? plan.price : plan.price.toFixed(2)) : null;
+  const price    = priceNum !== null ? `<sup>₪</sup>${priceNum}` : '—';
+  const daysRow = plan.days
+    ? `<div class="detail-row"><span class="detail-label">תוקף</span><span class="detail-value">${plan.days} ימים</span></div>`
+    : '';
+  const minutesVal = plan.minutes === -1 ? 'ללא הגבלה'
+                   : plan.minutes > 0    ? `${plan.minutes.toLocaleString()} דקות`
+                   : null;
+  const minutesRow = minutesVal
+    ? `<div class="detail-row"><span class="detail-label">דקות</span><span class="detail-value">${minutesVal}</span></div>`
+    : '';
+  const smsVal = plan.sms === -1 ? 'ללא הגבלה'
+               : plan.sms > 0    ? `${plan.sms.toLocaleString()} SMS`
+               : null;
+  const smsRow = smsVal
+    ? `<div class="detail-row"><span class="detail-label">SMS</span><span class="detail-value">${smsVal}</span></div>`
+    : '';
+  const extrasHtml = plan.extras?.length
+    ? `<div class="extras">${plan.extras.slice(0,4).map(e => `<span>${e}</span>`).join('')}</div>`
+    : '';
+
+  return `
+    <div class="plan-card">
+      <div class="plan-name" title="${plan.plan_name}">${plan.plan_name}</div>
+      <span class="carrier-badge badge-${plan.carrier}">${CARRIER_LABELS[plan.carrier] || plan.carrier}</span>
+      <div class="price">${price}</div>
+      <div class="price-note">₪ לחבילה</div>
+      <div class="details">
+        ${daysRow}
+        <div class="detail-row"><span class="detail-label">גלישה</span><span class="detail-value">${gb}</span></div>
+        ${minutesRow}
+        ${smsRow}
+      </div>
+      ${extrasHtml}
+    </div>`;
+}
+
+function renderAbroad() {
+  const filtered = filterAndSortAbroad(allAbroadPlans);
+  const grid  = document.getElementById('abroadGrid');
+  const title = document.getElementById('abroadTitle');
+  const sub   = document.getElementById('abroadSub');
+  title.textContent = abroadState.carrier === 'all' ? 'חבילות חו"ל' : `${CARRIER_LABELS[abroadState.carrier] || abroadState.carrier} — חו"ל`;
+  sub.textContent   = `${filtered.length} חבילות`;
+  grid.innerHTML = filtered.length
+    ? filtered.map(renderAbroadCard).join('')
+    : '<div class="no-plans">אין חבילות תואמות את הסינון</div>';
+}
+
+// ── Sidebar events ─────────────────────────────────────────────────────────
 document.querySelectorAll('.carrier-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.carrier-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.carrier = btn.dataset.carrier;
-    render();
+    abroadState.carrier = btn.dataset.carrier;
+    if (currentTab === 'domestic') render(); else renderAbroad();
+    updateCountBadges();
   });
 });
 document.querySelectorAll('.tag[data-gb]').forEach(tag => {
@@ -401,6 +559,30 @@ document.querySelectorAll('.tag[data-roaming]').forEach(tag => {
     tag.classList.add('active');
     state.roaming = tag.dataset.roaming;
     render();
+  });
+});
+document.querySelectorAll('.tag[data-abroad-gb]').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag[data-abroad-gb]').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    abroadState.gb = tag.dataset.abroadGb;
+    renderAbroad();
+  });
+});
+document.querySelectorAll('.tag[data-abroad-days]').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag[data-abroad-days]').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    abroadState.days = tag.dataset.abroadDays;
+    renderAbroad();
+  });
+});
+document.querySelectorAll('.tag[data-abroad-sort]').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag[data-abroad-sort]').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    abroadState.sort = tag.dataset.abroadSort;
+    renderAbroad();
   });
 });
 

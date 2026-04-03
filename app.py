@@ -2,7 +2,7 @@ import json
 import os
 import logging
 from flask import Flask, jsonify, render_template, request, make_response, send_from_directory
-from db import init_db, get_plans, get_changes
+from db import init_db, get_plans, get_changes, get_abroad_plans
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -30,11 +30,16 @@ def _ensure_vapid_keys(config_path):
     if cfg.get("vapid_public_key") and cfg.get("vapid_private_key"):
         return
     try:
+        import base64
         from py_vapid import Vapid
+        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
         v = Vapid()
         v.generate_keys()
+        # Serialize private key as PEM string
         cfg["vapid_private_key"] = v.private_pem().decode()
-        cfg["vapid_public_key"] = v.public_key
+        # Serialize public key as uncompressed point → urlsafe base64 (no padding)
+        pub_bytes = v.public_key.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+        cfg["vapid_public_key"] = base64.urlsafe_b64encode(pub_bytes).rstrip(b"=").decode()
         cfg["vapid_email"] = f"mailto:{cfg.get('email_sender', 'alon.yoch@gmail.com')}"
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(cfg, f, ensure_ascii=False, indent=2)
@@ -74,6 +79,27 @@ def api_changes():
     limit = int(request.args.get("limit", 20))
     changes = get_changes(limit=limit, db_path=_db_path())
     return jsonify(changes)
+
+
+@app.route("/api/abroad-plans")
+def api_abroad_plans():
+    carrier = request.args.get("carrier")
+    plans = get_abroad_plans(carrier=carrier, db_path=_db_path())
+    return jsonify(plans)
+
+
+@app.route("/api/scrape-abroad-now")
+def api_scrape_abroad_now():
+    """Manual trigger: scrape abroad packages and save to DB."""
+    try:
+        import scraper as sc
+        from db import save_abroad_plans
+        plans = sc.scrape_all_abroad()
+        save_abroad_plans(plans, db_path=_db_path())
+        return jsonify({"plans": len(plans), "status": "ok"})
+    except Exception as e:
+        logger.error(f"scrape-abroad-now failed: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/scrape-now")

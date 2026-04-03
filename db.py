@@ -43,6 +43,19 @@ def init_db(db_path=None):
                 auth       TEXT NOT NULL,
                 created_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS abroad_plans (
+                id         INTEGER PRIMARY KEY,
+                carrier    TEXT NOT NULL,
+                plan_name  TEXT NOT NULL,
+                price      REAL,
+                days       INTEGER,
+                data_gb    REAL,
+                minutes    INTEGER,
+                sms        INTEGER,
+                extras     TEXT,
+                scraped_at TEXT,
+                UNIQUE(carrier, plan_name)
+            );
         """)
         conn.commit()
     finally:
@@ -94,6 +107,61 @@ def get_plans(carrier=None, db_path=None):
                 "data_gb": r[3], "minutes": r[4],
                 "extras": json.loads(r[5]) if r[5] else [],
                 "scraped_at": r[6]
+            }
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def save_abroad_plans(plans, db_path=None):
+    conn = _connect(db_path)
+    try:
+        now = datetime.now().isoformat()
+        for plan in plans:
+            conn.execute("""
+                INSERT INTO abroad_plans (carrier, plan_name, price, days, data_gb, minutes, sms, extras, scraped_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(carrier, plan_name) DO UPDATE SET
+                    price      = excluded.price,
+                    days       = excluded.days,
+                    data_gb    = excluded.data_gb,
+                    minutes    = excluded.minutes,
+                    sms        = excluded.sms,
+                    extras     = excluded.extras,
+                    scraped_at = excluded.scraped_at
+            """, (
+                plan["carrier"], plan["plan_name"], plan.get("price"),
+                plan.get("days"), plan.get("data_gb"), plan.get("minutes"),
+                plan.get("sms"),
+                json.dumps(plan.get("extras", []), ensure_ascii=False),
+                now
+            ))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_abroad_plans(carrier=None, db_path=None):
+    conn = _connect(db_path)
+    try:
+        if carrier:
+            rows = conn.execute(
+                "SELECT carrier, plan_name, price, days, data_gb, minutes, sms, extras, scraped_at "
+                "FROM abroad_plans WHERE carrier=? ORDER BY price",
+                (carrier,)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT carrier, plan_name, price, days, data_gb, minutes, sms, extras, scraped_at "
+                "FROM abroad_plans ORDER BY carrier, price"
+            ).fetchall()
+        return [
+            {
+                "carrier": r[0], "plan_name": r[1], "price": r[2],
+                "days": r[3], "data_gb": r[4], "minutes": r[5], "sms": r[6],
+                "extras": json.loads(r[7]) if r[7] else [],
+                "scraped_at": r[8]
             }
             for r in rows
         ]
