@@ -12,7 +12,7 @@
 <title>השוואת חבילות סלולר</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f3f4f6; color: #111827; direction: rtl; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f3f4f6; color: #111827; direction: rtl; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
   /* Header */
   .header { background: #ffffff; border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
@@ -91,11 +91,11 @@
   .no-plans { color: #9ca3af; padding: 60px 20px; text-align: center; font-size: 14px; }
   .loading  { color: #9ca3af; padding: 60px 20px; text-align: center; font-size: 14px; }
 
-  /* Tab switcher in sidebar */
-  .sidebar-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
-  .sidebar-tab { flex: 1; padding: 7px 4px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid #e5e7eb; background: #f9fafb; color: #6b7280; cursor: pointer; font-family: inherit; transition: all 0.15s; }
-  .sidebar-tab.active { background: #eff6ff; border-color: #3b82f6; color: #2563eb; }
-  .sidebar-tab:hover:not(.active) { border-color: #93c5fd; }
+  /* Main tab bar */
+  .tab-bar { background: #ffffff; border-bottom: 1px solid #e5e7eb; display: flex; gap: 0; flex-shrink: 0; padding: 0 20px; }
+  .tab-btn { padding: 12px 24px; font-size: 14px; font-weight: 600; border: none; border-bottom: 3px solid transparent; background: transparent; color: #6b7280; cursor: pointer; font-family: inherit; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
+  .tab-btn:hover:not(.active) { color: #374151; border-bottom-color: #e5e7eb; }
+  .tab-btn.active { color: #2563eb; border-bottom-color: #3b82f6; }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; }
@@ -115,16 +115,16 @@
   <div class="update-info" id="updateInfo">טוען...</div>
 </div>
 
+<!-- Tab bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="domestic">📱 חבילות Mass Market</button>
+  <button class="tab-btn" data-tab="abroad">✈️ חבילות חו"ל</button>
+</div>
+
 <div class="main">
 
   <!-- Sidebar -->
   <div class="sidebar">
-
-    <!-- Tab switcher -->
-    <div class="sidebar-tabs">
-      <button class="sidebar-tab active" data-tab="domestic">📱 ארץ</button>
-      <button class="sidebar-tab" data-tab="abroad">✈️ חו"ל</button>
-    </div>
 
     <div class="sidebar-section">
       <div class="sidebar-title">חברה</div>
@@ -283,7 +283,7 @@ let abroadState  = { carrier: 'all', gb: 'all', days: 'all', sort: 'price_asc' }
 // ── Tab switching ──────────────────────────────────────────────────────────
 function switchTab(tab) {
   currentTab = tab;
-  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.domestic-section').forEach(s => s.style.display = tab === 'domestic' ? '' : 'none');
   document.querySelectorAll('.abroad-section').forEach(s => s.style.display = tab === 'abroad' ? '' : 'none');
   document.getElementById('domesticContent').style.display = tab === 'domestic' ? '' : 'none';
@@ -294,7 +294,7 @@ function switchTab(tab) {
   }
 }
 
-document.querySelectorAll('.sidebar-tab').forEach(btn => {
+document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
 
