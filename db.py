@@ -52,6 +52,31 @@ def init_db(db_path=None):
                 new_val     TEXT,
                 changed_at  TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS global_plans (
+                id             INTEGER PRIMARY KEY,
+                carrier        TEXT NOT NULL,
+                plan_name      TEXT NOT NULL,
+                price          REAL,
+                currency       TEXT,
+                original_price REAL,
+                days           INTEGER,
+                data_gb        REAL,
+                minutes        INTEGER,
+                sms            INTEGER,
+                esim           INTEGER DEFAULT 1,
+                extras         TEXT,
+                scraped_at     TEXT,
+                UNIQUE(carrier, plan_name)
+            );
+            CREATE TABLE IF NOT EXISTS global_changes (
+                id          INTEGER PRIMARY KEY,
+                carrier     TEXT NOT NULL,
+                plan_name   TEXT NOT NULL,
+                change_type TEXT NOT NULL,
+                old_val     TEXT,
+                new_val     TEXT,
+                changed_at  TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS abroad_plans (
                 id         INTEGER PRIMARY KEY,
                 carrier    TEXT NOT NULL,
@@ -117,6 +142,98 @@ def get_plans(carrier=None, db_path=None):
                 "extras": json.loads(r[5]) if r[5] else [],
                 "scraped_at": r[6]
             }
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def save_global_plans(plans, db_path=None):
+    conn = _connect(db_path)
+    try:
+        now = datetime.now().isoformat()
+        for plan in plans:
+            conn.execute("""
+                INSERT INTO global_plans
+                  (carrier, plan_name, price, currency, original_price, days, data_gb, minutes, sms, esim, extras, scraped_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+                ON CONFLICT(carrier, plan_name) DO UPDATE SET
+                    price          = excluded.price,
+                    currency       = excluded.currency,
+                    original_price = excluded.original_price,
+                    days           = excluded.days,
+                    data_gb        = excluded.data_gb,
+                    minutes        = excluded.minutes,
+                    sms            = excluded.sms,
+                    esim           = excluded.esim,
+                    extras         = excluded.extras,
+                    scraped_at     = excluded.scraped_at
+            """, (
+                plan["carrier"], plan["plan_name"], plan.get("price"),
+                plan.get("currency"), plan.get("original_price"),
+                plan.get("days"), plan.get("data_gb"), plan.get("minutes"),
+                plan.get("sms"), 1 if plan.get("esim", True) else 0,
+                json.dumps(plan.get("extras", []), ensure_ascii=False), now
+            ))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_global_plans(carrier=None, db_path=None):
+    conn = _connect(db_path)
+    try:
+        if carrier:
+            rows = conn.execute(
+                "SELECT carrier, plan_name, price, currency, original_price, days, data_gb, minutes, sms, esim, extras, scraped_at "
+                "FROM global_plans WHERE carrier=? ORDER BY price",
+                (carrier,)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT carrier, plan_name, price, currency, original_price, days, data_gb, minutes, sms, esim, extras, scraped_at "
+                "FROM global_plans ORDER BY carrier, price"
+            ).fetchall()
+        return [
+            {"carrier": r[0], "plan_name": r[1], "price": r[2], "currency": r[3],
+             "original_price": r[4], "days": r[5], "data_gb": r[6], "minutes": r[7],
+             "sms": r[8], "esim": bool(r[9]),
+             "extras": json.loads(r[10]) if r[10] else [], "scraped_at": r[11]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def save_global_changes(changes, db_path=None):
+    conn = _connect(db_path)
+    try:
+        now = datetime.now().isoformat()
+        for ch in changes:
+            conn.execute(
+                "INSERT INTO global_changes (carrier, plan_name, change_type, old_val, new_val, changed_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (ch["carrier"], ch["plan_name"], ch["change_type"],
+                 str(ch["old_val"]) if ch.get("old_val") is not None else None,
+                 str(ch["new_val"]) if ch.get("new_val") is not None else None,
+                 now)
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_global_changes(limit=50, db_path=None):
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT carrier, plan_name, change_type, old_val, new_val, changed_at "
+            "FROM global_changes ORDER BY changed_at DESC, id DESC LIMIT ?",
+            (limit,)
+        ).fetchall()
+        return [
+            {"carrier": r[0], "plan_name": r[1], "change_type": r[2],
+             "old_val": r[3], "new_val": r[4], "changed_at": r[5]}
             for r in rows
         ]
     finally:
