@@ -538,6 +538,345 @@ def scrape_019_abroad(page):
     return plans
 
 
+# ── Global eSIM scrapers ───────────────────────────────────────────────────
+
+def _get_usd_to_ils():
+    """Fetch live USD→ILS exchange rate. Returns float (fallback: 3.7)."""
+    try:
+        import urllib.request, json as _json
+        with urllib.request.urlopen(
+            "https://api.exchangerate.host/latest?base=USD&symbols=ILS", timeout=8
+        ) as r:
+            data = _json.loads(r.read())
+            rate = data["rates"]["ILS"]
+            logger.info(f"USD→ILS rate: {rate}")
+            return float(rate)
+    except Exception:
+        try:
+            import urllib.request, json as _json
+            with urllib.request.urlopen(
+                "https://open.er-api.com/v6/latest/USD", timeout=8
+            ) as r:
+                data = _json.loads(r.read())
+                rate = data["rates"]["ILS"]
+                logger.info(f"USD→ILS rate (fallback): {rate}")
+                return float(rate)
+        except Exception as e:
+            logger.warning(f"Exchange rate fetch failed: {e}. Using 3.7")
+            return 3.7
+
+
+def _get_eur_to_ils():
+    """Fetch live EUR→ILS exchange rate. Returns float (fallback: 4.0)."""
+    try:
+        import urllib.request, json as _json
+        with urllib.request.urlopen(
+            "https://open.er-api.com/v6/latest/EUR", timeout=8
+        ) as r:
+            data = _json.loads(r.read())
+            rate = data["rates"]["ILS"]
+            logger.info(f"EUR→ILS rate: {rate}")
+            return float(rate)
+    except Exception as e:
+        logger.warning(f"EUR rate fetch failed: {e}. Using 4.0")
+        return 4.0
+
+
+def _make_global_plan(carrier, name, price_ils, currency, original_price,
+                      data_gb, days, minutes=None, sms=None, esim=True, extras=None):
+    return {
+        "carrier": carrier,
+        "plan_name": name,
+        "price": round(price_ils, 2) if price_ils is not None else None,
+        "currency": currency,
+        "original_price": original_price,
+        "days": days,
+        "data_gb": data_gb,
+        "minutes": minutes,
+        "sms": sms,
+        "esim": esim,
+        "extras": extras or [],
+    }
+
+
+def scrape_tuki_global(page, usd_rate):
+    page.goto(
+        "https://www.tuki-esim.co.il/ds/heb/hp/regional-packages/global/",
+        timeout=30000, wait_until="networkidle"
+    )
+    page.wait_for_timeout(2000)
+    plans = []
+    for card in page.query_selector_all(".blue5, .blue15, .blue30"):
+        gb_el    = card.query_selector(".gb span")
+        price_el = card.query_selector(".price span:last-child")
+        valid_el = card.query_selector(".valid span")
+        if not gb_el or not price_el:
+            continue
+        gb_text    = gb_el.inner_text().strip()
+        price_text = price_el.inner_text().strip()
+        valid_text = valid_el.inner_text().strip() if valid_el else ""
+        gb      = _parse_gb(gb_text)
+        days    = _parse_days(valid_text)
+        usd_val = _parse_price(price_text)
+        if usd_val is None:
+            continue
+        price_ils = round(usd_val * usd_rate, 2)
+        name = f"Tuki Global {gb_text}"
+        if days:
+            name += f" {days}d"
+        plans.append(_make_global_plan(
+            "tuki", name, price_ils, "USD", usd_val,
+            gb, days, extras=["139 מדינות", "eSIM בלבד"]
+        ))
+    logger.info(f"Tuki global: {len(plans)} plans")
+    return plans
+
+
+def scrape_globalesim_global(page):
+    page.goto(
+        "https://globalesim.co.il/continent/esim-global/",
+        timeout=30000, wait_until="networkidle"
+    )
+    page.wait_for_timeout(2000)
+    plans = []
+    seen_names = set()
+
+    def scrape_tab(minutes_val):
+        for card in page.query_selector_all(".dataInfo_box"):
+            name_el  = card.query_selector(".dataInfo_content_top p")
+            price_el = card.query_selector(".woocommerce-Price-amount bdi")
+            lis = card.query_selector_all("ul li")
+            name = name_el.inner_text().strip() if name_el else "לא ידוע"
+            if not name or name in seen_names:
+                continue
+            seen_names.add(name)
+            price = None
+            if price_el:
+                price = _parse_price(price_el.inner_text().replace("₪", "").strip())
+            gb, days, countries = None, None, None
+            for li in lis:
+                t = li.inner_text().strip()
+                if "ימים" in t and days is None:
+                    days = _parse_days(t)
+                elif "מדינות" in t and countries is None:
+                    countries = t
+                elif ("GB" in t or "גיגה" in t) and gb is None:
+                    gb = _parse_gb(t)
+            extras = []
+            if countries:
+                extras.append(countries)
+            bonus = card.query_selector(".gift_badge")
+            if bonus:
+                bt = bonus.inner_text().strip()
+                if bt:
+                    extras.append(bt)
+            plans.append(_make_global_plan(
+                "globalesim", name, price, "ILS", price,
+                gb, days, minutes=minutes_val, extras=extras
+            ))
+
+    # Data-only tab (active by default)
+    scrape_tab(None)
+
+    # Calls+Data tab
+    tabs = page.query_selector_all(".choose_plan_type_button")
+    if len(tabs) > 1:
+        tabs[1].click()
+        page.wait_for_timeout(1500)
+        scrape_tab(50)
+
+    logger.info(f"GlobaleSIM global: {len(plans)} plans")
+    return plans
+
+
+def scrape_airalo_global(page, eur_rate):
+    """Scrape Airalo global eSIM packages by navigating to the Discover Global operator page."""
+    page.goto(
+        "https://www.airalo.com/global-esim",
+        timeout=45000, wait_until="domcontentloaded"
+    )
+    page.wait_for_timeout(4000)
+    plans = []
+    content = page.content()
+
+    # Extract packages from Nuxt payload JSON embedded in page
+    # Look for slug patterns: discover-in-{days}days-{gb}gb
+    pkg_pattern = re.compile(
+        r'"slug"\s*:\s*"(discover-in-(\d+)days-(\d+)gb[^"]*)"[^}]*?"net_price"\s*:\s*"?([\d.]+)"?',
+        re.IGNORECASE
+    )
+    seen = set()
+    for m in pkg_pattern.finditer(content):
+        slug, days_str, gb_str, price_str = m.group(1), m.group(2), m.group(3), m.group(4)
+        if slug in seen:
+            continue
+        seen.add(slug)
+        days = int(days_str)
+        gb   = float(gb_str)
+        eur  = float(price_str)
+        price_ils = round(eur * eur_rate, 2)
+        name = f"Airalo Discover {gb_str}GB {days}d"
+        plans.append(_make_global_plan(
+            "airalo", name, price_ils, "EUR", eur,
+            gb, days, extras=["100+ מדינות", "eSIM בלבד"]
+        ))
+
+    # Fallback: try price patterns if slug approach found nothing
+    if not plans:
+        price_pattern = re.compile(r'"net_price"\s*:\s*"?([\d.]+)"?.*?"data"\s*:\s*(\d+).*?"validity"\s*:\s*(\d+)', re.DOTALL)
+        seen_combo = set()
+        for m in price_pattern.finditer(content):
+            price_str, gb_str, days_str = m.group(1), m.group(2), m.group(3)
+            key = (gb_str, days_str, price_str)
+            if key in seen_combo:
+                continue
+            seen_combo.add(key)
+            gb, days, eur = int(gb_str), int(days_str), float(price_str)
+            if gb < 1 or gb > 100 or days < 1 or days > 400 or eur < 1:
+                continue
+            price_ils = round(eur * eur_rate, 2)
+            name = f"Airalo Discover {gb}GB {days}d"
+            plans.append(_make_global_plan(
+                "airalo", name, price_ils, "EUR", eur,
+                float(gb), days, extras=["100+ מדינות", "eSIM בלבד"]
+            ))
+
+    logger.info(f"Airalo global: {len(plans)} plans")
+    return plans
+
+
+def scrape_pelephone_globalsim(page):
+    page.goto(
+        "https://www.pelephone.co.il/digitalsite/heb/abroad/global-sim/",
+        timeout=30000, wait_until="networkidle"
+    )
+    page.wait_for_timeout(2000)
+    plans = []
+    seen_gb_days = set()
+    for card in page.query_selector_all(".packs > div[id^='p']"):
+        name_el  = card.query_selector(".pack_top .name span")
+        price_el = card.query_selector(".pack_top .price")
+        valid_el = card.query_selector(".supperlative")
+        txt_el   = card.query_selector(".new_txt")
+        esim_el  = card.query_selector(".best_offer img[alt*='סים'], .best_offer img[alt*='eSIM'], .best_offer img")
+        if not name_el or not price_el:
+            continue
+        gb_text    = name_el.inner_text().strip()
+        price_text = price_el.inner_text().replace("₪", "").strip()
+        gb    = _parse_gb(gb_text)
+        price = _parse_price(price_text)
+        if gb is None or price is None:
+            continue
+        dedup_key = (gb, price)
+        if dedup_key in seen_gb_days:
+            continue
+        seen_gb_days.add(dedup_key)
+        days = None
+        if valid_el:
+            spans = valid_el.query_selector_all("span")
+            if len(spans) >= 2:
+                num  = spans[0].inner_text().strip()
+                unit = spans[1].inner_text().strip()
+                if "שנ" in unit:
+                    try: days = int(num) * 365
+                    except: pass
+                elif "יום" in unit or "ימים" in unit:
+                    days = _parse_days(f"{num} {unit}")
+        minutes = None
+        extras  = []
+        if txt_el:
+            t = txt_el.inner_text().strip()
+            if t:
+                m = re.search(r"(\d+)\s*דקות", t)
+                if m:
+                    minutes = int(m.group(1))
+                extras.append(t)
+        esim = esim_el is not None
+        name = f"GlobalSIM {gb_text}"
+        plans.append(_make_global_plan(
+            "pelephone_global", name, price, "ILS", price,
+            gb, days, minutes=minutes, esim=esim, extras=extras
+        ))
+    logger.info(f"Pelephone GlobalSIM: {len(plans)} plans")
+    return plans
+
+
+def scrape_esimo_global(page, usd_rate):
+    page.goto(
+        "https://esimo.io/product/global-esim-only-data",
+        timeout=45000, wait_until="domcontentloaded"
+    )
+    page.wait_for_timeout(3000)
+    page.wait_for_timeout(3000)
+    plans = []
+    content = page.content()
+
+    # Extract from Next.js JSON payload
+    pkg_match = re.search(r'"packages"\s*:\s*(\[.*?\])', content, re.DOTALL)
+    if pkg_match:
+        import json as _json
+        try:
+            pkgs = _json.loads(pkg_match.group(1))
+            for pkg in pkgs:
+                gb   = float(pkg.get("data", 0))
+                days = int(pkg.get("validity", 0))
+                usd  = float(pkg.get("price", 0))
+                if gb <= 0 or days <= 0 or usd <= 0:
+                    continue
+                price_ils = round(usd * usd_rate, 2)
+                name = f"eSIMo Global {int(gb) if gb == int(gb) else gb}GB {days}d"
+                plans.append(_make_global_plan(
+                    "esimo", name, price_ils, "USD", usd,
+                    gb, days, extras=["גלישה בלבד", "eSIM בלבד", "100+ מדינות"]
+                ))
+        except Exception as e:
+            logger.error(f"eSIMo JSON parse failed: {e}")
+
+    # Fallback: parse button texts
+    if not plans:
+        for btn in page.query_selector_all("main button.MuiButtonBase-root"):
+            txt = btn.inner_text().strip()
+            m = re.search(r"(\d+)\s*GB.*?(\d+)\s*(?:Days|ימים)", txt, re.IGNORECASE)
+            if m:
+                gb   = float(m.group(1))
+                days = int(m.group(2))
+                # price unknown from button — skip
+                plans.append(_make_global_plan(
+                    "esimo", f"eSIMo Global {int(gb)}GB {days}d", None, "USD", None,
+                    gb, days, extras=["eSIM בלבד"]
+                ))
+
+    logger.info(f"eSIMo global: {len(plans)} plans")
+    return plans
+
+
+def scrape_all_global():
+    """Scrape global eSIM packages from all 5 providers. Returns flat list of plan dicts."""
+    usd_rate = _get_usd_to_ils()
+    eur_rate = _get_eur_to_ils()
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(user_agent=ua)
+        plans = []
+        jobs = [
+            ("scrape_tuki_global",          lambda pg: scrape_tuki_global(pg, usd_rate)),
+            ("scrape_globalesim_global",    scrape_globalesim_global),
+            ("scrape_airalo_global",        lambda pg: scrape_airalo_global(pg, eur_rate)),
+            ("scrape_pelephone_globalsim",  scrape_pelephone_globalsim),
+            ("scrape_esimo_global",         lambda pg: scrape_esimo_global(pg, usd_rate)),
+        ]
+        for name, fn in jobs:
+            try:
+                result = fn(page)
+                logger.info(f"{name}: {len(result)} global plans")
+                plans.extend(result)
+            except Exception as e:
+                logger.error(f"{name} failed: {e}", exc_info=True)
+        browser.close()
+    return plans
+
+
 def scrape_all_abroad():
     """Scrape abroad packages from all 5 carriers. Returns flat list of plan dicts."""
     with sync_playwright() as p:

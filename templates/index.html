@@ -38,6 +38,17 @@
   .dot-cellcom   { background: #4caf50; }
   .dot-mobile019 { background: #9c27b0; }
   .dot-all       { background: linear-gradient(135deg,#e91e63,#2196f3); }
+  .dot-tuki              { background: #0ea5e9; }
+  .dot-globalesim        { background: #22c55e; }
+  .dot-airalo            { background: #f59e0b; }
+  .dot-pelephone_global  { background: #2196f3; }
+  .dot-esimo             { background: #8b5cf6; }
+  .badge-tuki            { color: #0369a1; background: #e0f2fe; }
+  .badge-globalesim      { color: #15803d; background: #dcfce7; }
+  .badge-airalo          { color: #b45309; background: #fef3c7; }
+  .badge-pelephone_global{ color: #1d4ed8; background: #dbeafe; }
+  .badge-esimo           { color: #7e22ce; background: #f3e8ff; }
+  .esim-badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 8px; background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; margin-right: 4px; vertical-align: middle; }
 
   .tag-group { display: flex; flex-wrap: wrap; gap: 4px; }
   .tag { padding: 3px 9px; border-radius: 12px; font-size: 11px; background: #f9fafb; border: 1px solid #e5e7eb; color: #6b7280; cursor: pointer; transition: all 0.15s; }
@@ -119,6 +130,7 @@
 <div class="tab-bar">
   <button class="tab-btn active" data-tab="domestic">📱 חבילות Mass Market</button>
   <button class="tab-btn" data-tab="abroad">✈️ חבילות חו"ל</button>
+  <button class="tab-btn" data-tab="global">🌍 חבילות גלובליות</button>
 </div>
 
 <div class="main">
@@ -235,6 +247,75 @@
         <span class="tag" data-abroad-sort="days_asc">ימים ↑</span>
       </div>
     </div>
+
+    <!-- Global-only sections -->
+    <div class="sidebar-section global-section" style="display:none">
+      <div class="sidebar-title">ספק</div>
+      <button class="carrier-btn active" data-global-carrier="all">
+        <span class="dot dot-all"></span> כולם
+        <span class="count-badge" id="gcnt-all">—</span>
+      </button>
+      <button class="carrier-btn" data-global-carrier="tuki">
+        <span class="dot dot-tuki"></span> Tuki
+        <span class="count-badge" id="gcnt-tuki">—</span>
+      </button>
+      <button class="carrier-btn" data-global-carrier="globalesim">
+        <span class="dot dot-globalesim"></span> GlobaleSIM
+        <span class="count-badge" id="gcnt-globalesim">—</span>
+      </button>
+      <button class="carrier-btn" data-global-carrier="airalo">
+        <span class="dot dot-airalo"></span> Airalo
+        <span class="count-badge" id="gcnt-airalo">—</span>
+      </button>
+      <button class="carrier-btn" data-global-carrier="pelephone_global">
+        <span class="dot dot-pelephone_global"></span> GlobalSIM
+        <span class="count-badge" id="gcnt-pelephone_global">—</span>
+      </button>
+      <button class="carrier-btn" data-global-carrier="esimo">
+        <span class="dot dot-esimo"></span> eSIMo
+        <span class="count-badge" id="gcnt-esimo">—</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section global-section" style="display:none">
+      <div class="sidebar-title">גלישה</div>
+      <div class="tag-group">
+        <span class="tag active" data-global-gb="all">הכל</span>
+        <span class="tag" data-global-gb="0-5">עד 5GB</span>
+        <span class="tag" data-global-gb="5-15">5–15GB</span>
+        <span class="tag" data-global-gb="15+">15GB+</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section global-section" style="display:none">
+      <div class="sidebar-title">תקופה</div>
+      <div class="tag-group">
+        <span class="tag active" data-global-days="all">הכל</span>
+        <span class="tag" data-global-days="1-7">עד שבוע</span>
+        <span class="tag" data-global-days="8-30">8–30 ימים</span>
+        <span class="tag" data-global-days="30+">30+ ימים</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section global-section" style="display:none">
+      <div class="sidebar-title">מטבע מקורי</div>
+      <div class="tag-group">
+        <span class="tag active" data-global-currency="all">הכל</span>
+        <span class="tag" data-global-currency="ILS">₪ שקל</span>
+        <span class="tag" data-global-currency="USD">$ דולר</span>
+        <span class="tag" data-global-currency="EUR">€ אירו</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section global-section" style="display:none">
+      <div class="sidebar-title">מיון</div>
+      <div class="tag-group">
+        <span class="tag active" data-global-sort="price_asc">מחיר ↑</span>
+        <span class="tag" data-global-sort="price_desc">מחיר ↓</span>
+        <span class="tag" data-global-sort="gb_desc">GB ↓</span>
+        <span class="tag" data-global-sort="days_asc">ימים ↑</span>
+      </div>
+    </div>
   </div>
 
   <!-- Content -->
@@ -262,6 +343,17 @@
       </div>
     </div>
 
+    <!-- Global content -->
+    <div id="globalContent" style="display:none">
+      <div class="content-header">
+        <h2 id="globalTitle">חבילות גלובליות</h2>
+        <span class="content-sub" id="globalSub"></span>
+      </div>
+      <div id="globalGrid" class="plans-grid">
+        <div class="loading">⏳ טוען נתונים...</div>
+      </div>
+    </div>
+
   </div>
 
 </div>
@@ -271,16 +363,24 @@ const CARRIER_LABELS = {
   partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל',
   cellcom: 'סלקום', mobile019: '019'
 };
+const GLOBAL_LABELS = {
+  tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
+  pelephone_global: 'GlobalSIM', esimo: 'eSIMo'
+};
 
 let allPlans = [];
 let allAbroadPlans = [];
+let allGlobalPlans = [];
 let recentChangeKeys = new Set();
 let recentChangeTypes = {};
 let recentAbroadChangeKeys = new Set();
 let recentAbroadChangeTypes = {};
+let recentGlobalChangeKeys = new Set();
+let recentGlobalChangeTypes = {};
 let currentTab = 'domestic';
 let state        = { carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', changes: 'all', roaming: 'all' };
 let abroadState  = { carrier: 'all', gb: 'all', days: 'all', sort: 'price_asc' };
+let globalState  = { carrier: 'all', gb: 'all', days: 'all', currency: 'all', sort: 'price_asc' };
 
 // ── Tab switching ──────────────────────────────────────────────────────────
 function switchTab(tab) {
@@ -288,12 +388,13 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.domestic-section').forEach(s => s.style.display = tab === 'domestic' ? '' : 'none');
   document.querySelectorAll('.abroad-section').forEach(s => s.style.display = tab === 'abroad' ? '' : 'none');
+  document.querySelectorAll('.global-section').forEach(s => s.style.display = tab === 'global' ? '' : 'none');
   document.getElementById('domesticContent').style.display = tab === 'domestic' ? '' : 'none';
   document.getElementById('abroadContent').style.display   = tab === 'abroad'   ? '' : 'none';
+  document.getElementById('globalContent').style.display   = tab === 'global'   ? '' : 'none';
   updateCountBadges();
-  if (tab === 'abroad' && allAbroadPlans.length === 0) {
-    loadAbroadData();
-  }
+  if (tab === 'abroad' && allAbroadPlans.length === 0) loadAbroadData();
+  if (tab === 'global' && allGlobalPlans.length === 0) loadGlobalData();
 }
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -341,14 +442,25 @@ function updateHeader(plans) {
 }
 
 function updateCountBadges() {
-  const plans = currentTab === 'domestic' ? allPlans : allAbroadPlans;
-  const counts = {};
-  plans.forEach(p => { counts[p.carrier] = (counts[p.carrier] || 0) + 1; });
-  document.getElementById('cnt-all').textContent = plans.length;
-  ['partner','pelephone','hotmobile','cellcom','mobile019'].forEach(c => {
-    const el = document.getElementById(`cnt-${c}`);
-    if (el) el.textContent = counts[c] || 0;
-  });
+  if (currentTab === 'global') {
+    const counts = {};
+    allGlobalPlans.forEach(p => { counts[p.carrier] = (counts[p.carrier] || 0) + 1; });
+    const allEl = document.getElementById('gcnt-all');
+    if (allEl) allEl.textContent = allGlobalPlans.length;
+    ['tuki','globalesim','airalo','pelephone_global','esimo'].forEach(c => {
+      const el = document.getElementById(`gcnt-${c}`);
+      if (el) el.textContent = counts[c] || 0;
+    });
+  } else {
+    const plans = currentTab === 'domestic' ? allPlans : allAbroadPlans;
+    const counts = {};
+    plans.forEach(p => { counts[p.carrier] = (counts[p.carrier] || 0) + 1; });
+    document.getElementById('cnt-all').textContent = plans.length;
+    ['partner','pelephone','hotmobile','cellcom','mobile019'].forEach(c => {
+      const el = document.getElementById(`cnt-${c}`);
+      if (el) el.textContent = counts[c] || 0;
+    });
+  }
 }
 
 function renderChangesList(changes) {
@@ -571,6 +683,117 @@ function renderAbroad() {
     : '<div class="no-plans">אין חבילות תואמות את הסינון</div>';
 }
 
+// ── Global data ────────────────────────────────────────────────────────────
+async function loadGlobalData() {
+  document.getElementById('globalGrid').innerHTML = '<div class="loading">⏳ טוען חבילות גלובליות...</div>';
+  const [plans, changes] = await Promise.all([
+    fetch('/api/global-plans').then(r => r.json()),
+    fetch('/api/global-changes?limit=100').then(r => r.json())
+  ]);
+  allGlobalPlans = plans;
+
+  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  recentGlobalChangeKeys = new Set();
+  recentGlobalChangeTypes = {};
+  changes.filter(c => c.changed_at > cutoff).forEach(c => {
+    const key = `${c.carrier}|${c.plan_name}`;
+    recentGlobalChangeKeys.add(key);
+    recentGlobalChangeTypes[key] = c.change_type;
+  });
+
+  updateCountBadges();
+  renderGlobal();
+}
+
+function filterAndSortGlobal(plans) {
+  let r = plans;
+  const s = globalState;
+  if (s.carrier !== 'all')    r = r.filter(p => p.carrier === s.carrier);
+  if (s.gb === '0-5')         r = r.filter(p => p.data_gb !== null && p.data_gb <= 5);
+  if (s.gb === '5-15')        r = r.filter(p => p.data_gb !== null && p.data_gb > 5 && p.data_gb <= 15);
+  if (s.gb === '15+')         r = r.filter(p => p.data_gb !== null && p.data_gb > 15);
+  if (s.days === '1-7')       r = r.filter(p => p.days !== null && p.days <= 7);
+  if (s.days === '8-30')      r = r.filter(p => p.days !== null && p.days > 7 && p.days <= 30);
+  if (s.days === '30+')       r = r.filter(p => p.days !== null && p.days > 30);
+  if (s.currency !== 'all')   r = r.filter(p => p.currency === s.currency);
+  if (s.sort === 'price_asc')  r = [...r].sort((a,b) => (a.price ?? 9999) - (b.price ?? 9999));
+  if (s.sort === 'price_desc') r = [...r].sort((a,b) => (b.price ?? 0) - (a.price ?? 0));
+  if (s.sort === 'gb_desc')    r = [...r].sort((a,b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999));
+  if (s.sort === 'days_asc')   r = [...r].sort((a,b) => (a.days ?? 9999) - (b.days ?? 9999));
+  return r;
+}
+
+function renderGlobalCard(plan) {
+  const key = `${plan.carrier}|${plan.plan_name}`;
+  const ct  = recentGlobalChangeTypes[key];
+  let badge = '';
+  if (ct === 'new_plan')          badge = '<span class="change-badge badge-new">חדש</span>';
+  else if (ct === 'price_change') badge = '<span class="change-badge badge-changed">שינוי מחיר</span>';
+  else if (ct === 'removed_plan') badge = '<span class="change-badge badge-changed">הוסרה</span>';
+
+  const gb = plan.data_gb === null ? 'ללא הגבלה'
+           : plan.data_gb < 1     ? `${Math.round(plan.data_gb * 1024)}MB`
+           :                        `${plan.data_gb}GB`;
+
+  const priceNum = plan.price !== null ? (Number.isInteger(plan.price) ? plan.price : plan.price.toFixed(2)) : null;
+  const price    = priceNum !== null ? `<sup>₪</sup>${priceNum}` : '—';
+
+  // Original price in native currency
+  const origLabel = plan.original_price && plan.currency && plan.currency !== 'ILS'
+    ? `<span style="font-size:10px;color:#9ca3af;margin-right:4px;">(${plan.original_price} ${plan.currency})</span>`
+    : '';
+
+  const daysRow = plan.days
+    ? `<div class="detail-row"><span class="detail-label">תוקף</span><span class="detail-value">${plan.days} ימים</span></div>`
+    : '';
+  const minutesVal = plan.minutes === -1 ? 'ללא הגבלה'
+                   : plan.minutes > 0    ? `${plan.minutes.toLocaleString()} דקות`
+                   : null;
+  const minutesRow = minutesVal
+    ? `<div class="detail-row"><span class="detail-label">דקות</span><span class="detail-value">${minutesVal}</span></div>`
+    : '';
+  const smsVal = plan.sms === -1 ? 'ללא הגבלה' : plan.sms > 0 ? `${plan.sms} SMS` : null;
+  const smsRow = smsVal
+    ? `<div class="detail-row"><span class="detail-label">SMS</span><span class="detail-value">${smsVal}</span></div>`
+    : '';
+  const esimTag = plan.esim ? '<span class="esim-badge">eSIM</span>' : '';
+  const extrasHtml = plan.extras?.length
+    ? `<div class="extras">${plan.extras.slice(0,4).map(e => `<span>${e}</span>`).join('')}</div>`
+    : '';
+  const label = GLOBAL_LABELS[plan.carrier] || plan.carrier;
+
+  return `
+    <div class="plan-card">
+      ${badge}
+      <div class="plan-name" title="${plan.plan_name}">${plan.plan_name}</div>
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;">
+        <span class="carrier-badge badge-${plan.carrier}">${label}</span>
+        ${esimTag}
+      </div>
+      <div class="price">${price}</div>
+      <div class="price-note">₪ לחבילה ${origLabel}</div>
+      <div class="details">
+        ${daysRow}
+        <div class="detail-row"><span class="detail-label">גלישה</span><span class="detail-value">${gb}</span></div>
+        ${minutesRow}
+        ${smsRow}
+      </div>
+      ${extrasHtml}
+    </div>`;
+}
+
+function renderGlobal() {
+  const filtered = filterAndSortGlobal(allGlobalPlans);
+  const grid  = document.getElementById('globalGrid');
+  const title = document.getElementById('globalTitle');
+  const sub   = document.getElementById('globalSub');
+  title.textContent = globalState.carrier === 'all' ? 'חבילות גלובליות' : `${GLOBAL_LABELS[globalState.carrier] || globalState.carrier} — גלובלי`;
+  sub.textContent   = `${filtered.length} חבילות`;
+  grid.innerHTML = filtered.length
+    ? filtered.map(renderGlobalCard).join('')
+    : '<div class="no-plans">אין חבילות תואמות את הסינון</div>';
+}
+
 // ── Sidebar events ─────────────────────────────────────────────────────────
 document.querySelectorAll('.carrier-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -644,6 +867,49 @@ document.querySelectorAll('.tag[data-abroad-sort]').forEach(tag => {
     tag.classList.add('active');
     abroadState.sort = tag.dataset.abroadSort;
     renderAbroad();
+  });
+});
+
+// Global carrier buttons
+document.querySelectorAll('.carrier-btn[data-global-carrier]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.carrier-btn[data-global-carrier]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    globalState.carrier = btn.dataset.globalCarrier;
+    updateCountBadges();
+    renderGlobal();
+  });
+});
+document.querySelectorAll('.tag[data-global-gb]').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag[data-global-gb]').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    globalState.gb = tag.dataset.globalGb;
+    renderGlobal();
+  });
+});
+document.querySelectorAll('.tag[data-global-days]').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag[data-global-days]').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    globalState.days = tag.dataset.globalDays;
+    renderGlobal();
+  });
+});
+document.querySelectorAll('.tag[data-global-currency]').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag[data-global-currency]').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    globalState.currency = tag.dataset.globalCurrency;
+    renderGlobal();
+  });
+});
+document.querySelectorAll('.tag[data-global-sort]').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag[data-global-sort]').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    globalState.sort = tag.dataset.globalSort;
+    renderGlobal();
   });
 });
 

@@ -2,7 +2,7 @@ import json
 import os
 import logging
 from flask import Flask, jsonify, render_template, request, make_response, send_from_directory
-from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_changes
+from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_changes, get_global_plans, get_global_changes
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -86,6 +86,47 @@ def api_abroad_plans():
     carrier = request.args.get("carrier")
     plans = get_abroad_plans(carrier=carrier, db_path=_db_path())
     return jsonify(plans)
+
+
+@app.route("/api/global-plans")
+def api_global_plans():
+    carrier = request.args.get("carrier")
+    plans = get_global_plans(carrier=carrier, db_path=_db_path())
+    return jsonify(plans)
+
+
+@app.route("/api/global-changes")
+def api_global_changes():
+    limit = int(request.args.get("limit", 50))
+    changes = get_global_changes(limit=limit, db_path=_db_path())
+    return jsonify(changes)
+
+
+@app.route("/api/scrape-global-now")
+def api_scrape_global_now():
+    """Manual trigger: scrape global eSIM packages, detect changes, save to DB."""
+    try:
+        import scraper as sc
+        from db import save_global_plans, save_global_changes
+        from change_detector import detect_changes
+        old_plans = get_global_plans(db_path=_db_path())
+        new_plans = sc.scrape_all_global()
+        existing_changes = get_global_changes(limit=1, db_path=_db_path())
+        if not existing_changes:
+            seed = [{"carrier": p["carrier"], "plan_name": p["plan_name"],
+                     "change_type": "new_plan", "old_val": None, "new_val": p.get("price")}
+                    for p in new_plans]
+            save_global_changes(seed, db_path=_db_path())
+            changes = seed
+        else:
+            changes = detect_changes(old_plans, new_plans)
+            if changes:
+                save_global_changes(changes, db_path=_db_path())
+        save_global_plans(new_plans, db_path=_db_path())
+        return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
+    except Exception as e:
+        logger.error(f"scrape-global-now failed: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/abroad-changes")
