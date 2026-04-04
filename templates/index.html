@@ -276,6 +276,8 @@ let allPlans = [];
 let allAbroadPlans = [];
 let recentChangeKeys = new Set();
 let recentChangeTypes = {};
+let recentAbroadChangeKeys = new Set();
+let recentAbroadChangeTypes = {};
 let currentTab = 'domestic';
 let state        = { carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', changes: 'all', roaming: 'all' };
 let abroadState  = { carrier: 'all', gb: 'all', days: 'all', sort: 'price_asc' };
@@ -470,8 +472,21 @@ function render() {
 // ── Abroad data ────────────────────────────────────────────────────────────
 async function loadAbroadData() {
   document.getElementById('abroadGrid').innerHTML = '<div class="loading">⏳ טוען חבילות חו"ל...</div>';
-  const plans = await fetch('/api/abroad-plans').then(r => r.json());
+  const [plans, changes] = await Promise.all([
+    fetch('/api/abroad-plans').then(r => r.json()),
+    fetch('/api/abroad-changes?limit=100').then(r => r.json())
+  ]);
   allAbroadPlans = plans;
+
+  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  recentAbroadChangeKeys = new Set();
+  recentAbroadChangeTypes = {};
+  changes.filter(c => c.changed_at > cutoff).forEach(c => {
+    const key = `${c.carrier}|${c.plan_name}`;
+    recentAbroadChangeKeys.add(key);
+    recentAbroadChangeTypes[key] = c.change_type;
+  });
+
   updateCountBadges();
   renderAbroad();
 }
@@ -495,6 +510,13 @@ function filterAndSortAbroad(plans) {
 }
 
 function renderAbroadCard(plan) {
+  const key = `${plan.carrier}|${plan.plan_name}`;
+  const ct  = recentAbroadChangeTypes[key];
+  let badge = '';
+  if (ct === 'new_plan')          badge = '<span class="change-badge badge-new">חדש</span>';
+  else if (ct === 'price_change') badge = '<span class="change-badge badge-changed">שינוי מחיר</span>';
+  else if (ct === 'removed_plan') badge = '<span class="change-badge badge-changed">הוסרה</span>';
+
   const gb = plan.data_gb === null ? 'ללא הגבלה'
            : plan.data_gb < 1    ? `${Math.round(plan.data_gb * 1024)}MB`
            :                       `${plan.data_gb}GB`;
@@ -519,8 +541,10 @@ function renderAbroadCard(plan) {
     ? `<div class="extras">${plan.extras.slice(0,4).map(e => `<span>${e}</span>`).join('')}</div>`
     : '';
 
+  const abroadCardId = 'acard-' + (plan.carrier + '|' + plan.plan_name).replace(/[^a-zA-Z0-9\u0590-\u05ff]/g, '_');
   return `
-    <div class="plan-card">
+    <div class="plan-card" id="${abroadCardId}">
+      ${badge}
       <div class="plan-name" title="${plan.plan_name}">${plan.plan_name}</div>
       <span class="carrier-badge badge-${plan.carrier}">${CARRIER_LABELS[plan.carrier] || plan.carrier}</span>
       <div class="price">${price}</div>
