@@ -164,6 +164,69 @@ def api_scrape_abroad_now():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/scrape-all-now")
+def api_scrape_all_now():
+    """Scrape ALL tabs: domestic + abroad + global in one call."""
+    try:
+        import scraper as sc
+        from db import save_plans, save_changes, save_abroad_plans, save_abroad_changes, \
+                       save_global_plans, save_global_changes
+        from change_detector import detect_changes
+        results = {}
+
+        # ── Domestic ──────────────────────────────────────────────────────
+        old_domestic = get_plans(db_path=_db_path())
+        new_domestic = sc.scrape_all()
+        ch_domestic  = detect_changes(old_domestic, new_domestic)
+        save_plans(new_domestic, db_path=_db_path())
+        if ch_domestic:
+            save_changes(ch_domestic, db_path=_db_path())
+        results["domestic"] = {"plans": len(new_domestic), "changes": len(ch_domestic)}
+
+        # ── Abroad ────────────────────────────────────────────────────────
+        old_abroad = get_abroad_plans(db_path=_db_path())
+        new_abroad = sc.scrape_all_abroad()
+        existing_abroad_ch = get_abroad_changes(limit=1, db_path=_db_path())
+        if not existing_abroad_ch:
+            seed = [{"carrier": p["carrier"], "plan_name": p["plan_name"],
+                     "change_type": "new_plan", "old_val": None, "new_val": p.get("price")}
+                    for p in new_abroad]
+            save_abroad_changes(seed, db_path=_db_path())
+            ch_abroad = seed
+        else:
+            ch_abroad = detect_changes(old_abroad, new_abroad)
+            if ch_abroad:
+                save_abroad_changes(ch_abroad, db_path=_db_path())
+        save_abroad_plans(new_abroad, db_path=_db_path())
+        results["abroad"] = {"plans": len(new_abroad), "changes": len(ch_abroad)}
+
+        # ── Global ────────────────────────────────────────────────────────
+        old_global = get_global_plans(db_path=_db_path())
+        new_global = sc.scrape_all_global()
+        existing_global_ch = get_global_changes(limit=1, db_path=_db_path())
+        if not existing_global_ch:
+            seed = [{"carrier": p["carrier"], "plan_name": p["plan_name"],
+                     "change_type": "new_plan", "old_val": None, "new_val": p.get("price")}
+                    for p in new_global]
+            save_global_changes(seed, db_path=_db_path())
+            ch_global = seed
+        else:
+            ch_global = detect_changes(old_global, new_global)
+            if ch_global:
+                save_global_changes(ch_global, db_path=_db_path())
+        save_global_plans(new_global, db_path=_db_path())
+        results["global"] = {"plans": len(new_global), "changes": len(ch_global)}
+
+        results["status"] = "ok"
+        results["total_plans"] = len(new_domestic) + len(new_abroad) + len(new_global)
+        results["total_changes"] = len(ch_domestic) + len(ch_abroad) + len(ch_global)
+        logger.info(f"scrape-all-now: {results}")
+        return jsonify(results)
+    except Exception as e:
+        logger.error(f"scrape-all-now failed: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/scrape-now")
 def api_scrape_now():
     """Manual trigger for testing. Debug endpoint."""
