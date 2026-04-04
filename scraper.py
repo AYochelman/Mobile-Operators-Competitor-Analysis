@@ -850,8 +850,97 @@ def scrape_esimo_global(page, usd_rate):
     return plans
 
 
+def scrape_simtlv_global(page):
+    page.goto(
+        "https://simtlv.co.il/global-61-30days/?refg=159162",
+        timeout=35000, wait_until="networkidle"
+    )
+    page.wait_for_timeout(2000)
+    plans = []
+    for card in page.query_selector_all(".elementor-price-table"):
+        name_el    = card.query_selector(".elementor-price-table__heading")
+        price_el   = card.query_selector(".elementor-price-table__integer-part")
+        period_el  = card.query_selector(".elementor-price-table__period")
+        sub_el     = card.query_selector(".elementor-price-table__subheading")
+        add_el     = card.query_selector(".elementor-price-table__additional_info")
+        feat_els   = card.query_selector_all(".elementor-price-table__features-list li span")
+        if not name_el or not price_el:
+            continue
+        name_text = name_el.inner_text().strip()
+        price     = _parse_price(price_el.inner_text())
+        period    = period_el.inner_text().strip() if period_el else ""
+        days      = _parse_days(period)
+        gb        = _parse_gb(name_text)
+        if gb is None and sub_el:
+            gb = _parse_gb(sub_el.inner_text())
+        # Detect eSIM from additional_info or buy link
+        is_esim = bool(add_el and "esim" in (add_el.inner_text() or "").lower())
+        btn_el = card.query_selector(".elementor-price-table__button")
+        if btn_el:
+            href = btn_el.get_attribute("href") or ""
+            if "esim" in href.lower():
+                is_esim = True
+        extras = ["127 מדינות"]
+        for f in feat_els:
+            t = f.inner_text().strip()
+            if t and t not in extras:
+                extras.append(t)
+        esim_str = "eSIM" if is_esim else "Physical SIM"
+        full_name = f"SimTLV {name_text} ({esim_str})"
+        if price and gb:
+            plans.append(_make_global_plan(
+                "simtlv", full_name, price, "ILS", price,
+                gb, days, esim=is_esim, extras=extras
+            ))
+    logger.info(f"SimTLV global: {len(plans)} plans")
+    return plans
+
+
+def scrape_world8_global(page):
+    page.goto("https://world8.co.il/", timeout=35000, wait_until="networkidle")
+    page.wait_for_timeout(2000)
+    plans = []
+    for card in page.query_selector_all(".price-card.popup_btn, .price-card.pricing_content"):
+        name_el  = card.query_selector(".price-card--top h3")
+        price_li = card.query_selector("li.price span")
+        top_lis  = card.query_selector_all("li.top-text")
+        text_li  = card.query_selector("li.text")
+        badges   = card.query_selector_all(".notification-badge")
+        if not name_el or not price_li:
+            continue
+        name  = name_el.inner_text().strip()
+        price = _parse_price(re.sub(r'[^\d.]', '', price_li.inner_text()))
+        gb, minutes, sms = None, None, None
+        for li in top_lis:
+            t = li.inner_text().strip()
+            # Each li may contain multiple values like "60 דקות / 60 סמס / 1GB"
+            # Parse GB only from explicit GB mention
+            gb_m = re.search(r'(\d+(?:\.\d+)?)\s*GB', t, re.IGNORECASE)
+            if gb_m and gb is None:
+                gb = float(gb_m.group(1))
+            min_m = re.search(r'(\d+)\s*דקות', t)
+            if min_m and minutes is None:
+                minutes = int(min_m.group(1))
+            sms_m = re.search(r'(\d+)\s*(?:סמס|SMS)', t, re.IGNORECASE)
+            if sms_m and sms is None:
+                sms = int(sms_m.group(1))
+        validity_text = text_li.inner_text().strip() if text_li else ""
+        days = _parse_days(validity_text) if "ימים" in validity_text or "יום" in validity_text else None
+        extras = [b.inner_text().strip() for b in badges if b.inner_text().strip()]
+        if validity_text and validity_text not in extras:
+            extras.append(validity_text)
+        extras.append("120+ מדינות")
+        if price and (gb or minutes):
+            plans.append(_make_global_plan(
+                "world8", name, price, "ILS", price,
+                gb, days, minutes=minutes, sms=sms, esim=True, extras=extras
+            ))
+    logger.info(f"World8 global: {len(plans)} plans")
+    return plans
+
+
 def scrape_all_global():
-    """Scrape global eSIM packages from all 5 providers. Returns flat list of plan dicts."""
+    """Scrape global eSIM packages from all 7 providers. Returns flat list of plan dicts."""
     usd_rate = _get_usd_to_ils()
     eur_rate = _get_eur_to_ils()
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
@@ -865,6 +954,8 @@ def scrape_all_global():
             ("scrape_airalo_global",        lambda pg: scrape_airalo_global(pg, eur_rate)),
             ("scrape_pelephone_globalsim",  scrape_pelephone_globalsim),
             ("scrape_esimo_global",         lambda pg: scrape_esimo_global(pg, usd_rate)),
+            ("scrape_simtlv_global",        scrape_simtlv_global),
+            ("scrape_world8_global",        scrape_world8_global),
         ]
         for name, fn in jobs:
             try:
