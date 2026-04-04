@@ -142,7 +142,44 @@
   <!-- Sidebar -->
   <div class="sidebar">
 
-    <div class="sidebar-section">
+    <!-- Global providers — shown first when on global tab -->
+    <div class="sidebar-section global-section" style="display:none">
+      <div class="sidebar-title">ספק</div>
+      <button class="carrier-btn active" data-global-carrier="all">
+        <span class="dot dot-all"></span> כולם
+        <span class="count-badge" id="gcnt-all">—</span>
+      </button>
+      <button class="carrier-btn" data-global-carrier="tuki">
+        <span class="dot dot-tuki"></span> Tuki
+        <span class="count-badge" id="gcnt-tuki">—</span>
+      </button>
+      <button class="carrier-btn" data-global-carrier="globalesim">
+        <span class="dot dot-globalesim"></span> GlobaleSIM
+        <span class="count-badge" id="gcnt-globalesim">—</span>
+      </button>
+      <button class="carrier-btn" data-global-carrier="airalo">
+        <span class="dot dot-airalo"></span> Airalo
+        <span class="count-badge" id="gcnt-airalo">—</span>
+      </button>
+      <button class="carrier-btn" data-global-carrier="pelephone_global">
+        <span class="dot dot-pelephone_global"></span> GlobalSIM
+        <span class="count-badge" id="gcnt-pelephone_global">—</span>
+      </button>
+      <button class="carrier-btn" data-global-carrier="esimo">
+        <span class="dot dot-esimo"></span> eSIMo
+        <span class="count-badge" id="gcnt-esimo">—</span>
+      </button>
+      <button class="carrier-btn" data-global-carrier="simtlv">
+        <span class="dot dot-simtlv"></span> SimTLV
+        <span class="count-badge" id="gcnt-simtlv">—</span>
+      </button>
+      <button class="carrier-btn" data-global-carrier="world8">
+        <span class="dot dot-world8"></span> 8 World
+        <span class="count-badge" id="gcnt-world8">—</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section domestic-section abroad-section">
       <div class="sidebar-title">חברה</div>
       <button class="carrier-btn active" data-carrier="all">
         <span class="dot dot-all"></span> כולן
@@ -252,42 +289,6 @@
       </div>
     </div>
 
-    <!-- Global-only sections -->
-    <div class="sidebar-section global-section" style="display:none">
-      <div class="sidebar-title">ספק</div>
-      <button class="carrier-btn active" data-global-carrier="all">
-        <span class="dot dot-all"></span> כולם
-        <span class="count-badge" id="gcnt-all">—</span>
-      </button>
-      <button class="carrier-btn" data-global-carrier="tuki">
-        <span class="dot dot-tuki"></span> Tuki
-        <span class="count-badge" id="gcnt-tuki">—</span>
-      </button>
-      <button class="carrier-btn" data-global-carrier="globalesim">
-        <span class="dot dot-globalesim"></span> GlobaleSIM
-        <span class="count-badge" id="gcnt-globalesim">—</span>
-      </button>
-      <button class="carrier-btn" data-global-carrier="airalo">
-        <span class="dot dot-airalo"></span> Airalo
-        <span class="count-badge" id="gcnt-airalo">—</span>
-      </button>
-      <button class="carrier-btn" data-global-carrier="pelephone_global">
-        <span class="dot dot-pelephone_global"></span> GlobalSIM
-        <span class="count-badge" id="gcnt-pelephone_global">—</span>
-      </button>
-      <button class="carrier-btn" data-global-carrier="esimo">
-        <span class="dot dot-esimo"></span> eSIMo
-        <span class="count-badge" id="gcnt-esimo">—</span>
-      </button>
-      <button class="carrier-btn" data-global-carrier="simtlv">
-        <span class="dot dot-simtlv"></span> SimTLV
-        <span class="count-badge" id="gcnt-simtlv">—</span>
-      </button>
-      <button class="carrier-btn" data-global-carrier="world8">
-        <span class="dot dot-world8"></span> 8 World
-        <span class="count-badge" id="gcnt-world8">—</span>
-      </button>
-    </div>
 
     <div class="sidebar-section global-section" style="display:none">
       <div class="sidebar-title">גלישה</div>
@@ -399,9 +400,21 @@ let globalState  = { carrier: 'all', gb: 'all', days: 'all', currency: 'all', so
 function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  document.querySelectorAll('.domestic-section').forEach(s => s.style.display = tab === 'domestic' ? '' : 'none');
-  document.querySelectorAll('.abroad-section').forEach(s => s.style.display = tab === 'abroad' ? '' : 'none');
-  document.querySelectorAll('.global-section').forEach(s => s.style.display = tab === 'global' ? '' : 'none');
+  document.querySelectorAll('.sidebar-section').forEach(s => {
+    const isDomestic = s.classList.contains('domestic-section');
+    const isAbroad   = s.classList.contains('abroad-section');
+    const isGlobal   = s.classList.contains('global-section');
+    if (isDomestic && isAbroad) {
+      // Shared section (חברה) — show for domestic + abroad only
+      s.style.display = (tab === 'domestic' || tab === 'abroad') ? '' : 'none';
+    } else if (isDomestic) {
+      s.style.display = tab === 'domestic' ? '' : 'none';
+    } else if (isAbroad) {
+      s.style.display = tab === 'abroad' ? '' : 'none';
+    } else if (isGlobal) {
+      s.style.display = tab === 'global' ? '' : 'none';
+    }
+  });
   document.getElementById('domesticContent').style.display = tab === 'domestic' ? '' : 'none';
   document.getElementById('abroadContent').style.display   = tab === 'abroad'   ? '' : 'none';
   document.getElementById('globalContent').style.display   = tab === 'global'   ? '' : 'none';
