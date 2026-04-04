@@ -1,0 +1,772 @@
+=== PHASE 1: Initial Selector Discovery ===
+
+
+============================================================
+CARRIER: partner
+URL: https://www.partner.co.il/n/cellularsale/lobby
+Title: חבילות סלולר 5G משתלמות לחוויית גלישה בעוצמה שלא הכרתם | פרטנר
+
+Selectors found (0 matches):
+
+Page text sample:
+לידיעתך, אנו משתמשים באתר זה בעוגיות (Cookies) בכדי לספק לך חווית גלישה טובה יותר, וכן למטרות תפעול, סטטיסטיקה ושיווק. למידע נוסף ולמדיניות הפרטיות המעודכנת לחץ כאן.
+
+סגירה
+פרטי
+עסקי
+חנות
+סגירה
+כניסה לאזור האישי
+להצטרפות
+סלולר
++Partner tv
+פרטנר חו״ל
+אינטרנט סיבים
+חשמל
+חנות
+שירות ותמיכה
+אזור אישי
+
+רשת הסלולר
+המועדפת והמתקדמת
+ביותר בישראל
+
+Private 5G
+מעבר מסלול
+החלפת SIM ו-eSIM
+חבילות חו"ל
+שירותים ואפליקציות
+בחרו את חבילות הסלולר המתאימות עבורכם
+מצטרפים בקלות ובמהירות
+חיבור מיידי עם eSIM
+Partner Prince
+400
+GB
+34.9 ₪ לחודש
+למנוי בצרוף 2 מנויים ומעלה
+
+3,500 דקות ו-3,500 הודעות SMS
+
+200 דקות שיחה לחו"ל ל-42 יעדים נבחרים
+
+מנוי יחיד 39.9 ₪ לחודש
+
+להצטרפות אונליין
+תנאי התכנית
+Partner Queen 5G
+500
+GB
+39.9 ₪ לחודש
+למנוי למשך 3 חודשים
+
+5,000 דקות ו-5,000 הודעות SMS
+
+400 דקות שיחה לחו"ל ל-42 יעדים נבחרים
+
+49.9 לחודש למנוי מהחודש ה-4
+
+להצטרפות אונליין
+תנאי התכנית
+Partner King 5G
+800
+GB
+59.9 ₪ לחודש
+למנוי
+
+6,000 דקות ו-6,000 הודעות SMS
+
+500 דקות שיחה לחו"ל ל-42 יעדים נבחרים
+
+שירות Funtone ו-CyberGuard כלול בתכנית
+
+להצטרפות אונליין
+תנאי התכנית
+תכנית חברתית
+Partner Ace 5G
+1000
+GB
+69.9 ₪ לחודש
+למנוי
+
+6,000 דקות ו-6,000 הודעות SMS
+
+600 דקות שיחה לחו"ל ל-42 יעדים נבחרים
+
+שירות Funtone, eSIM watch, CyberGuard, ללא עלות
+
+10% מההכנסות נתרמות לעמותות שונות כמו
+
+״כנפיים של קרמבו״ ו-״אור למשפחות״
+
+להצטרפות אונליין
+תנאי התכנית
+תיעדוף ברשת דור 5 במצבי עומס
+Partner Boost 5G NEW
+1500
+GB
+69.9 ₪ לחודש
+למנוי
+
+חיבור מיידי בטכנולוגיית eSIM
+
+7,000 דקות ו-7,000 הודעות SMS
+
+600 דקות שיחה לחו"ל ל-42 יעדים נבחרים
+
+
+============================================================
+CARRIER: pelephone
+URL: https://www.pelephone.co.il/ds/heb/packages/mobile-packages/join-pelephone-online/
+Title: חבילות סלולר ללקוחות חדשים - חבילת סלולר במחיר מבצע | פלאפון
+
+Selectors found (1 matches):
+  [class*="package"]: 2 elements
+    Sample: 'חבילות ללקוחות חדשים\nולהוספת מנוי חדש ללקוח פלאפון\nמסלול 5G\n1000\nGB\n39.90\n₪\nלחודש\nלחודשיים הראשונים\nמתקדמים ל 5G ›\nגלישה חופשית באפליקציות נבחרות\nגליש'
+
+Page text sample:
+לנגישות מקלדת ותמיכה בקורא מסך לחץ F10
+קפיצה לאיזור התפריט
+קפיצה לאיזור המרכזי
+קפיצה לפוטר
+קפיצה לאזור האישי
+פלאפון שלי
+חנות
+חנות אילת
+חו"ל
+מידע ותמיכה
+צור קשר
+להצטרף לפלאפון
+5G MAX
+עסקי
+לאיזור האישי
+שאלות ותשובות
+מעבר מסלול
+עדיין לא בפלאפון
+מועדון הטבות 5G
+חבילות ללקוחות חדשים
+ולהוספת מנוי חדש ללקוח פלאפון
+מסלול 5G
+1000
+GB
+39.90
+₪
+לחודש
+לחודשיים הראשונים
+מתקדמים ל 5G ›
+גלישה חופשית באפליקציות נבחרות
+גלישה חופשית באפליקציות AI נבחרות
+5000 דקות ו- SMS
+₪120 לרכישת אביזרים בפלאפון
+מועדון הטבות 5G
+מסלול חו"ל ​Travel
+החל מהחודש השלישי - ₪49.90 לחודש למנוי
+להחלפת מסלול למנוי פלאפון >
+למידע נוסף
+משתלמת דור 4
+400
+GB
+39.90
+₪
+לחודש למנוי
+מתקדמים לפלאפון ›
+חיבור מיידי עם eSIM
+3500 דקות ו- SMS
+מסלול חו"ל ​Travel
+להחלפת מסלול למנוי פלאפון >
+למידע נוסף
+5G Max VIP All NEW
+2000
+GB
+49.90
+₪
+לחודש
+לחודשיים הראשונים
+מתקדמים ל- 5G MAX ›
+גלישה חופשית באפליקציות נבחרות
+גלישה חופשית באפליקציות AI נבחרות
+5000 דקות ו- SMS
+תיעדוף בגלישה בדור 5 במצבי עומס
+100 ₪ לרכישת מוצרים בפלאפון *
+חיבור מיידי עם eSIM
+מסלול חו"ל ​Travel
+החל מהחודש השלישי 64.9 ₪ לחודש למנוי
+המחיר בחודשיים הראשונים לאחר הטבת Welcome חד פעמית
+*למוצרים שמחירם מ-599 ש"ח
+להחלפת מסלול למנוי פלאפון >
+למידע נוסף
+חבילות נוספות
+לקבלת הצעה מנציג להצטרפות לפלאפון
+שלח
+מילוי הפרטים מהווה הסכמה לנציג פלאפון ליצור איתך קשר בנושא הנ"ל באמצעות שיחה טלפונית / הודעות SMS / WhatsApp / אימייל.
+ידוע למשתמש והוא מסכים כי כל מידע שימסור ו/או ייאסף אודותיו במסגרת השימוש באתר יישמר במאגרי חברת פלאפון Contact@pelephone.co.il וישמש אותה למטרות תפעול הבקשה ומטרות 
+
+============================================================
+CARRIER: hotmobile
+URL: https://www.hotmobile.co.il/saleslobby
+Title: מכר חבילות | HOT mobile
+
+Selectors found (2 matches):
+  [class*="plan"]: 14 elements
+    Sample: 'מבצעים חמים 5G DATA ONLY\nSIM ללא עלות\n5G ULTRA ∙ 2500GB ∙ Plus Protect 2025\n2,500GB\n\nגלישה סלולרית בארץ\n\n7,000\n\nדקות שיחה/SMS בארץ\n\nשירות HOT mobile C'
+  [class*="package"]: 20 elements
+    Sample: 'מבצעים חמים 5G DATA ONLY'
+
+Page text sample:
+HOTmobile עסקים
+משרות ב -HOTmobile
+הצטרפות
+סלולר
+שירות ותמיכה
+חנות
+חו"ל
+הפעלת SIM / eSIM
+כניסת משתמש עסקי
+כניסה לאזור האישי
+מצטרפים ל-HOT mobile ונשארים מחוברים בראש שקט
+
+מבצעים חמים 5G DATA ONLY
+SIM ללא עלות
+5G ULTRA ∙ 2500GB ∙ Plus Protect 2025
+2,500GB
+
+גלישה סלולרית בארץ
+
+7,000
+
+דקות שיחה/SMS בארץ
+
+שירות HOT mobile Cyber
+הטבת 500 דקות שיחה לחו"ל ל-27 יעדים נבחרים
+נתיב מהיר לגלישה עוצמתית במהירות שיא
+גלישה חופשית באפליקציות נבחרות
+₪69.9
+לחודש
+מתאים לי! לפרטי החבילה המלאים
+SIM ללא עלות
+5G ULTRA ∙ Plus FLY 10GB
+3,000GB
+
+גלישה סלולרית בארץ
+
+10,000
+
+דקות שיחה/SMS בארץ
+
+10GB
+
+גלישה סלולרית בחו"ל
+
+10GB גלישה סלולרית בחו"ל + 100 דקות שיחה וסמס כלולים ליעדים נבחרים
+שירות HOT mobile Cyber
+הטבת 500 דקות שיחה לחו"ל ל-27 יעדים נבחרים
+גלישה חופשית באפליקציות נבחרות
+₪109.9
+לחודש
+מתאים לי! לפרטי החבילה המלאים
+SIM ללא עלות
+5G ULTRA ∙ Premium
+3,000GB
+
+גלישה סלולרית בארץ
+
+10,000
+
+דקות שיחה/SMS בארץ
+
+שירות HOT mobile Cyber
+הטבת 500 דקות שיחה לחו"ל ל-27 יעדים נבחרים
+נתיב מהיר לגלישה עוצמתית במהירות שיא
+גלישה חופשית באפליקציות נבחרות
+₪79.9
+לחודש
+מתאים לי! לפרטי החבילה המלאים
+חבילות נוספות
+לקוחות HOT mobile?
+להחלפת תוכנית
+הצטרפו לתוכניות +5G עם חווית גלישה אחרת
+זמינים עבורכם בשירות דיגיטלי 24/7
+פריסת 5G מתקדמת בכל רחבי הארץ
+מעבר בקליק ובקלות עם eSIM
+מרכזי שירות, דוכנים ומעבדות תיקונים בפריסה ארצית
+שאלות ותשובות
+מה זה 5G?
+למה צריך 5G?
+איך אוכל לגלוש ב- 5G?
+האם רשת 5G מחליפה את רשת 4G?
+איך אדע שהגלישה שלי על רשת 5G?
+האם חייבים מכשיר תומך 5G כדי להתחבר לרשת 5G?
+רכשתי מכשיר תומך 5G בחו"ל. הוא יעבוד 
+
+============================================================
+CARRIER: cellcom
+URL: https://cellcom.co.il/production/Private/Cellular/
+Title: 
+
+Selectors found (0 matches):
+
+Page text sample:
+
+
+============================================================
+CARRIER: mobile019
+URL: https://019mobile.co.il/חבילות-סלולר/
+Title: חבילות סלולר - 019mobile
+
+Selectors found (0 matches):
+
+Page text sample:
+דלג לתפריט הראשי (מקש קיצור n) דלג לתוכן הדף (מקש קיצור s) דלג לתחתית הדף (מקש קיצור 2)
+סיבים אופטים
+אינטרנט ביתי
+שיחות לחו"ל
+חבילות סלולר
+טסים לחו"ל
+טעינה חוזרת לשוהים בחו"ל
+אזור אישי
+צור קשר
+*019 :חייגו
+בחרו את חבילת הסלולר שלכם ותיהנו מגלישה איכותית ומהירה
+ברשת בדור 5*, תמיכה ב-eSIM**, מחירים משתלמים והשירות המתקדם בישראל.
+אוקי... תנו לי עוד פרטים
+* בחבילות תומכות בדור 5.
+
+
+** השירות נתמך רק בטלפונים אשר תומכים ב-eSIM, ואינו נתמך בשעונים חכמים.
+BIG DATA
+₪39.90
+300GB גלישה
+5000 דק' שיחה + 5000 הודעות
+מחיר קבוע לכל החיים
+להצטרפות באמצעות נציג
+להצטרפות באתר
+שימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,
+eSIM ללא עלות.
+הגלישה ברשת דור 5 תתאפשר במכשיר סלולרי התומך בדור 5, וכפוף למגבלות הרשת הסלולרית.
+טיוטת הסכם התקשרות
+לכל החיים
+₪19.80
+12GB גלישה
+5000 דק' שיחה + 5000 הודעות
+מחיר קבוע לכל החיים
+להצטרפות באמצעות נציג
+להצטרפות באתר
+בשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,
+eSIM ללא עלות, אפשרות לסינון וחסימת אתרים בחינם.
+טיוטת הסכם התקשרות
+בול בפוני!
+₪21.90
+30GB גלישה
+5000 דק' + 5000 הודעות
+מחיר קבוע לכל החיים
+להצטרפות באמצעות נציג
+להצטרפות באתר
+בשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,
+eSIM ללא עלות, אפשרות לסינון וחסימת אתרים בחינם.
+טיוטת הסכם התקשרות
+הגזמנו
+₪25.90
+170GB גלישה בדור 5
+5000 דק + 5000 הודעות
+מחיר קבוע לכל החיים
+להצטרפות באמצעות נציג
+להצטרפות באתר
+בשימוש אישי וסביר בכפוף לתקנון.
+הגלישה ברשת דור 5 תתאפשר במכשיר סלולרי התומך בדור 5, וכפוף למגבלות הרשת הסלולרית.
+עלות כרטיס ₪10i SIM.
+eSIM ללא עלות.
+אפשרות לסינון וחסימת אתרים בחינם.
+טיוטת
+
+
+=== PHASE 2: Deep Inspection ===
+
+
+============================================================
+DEEP INSPECT: partner
+
+Frequent classes (3-15 occurrences):
+  .single-advantage: 15 times
+  .title: 13 times
+  .row-panel: 13 times
+  .head-panel: 13 times
+  .title-text: 13 times
+  .icon: 13 times
+  .icon-arrow-up: 13 times
+  .divider: 12 times
+  .__ADORIC__: 11 times
+  .link: 10 times
+  .menu-item: 8 times
+  .tab-link: 8 times
+  .editing: 8 times
+  .brand-btn: 7 times
+  .btn-style-2: 7 times
+  .arrow-link: 7 times
+  .tab-content: 7 times
+  .element-text: 7 times
+  .text: 6 times
+  .closeLightboxButton: 6 times
+
+Price-containing elements:
+  <SCRIPT class=''> parent=''
+    Text: '{"@context":"https://schema.org","@type":"ItemList","name":"השוואת חבילות סלולר בפרטנר","itemListEle'
+  <SCRIPT class=''> parent=''
+    Text: '{"@context": "https://schema.org","@type": "FAQPage","mainEntity": [{"@type": "Question","name":"מה '
+  <P class=''> parent='marketing-message ng-star-inserted'
+    Text: 'מנוי יחיד 39.9 ₪ לחודש'
+  <P class=''> parent=''
+    Text: 'קופון אביזרים 100 ₪ (בקניה מעל 199 ₪)'
+  <P class=''> parent=''
+    Text: 'בהתאם לתנאי תכנית Partner Prince ולתנאי השירות המלאים • תשלום חודשי למנוי בודד בתכנית 39.9 ₪ כולל מע'
+  <P class=''> parent=''
+    Text: 'בהתאם לתנאי תכנית Partner Queen 5G ולתנאי השירות המלאים • תשלום חודשי למנוי בודד בתכנית 39.9 ₪ כולל '
+  <P class=''> parent=''
+    Text: 'בכפוף לתנאי תכנית Partner King 5G ולתנאי השירות המלאים תשלום חודשי בתכנית 59.9 ₪ כולל מע"מ למנוי בוד'
+  <P class=''> parent=''
+    Text: 'בכפוף לתנאי תכנית Partner ACE 5G ולתנאי השירות המלאים תשלום חודשי בתכנית 69.9 ₪ כולל מע"מ למנוי בודד'
+  <P class=''> parent=''
+    Text: 'בכפוף לתנאי תכנית Partner Boost 5G ולתנאי השירות המלאים • תשלום חודשי בתכנית 69.9 ₪ כולל מע"מ למנוי '
+
+GB-containing elements:
+  <SCRIPT class=''> parent=''
+    Text: '{"@context": "https://schema.org","@type": "FAQPage","mainEntity": [{"@type": "Question","name":"מה '
+  <P class=''> parent=''
+    Text: 'בהתאם לתנאי תכנית Partner Prince ולתנאי השירות המלאים • תשלום חודשי למנוי בודד בתכנית 39.9 ₪ כולל מע'
+
+Repeated containers (likely card grids):
+  <DIV class='app'> 3 children
+    Child classes: ['']
+    Sample: 'לידיעתך, אנו משתמשים באתר זה בעוגיות (Cookies) בכדי לספק לך חווית גלישה טובה יותר, וכן למטרות תפעול, סטטיסטיקה ושיווק. למידע נוסף ולמדיניות הפרטיות המעודכנת לחץ כאן.\n\nסגירה\nפרטי\nעסקי\nחנות\nסגירה\nכניסה '
+  <HEADER class='ng-star-inserted'> 3 children
+    Child classes: ['', 'ng-star-inserted', 'header-content']
+    Sample: 'לידיעתך, אנו משתמשים באתר זה בעוגיות (Cookies) בכדי לספק לך חווית גלישה טובה יותר, וכן למטרות תפעול, סטטיסטיקה ושיווק. למידע נוסף ולמדיניות הפרטיות המעודכנת לחץ כאן.\n\nסגירה\nפרטי\nעסקי\nחנות\nסגירה\nכניסה '
+  <DIV class='header-above-header ng-star-inserted'> 3 children
+    Child classes: ['link-item ng-star-inserted selected', 'link-item ng-star-inserted']
+    Sample: 'פרטי\nעסקי\nחנות'
+  <DIV class='header-content'> 3 children
+    Child classes: ['ng-star-inserted', 'links-wrapper ng-star-inserted', 'cookies-open menu-wrapper ng-star-inserted']
+    Sample: 'סגירה\nכניסה לאזור האישי\nלהצטרפות\nסלולר\n+Partner tv\nפרטנר חו״ל\nאינטרנט סיבים\nחשמל\nחנות\nשירות ותמיכה\nאזור אישי'
+  <DIV class='btn-user'> 3 children
+    Child classes: ['icon-personal', 'btn-user-text', 'user-login-text']
+    Sample: 'כניסה לאזור האישי'
+  <UL class='menu'> 8 children
+    Child classes: ['menu-item ng-star-inserted']
+    Sample: 'סלולר\n+Partner tv\nפרטנר חו״ל\nאינטרנט סיבים\nחשמל\nחנות\nשירות ותמיכה\nאזור אישי'
+  <DIV class='tab-content ng-star-inserted'> 12 children
+    Child classes: ['content-box ng-star-inserted sub-link']
+    Sample: 'הצטרפות אונלייןמעבר בין תוכניותשירותים ואפליקציותהעברת בעלותהחלפת SIM ו-eSIMמדריכי החלפת SIM ו-eSIMחבילות לטסים לחו"לאובדן או גניבת מכשירתוכנית פריפייד - Bigtalkשירות תיקונים Private CarePrivate Care '
+  <DIV class='tab-content ng-star-inserted'> 10 children
+    Child classes: ['content-box ng-star-inserted sub-link']
+    Sample: 'הצטרפות ל-+Partner tvעולם התוכן שלנוערוציםחבילות תוכןNetflixאזור אישישירות ותמיכה בטלוויזיההתקנת יישומון פיקוד העורףהכירו את +Partner tvערוץ הגיבורים'
+  <DIV class='tab-content ng-star-inserted'> 4 children
+    Child classes: ['content-box ng-star-inserted sub-link']
+    Sample: 'חבילות לטסים לחו"לאזור אישי חו"לסינון שיחות בחו"לפתיחה לשימוש בחו"ל'
+  <DIV class='tab-content ng-star-inserted'> 7 children
+    Child classes: ['content-box ng-star-inserted sub-link']
+    Sample: 'Partner Fiber הצטרפות אונלייןמעבר דירהשדרוג מהירות גלישהשירותים ותוכןמגדיל טווח Mesh Wi-Fi 6נתביםבדיקת מהירות'
+
+============================================================
+DEEP INSPECT: pelephone
+
+Frequent classes (3-15 occurrences):
+  .inner-element: 15 times
+  .adoric_element: 13 times
+  .lazyload: 10 times
+  .question: 9 times
+  .answer: 9 times
+  .general-content: 7 times
+  .container: 7 times
+  .pratiBF: 6 times
+  .iskiBF: 6 times
+  .btn: 6 times
+  .__ADORIC__: 5 times
+  .sub_head_nav: 5 times
+  .sub_nav_items: 5 times
+  .border_5: 5 times
+  .superlative: 5 times
+  .superlative2: 5 times
+  .top_blue: 5 times
+  .only_gb: 5 times
+  .price_gb: 5 times
+  .a: 5 times
+
+Price-containing elements:
+  <SPAN class='d'> parent='price_line'
+    Text: '₪'
+  <SPAN class=''> parent=''
+    Text: '₪120 לרכישת אביזרים בפלאפון'
+  <DIV class='reg_price'> parent='item item1'
+    Text: 'החל מהחודש השלישי - ₪49.90 לחודש למנוי'
+  <SPAN class='d'> parent='price_line'
+    Text: '₪'
+  <SPAN class='d'> parent='price_line'
+    Text: '₪'
+  <SPAN class=''> parent=''
+    Text: '100 ₪ לרכישת מוצרים בפלאפון *'
+  <DIV class=''> parent='bot_txt_reg'
+    Text: 'החל מהחודש השלישי 64.9 ₪ לחודש למנוי'
+  <DIV class=''> parent='bot_txt_reg'
+    Text: '*למוצרים שמחירם מ-599 ש"ח'
+  <SPAN class='d'> parent='price_line'
+    Text: '₪'
+  <SPAN class=''> parent=''
+    Text: '100\xa0₪\xa0לרכישת מוצרים בפלאפון *'
+
+GB-containing elements:
+  <SCRIPT class=''> parent=''
+    Text: '{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"מה זה ר'
+  <DIV class='only_gb'> parent='top_blue'
+    Text: '1000 GB'
+  <DIV class='only_gb'> parent='top_blue'
+    Text: '400 GB'
+  <DIV class='only_gb'> parent='top_blue'
+    Text: '2000 GB'
+  <DIV class='only_gb'> parent='top_blue'
+    Text: '3000 GB'
+  <DIV class='only_gb'> parent='top_blue'
+    Text: '3000 GB'
+  <SPAN class=''> parent=''
+    Text: '10GB גלישה\xa0בחו"ל בכל\xa0חודש'
+  <DIV class='answer'> parent='inner'
+    Text: '\n                    כן. למסלולי 5G יש גם יתרונות נוספים כמו נפח גלישה ענק החל מ- 500GB ,וניתן ליהנו'
+  <DIV class='answer'> parent='inner'
+    Text: '\n                    רשת ה- 5G מאפשרת קצב נתונים גבוה יותר וזמני השהייה נמוכים יותר. הרשת תומכת במהי'
+  <SCRIPT class=''> parent='whiteHeaderBf'
+    Text: 'datasource[\'accessibility\']={"data":"0#0#0#0"};datasource[\'regexPatterns\']={"phone":"^\\\\+?\\\\d{2}[- ]'
+
+Repeated containers (likely card grids):
+  <DIV class='flex_top_menu'> 3 children
+    Child classes: ['flex_logo', '', 'flex_login']
+    Sample: 'פלאפון שלי\nחנות\nחנות אילת\nחו"ל\nמידע ותמיכה\nצור קשר\nלהצטרף לפלאפון\n5G MAX\nעסקי\nלאיזור האישי'
+  <DIV class='flex_logo'> 5 children
+    Child classes: ['pratiBF', 'iskiBF', 'search_box']
+    Sample: ''
+  <DIV class='my-autocomplete'> 3 children
+    Child classes: ['', 'my-autocomplete-items']
+    Sample: ''
+  <DIV class='sub_nav_items'> 4 children
+    Child classes: ['item']
+    Sample: 'החשבון שלי אפליקציית פלאפון שלי חשבוניות אחרונותמצב חיוב נוכחיסטטוס ניצול חבילות גלישהמידע על המסלול שליפירוט שיחותארכיון מסמכיםדו"ח תשלומיםהזמנות שלימועדון הטבות 5Gלעבוד בפלאפוןפעולות על החשבוןeSIM ל'
+  <DIV class='item'> 12 children
+    Child classes: ['ttl', 'sub_lnk']
+    Sample: 'החשבון שלי אפליקציית פלאפון שלי חשבוניות אחרונותמצב חיוב נוכחיסטטוס ניצול חבילות גלישהמידע על המסלול שליפירוט שיחותארכיון מסמכיםדו"ח תשלומיםהזמנות שלימועדון הטבות 5Gלעבוד בפלאפון'
+  <DIV class='item'> 7 children
+    Child classes: ['ttl', 'sub_lnk']
+    Sample: 'פלאפון חו"לחבילות לטסים לחו"לGlobal Sim  ללקוחות כל החברותחשוב לדעת לפני שטסיםסינון שיחות בחו"לסטטוס ניצול חבילות חו"לחבילות חו"ל לחשכ"ל'
+  <DIV class='sub_nav_items'> 5 children
+    Child classes: ['item']
+    Sample: 'מכשירים ואביזריםמכשיריםקטלוג מבצעים חנות Appleחנות Samsungמחירי אילת Pele Cashבדיקת טרייד איןשעוניםרמקולים, אוזניות ודיבוריותOutletמוצרי חשמל לביתמסכי טלוויזיהגיימינגמצלמות אבטחה ורשתטאבלטיםמחשבים ניי'
+  <DIV class='item'> 7 children
+    Child classes: ['ttl', 'sub_lnk']
+    Sample: 'חו"לחבילות לטסים לחו"לGlobal Sim  ללקוחות כל החברות חשוב לדעת לפני שטסיםסינון שיחות בחו"לסטטוס ניצול חבילות חו"לחבילות חו"ל לחשכ"ל'
+  <DIV class='item'> 8 children
+    Child classes: ['ttl', 'sub_lnk']
+    Sample: 'תוכן ואפליקציותשעוני eSIMאפליקציית פלאפון שלישיר בהמתנהpelephone carpelephone Cyberבקרת הוריםמענה קולי'
+  <DIV class='item'> 7 children
+    Child classes: ['ttl', 'sub_lnk']
+    Sample: 'שירותים לעסקיםלהצטרף לפלאפון עסקיםHarmony Mobileרשתות פרטיות 5G MAXפלאפון PTTפלאפון +carשעון נוכחות סלולרי'
+
+============================================================
+DEEP INSPECT: hotmobile
+
+Frequent classes (3-15 occurrences):
+  .header-navbar-item-wrapper: 12 times
+  .feature-name: 11 times
+  .feature-description: 11 times
+  .list-item: 11 times
+  .question: 11 times
+  .item-question: 11 times
+  .arrowIcon: 11 times
+  .expand-icon-img: 11 times
+  .additional-info: 11 times
+  .sub-menu: 10 times
+  .btn-lg: 10 times
+  .svg-icon: 8 times
+  .full: 8 times
+  .additional-features: 7 times
+  .price-box: 7 times
+  .price: 7 times
+  .current-price: 7 times
+  .old-price: 7 times
+  .price-description: 7 times
+  .package-btn: 7 times
+
+Price-containing elements:
+  <SPAN class='symbol'> parent='current-price'
+    Text: '₪'
+  <SPAN class='symbol'> parent='current-price'
+    Text: '₪'
+  <SPAN class='symbol'> parent='current-price'
+    Text: '₪'
+  <SPAN class='symbol'> parent='current-price'
+    Text: '₪'
+  <SPAN class='symbol'> parent='current-price'
+    Text: '₪'
+  <SPAN class='symbol'> parent='current-price'
+    Text: '₪'
+
+GB-containing elements:
+  <H1 class='name'> parent='container plan51010763'
+    Text: '5G ULTRA ∙ 2500GB ∙ Plus Protect 2025'
+  <DIV class='feature-name'> parent='feature'
+    Text: '2,500GB'
+  <H1 class='name'> parent='container plan51010760'
+    Text: '5G ULTRA ∙ Plus FLY 10GB'
+  <DIV class='feature-name'> parent='feature'
+    Text: '3,000GB'
+  <DIV class='feature-name'> parent='feature'
+    Text: '10GB'
+  <DIV class='feature-name'> parent='feature'
+    Text: '3,000GB'
+  <H1 class='name'> parent='container plan51011007'
+    Text: '5G GEN 2000GB 2026'
+  <DIV class='feature-name'> parent='feature'
+    Text: '2,000GB'
+  <H1 class='name'> parent='container plan51010415'
+    Text: '20GB ∙ Data only'
+  <DIV class='feature-name'> parent='feature'
+    Text: '20GB'
+
+Repeated containers (likely card grids):
+  <NAV class='header-navbar'> 7 children
+    Child classes: ['header-navbar-item-wrapper']
+    Sample: '\n\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\tהצטרפות\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tהצטרפות און ליין\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tהצטרפות באמצעות נציג\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\teSIM\n\t\t\t\t\t\t\t\t\t'
+  <DIV class='sub-menu'> 7 children
+    Child classes: ['header-navbar-item']
+    Sample: '\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tהצטרפות און ליין\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tהצטרפות באמצעות נציג\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\teSIM\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tFIX IT - שירות תיקונים\n\t'
+  <DIV class='sub-menu'> 3 children
+    Child classes: ['header-navbar-item']
+    Sample: '\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tהצטרפות און ליין\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tמעבר בין תכניות\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\teSIM\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t'
+  <DIV class='sub-menu'> 10 children
+    Child classes: ['header-navbar-item']
+    Sample: '\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tתשלום חוב\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tפעולות בשירות עצמי\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tאיתור מרכזי שירות ומכירה\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tמעבר בין תכני'
+  <DIV class='sub-menu'> 8 children
+    Child classes: ['header-navbar-item']
+    Sample: '\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tסמרטפונים ואביזרים\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tמחשבים, טאבלטים וגיימינג\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tמוצרי חשמל\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tשעונים חכמים'
+  <DIV class='sub-menu'> 3 children
+    Child classes: ['header-navbar-item']
+    Sample: '\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tחבילות חו"ל\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tהצטרפות לשירותי Travel Sim \n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tמחייגים לחו"ל\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t'
+  <UL class='icons'> 4 children
+    Child classes: ['']
+    Sample: ''
+  <NAV class='header-navbar'> 5 children
+    Child classes: ['header-navbar-item-wrapper']
+    Sample: 'הצטרפות\nסלולר\nשירות ותמיכה\nחנות\nחו"ל'
+  <DIV class='sub-menu-links'> 7 children
+    Child classes: ['header-navbar-item']
+    Sample: '\n                                                    \n                                                        הצטרפות און ליין\n                                                    \n                    '
+  <DIV class='sub-menu-links'> 3 children
+    Child classes: ['header-navbar-item']
+    Sample: '\n                                                    \n                                                        הצטרפות און ליין\n                                                    \n                    '
+
+============================================================
+DEEP INSPECT: cellcom
+
+Frequent classes (3-15 occurrences):
+
+Price-containing elements:
+
+GB-containing elements:
+
+Repeated containers (likely card grids):
+
+============================================================
+DEEP INSPECT: mobile019
+
+Frequent classes (3-15 occurrences):
+  .item: 15 times
+  .inner: 12 times
+  .hoverlink: 11 times
+  .item_pack: 11 times
+  .price: 11 times
+  .nis: 11 times
+  .blist: 11 times
+  .btns_group: 11 times
+  .btn_blue: 11 times
+  .btn_update: 11 times
+  .btn_signup: 11 times
+  .rules: 11 times
+  .icon: 10 times
+  .small: 9 times
+  .desc: 7 times
+  .innerpage: 6 times
+  .input: 6 times
+  .col: 5 times
+  .box: 5 times
+  .close_btn: 5 times
+
+Price-containing elements:
+  <SPAN class='nis'> parent='price'
+    Text: '₪'
+  <DIV class=''> parent='table-cell'
+    Text: 'שימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,'
+  <SPAN class='nis'> parent='price'
+    Text: '₪'
+  <SPAN class='nis'> parent='price'
+    Text: '₪'
+  <SPAN class='nis'> parent='price'
+    Text: '₪'
+  <SPAN class='nis'> parent='price'
+    Text: '₪'
+  <DIV class=''> parent='table-cell'
+    Text: 'לאחר מכן המחיר יעלה ב10 ₪.'
+  <SPAN class='nis'> parent='price'
+    Text: '₪'
+  <DIV class=''> parent='table-cell'
+    Text: 'לאחר מכן המחיר יעלה ב10 ₪.'
+  <SPAN class='nis'> parent='price'
+    Text: '₪'
+
+GB-containing elements:
+  <STRONG class=''> parent=''
+    Text: '300GB'
+  <STRONG class=''> parent=''
+    Text: '12GB'
+  <STRONG class=''> parent=''
+    Text: '30GB'
+  <STRONG class=''> parent=''
+    Text: '170GB'
+  <STRONG class=''> parent=''
+    Text: '100GB'
+  <STRONG class=''> parent=''
+    Text: '200GB'
+  <STRONG class=''> parent=''
+    Text: '2GB'
+  <LI class=''> parent='blist'
+    Text: '10GB גלישה'
+  <LI class=''> parent='blist'
+    Text: '40GB גלישה'
+
+Repeated containers (likely card grids):
+  <DIV class='skiptocontent'> 3 children
+    Child classes: ['access']
+    Sample: 'דלג לתפריט הראשי (מקש קיצור n) דלג לתוכן הדף (מקש קיצור s) דלג לתחתית הדף (מקש קיצור 2)'
+  <DIV class='desc animateobj'> 3 children
+    Child classes: ['']
+    Sample: 'בחרו את חבילת הסלולר שלכם ותיהנו מגלישה איכותית ומהירה\nברשת בדור 5*, תמיכה ב-eSIM**, מחירים משתלמים והשירות המתקדם בישראל.'
+  <DIV class='text-5g'> 3 children
+    Child classes: ['']
+    Sample: '* בחבילות תומכות בדור 5.\n\n\n** השירות נתמך רק בטלפונים אשר תומכים ב-eSIM, ואינו נתמך בשעונים חכמים.'
+  <DIV class='list'> 11 children
+    Child classes: ['item', 'item item_hor']
+    Sample: "BIG DATA\n₪39.90\n300GB גלישה\n5000 דק' שיחה + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר\nשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות.\nהגלישה ברשת דור 5 ת"
+  <DIV class='table'> 4 children
+    Child classes: ['table-cell']
+    Sample: "BIG DATA\n₪39.90\n300GB גלישה\n5000 דק' שיחה + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר"
+  <UL class='blist'> 3 children
+    Child classes: ['']
+    Sample: "300GB גלישה\n5000 דק' שיחה + 5000 הודעות\nמחיר קבוע לכל החיים"
+  <DIV class='table-cell'> 3 children
+    Child classes: ['']
+    Sample: 'שימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות.\nהגלישה ברשת דור 5 תתאפשר במכשיר סלולרי התומך בדור 5, וכפוף למגבלות הרשת הסלולרית.\nטיוטת הסכם התקשרות'
+  <DIV class='table'> 4 children
+    Child classes: ['table-cell']
+    Sample: "לכל החיים\n₪19.80\n12GB גלישה\n5000 דק' שיחה + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר"
+  <UL class='blist'> 3 children
+    Child classes: ['']
+    Sample: "12GB גלישה\n5000 דק' שיחה + 5000 הודעות\nמחיר קבוע לכל החיים"
+  <DIV class='table'> 4 children
+    Child classes: ['table-cell']
+    Sample: "בול בפוני!\n₪21.90\n30GB גלישה\n5000 דק' + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר"
+
+
+Raw results saved to inspect_raw_results.json

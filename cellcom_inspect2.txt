@@ -1,0 +1,22 @@
+Total .abroad-package-client: 3
+
+--- Card 0 ---
+visible=True
+classes=abroad-package-client abroad-package-client__family-shadow 
+text='המושלמת לחו"ל\nחבילה ל-30 ימים\n20\nGB\nשיחות\n100\xa0דקות\nהודעות סמס\n100\xa0הודעות\nכולל שיחות מקומיות\n249₪\nלרכישה\nמדינות כלולות>\nחשוב לדעת>'
+
+--- Card 1 ---
+visible=True
+classes=abroad-package-client abroad-package-client__family-shadow 
+text='כל מה שצריך לחודש\nחבילה ל-30 ימים\n50\nGB\nכולל גלישה חופשית באפליקציות נבחרות\nשיחות\n250\xa0דקות\nהודעות סמס\n250\xa0הודעות\nכולל שיחות מקומיות\n299₪\nלרכישה\nמדינות כלולות>\nחשוב לדעת>'
+
+--- Card 2 ---
+visible=True
+classes=abroad-package-client  
+text='בלי לבדוק כל רגע\nחבילה ל-30 ימים\n60\nGB\nכולל גלישה חופשית באפליקציות נבחרות\nשיחות\n300\xa0דקות\nהודעות סמס\n300\xa0הודעות\nכולל שיחות מקומיות\n329₪\nלרכישה\nמדינות כלולות>\nחשוב לדעת>'
+
+
+Checking for carousel/slider containers:
+
+packages-holder HTML (first 3000):
+<div data-node-item="448"><div class="pr-0 pl-0 m-auto abroad-market-popular__desktop container" data-node-item="449"><div class="mb-1 justify-content-center row" data-node-item="450"><div class="mb-5 abroad-market-popular__desktop__item-one col-4 col" data-node-item="451"><div class="abroad-package-client__container" data-node-item="452"><div class="abroad-package-client abroad-package-client__family-shadow " data-node-item="453"><div class="abroad-package-client__start-card" data-node-item="454"><div class="abroad-package-client__title" data-node-item="455">המושלמת לחו"ל</div><div class="abroad-package-client__separator" data-node-item="456"></div><div class="abroad-package-client__duration" data-node-item="457">חבילה ל-30 ימים</div><div class="abroad-package-client__data--bank VoiceSmsData" data-node-item="458">20<span class="abroad-package-data-unit" data-node-item="459">GB</span></div><div class="abroad-package-client__details--bank-regular VoiceSmsData" data-node-item="460"><div class="abroad-package-client__details--bank-regular-content" data-node-item="461"><div class="abroad-package-voice-sms" data-node-item="462"><div class="abroad-package-voice-sms__type" data-node-item="463">שיחות</div><div class="abroad-package-voice-sms__value" data-node-item="464"><span data-node-item="465">100</span><span class="abroad-package-voice-sms--space" data-node-item="466">&nbsp;</span><span data-node-item="467">דקות</span></div></div></div><div class="abroad-package-client__details--bank-regular-content" data-node-item="468"><div class="abroad-package-voice-sms" data-node-item="469"><div class="abroad-package-voice-sms__type" data-node-item="470">הודעות סמס</div><div class="abroad-package-voice-sms__value" data-node-item="471"><span data-node-item="472">100</span><span class="abroad-package-voice-sms--space" data-node-item="473">&nbsp;</span><span data-node-item="474">הודעות</span></div></div></div></div></div><div class="abroad-package-client__end-card" data-node-item="475"><div class="abroad-package-client__financial-details--bank" data-node-item="476"><div class="abroad-package-client__financial-details--bank--price  " data-node-item="477"><div class="abroad-package-client__financial-details--bank--price__label" data-node-item="478"><span class="abroad-package-client__financial-details--bank--price__label--text" data-node-item="479">כולל שיחות מקומיות</span></div><div class="abroad-package-client__financial-details--bank--price__real" data-node-item="480"><span class="abroad-package-client__price-real--bank--container" data-node-item="481"><span data-node-item="482">249</span><span class="abroad-package-client__price-real--bank--container__shekel-symbol" data-node-item="483">₪</span></span></div><div class="abroad-package-client__financial-details--bank--price__deleted" data-node-item="484"><span class="abroad-package-client__price-delete--bank--container" data-node-item="485"><div data-node-item="486"><span data-node-item="487"></span><span data-node

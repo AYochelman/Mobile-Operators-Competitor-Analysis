@@ -1,0 +1,458 @@
+
+============================================================
+CARRIER: pelephone
+============================================================
+Clicking 'more packages' button...
+Found 20 .package cards
+
+--- CARD 1 ---
+
+    <span></span>
+    
+        <div class="ttl">
+            חבילת חו"ל קטנה
+                <span class="cancel_free">ביטול חינם עד הטיסה</span>
+            
+                <span class="period">4 <span>ימים</span></span>
+            
+             <div class="price_section">
+                 <div>
+                   <div class="price"><span>₪</span>99</div>
+                     <div class="old_price">
+                       
+                    </div>
+                  </div>
+                  <a href="/DigitalSite/heb/abroad/gl-sms/?soid=438" class="btn_pack">
+                  להזמנה ›
+                  <span class="favourite-text">חבילת חו"ל קטנה להזמנה</span>
+                 </a>
+            </div>
+            
+        </div>
+        <div class="data">
+           
+            <span class="do_center"></span>
+            
+    <img data-src="" alt="" class="lazyload desktop-only superlative_img lazyloaded" src="">
+
+
+           
+           
+            <div class="g_d_s">
+                <div>
+                    
+                    <div class="g">                       
+                        <span>
+                            1GB
+                        </span>
+                         גלישה
+                    </div>
+                    
+                </div>
+                <div class="g_d_s_flex">
+                    
+                </div>
+            </div>
+            <div class="free_app">
+                <div class="wrp_smal_pck">
+<div class="sml_pck">
+<h3>תוספות במחיר קטן &gt;</h3>
+
+<div>תוספת <span>1GB</span> בעלות של <span class="p">₪19</span></div>
+
+<div>תוספת <span>2GB</span> בעלות של <span class="p">₪39</span></div>
+
+<div>תוספת <span>3GB</span> בעלות של <span class="p">₪49</span></div>
+
+<div>תוספת <span>100</span> דקות ו <span>100</span> הודעות בעלות של <span class="p">₪29</span></div>
+
+
+
+</div>
+</div>
+
+            </div>
+            
+        </div>
+
+    
+    
+    <div class="bottom_line" rel="438" nsid="5341" boneid="9343" sid="2">
+       
+   
+
+--- CARD 2 ---
+
+    <span></span>
+    
+        <div class="ttl">
+            <span class="superlativ_egipt"> <img src="/DigitalSite/UploadedImages/02_2026/salen.png"> </span> מושלמת <span class="egipt_eclips"> </span>
+                <span class="cancel_free">ביטול חינם עד הטיסה</span>
+            
+                <span class="period">14 <span>ימים</span></span>
+            
+             <div class="price_section">
+                 <div>
+                   <div class="price"><span>₪</span>249</div>
+                     <div class="old_price">
+                        <span aria-label="מחיר קודם" class="del_price"><span>₪</span>269</span>
+                       
+                    </div>
+                  </div>
+                  <a href="/DigitalSite/heb/abroad/gl-sms/?soid=301" class="btn_pack">
+                  להזמנה ›
+                  <span class="favourite-text"><span class="superlativ_egipt"> <img src="/DigitalSite/UploadedImages/02_2026/salen.png"> </span> מושלמת <span class="egipt_eclips"> </span> להזמנה</span>
+                 </a>
+            </div>
+            
+        </div>
+        <div class="data">
+           
+            <span class="do_center"></span>
+            
+    <img data-src="" alt="" class="lazyload desktop-only superlative_img lazyloaded" src="">
+
+
+           
+           
+            <div class="g_d_s">
+                <div>
+                    
+                    <div class="g">                       
+                        <span>
+                            15GB
+                        </span>
+                         גלישה
+                    </div>
+                    
+                </div>
+                <div class="g_d_s_flex">
+                    
+                        <div class="d">                            
+                            <span>
+                                300
+                            </span>
+                            דקות
+                        </div>
+                    
+                        <div class="s"> 
+
+--- CARD 3 ---
+
+    <span></span>
+    
+        <div class="ttl">
+            שומרים על קשר
+                <span class="cancel_free">ביטול חינם עד הטיסה</span>
+            
+                <span class="period">14 <span>ימים</span></span>
+            
+             <div class="price_section">
+                 <div>
+                   <div class="price"><span>₪</span>199</div>
+                     <div class="old_price">
+                        <span aria-label="מחיר קודם" class="del_price"><span>₪</span>219</span>
+                       
+                    </div>
+                  </div>
+                  <a href="/DigitalSite/heb/abroad/gl-sms/?soid=236" class="btn_pack">
+                  להזמנה ›
+                  <span class="favourite-text">שומרים על קשר להזמנה</span>
+                 </a>
+            </div>
+            
+        </div>
+        <div class="data">
+           
+            <span class="do_center"></span>
+            
+    <img data-src="" alt="" class="lazyload desktop-only superlative_img lazyloaded" src="">
+
+
+           
+           
+            <div class="g_d_s">
+                <div>
+                    
+                    <div class="g">                       
+                        <span>
+                            5GB
+                        </span>
+                         גלישה
+                    </div>
+                    
+                </div>
+                <div class="g_d_s_flex">
+                    
+                        <div class="d">                            
+                            <span>
+                                80
+                            </span>
+                            דקות
+                        </div>
+                    
+                        <div class="s">                            
+                            <span>
+                                80
+                            </span>
+                            SMS
+                        </div>
+                    
+                </div>
+            </d
+
+============================================================
+CARRIER: cellcom
+============================================================
+Found 3 .abroad-package-client cards
+  Button: 'עזרה'
+  Button: 'קורא מסך'
+  Button: 'מקלדת'
+  Button: 'קורא הטקסטהכי טוב ב-Chrome'
+  Button: 'מקלדת וירטואלית'
+  Button: 'שליטה קוליתהכי טוב ב-Chrome'
+  Button: 'שחור לבן'
+  Button: 'ניגודיות צבע'
+  Button: 'ללא אנימציה'
+  Button: 'גופן קטןהצגת גודל גופן קטן, גופן גודל קטן ב-100%'
+  Button: 'קישורים מודגשים'
+  Button: 'נקה הגדרות נגישות'
+  Button: 'סגור כלי נגישות'
+  Button: 'חיפוש חבילה'
+  Button: 'אזור אישי'
+  Button: 'מנוי עסקי'
+  Button: 'המשך'
+  Button: 'Next Month'
+  Button: '29'
+  Button: '30'
+  Button: '31'
+  Button: '1'
+  Button: '2'
+  Button: '3'
+  Button: '4'
+  Button: '5'
+  Button: '6'
+  Button: '7'
+  Button: '8'
+  Button: '9'
+  Button: '10'
+  Button: '11'
+  Button: '12'
+  Button: '13'
+  Button: '14'
+  Button: '15'
+  Button: '16'
+  Button: '17'
+  Button: '18'
+  Button: '19'
+  Button: '20'
+  Button: '21'
+  Button: '22'
+  Button: '23'
+  Button: '24'
+  Button: '25'
+  Button: '26'
+  Button: '27'
+  Button: '28'
+  Button: '29'
+  Button: '30'
+  Button: '1'
+  Button: '2'
+  Button: 'המשך'
+  Button: 'תמצאו לי חבילה'
+  Button: 'לחבילות חו"ל נוספות'
+  Button: 'סגירה'
+  Button: 'סנכרון אוטומטי'
+  Button: 'נדידת נתונים'
+
+--- CARD 1 ---
+<div class="abroad-package-client__start-card" data-node-item="454"><div class="abroad-package-client__title" data-node-item="455">המושלמת לחו"ל</div><div class="abroad-package-client__separator" data-node-item="456"></div><div class="abroad-package-client__duration" data-node-item="457">חבילה ל-30 ימים</div><div class="abroad-package-client__data--bank VoiceSmsData" data-node-item="458">20<span class="abroad-package-data-unit" data-node-item="459">GB</span></div><div class="abroad-package-client__details--bank-regular VoiceSmsData" data-node-item="460"><div class="abroad-package-client__details--bank-regular-content" data-node-item="461"><div class="abroad-package-voice-sms" data-node-item="462"><div class="abroad-package-voice-sms__type" data-node-item="463">שיחות</div><div class="abroad-package-voice-sms__value" data-node-item="464"><span data-node-item="465">100</span><span class="abroad-package-voice-sms--space" data-node-item="466">&nbsp;</span><span data-node-item="467">דקות</span></div></div></div><div class="abroad-package-client__details--bank-regular-content" data-node-item="468"><div class="abroad-package-voice-sms" data-node-item="469"><div class="abroad-package-voice-sms__type" data-node-item="470">הודעות סמס</div><div class="abroad-package-voice-sms__value" data-node-item="471"><span data-node-item="472">100</span><span class="abroad-package-voice-sms--space" data-node-item="473">&nbsp;</span><span data-node-item="474">הודעות</span></div></div></div></div></div><div class="abroad-package-client__end-card" data-node-item="475"><div class="abroad-package-client__financial-details--bank" data-node-item="476"><div class="abroad-package-client__financial-details--bank--price  " data-node-item="477"><div class="abroad-package-client__financial-details--bank--price__label" data-node-item="478"><span class="abroad-package-client__financial-details--bank--price__label--text" data-node-item="479">כולל שיחות מקומיות</span></div><div class="abroad-package-client__financial-details--bank--price__real" data-node-item="480"><span class="abroad-package-client__price-real--bank--container" data-node-item="481"><span data-node-item="482">249</span><span class="abroad-package-client__price-real--bank--container__shekel-symbol" data-node-item="483">₪</span></span></div><div class="abroad-package-client__financial-details--bank--price__deleted" data-node-item="484"><span class="abroad-package-client__price-delete--bank--container" data-node-item="485"><div data-node-item="486"><span data-node-item="487"></span><span data-node-item="488"></span></div><div class="abroad-package-client__financial-details--bank--price--eraser" data-node-item="489"></div></span></div></div><div class="abroad-package-client__financial-details--bank--button" data-node-item="490">לרכישה</div></div><div class="abroad-package-client__footer" data-node-item="491"><div class="abroad-package-client__footer--separator" data-node-item="492"></div><div class="abroad-package-client__fo
+
+--- CARD 2 ---
+<div class="abroad-package-client__start-card" data-node-item="506"><div class="abroad-package-client__title" data-node-item="507">כל מה שצריך לחודש</div><div class="abroad-package-client__separator" data-node-item="508"></div><div class="abroad-package-client__duration" data-node-item="509">חבילה ל-30 ימים</div><div class="abroad-package-client__data--bank VoiceSmsData" data-node-item="510">50<span class="abroad-package-data-unit" data-node-item="511">GB</span></div><div class="abroad-package-client__data--bank-unlimited-app" data-node-item="512"><div class="abroad-package-client__data--bank-unlimited-app--icons" data-node-item="513"><img src="https://contentepi.cellcom.co.il/globalassets/abroad/----2.png" alt="TikTok Instagram" class="abroad-package-client__data--bank-unlimited-app--icons--item" data-node-item="514"><img src="https://contentepi.cellcom.co.il/globalassets/abroad/----.png" alt="Facebook Whatsapp" class="abroad-package-client__data--bank-unlimited-app--icons--item" data-node-item="515"><img src="https://contentepi.cellcom.co.il/globalassets/abroad/-----.png" alt="Waze Google maps" class="abroad-package-client__data--bank-unlimited-app--icons--item" data-node-item="516"></div><div class="abroad-package-client__data--bank-unlimited-app--text" data-node-item="517">כולל גלישה חופשית באפליקציות נבחרות</div></div><div class="abroad-package-client__details--bank-regular VoiceSmsData" data-node-item="518"><div class="abroad-package-client__details--bank-regular-content" data-node-item="519"><div class="abroad-package-voice-sms" data-node-item="520"><div class="abroad-package-voice-sms__type" data-node-item="521">שיחות</div><div class="abroad-package-voice-sms__value" data-node-item="522"><span data-node-item="523">250</span><span class="abroad-package-voice-sms--space" data-node-item="524">&nbsp;</span><span data-node-item="525">דקות</span></div></div></div><div class="abroad-package-client__details--bank-regular-content" data-node-item="526"><div class="abroad-package-voice-sms" data-node-item="527"><div class="abroad-package-voice-sms__type" data-node-item="528">הודעות סמס</div><div class="abroad-package-voice-sms__value" data-node-item="529"><span data-node-item="530">250</span><span class="abroad-package-voice-sms--space" data-node-item="531">&nbsp;</span><span data-node-item="532">הודעות</span></div></div></div></div></div><div class="abroad-package-client__end-card" data-node-item="533"><div class="abroad-package-client__financial-details--bank" data-node-item="534"><div class="abroad-package-client__financial-details--bank--price  " data-node-item="535"><div class="abroad-package-client__financial-details--bank--price__label" data-node-item="536"><span class="abroad-package-client__financial-details--bank--price__label--text" data-node-item="537">כולל שיחות מקומיות</span></div><div class="abroad-package-client__financial-details--bank--price__real" data-node-item="538"><span class="abroad-package-client__price-real--bank--container
+
+============================================================
+CARRIER: partner
+============================================================
+Found 4 .package-wrapper cards
+  Button: 'נגישות'
+  Button: 'לְחַץ אֶנְטֵר לְנִוּוּט מִקְלֶדֶת'
+  Button: 'לְחַץ אֶנְטֵר לִפְּתִיחַת תַּפְרִיט נְגִישׁוּת.'
+  Button: 'סגירה'
+  Button: 'להצטרפות'
+  Button: 'אזור אישי חו"ל'
+  Button: 'לקוח עסקי'
+  Button: 'חפשו לי חבילה'
+  Button: 'אני רוצה את החבילה'
+  Button: 'אני רוצה את החבילה'
+  Button: 'אני רוצה את החבילה'
+  Button: 'אני רוצה את החבילה'
+  Button: 'לצפייה בחבילות נוספות'
+  Button: 'סגירה'
+  Button: 'הבנתי, המשך'
+
+--- CARD 1 ---
+<div _ngcontent-ng-c1265957620="" class="package-title"><h3 _ngcontent-ng-c1265957620="" class="package-name">חופשה משפחתית</h3><div _ngcontent-ng-c1265957620="" class="package-price-and-size"><div _ngcontent-ng-c1265957620="" class="package-size ng-star-inserted">50GB</div><!----><div _ngcontent-ng-c1265957620="" class="size-and-price-divider ng-star-inserted"></div><!----><div _ngcontent-ng-c1265957620="" class="package-price"><span _ngcontent-ng-c1265957620="" class="deleted-price ng-star-inserted">₪319</span><!----><span _ngcontent-ng-c1265957620="" class="currency">₪</span><span _ngcontent-ng-c1265957620="" class="price-text">299</span></div></div></div><div _ngcontent-ng-c1265957620="" class="package-flag ng-star-inserted">מחיר מיוחד לאתר</div><!----><!----><div _ngcontent-ng-c1265957620="" class="package-content"><!----><ul _ngcontent-ng-c1265957620="" class="package-description-list"><li _ngcontent-ng-c1265957620="" class="description-item ng-star-inserted"><img _ngcontent-ng-c1265957620="" alt="" class="description-img" src="https://u.partner.co.il/media/avchopjh/שיחות-svg.svg"><span _ngcontent-ng-c1265957620="" class="description-text">300 דקות</span></li><li _ngcontent-ng-c1265957620="" class="description-item ng-star-inserted"><img _ngcontent-ng-c1265957620="" alt="" class="description-img" src="https://u.partner.co.il/media/2dufiomo/הודעות-svg.svg"><span _ngcontent-ng-c1265957620="" class="description-text">300 הודעות</span></li><li _ngcontent-ng-c1265957620="" class="description-item ng-star-inserted"><img _ngcontent-ng-c1265957620="" alt="" class="description-img" src="https://u.partner.co.il/media/3vrb53ro/שעון-1.svg"><span _ngcontent-ng-c1265957620="" class="description-text">בתוקף ל-30 ימים</span></li><li _ngcontent-ng-c1265957620="" class="description-item ng-star-inserted"><img _ngcontent-ng-c1265957620="" alt="" class="description-img" src="https://u.partner.co.il/media/v5bm0i4l/איקון-2-7-לקוחות.svg"><span _ngcontent-ng-c1265957620="" class="description-text">ללקוחות בעלי 2-10 מנויים</span></li><!----></ul><app-package-marketing-text _ngcontent-ng-c1265957620="" class="bottom-marketing-text ng-star-inserted" _nghost-ng-c3868381340=""><div _ngcontent-ng-c3868381340="" class="package-marketing-text-wrapper"><div _ngcontent-ng-c3868381340="" class="border"></div><div _ngcontent-ng-c3868381340="" class="marketing-text">חבילה משותפת 50GB לכל המשפחה</div><div _ngcontent-ng-c3868381340="" class="border"></div></div></app-package-marketing-text><!----><!----></div><div _ngcontent-ng-c1265957620="" class="package-footer"><div _ngcontent-ng-c1265957620="" class="choose-package-btn-wrapper"><button _ngcontent-ng-c1265957620="" class="brand-btn btn-style-2 choose-package-btn ng-star-inserted"> אני רוצה את החבילה </button><!----></div><!----><div _ngcontent-ng-c1265957620="" class="package-information-links"><div _ngcontent-ng-c1265957620="" class="package-information-link"> המדינות הכלולות</div><div _ngcontent-ng-c1265957620="" class="pa
+
+--- CARD 2 ---
+<div _ngcontent-ng-c1265957620="" class="package-title"><h3 _ngcontent-ng-c1265957620="" class="package-name">חו"ל מושלמת</h3><div _ngcontent-ng-c1265957620="" class="package-price-and-size"><div _ngcontent-ng-c1265957620="" class="package-size ng-star-inserted">30GB</div><!----><div _ngcontent-ng-c1265957620="" class="size-and-price-divider ng-star-inserted"></div><!----><div _ngcontent-ng-c1265957620="" class="package-price"><span _ngcontent-ng-c1265957620="" class="deleted-price ng-star-inserted">₪289</span><!----><span _ngcontent-ng-c1265957620="" class="currency">₪</span><span _ngcontent-ng-c1265957620="" class="price-text">269</span></div></div></div><div _ngcontent-ng-c1265957620="" class="package-flag ng-star-inserted">מחיר מיוחד לאתר</div><!----><!----><div _ngcontent-ng-c1265957620="" class="package-content"><!----><ul _ngcontent-ng-c1265957620="" class="package-description-list"><li _ngcontent-ng-c1265957620="" class="description-item ng-star-inserted"><img _ngcontent-ng-c1265957620="" alt="" class="description-img" src="https://u.partner.co.il/media/avchopjh/שיחות-svg.svg"><span _ngcontent-ng-c1265957620="" class="description-text">300 דקות</span></li><li _ngcontent-ng-c1265957620="" class="description-item ng-star-inserted"><img _ngcontent-ng-c1265957620="" alt="" class="description-img" src="https://u.partner.co.il/media/2dufiomo/הודעות-svg.svg"><span _ngcontent-ng-c1265957620="" class="description-text">300 הודעות</span></li><li _ngcontent-ng-c1265957620="" class="description-item ng-star-inserted"><img _ngcontent-ng-c1265957620="" alt="" class="description-img" src="https://u.partner.co.il/media/3vrb53ro/שעון-1.svg"><span _ngcontent-ng-c1265957620="" class="description-text">בתוקף ל-30 ימים</span></li><!----></ul><app-package-marketing-text _ngcontent-ng-c1265957620="" class="bottom-marketing-text ng-star-inserted" _nghost-ng-c3868381340=""><div _ngcontent-ng-c3868381340="" class="package-marketing-text-wrapper"><div _ngcontent-ng-c3868381340="" class="border"></div><div _ngcontent-ng-c3868381340="" class="marketing-text">מבצע לבני המשפחה! חבילת 5GB גלישה ב-49 ש״ח בלבד</div><div _ngcontent-ng-c3868381340="" class="border"></div></div></app-package-marketing-text><!----><!----></div><div _ngcontent-ng-c1265957620="" class="package-footer"><div _ngcontent-ng-c1265957620="" class="choose-package-btn-wrapper"><button _ngcontent-ng-c1265957620="" class="brand-btn btn-style-2 choose-package-btn ng-star-inserted"> אני רוצה את החבילה </button><!----></div><!----><div _ngcontent-ng-c1265957620="" class="package-information-links"><div _ngcontent-ng-c1265957620="" class="package-information-link"> המדינות הכלולות</div><div _ngcontent-ng-c1265957620="" class="package-information-link"> פרטי החבילה</div></div></div><!---->
+
+============================================================
+CARRIER: hotmobile
+============================================================
+Regex matches: 7
+
+--- MATCH ---
+<link href="/Content/CSS/Lobby/HM_roaming.css" rel="stylesheet">
+
+
+
+<div class="sidePanel" id="moreDetails" aria-hidden="true">
+    <div class="sidePanel_frame">
+        <div class="sidePanel_close">
+            <a role="button" aria-controls="moreDetails">
+                <i role="img" aria-hidden="true" class="icon-close">
+                </i>
+            </a>
+        </div>
+
+--- MATCH ---
+<div class="dealDetails">
+                <div class="dealDetails_box">
+                    <div class="dealDetails_drawer">
+                        <div class="dealsItem_price">
+                            <div class="dealsItem_priceAmount">
+                                <div>
+                                    <strong id="selectedPackageRate">
+                                    </strong>
+                                    <strong>
+                                        <b>₪</b>
+                                    </strong>
+                                </div>
+
+--- MATCH ---
+<div class="dealsItem_priceDetails" id="selectedDurationDesc"></div>
+
+  Selector '[id^='deal']' -> 4 elements
+  FIRST HTML:
+
+
+============================================================
+CARRIER: 019
+============================================================
+Found 3 .item_pack cards
+
+Section HTML (first 5000):
+
+                    <div class="innerpage">
+                                                <div class="list">
+                                                        <div class="item">
+                                <a href="javascript:;" class="hoverlink"></a>
+                                <div class="item_pack">
+                                    <div class="inner">
+                                        <h3 class="title"><div class="badge"><div><strong style="padding-top:0;"><span>מבצע קיץ!</span></strong></div></div><span style="font-size:0.98em;">חבילת "חוזרים תיק תק"</span></h3>
+                                        <div class="switch_cont">
+                                            <div class="one">
+                                                                                                <div class="price_gb">
+                                                    <div class="price"><span class="nis">₪</span>79</div>
+                                                    <div class="gb price">1<span class="nis">GB</span></div>
+                                                </div>
+                                                <ul class="blist">
+                                                                                                        <li>למדינות באירופה וארה"ב. <a href="javascript:;" class="open_lightbox" data-lightbox="popup_countries">לרשימה</a></li>
+                                                                                                        <li>למשך 7 ימים</li>
+                                                                                                    </ul>
+                                            </div>
+                                        </div>
+                                        <div class="btns_group">
+                                            <ul>
+                                                <li><form class="input_select" method="post" action="/טסים-לחול-הרשמה/"><input type="hidden" value="-1" name="created_by"><input type="hidden" value="10000,&lt;span style=&quot;font-size:0.98em;&quot;&gt;חבילת &quot;חוזרים תיק תק&quot;&lt;/span&gt;" name="input_country"><input type="hidden" value="80907584,309093" name="product_pack_1"><input type="hidden" name="product_info" value="1GB"><button type="submit" class="btn btn_blue" title="לרכישה">לרכישה<span class="icon_arrow_left"></span></button></form></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>                            
+                                                        <div class="item item_big">
+                                <a href="javascript:;" class="hoverlink"></a>
+                                <div class="item_pack">
+                                    <div class="inner">
+                                        <h3 class="title">מבצע "קפצתי לחו"ל"</h3>
+                                        <div class="switch_cont">
+                                            <div class="one">
+                                                                                                <div class="price_gb">
+                                                    <div class="price"><span class="nis">₪</span>160</div>
+                                                    <div class="gb price">5<span class="nis">GB</span></div>
+                                                </div>
+                                                <ul class="blist">
+                                                                                                        <li><strong>50 דק'</strong> שיחה לישראל ובחו"ל</li>
+                                                                                                        <li>למדינות באירופה וארה"ב. <a href="javascript:;" class="open_lightbox" data-lightbox="popup_countries">לרשימה</a></li>
+                                                                                                        <li>למשך 8 ימים</li>
+                                                                                                    </ul>
+                                            </div>
+                                        </div>
+                                        <div class="btns_group">
+                                            <ul>
+                                                <li><form class="input_select" method="post" action="/טסים-לחול-הרשמה/"><input type="hidden" value="-1" name="created_by"><input type="hidden" value="10000,מבצע &quot;קפצתי לחו&quot;ל&quot;" name="input_country"><input type="hidden" value="1286095,309022" name="product_pack_1"><input type="hidden" name="product_info" value="5GB ו-50 דקות שיחה"><button type="submit" class="btn btn_blue" title="לרכישה">לרכישה<span class="icon_arrow_left"></span></button></form></li>
+                                            </ul>
+             
+
+--- CARD 1 ---
+
+                                    <div class="inner">
+                                        <h3 class="title"><div class="badge"><div><strong style="padding-top:0;"><span>מבצע קיץ!</span></strong></div></div><span style="font-size:0.98em;">חבילת "חוזרים תיק תק"</span></h3>
+                                        <div class="switch_cont">
+                                            <div class="one">
+                                                                                                <div class="price_gb">
+                                                    <div class="price"><span class="nis">₪</span>79</div>
+                                                    <div class="gb price">1<span class="nis">GB</span></div>
+                                                </div>
+                                                <ul class="blist">
+                                                                                                        <li>למדינות באירופה וארה"ב. <a href="javascript:;" class="open_lightbox" data-lightbox="popup_countries">לרשימה</a></li>
+                                                                                                        <li>למשך 7 ימים</li>
+                                                                                                    </ul>
+                                            </div>
+                                        </div>
+                                        <div class="btns_group">
+                                            <ul>
+                                                <li><form class="input_select" method="post" action="/טסים-לחול-הרשמה/"><input type="hidden" value="-1" name="created_by"><input type="hidden" value="10000,&lt;span style=&quot;font-size:0.98em;&quot;&gt;חבילת &quot;חוזרים תיק תק&quot;&lt;/span&gt;" name="input_country"><input type="hidden" value="80907584,309093" name="product_pack_1"><input type="hidden" name="product_info" value="1GB"><button type="submit" class="b
+
+--- CARD 2 ---
+
+                                    <div class="inner">
+                                        <h3 class="title">מבצע "קפצתי לחו"ל"</h3>
+                                        <div class="switch_cont">
+                                            <div class="one">
+                                                                                                <div class="price_gb">
+                                                    <div class="price"><span class="nis">₪</span>160</div>
+                                                    <div class="gb price">5<span class="nis">GB</span></div>
+                                                </div>
+                                                <ul class="blist">
+                                                                                                        <li><strong>50 דק'</strong> שיחה לישראל ובחו"ל</li>
+                                                                                                        <li>למדינות באירופה וארה"ב. <a href="javascript:;" class="open_lightbox" data-lightbox="popup_countries">לרשימה</a></li>
+                                                                                                        <li>למשך 8 ימים</li>
+                                                                                                    </ul>
+                                            </div>
+                                        </div>
+                                        <div class="btns_group">
+                                            <ul>
+                                                <li><form class="input_select" method="post" action="/טסים-לחול-הרשמה/"><input type="hidden" value="-1" name="created_by"><input type="hidden" value="10000,מבצע &quot;קפצתי לחו&quot;ל&quot;" name="input_country"><input type="hidden" value="1286095,309022" name="product_pack_1"><input type="hidden" name="product_info" value="5GB ו-50 דקות שיחה"><button type="submit" class="btn btn_blue" title="לרכישה">
+
+--- CARD 3 ---
+
+                                    <div class="inner">
+                                        <h3 class="title">מבצע "לטיול יצאנו"</h3>
+                                        <div class="switch_cont">
+                                            <div class="one">
+                                                                                                <div class="price_gb">
+                                                    <div class="price"><span class="nis">₪</span>190</div>
+                                                    <div class="gb price">7<span class="nis">GB</span></div>
+                                                </div>
+                                                <ul class="blist">
+                                                                                                        <li><strong>70 דק'</strong> שיחה לישראל ובחו"ל</li>
+                                                                                                        <li>למדינות באירופה וארה"ב. <a href="javascript:;" class="open_lightbox" data-lightbox="popup_countries">לרשימה</a></li>
+                                                                                                        <li>למשך 15 ימים</li>
+                                                                                                    </ul>
+                                            </div>
+                                        </div>
+                                        <div class="btns_group">
+                                            <ul>
+                                                <li><form class="input_select" method="post" action="/טסים-לחול-הרשמה/"><input type="hidden" value="-1" name="created_by"><input type="hidden" value="10000,מבצע &quot;לטיול יצאנו&quot;" name="input_country"><input type="hidden" value="1286096,309057" name="product_pack_1"><input type="hidden" name="product_info" value="7GB ו-70 דקות שיחה"><button type="submit" class="btn btn_blue" title="לרכישה">לרכי

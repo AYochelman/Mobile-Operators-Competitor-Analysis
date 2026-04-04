@@ -689,57 +689,81 @@ def scrape_globalesim_global(page):
     return plans
 
 
-def scrape_airalo_global(page, eur_rate):
-    """Scrape Airalo global eSIM packages by navigating to the Discover Global operator page."""
-    page.goto(
-        "https://www.airalo.com/global-esim",
-        timeout=45000, wait_until="domcontentloaded"
-    )
-    page.wait_for_timeout(4000)
+def scrape_airalo_global(page, usd_rate):
+    """Scrape Airalo global eSIM packages via REST API (no Playwright needed).
+    Uses x-client-version: version2 header to get all operators (Discover + Discover+).
+    """
+    import urllib.request as _req
+    import json as _json
     plans = []
-    content = page.content()
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+            "Accept": "application/json",
+            "Referer": "https://www.airalo.com/global-esim",
+            "x-client-version": "version2",
+            "accept-language": "en",
+        }
+        request = _req.Request(
+            "https://www.airalo.com/api/v4/regions/world",
+            headers=headers
+        )
+        with _req.urlopen(request, timeout=15) as resp:
+            data = _json.loads(resp.read().decode())
 
-    # Extract packages from Nuxt payload JSON embedded in page
-    # Look for slug patterns: discover-in-{days}days-{gb}gb
-    pkg_pattern = re.compile(
-        r'"slug"\s*:\s*"(discover-in-(\d+)days-(\d+)gb[^"]*)"[^}]*?"net_price"\s*:\s*"?([\d.]+)"?',
-        re.IGNORECASE
-    )
-    seen = set()
-    for m in pkg_pattern.finditer(content):
-        slug, days_str, gb_str, price_str = m.group(1), m.group(2), m.group(3), m.group(4)
-        if slug in seen:
-            continue
-        seen.add(slug)
-        days = int(days_str)
-        gb   = float(gb_str)
-        eur  = float(price_str)
-        price_ils = round(eur * eur_rate, 2)
-        name = f"Airalo Discover {gb_str}GB {days}d"
-        plans.append(_make_global_plan(
-            "airalo", name, price_ils, "EUR", eur,
-            gb, days, extras=["100+ מדינות", "eSIM בלבד"]
-        ))
+        packages = data.get("packages", [])
+        seen = set()
+        for pkg in packages:
+            try:
+                slug = pkg.get("slug", "")
+                if slug in seen:
+                    continue
+                seen.add(slug)
 
-    # Fallback: try price patterns if slug approach found nothing
-    if not plans:
-        price_pattern = re.compile(r'"net_price"\s*:\s*"?([\d.]+)"?.*?"data"\s*:\s*(\d+).*?"validity"\s*:\s*(\d+)', re.DOTALL)
-        seen_combo = set()
-        for m in price_pattern.finditer(content):
-            price_str, gb_str, days_str = m.group(1), m.group(2), m.group(3)
-            key = (gb_str, days_str, price_str)
-            if key in seen_combo:
+                # Price: always in USD
+                price_obj = pkg.get("price", {})
+                usd = float(price_obj.get("amount", 0))
+                if usd <= 0:
+                    continue
+                price_ils = round(usd * usd_rate, 2)
+
+                # Data amount (stored in MB in 'amount' field)
+                if pkg.get("is_unlimited"):
+                    gb = None
+                else:
+                    mb = pkg.get("amount", 0)
+                    gb = round(mb / 1024, 2) if mb else None
+
+                days    = pkg.get("day")
+                minutes = pkg.get("voice")    # None for data-only plans
+                sms     = pkg.get("text")     # None for data-only plans
+
+                # Operator name: "Discover" or "Discover+"
+                operator_title = pkg.get("operator", {}).get("title", "Discover")
+
+                # Build plan name including operator to distinguish the two
+                gb_label  = f"{int(gb)}GB" if gb and gb == int(gb) else (f"{gb}GB" if gb else "ללא הגבלה")
+                day_label = f"{days}d" if days else ""
+                name = f"Airalo {operator_title} {gb_label} {day_label}".strip()
+
+                # Extras
+                operator = pkg.get("operator", {})
+                country_count = len(operator.get("countries", []))
+                extras = []
+                if country_count:
+                    extras.append(f"{country_count}+ מדינות")
+                extras.append("eSIM בלבד")
+
+                plans.append(_make_global_plan(
+                    "airalo", name, price_ils, "USD", usd,
+                    gb, days, minutes=minutes, sms=sms, esim=True,
+                    extras=extras
+                ))
+            except Exception as e:
+                logger.debug(f"Airalo package parse error: {e}")
                 continue
-            seen_combo.add(key)
-            gb, days, eur = int(gb_str), int(days_str), float(price_str)
-            if gb < 1 or gb > 100 or days < 1 or days > 400 or eur < 1:
-                continue
-            price_ils = round(eur * eur_rate, 2)
-            name = f"Airalo Discover {gb}GB {days}d"
-            plans.append(_make_global_plan(
-                "airalo", name, price_ils, "EUR", eur,
-                float(gb), days, extras=["100+ מדינות", "eSIM בלבד"]
-            ))
+    except Exception as e:
+        logger.error(f"Airalo API failed: {e}", exc_info=True)
 
     logger.info(f"Airalo global: {len(plans)} plans")
     return plans
@@ -802,21 +826,35 @@ def scrape_pelephone_globalsim(page):
 
 
 def scrape_esimo_global(page, usd_rate):
+    import json as _json
     page.goto(
         "https://esimo.io/product/global-esim-only-data",
         timeout=45000, wait_until="domcontentloaded"
     )
-    page.wait_for_timeout(3000)
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(4000)
     plans = []
     content = page.content()
 
-    # Extract from Next.js JSON payload
-    pkg_match = re.search(r'"packages"\s*:\s*(\[.*?\])', content, re.DOTALL)
-    if pkg_match:
-        import json as _json
+    # Next.js embeds data as escaped JSON inside a script tag:
+    # \"packages\":[{\"id\":\"...\",\"data\":1,\"validity\":7,\"price\":14.9,...}]
+    # The literal string in content is: \"packages\":[ (backslash + quote)
+    pkg_idx = content.find('\\"packages\\":[')
+    if pkg_idx >= 0:
+        bracket_start = content.index('[', pkg_idx)
+        depth, end = 0, bracket_start
+        for i in range(bracket_start, len(content)):
+            if content[i] == '[':
+                depth += 1
+            elif content[i] == ']':
+                depth -= 1
+                if depth == 0:
+                    end = i + 1
+                    break
+        pkg_str = content[bracket_start:end]
+        # Unescape: \" → "  and \\\\ → \\
+        pkg_str = pkg_str.replace('\\"', '"').replace('\\\\', '\\')
         try:
-            pkgs = _json.loads(pkg_match.group(1))
+            pkgs = _json.loads(pkg_str)
             for pkg in pkgs:
                 gb   = float(pkg.get("data", 0))
                 days = int(pkg.get("validity", 0))
@@ -824,25 +862,29 @@ def scrape_esimo_global(page, usd_rate):
                 if gb <= 0 or days <= 0 or usd <= 0:
                     continue
                 price_ils = round(usd * usd_rate, 2)
-                name = f"eSIMo Global {int(gb) if gb == int(gb) else gb}GB {days}d"
+                gb_label = int(gb) if gb == int(gb) else gb
+                name = f"eSIMo Global {gb_label}GB {days}d"
                 plans.append(_make_global_plan(
                     "esimo", name, price_ils, "USD", usd,
                     gb, days, extras=["גלישה בלבד", "eSIM בלבד", "100+ מדינות"]
                 ))
         except Exception as e:
-            logger.error(f"eSIMo JSON parse failed: {e}")
+            logger.error(f"eSIMo JSON parse failed: {e}", exc_info=True)
 
-    # Fallback: parse button texts
+    # Fallback: scrape visible product option buttons
     if not plans:
-        for btn in page.query_selector_all("main button.MuiButtonBase-root"):
+        for btn in page.query_selector_all("button"):
             txt = btn.inner_text().strip()
-            m = re.search(r"(\d+)\s*GB.*?(\d+)\s*(?:Days|ימים)", txt, re.IGNORECASE)
-            if m:
+            m = re.search(r"([\d.]+)\s*GB[^\d]*([\d]+)\s*(?:Days?|ימים)", txt, re.IGNORECASE)
+            p = re.search(r"\$([\d.]+)", txt)
+            if m and p:
                 gb   = float(m.group(1))
                 days = int(m.group(2))
-                # price unknown from button — skip
+                usd  = float(p.group(1))
+                price_ils = round(usd * usd_rate, 2)
+                gb_label = int(gb) if gb == int(gb) else gb
                 plans.append(_make_global_plan(
-                    "esimo", f"eSIMo Global {int(gb)}GB {days}d", None, "USD", None,
+                    "esimo", f"eSIMo Global {gb_label}GB {days}d", price_ils, "USD", usd,
                     gb, days, extras=["eSIM בלבד"]
                 ))
 
@@ -951,7 +993,7 @@ def scrape_all_global():
         jobs = [
             ("scrape_tuki_global",          lambda pg: scrape_tuki_global(pg, usd_rate)),
             ("scrape_globalesim_global",    scrape_globalesim_global),
-            ("scrape_airalo_global",        lambda pg: scrape_airalo_global(pg, eur_rate)),
+            ("scrape_airalo_global",        lambda pg: scrape_airalo_global(pg, usd_rate)),
             ("scrape_pelephone_globalsim",  scrape_pelephone_globalsim),
             ("scrape_esimo_global",         lambda pg: scrape_esimo_global(pg, usd_rate)),
             ("scrape_simtlv_global",        scrape_simtlv_global),
@@ -966,6 +1008,267 @@ def scrape_all_global():
                 logger.error(f"{name} failed: {e}", exc_info=True)
         browser.close()
     return plans
+
+
+# ── Content Services Scraper ───────────────────────────────────────────────
+
+CONTENT_SERVICES = [
+    # ── eSIM שעון ──────────────────────────────────────────────────────────
+    {"service": "eSIM שעון", "carrier": "cellcom",
+     "url": "https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/smart_watch_esim/",
+     "strategy": "cellcom_faq_esim", "free_trial": "חודש חינם"},
+    {"service": "eSIM שעון", "carrier": "partner",
+     "url": "https://www.partner.co.il/u/esim",
+     "strategy": "keyword_scan", "price_keyword": "14.90", "free_trial": "ללא תקופת חינם"},
+    {"service": "eSIM שעון", "carrier": "hotmobile",
+     "url": "https://hotmobile-sale.online/deals/esim-watch/",
+     "strategy": "keyword_scan", "price_keyword": "15.90", "free_trial": "3 חודשים ללא עלות"},
+    {"service": "eSIM שעון", "carrier": "pelephone",
+     "url": "https://www.pelephone.co.il/ds/heb/eshop/campaigns/esim-watch/",
+     "strategy": "keyword_scan", "price_keyword": "19.90", "free_trial": "חודשיים מתנה"},
+    # ── סייבר ──────────────────────────────────────────────────────────────
+    {"service": "סייבר", "carrier": "pelephone",
+     "url": "https://www.pelephone.co.il/ds/heb/content-products/pelephonecyber/",
+     "strategy": "keyword_scan", "price_keyword": "הגנת סייבר רישתית", "free_trial": "3 חודשים חינם"},
+    {"service": "סייבר", "carrier": "hotmobile",
+     "url": "https://campaign.hotmobile.co.il/cyber/",
+     "strategy": "keyword_scan", "price_keyword": None, "free_trial": "חודש ראשון חינם"},
+    {"service": "סייבר", "carrier": "partner",
+     "url": "https://www.partner.co.il/u/cyberguard",
+     "strategy": "keyword_scan", "price_keyword": "להצטרפות", "free_trial": "ללא תקופת חינם"},
+    {"service": "סייבר", "carrier": "cellcom",
+     "url": "https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/Safe_browsing/",
+     "strategy": "keyword_scan", "price_keyword": "גלישה בטוחה בנייד", "free_trial": "ללא תקופת חינם"},
+    # ── נורטון ─────────────────────────────────────────────────────────────
+    {"service": "נורטון", "carrier": "pelephone",
+     "url": "https://www.pelephone.co.il/ds/heb/content-products/pelephonecyber/",
+     "strategy": "keyword_scan", "price_keyword": "חודש ראשון חינם", "free_trial": "חודש ראשון חינם"},
+    {"service": "נורטון", "carrier": "hotmobile",
+     "url": "https://www.hotmobile.co.il/Pages/Norton.aspx",
+     "strategy": "keyword_scan", "price_keyword": "Norton", "free_trial": "50% הנחה ל-4 חודשים"},
+    {"service": "נורטון", "carrier": "partner",
+     "url": "https://www.partner.co.il/u/norton-cell",
+     "strategy": "keyword_scan", "price_keyword": "החל מ", "free_trial": "ללא תקופת חינם",
+     "note": "ל-3 רישיונות"},
+    {"service": "נורטון", "carrier": "cellcom",
+     "url": "https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/",
+     "strategy": "cellcom_hub", "page_keyword": "נורטון מובייל", "free_trial": "ללא תקופת חינם"},
+    # ── שיר בהמתנה ─────────────────────────────────────────────────────────
+    {"service": "שיר בהמתנה", "carrier": "pelephone",
+     "url": "https://www.pelephone.co.il/digitalsite/heb/content-products/songwaiting/lobby/",
+     "strategy": "keyword_scan", "price_keyword": 'ואח"כ רק', "free_trial": 'חודש ראשון חינם | הורדת שיר: ₪2.90'},
+    {"service": "שיר בהמתנה", "carrier": "hotmobile",
+     "url": None, "strategy": "not_available", "free_trial": "—"},
+    {"service": "שיר בהמתנה", "carrier": "partner",
+     "url": "https://www.partner.co.il/n/funtone/main/home",
+     "strategy": "html_scan", "price_keyword": "עלות השירות", "free_trial": 'חודש ראשון חינם | הורדת שיר: ₪5.90'},
+    {"service": "שיר בהמתנה", "carrier": "cellcom",
+     "url": "https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/",
+     "strategy": "cellcom_hub", "page_keyword": "המתנה נעימה", "free_trial": "ללא תקופת חינם"},
+    # ── תא קולי ────────────────────────────────────────────────────────────
+    {"service": "תא קולי", "carrier": "pelephone",
+     "url": "https://www.pelephone.co.il/ds/heb/support/support/voice-mail/",
+     "strategy": "keyword_scan", "price_keyword": "כמה עולה השירות?",
+     "faq_question": "כמה עולה השירות?", "free_trial": "ללא תקופת חינם"},
+    {"service": "תא קולי", "carrier": "hotmobile",
+     "url": None, "strategy": "not_available", "free_trial": "—"},
+    {"service": "תא קולי", "carrier": "partner",
+     "url": "https://www.partner.co.il/n/partnerdigital/voice_mail",
+     "strategy": "keyword_scan", "price_keyword": "תא קולי", "free_trial": "ללא תקופת חינם"},
+    {"service": "תא קולי", "carrier": "cellcom",
+     "url": "https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/",
+     "strategy": "cellcom_hub", "page_keyword": "תא קולי אישי", "free_trial": "ללא תקופת חינם"},
+]
+
+
+def _extract_content_price(text, keyword=None, lookback=50):
+    """Extract price from text near an optional keyword."""
+    search = text
+    if keyword:
+        idx = text.find(keyword)
+        if idx == -1:
+            return None
+        search = text[max(0, idx - lookback):idx + 700]
+    patterns = [
+        r'רק\s+(\d+\.?\d*)',
+        r'₪\s*(\d+\.?\d*)',
+        r'(\d+\.?\d*)\s*₪',
+        r'(\d+\.?\d*)\s*ש["\u05f4]ח',
+        r'(\d+\.?\d*)\s*שח',
+        r'החל מ-(\d+\.?\d*)',
+        r'ב-\s*(\d+\.?\d*)\s*₪',
+        r'ב-\s*(\d+\.?\d*)\s*ש',
+    ]
+    for pat in patterns:
+        m = re.search(pat, search)
+        if m:
+            val = float(m.group(1))
+            if 1 <= val <= 500:          # sanity check: ₪1–₪500
+                return f"₪{m.group(1)}"
+    return None
+
+
+def _cellcom_hub_price(page, page_keyword):
+    """Extract price from Cellcom hub page by finding product section and clicking its FAQ."""
+    try:
+        for pct in [0.2, 0.4, 0.6, 0.8, 1.0]:
+            page.evaluate(f"window.scrollTo(0, document.body.scrollHeight * {pct})")
+            page.wait_for_timeout(400)
+        page.evaluate(f"""
+            () => {{
+                const allEls = Array.from(document.querySelectorAll('*'));
+                let container = null;
+                for (const el of allEls) {{
+                    const txt = (el.innerText || '').trim();
+                    if (txt.includes('{page_keyword}') && txt.length < 200) {{
+                        container = el; break;
+                    }}
+                }}
+                if (!container) return false;
+                const section = container.closest(
+                    'section, article, div[class*="product"], div[class*="card"], div[class*="item"]'
+                ) || container.parentElement;
+                if (!section) return false;
+                const questions = section.querySelectorAll(
+                    '.FAQItemBlock__question, [class*="question"], [class*="faq"] button'
+                );
+                for (const q of questions) {{
+                    const qt = (q.innerText || '').trim();
+                    if (qt.includes('מה עלות') || qt.includes('עלות השירות')) {{
+                        q.scrollIntoView(); q.click(); return true;
+                    }}
+                }}
+                container.scrollIntoView(); container.click(); return true;
+            }}
+        """)
+        page.wait_for_timeout(2000)
+        answer = page.evaluate("""
+            () => {
+                const els = Array.from(document.querySelectorAll('.FAQItemBlock__answer, [class*="answer"]'));
+                for (const el of els) {
+                    const txt = (el.innerText || '').trim();
+                    if (txt.includes('₪')) return txt;
+                }
+                return null;
+            }
+        """)
+        if answer:
+            price = _extract_content_price(answer)
+            if price:
+                return price
+        body = page.inner_text("body")
+        return _extract_content_price(body, page_keyword, lookback=0)
+    except Exception:
+        return None
+
+
+def scrape_all_content():
+    """Scrape all content services (eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי).
+    Returns list of dicts: {service, carrier, price, free_trial, note, status}
+    """
+    from datetime import datetime as _dt
+    UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
+    results = []
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(user_agent=UA)
+
+        for entry in CONTENT_SERVICES:
+            service    = entry["service"]
+            carrier    = entry["carrier"]
+            free_trial = entry.get("free_trial", "—")
+            note       = entry.get("note", "")
+
+            def _result(price, status):
+                return {"service": service, "carrier": carrier, "price": price,
+                        "free_trial": free_trial, "note": note, "status": status}
+
+            if entry["strategy"] == "not_available":
+                results.append(_result("לא זמין", "לא זמין"))
+                logger.info(f"Content {service}/{carrier}: לא זמין")
+                continue
+
+            url = entry["url"]
+            try:
+                page.goto(url, timeout=45000)
+                try:
+                    page.wait_for_load_state("networkidle", timeout=15000)
+                except Exception:
+                    page.wait_for_load_state("domcontentloaded")
+                    page.wait_for_timeout(2000)
+
+                # ── Cellcom hub (נורטון / שיר בהמתנה / תא קולי) ──────────
+                if entry["strategy"] == "cellcom_hub":
+                    price = _cellcom_hub_price(page, entry["page_keyword"])
+                    results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא"))
+
+                # ── Cellcom FAQ (eSIM שעון) ───────────────────────────────
+                elif entry["strategy"] == "cellcom_faq_esim":
+                    for pct in [0.3, 0.6, 1.0]:
+                        page.evaluate(f"window.scrollTo(0, document.body.scrollHeight * {pct})")
+                        page.wait_for_timeout(500)
+                    page.evaluate("""
+                        () => {
+                            const qs = document.querySelectorAll('.FAQItemBlock__question');
+                            for (const q of qs) {
+                                if ((q.innerText || '').includes('מה עלות השירות')) {
+                                    q.scrollIntoView(); q.click(); return true;
+                                }
+                            }
+                        }
+                    """)
+                    page.wait_for_timeout(2500)
+                    answer = page.evaluate("""
+                        () => {
+                            const as = document.querySelectorAll('.FAQItemBlock__answer');
+                            for (const a of as) {
+                                const t = (a.innerText || '').trim();
+                                if (t.includes('₪')) return t;
+                            }
+                            return null;
+                        }
+                    """)
+                    price = _extract_content_price(answer) if answer else None
+                    results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא"))
+
+                # ── HTML scan for Angular/React SPAs (Partner Funtone) ────
+                elif entry["strategy"] == "html_scan":
+                    page.wait_for_timeout(7000)
+                    html = page.evaluate("() => document.documentElement.innerHTML")
+                    stripped = re.sub(r'<[^>]+>', ' ', html)
+                    stripped = re.sub(r'\s+', ' ', stripped)
+                    price = _extract_content_price(stripped, entry.get("price_keyword"))
+                    results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא"))
+
+                # ── keyword_scan (default) ────────────────────────────────
+                else:
+                    faq_q = entry.get("faq_question")
+                    if faq_q:
+                        page.evaluate(f"""
+                            () => {{
+                                const all = Array.from(document.querySelectorAll('*'));
+                                const q = all.find(el => {{
+                                    const t = (el.innerText || '').trim();
+                                    return t === '{faq_q}' && el.children.length === 0;
+                                }});
+                                if (q) {{ q.scrollIntoView(); q.click(); }}
+                            }}
+                        """)
+                        page.wait_for_timeout(2000)
+                    body  = page.inner_text("body")
+                    price = _extract_content_price(body, entry.get("price_keyword"))
+                    results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא"))
+
+                logger.info(f"Content {service}/{carrier}: {results[-1]['price']}")
+            except Exception as e:
+                logger.error(f"Content scrape failed {service}/{carrier}: {e}")
+                results.append(_result("שגיאה", "שגיאה"))
+
+        browser.close()
+
+    logger.info(f"scrape_all_content: {len(results)} results")
+    return results
 
 
 def scrape_all_abroad():

@@ -2,7 +2,8 @@ import json
 import os
 import logging
 from flask import Flask, jsonify, render_template, request, make_response, send_from_directory
-from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_changes, get_global_plans, get_global_changes
+from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_changes, get_global_plans, get_global_changes, \
+               get_content_plans, get_content_changes
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -217,13 +218,58 @@ def api_scrape_all_now():
         save_global_plans(new_global, db_path=_db_path())
         results["global"] = {"plans": len(new_global), "changes": len(ch_global)}
 
+        # ── Content services ──────────────────────────────────────────────
+        from db import save_content_plans, save_content_changes
+        from change_detector import detect_content_changes
+        old_content = get_content_plans(db_path=_db_path())
+        new_content = sc.scrape_all_content()
+        ch_content = detect_content_changes(old_content, new_content)
+        save_content_plans(new_content, db_path=_db_path())
+        if ch_content:
+            save_content_changes(ch_content, db_path=_db_path())
+        results["content"] = {"plans": len(new_content), "changes": len(ch_content)}
+
         results["status"] = "ok"
-        results["total_plans"] = len(new_domestic) + len(new_abroad) + len(new_global)
-        results["total_changes"] = len(ch_domestic) + len(ch_abroad) + len(ch_global)
+        results["total_plans"] = len(new_domestic) + len(new_abroad) + len(new_global) + len(new_content)
+        results["total_changes"] = len(ch_domestic) + len(ch_abroad) + len(ch_global) + len(ch_content)
         logger.info(f"scrape-all-now: {results}")
         return jsonify(results)
     except Exception as e:
         logger.error(f"scrape-all-now failed: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/content-plans")
+def api_content_plans():
+    carrier = request.args.get("carrier")
+    service = request.args.get("service")
+    plans = get_content_plans(service=service, carrier=carrier, db_path=_db_path())
+    return jsonify(plans)
+
+
+@app.route("/api/content-changes")
+def api_content_changes():
+    limit = int(request.args.get("limit", 50))
+    changes = get_content_changes(limit=limit, db_path=_db_path())
+    return jsonify(changes)
+
+
+@app.route("/api/scrape-content-now")
+def api_scrape_content_now():
+    """Manual trigger: scrape content services, detect changes, save to DB."""
+    try:
+        import scraper as sc
+        from db import save_content_plans, save_content_changes
+        from change_detector import detect_content_changes
+        old_plans = get_content_plans(db_path=_db_path())
+        new_plans = sc.scrape_all_content()
+        changes = detect_content_changes(old_plans, new_plans)
+        save_content_plans(new_plans, db_path=_db_path())
+        if changes:
+            save_content_changes(changes, db_path=_db_path())
+        return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
+    except Exception as e:
+        logger.error(f"scrape-content-now failed: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 
@@ -249,6 +295,131 @@ def api_scrape_now():
 
 
 # ── Push Notification Routes ───────────────────────────────────────────────
+
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    """AI chat over the plans data using Claude API."""
+    data = request.get_json(force=True)
+    question = (data.get("question") or "").strip()
+    if not question:
+        return jsonify({"error": "no question"}), 400
+
+    config = load_config()
+    api_key = config.get("anthropic_api_key", "")
+    if not api_key:
+        return jsonify({"error": "anthropic_api_key missing in config.json"}), 500
+
+    try:
+        import requests as _req
+        from datetime import datetime
+
+        # ── Build context from DB ──────────────────────────────────────────
+        def fmt_price(p):
+            return f"₪{p}" if p is not None else "—"
+
+        def fmt_gb(g):
+            if g is None: return "ללא הגבלה"
+            return f"{round(g*1024)}MB" if g < 1 else f"{g}GB"
+
+        lines = [
+            "אתה עוזר נתונים עבור מערכת השוואת חבילות סלולר ישראלית.",
+            "להלן הנתונים הנוכחיים מהמסד נתונים. ענה בעברית, בצורה תמציתית וברורה.",
+            f"תאריך עדכון: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            "",
+        ]
+
+        # Domestic plans
+        domestic = get_plans(db_path=_db_path())
+        if domestic:
+            lines.append("## חבילות ביתיות (ישראל)")
+            for p in domestic:
+                lines.append(
+                    f"  {p['carrier']} | {p['plan_name']} | {fmt_price(p.get('price'))} | "
+                    f"{fmt_gb(p.get('data_gb'))} | {p.get('minutes','')} דקות"
+                    + (f" | extras: {';'.join(p['extras'])}" if p.get('extras') else "")
+                )
+
+        # Abroad plans
+        abroad = get_abroad_plans(db_path=_db_path())
+        if abroad:
+            lines.append("")
+            lines.append("## חבילות חו\"ל")
+            for p in abroad:
+                lines.append(
+                    f"  {p['carrier']} | {p['plan_name']} | {fmt_price(p.get('price'))} | "
+                    f"{p.get('days','')} ימים | {fmt_gb(p.get('data_gb'))}"
+                )
+
+        # Global plans
+        global_plans = get_global_plans(db_path=_db_path())
+        if global_plans:
+            lines.append("")
+            lines.append("## חבילות גלובליות (eSIM)")
+            for p in global_plans:
+                lines.append(
+                    f"  {p['carrier']} | {p['plan_name']} | {fmt_price(p.get('price'))} | "
+                    f"{p.get('days','')} ימים | {fmt_gb(p.get('data_gb'))}"
+                )
+
+        # Content services
+        content = get_content_plans(db_path=_db_path())
+        if content:
+            lines.append("")
+            lines.append("## שירותי תוכן")
+            for p in content:
+                lines.append(
+                    f"  {p['service']} | {p['carrier']} | {p.get('price','')} | "
+                    f"ניסיון: {p.get('free_trial','')}"
+                )
+
+        # Recent changes (last 90 days)
+        all_changes = []
+        for ch in get_changes(limit=200, db_path=_db_path()):
+            all_changes.append(("ביתי", ch))
+        for ch in get_abroad_changes(limit=200, db_path=_db_path()):
+            all_changes.append(("חו\"ל", ch))
+        for ch in get_global_changes(limit=200, db_path=_db_path()):
+            all_changes.append(("גלובלי", ch))
+        for ch in get_content_changes(limit=200, db_path=_db_path()):
+            all_changes.append(("תוכן", ch))
+
+        if all_changes:
+            lines.append("")
+            lines.append("## היסטוריית שינויים (עד 200 אחרונים לכל קטגוריה)")
+            for tab, ch in all_changes:
+                carrier = ch.get("carrier", ch.get("service", ""))
+                lines.append(
+                    f"  [{tab}] {ch.get('changed_at','')[:10]} | {carrier} | "
+                    f"{ch.get('plan_name', ch.get('service',''))} | "
+                    f"{ch.get('change_type','')} | {ch.get('old_val','')} → {ch.get('new_val','')}"
+                )
+
+        context = "\n".join(lines)
+
+        # ── Call Anthropic API ─────────────────────────────────────────────
+        resp = _req.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                "model": "claude-haiku-4-5",
+                "max_tokens": 1024,
+                "system": context,
+                "messages": [{"role": "user", "content": question}],
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        answer = resp.json()["content"][0]["text"]
+        return jsonify({"answer": answer})
+
+    except Exception as e:
+        logger.error(f"chat failed: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route("/api/push/vapid-public-key")
 def api_vapid_public_key():
@@ -295,7 +466,9 @@ def api_push_test():
 if __name__ == "__main__":
     from apscheduler.schedulers.background import BackgroundScheduler
     from change_detector import detect_changes
-    from notifier import format_message, format_abroad_message, send_notification, send_whatsapp, send_email_report, send_push_notifications
+    from notifier import (format_message, format_abroad_message, format_global_message,
+                          format_content_message, send_notification, send_whatsapp,
+                          send_email_report, send_push_notifications)
     from excel_report import build_excel_report
     import scraper
 
@@ -341,11 +514,50 @@ if __name__ == "__main__":
                 save_abroad_changes(abroad_changes)
                 abroad_msg = format_abroad_message(abroad_changes)
                 ok_tg_abroad = send_notification(abroad_msg, config)
-                logger.info(f"Telegram (abroad) sent: {ok_tg_abroad}")
+                logger.info(f"Telegram (abroad) sent: {ok_tg_abroad}, changes: {len(abroad_changes)}")
             else:
                 logger.info("No abroad changes.")
 
-            logger.info(f"Done. {len(new_plans)} domestic, {len(new_abroad)} abroad plans.")
+            # ── Global eSIM ────────────────────────────────────────────────
+            from db import save_global_plans, save_global_changes
+            old_global = get_global_plans()
+            new_global = scraper.scrape_all_global()
+            existing_global_ch = get_global_changes(limit=1)
+            if not existing_global_ch:
+                seed = [{"carrier": p["carrier"], "plan_name": p["plan_name"],
+                         "change_type": "new_plan", "old_val": None, "new_val": p.get("price")}
+                        for p in new_global]
+                save_global_changes(seed)
+                global_changes = seed
+            else:
+                global_changes = detect_changes(old_global, new_global)
+                if global_changes:
+                    save_global_changes(global_changes)
+            save_global_plans(new_global)
+            if global_changes:
+                global_msg = format_global_message(global_changes)
+                ok_tg_global = send_notification(global_msg, config)
+                logger.info(f"Telegram (global) sent: {ok_tg_global}, changes: {len(global_changes)}")
+            else:
+                logger.info("No global changes.")
+
+            # ── Content services ───────────────────────────────────────────
+            from db import save_content_plans, save_content_changes
+            from change_detector import detect_content_changes
+            old_content = get_content_plans()
+            new_content = scraper.scrape_all_content()
+            content_changes = detect_content_changes(old_content, new_content)
+            save_content_plans(new_content)
+            if content_changes:
+                save_content_changes(content_changes)
+                content_msg = format_content_message(content_changes)
+                ok_tg_content = send_notification(content_msg, config)
+                logger.info(f"Telegram (content) sent: {ok_tg_content}, changes: {len(content_changes)}")
+            else:
+                logger.info("No content changes.")
+
+            logger.info(f"Done. {len(new_plans)} domestic, {len(new_abroad)} abroad, "
+                        f"{len(new_global)} global, {len(new_content)} content plans.")
         except Exception as e:
             logger.error(f"Scrape job failed: {e}", exc_info=True)
 

@@ -1,0 +1,378 @@
+
+============================================================
+CARRIER: pelephone
+URL: https://www.pelephone.co.il/digitalsite/heb/abroad/packages/
+============================================================
+Title: חבילות גלישה בחו"ל - טסים עם פלאפון לחו"ל | פלאפון
+Final URL: https://www.pelephone.co.il/digitalsite/heb/abroad/packages/
+
+BODY TEXT PREVIEW:
+לנגישות מקלדת ותמיכה בקורא מסך לחץ F10
+קפיצה לאיזור התפריט
+קפיצה לאיזור המרכזי
+קפיצה לפוטר
+קפיצה לאזור האישי
+פלאפון שלי
+חנות
+חנות אילת
+חו"ל
+מידע ותמיכה
+צור קשר
+להצטרף לפלאפון
+5G MAX
+עסקי
+לאיזור האישי
+לטוס עם פלאפון לחו"ל
+ולהישאר עם המספר שלך בכל מקום בעולם
+הזמנת חבילה
+יש לי כבר חבילה
+לאן טסים?
+אפשר לבחור יעד אחד
+באיזה תאריכים?
+יש לסמן תאריך טיסה ותאריך חזרה לארץ
+איפוס
+שירות 24/7
+ביטול חינם
+שאלות ותשובות
+חיפוש חבילה >
+המחיר המוצג מוזל בהשוואה לרכישה מנציג
+חבילת חו"ל קטנה
+4
+ימים
+₪99
+להזמנה ›
+1GB ג
+
+CARD CANDIDATES (20):
+  <DIV class='find-pack ng-scope' id='' children=8>
+    TEXT: 'לטוס עם פלאפון לחו"ל\nולהישאר עם המספר שלך בכל מקום בעולם\nהזמנת חבילה\nיש לי כבר חבילה\nלאן טסים?\nאפשר לבחור יעד אחד\nבאיזה תאריכים?\nיש לסמן תאריך טיסה ות'
+  <DIV class='calc_pack' id='' children=3>
+    TEXT: 'לאן טסים?\nאפשר לבחור יעד אחד\nבאיזה תאריכים?\nיש לסמן תאריך טיסה ותאריך חזרה לארץ\nאיפוס'
+  <BUTTON class='btn find-me-package' id='' children=2>
+    TEXT: ''
+  <A class='find-me-package-reset' id='' children=0>
+    TEXT: 'איפוס'
+  <DIV class='no-packages-results-html' id='' children=1>
+    TEXT: '\n        לא נמצאו תוצאות\n    '
+  <DIV class='packs_summer_2018' id='' children=3>
+    TEXT: 'חבילת חו"ל קטנה\n4\nימים\n₪99\nלהזמנה ›\n1GB גלישה\nתוספות במחיר קטן >\nתוספת 1GB בעלות של ₪19\nתוספת 2GB בעלות של ₪39\nתוספת 3GB בעלות של ₪49\nתוספת 100 דקות ו'
+  <DIV class='package package-id-52  ' id='' children=4>
+    TEXT: 'חבילת חו"ל קטנה\n4\nימים\n₪99\nלהזמנה ›\n1GB גלישה\nתוספות במחיר קטן >\nתוספת 1GB בעלות של ₪19\nתוספת 2GB בעלות של ₪39\nתוספת 3GB בעלות של ₪49\nתוספת 100 דקות ו'
+  <A class='btn_pack' id='' children=1>
+    TEXT: 'להזמנה ›'
+  <DIV class='package package-id-3 family ' id='' children=4>
+    TEXT: 'מושלמת\n14\nימים\n₪249\n₪269\nלהזמנה ›\n15GB גלישה\n300 דקות\n300 SMS\nגלישה חופשית באפליקציות \nמגיעה לך חבילה נוספת למשפחה וחברים החל מ- ₪49\nמידע נוסף ›\nהמדינ'
+  <DIV class='package package-id-54 family vertical-data' id='' children=4>
+    TEXT: 'שומרים על קשר\n14\nימים\n₪199\n₪219\nלהזמנה ›\n5GB גלישה\n80 דקות\n80 SMS\n\xa0\nמגיעה לך חבילה נוספת למשפחה וחברים החל מ- ₪49\nמידע נוסף ›\nהמדינות הכלולות ›'
+  <BUTTON class='btn_more_packs more_show' id='' children=0>
+    TEXT: 'לחבילות נוספות'
+  <BUTTON class='btn_more_packs search-back' id='' children=0>
+    TEXT: 'חזור'
+  <DIV class='package package-id-4 family ' id='' children=4>
+    TEXT: '\n    \n    \n        \n            חו"ל מושלמת L\n                ביטול חינם עד הטיסה\n            \n                21 ימים\n            \n             \n    '
+  <DIV class='package package-id-5 family ' id='' children=4>
+    TEXT: '\n    \n    \n        \n            חו"ל מושלמת XL\n                ביטול חינם עד הטיסה\n            \n                30 ימים\n            \n             \n   '
+  <DIV class='package package-id-6 family ' id='' children=4>
+    TEXT: '\n    \n    \n        \n            חו"ל מושלמת 45 יום\n                ביטול חינם עד הטיסה\n            \n                45 ימים\n            \n             '
+  <DIV class='package package-id-7 family ' id='' children=4>
+    TEXT: '\n    \n    \n        \n            חו"ל מושלמת 60 יום\n                ביטול חינם עד הטיסה\n            \n                60 ימים\n            \n             '
+  <DIV class='package package-id-10 family america vertical-data' id='' children=4>
+    TEXT: '\n    \n    \n        \n            ביג אמריקה לארה"ב  (כולל קנדה)\n                45 ימים\n            \n             \n                 \n                  '
+  <DIV class='package package-id-46 family vertical-data' id='' children=4>
+    TEXT: '\n    \n    \n        \n             חבילת חו"ל למצרים  (טאבה, נואיבה, דאהב, שארם א-שייח)\n                14 ימים\n            \n             \n             '
+  <DIV class='package package-id-11  ' id='' children=4>
+    TEXT: '\n    \n    \n        \n            חבילת specialגלישה ב-MB\n                14 ימים\n            \n             \n                 \n                   ₪209\n '
+  <DIV class='package package-id-12  ' id='' children=4>
+    TEXT: '\n    \n    \n        \n            חבילת special+  גלישה ב-MB\n                14 ימים\n            \n             \n                 \n                   ₪20'
+
+PRICE ELEMENTS (15):
+  <SCRIPT class=''> text='{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"כמה זה ' parent=''
+  <SPAN class=''> text='₪' parent='price'
+  <SPAN class='p'> text='₪19' parent=''
+  <SPAN class='p'> text='₪39' parent=''
+  <SPAN class='p'> text='₪49' parent=''
+  <SPAN class='p'> text='₪29' parent=''
+  <SPAN class=''> text='₪' parent='price'
+  <SPAN class=''> text='₪' parent='del_price'
+  <SPAN class='s2'> text='₪' parent='free_3'
+  <SPAN class=''> text='₪' parent='price'
+  <SPAN class=''> text='₪' parent='del_price'
+  <SPAN class='s2'> text='₪' parent='free_3'
+  <SPAN class=''> text='₪' parent='price'
+  <SPAN class=''> text='₪' parent='del_price'
+  <SPAN class='s2'> text='₪' parent='free_3'
+
+============================================================
+CARRIER: cellcom
+URL: https://cellcom.co.il/AbroadMain/lobby/
+============================================================
+Title: סלקום חו"ל - מבחר חבילות סלולר לחו"ל - גלישה ושיחות בחו"ל :: סלקום
+Final URL: https://cellcom.co.il/AbroadMain/lobby/
+
+BODY TEXT PREVIEW:
+עבור לסרגל הכלים של הנגישות
+פרטיעסקידרושים
+מרכזי שירות
+סלולר
+חנות
+אינטרנט וסיבים
+סלקום tv+
+סלקום חו"ל
+חשמל
+שירות ותמיכה
+החלפה ל-eSIM
+אזור אישי
+טסים עם סלקום חו"ל
+ונשארים עם המספר שלכם בכל מקום
+חיפוש חבילה
+אזור אישי
+מנוי עסקי
+לאן טסים?
+אפשר לבחור עד חמישה יעדים
+באיזה תאריכים?
+מתאריך ההמראה ועד תאריך הנחיתה
+תמצאו לי חבילה
+חבילות חו"ל המשתלמות שלנו
+המושלמת לחו"ל
+חבילה ל-30 ימים
+20
+GB
+שיחות
+100 דקות
+הודעות סמס
+100 הודעות
+כולל שיחות מקומיות
+249₪
+לרכישה
+מדינות כלולות>
+חשוב לדעת>
+מגיעה לך חבילת גלישה 5
+
+CARD CANDIDATES (20):
+  <DIV class='packages-wrapper' id='' children=2>
+    TEXT: 'חבילות חו"ל המשתלמות שלנו\nהמושלמת לחו"ל\nחבילה ל-30 ימים\n20\nGB\nשיחות\n100\xa0דקות\nהודעות סמס\n100\xa0הודעות\nכולל שיחות מקומיות\n249₪\nלרכישה\nמדינות כלולות>\nחשוב '
+  <DIV class='packages-holder' id='' children=1>
+    TEXT: 'המושלמת לחו"ל\nחבילה ל-30 ימים\n20\nGB\nשיחות\n100\xa0דקות\nהודעות סמס\n100\xa0הודעות\nכולל שיחות מקומיות\n249₪\nלרכישה\nמדינות כלולות>\nחשוב לדעת>\nמגיעה לך חבילת גלישה'
+  <DIV class='abroad-package-client__container' id='' children=2>
+    TEXT: 'המושלמת לחו"ל\nחבילה ל-30 ימים\n20\nGB\nשיחות\n100\xa0דקות\nהודעות סמס\n100\xa0הודעות\nכולל שיחות מקומיות\n249₪\nלרכישה\nמדינות כלולות>\nחשוב לדעת>\nמגיעה לך חבילת גלישה'
+  <DIV class='abroad-package-client abroad-package-client__family-shadow ' id='' children=2>
+    TEXT: 'המושלמת לחו"ל\nחבילה ל-30 ימים\n20\nGB\nשיחות\n100\xa0דקות\nהודעות סמס\n100\xa0הודעות\nכולל שיחות מקומיות\n249₪\nלרכישה\nמדינות כלולות>\nחשוב לדעת>'
+  <DIV class='abroad-package-client__start-card' id='' children=5>
+    TEXT: 'המושלמת לחו"ל\nחבילה ל-30 ימים\n20\nGB\nשיחות\n100\xa0דקות\nהודעות סמס\n100\xa0הודעות'
+  <DIV class='abroad-package-client__title' id='' children=0>
+    TEXT: 'המושלמת לחו"ל'
+  <DIV class='abroad-package-client__separator' id='' children=0>
+    TEXT: ''
+  <DIV class='abroad-package-client__duration' id='' children=0>
+    TEXT: 'חבילה ל-30 ימים'
+  <DIV class='abroad-package-client__data--bank VoiceSmsData' id='' children=1>
+    TEXT: '20\nGB'
+  <SPAN class='abroad-package-data-unit' id='' children=0>
+    TEXT: 'GB'
+  <DIV class='abroad-package-client__details--bank-regular VoiceSmsData' id='' children=2>
+    TEXT: 'שיחות\n100\xa0דקות\nהודעות סמס\n100\xa0הודעות'
+  <DIV class='abroad-package-client__details--bank-regular-content' id='' children=1>
+    TEXT: 'שיחות\n100\xa0דקות'
+  <DIV class='abroad-package-voice-sms' id='' children=2>
+    TEXT: 'שיחות\n100\xa0דקות'
+  <DIV class='abroad-package-voice-sms__type' id='' children=0>
+    TEXT: 'שיחות'
+  <DIV class='abroad-package-voice-sms__value' id='' children=3>
+    TEXT: '100\xa0דקות'
+  <SPAN class='abroad-package-voice-sms--space' id='' children=0>
+    TEXT: '\xa0'
+  <DIV class='abroad-package-client__end-card' id='' children=2>
+    TEXT: 'כולל שיחות מקומיות\n249₪\nלרכישה\nמדינות כלולות>\nחשוב לדעת>'
+  <DIV class='abroad-package-client__financial-details--bank' id='' children=2>
+    TEXT: 'כולל שיחות מקומיות\n249₪\nלרכישה'
+  <DIV class='abroad-package-client__financial-details--bank--price  ' id='' children=3>
+    TEXT: 'כולל שיחות מקומיות\n249₪'
+  <DIV class='abroad-package-client__financial-details--bank--price__label' id='' children=1>
+    TEXT: 'כולל שיחות מקומיות'
+
+PRICE ELEMENTS (6):
+  <SPAN class='abroad-package-client__price-real--bank--container__shekel-s'> text='₪' parent='abroad-package-client__price-real--bank--container'
+  <DIV class='abroad-package-client__text-under-package__text'> text='מגיעה לך חבילת גלישה 5GB נוספת לבני משפחה ב – 49 ₪ בלבד' parent='abroad-package-client__text-under-package false'
+  <SPAN class='abroad-package-client__price-real--bank--container__shekel-s'> text='₪' parent='abroad-package-client__price-real--bank--container'
+  <DIV class='abroad-package-client__text-under-package__text'> text='מגיעה לך חבילת גלישה 5GB נוספת לבני משפחה ב – 49 ₪ בלבד' parent='abroad-package-client__text-under-package false'
+  <SPAN class='abroad-package-client__price-real--bank--container__shekel-s'> text='₪' parent='abroad-package-client__price-real--bank--container'
+  <P class=''> text='חלק מהחבילות שלנו כוללות הטבה מיוחדת לבני המשפחה: חבילת גלישה בנפח 5GB עם גלישה חופשית באפליקציות נב' parent='FAQItemBlock__answer__inner'
+
+============================================================
+CARRIER: partner
+URL: https://www.partner.co.il/n/roamingcellular/lobby
+============================================================
+Title: פרטנר חו"ל - מבחר חבילות גלישה ושיחות לחו"ל - Partner
+Final URL: https://www.partner.co.il/n/roamingcellular/lobby
+
+BODY TEXT PREVIEW:
+שִׂים לֵב: בְּאֲתָר זֶה מֻפְעֶלֶת מַעֲרֶכֶת נָגִישׁ בִּקְלִיק הַמְּסַיַּעַת לִנְגִישׁוּת הָאֲתָר. לְחַץ Control-F11 לְהַתְאָמַת הָאֲתָר לְעִוְורִים הַמִּשְׁתַּמְּשִׁים בְּתוֹכְנַת קוֹרֵא־מָסָךְ; לְחַץ Control-F10 לִפְתִיחַת תַּפְרִיט נְגִישׁוּת.
+לְחַץ אֶנְטֵר לְהַתְאָמַת הָאֲתָר לְעִוְורִים
+הַמִּשְׁתַּמְּשִׁים בְּתוֹכְנַת קוֹרֵא־מָסָךְ.
+לְחַץ אֶנְטֵר לְנִוּוּט מִקְלֶדֶת
+לְחַץ אֶנְטֵר לִפְּתִיחַת תַּפְרִיט נְגִישׁוּת.
+
+לידיעתך, אנו משתמשים באתר זה בעוגיות (Cookies) בכדי לספק לך חווית גלישה טובה י
+
+CARD CANDIDATES (20):
+  <DIV class='search-and-packages-wrapper ng-star-inserted' id='' children=2>
+    TEXT: 'לאן טסים?\nמתי טסים?\nחפשו לי חבילה\nחבילות חו"ל הפופולריות שלנו\nחופשה משפחתית\n50GB\n₪319₪299\nמחיר מיוחד לאתר\n300 דקות\n300 הודעות\nבתוקף ל-30 ימים\nללקוחות '
+  <SPAN class='icon-plane ng-star-inserted' id='' children=0>
+    TEXT: ''
+  <BUTTON class='brand-btn btn-style-1 search-packages-btn' id='' children=0>
+    TEXT: 'חפשו לי חבילה'
+  <DIV class='roaming-packages-wrapper' id='' children=3>
+    TEXT: 'חבילות חו"ל הפופולריות שלנו\nחופשה משפחתית\n50GB\n₪319₪299\nמחיר מיוחד לאתר\n300 דקות\n300 הודעות\nבתוקף ל-30 ימים\nללקוחות בעלי 2-10 מנויים\nחבילה משותפת 50GB'
+  <DIV class='packages-title-wrapper' id='' children=1>
+    TEXT: 'חבילות חו"ל הפופולריות שלנו'
+  <H2 class='packages-title ng-star-inserted' id='' children=0>
+    TEXT: 'חבילות חו"ל הפופולריות שלנו'
+  <DIV class='packages small-width' id='' children=4>
+    TEXT: 'חופשה משפחתית\n50GB\n₪319₪299\nמחיר מיוחד לאתר\n300 דקות\n300 הודעות\nבתוקף ל-30 ימים\nללקוחות בעלי 2-10 מנויים\nחבילה משותפת 50GB לכל המשפחה\nאני רוצה את החבי'
+  <DIV class='package-wrapper' id='' children=4>
+    TEXT: 'חופשה משפחתית\n50GB\n₪319₪299\nמחיר מיוחד לאתר\n300 דקות\n300 הודעות\nבתוקף ל-30 ימים\nללקוחות בעלי 2-10 מנויים\nחבילה משותפת 50GB לכל המשפחה\nאני רוצה את החבי'
+  <DIV class='package-title' id='' children=2>
+    TEXT: 'חופשה משפחתית\n50GB\n₪319₪299'
+  <H3 class='package-name' id='' children=0>
+    TEXT: 'חופשה משפחתית'
+  <DIV class='package-price-and-size' id='' children=3>
+    TEXT: '50GB\n₪319₪299'
+  <DIV class='package-size ng-star-inserted' id='' children=0>
+    TEXT: '50GB'
+  <DIV class='package-price' id='' children=3>
+    TEXT: '₪319₪299'
+  <DIV class='package-flag ng-star-inserted' id='' children=0>
+    TEXT: 'מחיר מיוחד לאתר'
+  <DIV class='package-content' id='' children=2>
+    TEXT: '300 דקות\n300 הודעות\nבתוקף ל-30 ימים\nללקוחות בעלי 2-10 מנויים\nחבילה משותפת 50GB לכל המשפחה'
+  <UL class='package-description-list' id='' children=4>
+    TEXT: '300 דקות\n300 הודעות\nבתוקף ל-30 ימים\nללקוחות בעלי 2-10 מנויים'
+  <DIV class='package-marketing-text-wrapper' id='' children=3>
+    TEXT: 'חבילה משותפת 50GB לכל המשפחה'
+  <DIV class='package-footer' id='' children=2>
+    TEXT: 'אני רוצה את החבילה\nהמדינות הכלולות\nפרטי החבילה'
+  <DIV class='choose-package-btn-wrapper' id='' children=1>
+    TEXT: 'אני רוצה את החבילה'
+  <BUTTON class='brand-btn btn-style-2 choose-package-btn ng-star-inserted' id='' children=0>
+    TEXT: 'אני רוצה את החבילה'
+
+PRICE ELEMENTS (7):
+  <SPAN class='deleted-price ng-star-inserted'> text='₪319' parent='package-price'
+  <SPAN class='currency'> text='₪' parent='package-price'
+  <SPAN class='deleted-price ng-star-inserted'> text='₪289' parent='package-price'
+  <SPAN class='currency'> text='₪' parent='package-price'
+  <SPAN class='deleted-price ng-star-inserted'> text='₪269' parent='package-price'
+  <SPAN class='currency'> text='₪' parent='package-price'
+  <SPAN class='currency'> text='₪' parent='package-price'
+
+============================================================
+CARRIER: hotmobile
+URL: https://www.hotmobile.co.il/roaming
+============================================================
+Title: הוט מובייל - חבילות סלולר וגלישה בחו"ל – HOT mobile
+Final URL: https://www.hotmobile.co.il/roaming
+
+BODY TEXT PREVIEW:
+דלג לאיזור תוכן מרכזי
+דלג לאיזור תפריט ראשי
+דלג לאיזור תפריט תחתון
+דלג לתוכן
+כניסה לאזור האישי
+כניסת משתמש עסקי
+הפעלת SIM/eSIM
+הצטרפות
+סלולר
+שירות ותמיכה
+חנות
+חו"ל
+HOTmobile עסקים
+משרות ב -HOTmobile
+חבילות HOT mobile לחו"ל
+מחוברים תמיד, עם אותו מספר, בכל יעד!
+
+
+שירות 24/7 מכל העולם
+
+
+מחיר מיוחד למזמינים באתר
+
+
+ביטול ושינוי תאריך בחינם
+יש לי כבר חבילת גלישה
+בחרו את החבילה המשתלמת לחו"ל שמתאימה לכם:
+לאן טסים?
+מתי טסים?
+חפש
+Perfect Fly 1GB - חבילה יומית
+1GB
+גלישה
+ליום
+0.99 ₪
+לדקת שיחה
+0.99
+להודעת S
+
+CARD CANDIDATES (0):
+
+PRICE ELEMENTS (15):
+  <B class=''> text='₪' parent=''
+  <P class=''> text='בסיום הזמנת החבילה\xa0תוכלו להזמין חבילת\xa0חו"ל נוספת ב-0 ₪ עבור משפחה שטסים אתכם, כך שכולם ממשיכים לגלוש' parent='dealDetails_family'
+  <B class=''> text='₪' parent=''
+  <B class=''> text='₪' parent=''
+  <B class=''> text='₪' parent=''
+  <B class=''> text='₪' parent=''
+  <B class=''> text='₪' parent=''
+  <B class=''> text='₪' parent=''
+  <B class=''> text='₪' parent=''
+  <B class=''> text='₪' parent=''
+  <B class=''> text='₪' parent=''
+  <B class=''> text='₪' parent=''
+  <B class=''> text='₪' parent=''
+  <B class=''> text='₪' parent=''
+  <B class=''> text='0.99 ₪' parent=''
+
+============================================================
+CARRIER: 019
+URL: https://019mobile.co.il/גלישה-בחול-חבילה-לחול-חבילות-אינטרנט/
+============================================================
+Title: טסים לחו"ל רק עם 019 מובייל ונהנים מחבילות סלולר לחו"ל הכי אטרקטיביות
+Final URL: https://019mobile.co.il/%D7%92%D7%9C%D7%99%D7%A9%D7%94-%D7%91%D7%97%D7%95%D7%9C-%D7%97%D7%91%D7%99%D7%9C%D7%94-%D7%9C%D7%97%D7%95%D7%9C-%D7%97%D7%91%D7%99%D7%9C%D7%95%D7%AA-%D7%90%D7%99%D7%A0%D7%98%D7%A8%D7%A0%D7%98/
+
+BODY TEXT PREVIEW:
+נגישות
+נגישות
+דלג לתפריט הראשי (מקש קיצור n)
+דלג לתוכן הדף (מקש קיצור s)
+דלג לתחתית הדף (מקש קיצור 2)
+סיבים אופטים
+שיחות לחו"ל
+חבילות סלולר
+טסים לחו"ל
+אזור אישי
+צור קשר
+*019 :חייגו
+קבלת SIM בנתב"ג / ע"י שליח תשלום מראש למניעת חיובי יתר המחירים הזולים ביותר לחו"ל שיחות נכנסות חינם* פתוח ללקוחות כל החברות
+*כולל סינון שיחות חינם
+מבצע קיץ!
+חבילת "חוזרים תיק תק"
+₪79 1GB
+למדינות באירופה וארה"ב. לרשימה
+למשך 7 ימים
+לרכישה
+מבצע "קפצתי לחו"ל"
+₪160 5GB
+50 דק' שיחה לישראל ובחו"ל
+למדינות באירופה וארה"ב. לרשי
+
+CARD CANDIDATES (3):
+  <SECTION class='deals_pack_flying deals_pack' id='deals_pack' children=1>
+    TEXT: 'מבצע קיץ!\nחבילת "חוזרים תיק תק"\n₪79 1GB\nלמדינות באירופה וארה"ב. לרשימה\nלמשך 7 ימים\nלרכישה\nמבצע "קפצתי לחו"ל"\n₪160 5GB\n50 דק\' שיחה לישראל ובחו"ל\nלמדינו'
+  <DIV class='item_pack' id='' children=1>
+    TEXT: 'מבצע קיץ!\nחבילת "חוזרים תיק תק"\n₪79 1GB\nלמדינות באירופה וארה"ב. לרשימה\nלמשך 7 ימים\nלרכישה'
+  <INPUT class='input_pack_ref' id='' children=0>
+    TEXT: ''
+
+PRICE ELEMENTS (3):
+  <SPAN class='nis'> text='₪' parent='price'
+  <SPAN class='nis'> text='₪' parent='price'
+  <SPAN class='nis'> text='₪' parent='price'

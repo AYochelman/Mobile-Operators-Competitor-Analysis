@@ -1,0 +1,243 @@
+=== PARTNER DEEP INSPECTION ===
+
+Partner - Classes appearing 3-10 times (excluding ng/mat/cdk):
+  .link: 10
+  .menu-item: 8
+  .tab-link: 8
+  .editing: 8
+  .brand-btn: 7
+  .btn-style-2: 7
+  .arrow-link: 7
+  .tab-content: 7
+  .element-text: 7
+  .text: 6
+  .closeLightboxButton: 6
+  .join-box: 5
+  .join-box-image: 5
+  .plan-wrapper: 5
+  .plan-banner: 5
+  .plan-right-side: 5
+  .size: 5
+  .plan-left-side: 5
+  .price: 5
+  .plan-advantages: 5
+  .btn-plan-modal: 5
+  .bottom-part: 5
+  .plan-link: 5
+  .link-image: 5
+  .links-group: 4
+  .hide-mobile: 4
+  .element-shape: 4
+  .element-image: 4
+  .__ADORIC__9: 3
+  .link-item: 3
+  .sub-title: 3
+  .text-color-dark-white: 3
+  .text-color-blue: 3
+  .text-color-white: 3
+  .text-brand-color: 3
+  .marketing-message: 3
+  .single-item: 3
+
+Partner - Elements containing GB + price:
+  <DIV class='plan-banner' id='' data=[]>
+    Children: 2, TextLen: 25
+    Sample: '800\nGB\n59.9 ₪ לחודש\nלמנוי'
+
+  <DIV class='plan-banner' id='' data=[]>
+    Children: 2, TextLen: 26
+    Sample: '1000\nGB\n69.9 ₪ לחודש\nלמנוי'
+
+  <DIV class='plan-banner' id='' data=[]>
+    Children: 2, TextLen: 26
+    Sample: '1500\nGB\n69.9 ₪ לחודש\nלמנוי'
+
+  <DIV class='plan-banner' id='' data=[]>
+    Children: 2, TextLen: 39
+    Sample: '500\nGB\n39.9 ₪ לחודש\nלמנוי למשך 3 חודשים'
+
+  <DIV class='plan-banner' id='' data=[]>
+    Children: 2, TextLen: 46
+    Sample: '400\nGB\n34.9 ₪ לחודש\nלמנוי בצרוף 2 מנויים ומעלה'
+
+  <DIV class='plan-wrapper ng-star-inserted' id='' data=[]>
+    Children: 4, TextLen: 181
+    Sample: 'Partner King 5G\n800\nGB\n59.9 ₪ לחודש\nלמנוי\n\n6,000 דקות ו-6,000 הודעות SMS\n\n500 דקות שיחה לחו"ל ל-42 יעדים נבחרים\n\nשירות Funtone ו-CyberGuard כלול בתכנית\n\nלהצטרפות אונליין\nתנאי התכנית'
+
+  <DIV class='plan-wrapper ng-star-inserted' id='' data=[]>
+    Children: 4, TextLen: 185
+    Sample: 'Partner Prince\n400\nGB\n34.9 ₪ לחודש\nלמנוי בצרוף 2 מנויים ומעלה\n\n3,500 דקות ו-3,500 הודעות SMS\n\n200 דקות שיחה לחו"ל ל-42 יעדים נבחרים\n\nמנוי יחיד 39.9 ₪ לחודש\n\nלהצטרפות אונליין\nתנאי התכנית'
+
+  <DIV class='plan-wrapper ng-star-inserted' id='' data=[]>
+    Children: 4, TextLen: 185
+    Sample: 'Partner Queen 5G\n500\nGB\n39.9 ₪ לחודש\nלמנוי למשך 3 חודשים\n\n5,000 דקות ו-5,000 הודעות SMS\n\n400 דקות שיחה לחו"ל ל-42 יעדים נבחרים\n\n49.9 לחודש למנוי מהחודש ה-4\n\nלהצטרפות אונליין\nתנאי התכנית'
+
+  <DIV class='plan-wrapper ng-star-inserted' id='' data=[]>
+    Children: 5, TextLen: 277
+    Sample: 'תכנית חברתית\nPartner Ace 5G\n1000\nGB\n69.9 ₪ לחודש\nלמנוי\n\n6,000 דקות ו-6,000 הודעות SMS\n\n600 דקות שיחה לחו"ל ל-42 יעדים נבחרים\n\nשירות Funtone, eSIM watch, CyberGuard, ללא עלות\n\n10% מההכנסות נתרמות לעמות'
+
+  <DIV class='plan-wrapper ng-star-inserted' id='' data=[]>
+    Children: 5, TextLen: 285
+    Sample: 'תיעדוף ברשת דור 5 במצבי עומס\nPartner Boost 5G NEW\n1500\nGB\n69.9 ₪ לחודש\nלמנוי\n\nחיבור מיידי בטכנולוגיית eSIM\n\n7,000 דקות ו-7,000 הודעות SMS\n\n600 דקות שיחה לחו"ל ל-42 יעדים נבחרים\n\nCyberGuard, eSIM Watch'
+
+  <DIV class='wraps-plans-elements' id='' data=[]>
+    Children: 5, TextLen: 1117
+    Sample: 'Partner Prince\n400\nGB\n34.9 ₪ לחודש\nלמנוי בצרוף 2 מנויים ומעלה\n\n3,500 דקות ו-3,500 הודעות SMS\n\n200 דקות שיחה לחו"ל ל-42 יעדים נבחרים\n\nמנוי יחיד 39.9 ₪ לחודש\n\nלהצטרפות אונליין\nתנאי התכנית\nPartner Queen '
+
+  <DIV class='wraps-plans ng-star-inserted' id='' data=[]>
+    Children: 2, TextLen: 1198
+    Sample: 'בחרו את חבילות הסלולר המתאימות עבורכם\nמצטרפים בקלות ובמהירות\nחיבור מיידי עם eSIM\nPartner Prince\n400\nGB\n34.9 ₪ לחודש\nלמנוי בצרוף 2 מנויים ומעלה\n\n3,500 דקות ו-3,500 הודעות SMS\n\n200 דקות שיחה לחו"ל ל-42 '
+
+  <DIV class='wraps-without-img' id='' data=[]>
+    Children: 3, TextLen: 1198
+    Sample: 'בחרו את חבילות הסלולר המתאימות עבורכם\nמצטרפים בקלות ובמהירות\nחיבור מיידי עם eSIM\nPartner Prince\n400\nGB\n34.9 ₪ לחודש\nלמנוי בצרוף 2 מנויים ומעלה\n\n3,500 דקות ו-3,500 הודעות SMS\n\n200 דקות שיחה לחו"ל ל-42 '
+
+  <DIV class='wraps-lobby' id='' data=[]>
+    Children: 6, TextLen: 8703
+    Sample: 'רשת הסלולר\nהמועדפת והמתקדמת\nביותר בישראל\n\nPrivate 5G\nמעבר מסלול\nהחלפת SIM ו-eSIM\nחבילות חו"ל\nשירותים ואפליקציות\nבחרו את חבילות הסלולר המתאימות עבורכם\nמצטרפים בקלות ובמהירות\nחיבור מיידי עם eSIM\nPartner'
+
+  <DIV class='app' id='' data=[]>
+    Children: 3, TextLen: 10211
+    Sample: 'לידיעתך, אנו משתמשים באתר זה בעוגיות (Cookies) בכדי לספק לך חווית גלישה טובה יותר, וכן למטרות תפעול, סטטיסטיקה ושיווק. למידע נוסף ולמדיניות הפרטיות המעודכנת לחץ כאן.\n\nסגירה\nפרטי\nעסקי\nחנות\nסגירה\nכניסה '
+
+
+Partner - data-testid elements (0):
+
+
+=== CELLCOM INVESTIGATION ===
+
+
+Trying Cellcom URL: https://cellcom.co.il/production/Private/Cellular/
+  Title: חבילות סלולר - חבילות משתלמות כולל גלישה, 5G, חו"ל ועוד :: סלקום
+  Text sample: עבור לסרגל הכלים של הנגישות
+פרטיעסקידרושים
+מרכזי שירות
+סלולר
+חנות
+אינטרנט וסיבים
+סלקום tv+
+סלקום חו"ל
+חשמל
+שירות ותמיכה
+החלפה ל-eSIM
+אזור אישי
+
+סלקום במקום הראשון!
+
+רשת הסלולר הטובה בישראל
+לשנת 2025! 
+
+שדרגו ל – 5G Pro
+
+חבילות חו"ל
+
+החלפה ל-eSIM
+
+שינוי חבילה
+
+מכשירים ואביזרים
+
+חבילות הסלולר שלנו
+חבילות סלולר
+חבילות חו"ל
+חבילות SIM DATA
+
+4G Basic 
+500GB
+
+3500 דק' /SMS
+150 דק' מהארץ לחו"ל
+₪44.9
+לחודש
+להצטרפות
+למידע נוסף 
+
+5G 
+800GB
+
+5000 דק' /SMS
+500 דק' מהארץ לחו"ל
+גלישה חופשית באפליקציות נבחרות
+
+  Final URL: https://cellcom.co.il/production/Private/Cellular/
+  Classes: [{'cls': 'header-feature', 'count': 12}, {'cls': 'text', 'count': 12}, {'cls': 'wrapper-img', 'count': 10}, {'cls': 'UpgradeItemBlock', 'count': 9}, {'cls': 'UpgradeItemBlock__title-and-image', 'count': 9}, {'cls': 'UpgradeItemBlock__title-and-image__title', 'count': 9}, {'cls': 'UpgradeItemBlock__description', 'count': 9}, {'cls': 'UpgradeItemBlock__price-and-button', 'count': 9}, {'cls': 'UpgradeItemBlock__price-and-button__button', 'count': 9}, {'cls': 'action-button', 'count': 9}]
+
+Trying Cellcom URL: https://www.cellcom.co.il/
+  Title: סלקום | אינטרנט ביתי מהיר, סיבים, חבילות סלולר, eSIM ,TV :: סלקום
+  Text sample: עבור לסרגל הכלים של הנגישות
+פרטיעסקידרושים
+מרכזי שירות
+סלולר
+חנות
+אינטרנט וסיבים
+סלקום tv+
+סלקום חו"ל
+חשמל
+שירות ותמיכה
+החלפה ל-eSIM
+אזור אישי
+פעולות נפוצות בשירות עצמי
+החלפת SIM ל- eSIM
+קניית חבילת חו"ל
+החשבונית שלי
+עדכון אמצעי תשלום
+סטטוס תקלת אינטרנט אזורית
+טיפול בתקלת אינטרנט סיבים
+תשלום חוב
+לכל הפעולות
+הסיב הכי מהיר בישראל – עכשיו אצלך בבית
+אינטרנט סיבים
+סלולר
+חו"ל
+TV
+חשמל
+אינטרנט גם לממ"ד
+
+Fiber 1Gb
+
+אינטרנט הסיבים המהיר בישראל
+נקודת רשת לממ"ד כלולה
+מהירות הורדה עד 1Gb
+מהירות העלאה עד 100M
+  Final URL: https://cellcom.co.il/
+  Classes: [{'cls': 'header-feature', 'count': 12}, {'cls': 'text', 'count': 12}, {'cls': 'item', 'count': 11}, {'cls': 'icon', 'count': 11}, {'cls': 'item-text', 'count': 11}, {'cls': 'swiper-item', 'count': 9}, {'cls': 'nav-item', 'count': 8}, {'cls': 'false', 'count': 8}, {'cls': 'nav-head-link-wrapper', 'count': 8}, {'cls': 'nav-item-regular', 'count': 8}]
+
+Trying Cellcom URL: https://cellcom.co.il/
+  Title: סלקום | אינטרנט ביתי מהיר, סיבים, חבילות סלולר, eSIM ,TV :: סלקום
+  Text sample: עבור לסרגל הכלים של הנגישות
+פרטיעסקידרושים
+מרכזי שירות
+סלולר
+חנות
+אינטרנט וסיבים
+סלקום tv+
+סלקום חו"ל
+חשמל
+שירות ותמיכה
+החלפה ל-eSIM
+אזור אישי
+פעולות נפוצות בשירות עצמי
+החלפת SIM ל- eSIM
+קניית חבילת חו"ל
+החשבונית שלי
+עדכון אמצעי תשלום
+סטטוס תקלת אינטרנט אזורית
+טיפול בתקלת אינטרנט סיבים
+תשלום חוב
+לכל הפעולות
+הסיב הכי מהיר בישראל – עכשיו אצלך בבית
+אינטרנט סיבים
+סלולר
+חו"ל
+TV
+חשמל
+אינטרנט גם לממ"ד
+
+Fiber 1Gb
+
+אינטרנט הסיבים המהיר בישראל
+נקודת רשת לממ"ד כלולה
+מהירות הורדה עד 1Gb
+מהירות העלאה עד 100M
+  Final URL: https://cellcom.co.il/
+  Classes: [{'cls': 'header-feature', 'count': 12}, {'cls': 'text', 'count': 12}, {'cls': 'item', 'count': 11}, {'cls': 'icon', 'count': 11}, {'cls': 'item-text', 'count': 11}, {'cls': 'swiper-item', 'count': 9}, {'cls': 'nav-item', 'count': 8}, {'cls': 'false', 'count': 8}, {'cls': 'nav-head-link-wrapper', 'count': 8}, {'cls': 'nav-item-regular', 'count': 8}]

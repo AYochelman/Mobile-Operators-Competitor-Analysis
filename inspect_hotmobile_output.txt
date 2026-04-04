@@ -1,0 +1,152 @@
+=== HOT MOBILE PRICE/STRUCTURE INSPECTION ===
+HOT Mobile - .package-wrap.js-plan-filter cards (4):
+
+--- Card[0] inner: 'container plan51010763' ---
+  Full text: 'SIM ללא עלות\n5G ULTRA ∙ 2500GB ∙ Plus Protect 2025\n2,500GB\n\nגלישה סלולרית בארץ\n\n7,000\n\nדקות שיחה/SMS בארץ\n\nשירות HOT mobile Cyber\nהטבת 500 דקות שיחה לחו"ל ל-27 יעדים נבחרים\nנתיב מהיר לגלישה עוצמתית במהירות שיא\nגלישה חופשית באפליקציות נבחרות\n₪69.9\nלחו'
+  Feature names: ['2,500GB', '7,000']
+  current-price text: '₪69.9'
+  current-price HTML: <div class="current-price">
+                <span class="symbol">₪</span>69.9
+            </div>
+  price-box HTML: <div class="price-box">
+        <div class="price">
+            <div></div>
+            <div class="current-price">
+                <span class="symbol">₪</span>69.9
+            </div>
+
+            <div class="old-price">
+            </div>
+        </div>
+
+        <div class="price-description">לחוד
+  Leaf structure:
+    DIV.bottom-badge: 'SIM ללא עלות'
+    H1.name: '5G ULTRA ∙ 2500GB ∙ Plus Protect 2025'
+    DIV.feature-name: '2,500GB'
+    P.feature-description: 'גלישה סלולרית בארץ'
+    DIV.apps-title: 'גלישה חופשית באפליקציות נבחרות'
+    SPAN.symbol: '₪'
+    DIV.price-description: 'לחודש'
+    SPAN.selectPlanBtn: 'מתאים לי!'
+    SPAN.next: 'המשך'
+    BUTTON.btn-link more-details: 'לפרטי החבילה המלאים'
+
+--- Card[1] inner: 'container plan51010760' ---
+  Full text: 'SIM ללא עלות\n5G ULTRA ∙ Plus FLY 10GB\n3,000GB\n\nגלישה סלולרית בארץ\n\n10,000\n\nדקות שיחה/SMS בארץ\n\n10GB\n\nגלישה סלולרית בחו"ל\n\n10GB גלישה סלולרית בחו"ל + 100 דקות שיחה וסמס כלולים ליעדים נבחרים\nשירות HOT mobile Cyber\nהטבת 500 דקות שיחה לחו"ל ל-27 יעדים נב'
+  Feature names: ['3,000GB', '10,000', '10GB']
+  current-price text: '₪109.9'
+  current-price HTML: <div class="current-price">
+                <span class="symbol">₪</span>109.9
+            </div>
+  price-box HTML: <div class="price-box">
+        <div class="price">
+            <div></div>
+            <div class="current-price">
+                <span class="symbol">₪</span>109.9
+            </div>
+
+            <div class="old-price">
+            </div>
+        </div>
+
+        <div class="price-description">לחו
+  Leaf structure:
+    DIV.bottom-badge: 'SIM ללא עלות'
+    H1.name: '5G ULTRA ∙ Plus FLY 10GB'
+    DIV.feature-name: '3,000GB'
+    P.feature-description: 'גלישה סלולרית בארץ'
+    DIV.apps-title: 'גלישה חופשית באפליקציות נבחרות'
+    SPAN.symbol: '₪'
+    DIV.price-description: 'לחודש'
+    SPAN.selectPlanBtn: 'מתאים לי!'
+    SPAN.next: 'המשך'
+    BUTTON.btn-link more-details: 'לפרטי החבילה המלאים'
+
+--- Card[2] inner: 'container plan51010781' ---
+  Full text: 'SIM ללא עלות\n5G ULTRA ∙ Premium\n3,000GB\n\nגלישה סלולרית בארץ\n\n10,000\n\nדקות שיחה/SMS בארץ\n\nשירות HOT mobile Cyber\nהטבת 500 דקות שיחה לחו"ל ל-27 יעדים נבחרים\nנתיב מהיר לגלישה עוצמתית במהירות שיא\nגלישה חופשית באפליקציות נבחרות\n₪79.9\nלחודש\nמתאים לי! לפרטי'
+  Feature names: ['3,000GB', '10,000']
+  current-price text: '₪79.9'
+  current-price HTML: <div class="current-price">
+                <span class="symbol">₪</span>79.9
+            </div>
+  price-box HTML: <div class="price-box">
+        <div class="price">
+            <div></div>
+            <div class="current-price">
+                <span class="symbol">₪</span>79.9
+            </div>
+
+            <div class="old-price">
+            </div>
+        </div>
+
+        <div class="price-description">לחוד
+  Leaf structure:
+    DIV.bottom-badge: 'SIM ללא עלות'
+    H1.name: '5G ULTRA ∙ Premium'
+    DIV.feature-name: '3,000GB'
+    P.feature-description: 'גלישה סלולרית בארץ'
+    DIV.apps-title: 'גלישה חופשית באפליקציות נבחרות'
+    SPAN.symbol: '₪'
+    DIV.price-description: 'לחודש'
+    SPAN.selectPlanBtn: 'מתאים לי!'
+    SPAN.next: 'המשך'
+    BUTTON.btn-link more-details: 'לפרטי החבילה המלאים'
+
+--- Card[3] inner: 'container plan51011007' ---
+  Full text: '\n                \n\n            SIM ללא עלות\n    5G GEN 2000GB 2026\n    \n                \n                        \n                            6,000\n                        דקות שיחה/SMS בארץ\n                \n                    \n                \n    '
+  Feature names: ['6,000', '2,000GB']
+  current-price text: '\n                ₪59.9\n            '
+  current-price HTML: <div class="current-price">
+                <span class="symbol">₪</span>59.9
+            </div>
+  price-box HTML: <div class="price-box">
+        <div class="price">
+            <div></div>
+            <div class="current-price">
+                <span class="symbol">₪</span>59.9
+            </div>
+
+            <div class="old-price">
+            </div>
+        </div>
+
+        <div class="price-description">לחוד
+  Leaf structure:
+    DIV.bottom-badge: 'SIM ללא עלות'
+    H1.name: '5G GEN 2000GB 2026'
+    DIV.feature-name: '6,000'
+    P.feature-description: 'דקות שיחה/SMS בארץ'
+    DIV.apps-title: 'גלישה חופשית באפליקציות נבחרות'
+    SPAN.symbol: '₪'
+    DIV.price-description: 'לחודש'
+    SPAN.selectPlanBtn: 'מתאים לי!'
+    SPAN.next: 'המשך'
+    BUTTON.btn-link more-details: 'לפרטי החבילה המלאים'
+
+
+=== 019MOBILE PRICE STRUCTURE ===
+
+019mobile - price structure:
+
+--- item[0] ---
+  name: 'BIG DATA'
+  priceText: '₪39.90'
+  priceHTML: <div class="price"><span class="nis">₪</span>39.<span class="small">90</span></div>
+  gbTexts: ['300GB', 'מחיר קבוע לכל החיים']
+  blistItems: ['300GB גלישה', "5000 דק' שיחה + 5000 הודעות", 'מחיר קבוע לכל החיים']
+
+--- item[1] ---
+  name: 'לכל החיים'
+  priceText: '₪19.80'
+  priceHTML: <div class="price"><span class="nis">₪</span>19.<span class="small">80</span></div>
+  gbTexts: ['12GB', 'מחיר קבוע לכל החיים']
+  blistItems: ['12GB גלישה', "5000 דק' שיחה + 5000 הודעות", 'מחיר קבוע לכל החיים']
+
+--- item[2] ---
+  name: 'בול בפוני!'
+  priceText: '₪21.90'
+  priceHTML: <div class="price"><span class="nis">₪</span>21.<span class="small">90</span></div>
+  gbTexts: ['30GB', 'מחיר קבוע לכל החיים']
+  blistItems: ['30GB גלישה', "5000 דק' + 5000 הודעות", 'מחיר קבוע לכל החיים']

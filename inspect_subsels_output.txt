@@ -1,0 +1,274 @@
+=== CELLCOM CARD STRUCTURE ===
+Cellcom - Found 5 UpgradeItemBlock cards
+
+--- Card 0 ---
+Full text: 'נורטון מוביילפתרון ההגנה המושלם לנייד. מגן ומתריע מפני מתקפות סייבר, חוסם אתרים זדוניים, גניבת זהות ועוד12.90 ₪ לחודשלהצטרפות'
+Structure:
+  .UpgradeItemBlock__title-and-image: 'נורטון מובייל'
+  .UpgradeItemBlock__title-and-image__title: 'נורטון מובייל'
+  .UpgradeItemBlock__description: 'פתרון ההגנה המושלם לנייד. מגן ומתריע מפני מתקפות סייבר, חוסם אתרים זדוניים, גניב'
+  .UpgradeItemBlock__price-and-button: '12.90 ₪ לחודשלהצטרפות'
+  .UpgradeItemBlock__price-and-button__price-and-date: '12.90 ₪ לחודש'
+  .UpgradeItemBlock__price-and-button__price-and-date__items: '12.90 ₪ לחודש'
+  .UpgradeItemBlock__price-and-button__price-and-date__items__price: '12.90 ₪'
+  .UpgradeItemBlock__price-and-button__price-and-date__items__date: 'לחודש'
+  .UpgradeItemBlock__price-and-button__button: 'להצטרפות'
+
+--- Card 1 ---
+Full text: 'סלקום FIXשירות תיקונים למכשירים סלולריים, במסגרתו תיהנו מתיקונים במעבדות סלקום19.90 ₪ לחודשלהצטרפות'
+Structure:
+  .UpgradeItemBlock__title-and-image: 'סלקום FIX'
+  .UpgradeItemBlock__title-and-image__title: 'סלקום FIX'
+  .UpgradeItemBlock__description: 'שירות תיקונים למכשירים סלולריים, במסגרתו תיהנו מתיקונים במעבדות סלקום'
+  .UpgradeItemBlock__price-and-button: '19.90 ₪ לחודשלהצטרפות'
+  .UpgradeItemBlock__price-and-button__price-and-date: '19.90 ₪ לחודש'
+  .UpgradeItemBlock__price-and-button__price-and-date__items: '19.90 ₪ לחודש'
+  .UpgradeItemBlock__price-and-button__price-and-date__items__price: '19.90 ₪'
+  .UpgradeItemBlock__price-and-button__price-and-date__items__date: 'לחודש'
+  .UpgradeItemBlock__price-and-button__button: 'להצטרפות'
+
+--- Card 2 ---
+Full text: 'סלקום eSIMעוברים לסים דיגיטלי המוטמע במכשיר. פשוט, נוח ומיידי – מצטרפים, מקבלים QR, סורקים ומתחילים לדברלפרטים'
+Structure:
+  .UpgradeItemBlock__title-and-image: 'סלקום eSIM'
+  .UpgradeItemBlock__title-and-image__title: 'סלקום eSIM'
+  .UpgradeItemBlock__description: 'עוברים לסים דיגיטלי המוטמע במכשיר. פשוט, נוח ומיידי – מצטרפים, מקבלים QR, סורקים'
+  .UpgradeItemBlock__price-and-button: 'לפרטים'
+  .UpgradeItemBlock__price-and-button__button: 'לפרטים'
+
+--- Card 3 ---
+Full text: 'נורטון מוביילפתרון ההגנה המושלם לנייד. מגן ומתריע מפני מתקפות סייבר, חוסם אתרים זדוניים, גניבת זהות ועוד12.90 ₪ לחודשלהצטרפות'
+Structure:
+  .UpgradeItemBlock__title-and-image: 'נורטון מובייל'
+  .UpgradeItemBlock__title-and-image__title: 'נורטון מובייל'
+  .UpgradeItemBlock__description: 'פתרון ההגנה המושלם לנייד. מגן ומתריע מפני מתקפות סייבר, חוסם אתרים זדוניים, גניב'
+  .UpgradeItemBlock__price-and-button: '12.90 ₪ לחודשלהצטרפות'
+  .UpgradeItemBlock__price-and-button__price-and-date: '12.90 ₪ לחודש'
+  .UpgradeItemBlock__price-and-button__price-and-date__items: '12.90 ₪ לחודש'
+  .UpgradeItemBlock__price-and-button__price-and-date__items__price: '12.90 ₪'
+  .UpgradeItemBlock__price-and-button__price-and-date__items__date: 'לחודש'
+  .UpgradeItemBlock__price-and-button__button: 'להצטרפות'
+
+--- Card 4 ---
+Full text: 'סלקום FIXשירות תיקונים למכשירים סלולריים, במסגרתו תיהנו מתיקונים במעבדות סלקום19.90 ₪ לחודשלהצטרפות'
+Structure:
+  .UpgradeItemBlock__title-and-image: 'סלקום FIX'
+  .UpgradeItemBlock__title-and-image__title: 'סלקום FIX'
+  .UpgradeItemBlock__description: 'שירות תיקונים למכשירים סלולריים, במסגרתו תיהנו מתיקונים במעבדות סלקום'
+  .UpgradeItemBlock__price-and-button: '19.90 ₪ לחודשלהצטרפות'
+  .UpgradeItemBlock__price-and-button__price-and-date: '19.90 ₪ לחודש'
+  .UpgradeItemBlock__price-and-button__price-and-date__items: '19.90 ₪ לחודש'
+  .UpgradeItemBlock__price-and-button__price-and-date__items__price: '19.90 ₪'
+  .UpgradeItemBlock__price-and-button__price-and-date__items__date: 'לחודש'
+  .UpgradeItemBlock__price-and-button__button: 'להצטרפות'
+
+
+=== PELEPHONE CARD STRUCTURE ===
+
+Pelephone - [class*='package'] elements: 2
+
+--- package[0] class='general-cellularpackages' children=1 ---
+Text: 'חבילות ללקוחות חדשים\nולהוספת מנוי חדש ללקוח פלאפון\nמסלול 5G\n1000\nGB\n39.90\n₪\nלחודש\nלחודשיים הראשונים\nמתקדמים ל 5G ›\nגלישה חופשית באפליקציות נבחרות\nגלישה חופשית באפליקציות AI נבחרות\n5000 דקות ו- SMS\n₪120 לרכישת אביזרים בפלאפון\nמועדון הטבות 5G\nמסלול חו"ל \u200bTravel\nהחל מהחודש השלישי - ₪49.90 לחודש למנוי\nל'
+Leaf structure:
+  .superlative: '5G Max VIP Global NEW'
+  .only_gb: '3000 GB'
+  .a1: '3000'
+  .a2: 'GB'
+  .c: '129'
+  .d: '₪'
+  .e: 'לחודש'
+  .monthly: 'לחודשיים הראשונים'
+  .btn: 'מתקדמים ל- 5G MAX ›'
+  .reg_price: 'החל מהחודש השלישי - ₪49.90 לחודש למנוי'
+  ."right": 'להחלפת מסלול למנוי פלאפון >'
+  .left: 'מידע נוסף >'
+
+--- package[1] class='cellular-packages' children=1 ---
+Text: 'חבילות ללקוחות חדשים\nולהוספת מנוי חדש ללקוח פלאפון\nמסלול 5G\n1000\nGB\n39.90\n₪\nלחודש\nלחודשיים הראשונים\nמתקדמים ל 5G ›\nגלישה חופשית באפליקציות נבחרות\nגלישה חופשית באפליקציות AI נבחרות\n5000 דקות ו- SMS\n₪120 לרכישת אביזרים בפלאפון\nמועדון הטבות 5G\nמסלול חו"ל \u200bTravel\nהחל מהחודש השלישי - ₪49.90 לחודש למנוי\nל'
+Leaf structure:
+  .superlative: '5G Max VIP Global NEW'
+  .only_gb: '3000 GB'
+  .a1: '3000'
+  .a2: 'GB'
+  .c: '129'
+  .d: '₪'
+  .e: 'לחודש'
+  .monthly: 'לחודשיים הראשונים'
+  .btn: 'מתקדמים ל- 5G MAX ›'
+  .reg_price: 'החל מהחודש השלישי - ₪49.90 לחודש למנוי'
+  ."right": 'להחלפת מסלול למנוי פלאפון >'
+  .left: 'מידע נוסף >'
+
+Pelephone - whiteHeaderBf/pratiBF/iskiBF:
+  .pratiBF: children=1
+    text: ''
+  .iskiBF: children=1
+    text: ''
+  .whiteHeaderBf: children=27
+    text: 'לנגישות מקלדת ותמיכה בקורא מסך לחץ F10\nקפיצה לאיזור התפריט\nקפיצה לאיזור המרכזי\nקפיצה לפוטר\nקפיצה לאזור האישי\nפלאפון שלי\nחנות\nחנות אילת\nחו"ל\nמידע ותמיכה\nצור קשר\nלהצטרף לפלאפון\n5G MAX\nעסקי\nלאיזור האישי\n'
+
+Pelephone - top_blue elements (5):
+  [0] text='1000\nGB\n39.90\n₪\nלחודש\nלחודשיים הראשונים\nמתקדמים ל 5G ›'
+    parent: .item item1 | grandparent: .border_5 (children: 1)
+    parent text: 'מסלול 5G\n1000\nGB\n39.90\n₪\nלחודש\nלחודשיים הראשונים\nמתקדמים ל 5G ›\nגלישה חופשית באפליקציות נבחרות\nגלישה חופשית באפליקציות AI נבחרות\n5000 דקות ו- SMS\n₪120'
+  [1] text='400\nGB\n39.90\n₪\nלחודש למנוי\nמתקדמים לפלאפון ›'
+    parent: .item item2 | grandparent: .border_5 (children: 1)
+    parent text: 'משתלמת דור 4\n400\nGB\n39.90\n₪\nלחודש למנוי\nמתקדמים לפלאפון ›\nחיבור מיידי עם eSIM\n3500 דקות ו- SMS\nמסלול חו"ל \u200bTravel\nלהחלפת מסלול למנוי פלאפון >\nלמידע נו'
+  [2] text='2000\nGB\n49.90\n₪\nלחודש\nלחודשיים הראשונים\nמתקדמים ל- 5G MAX ›'
+    parent: .item item3 | grandparent: .border_5 (children: 1)
+    parent text: '5G Max VIP All NEW\n2000\nGB\n49.90\n₪\nלחודש\nלחודשיים הראשונים\nמתקדמים ל- 5G MAX ›\nגלישה חופשית באפליקציות נבחרות\nגלישה חופשית באפליקציות AI נבחרות\n5000 ד'
+  [3] text='\n                                3000 GB\n                                \n      '
+    parent: .item item4 | grandparent: .border_5 (children: 1)
+    parent text: '\n                           \n                                5G Max VIP Plus TOP \n                                \n                                   '
+  [4] text='\n                                3000 GB\n                                \n      '
+    parent: .item item5 | grandparent: .border_5 (children: 1)
+    parent text: '\n                           \n                                5G Max VIP Global NEW \n                                \n                                 '
+
+
+=== 019MOBILE CARD STRUCTURE ===
+
+019mobile - .item elements: 10
+
+--- item[0] class='item' children=2 ---
+Text: "BIG DATA\n₪39.90\n300GB גלישה\n5000 דק' שיחה + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר\nשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות.\nהגלישה ברשת דור 5 ת"
+Leaf structure:
+  .nis: '₪'
+  .small: '90'
+
+--- item[1] class='item' children=2 ---
+Text: "לכל החיים\n₪19.80\n12GB גלישה\n5000 דק' שיחה + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר\nבשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות, אפשרות לסינון וחסי"
+Leaf structure:
+  .nis: '₪'
+  .small: '80'
+  .white: 'כ'
+
+--- item[2] class='item' children=2 ---
+Text: "בול בפוני!\n₪21.90\n30GB גלישה\n5000 דק' + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר\nבשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות, אפשרות לסינון וחסימת א"
+Leaf structure:
+  .nis: '₪'
+  .small: '90'
+  .white: 'כ'
+
+--- item[3] class='item' children=2 ---
+Text: 'הגזמנו\n₪25.90\n170GB גלישה בדור 5\n5000 דק + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר\nבשימוש אישי וסביר בכפוף לתקנון.\nהגלישה ברשת דור 5 תתאפשר במכשיר סלולרי התומך בדור 5, וכפו'
+Leaf structure:
+  .nis: '₪'
+  .small: '90'
+  .white: 'i'
+
+--- item[4] class='item' children=2 ---
+Text: 'WE  IT\n₪29.90\n100GB גלישה\n5000 דק\' + 5000 הודעות\n100 דקות שיחה למבחר מדינות בחו"ל\nמחיר קבוע לשלוש שנים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר\nבשימוש אישי וסביר בכפוף לתקנון. 100 דק\' שיחה למבחר מדינות לטל'
+Leaf structure:
+  .nis: '₪'
+  .small: '90'
+  .white: 'כ'
+
+--- item[5] class='item' children=2 ---
+Text: 'BIG TIME\n₪31.80\n200GB גלישה\n5000 דק\' + 5000 הודעות\n200 דקות שיחה למבחר מדינות בחו"ל\nמחיר קבוע לשלוש שנים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר\nבשימוש אישי וסביר בכפוף לתקנון. 200 דק\' שיחה למבחר מדינות ל'
+Leaf structure:
+  .nis: '₪'
+  .small: '80'
+  .white: 'כ'
+
+--- item[6] class='item' children=2 ---
+Text: 'חבילת עשר\n₪10\n100 דק שיחה\n100 הודעות SMS\n100MB גלישה\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר\nבשימוש אישי וסביר בכפוף לתקנון.\nעלות כרטיס ₪10i SIM כ, eSIM ללא עלות, אפשרות לסינון וחסימת '
+Leaf structure:
+  .nis: '₪'
+  .white: 'כ'
+
+--- item[7] class='item' children=2 ---
+Text: 'SIM Data\n₪12\n2GB גלישה\nמתאים לרכב ול IOT\nאפשרות לip קבוע בתוספת 15 ש"ח\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר\nבשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות, אפש'
+Leaf structure:
+  .nis: '₪'
+  .white: 'כ'
+
+--- item[8] class='item item_hor' children=2 ---
+Text: 'חבילת נטפרי S\n₪25.00\n10GB גלישה\nמסונן ומאושר ע"י ועד הרבנים\nללא עליית מחיר\nלהצטרפות\nבאמצעות נציג\nלהצטרפות\nבאתר\nהתחברות למוצר זה מותנה בתקנון נטפרי ובתשלום עלות לחברת נטפרי .\nהשירות הינו ללקוחות פרטיים'
+Leaf structure:
+  .nis: '₪'
+  .small: '00'
+  .white: 'i'
+
+--- item[9] class='item item_hor' children=2 ---
+Text: 'חבילת נטפרי M\n₪42.00\n40GB גלישה\nמסונן ומאושר ע"י ועד הרבנים\nללא עליית מחיר\nלהצטרפות\nבאמצעות נציג\nלהצטרפות\nבאתר\nהתחברות למוצר זה מותנה בתקנון נטפרי ובתשלום עלות לחברת נטפרי .\nהשירות הינו ללקוחות פרטיים'
+Leaf structure:
+  .nis: '₪'
+  .small: '00'
+  .white: 'i'
+
+
+=== HOT MOBILE CARD STRUCTURE ===
+
+HOT mobile - plan elements:
+
+--- class='plans' children=4 ---
+Text: 'מבצעים חמים 5G DATA ONLY\nSIM ללא עלות\n5G ULTRA ∙ 2500GB ∙ Plus Protect 2025\n2,500GB\n\nגלישה סלולרית בארץ\n\n7,000\n\nדקות שיחה/SMS בארץ\n\nשירות HOT mobile Cyber\nהטבת 500 דקות שיחה לחו"ל ל-27 יעדים נבחרים\nנתיב מהיר לגלישה עוצמתית במהירות שיא\nגלישה חופשית באפליקציות נבחרות\n₪69.9\nלחודש\nמתאים לי! לפרטי החבילה'
+Leaf structure:
+  .js-filters packages-filter-buttons: 'DATA ONLY'
+  .bottom-badge: 'SIM ללא עלות'
+  .name: '150GB ∙ Data only'
+  .feature-name: '150GB'
+  .feature-description: 'גלישה כל חודש'
+  .apps-title: 'גלישה חופשית באפליקציות נבחרות'
+  .symbol: '₪'
+  .price-description: 'לחודש'
+  .selectPlanBtn: 'מתאים לי!'
+  .next: 'המשך'
+  .btn-link more-details: 'לפרטי החבילה המלאים'
+  .load-more-btn btn-lg: 'סגור'
+
+--- class='package-wrap js-plan-filter' children=1 ---
+Text: 'SIM ללא עלות\n5G ULTRA ∙ 2500GB ∙ Plus Protect 2025\n2,500GB\n\nגלישה סלולרית בארץ\n\n7,000\n\nדקות שיחה/SMS בארץ\n\nשירות HOT mobile Cyber\nהטבת 500 דקות שיחה לחו"ל ל-27 יעדים נבחרים\nנתיב מהיר לגלישה עוצמתית במהירות שיא\nגלישה חופשית באפליקציות נבחרות\n₪69.9\nלחודש\nמתאים לי! לפרטי החבילה המלאים'
+Leaf structure:
+  .bottom-badge: 'SIM ללא עלות'
+  .name: '5G ULTRA ∙ 2500GB ∙ Plus Protect 2025'
+  .feature-name: '7,000'
+  .feature-description: 'דקות שיחה/SMS בארץ'
+  .apps-title: 'גלישה חופשית באפליקציות נבחרות'
+  .symbol: '₪'
+  .price-description: 'לחודש'
+  .selectPlanBtn: 'מתאים לי!'
+  .next: 'המשך'
+  .btn-link more-details: 'לפרטי החבילה המלאים'
+
+--- class='container plan51010763' children=9 ---
+Text: 'SIM ללא עלות\n5G ULTRA ∙ 2500GB ∙ Plus Protect 2025\n2,500GB\n\nגלישה סלולרית בארץ\n\n7,000\n\nדקות שיחה/SMS בארץ\n\nשירות HOT mobile Cyber\nהטבת 500 דקות שיחה לחו"ל ל-27 יעדים נבחרים\nנתיב מהיר לגלישה עוצמתית במהירות שיא\nגלישה חופשית באפליקציות נבחרות\n₪69.9\nלחודש\nמתאים לי! לפרטי החבילה המלאים'
+Leaf structure:
+  .bottom-badge: 'SIM ללא עלות'
+  .name: '5G ULTRA ∙ 2500GB ∙ Plus Protect 2025'
+  .feature-name: '7,000'
+  .feature-description: 'דקות שיחה/SMS בארץ'
+  .apps-title: 'גלישה חופשית באפליקציות נבחרות'
+  .symbol: '₪'
+  .price-description: 'לחודש'
+  .selectPlanBtn: 'מתאים לי!'
+  .next: 'המשך'
+  .btn-link more-details: 'לפרטי החבילה המלאים'
+
+--- class='container plan51010760' children=9 ---
+Text: 'SIM ללא עלות\n5G ULTRA ∙ Plus FLY 10GB\n3,000GB\n\nגלישה סלולרית בארץ\n\n10,000\n\nדקות שיחה/SMS בארץ\n\n10GB\n\nגלישה סלולרית בחו"ל\n\n10GB גלישה סלולרית בחו"ל + 100 דקות שיחה וסמס כלולים ליעדים נבחרים\nשירות HOT mobile Cyber\nהטבת 500 דקות שיחה לחו"ל ל-27 יעדים נבחרים\nגלישה חופשית באפליקציות נבחרות\n₪109.9\nלחודש\nמ'
+Leaf structure:
+  .bottom-badge: 'SIM ללא עלות'
+  .name: '5G ULTRA ∙ Plus FLY 10GB'
+  .feature-name: '10GB'
+  .feature-description: 'גלישה סלולרית בחו"ל'
+  .apps-title: 'גלישה חופשית באפליקציות נבחרות'
+  .symbol: '₪'
+  .price-description: 'לחודש'
+  .selectPlanBtn: 'מתאים לי!'
+  .next: 'המשך'
+  .btn-link more-details: 'לפרטי החבילה המלאים'
+
+--- class='container plan51010781' children=9 ---
+Text: 'SIM ללא עלות\n5G ULTRA ∙ Premium\n3,000GB\n\nגלישה סלולרית בארץ\n\n10,000\n\nדקות שיחה/SMS בארץ\n\nשירות HOT mobile Cyber\nהטבת 500 דקות שיחה לחו"ל ל-27 יעדים נבחרים\nנתיב מהיר לגלישה עוצמתית במהירות שיא\nגלישה חופשית באפליקציות נבחרות\n₪79.9\nלחודש\nמתאים לי! לפרטי החבילה המלאים'
+Leaf structure:
+  .bottom-badge: 'SIM ללא עלות'
+  .name: '5G ULTRA ∙ Premium'
+  .feature-name: '10,000'
+  .feature-description: 'דקות שיחה/SMS בארץ'
+  .apps-title: 'גלישה חופשית באפליקציות נבחרות'
+  .symbol: '₪'
+  .price-description: 'לחודש'
+  .selectPlanBtn: 'מתאים לי!'
+  .next: 'המשך'
+  .btn-link more-details: 'לפרטי החבילה המלאים'

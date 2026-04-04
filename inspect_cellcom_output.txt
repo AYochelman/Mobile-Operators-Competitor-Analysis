@@ -1,0 +1,339 @@
+Cellcom - Elements with GB + price (sorted by text length):
+
+  <DIV class='device-item item3' id='' data=[data-node-item="675"]>
+    children=3, textLen=33
+    text: 'iPhone 17\n256GB\n3,689₪\nיבואן רשמי'
+
+  <DIV class='device-details-wrapper' id='' data=[data-node-item="676"]>
+    children=4, textLen=33
+    text: 'iPhone 17\n256GB\n3,689₪\nיבואן רשמי'
+
+  <DIV class='device-item item2' id='' data=[data-node-item="664"]>
+    children=3, textLen=37
+    text: 'iPhone 17 Pro\n256GB\n5,039₪\nיבואן רשמי'
+
+  <DIV class='device-details-wrapper' id='' data=[data-node-item="665"]>
+    children=4, textLen=37
+    text: 'iPhone 17 Pro\n256GB\n5,039₪\nיבואן רשמי'
+
+  <DIV class='device-item item1 big-item' id='' data=[data-node-item="653"]>
+    children=3, textLen=40
+    text: 'יבואן רשמי\nGalaxy S26 Ultra\n512GB\n4,549₪'
+
+  <DIV class='device-details-wrapper' id='' data=[data-node-item="654"]>
+    children=4, textLen=40
+    text: 'יבואן רשמי\nGalaxy S26 Ultra\n512GB\n4,549₪'
+
+  <DIV class='package' id='SOC_A973' data=[data-infrastructures="", data-saletype="cellular", data-node-item="347"]>
+    children=2, textLen=83
+    text: '4G Basic \n500GB\n\n3500 דק\' /SMS\n150 דק\' מהארץ לחו"ל\n₪44.9\nלחודש\nלהצטרפות\nלמידע נוסף '
+
+  <DIV class='package' id='SOC_AAGM' data=[data-infrastructures="", data-saletype="cellular", data-node-item="404"]>
+    children=2, textLen=152
+    text: '5G \n800GB\n\n5000 דק\' /SMS\n500 דק\' מהארץ לחו"ל\nגלישה חופשית באפליקציות נבחרות\n₪39.9\nלחודש,\nלחודשיים הראשונים\n\nולאחר מכן 59.9 ₪ לחודש\n\nלהצטרפות\nלמידע נוסף '
+
+  <DIV class='package' id='SOC_A979' data=[data-infrastructures="", data-saletype="cellular", data-node-item="472"]>
+    children=3, textLen=173
+    text: 'כולל שירות תיקונים\n\n5G Pro Care \n1500GB\n\nנתיב מהיר ברשת\n5000 דק\' /SMS\n500 דק\' מהארץ לחו"ל\nשירות תיקונים מורחב\nגלישה חופשית באפליקציות נבחרות\n₪69.9\nלחודש\nלהצטרפות\nלמידע נוסף '
+
+  <DIV class='devices-wrapper' id='' data=[data-node-item="652"]>
+    children=5, textLen=180
+    text: 'יבואן רשמי\nGalaxy S26 Ultra\n512GB\n4,549₪\niPhone 17 Pro\n256GB\n5,039₪\nיבואן רשמי\niPhone 17\n256GB\n3,689₪\nיבואן רשמי\nAirPods Pro 3\n944₪\nיבואן רשמי\nApple Watch Ultra 3\n2,999₪\nיבואן רשמי'
+
+  <DIV class='devices-and-accessories' id='' data=[data-node-item="650"]>
+    children=3, textLen=210
+    text: 'מכשירים ואביזרים\nיבואן רשמי\nGalaxy S26 Ultra\n512GB\n4,549₪\niPhone 17 Pro\n256GB\n5,039₪\nיבואן רשמי\niPhone 17\n256GB\n3,689₪\nיבואן רשמי\nAirPods Pro 3\n944₪\nיבואן רשמי\nApple Watch Ultra 3\n2,999₪\nיבואן רשמי\nלכל המכשירים'
+
+  <DIV class='swiper-container swiper-container-initialized swiper-container-horizontal swiper-container-pointer-events swiper-container-rtl swiper-item' id='' data=[data-node-item="340"]>
+    children=3, textLen=411
+    text: '4G Basic \n500GB\n\n3500 דק\' /SMS\n150 דק\' מהארץ לחו"ל\n₪44.9\nלחודש\nלהצטרפות\nלמידע נוסף \n\n5G \n800GB\n\n5000 דק\' /SMS\n500 דק\' מהארץ לחו"ל\nגלישה חופשית באפליקציות נבחרות\n₪39.9\nלחודש,\nלחודשיים הראשונים\n\nולאחר מכן 59.9 ₪ לחודש\n\nלהצטרפות\nלמידע נוסף \nכולל שירות תיקונים\n\n5G Pro Care \n1500GB\n\nנתיב מהיר ברשת\n5000 ד'
+
+  <DIV class='swiper-wrapper' id='' data=[data-node-item="343"]>
+    children=3, textLen=411
+    text: '4G Basic \n500GB\n\n3500 דק\' /SMS\n150 דק\' מהארץ לחו"ל\n₪44.9\nלחודש\nלהצטרפות\nלמידע נוסף \n\n5G \n800GB\n\n5000 דק\' /SMS\n500 דק\' מהארץ לחו"ל\nגלישה חופשית באפליקציות נבחרות\n₪39.9\nלחודש,\nלחודשיים הראשונים\n\nולאחר מכן 59.9 ₪ לחודש\n\nלהצטרפות\nלמידע נוסף \nכולל שירות תיקונים\n\n5G Pro Care \n1500GB\n\nנתיב מהיר ברשת\n5000 ד'
+
+  <DIV class='sale-package-wrapper' id='' data=[data-node-item="324"]>
+    children=4, textLen=484
+    text: 'חבילות הסלולר שלנו\nחבילות סלולר\nחבילות חו"ל\nחבילות SIM DATA\n\n4G Basic \n500GB\n\n3500 דק\' /SMS\n150 דק\' מהארץ לחו"ל\n₪44.9\nלחודש\nלהצטרפות\nלמידע נוסף \n\n5G \n800GB\n\n5000 דק\' /SMS\n500 דק\' מהארץ לחו"ל\nגלישה חופשית באפליקציות נבחרות\n₪39.9\nלחודש,\nלחודשיים הראשונים\n\nולאחר מכן 59.9 ₪ לחודש\n\nלהצטרפות\nלמידע נוסף \nכ'
+
+
+All top classes:
+  swiper-slide:25
+  uni-toolbar-image:17
+  boxed-button:16
+  tab-button:16
+  feature-text:16
+  uni-clearfix:15
+  ss-button:15
+  ss-option-text:15
+  ss-content:13
+  ss-content-by-lang-right:13
+  header-feature:12
+  text:12
+  wrapper-img:10
+  UpgradeItemBlock:9
+  UpgradeItemBlock__title-and-image:9
+  UpgradeItemBlock__title-and-image__title:9
+  UpgradeItemBlock__description:9
+  UpgradeItemBlock__price-and-button:9
+  UpgradeItemBlock__price-and-button__button:9
+  action-button:9
+  button-title:9
+  nav-item:8
+  nav-head-link-wrapper:8
+  nav-item-regular:8
+  block:8
+  col-12:8
+  nav-item-arrow:7
+  down:7
+  false:7
+  swiper-item:7
+  visually-hidden:6
+  uni-toolbar-icon:6
+  swiper-container:6
+  swiper-container-initialized:6
+  swiper-container-horizontal:6
+  swiper-container-pointer-events:6
+  swiper-container-rtl:6
+  swiper-wrapper:6
+  UpgradeItemBlock__price-and-button__price-and-date:6
+  UpgradeItemBlock__price-and-button__price-and-date__items:6
+  UpgradeItemBlock__price-and-button__price-and-date__items__price:6
+  UpgradeItemBlock__price-and-button__price-and-date__items__date:6
+  wrapper-titles:5
+  btn-submit:5
+  btn-submit__label:5
+  highlight:5
+  device-item:5
+  device-details-wrapper:5
+  device-top-tag:5
+  device-name:5
+  device-sub-text:5
+  device-price:5
+  nis:5
+  device-image-wrapper:5
+  device-footer:5
+  arrow-icon:5
+  social-link-icon:5
+  content:4
+  FAQItemBlock:4
+  FAQItemBlock__wrapper:4
+  FAQItemBlock__question:4
+  FAQItemBlock__question__text:4
+  FAQItemBlock__question__arrow:4
+  FAQItemBlock__answer:4
+  collapse:4
+  FAQItemBlock__answer__inner:4
+  columns:4
+  radio-group:3
+  hidden:3
+  swiper-slide-active:3
+  textTab:3
+  package:3
+  header:3
+  top-header:3
+  header-titles:3
+  title:3
+  body-package:3
+  bottom-header:3
+  header-features:3
+  only-text:3
+
+
+Full page text length: 3102
+עבור לסרגל הכלים של הנגישות
+פרטיעסקידרושים
+מרכזי שירות
+סלולר
+חנות
+אינטרנט וסיבים
+סלקום tv+
+סלקום חו"ל
+חשמל
+שירות ותמיכה
+החלפה ל-eSIM
+אזור אישי
+
+סלקום במקום הראשון!
+
+רשת הסלולר הטובה בישראל
+לשנת 2025! 
+
+שדרגו ל – 5G Pro
+
+חבילות חו"ל
+
+החלפה ל-eSIM
+
+שינוי חבילה
+
+מכשירים ואביזרים
+
+חבילות הסלולר שלנו
+חבילות סלולר
+חבילות חו"ל
+חבילות SIM DATA
+
+4G Basic 
+500GB
+
+3500 דק' /SMS
+150 דק' מהארץ לחו"ל
+₪44.9
+לחודש
+להצטרפות
+למידע נוסף 
+
+5G 
+800GB
+
+5000 דק' /SMS
+500 דק' מהארץ לחו"ל
+גלישה חופשית באפליקציות נבחרות
+₪39.9
+לחודש,
+לחודשיים הראשונים
+
+ולאחר מכן 59.9 ₪ לחודש
+
+להצטרפות
+למידע נוסף 
+כולל שירות תיקונים
+
+5G Pro Care 
+1500GB
+
+נתיב מהיר ברשת
+5000 דק' /SMS
+500 דק' מהארץ לחו"ל
+שירות תיקונים מורחב
+גלישה חופשית באפליקציות נבחרות
+₪69.9
+לחודש
+להצטרפות
+למידע נוסף 
+לכל החבילות
+שירותים נוספים לסלולר שלך
+נורטון מובייל
+
+פתרון ההגנה המושלם לנייד. מגן ומתריע מפני מתקפות סייבר, חוסם אתרים זדוניים, גניבת זהות ועוד
+
+12.90 ₪
+לחודש
+להצטרפות
+סלקום FIX
+
+שירות תיקונים למכשירים סלולריים, במסגרתו תיהנו מתיקונים במעבדות סלקום
+
+19.90 ₪
+לחודש
+להצטרפות
+סלקום eSIM
+
+עוברים לסים דיגיטלי המוטמע במכשיר. פשוט, נוח ומיידי – מצטרפים, מקבלים QR, סורקים ומתחילים לדבר
+
+לפרטים
+לשירותים נוספים
+מכשירים ואביזרים
+יבואן רשמי
+Galaxy S26 Ultra
+512GB
+4,549₪
+iPhone 17 Pro
+256GB
+5,039₪
+יבואן רשמי
+iPhone 17
+256GB
+3,689₪
+יבואן רשמי
+AirPods Pro 3
+944₪
+יבואן רשמי
+Apple Watch Ultra 3
+2,999₪
+יבואן רשמי
+לכל המכשירים
+פעולות נפוצות בשירות עצמי
+החלפה ל-eSIM
+חסימה ושחרור גלישת סלולר
+קניית חבילת חו"ל
+שיחות מהארץ לחו"ל
+טיפול בתקלת גלישה בסלולר
+טיפול בתקלת שיחות בארץ
+הפעלת SIM חדש
+החלפת מספר סלולר
+מחיר מיוחד באתר
+לכל הפעולות בשירות עצמי
+הכול על עולם הסלולר
+
+בחירת חבילת סלולר ב- 2026
+
+אתם משלמים על חבילת סלולר שלא נותנת לכם מספיק? או אולי נתקעים ללא קליטה דווקא כשאתם צריכים את ה-WAZE?...
+
+המשך קריאה
+
+ניוד המספר שלי לסלקום
+
+החלטתם לעבור חברה אבל מפחדים לאבד את המספר? חוששים להישאר בלי קליטה באמצע היום? תשכחו מהבירוקרטיה הישנה...
+
+המשך קריאה
+תמיד שואלים אותנו
+איך לבחור חבילת סלולר שמתאימה לי?
+מה זה 5G Pro?
+איך אפשר לעבור לתכנית סלולר אחרת?
+איזה שירותים נוספים לנייד יש בסלקום?
+
+שירות 5G PRO מאפשר מהירות גבוהה יותר במצבי עומס בתנאים מסוימים בכפוף לאזורי כיסוי ולציוד תומך.
+
+שירות עצמי
+כניסה לאזור האישי
+שירות ותמיכה
+פעולות בשירות עצמי
+צפייה בחשבונית
+מעבר דירה
+מעבר חבילת סלולר
+בדיקת מהירות אינטרנט
+אובדן/גניבת מכשיר
+השלמת ניוד סלולר
+הסרה מדיוור פרסומי
+בקרת הורים
+סינון תכנים - ללא עלות
+אזור אישי
+חבילות ומוצרים מובילים
+סלקום אינטרנט סיבים
+חבילות האינטרנט של סלקום
+WiFi 7
+FiberTV
+אינטרנט ביתי
+סלקום 5G
+סלקום eSIM
+חבילות סלקום חו"ל
+סלקום Energy
+סלקום tv+
+עולם התוכן של סלקום tv+
+סלקום ועמותת חמניות
+עמותת גדולים במדים
+צור קשר
+כל הדרכים ליצור עימנו קשר
+למרכזי השירות והחנויות שלנו
+נציב תלונות
+איתור מספרים בחינם
+סלקום עסקים
+דרושים
+הפסקת שירותים
+כללי
+אודות
+Investor relations
+International Carrier Services
+תנאי שימוש
+מדיניות הפרטיות ושימוש במידע אישי
+תובענות ייצוגיות
+שירותים תעריפים ומדיניות
+נגישות
+סגירת רשתות - מידע חשוב
+סגירת רשתות דור 2/3
+שיתוף משתמשים - דף מידע
+הודעה בנוגע לקבלת חיווי אשראי
+קווים כשרים – שאילתא ואמות מידה
+כוכביות פנויות ותפוס

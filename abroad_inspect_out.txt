@@ -1,0 +1,437 @@
+
+============================================================
+CARRIER: pelephone
+URL: https://www.pelephone.co.il/digitalsite/heb/abroad/packages/
+============================================================
+  FOUND MORE BUTTON: 'ולמדיניות הפרטיות המעודכנת' - clicking
+Page title: תנאי פרטיות - מידע ותמיכה פלאפון
+
+HTML (first 10000 chars):
+<!DOCTYPE html><html lang="he" class=""><head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="rating" content="General">
+<meta name="revisit-after" content="3 days">
+<meta name="copyright" content="https://www.pelephone.co.il">
+<meta name="author" content="Pelephone">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="theme-color" content="#001fff">
+<meta name="google-site-verification" content="mG7SUYzAv14-MkozdtVnEL1tENqtp2NXh9uTpnV50m0">
+<meta name="facebook-domain-verification" content="tf6b8zwt453dlqcbv3vkhgwjqwh8tn">
+<meta id="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=yes" name="viewport">
+
+    <script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/destination?id=AW-770412363&amp;cx=c&amp;gtm=4e6411"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/destination?id=AW-770431096&amp;cx=c&amp;gtm=4e6411"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/destination?id=AW-10880459110&amp;cx=c&amp;gtm=4e6411"></script><script type="text/javascript" async="" src="https://analytics.tiktok.com/i18n/pixel/static/identify_5cff1caf.js"></script><script type="text/javascript" async="" src="https://analytics.tiktok.com/i18n/pixel/static/main.MWE0ZWQ3ZWQwMA.js" data-id="C9RNE2JC77U2Q7VAE710"></script><script type="text/javascript" async="" src="https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=C9RNE2JC77U2Q7VAE710&amp;lib=ttq"></script><script src="https://connect.facebook.net/signals/config/728349197309191?v=2.9.291&amp;r=stable&amp;domain=www.pelephone.co.il&amp;hme=295b1b33901e14aeab879c0b58f907ef4d5f44fdd19814310771af911c5f6ac8&amp;ex_m=102%2C198%2C147%2C22%2C70%2C71%2C139%2C66%2C65%2C11%2C155%2C88%2C16%2C132%2C124%2C37%2C73%2C76%2C130%2C152%2C157%2C8%2C4%2C5%2C7%2C6%2C3%2C89%2C99%2C158%2C163%2C212%2C60%2C179%2C180%2C53%2C267%2C30%2C72%2C224%2C223%2C222%2C23%2C32%2C101%2C59%2C10%2C61%2C95%2C96%2C97%2C103%2C127%2C31%2C29%2C129%2C126%2C125%2C148%2C74%2C151%2C149%2C150%2C48%2C58%2C120%2C15%2C154%2C43%2C254%2C255%2C253%2C26%2C27%2C28%2C46%2C140%2C75%2C110%2C18%2C20%2C42%2C38%2C40%2C39%2C81%2C90%2C94%2C108%2C138%2C141%2C44%2C109%2C24%2C21%2C116%2C67%2C35%2C143%2C142%2C144%2C135%2C133%2C25%2C34%2C57%2C107%2C153%2C68%2C17%2C145%2C112%2C79%2C64%2C19%2C83%2C84%2C113%2C82%2C33%2C284%2C205%2C194%2C195%2C193%2C287%2C279%2C50%2C206%2C105%2C128%2C78%2C118%2C52%2C45%2C47%2C111%2C117%2C123%2C56%2C62%2C51%2C54%2C98%2C156%2C1%2C121%2C14%2C119%2C12%2C2%2C55%2C91%2C63%2C115%2C87%2C86%2C159%2C160%2C92%2C93%2C9%2C122%2C100%2C49%2C136%2C85%2C77%2C69%2C114%2C104%2C41%2C137%2C0%2C80%2C131%2C134%2C146%2C36%2C106%2C13%2C161" async=""></script><script async="" src="https://connect.facebook.net/en_US/fbevents.js"></script><script id="Adoric_Script" src="https://15833265.adoric-om.com/adoric.js?v=1" async="" data-key="5afccf75b07c2ef627219854ebdf278a"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-0KP0TXC0NH&amp;cx=c&amp;gtm=4e6411"></script><script async="" src="//www.googletagmanager.com/gtm.js?id=GTM-PPV4MN"></script><script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Pelephone",
+      "url": "https://www.pelephone.co.il/ds/heb/home/",
+      "description": "פלאפון - שירותי סלולר מתקדמים, חבילות גלישה וחנות אונליין בה תוכלו להזמין מכשירים ואביזרים כגון אייפון, גלקסי, שעונים חכמים, אוזניות ועוד."
+    }
+    </script>
+<base href="/ds/">
+<script src="static/essentials.min.js?v=WNz0wt4qBgFlSiOgwIBg"></script>
+<script type="text/javascript">
+    var datasource = {};
+    datasource.nsid = 6;
+    datasource.objid = 7953;
+    datasource.boneid = 8009;
+    datasource.lcid = 1037;
+    datasource.langShortName = 'heb';
+    datasource.env = 3;
+    datasource.appRoot = '/ds/';
+    datasource.cdate = '03/04/2026 03:00:35';
+    datasource.ref = null;
+</script>
+<meta name="description" content="מדיניות הפרטיות ותנאי השימוש באתר פלאפון, הכנסו לאתר."><meta name="robots" content="INDEX,FOLLOW"><title>תנאי פרטיות - מידע ותמיכה פלאפון</title><link rel="canonical" href="https://www.pelephone.co.il/ds/heb/support/general_info/privacypolicy/"><style>
+    .async-hide { opacity: 0 !important }
+</style>
+<script>
+    dataLayer = [];
+
+    $ready(function(){
+        return window.$;
+    }, function(){
+        $.get('/login/api/login/visitor/').then(function (response) {
+
+            var un_url = window.location.href;
+            un_url = un_url.toLowerCase();
+            var un_category = un_url.split('//').join('/');
+            un_category = un_category.toLowerCase().replace("http:/", "http://");
+            un_category = un_category.toLowerCase().replace("https:/", "https://");
+            un_category = un_category.toLowerCase().replace("http://www.pelephone.co.il/digitalsite/", "");
+            un_category = un_category.toLowerCase().replace("https://www.pelephone.co.il/digitalsite/", "");
+            datasource.userId = response.userId;
+
+            $ready(function () { return window.analyticsTools; }, function () {
+                analyticsTools.dlPush({
+                    "event": 'user properties',
+                    "PageTitle": document.title,
+                    "PageURL": un_url,
+                    "PageCategory": un_category,
+                    "UserId": response.userId
+                });
+            });
+
+
+                            //Anti Flicker Start
+                            (function (a, s, y, n, c, h, i, d, e) {
+                                s.className += ' ' + y; h.start = 1 * new Date;
+                                h.end = i = function () { s.className = s.className.replace(RegExp(' ?' + y), '') };
+                                (a[n] = a[n] || []).hide = h; setTimeout(function () { i(); h.end = null }, c); h.timeout = c;
+                            })(window, document.documentElement, 'async-hide', 'dataLayer', 4000,
+                                { 'GTM-PPV4MN': true });
+                        //Anti Flicker End
+                
+            //    Google Tag Manager
+            (function (w, d, s, l, i) { w[l] = w[l] || []; w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' }); var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src = '//www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f); })(window, document, 'script', 'dataLayer', 'GTM-PPV4MN');
+            //    End Google Tag Manager
+        });
+    });
+
+</script>
+
+    <script type="text/javascript" async="" src="//510002074.collect.igodigital.com/collect.js"></script>
+<script>var _etmc = []; _etmc.push(["setOrgId", "510002074"]); _etmc.push(["trackPageView", { "item": "ycTLymPVTZbFkoyoFOHp6A+PI0ynivubMgrBb9c9Foo=" }]);</script>
+
+    <link href="static/libs.min.css?v=iyy2sQhDF6MMNpbxorPm" rel="stylesheet">
+    
+    <script src="static/libs.min.js?v=mZ6fTt52zbbk3moPj2gU"></script>
+        <link rel="apple-touch-icon" href="/ds/images/favicons/pele-180.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/ds/images/favicons/pele-32.png">
+        <link rel="icon" type="image/png" sizes="192x192" href="/ds/images/favicons/pele-192.png">
+    
+<link class="__ADORIC__" rel="stylesheet" type="text/css" href="https://static.adoric.com/adoric.v9.11.min.css" media="all"><script type="text/javascript" async="" src="https://googleads.g.doubleclick.net/pagead/viewthroughconversion/770431096/?random=1775236193584&amp;cv=11&amp;fst=1775236193584&amp;bg=ffffff&amp;guid=ON&amp;async=1&amp;gtm=45be6411v9118481873z86240315za20gzb6240315zd6240315xea&amp;gcd=13l3l3l3l1l1&amp;dma=0&amp;tag_exp=0~115938465~115938468~116991816~117266400~118398309&amp;u_w=1280&amp;u_h=720&amp;url=https%3A%2F%2Fwww.pelephone.co.il%2Fds%2Fheb%2Fsupport%2Fgeneral_info%2Fprivacypolicy%2F&amp;ref=https%3A%2F%2Fwww.pelephone.co.il%2Fdigitalsite%2Fheb%2Fabroad%2Fpackages%2F&amp;frm=0&amp;tiba=%D7%AA%D7%A0%D7%90%D7%99%20%D7%A4%D7%A8%D7%98%D7%99%D7%95%D7%AA%20-%20%D7%9E%D7%99%D7%93%D7%A2%20%D7%95%D7%AA%D7%9E%D7%99%D7%9B%D7%94%20%D7%A4%D7%9C%D7%90%D7%A4%D7%95%D7%9F&amp;hn=www.googleadservices.com&amp;npa=0&amp;pscdl=noapi&amp;auid=175805970.1775236183&amp;uaa=x86&amp;uab=64&amp;uafvl=Not%253AA-Brand%3B99.0.0.0%7CHeadlessChrome%3B145.0.7632.6%7CChromium%3B145.0.7632.6&amp;uamb=0&amp;uam=&amp;uap=Windows&amp;uapv=10.0.0&amp;uaw=0&amp;_tu=CA&amp;rfmt=3&amp;fmt=4"></script><script type="text/javascript" async="" src="https://googleads.g.doubleclick.net/pagead/viewthroughconversion/10880459110/?random=1775236193646&amp;cv=11&amp;fst=1775236193646&amp;bg=ffffff&amp;guid=ON&amp;async=1&amp;gtm=45be6411v9214337617z86240315za20gzb6240315zd6240315xea&amp;gcd=13l3l3l3l1l1&amp;dma=0&amp;tag_exp=0~115938465~115938468~116991817~117266402~118328143&amp;u_w=1280&amp;u_h=720&amp;url=https%3A%2F%2Fwww.pelephone.co.il%2Fds%2Fheb%2Fsupport%2Fgeneral_info%2Fprivacypolicy%2F&amp;ref=https%3A%2F%2Fwww.pelephone.co.il%2Fdigitalsite%2Fheb%2Fabroad%2Fpackages%2F&amp;frm=0&amp;tiba=%D7%AA%D7%A0%D7%90%D7%99%20%D7%A4%D7%A8%D7%98%D7%99%D7%95%D7%AA%20-%20%D7%9E%D7%99%D7%93%D7%A2%20%D7%95%D7%AA%D7%9E%D7%99%D7%9B%D7%94%20%D7%A4%D7%9C%D7%90%D7%A4%D7%95%D7%9F&amp;hn=www.googleadservices.com&amp;npa=0&amp;pscdl=noapi&amp;auid=175805970.1775236183&amp;uaa=x86&amp;uab=64&amp;uafvl=Not%253AA-Brand%3B99.0.0.0%7CHeadlessChrome%3B145.0.7632.6%7CChromium%3B145.0.7632.6&amp;uamb=0&amp;uam=&amp;uap=Windows&amp;uapv=10.0.0&amp;uaw=0&amp;_tu=CA&amp;rfmt=3&amp;fmt=4"></script><script type="text/javascript" async="" src="https://googleads.g.doubleclick.net/pagead/viewthroughconversion/770412363/?random=1775236194006&amp;cv=11&amp;fst=1775236194006&amp;bg=ffffff&amp;guid=ON&amp;async=1&amp;gtm=45be6411v9215093143z86240315za20gzb6240315zd6240315xea&amp;gcd=13l3l3l3l1l1&amp;dma=0&amp;
+
+============================================================
+CARRIER: cellcom
+URL: https://cellcom.co.il/AbroadMain/lobby/
+============================================================
+Page title: סלקום חו"ל - מבחר חבילות סלולר לחו"ל - גלישה ושיחות בחו"ל :: סלקום
+
+HTML (first 10000 chars):
+<!DOCTYPE html><html lang="he" data-attrs="html" class="uni-toolbar-browser-chrome uni-toolbar-browser-chrome-145"><head><meta http-equiv="origin-trial" content="A7vZI3v+Gz7JfuRolKNM4Aff6zaGuT7X0mf3wtoZTnKv6497cVMnhy03KDqX7kBz/q/iidW7srW31oQbBt4VhgoAAACUeyJvcmlnaW4iOiJodHRwczovL3d3dy5nb29nbGUuY29tOjQ0MyIsImZlYXR1cmUiOiJEaXNhYmxlVGhpcmRQYXJ0eVN0b3JhZ2VQYXJ0aXRpb25pbmczIiwiZXhwaXJ5IjoxNzU3OTgwODAwLCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><meta charset="UTF-8"><meta name="viewport" content="width=device-width,height=device-height,initial-scale=1"><meta http-equiv="X-UA-Compatible" content="ie=edge"><meta name="cellsrcArea" content="General"><meta name="cellsrcSubArea" content="Web"><meta name="System" content="CellcomDigitalSite"><script type="text/javascript" async="" src="https://widgetver.zoomengage.com/js/za_widget_420a.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/destination?id=G-D41EXP1SBW&amp;cx=c&amp;gtm=4e6411h1"></script><script type="text/javascript" async="" src="https://widgetapi.zoomengage.com/widget.js?id=19763655&amp;secure&amp;9862423"></script><script type="text/javascript" async="" src="https://snap.licdn.com/li.lms-analytics/insight.min.js"></script><script type="text/javascript" async="" src="https://connect.facebook.net/en_US/fbevents.js"></script><script type="text/javascript" async="" src="https://widgetcdn.zoomengage.com/19763655-7c8d/6/widget.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-DKY5SL7VJD&amp;cx=c&amp;gtm=4e6411h1"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=DC-15293834&amp;cx=c&amp;gtm=4e6411h1"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=AW-16451399360&amp;cx=c&amp;gtm=4e6411h1"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=AW-1023402945&amp;cx=c&amp;gtm=4e6411h1"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-D41EXP1SBW&amp;cx=c&amp;gtm=4e6411h1"></script><script type="text/javascript" async="" charset="utf-8" src="https://www.gstatic.com/recaptcha/releases/kUYUkUlSyqkjTSMaN2w3RaOh/recaptcha__en.js" crossorigin="anonymous" integrity="sha384-p0z9Du3Dwf3ZTlFDRLUo9qWChfInAzC61KfZjxqsWFq5OGFzbrOOAw4oIQc6AMn7"></script><script src="https://connect.facebook.net/signals/config/3005613659481184?v=2.9.291&amp;r=stable&amp;domain=cellcom.co.il&amp;hme=295b1b33901e14aeab879c0b58f907ef4d5f44fdd19814310771af911c5f6ac8&amp;ex_m=102%2C198%2C147%2C22%2C70%2C71%2C139%2C66%2C65%2C11%2C155%2C88%2C16%2C132%2C124%2C37%2C73%2C76%2C130%2C152%2C157%2C8%2C4%2C5%2C7%2C6%2C3%2C89%2C99%2C158%2C163%2C212%2C60%2C179%2C180%2C53%2C267%2C30%2C72%2C224%2C223%2C222%2C23%2C32%2C101%2C59%2C10%2C61%2C95%2C96%2C97%2C103%2C127%2C31%2C29%2C129%2C126%2C125%2C148%2C74%2C151%2C149%2C150%2C48%2C58%2C120%2C15%2C154%2C43%2C254%2C255%2C253%2C26%2C27%2C28%2C46%2C140%2C75%2C110%2C18%2C20%2C42%2C38%2C40%2C39%2C81%2C90%2C94%2C108%2C138%2C141%2C44%2C109%2C24%2C21%2C116%2C67%2C35%2C143%2C142%2C144%2C135%2C133%2C25%2C34%2C57%2C107%2C153%2C68%2C17%2C145%2C112%2C79%2C64%2C19%2C83%2C84%2C113%2C82%2C33%2C284%2C205%2C194%2C195%2C193%2C287%2C279%2C50%2C206%2C105%2C128%2C78%2C118%2C52%2C45%2C47%2C111%2C117%2C123%2C56%2C62%2C51%2C54%2C98%2C156%2C1%2C121%2C14%2C119%2C12%2C2%2C55%2C91%2C63%2C115%2C87%2C86%2C159%2C160%2C92%2C93%2C9%2C122%2C100%2C49%2C136%2C85%2C77%2C69%2C114%2C104%2C41%2C137%2C0%2C80%2C131%2C134%2C146%2C36%2C106%2C13%2C161" async=""></script><script async="" src="https://connect.facebook.net/en_US/fbevents.js"></script><script async="" src="https://www.googletagmanager.com/gtm.js?id=GTM-P2SNVT3"></script><script id="domainDetector">!function(){var o="CLC";window.location.hostname.includes("golan.co.il")&&(o="GLN"),window.__DOMAIN_MARKET_CODE__=o,sessionStorage.setItem("domainMarketCode",o)}()</script><script>window.addEventListener("beforeunload",(()=>{})),window.addEventListener("load",(()=>{performance.navigation.type}))</script><script id="prerenderStart">window.prerenderReady=!1</script><script id="prerenderReady">document.addEventListener("DOMContentLoaded",(function(){try{const e=Date.now(),n=25e3,t=setInterval((()=>{try{const a=Date.now()-e,r=document.getElementById("epi-page-container"),o=r&&r.children.length>0;if(document.title&&o||a>=n){clearInterval(t),window.prerenderReady=!0;const n=Date.now()-e,a=performance.getEntriesByType("navigation")[0],r=a?a.loadEventEnd-a.startTime:null;window.dataLayer=window.dataLayer||[],window.dataLayer.push({event:"pageKpiMetrics",reactRenderTimeMs:n,pageLoadTimeMs:r,reactRendered:o})}}catch(e){console.warn("Polling error:",e),clearInterval(t)}}),250)}catch(e){console.error("Prerender script failed to initialize:",e)}}))</script><script id="preloadStartPage">!async function(){const e=await async function(){const e=performance.now();try{await fetch(`/favicon.ico?cb=${Date.now()}`,{cache:"no-store",mode:"no-cors"})}catch(e){}return performance.now()-e}();let t,o;e<50?(t="very-fast",o=6e3):e<100?(t="fast",o=8e3):e<250?(t="medium",o=12e3):e<500?(t="slow",o=18e3):e<1e3?(t="very-slow",o=6e4):(t="extremely-slow",o=18e4);let n,c,a=!1;const r=new Promise(((e,t)=>{n=t=>{a||(a=!0,clearTimeout(i),e(t))},c=e=>{a||(a=!0,clearTimeout(i),t(e))}}));window.__startPagePreload=function(){return r};const s=new AbortController,i=setTimeout((()=>{a||(s.abort(),c(new Error("Preload timeout")))}),o);fetch("https://contentepi.cellcom.co.il/api/episerver/v2.0/content/914?expand=*",{method:"GET",headers:{Accept:"application/json","Accept-Language":""},mode:"cors",signal:s.signal}).then((e=>e.json())).then((e=>{n(e)})).catch((e=>{c(e)}))}()</script><script defer="defer" src="https://cellcom.co.il/Spa/Scripts/lib.b74b99ac0d41e8831620.js"></script><script defer="defer" src="https://cellcom.co.il/Spa/Scripts/app.dc787df94323de23934f.js"></script><link href="https://cellcom.co.il/Spa/Styles/styles.4008b8d054a4483614e8.css" rel="stylesheet">
+
+
+<script type="text/javascript" id="_cls_detector" src="https://cdn.glassboxcdn.com/poc/cellcom/p/detector-dom.min.js" async="true" data-clsconfig="reportURI=https://report.c1101.gbqofs.io/k5dlhazk/reporting/60c29e41-1dab-2a8d-0d1b-6be9c65cc9cf/cls_report;recordErrors=true;recordScrolls=true;recordMouseMoves=true;"></script>
+
+
+
+
+<script id="gbConfig" src="https://cdn.glassboxcdn.com/poc/cellcom/p/config.js"></script><script id="_cls_detector" src="https://cdn.gbqofs.com/sv/b/detector-bootstrap.min.js" type="module" data-clsconfig="reportURI=https://report.c1101.gbqofs.io/k5dlhazk/reporting/60c29e41-1dab-2a8d-0d1b-6be9c65cc9cf/cls_report;recordErrors=true;recordScrolls=true;recordMouseMoves=true;"></script><style id="cms-theme-colors">:root {
+}</style><script id="PluroAi_Accessibility">
+      (function() {
+        var e = document.createElement('script');
+        e.async = true;
+        e.defer = true;
+        e.setAttribute("type", "text/javascript");
+        e.setAttribute("src", "https://my.pluro.ai/unitoolbar.js?lang=he");
+        document.getElementsByTagName("head")[0].appendChild(e);
+      })();
+    </script><script async="" defer="" type="text/javascript" src="https://my.pluro.ai/unitoolbar.js?lang=he"></script><script id="gtmScriptId">
+      (function(w,d,s,l,i){
+        w[l]=w[l]||[];
+        w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
+        var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s), dl=l!='dataLayer'?'&l='+l:'';
+        j.async=true;
+        j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+        f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-P2SNVT3');
+    </script><script id="script-5" src="https://www.google.com/recaptcha/api.js?render=6Lfdn98UAAAAAP0Hryf898rV70y6TuwWgJEV7ytW" async=""></script><script id="faceBookPixelScriptId">
+      !(function(f,b,e,v,n,t,s){
+        if(f.fbq)return;
+        n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;
+        n.push=n;
+        n.loaded=!0;
+        n.version='2.0';
+        n.queue=[];
+        t=b.createElement(e);t.async=!0;
+        t.src=v;
+        s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s);
+      })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '3005613659481184');
+      fbq('track', 'PageView');
+    </script><title>סלקום חו"ל - מבחר חבילות סלולר לחו"ל - גלישה ושיחות בחו"ל :: סלקום</title><link rel="canonical" href="https://cellcom.co.il/AbroadMain/lobby/" data-rh="true"><link rel="shortcut icon" href="/Spa/favicon.ico" type="image/x-icon" data-rh="true"><meta name="description" content=" מגוון חבילות סלולר - חבילות גלישה בחול, גלישה ללא הגבלה, שיחות לישראל ובינלאומיות, SMS ועוד. בחרו יעד ורכשו בקלות חבילת חו&quot;ל במחירים מיוחדים באתר." data-rh="true"><meta name="searchKeyWords" content="" data-rh="true"><meta name="keywords" content="Abroad Lobby" data-rh="true"><meta property="og:title" content="סלקום חו&quot;ל - מבחר חבילות סלולר לחו&quot;ל - גלישה ושיחות בחו&quot;ל" data-rh="true"><meta property="og:image" content="https://contentepi.cellcom.co.ilundefined" data-rh="true"><meta property="og:image:width" content="1200" data-rh="true"><meta property="og:image:height" content="630" data-rh="true"><meta property="og:description" content=" מגוון חבילות סלולר - חבילות גלישה בחול, גלישה ללא הגבלה, שיחות לישראל ובינלאומיות, SMS ועוד. בחרו יעד ורכשו בקלות חבילת חו&quot;ל במחירים מיוחדים באתר." data-rh="true"><meta name="format-detection" content="telephone=no" data-rh="true"><meta property="og:type" content="website" data-rh="true"><meta property="og:site_name" content="Cellcom" data-rh="true"><script type="application/ld+json" data-rh="true">{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [{
+    "@type": "Question",
+    "name":
+
+============================================================
+CARRIER: partner
+URL: https://www.partner.co.il/n/roamingcellular/lobby
+============================================================
+Page title: פרטנר חו"ל - מבחר חבילות גלישה ושיחות לחו"ל - Partner
+
+HTML (first 10000 chars):
+<!DOCTYPE html><html lang="en" data-critters-container="" style="overflow: scroll;"><head><script type="application/ld+json" data-schema-type="packages-comparison">{"@context":"https://schema.org","@type":"ItemList","name":"השוואת חבילות נדידה בפרטנר","itemListElement":[{"@type":"Product","position":1,"name":"חופשה משפחתית","description":"חבילה משותפת 50GB לכל המשפחה","offers":{"@type":"Offer","price":"319","priceCurrency":"ILS","availability":"https://schema.org/InStock"}},{"@type":"Product","position":2,"name":"חו\"ל מושלמת","description":"מבצע לבני המשפחה! חבילת 5GB גלישה ב-49 ש״ח בלבד","offers":{"@type":"Offer","price":"289","priceCurrency":"ILS","availability":"https://schema.org/InStock"}},{"@type":"Product","position":3,"name":"חו\"ל בסטייל","description":"מבצע לבני המשפחה! חבילת 5GB גלישה ב-49 ש״ח בלבד","offers":{"@type":"Offer","price":"269","priceCurrency":"ILS","availability":"https://schema.org/InStock"}},{"@type":"Product","position":4,"name":"חו\"ל Connect","description":"ללא שיחות והודעות","offers":{"@type":"Offer","price":"209","priceCurrency":"ILS","availability":"https://schema.org/InStock"}},{"@type":"Product","position":5,"name":"חו\"ל בגדול","description":"600 דקות | 600 הודעות","offers":{"@type":"Offer","price":"509","priceCurrency":"ILS","availability":"https://schema.org/InStock"}},{"@type":"Product","position":6,"name":"חופשה משפחתית בגדול","description":"כל המשפחה בחבילה אחת!","offers":{"@type":"Offer","price":"539","priceCurrency":"ILS","availability":"https://schema.org/InStock"}},{"@type":"Product","position":7,"name":"חו\"ל ספיישל","description":"50 דקות | 50 הודעות","offers":{"@type":"Offer","price":"219","priceCurrency":"ILS","availability":"https://schema.org/InStock"}}]}</script><meta http-equiv="origin-trial" content="A7vZI3v+Gz7JfuRolKNM4Aff6zaGuT7X0mf3wtoZTnKv6497cVMnhy03KDqX7kBz/q/iidW7srW31oQbBt4VhgoAAACUeyJvcmlnaW4iOiJodHRwczovL3d3dy5nb29nbGUuY29tOjQ0MyIsImZlYXR1cmUiOiJEaXNhYmxlVGhpcmRQYXJ0eVN0b3JhZ2VQYXJ0aXRpb25pbmczIiwiZXhwaXJ5IjoxNzU3OTgwODAwLCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><script type="text/javascript" async="" charset="utf-8" src="https://www.gstatic.com/recaptcha/releases/kUYUkUlSyqkjTSMaN2w3RaOh/recaptcha__en.js" crossorigin="anonymous" integrity="sha384-p0z9Du3Dwf3ZTlFDRLUo9qWChfInAzC61KfZjxqsWFq5OGFzbrOOAw4oIQc6AMn7"></script><script type="text/javascript">
+                (async function(){
+                    var self = {"versionId":"661f705f44cb220024ddb224","identifier":"__ADORIC__16","campaignId":"661f705f44cb220024ddb226","campaignTitle":"פופאפ ביטוח ישיר - רומינג","versionTitle":"Variation #1","domainId":"5bbdc3ee27927bc200f581e8","device":"desktop"};
+
+                    return new Promise((resolve, reject) => {
+    var MS = 2000;
+    var targetUrl = 'https://www.partner.co.il/n/roamingcellular/stepper/congrats';
+    var interval = setInterval(pageUrlChecker, MS);
+
+    function pageUrlChecker() {
+      
+        if (location.href.indexOf(targetUrl) !== -1) {
+          	
+            clearInterval(interval);
+            return resolve(true);
+        }
+    }
+});
+                })().then((condition) => {
+                    adoric.trigger(self, 'lightbox:finish:preload:script:661f705f44cb220024ddb224', {
+                        condition
+                    });
+                })
+                .catch((error) => {
+                    adoric.trigger(self, 'lightbox:finish:preload:script:661f705f44cb220024ddb224', {
+                        condition: false,
+                        error
+                    });
+                });
+            </script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/destination?id=AW-1036431417&amp;cx=c&amp;gtm=4e6411"></script><script type="text/javascript">
+                (async function(){
+                    var self = {"versionId":"643e7adf41d35b5e38f57cc0","identifier":"__ADORIC__5","campaignId":"643bc9a5c6e4f64caee092d0","campaignTitle":"כפתור הצטרפות - עמוד הבית ","versionTitle":"Variation 2 ","domainId":"5bbdc3ee27927bc200f581e8","device":"desktop"};
+
+                    return new Promise((resolve, reject) => {
+
+    wasCampaignShowed();
+
+    function wasCampaignShowed(index) {
+        var WAITING_TIMER_COUNTER = 10;
+        var HALF_OF_THE_SECOND = 500;
+
+        findNativeSelector();
+
+        function findNativeSelector() {
+            WAITING_TIMER_COUNTER--;
+
+            var element = document.querySelector('.header-menu');
+
+            if (!element && WAITING_TIMER_COUNTER > 0) {
+                setTimeout(findNativeSelector, HALF_OF_THE_SECOND);
+            } else {
+                if (element) {
+                    return resolve(true);
+                }
+                return reject(false);
+            }
+        }
+    }
+})
+
+                })().then((condition) => {
+                    adoric.trigger(self, 'lightbox:finish:preload:script:643e7adf41d35b5e38f57cc0', {
+                        condition
+                    });
+                })
+                .catch((error) => {
+                    adoric.trigger(self, 'lightbox:finish:preload:script:643e7adf41d35b5e38f57cc0', {
+                        condition: false,
+                        error
+                    });
+                });
+            </script><script type="text/javascript">
+                (async function(){
+                    var self = {"versionId":"661f705f44cb220024ddb224","identifier":"__ADORIC__3","campaignId":"661f705f44cb220024ddb226","campaignTitle":"פופאפ ביטוח ישיר - רומינג","versionTitle":"Variation #1","domainId":"5bbdc3ee27927bc200f581e8","device":"desktop"};
+
+                    return new Promise((resolve, reject) => {
+    var MS = 2000;
+    var targetUrl = 'https://www.partner.co.il/n/roamingcellular/stepper/congrats';
+    var interval = setInterval(pageUrlChecker, MS);
+
+    function pageUrlChecker() {
+      
+        if (location.href.indexOf(targetUrl) !== -1) {
+          	
+            clearInterval(interval);
+            return resolve(true);
+        }
+    }
+});
+                })().then((condition) => {
+                    adoric.trigger(self, 'lightbox:finish:preload:script:661f705f44cb220024ddb224', {
+                        condition
+                    });
+                })
+                .catch((error) => {
+                    adoric.trigger(self, 'lightbox:finish:preload:script:661f705f44cb220024ddb224', {
+                        condition: false,
+                        error
+                    });
+                });
+            </script>
+
+  <!-- Google Tag Manager -->
+  <script type="text/javascript" async="" src="https://appd.partner.co.il:443/wwwroot/adrum-ext.8ad16b8375327e66a32816a8ad7be617.js"></script><script id="Adoric_Script" src="https://96257887.adoric-om.com/adoric.js" async="" data-key="4e97cc9b5f3bd5d8cf6537d476a68ba0"></script><script src="https://connect.facebook.net/signals/config/2046243148994991?v=2.9.291&amp;r=stable&amp;domain=www.partner.co.il&amp;hme=295b1b33901e14aeab879c0b58f907ef4d5f44fdd19814310771af911c5f6ac8&amp;ex_m=102%2C198%2C147%2C22%2C70%2C71%2C139%2C66%2C65%2C11%2C155%2C88%2C16%2C132%2C124%2C37%2C73%2C76%2C130%2C152%2C157%2C8%2C4%2C5%2C7%2C6%2C3%2C89%2C99%2C158%2C163%2C212%2C60%2C179%2C180%2C53%2C267%2C30%2C72%2C224%2C223%2C222%2C23%2C32%2C101%2C59%2C10%2C61%2C95%2C96%2C97%2C103%2C127%2C31%2C29%2C129%2C126%2C125%2C148%2C74%2C151%2C149%2C150%2C48%2C58%2C120%2C15%2C154%2C43%2C254%2C255%2C253%2C26%2C27%2C28%2C46%2C140%2C75%2C110%2C18%2C20%2C42%2C38%2C40%2C39%2C81%2C90%2C94%2C108%2C138%2C141%2C44%2C109%2C24%2C21%2C116%2C67%2C35%2C143%2C142%2C144%2C135%2C133%2C25%2C34%2C57%2C107%2C153%2C68%2C17%2C145%2C112%2C79%2C64%2C19%2C83%2C84%2C113%2C82%2C33%2C284%2C205%2C194%2C195%2C193%2C287%2C279%2C50%2C206%2C105%2C128%2C78%2C118%2C52%2C45%2C47%2C111%2C117%2C123%2C56%2C62%2C51%2C54%2C98%2C156%2C1%2C121%2C14%2C119%2C12%2C2%2C55%2C91%2C63%2C115%2C87%2C86%2C159%2C160%2C92%2C93%2C9%2C122%2C100%2C49%2C136%2C85%2C77%2C69%2C114%2C104%2C41%2C137%2C0%2C80%2C131%2C134%2C146%2C36%2C106%2C13%2C161" async=""></script><script type="text/javascript" async="" src="https://connect.facebook.net/en_US/fbevents.js"></script><script type="text/javascript" async="" src="https://cdn.jsdelivr.net/npm/ip-geolocation-api-jquery-sdk@1.1.0/ipgeolocation.min.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-YCZ8QF655H&amp;cx=c&amp;gtm=4e6411"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-7GHL7XZFSC&amp;cx=c&amp;gtm=4e6411"></script><script async="" src="https://www.googletagmanager.com/gtm.js?id=GTM-TW3MD4"></script><script>
+    (function (w, d, s, l, i) {
+      w[l] = w[l] || []; w[l].push({
+        'gtm.start':
+          new Date().getTime(), event: 'gtm.js'
+      }); var f = d.getElementsByTagName(s)[0],
+        j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+          'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+    })(window, document, 'script', 'dataLayer', 'GTM-TW3MD4');</script>
+  <!-- End Google Tag Manager -->
+
+
+  <!-- Start VWO Async SmartCode -->
+  <link rel="preconnect" href="https://dev.visualwebsiteoptimizer.com">
+  <script type="text/javascript" id="vwoCode">
+    window._vwo_code || (function () {
+      var account_id = 790009,
+        version = 2.0,
+        settings_tolerance = 2000,
+        hide_element = 'body',
+        hide_element_style = 'opacity:0 !important;filter:alpha(opacity=0) !important;background:none !important',
+        /* DO NOT EDIT BELOW THIS LINE */
+        f = false, w = window, d = document, v = d.querySelector('#vwoCode'), cK = '_vwo_' + account_id + '_settings', cc = {}; try { var c = JSON.parse(localStorage.getItem('_vwo_' + account_id + '_config')); cc = c && typeof c === 'object' ? c : {} } catch (e) { } var stT = cc.stT === 'session' ? w.sessionStorage : w.localStorage; code = { use_existing_jquery: function () { return typeof
+
+============================================================
+CARRIER: hotmobile
+URL: https://www.hotmobile.co.il/roaming
+============================================================
+Page title: הוט מובייל - חבילות סלולר וגלישה בחו"ל – HOT mobile
+
+HTML (first 10000 chars):
+<!DOCTYPE html><html lang="he" dir="rtl"><head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=EDGE">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <meta property="og:title" content="HOTmobile">
+    <meta property="og:description" content="HOTmobile">
+    <meta property="og:url" content="https://www.hotmobile.co.il">
+    
+    <!--<title>HOT mobile – הוט מובייל</title>-->
+    <!-- Ai-Web script -->
+    <script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/destination?id=DC-12028931&amp;cx=c&amp;gtm=4e6411"></script><script type="text/javascript" async="" src="https://widgetver.zoomengage.com/js/za_widget_420a.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/destination?id=AW-1000064488&amp;cx=c&amp;gtm=4e6411"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/destination?id=AW-1015367902&amp;cx=c&amp;gtm=4e6411"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/destination?id=AW-1007245790&amp;cx=c&amp;gtm=4e6411"></script><script async="" src="https://196826.tctm.co/p.js?sid=null&amp;p=921647.972.77.707.53.05,921647.972.77.707.51.30,921647.972.77.707.86.64,921647.972.53.903.11.30,921647.972.53.903.11.43,921647.972.77.707.50.58,921647.972.53.903.11.44,921647.972.53.903.11.47,921647.972.53.903.11.48,921647.972.53.903.11.46,921647.972.53.903.11.49,921647.972.53.903.11.27,921647.972.53.903.11.29,921647.972.53.903.17.66,921647.972.53.903.17.26,921647.972.53.903.19.56,921647.972.53.903.22.28,921647.972.53.903.11.52,921647.972.1.801.710.65.3,921647.972.53.903.11.53,921647.972.53.903.11.21,921647.972.53.903.19.46,921647.972.53.903.11.09,921647.972.53.903.11.63,921647.972.1.801.710.69.9,921647.972.53.903.11.23,921647.972.53.903.11.60,921647.972.53.903.11.01,921647.972.53.903.11.18,921647.972.53.903.19.57&amp;"></script><script type="text/javascript" async="" src="https://analytics.tiktok.com/i18n/pixel/static/identify_5cff1caf.js"></script><script type="text/javascript" async="" src="https://analytics.tiktok.com/i18n/pixel/static/main.MWE0ZWQ3ZWQwMA.js" data-id="D0GRCURC77U626LJG4N0"></script><script async="" src="https://scripts.clarity.ms/0.8.59/clarity.js"></script><script type="text/javascript" async="" src="https://d221oziut8gs4d.cloudfront.net/widget.js?id=19761772&amp;secure&amp;9862423"></script><script async="" src="https://wave.outbrain.com/mtWavesBundler/handler/00721131c4c197c77fd43637a9aa1cc3b3" type="text/javascript"></script><script type="text/javascript" async="" src="https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=D0GRCURC77U626LJG4N0&amp;lib=ttq"></script><script async="" src="//amplify.outbrain.com/cp/obtp.js" type="text/javascript"></script><script src="https://connect.facebook.net/signals/config/706432829814646?v=2.9.291&amp;r=stable&amp;domain=www.hotmobile.co.il&amp;hme=295b1b33901e14aeab879c0b58f907ef4d5f44fdd19814310771af911c5f6ac8&amp;ex_m=102%2C198%2C147%2C22%2C70%2C71%2C139%2C66%2C65%2C11%2C155%2C88%2C16%2C132%2C124%2C37%2C73%2C76%2C130%2C152%2C157%2C8%2C4%2C5%2C7%2C6%2C3%2C89%2C99%2C158%2C163%2C212%2C60%2C179%2C180%2C53%2C267%2C30%2C72%2C224%2C223%2C222%2C23%2C32%2C101%2C59%2C10%2C61%2C95%2C96%2C97%2C103%2C127%2C31%2C29%2C129%2C126%2C125%2C148%2C74%2C151%2C149%2C150%2C48%2C58%2C120%2C15%2C154%2C43%2C254%2C255%2C253%2C26%2C27%2C28%2C46%2C140%2C75%2C110%2C18%2C20%2C42%2C38%2C40%2C39%2C81%2C90%2C94%2C108%2C138%2C141%2C44%2C109%2C24%2C21%2C116%2C67%2C35%2C143%2C142%2C144%2C135%2C133%2C25%2C34%2C57%2C107%2C153%2C68%2C17%2C145%2C112%2C79%2C64%2C19%2C83%2C84%2C113%2C82%2C33%2C284%2C205%2C194%2C195%2C193%2C287%2C279%2C50%2C206%2C105%2C128%2C78%2C118%2C52%2C45%2C47%2C111%2C117%2C123%2C56%2C62%2C51%2C54%2C98%2C156%2C1%2C121%2C14%2C119%2C12%2C2%2C55%2C91%2C63%2C115%2C87%2C86%2C159%2C160%2C92%2C93%2C9%2C122%2C100%2C49%2C136%2C85%2C77%2C69%2C114%2C104%2C41%2C137%2C0%2C80%2C131%2C134%2C146%2C36%2C106%2C13%2C161%2C221%2C220%2C215%2C217%2C218%2C219%2C216%2C204%2C214%2C186%2C183%2C184%2C178%2C182%2C185%2C181%2C176%2C307%2C269%2C189%2C208%2C177%2C175%2C227%2C199%2C169%2C170%2C165%2C171%2C168%2C166%2C167%2C164%2C162%2C173%2C174%2C172%2C256%2C306%2C187" async=""></script><script src="https://connect.facebook.net/signals/config/1219612168191292?v=2.9.291&amp;r=stable&amp;domain=www.hotmobile.co.il&amp;hme=295b1b33901e14aeab879c0b58f907ef4d5f44fdd19814310771af911c5f6ac8&amp;ex_m=102%2C198%2C147%2C22%2C70%2C71%2C139%2C66%2C65%2C11%2C155%2C88%2C16%2C132%2C124%2C37%2C73%2C76%2C130%2C152%2C157%2C8%2C4%2C5%2C7%2C6%2C3%2C89%2C99%2C158%2C163%2C212%2C60%2C179%2C180%2C53%2C267%2C30%2C72%2C224%2C223%2C222%2C23%2C32%2C101%2C59%2C10%2C61%2C95%2C96%2C97%2C103%2C127%2C31%2C29%2C129%2C126%2C125%2C148%2C74%2C151%2C149%2C150%2C48%2C58%2C120%2C15%2C154%2C43%2C254%2C255%2C253%2C26%2C27%2C28%2C46%2C140%2C75%2C110%2C18%2C20%2C42%2C38%2C40%2C39%2C81%2C90%2C94%2C108%2C138%2C141%2C44%2C109%2C24%2C21%2C116%2C67%2C35%2C143%2C142%2C144%2C135%2C133%2C25%2C34%2C57%2C107%2C153%2C68%2C17%2C145%2C112%2C79%2C64%2C19%2C83%2C84%2C113%2C82%2C33%2C284%2C205%2C194%2C195%2C193%2C287%2C279%2C50%2C206%2C105%2C128%2C78%2C118%2C52%2C45%2C47%2C111%2C117%2C123%2C56%2C62%2C51%2C54%2C98%2C156%2C1%2C121%2C14%2C119%2C12%2C2%2C55%2C91%2C63%2C115%2C87%2C86%2C159%2C160%2C92%2C93%2C9%2C122%2C100%2C49%2C136%2C85%2C77%2C69%2C114%2C104%2C41%2C137%2C0%2C80%2C131%2C134%2C146%2C36%2C106%2C13%2C161%2C221%2C220%2C215%2C217%2C218%2C219%2C216%2C204%2C214%2C186%2C183%2C184%2C178%2C182%2C185%2C181%2C176%2C307%2C269%2C189%2C208%2C177%2C175%2C227%2C199%2C169%2C170%2C165%2C171%2C168%2C166%2C167%2C164%2C162%2C173%2C174%2C172%2C256%2C306%2C187" async=""></script><script src="https://connect.facebook.net/signals/config/895819713768483?v=2.9.291&amp;r=stable&amp;domain=www.hotmobile.co.il&amp;hme=295b1b33901e14aeab879c0b58f907ef4d5f44fdd19814310771af911c5f6ac8&amp;ex_m=102%2C198%2C147%2C22%2C70%2C71%2C139%2C66%2C65%2C11%2C155%2C88%2C16%2C132%2C124%2C37%2C73%2C76%2C130%2C152%2C157%2C8%2C4%2C5%2C7%2C6%2C3%2C89%2C99%2C158%2C163%2C212%2C60%2C179%2C180%2C53%2C267%2C30%2C72%2C224%2C223%2C222%2C23%2C32%2C101%2C59%2C10%2C61%2C95%2C96%2C97%2C103%2C127%2C31%2C29%2C129%2C126%2C125%2C148%2C74%2C151%2C149%2C150%2C48%2C58%2C120%2C15%2C154%2C43%2C254%2C255%2C253%2C26%2C27%2C28%2C46%2C140%2C75%2C110%2C18%2C20%2C42%2C38%2C40%2C39%2C81%2C90%2C94%2C108%2C138%2C141%2C44%2C109%2C24%2C21%2C116%2C67%2C35%2C143%2C142%2C144%2C135%2C133%2C25%2C34%2C57%2C107%2C153%2C68%2C17%2C145%2C112%2C79%2C64%2C19%2C83%2C84%2C113%2C82%2C33%2C284%2C205%2C194%2C195%2C193%2C287%2C279%2C50%2C206%2C105%2C128%2C78%2C118%2C52%2C45%2C47%2C111%2C117%2C123%2C56%2C62%2C51%2C54%2C98%2C156%2C1%2C121%2C14%2C119%2C12%2C2%2C55%2C91%2C63%2C115%2C87%2C86%2C159%2C160%2C92%2C93%2C9%2C122%2C100%2C49%2C136%2C85%2C77%2C69%2C114%2C104%2C41%2C137%2C0%2C80%2C131%2C134%2C146%2C36%2C106%2C13%2C161" async=""></script><script async="" src="https://connect.facebook.net/en_US/fbevents.js"></script><script type="text/javascript" async="" src="https://cdn.taboola.com/libtrc/unip/1957961/tfa.js"></script><script type="text/javascript" async="" src="https://www.clarity.ms/tag/ngcpcvxg94"></script><script type="text/javascript" async="" src="https://static.hotjar.com/c/hotjar-5348641.js?sv=7"></script><script type="text/javascript" async="" src="https://d2xerlamkztbb1.cloudfront.net/19761772-b257/5/widget.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-KD7HJD0FWJ&amp;cx=c&amp;gtm=4e6411"></script><script async="" src="https://www.googletagmanager.com/gtm.js?id=GTM-PLWN43"></script><script src="https://portal.allyable.com/aweb?license=115ff38a7a9c4889a5eaf220a11cf639" async="" referrerpolicy="no-referrer-when-downgrade"></script>
+    <!-------------------->
+    
+    
+
+    
+
+<title>הוט מובייל - חבילות סלולר וגלישה בחו"ל – HOT mobile</title>
+
+<meta name="keywords" content="דברו, גלשו, סמסו">
+<meta name="description" content="הוט מובייל מציעה מגוון חבילות סלולר וגלישה בחו&quot;ל לפי ההעדפות שלכם! הודעות SMS וגלישה באינטרנט בחו''ל. בחרו את החבילה המתאימה עבורכם וטוסו לחו&quot;ל בראש שקט!">
+<meta name="author">
+<meta name="application-name">
+
+    <link rel="canonical" href="https://www.hotmobile.co.il/roaming">
+
+
+
+    <!-- Google Tag Manager -->
+    <script>
+        (function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start': new Date().getTime(), event: 'gtm.js'
+            });
+            var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : '';
+            j.async = true;
+            j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+            f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-PLWN43');
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+    </script>
+    <!-- End Google Tag Manager -->
+    <link href="/bundles/HM_MasterCSS?v=TVcKVNSeU-yKvBCQlyZVcoZV8D7SbQJSXKE8369x2aA1" rel="stylesheet">
+
+<script type="text/javascript" async="" src="https://googleads.g.doubleclick.net/pagead/viewthroughconversion/996991179/?random=1775236214638&amp;cv=11&amp;fst=1775236214638&amp;bg=ffffff&amp;guid=ON&amp;async=1&amp;en=gtag.config&amp;gtm=45be6411v889027203za200zd889027203xec&amp;gcd=13l3l3R3l5l1&amp;dma=0&amp;tag_exp=0~115938465~115938468~116991817~117266402~118131808&amp;u_w=1280&amp;u_h=720&amp;url=https%3A%2F%2Fwww.hotmobile.co.il%2Froaming&amp;frm=0&amp;tiba=%D7%94%D7%95%D7%98%20%D7%9E%D7%95%D7%91%D7%99%D7%99%D7%9C%20-%20%D7%97%D7%91%D7%99%D7%9C%D7%95%D7%AA%20%D7%A1%D7%9C%D7%95%D7%9C%D7%A8%20%D7%95%D7%92%D7%9C%D7%99%D7%A9%D7%94%20%D7%91%D7%97%D7%95%22%D7%9C%20%E2%80%93%20HOT%20mobile&amp;hn=www.googleadservices.com&amp;npa=0&amp;pscdl=noapi&amp;auid=1577609078.1775236214&amp;uaa=x86&amp
+
+============================================================
+CARRIER: 019
+URL: https://019mobile.co.il/%d7%92%d7%9c%d7%99%d7%a9%d7%94-%d7%91%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%94-%d7%9c%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%95%d7%aa-%d7%90%d7%99%d7%a0%d7%98%d7%a8%d7%a0%d7%98/
+============================================================
+  FOUND MORE BUTTON: 'למדיניות הפרטיות המעודכנת' - clicking
+Page title: טסים לחו"ל רק עם 019 מובייל ונהנים מחבילות סלולר לחו"ל הכי אטרקטיביות
+
+HTML (first 10000 chars):
+<!DOCTYPE html><html lang="he"><head><meta http-equiv="origin-trial" content="A7vZI3v+Gz7JfuRolKNM4Aff6zaGuT7X0mf3wtoZTnKv6497cVMnhy03KDqX7kBz/q/iidW7srW31oQbBt4VhgoAAACUeyJvcmlnaW4iOiJodHRwczovL3d3dy5nb29nbGUuY29tOjQ0MyIsImZlYXR1cmUiOiJEaXNhYmxlVGhpcmRQYXJ0eVN0b3JhZ2VQYXJ0aXRpb25pbmczIiwiZXhwaXJ5IjoxNzU3OTgwODAwLCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><script type="text/javascript" async="" src="https://analytics.tiktok.com/i18n/pixel/static/identify_5cff1caf.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/destination?id=AW-11137482610&amp;cx=c&amp;gtm=4e6411"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/destination?id=AW-402297514&amp;cx=c&amp;gtm=4e6411"></script><script type="text/javascript" async="" src="https://analytics.tiktok.com/i18n/pixel/static/main.MWE0ZWQ3ZWQwOA.js" data-id="CDLNKSBC77U5MH0KJ9JG"></script><script async="" src="https://wave.outbrain.com/mtWavesBundler/handler/00031ff60fccbccb658a333ff761b4eec7" type="text/javascript"></script><script async="" src="https://wave.outbrain.com/mtWavesBundler/handler/002ab35752315dfe66183493d1624076cd" type="text/javascript"></script><script async="" type="text/javascript" id="glassix-widget-script" src="https://cdn.glassix.com/clients/widget.1.2.min.js"></script><script type="text/javascript" async="" src="https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=CDLNKSBC77U5MH0KJ9JG&amp;lib=ttq"></script><script async="" src="//cdn.taboola.com/libtrc/unip/1107678/tfa.js" id="tb_tfa_script"></script><script type="text/javascript" async="" src="https://bat.bing.com/bat.js"></script><script type="text/javascript" async="" src="https://amplify.outbrain.com/cp/obtp.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-KS4YWG43YQ&amp;cx=c&amp;gtm=4e6411"></script><script type="text/javascript" async="" charset="utf-8" src="https://www.gstatic.com/recaptcha/releases/kUYUkUlSyqkjTSMaN2w3RaOh/recaptcha__en.js" crossorigin="anonymous" integrity="sha384-p0z9Du3Dwf3ZTlFDRLUo9qWChfInAzC61KfZjxqsWFq5OGFzbrOOAw4oIQc6AMn7"></script><script src="https://connect.facebook.net/signals/config/409175396111274?v=2.9.291&amp;r=stable&amp;domain=019mobile.co.il&amp;hme=295b1b33901e14aeab879c0b58f907ef4d5f44fdd19814310771af911c5f6ac8&amp;ex_m=102%2C198%2C147%2C22%2C70%2C71%2C139%2C66%2C65%2C11%2C155%2C88%2C16%2C132%2C124%2C37%2C73%2C76%2C130%2C152%2C157%2C8%2C4%2C5%2C7%2C6%2C3%2C89%2C99%2C158%2C163%2C212%2C60%2C179%2C180%2C53%2C267%2C30%2C72%2C224%2C223%2C222%2C23%2C32%2C101%2C59%2C10%2C61%2C95%2C96%2C97%2C103%2C127%2C31%2C29%2C129%2C126%2C125%2C148%2C74%2C151%2C149%2C150%2C48%2C58%2C120%2C15%2C154%2C43%2C254%2C255%2C253%2C26%2C27%2C28%2C46%2C140%2C75%2C110%2C18%2C20%2C42%2C38%2C40%2C39%2C81%2C90%2C94%2C108%2C138%2C141%2C44%2C109%2C24%2C21%2C116%2C67%2C35%2C143%2C142%2C144%2C135%2C133%2C25%2C34%2C57%2C107%2C153%2C68%2C17%2C145%2C112%2C79%2C64%2C19%2C83%2C84%2C113%2C82%2C33%2C284%2C205%2C194%2C195%2C193%2C287%2C279%2C50%2C206%2C105%2C128%2C78%2C118%2C52%2C45%2C47%2C111%2C117%2C123%2C56%2C62%2C51%2C54%2C98%2C156%2C1%2C121%2C14%2C119%2C12%2C2%2C55%2C91%2C63%2C115%2C87%2C86%2C159%2C160%2C92%2C93%2C9%2C122%2C100%2C49%2C136%2C85%2C77%2C69%2C114%2C104%2C41%2C137%2C0%2C80%2C131%2C134%2C146%2C36%2C106%2C13%2C161" async=""></script><script async="" src="https://connect.facebook.net/en_US/fbevents.js"></script><script async="" src="https://www.googletagmanager.com/gtm.js?id=GTM-KK6D5Q9"></script><script type="text/javascript">try { document.__defineGetter__("referrer",function(){return "";}); } catch (exception) {try {Object.defineProperties(document, {referrer:   { get: function() { return ""; } } } );} catch (exception) {} } </script>
+    
+    <!-- Content type and encoding -->
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1, user-scalable=yes"> 
+    <meta name="facebook-domain-verification" content="oruu6nstr2fvmvm8cjgl1vsb53yrzm">
+        
+    <!-- Link to stylesheet -->
+    <link rel="stylesheet" type="text/css" href="https://019mobile.co.il/wp-content/themes/019mobile/media/css/style.min.css?ver=11.19">
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="https://019mobile.co.il/wp-content/themes/019mobile/media/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" href="https://019mobile.co.il/wp-content/themes/019mobile/media/favicons/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="https://019mobile.co.il/wp-content/themes/019mobile/media/favicons/favicon-16x16.png" sizes="16x16">
+    <link rel="manifest" href="https://019mobile.co.il/wp-content/themes/019mobile/media/favicons/manifest.json">
+    <link rel="mask-icon" href="https://019mobile.co.il/wp-content/themes/019mobile/media/favicons/safari-pinned-tab.svg" color="#c5203a">
+    <link rel="shortcut icon" href="https://019mobile.co.il/wp-content/themes/019mobile/media/favicons/favicon.ico">
+    <meta name="apple-mobile-web-app-title" content="019 Mobile">
+    <meta name="application-name" content="019 Mobile">
+    <meta name="msapplication-config" content="https://019mobile.co.il/wp-content/themes/019mobile/media/favicons/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-KK6D5Q9');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Facebook Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '409175396111274');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=409175396111274&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Facebook Pixel Code -->
+
+    <!-- Global site tag (gtag.js) - Google Ads: 862067174 -->
+    <script async="" src="https://www.googletagmanager.com/gtag/js?id=AW-862067174"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'AW-862067174');
+    </script>
+    
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+	<style>img:is([sizes="auto" i], [sizes^="auto," i]) { contain-intrinsic-size: 3000px 1500px }</style>
+	
+	<!-- This site is optimized with the Yoast SEO plugin v25.7 - https://yoast.com/wordpress/plugins/seo/ -->
+	<title>טסים לחו"ל רק עם 019 מובייל ונהנים מחבילות סלולר לחו"ל הכי אטרקטיביות</title>
+	<meta name="description" content="חבילות גלישה לחו&quot;ל החל מ- 59 ש&quot;ח ! *למזמינים דרך האתר - כרטיס סים לחול חינם. חבילות סלולר לחו&quot;ל במחירים חסרי תקדים. לפרטים נוספים הכנסו &gt;&gt;">
+	<meta property="og:locale" content="he_IL">
+	<meta property="og:type" content="article">
+	<meta property="og:title" content="טסים לחו&quot;ל רק עם 019 מובייל ונהנים מחבילות סלולר לחו&quot;ל הכי אטרקטיביות">
+	<meta property="og:description" content="חבילות גלישה לחו&quot;ל החל מ- 59 ש&quot;ח ! *למזמינים דרך האתר - כרטיס סים לחול חינם. חבילות סלולר לחו&quot;ל במחירים חסרי תקדים. לפרטים נוספים הכנסו &gt;&gt;">
+	<meta property="og:url" content="https://019mobile.co.il/גלישה-בחול-חבילה-לחול-חבילות-אינטרנט/">
+	<meta property="og:site_name" content="019mobile">
+	<meta property="article:modified_time" content="2025-03-18T14:51:22+00:00">
+	<meta name="twitter:card" content="summary_large_image">
+	<script type="application/ld+json" class="yoast-schema-graph">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://019mobile.co.il/%d7%92%d7%9c%d7%99%d7%a9%d7%94-%d7%91%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%94-%d7%9c%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%95%d7%aa-%d7%90%d7%99%d7%a0%d7%98%d7%a8%d7%a0%d7%98/","url":"https://019mobile.co.il/%d7%92%d7%9c%d7%99%d7%a9%d7%94-%d7%91%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%94-%d7%9c%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%95%d7%aa-%d7%90%d7%99%d7%a0%d7%98%d7%a8%d7%a0%d7%98/","name":"טסים לחו\"ל רק עם 019 מובייל ונהנים מחבילות סלולר לחו\"ל הכי אטרקטיביות","isPartOf":{"@id":"https://019mobile.co.il/#website"},"datePublished":"2018-07-27T09:53:09+00:00","dateModified":"2025-03-18T14:51:22+00:00","description":"חבילות גלישה לחו\"ל החל מ- 59 ש\"ח ! *למזמינים דרך האתר - כרטיס סים לחול חינם. חבילות סלולר לחו\"ל במחירים חסרי תקדים. לפרטים נוספים הכנסו >>","breadcrumb":{"@id":"https://019mobile.co.il/%d7%92%d7%9c%d7%99%d7%a9%d7%94-%d7%91%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%94-%d7%9c%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%95%d7%aa-%d7%90%d7%99%d7%a0%d7%98%d7%a8%d7%a0%d7%98/#breadcrumb"},"inLanguage":"he-IL","potentialAction":[{"@type":"ReadAction","target":["https://019mobile.co.il/%d7%92%d7%9c%d7%99%d7%a9%d7%94-%d7%91%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%94-%d7%9c%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%95%d7%aa-%d7%90%d7%99%d7%a0%d7%98%d7%a8%d7%a0%d7%98/"]}]},{"@type":"BreadcrumbList","@id":"https://019mobile.co.il/%d7%92%d7%9c%d7%99%d7%a9%d7%94-%d7%91%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%94-%d7%9c%d7%97%d7%95%d7%9c-%d7%9

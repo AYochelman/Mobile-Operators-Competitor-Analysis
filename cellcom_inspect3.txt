@@ -1,0 +1,37 @@
+=== Section headings / titles ===
+  h1: 'טסים עם סלקום חו"ל\nונשארים עם המספר שלכם בכל מקום'
+  h2: 'חבילות חו"ל המשתלמות שלנו'
+  h2: 'לטוס לחו"ל\n\nעם החבילה המושלמת'
+  h2: 'רגע לפני שאתם ממריאים'
+  h3: 'בוחרים חבילה וטסים בראש שקט'
+  h3: 'כמה זה יעלה'
+  h3: 'בלי חבילת סלקום חו"ל?'
+  .title: 'וואטסאפ 24/7, מכל מקום בארץ ובעולם 0524999123'
+  .title: 'נשארים עם אותו ה-SIM'
+  .title: 'גלישה קלה ונוחה - לא מחפשים WIFI כל הזמן'
+  .title: '972-529986919+ מוקד השירות של סלקום 24/7, מכל מקום בעולם'
+  [class*=title]: 'טסים עם סלקום חו"ל\nונשארים עם המספר שלכם בכל מקום'
+  [class*=title]: 'חיפוש חבילה'
+  [class*=title]: 'אזור אישי'
+  [class*=title]: 'מנוי עסקי'
+  [class*=title]: 'לאן טסים?'
+  [class*=title]: 'באיזה תאריכים?'
+  [class*=title]: 'חבילות חו"ל המשתלמות שלנו'
+  [class*=title]: 'המושלמת לחו"ל'
+  [class*=title]: 'כל מה שצריך לחודש'
+
+=== packages-wrapper structure ===
+packages-wrapper inner HTML length: 14676
+  child 0: class=row text='חבילות חו"ל המשתלמות שלנו'
+  child 1: class=packages-holder text='המושלמת לחו"ל\nחבילה ל-30 ימים\n20\nGB\nשיחות\n100\xa0דקות\nהודעות סמס\n100\xa0הודעות\nכולל שי'
+
+=== Checking all anchor links with abroad in href ===
+  href=/AbroadMain/Silent_roamers-old/ text='לחבילות נוספות>>'
+  href=/AbroadMain/marketPrice/ text='תעריפי שימוש בחו"ל\nללא החבילה\n»'
+  href=/production/Private/Packages/moving/ text='מעבר דירה'
+  href=/production/Private/Cellular/--/change_package/ text='מעבר חבילת סלולר'
+  href=/AbroadMain/lobby/ text='חבילות סלקום חו"ל'
+
+=== Full packages-holder section ===
+Total length: 14332
+-item="488"></span></div><div class="abroad-package-client__financial-details--bank--price--eraser" data-node-item="489"></div></span></div></div><div class="abroad-package-client__financial-details--bank--button" data-node-item="490">לרכישה</div></div><div class="abroad-package-client__footer" data-node-item="491"><div class="abroad-package-client__footer--separator" data-node-item="492"></div><div class="abroad-package-client__footer--content" data-node-item="493"><div class="abroad-package-client__footer--content--text" data-node-item="494">מדינות כלולות<span class="abroad-package-client__footer--content--text__arrow" data-node-item="495">&gt;</span></div><div class="abroad-package-client__footer--content--text" data-node-item="496">חשוב לדעת<span class="abroad-package-client__footer--content--text__arrow" data-node-item="497">&gt;</span></div></div></div></div></div><div class="family-container" data-node-item="498"><div class="abroad-package-client__text-under-package false" data-node-item="499"><div class="abroad-package-client__text-under-package__star-icon" data-node-item="500"><img src="https://cellcom.co.il/Spa/Assets/icon-24-star.2a82b03ae3b72ebb94f1.svg" alt="start" data-node-item="501"></div><div class="abroad-package-client__text-under-package__text" data-node-item="502">מגיעה לך חבילת גלישה 5GB נוספת לבני משפחה ב – 49 ₪ בלבד</div></div></div></div></div><div class="mb-5 abroad-market-popular__desktop__item-two col-4 col" data-node-item="503"><div class="abroad-package-client__container" data-node-item="504"><div class="abroad-package-client abroad-package-client__family-shadow " data-node-item="505"><div class="abroad-package-client__start-card" data-node-item="506"><div class="abroad-package-client__title" data-node-item="507">כל מה שצריך לחודש</div><div class="abroad-package-client__separator" data-node-item="508"></div><div class="abroad-package-client__duration" data-node-item="509">חבילה ל-30 ימים</div><div class="abroad-package-client__data--bank VoiceSmsData" data-node-item="510">50<span class="abroad-package-data-unit" data-node-item="511">GB</span></div><div class="abroad-package-client__data--bank-unlimited-app" data-node-item="512"><div class="abroad-package-client__data--bank-unlimited-app--icons" data-node-item="513"><img src="https://contentepi.cellcom.co.il/globalassets/abroad/----2.png" alt="TikTok Instagram" class="abroad-package-client__data--bank-unlimited-app--icons--item" data-node-item="514"><img src="https://contentepi.cellcom.co.il/globalassets/abroad/----.png" alt="Facebook Whatsapp" class="abroad-package-client__data--bank-unlimited-app--icons--item" data-node-item="515"><img src="https://contentepi.cellcom.co.il/globalassets/abroad/-----.png" alt="Waze Google maps" class="abroad-package-client__data--bank-unlimited-app--icons--item" data-node-item="516"></div><div class="abroad-package-client__data--bank-unlimited-app--text" data-node-item="517">כולל גלישה חופשית באפליקציות נבחרות</div></div><div class="a
