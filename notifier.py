@@ -52,6 +52,43 @@ def format_message(changes):
     return "\n".join(lines)
 
 
+def format_abroad_message(changes):
+    now = datetime.now().strftime("%H:%M")
+    by_carrier = defaultdict(list)
+    for ch in changes:
+        by_carrier[ch["carrier"]].append(ch)
+
+    n = len(by_carrier)
+    suffix = "חברה" if n == 1 else "חברות"
+    lines = [
+        f"✈️ חבילות חו\"ל | עדכון {now}",
+        "",
+        f"🔔 זוהו שינויים ב-{n} {suffix}",
+    ]
+
+    for carrier, carrier_changes in by_carrier.items():
+        name = CARRIER_NAMES.get(carrier, carrier)
+        lines.append(f"\n● {name}")
+        for ch in carrier_changes:
+            ct = ch["change_type"]
+            if ct == "price_change":
+                old, new = ch["old_val"], ch["new_val"]
+                try:
+                    arrow = "↘" if float(new) < float(old) else "↗"
+                except (TypeError, ValueError):
+                    arrow = "↕"
+                lines.append(f"{arrow} {ch['plan_name']}: ₪{old} ← ₪{new}")
+            elif ct == "new_plan":
+                lines.append(f"✨ חבילה חדשה: {ch['plan_name']} ב-₪{ch['new_val']}")
+            elif ct == "removed_plan":
+                lines.append(f"❌ הוסרה: {ch['plan_name']}")
+            elif ct == "extras_change":
+                lines.append(f"🔄 שינוי פרטים: {ch['plan_name']}")
+
+    lines += ["", "📊 http://localhost:5000"]
+    return "\n".join(lines)
+
+
 def send_notification(message, config):
     token = config["telegram_bot_token"]
     chat_id = config["telegram_chat_id"]

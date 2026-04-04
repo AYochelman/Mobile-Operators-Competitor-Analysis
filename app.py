@@ -191,7 +191,7 @@ def api_push_test():
 if __name__ == "__main__":
     from apscheduler.schedulers.background import BackgroundScheduler
     from change_detector import detect_changes
-    from notifier import format_message, send_notification, send_whatsapp, send_email_report, send_push_notifications
+    from notifier import format_message, format_abroad_message, send_notification, send_whatsapp, send_email_report, send_push_notifications
     from excel_report import build_excel_report
     import scraper
 
@@ -209,8 +209,10 @@ if __name__ == "__main__":
         logger.info("Starting scheduled scrape...")
         config = load_config()
         try:
+            from db import save_plans, save_changes, save_abroad_plans, save_abroad_changes, get_abroad_plans
+
+            # ── Domestic plans ─────────────────────────────────────────────
             new_plans = scraper.scrape_all()
-            from db import save_plans, save_changes
             old_plans = get_plans()
             changes = detect_changes(old_plans, new_plans)
             save_plans(new_plans)
@@ -218,14 +220,28 @@ if __name__ == "__main__":
                 save_changes(changes)
                 msg = format_message(changes)
                 ok_tg = send_notification(msg, config)
-                logger.info(f"Telegram sent: {ok_tg}")
+                logger.info(f"Telegram (domestic) sent: {ok_tg}")
                 ok_wa = send_whatsapp(msg, config)
                 logger.info(f"WhatsApp sent: {ok_wa}")
                 n_push = send_push_notifications(changes, config)
                 logger.info(f"Web Push sent: {n_push}")
             else:
-                logger.info("No changes.")
-            logger.info(f"Done. {len(new_plans)} plans, {len(changes)} changes.")
+                logger.info("No domestic changes.")
+
+            # ── Abroad plans ───────────────────────────────────────────────
+            new_abroad = scraper.scrape_all_abroad()
+            old_abroad = get_abroad_plans()
+            abroad_changes = detect_changes(old_abroad, new_abroad)
+            save_abroad_plans(new_abroad)
+            if abroad_changes:
+                save_abroad_changes(abroad_changes)
+                abroad_msg = format_abroad_message(abroad_changes)
+                ok_tg_abroad = send_notification(abroad_msg, config)
+                logger.info(f"Telegram (abroad) sent: {ok_tg_abroad}")
+            else:
+                logger.info("No abroad changes.")
+
+            logger.info(f"Done. {len(new_plans)} domestic, {len(new_abroad)} abroad plans.")
         except Exception as e:
             logger.error(f"Scrape job failed: {e}", exc_info=True)
 
