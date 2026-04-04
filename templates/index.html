@@ -107,16 +107,69 @@
   .loading  { color: #9ca3af; padding: 60px 20px; text-align: center; font-size: 14px; }
 
   /* Main tab bar */
-  .tab-bar { background: #ffffff; border-bottom: 1px solid #e5e7eb; display: flex; gap: 0; flex-shrink: 0; padding: 0 20px; justify-content: center; }
-  .tab-btn { padding: 14px 32px; font-size: 15px; font-weight: 700; border: none; border-bottom: 4px solid transparent; background: transparent; color: #6b7280; cursor: pointer; font-family: inherit; transition: color 0.15s, border-color 0.15s; white-space: nowrap; letter-spacing: 0.01em; }
+  .tab-bar { background: #ffffff; border-bottom: 1px solid #e5e7eb; display: flex; gap: 0; flex-shrink: 0; padding: 0 20px; justify-content: center; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 14px 24px; font-size: 15px; font-weight: 700; border: none; border-bottom: 4px solid transparent; background: transparent; color: #6b7280; cursor: pointer; font-family: inherit; transition: color 0.15s, border-color 0.15s; white-space: nowrap; letter-spacing: 0.01em; flex-shrink: 0; }
   .tab-btn:hover:not(.active) { color: #374151; border-bottom-color: #d1d5db; }
   .tab-btn.active { color: #2563eb; border-bottom-color: #3b82f6; }
+
+  /* Content service cards */
+  .content-service-section { margin-bottom: 28px; }
+  .content-service-title { font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; }
+  .content-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+  .content-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; position: relative; transition: box-shadow 0.15s, border-color 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .content-card:hover { border-color: #93c5fd; box-shadow: 0 4px 12px rgba(59,130,246,0.1); }
+  .content-price-val { font-size: 26px; font-weight: 700; color: #111827; margin: 8px 0 2px; line-height: 1; }
+  .content-price-val sup { font-size: 12px; font-weight: 400; color: #6b7280; }
+  .content-price-mo { font-size: 11px; color: #9ca3af; margin-bottom: 6px; }
+  .content-trial { font-size: 11px; color: #059669; margin-top: 5px; line-height: 1.4; }
+  .content-trial::before { content: "🎁 "; }
+  .content-note { font-size: 11px; color: #6b7280; margin-top: 4px; }
+  .content-na { font-size: 13px; color: #9ca3af; padding: 6px 0; }
+
+  /* Chat panel */
+  .chat-fab { background: #6366f1; border: none; border-radius: 50%; width: 38px; height: 38px; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(99,102,241,0.4); transition: background 0.15s, transform 0.15s; flex-shrink: 0; }
+  .chat-fab:hover { background: #4f46e5; transform: scale(1.08); }
+  .chat-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 100; }
+  .chat-overlay.open { display: block; }
+  .chat-panel { position: fixed; bottom: 0; left: 0; right: 0; max-width: 680px; margin: 0 auto; background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0 -4px 32px rgba(0,0,0,0.15); z-index: 101; display: flex; flex-direction: column; max-height: 70vh; transition: transform 0.25s ease; transform: translateY(100%); }
+  .chat-panel.open { transform: translateY(0); }
+  .chat-header { padding: 14px 18px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .chat-header h3 { font-size: 15px; font-weight: 700; color: #111827; margin: 0; }
+  .chat-header span { font-size: 11px; color: #9ca3af; }
+  .chat-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #9ca3af; line-height: 1; padding: 0 4px; }
+  .chat-close:hover { color: #374151; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .chat-msg { max-width: 88%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+  .chat-msg.user { align-self: flex-end; background: #eff6ff; color: #1e40af; border-radius: 12px 12px 2px 12px; }
+  .chat-msg.assistant { align-self: flex-start; background: #f9fafb; color: #111827; border: 1px solid #e5e7eb; border-radius: 12px 12px 12px 2px; }
+  .chat-msg.thinking { color: #9ca3af; font-style: italic; }
+  .chat-input-row { padding: 12px 14px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px; flex-shrink: 0; }
+  .chat-input { flex: 1; border: 1px solid #e5e7eb; border-radius: 10px; padding: 9px 12px; font-size: 13px; font-family: inherit; outline: none; resize: none; direction: rtl; }
+  .chat-input:focus { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+  .chat-send { background: #6366f1; border: none; border-radius: 10px; color: #fff; font-size: 16px; padding: 9px 14px; cursor: pointer; transition: background 0.15s; flex-shrink: 0; }
+  .chat-send:hover:not(:disabled) { background: #4f46e5; }
+  .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+  .chat-examples { padding: 0 14px 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .chat-example { font-size: 11px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 20px; padding: 4px 10px; cursor: pointer; color: #374151; transition: all 0.15s; }
+  .chat-example:hover { background: #eff6ff; border-color: #6366f1; color: #4f46e5; }
+
+  /* Refresh button */
+  .refresh-btn { display: flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; color: #15803d; cursor: pointer; font-size: 13px; font-weight: 600; padding: 7px 13px; transition: all 0.2s; flex-shrink: 0; font-family: inherit; }
+  .refresh-btn:hover:not(:disabled) { background: #dcfce7; border-color: #4ade80; color: #166534; }
+  .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .refresh-btn.loading { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+  .refresh-btn.success { background: #f0fdf4; border-color: #4ade80; color: #166534; }
+  .refresh-btn.error   { background: #fff1f2; border-color: #fca5a5; color: #b91c1c; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { display: inline-block; animation: spin 0.9s linear infinite; }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
 </style>
 </head>
 <body>
@@ -126,7 +179,17 @@
     <h1>📱 השוואת חבילות סלולר</h1>
     <div class="sub">פלאפון · פרטנר · הוט מובייל · סלקום · 019 &nbsp;|&nbsp; <span style="color:#9ca3af;font-size:11px;">נוצר ע"י אלון יוכלמן</span></div>
   </div>
-  <button class="bell-btn" id="bellBtn" title="הפעל התראות" aria-label="הפעל התראות">🔔</button>
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <button class="refresh-btn" id="refreshBtn" title="עדכן את כל החוצצים עכשיו">
+        <span id="refreshIcon">🔄</span>
+        <span id="refreshLabel">עדכן הכל</span>
+      </button>
+      <span id="refreshHint" style="font-size:10px;color:#9ca3af;white-space:nowrap;">עדכון כל החוצצים אורך כ־4 דקות</span>
+    </div>
+    <button class="chat-fab" id="chatFab" title="שאל שאלה על הנתונים">💬</button>
+    <button class="bell-btn" id="bellBtn" title="הפעל התראות" aria-label="הפעל התראות">🔔</button>
+  </div>
   <div class="update-info" id="updateInfo">טוען...</div>
 </div>
 
@@ -135,6 +198,7 @@
   <button class="tab-btn active" data-tab="domestic">📱 חבילות Mass Market</button>
   <button class="tab-btn" data-tab="abroad">✈️ חבילות חו"ל</button>
   <button class="tab-btn" data-tab="global">🌍 חבילות גלובליות</button>
+  <button class="tab-btn" data-tab="content">📺 שירותי תוכן</button>
 </div>
 
 <div class="main">
@@ -162,7 +226,7 @@
         <span class="count-badge" id="gcnt-airalo">—</span>
       </button>
       <button class="carrier-btn" data-global-carrier="pelephone_global">
-        <span class="dot dot-pelephone_global"></span> GlobalSIM
+        <span class="dot dot-pelephone_global"></span> GlobalSIM - Pelephone
         <span class="count-badge" id="gcnt-pelephone_global">—</span>
       </button>
       <button class="carrier-btn" data-global-carrier="esimo">
@@ -329,6 +393,38 @@
         <span class="tag" data-global-sort="days_asc">ימים ↑</span>
       </div>
     </div>
+
+    <!-- Content service sections -->
+    <div class="sidebar-section content-section" style="display:none">
+      <div class="sidebar-title">חברה</div>
+      <button class="carrier-btn active" data-content-carrier="all">
+        <span class="dot dot-all"></span> כולן
+      </button>
+      <button class="carrier-btn" data-content-carrier="cellcom">
+        <span class="dot dot-cellcom"></span> סלקום
+      </button>
+      <button class="carrier-btn" data-content-carrier="partner">
+        <span class="dot dot-partner"></span> פרטנר
+      </button>
+      <button class="carrier-btn" data-content-carrier="hotmobile">
+        <span class="dot dot-hotmobile"></span> הוט מובייל
+      </button>
+      <button class="carrier-btn" data-content-carrier="pelephone">
+        <span class="dot dot-pelephone"></span> פלאפון
+      </button>
+    </div>
+
+    <div class="sidebar-section content-section" style="display:none">
+      <div class="sidebar-title">שירות</div>
+      <div class="tag-group">
+        <span class="tag active" data-content-service="all">הכל</span>
+        <span class="tag" data-content-service="eSIM שעון">eSIM שעון</span>
+        <span class="tag" data-content-service="סייבר">סייבר</span>
+        <span class="tag" data-content-service="נורטון">נורטון</span>
+        <span class="tag" data-content-service="שיר בהמתנה">שיר בהמתנה</span>
+        <span class="tag" data-content-service="תא קולי">תא קולי</span>
+      </div>
+    </div>
   </div>
 
   <!-- Content -->
@@ -367,8 +463,45 @@
       </div>
     </div>
 
+    <!-- Content services tab -->
+    <div id="contentTabContent" style="display:none">
+      <div class="content-header">
+        <h2 id="contentServiceTitle">שירותי תוכן</h2>
+        <span class="content-sub" id="contentServiceSub"></span>
+      </div>
+      <div id="contentServiceBody">
+        <div class="loading">⏳ טוען שירותי תוכן...</div>
+      </div>
+    </div>
+
   </div>
 
+</div>
+
+<!-- Chat overlay + panel -->
+<div class="chat-overlay" id="chatOverlay"></div>
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-header">
+    <div>
+      <h3>💬 שאל על הנתונים</h3>
+      <span>מופעל על ידי Claude AI · מחירים, שינויים, השוואות</span>
+    </div>
+    <button class="chat-close" id="chatClose">✕</button>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-msg assistant">שלום! אני יכול לענות על שאלות לגבי חבילות הסלולר, היסטוריית המחירים והשינויים במסד הנתונים. מה תרצה לדעת?</div>
+  </div>
+  <div class="chat-examples" id="chatExamples">
+    <span class="chat-example">מה הכי זול בחו"ל ל-30 יום?</span>
+    <span class="chat-example">אילו חבילות כוללות 5G?</span>
+    <span class="chat-example">מה השתנה בפלאפון לאחרונה?</span>
+    <span class="chat-example">השווה מחירי eSIM שעון</span>
+    <span class="chat-example">מה הכי משתלם לחו"ל קצר?</span>
+  </div>
+  <div class="chat-input-row">
+    <textarea class="chat-input" id="chatInput" rows="1" placeholder="שאל שאלה על הנתונים..."></textarea>
+    <button class="chat-send" id="chatSend">➤</button>
+  </div>
 </div>
 
 <script>
@@ -378,23 +511,28 @@ const CARRIER_LABELS = {
 };
 const GLOBAL_LABELS = {
   tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
-  pelephone_global: 'GlobalSIM', esimo: 'eSIMo',
+  pelephone_global: 'GlobalSIM - Pelephone', esimo: 'eSIMo',
   simtlv: 'SimTLV', world8: '8 World'
 };
 
 let allPlans = [];
 let allAbroadPlans = [];
 let allGlobalPlans = [];
+let allContentPlans = [];
 let recentChangeKeys = new Set();
 let recentChangeTypes = {};
 let recentAbroadChangeKeys = new Set();
 let recentAbroadChangeTypes = {};
 let recentGlobalChangeKeys = new Set();
 let recentGlobalChangeTypes = {};
+let recentContentChangeKeys = new Set();
+let recentContentChangeTypes = {};
 let currentTab = 'domestic';
 let state        = { carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', changes: 'all', roaming: 'all' };
 let abroadState  = { carrier: 'all', gb: 'all', days: 'all', sort: 'price_asc' };
 let globalState  = { carrier: 'all', gb: 'all', days: 'all', currency: 'all', sort: 'price_asc' };
+let contentState = { carrier: 'all', service: 'all' };
+const CONTENT_SERVICES = ['eSIM שעון', 'סייבר', 'נורטון', 'שיר בהמתנה', 'תא קולי'];
 
 // ── Tab switching ──────────────────────────────────────────────────────────
 function switchTab(tab) {
@@ -404,6 +542,7 @@ function switchTab(tab) {
     const isDomestic = s.classList.contains('domestic-section');
     const isAbroad   = s.classList.contains('abroad-section');
     const isGlobal   = s.classList.contains('global-section');
+    const isContent  = s.classList.contains('content-section');
     if (isDomestic && isAbroad) {
       // Shared section (חברה) — show for domestic + abroad only
       s.style.display = (tab === 'domestic' || tab === 'abroad') ? '' : 'none';
@@ -413,14 +552,18 @@ function switchTab(tab) {
       s.style.display = tab === 'abroad' ? '' : 'none';
     } else if (isGlobal) {
       s.style.display = tab === 'global' ? '' : 'none';
+    } else if (isContent) {
+      s.style.display = tab === 'content' ? '' : 'none';
     }
   });
-  document.getElementById('domesticContent').style.display = tab === 'domestic' ? '' : 'none';
-  document.getElementById('abroadContent').style.display   = tab === 'abroad'   ? '' : 'none';
-  document.getElementById('globalContent').style.display   = tab === 'global'   ? '' : 'none';
+  document.getElementById('domesticContent').style.display  = tab === 'domestic' ? '' : 'none';
+  document.getElementById('abroadContent').style.display    = tab === 'abroad'   ? '' : 'none';
+  document.getElementById('globalContent').style.display    = tab === 'global'   ? '' : 'none';
+  document.getElementById('contentTabContent').style.display = tab === 'content' ? '' : 'none';
   updateCountBadges();
-  if (tab === 'abroad' && allAbroadPlans.length === 0) loadAbroadData();
-  if (tab === 'global' && allGlobalPlans.length === 0) loadGlobalData();
+  if (tab === 'abroad'  && allAbroadPlans.length  === 0) loadAbroadData();
+  if (tab === 'global'  && allGlobalPlans.length  === 0) loadGlobalData();
+  if (tab === 'content' && allContentPlans.length === 0) loadContentData();
 }
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -477,6 +620,8 @@ function updateCountBadges() {
       const el = document.getElementById(`gcnt-${c}`);
       if (el) el.textContent = counts[c] || 0;
     });
+  } else if (currentTab === 'content') {
+    // no per-carrier count badges in content sidebar (buttons have none)
   } else {
     const plans = currentTab === 'domestic' ? allPlans : allAbroadPlans;
     const counts = {};
@@ -514,8 +659,8 @@ function navigateToPlan(carrier, planName, cardId) {
   // Set carrier filter to show all (so plan is visible) then scroll
   state.carrier = carrier;
   state.changes = 'all';
-  // Activate carrier button
-  document.querySelectorAll('.carrier-btn').forEach(b => {
+  // Activate carrier button (only domestic/abroad buttons, not global/content)
+  document.querySelectorAll('.carrier-btn[data-carrier]').forEach(b => {
     b.classList.toggle('active', b.dataset.carrier === carrier);
   });
   render();
@@ -821,9 +966,10 @@ function renderGlobal() {
 }
 
 // ── Sidebar events ─────────────────────────────────────────────────────────
-document.querySelectorAll('.carrier-btn').forEach(btn => {
+// Only domestic/abroad carrier buttons (data-carrier) — NOT global/content buttons
+document.querySelectorAll('.carrier-btn[data-carrier]').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.carrier-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.carrier-btn[data-carrier]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.carrier = btn.dataset.carrier;
     abroadState.carrier = btn.dataset.carrier;
@@ -939,7 +1085,196 @@ document.querySelectorAll('.tag[data-global-sort]').forEach(tag => {
   });
 });
 
+// ── Scrape-all button ──────────────────────────────────────────────────────
+const refreshBtn   = document.getElementById('refreshBtn');
+const refreshIcon  = document.getElementById('refreshIcon');
+const refreshLabel = document.getElementById('refreshLabel');
+const refreshHint  = document.getElementById('refreshHint');
+
+let _countdownTimer = null;
+const COUNTDOWN_SEC = 4 * 60; // 4 minutes
+
+function startCountdown() {
+  let remaining = COUNTDOWN_SEC;
+  refreshHint.style.color = '#6366f1';
+  refreshHint.style.fontWeight = '600';
+
+  function tick() {
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    refreshHint.textContent = `⏱ נותרו ${m}:${String(s).padStart(2,'0')}`;
+    if (remaining > 0) {
+      remaining--;
+      _countdownTimer = setTimeout(tick, 1000);
+    } else {
+      refreshHint.textContent = 'מסיים...';
+    }
+  }
+  tick();
+}
+
+function stopCountdown() {
+  if (_countdownTimer) { clearTimeout(_countdownTimer); _countdownTimer = null; }
+  refreshHint.textContent = 'עדכון כל החוצצים אורך כ־4 דקות';
+  refreshHint.style.color = '#9ca3af';
+  refreshHint.style.fontWeight = 'normal';
+}
+
+async function scrapeAll() {
+  if (refreshBtn.disabled) return;
+  refreshBtn.disabled = true;
+  refreshBtn.classList.remove('success', 'error');
+  refreshBtn.classList.add('loading');
+  refreshIcon.innerHTML = '<span class="spin">⏳</span>';
+  refreshLabel.textContent = 'סורק...';
+  startCountdown();
+
+  try {
+    const resp = await fetch('/api/scrape-all-now');
+    const data = await resp.json();
+
+    if (data.status === 'ok') {
+      stopCountdown();
+      refreshBtn.classList.remove('loading');
+      refreshBtn.classList.add('success');
+      refreshIcon.innerHTML = '✅';
+      refreshLabel.textContent = `${data.total_plans} חבילות, ${data.total_changes} שינויים`;
+
+      // Reload whichever tabs have been visited
+      const hadAbroad  = allAbroadPlans.length  > 0;
+      const hadGlobal  = allGlobalPlans.length  > 0;
+      const hadContent = allContentPlans.length > 0;
+      allPlans = []; allAbroadPlans = []; allGlobalPlans = []; allContentPlans = [];
+      await loadData();
+      if (hadAbroad)  loadAbroadData();
+      if (hadGlobal)  loadGlobalData();
+      if (hadContent) loadContentData();
+    } else {
+      throw new Error(data.error || 'שגיאה לא ידועה');
+    }
+  } catch (err) {
+    stopCountdown();
+    refreshBtn.classList.remove('loading');
+    refreshBtn.classList.add('error');
+    refreshIcon.innerHTML = '❌';
+    refreshLabel.textContent = 'שגיאה — לחץ לניסיון חוזר';
+    console.error('scrape-all failed:', err);
+  } finally {
+    setTimeout(() => {
+      refreshBtn.disabled = false;
+      refreshBtn.classList.remove('loading', 'success', 'error');
+      refreshIcon.innerHTML = '🔄';
+      refreshLabel.textContent = 'עדכן הכל';
+    }, 4000);
+  }
+}
+
+refreshBtn.addEventListener('click', scrapeAll);
+
 loadData();
+
+// ── Content services ───────────────────────────────────────────────────────
+async function loadContentData() {
+  document.getElementById('contentServiceBody').innerHTML = '<div class="loading">⏳ טוען שירותי תוכן...</div>';
+  const [plans, changes] = await Promise.all([
+    fetch('/api/content-plans').then(r => r.json()),
+    fetch('/api/content-changes?limit=100').then(r => r.json())
+  ]);
+  allContentPlans = plans;
+
+  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  recentContentChangeKeys = new Set();
+  recentContentChangeTypes = {};
+  changes.filter(c => c.changed_at > cutoff).forEach(c => {
+    const key = `${c.service}|${c.carrier}`;
+    recentContentChangeKeys.add(key);
+    recentContentChangeTypes[key] = c.change_type;
+  });
+
+  renderContent();
+}
+
+function renderContentCard(plan) {
+  const key = `${plan.service}|${plan.carrier}`;
+  const ct  = recentContentChangeTypes[key];
+  let badge = '';
+  if (ct === 'new_service')      badge = '<span class="change-badge badge-new">חדש</span>';
+  else if (ct === 'price_change') badge = '<span class="change-badge badge-changed">שינוי מחיר</span>';
+  else if (ct === 'trial_change') badge = '<span class="change-badge badge-changed">שינוי ניסיון</span>';
+
+  const bad = ['לא נמצא', 'שגיאה', 'לא זמין'];
+  const priceOk = plan.price && !bad.some(b => plan.price.includes(b));
+  // Price may already include ₪ symbol from scraper
+  const displayPrice = plan.price ? plan.price.replace(/^₪\s*/, '') : '';
+  const priceHtml = priceOk
+    ? `<div class="content-price-val"><sup>₪</sup>${displayPrice}</div><div class="content-price-mo">₪ לחודש</div>`
+    : `<div class="content-na">${plan.price || 'לא זמין'}</div>`;
+  const trialHtml = plan.free_trial
+    ? `<div class="content-trial">${plan.free_trial}</div>` : '';
+  const noteHtml  = plan.note
+    ? `<div class="content-note">${plan.note}</div>` : '';
+
+  return `
+    <div class="content-card">
+      ${badge}
+      <span class="carrier-badge badge-${plan.carrier}">${CARRIER_LABELS[plan.carrier] || plan.carrier}</span>
+      ${priceHtml}
+      ${trialHtml}
+      ${noteHtml}
+    </div>`;
+}
+
+function renderContent() {
+  const body  = document.getElementById('contentServiceBody');
+  const title = document.getElementById('contentServiceTitle');
+  const sub   = document.getElementById('contentServiceSub');
+
+  let plans = allContentPlans;
+  if (contentState.carrier !== 'all') plans = plans.filter(p => p.carrier === contentState.carrier);
+
+  const services = contentState.service !== 'all'
+    ? [contentState.service]
+    : CONTENT_SERVICES.filter(s => allContentPlans.some(p => p.service === s));
+
+  title.textContent = contentState.service !== 'all' ? contentState.service : 'שירותי תוכן';
+  sub.textContent   = `${plans.length} רשומות`;
+
+  if (!allContentPlans.length) {
+    body.innerHTML = '<div class="no-plans">אין נתונים. הפעל סריקה: <a href="/api/scrape-content-now" style="color:#3b82f6">/api/scrape-content-now</a></div>';
+    return;
+  }
+
+  body.innerHTML = services.map(svc => {
+    const svcPlans = plans.filter(p => p.service === svc);
+    if (!svcPlans.length) return '';
+    return `
+      <div class="content-service-section">
+        <div class="content-service-title">📺 ${svc}</div>
+        <div class="content-cards-grid">
+          ${svcPlans.map(renderContentCard).join('')}
+        </div>
+      </div>`;
+  }).filter(Boolean).join('') || '<div class="no-plans">אין נתונים תואמים לסינון</div>';
+}
+
+// Content carrier buttons
+document.querySelectorAll('.carrier-btn[data-content-carrier]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.carrier-btn[data-content-carrier]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    contentState.carrier = btn.dataset.contentCarrier;
+    renderContent();
+  });
+});
+// Content service tags
+document.querySelectorAll('.tag[data-content-service]').forEach(tag => {
+  tag.addEventListener('click', () => {
+    document.querySelectorAll('.tag[data-content-service]').forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    contentState.service = tag.dataset.contentService;
+    renderContent();
+  });
+});
 
 // ── Service Worker + Web Push ──────────────────────────────────────────────
 const bellBtn = document.getElementById('bellBtn');
@@ -1028,6 +1363,83 @@ async function togglePush() {
   } catch (err) {
     console.error('Push toggle error:', err);
     alert('שגיאה: ' + err.message);
+  }
+}
+
+// ── Chat panel ─────────────────────────────────────────────────────────────
+const chatFab      = document.getElementById('chatFab');
+const chatOverlay  = document.getElementById('chatOverlay');
+const chatPanel    = document.getElementById('chatPanel');
+const chatClose    = document.getElementById('chatClose');
+const chatMessages = document.getElementById('chatMessages');
+const chatInput    = document.getElementById('chatInput');
+const chatSend     = document.getElementById('chatSend');
+const chatExamples = document.getElementById('chatExamples');
+
+function openChat()  { chatOverlay.classList.add('open'); chatPanel.classList.add('open'); chatInput.focus(); }
+function closeChat() { chatOverlay.classList.remove('open'); chatPanel.classList.remove('open'); }
+
+chatFab.addEventListener('click', openChat);
+chatClose.addEventListener('click', closeChat);
+chatOverlay.addEventListener('click', closeChat);
+
+chatExamples.querySelectorAll('.chat-example').forEach(el => {
+  el.addEventListener('click', () => { chatInput.value = el.textContent; sendChatMessage(); });
+});
+
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+});
+chatSend.addEventListener('click', sendChatMessage);
+
+chatInput.addEventListener('input', () => {
+  chatInput.style.height = 'auto';
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+});
+
+function appendMsg(role, text) {
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  div.textContent = text;
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  // Hide examples once conversation starts
+  if (chatMessages.querySelectorAll('.chat-msg.user').length > 0) {
+    chatExamples.style.display = 'none';
+  }
+  return div;
+}
+
+async function sendChatMessage() {
+  const q = chatInput.value.trim();
+  if (!q || chatSend.disabled) return;
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  chatExamples.style.display = 'none';
+
+  appendMsg('user', q);
+  const thinking = appendMsg('assistant thinking', '⏳ מחשב...');
+  chatSend.disabled = true;
+
+  try {
+    const res  = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q })
+    });
+    const data = await res.json();
+    thinking.remove();
+    if (data.answer) {
+      appendMsg('assistant', data.answer);
+    } else {
+      appendMsg('assistant', '❌ שגיאה: ' + (data.error || 'תשובה לא התקבלה'));
+    }
+  } catch (err) {
+    thinking.remove();
+    appendMsg('assistant', '❌ שגיאת רשת: ' + err.message);
+  } finally {
+    chatSend.disabled = false;
+    chatInput.focus();
   }
 }
 

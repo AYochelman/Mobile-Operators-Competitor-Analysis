@@ -1,0 +1,8 @@
+=== Checking /AbroadMain/Silent_roamers-old/ ===
+abroad-package-client count: 3
+  [0] visible=True text='בטן גב בתאילנד\nחבילה ל-30 ימים\n20\nGB\nשיחות\n20\xa0דקות\nהודעות סמס\n20\xa0הודעות\n99₪\nלרכישה\nמדינות כלולות>\nחשוב לדעת>'
+  [1] visible=True text='סופ"ש בקטנה\nחבילה ל-2 ימים\n1\nGB\nשיחות\n20\xa0דקות\nהודעות סמס\n20\xa0הודעות\n99₪\nלרכישה\nמדינות כלולות>\nחשוב לדעת>'
+  [2] visible=True text='טסים לגלוש\nחבילה ל-7 ימים\n3\nGB\nללא שיחות\nללא הודעות סמס\n119₪\nלרכישה\nמדינות כלולות>\nחשוב לדעת>'
+
+URL after navigation: https://cellcom.co.il/AbroadMain/Silent_roamers-old/
+Page title: רומרים שקטים :: סלקום

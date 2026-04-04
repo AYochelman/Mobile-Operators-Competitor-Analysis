@@ -90,6 +90,26 @@ def init_db(db_path=None):
                 scraped_at TEXT,
                 UNIQUE(carrier, plan_name)
             );
+            CREATE TABLE IF NOT EXISTS content_plans (
+                id         INTEGER PRIMARY KEY,
+                service    TEXT NOT NULL,
+                carrier    TEXT NOT NULL,
+                price      TEXT,
+                free_trial TEXT,
+                note       TEXT,
+                status     TEXT,
+                scraped_at TEXT,
+                UNIQUE(service, carrier)
+            );
+            CREATE TABLE IF NOT EXISTS content_changes (
+                id          INTEGER PRIMARY KEY,
+                service     TEXT NOT NULL,
+                carrier     TEXT NOT NULL,
+                change_type TEXT NOT NULL,
+                old_val     TEXT,
+                new_val     TEXT,
+                changed_at  TEXT NOT NULL
+            );
         """)
         conn.commit()
     finally:
@@ -378,6 +398,100 @@ def get_push_subscriptions(db_path=None):
         ).fetchall()
         return [
             {"endpoint": r[0], "keys": {"p256dh": r[1], "auth": r[2]}}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def save_content_plans(plans, db_path=None):
+    conn = _connect(db_path)
+    try:
+        now = datetime.now().isoformat()
+        for plan in plans:
+            conn.execute("""
+                INSERT INTO content_plans (service, carrier, price, free_trial, note, status, scraped_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(service, carrier) DO UPDATE SET
+                    price      = excluded.price,
+                    free_trial = excluded.free_trial,
+                    note       = excluded.note,
+                    status     = excluded.status,
+                    scraped_at = excluded.scraped_at
+            """, (
+                plan["service"], plan["carrier"], plan.get("price"),
+                plan.get("free_trial"), plan.get("note", ""),
+                plan.get("status"), now
+            ))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_content_plans(service=None, carrier=None, db_path=None):
+    conn = _connect(db_path)
+    try:
+        if service and carrier:
+            rows = conn.execute(
+                "SELECT service, carrier, price, free_trial, note, status, scraped_at "
+                "FROM content_plans WHERE service=? AND carrier=? ORDER BY service, carrier",
+                (service, carrier)
+            ).fetchall()
+        elif service:
+            rows = conn.execute(
+                "SELECT service, carrier, price, free_trial, note, status, scraped_at "
+                "FROM content_plans WHERE service=? ORDER BY carrier",
+                (service,)
+            ).fetchall()
+        elif carrier:
+            rows = conn.execute(
+                "SELECT service, carrier, price, free_trial, note, status, scraped_at "
+                "FROM content_plans WHERE carrier=? ORDER BY service",
+                (carrier,)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT service, carrier, price, free_trial, note, status, scraped_at "
+                "FROM content_plans ORDER BY service, carrier"
+            ).fetchall()
+        return [
+            {"service": r[0], "carrier": r[1], "price": r[2], "free_trial": r[3],
+             "note": r[4], "status": r[5], "scraped_at": r[6]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def save_content_changes(changes, db_path=None):
+    conn = _connect(db_path)
+    try:
+        now = datetime.now().isoformat()
+        for ch in changes:
+            conn.execute(
+                "INSERT INTO content_changes (service, carrier, change_type, old_val, new_val, changed_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (ch["service"], ch["carrier"], ch["change_type"],
+                 str(ch["old_val"]) if ch.get("old_val") is not None else None,
+                 str(ch["new_val"]) if ch.get("new_val") is not None else None,
+                 now)
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_content_changes(limit=50, db_path=None):
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT service, carrier, change_type, old_val, new_val, changed_at "
+            "FROM content_changes ORDER BY changed_at DESC, id DESC LIMIT ?",
+            (limit,)
+        ).fetchall()
+        return [
+            {"service": r[0], "carrier": r[1], "change_type": r[2],
+             "old_val": r[3], "new_val": r[4], "changed_at": r[5]}
             for r in rows
         ]
     finally:

@@ -1,0 +1,261 @@
+=== CELLCOM .package STRUCTURE ===
+Cellcom - .package elements (3):
+
+--- Package[0] id='SOC_A973' class='package'
+    data: data-infrastructures="", data-saletype="cellular", data-node-item="347"
+    full text: '4G Basic \n500GB\n\n3500 דק\' /SMS\n150 דק\' מהארץ לחו"ל\n₪44.9\nלחודש\nלהצטרפות\nלמידע נוסף '
+    Direct children:
+      <DIV class='header'>: '4G Basic \n500GB'
+      <DIV class='body-package'>: '3500 דק\' /SMS\n150 דק\' מהארץ לחו"ל\n₪44.9\nלחודש\nלהצטרפות\nלמידע נוסף '
+    Leaf structure:
+      DIV.text: '150 דק\' מהארץ לחו"ל'
+      SPAN.currency: '₪'
+      SPAN.no-class: 'לחודש'
+      SPAN.btn-submit__label: 'להצטרפות'
+      P.no-class: '100 דקות ליעדים נייחים ו-50 דקות ליעדים נייחים וניידים מישראל ל-40 מדינות נבחרות'
+      A.no-class: 'לעיקרי התוכנית'
+
+--- Package[1] id='SOC_AAGM' class='package'
+    data: data-infrastructures="", data-saletype="cellular", data-node-item="404"
+    full text: '5G \n800GB\n\n5000 דק\' /SMS\n500 דק\' מהארץ לחו"ל\nגלישה חופשית באפליקציות נבחרות\n₪39.9\nלחודש,\nלחודשיים הראשונים\n\nולאחר מכן 59.9 ₪ לחודש\n\nלהצטרפות\nלמידע נוסף '
+    Direct children:
+      <DIV class='header'>: '5G \n800GB'
+      <DIV class='body-package'>: '5000 דק\' /SMS\n500 דק\' מהארץ לחו"ל\nגלישה חופשית באפליקציות נבחרות\n₪39.9\nלחודש,\nלחודשיים הראשונים\n\nולא'
+    Leaf structure:
+      DIV.text: 'גלישה חופשית באפליקציות נבחרות'
+      SPAN.currency: '₪'
+      SPAN.no-class: 'לחודשיים הראשונים'
+      P.router-text: 'ולאחר מכן 59.9 ₪ לחודש'
+      SPAN.btn-submit__label: 'להצטרפות'
+      P.no-class: 'הנחה על שירות המתנה נעימה בסיסי'
+      A.no-class: 'לעיקרי התוכנית'
+
+--- Package[2] id='SOC_A979' class='package'
+    data: data-infrastructures="", data-saletype="cellular", data-node-item="472"
+    full text: 'כולל שירות תיקונים\n\n5G Pro Care \n1500GB\n\nנתיב מהיר ברשת\n5000 דק\' /SMS\n500 דק\' מהארץ לחו"ל\nשירות תיקונים מורחב\nגלישה חופשית באפליקציות נבחרות\n₪69.9\nלחודש\nלהצטרפות\nלמידע נוסף '
+    Direct children:
+      <DIV class='benefit'>: 'כולל שירות תיקונים'
+      <DIV class='header'>: '5G Pro Care \n1500GB\n\nנתיב מהיר ברשת'
+      <DIV class='body-package'>: '5000 דק\' /SMS\n500 דק\' מהארץ לחו"ל\nשירות תיקונים מורחב\nגלישה חופשית באפליקציות נבחרות\n₪69.9\nלחודש\nלהצ'
+    Leaf structure:
+      SPAN.benefit-text: 'כולל שירות תיקונים'
+      DIV.banner: 'נתיב מהיר ברשת'
+      DIV.text: 'גלישה חופשית באפליקציות נבחרות'
+      SPAN.currency: '₪'
+      SPAN.no-class: 'לחודש'
+      SPAN.btn-submit__label: 'להצטרפות'
+      P.no-class: 'שירות 5G Pro מאפשר מהירות גבוהה יותר במצבי עומס בתנאים מסוימים, בכפוף לאזורי כיס'
+      A.no-class: 'לעיקרי התוכנית'
+
+
+=== PARTNER .plan-wrapper STRUCTURE ===
+
+Partner - .plan-wrapper elements (3):
+
+--- Card[0] ---
+  Full text: 'Partner Prince\n400\nGB\n34.9 ₪ לחודש\nלמנוי בצרוף 2 מנויים ומעלה\n\n3,500 דקות ו-3,500 הודעות SMS\n\n200 דקות שיחה לחו"ל ל-42 יעדים נבחרים\n\nמנוי יחיד 39.9 ₪ לחודש\n\nלהצטרפות אונליין\nתנאי התכנית'
+  Direct children:
+    <H3 class='title'> (0 children): 'Partner Prince'
+    <DIV class='plan-banner'> (2 children): '400\nGB\n34.9 ₪ לחודש\nלמנוי בצרוף 2 מנויים ומעלה'
+    <DIV class='plan-advantages'> (2 children): '3,500 דקות ו-3,500 הודעות SMS\n\n200 דקות שיחה לחו"ל ל-42 יעדים נבחרים'
+    <DIV class='bottom-part'> (3 children): 'מנוי יחיד 39.9 ₪ לחודש\n\nלהצטרפות אונליין\nתנאי התכנית'
+  Leaf structure:
+    H3.title: 'Partner Prince'
+    SPAN.size: '400'
+    SPAN.no-class: 'GB'
+    SPAN.price: '34.9'
+    DIV.no-class: 'למנוי בצרוף 2 מנויים ומעלה'
+    P.no-class: '3,500 דקות ו-3,500 הודעות SMS'
+    A.btn-plan-modal: 'ל-42 יעדים נבחרים'
+    BUTTON.brand-btn btn-style-2: 'להצטרפות אונליין'
+    A.plan-link: 'תנאי התכנית'
+
+--- Card[1] ---
+  Full text: 'Partner Queen 5G\n500\nGB\n39.9 ₪ לחודש\nלמנוי למשך 3 חודשים\n\n5,000 דקות ו-5,000 הודעות SMS\n\n400 דקות שיחה לחו"ל ל-42 יעדים נבחרים\n\n49.9 לחודש למנוי מהחודש ה-4\n\nלהצטרפות אונליין\nתנאי התכנית'
+  Direct children:
+    <H3 class='title'> (0 children): 'Partner Queen 5G'
+    <DIV class='plan-banner'> (2 children): '500\nGB\n39.9 ₪ לחודש\nלמנוי למשך 3 חודשים'
+    <DIV class='plan-advantages'> (2 children): '5,000 דקות ו-5,000 הודעות SMS\n\n400 דקות שיחה לחו"ל ל-42 יעדים נבחרים'
+    <DIV class='bottom-part'> (3 children): '49.9 לחודש למנוי מהחודש ה-4\n\nלהצטרפות אונליין\nתנאי התכנית'
+  Leaf structure:
+    H3.title: 'Partner Queen 5G'
+    SPAN.size: '500'
+    SPAN.no-class: 'GB'
+    SPAN.price: '39.9'
+    DIV.no-class: 'למנוי למשך 3 חודשים'
+    P.no-class: '5,000 דקות ו-5,000 הודעות SMS'
+    A.btn-plan-modal: 'ל-42 יעדים נבחרים'
+    BUTTON.brand-btn btn-style-2: 'להצטרפות אונליין'
+    A.plan-link: 'תנאי התכנית'
+
+--- Card[2] ---
+  Full text: 'Partner King 5G\n800\nGB\n59.9 ₪ לחודש\nלמנוי\n\n6,000 דקות ו-6,000 הודעות SMS\n\n500 דקות שיחה לחו"ל ל-42 יעדים נבחרים\n\nשירות Funtone ו-CyberGuard כלול בתכנית\n\nלהצטרפות אונליין\nתנאי התכנית'
+  Direct children:
+    <H3 class='title'> (0 children): 'Partner King 5G'
+    <DIV class='plan-banner'> (2 children): '800\nGB\n59.9 ₪ לחודש\nלמנוי'
+    <DIV class='plan-advantages'> (3 children): '6,000 דקות ו-6,000 הודעות SMS\n\n500 דקות שיחה לחו"ל ל-42 יעדים נבחרים\n\nשירות Funtone ו-CyberGuard כלו'
+    <DIV class='bottom-part'> (2 children): 'להצטרפות אונליין\nתנאי התכנית'
+  Leaf structure:
+    H3.title: 'Partner King 5G'
+    SPAN.size: '800'
+    SPAN.no-class: 'GB'
+    SPAN.price: '59.9'
+    DIV.no-class: 'למנוי'
+    P.no-class: '6,000 דקות ו-6,000 הודעות SMS'
+    A.btn-plan-modal: 'ל-42 יעדים נבחרים'
+    BUTTON.brand-btn btn-style-2: 'להצטרפות אונליין'
+    A.plan-link: 'תנאי התכנית'
+
+
+=== 019MOBILE .item STRUCTURE ===
+
+019mobile - .item (regular plans) elements (3):
+
+--- Item[0] ---
+  Full text: "BIG DATA\n₪39.90\n300GB גלישה\n5000 דק' שיחה + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר\nשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות.\nהגלישה ברשת דור 5 תתאפשר במכשיר סלולרי התומך בדור 5, וכפוף למגבלות הרשת הסלולרית.\nטיוטת הסכם התקשרות"
+  Direct children:
+    <A class='hoverlink'> (0 children): ''
+    <DIV class='item_pack'> (2 children): "BIG DATA\n₪39.90\n300GB גלישה\n5000 דק' שיחה + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלה"
+  Leaf/near-leaf structure:
+    DIV.table-cell: 'BIG DATA'
+    H3.title: 'BIG DATA'
+    DIV.no-class: 'BIG DATA'
+    SPAN.nis: '₪'
+    SPAN.small: '90'
+    LI.no-class: '300GB גלישה'
+    STRONG.no-class: '300GB'
+    DIV.btns_group: 'להצטרפות באמצעות נציג\nלהצטרפות באתר'
+    A.btn btn_blue btn_update: 'להצטרפות באמצעות נציג'
+    A.btn btn_signup: 'להצטרפות באתר'
+    DIV.rules: 'שימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות.\nהגלישה ברשת'
+    DIV.table: 'שימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות.\nהגלישה ברשת'
+    A.no-class: 'טיוטת הסכם התקשרות'
+
+--- Item[1] ---
+  Full text: "לכל החיים\n₪19.80\n12GB גלישה\n5000 דק' שיחה + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר\nבשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות, אפשרות לסינון וחסימת אתרים בחינם.\nטיוטת הסכם התקשרות"
+  Direct children:
+    <A class='hoverlink'> (0 children): ''
+    <DIV class='item_pack'> (2 children): "לכל החיים\n₪19.80\n12GB גלישה\n5000 דק' שיחה + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלה"
+  Leaf/near-leaf structure:
+    DIV.table-cell: 'לכל החיים'
+    H3.title: 'לכל החיים'
+    DIV.no-class: 'לכל החיים'
+    SPAN.nis: '₪'
+    SPAN.small: '80'
+    LI.no-class: '12GB גלישה'
+    STRONG.no-class: '12GB'
+    DIV.btns_group: 'להצטרפות באמצעות נציג\nלהצטרפות באתר'
+    A.btn btn_blue btn_update: 'להצטרפות באמצעות נציג'
+    A.btn btn_signup: 'להצטרפות באתר'
+    DIV.rules: 'בשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות, אפשרות לסי'
+    DIV.table: 'בשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות, אפשרות לסי'
+    SPAN.white: 'i'
+    A.no-class: 'טיוטת הסכם התקשרות'
+
+--- Item[2] ---
+  Full text: "בול בפוני!\n₪21.90\n30GB גלישה\n5000 דק' + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפות באתר\nבשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות, אפשרות לסינון וחסימת אתרים בחינם.\nטיוטת הסכם התקשרות"
+  Direct children:
+    <A class='hoverlink'> (0 children): ''
+    <DIV class='item_pack'> (2 children): "בול בפוני!\n₪21.90\n30GB גלישה\n5000 דק' + 5000 הודעות\nמחיר קבוע לכל החיים\nלהצטרפות באמצעות נציג\nלהצטרפ"
+  Leaf/near-leaf structure:
+    DIV.table-cell: 'בול בפוני!'
+    H3.title: 'בול בפוני!'
+    DIV.no-class: 'בול בפוני!'
+    SPAN.nis: '₪'
+    SPAN.small: '90'
+    LI.no-class: '30GB גלישה'
+    STRONG.no-class: '30GB'
+    DIV.btns_group: 'להצטרפות באמצעות נציג\nלהצטרפות באתר'
+    A.btn btn_blue btn_update: 'להצטרפות באמצעות נציג'
+    A.btn btn_signup: 'להצטרפות באתר'
+    DIV.rules: 'בשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות, אפשרות לסי'
+    DIV.table: 'בשימוש אישי וסביר בכפוף לתקנון. עלות כרטיס ₪10i SIM כ,\neSIM ללא עלות, אפשרות לסי'
+    SPAN.white: 'i'
+    A.no-class: 'טיוטת הסכם התקשרות'
+
+
+=== PELEPHONE .border_5 .item STRUCTURE ===
+
+Pelephone - .border_5 .item elements (5):
+
+--- item[0] class='item item1' ---
+  Full text: 'מסלול 5G\n1000\nGB\n39.90\n₪\nלחודש\nלחודשיים הראשונים\nמתקדמים ל 5G ›\nגלישה חופשית באפליקציות נבחרות\nגלישה חופשית באפליקציות AI נבחרות\n5000 דקות ו- SMS\n₪120 לרכישת אביזרים בפלאפון\nמועדון הטבות 5G\nמסלול חו"ל \u200bTravel\nהחל מהחודש השלישי - ₪49.90 לחודש למנוי\nלהחלפת מסלול למנוי פלאפון >\nלמידע נוסף'
+  Leaf structure:
+    DIV.superlative: 'מסלול 5G'
+    DIV.only_gb: '1000 GB'
+    SPAN.a1: '1000'
+    SPAN.a2: 'GB'
+    SPAN.c: '39.90'
+    SPAN.d: '₪'
+    SPAN.e: 'לחודש'
+    DIV.monthly: 'לחודשיים הראשונים'
+    A.btn: 'מתקדמים ל 5G ›'
+    SPAN.no-class: 'גלישה חופשית באפליקציות נבחרות'
+    DIV.reg_price: 'החל מהחודש השלישי - ₪49.90 לחודש למנוי'
+    A."right": 'להחלפת מסלול למנוי פלאפון >'
+    A.left: 'למידע נוסף'
+
+--- item[1] class='item item2' ---
+  Full text: 'משתלמת דור 4\n400\nGB\n39.90\n₪\nלחודש למנוי\nמתקדמים לפלאפון ›\nחיבור מיידי עם eSIM\n3500 דקות ו- SMS\nמסלול חו"ל \u200bTravel\nלהחלפת מסלול למנוי פלאפון >\nלמידע נוסף'
+  Leaf structure:
+    DIV.superlative: 'משתלמת דור 4'
+    DIV.only_gb: '400 GB'
+    SPAN.a1: '400'
+    SPAN.a2: 'GB'
+    SPAN.c: '39.90'
+    SPAN.d: '₪'
+    SPAN.e: 'לחודש למנוי'
+    A.btn: 'מתקדמים לפלאפון ›'
+    SPAN.no-class: 'חיבור מיידי עם eSIM'
+    A."right": 'להחלפת מסלול למנוי פלאפון >'
+    A.left: 'למידע נוסף'
+
+--- item[2] class='item item3' ---
+  Full text: '5G Max VIP All NEW\n2000\nGB\n49.90\n₪\nלחודש\nלחודשיים הראשונים\nמתקדמים ל- 5G MAX ›\nגלישה חופשית באפליקציות נבחרות\nגלישה חופשית באפליקציות AI נבחרות\n5000 דקות\xa0ו- SMS\nתיעדוף בגלישה בדור 5 במצבי עומס\n100 ₪ לרכישת מוצרים בפלאפון *\nחיבור מיידי עם eSIM\nמסלול חו"ל \u200bTravel\nהחל מהחודש השלישי 64.9 ₪ לחודש למנוי\nה'
+  Leaf structure:
+    DIV.superlative: '5G Max VIP All NEW'
+    DIV.only_gb: '2000 GB'
+    SPAN.a1: '2000'
+    SPAN.a2: 'GB'
+    SPAN.c: '49.90'
+    SPAN.d: '₪'
+    SPAN.e: 'לחודש'
+    DIV.monthly: 'לחודשיים הראשונים'
+    A.btn: 'מתקדמים ל- 5G MAX ›'
+    SPAN.no-class: 'גלישה חופשית באפליקציות נבחרות'
+    DIV.no-class: 'החל מהחודש השלישי 64.9 ₪ לחודש למנוי'
+    A."right": 'להחלפת מסלול למנוי פלאפון >'
+    A.left: 'למידע נוסף'
+
+--- item[3] class='item item4' ---
+  Full text: '\n                           \n                                5G Max VIP Plus TOP \n                                \n                                    \n                                \n\n\n                            \n                                3000 GB\n                                \n           '
+  Leaf structure:
+    DIV.superlative: '5G Max VIP Plus TOP'
+    DIV.only_gb: '3000 GB'
+    SPAN.a1: '3000'
+    SPAN.a2: 'GB'
+    SPAN.c: '59.90'
+    SPAN.d: '₪'
+    SPAN.e: 'לחודש'
+    DIV.monthly: 'לחודשיים הראשונים'
+    A.btn: 'מתקדמים ל- 5G MAX ›'
+    SPAN.no-class: '5000 דקות\xa0ו- SMS'
+    DIV.no-class: 'החל מהחודש השלישי 74.9 ₪ לחודש למנוי'
+    A."right": 'להחלפת מסלול למנוי פלאפון >'
+    A.left: 'מידע נוסף >'
+
+--- item[4] class='item item5' ---
+  Full text: '\n                           \n                                5G Max VIP Global NEW \n                                \n                                    \n                                \n\n\n                            \n                                3000 GB\n                                \n         '
+  Leaf structure:
+    DIV.superlative: '5G Max VIP Global NEW'
+    DIV.only_gb: '3000 GB'
+    SPAN.a1: '3000'
+    SPAN.a2: 'GB'
+    SPAN.c: '129'
+    SPAN.d: '₪'
+    SPAN.e: 'לחודש'
+    A.btn: 'מתקדמים ל- 5G MAX ›'
+    SPAN.no-class: '5000 דקות\xa0ו- SMS'
+    DIV.no-class: 'מסלול בהתחייבות'
+    A."right": 'להחלפת מסלול למנוי פלאפון >'
+    A.left: 'מידע נוסף >'

@@ -17,6 +17,16 @@ CARRIER_NAMES = {
     "mobile019": "019",
 }
 
+GLOBAL_PROVIDER_NAMES = {
+    "tuki":             "Tuki",
+    "globalesim":       "GlobaleSIM",
+    "airalo":           "Airalo",
+    "pelephone_global": "GlobalSIM - Pelephone",
+    "esimo":            "eSIMo",
+    "simtlv":           "SimTLV",
+    "world8":           "8 World",
+}
+
 
 def format_message(changes):
     now = datetime.now().strftime("%H:%M")
@@ -47,6 +57,8 @@ def format_message(changes):
                 lines.append(f"❌ הוסרה: {ch['plan_name']}")
             elif ct == "extras_change":
                 lines.append(f"🔄 שינוי הטבות: {ch['plan_name']}")
+            elif ct == "details_change":
+                lines.append(f"📋 {ch['plan_name']}: {ch['new_val']} (היה: {ch['old_val']})")
 
     lines += ["", "📊 http://localhost:5000"]
     return "\n".join(lines)
@@ -84,6 +96,77 @@ def format_abroad_message(changes):
                 lines.append(f"❌ הוסרה: {ch['plan_name']}")
             elif ct == "extras_change":
                 lines.append(f"🔄 שינוי פרטים: {ch['plan_name']}")
+            elif ct == "details_change":
+                lines.append(f"📋 {ch['plan_name']}: {ch['new_val']} (היה: {ch['old_val']})")
+
+    lines += ["", "📊 http://localhost:5000"]
+    return "\n".join(lines)
+
+
+def format_global_message(changes):
+    now = datetime.now().strftime("%H:%M")
+    by_provider = defaultdict(list)
+    for ch in changes:
+        by_provider[ch["carrier"]].append(ch)
+
+    n = len(by_provider)
+    suffix = "ספק" if n == 1 else "ספקים"
+    lines = [
+        f"🌍 חבילות גלובליות | עדכון {now}",
+        "",
+        f"🔔 זוהו שינויים ב-{n} {suffix}",
+    ]
+
+    for carrier, carrier_changes in by_provider.items():
+        name = GLOBAL_PROVIDER_NAMES.get(carrier, carrier)
+        lines.append(f"\n● {name}")
+        for ch in carrier_changes:
+            ct = ch["change_type"]
+            if ct == "price_change":
+                old, new = ch["old_val"], ch["new_val"]
+                try:
+                    arrow = "↘" if float(new) < float(old) else "↗"
+                except (TypeError, ValueError):
+                    arrow = "↕"
+                lines.append(f"{arrow} {ch['plan_name']}: ₪{old} ← ₪{new}")
+            elif ct == "new_plan":
+                lines.append(f"✨ חבילה חדשה: {ch['plan_name']} ב-₪{ch['new_val']}")
+            elif ct == "removed_plan":
+                lines.append(f"❌ הוסרה: {ch['plan_name']}")
+            elif ct == "extras_change":
+                lines.append(f"🔄 שינוי פרטים: {ch['plan_name']}")
+            elif ct == "details_change":
+                lines.append(f"📋 {ch['plan_name']}: {ch['new_val']} (היה: {ch['old_val']})")
+
+    lines += ["", "📊 http://localhost:5000"]
+    return "\n".join(lines)
+
+
+def format_content_message(changes):
+    now = datetime.now().strftime("%H:%M")
+    by_service = defaultdict(list)
+    for ch in changes:
+        by_service[ch["service"]].append(ch)
+
+    n = len(by_service)
+    suffix = "שירות" if n == 1 else "שירותים"
+    lines = [
+        f"📺 שירותי תוכן | עדכון {now}",
+        "",
+        f"🔔 זוהו שינויים ב-{n} {suffix}",
+    ]
+
+    for service, service_changes in by_service.items():
+        lines.append(f"\n● {service}")
+        for ch in service_changes:
+            ct = ch["change_type"]
+            carrier_name = CARRIER_NAMES.get(ch.get("carrier", ""), ch.get("carrier", ""))
+            if ct == "price_change":
+                lines.append(f"💰 {carrier_name}: {ch['old_val']} ← {ch['new_val']}")
+            elif ct == "new_service":
+                lines.append(f"✨ {carrier_name}: חדש — {ch['new_val']}")
+            elif ct == "trial_change":
+                lines.append(f"🎁 {carrier_name}: ניסיון {ch['old_val']} ← {ch['new_val']}")
 
     lines += ["", "📊 http://localhost:5000"]
     return "\n".join(lines)

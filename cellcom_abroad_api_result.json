@@ -1,0 +1,5581 @@
+{
+  "Header": {
+    "ReturnCode": 0,
+    "ReturnCodeMessage": "SUCCESS"
+  },
+  "Body": [
+    {
+      "blockId": "20542",
+      "labelEpi": "",
+      "titleEpi": "המושלמת לחו\"ל",
+      "packageDuration": 30,
+      "packageBankExpirationDate": "02.05.2026",
+      "type": "VoiceSmsData",
+      "packageSegment": "Unknown",
+      "isBankOrByUse": "Bank",
+      "packageDetailsList": [
+        {
+          "voice": {
+            "unit": "MultiFeatures",
+            "value": 100,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "sms": {
+            "unit": "Occurrences Call",
+            "value": 100,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "data": {
+            "unit": "GB",
+            "value": 20,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "countrySupportedList": null
+        }
+      ],
+      "iconAppEpi": null,
+      "price": 249.0,
+      "priceDeleted": 0.0,
+      "buttonValue": "לרכישה",
+      "policiesEpi": "/globalassets/pdf/abraod/04.22/30110.pdf",
+      "dataForApp": {
+        "hasDataForApp": false,
+        "isUnlimitedDataForApp": false,
+        "valueDataForApp": null,
+        "unit": "Empty"
+      },
+      "importantInfo": [
+        "מכסת הדקות מתייחסת לשיחות יוצאות למספרים ישראלים, שיחות נכנסות, ומקומיות בלבד",
+        "תעריף דקת שיחה יוצאת למספרים ישראלים/שיחה נכנסת לאחר סיום כמות הדקות בחבילה הוא ₪2.5 לדקה , כל עוד החבילה בתוקף, ותעריף דקת שיחה מקומית לאחר סיום כמות הדקות בחבילה הוא ₪4.5 לדקה, כל עוד החבילה בתוקף",
+        "תעריף הודעה יוצאת לאחר סיום כמות ההודעות בחבילה הוא ₪2.5 להודעה , כל עוד החבילה בתוקף",
+        "החבילה כוללת תעריף מוזל של ₪4.5 לדקת שיחה בינלאומית, כל עוד החבילה בתוקף",
+        "לאחר סיום תוקף החבילה, תעריף דקת שיחה למספר ישראלי/ בינלאומי/ מקומי הוא ₪19.9",
+        "החבילה אינה תקפה באניות ובמטוסים. תעריף דקת שיחה בינלאומית ומקומית – 4.5 ₪, כל עוד לא הסתיימה החבילה. לאחר סיומה, תעריף דקת שיחה בינלאומית ומקומית  הוא 19.90 ₪. לתשומת ליבך, קיימים מפעילים אשר אינם תומכים ברשת דור 3 ודור 2 – כך שלא ניתן לבצע שימוש ברשתות מפעילים אלו במכשירי דור 2, 3 וכן לא ניתן לבצע שימושי שיחה ברשתות אלו במכשירים שאינם תומכים ב-VOLTE"
+      ],
+      "displayImportantToKnow": true,
+      "countrySupportedList": [
+        {
+          "countryCode": "AD",
+          "countryHebName": "אנדורה"
+        },
+        {
+          "countryCode": "AG",
+          "countryHebName": "אנטיגואה וברבודה"
+        },
+        {
+          "countryCode": "AI",
+          "countryHebName": "אנגווילה"
+        },
+        {
+          "countryCode": "AL",
+          "countryHebName": "אלבניה"
+        },
+        {
+          "countryCode": "AM",
+          "countryHebName": "ארמניה"
+        },
+        {
+          "countryCode": "AN",
+          "countryHebName": "האנטילים ההולנדיים"
+        },
+        {
+          "countryCode": "AR",
+          "countryHebName": "ארגנטינה"
+        },
+        {
+          "countryCode": "AT",
+          "countryHebName": "אוסטריה"
+        },
+        {
+          "countryCode": "AU",
+          "countryHebName": "אוסטרליה"
+        },
+        {
+          "countryCode": "AW",
+          "countryHebName": "ארובה"
+        },
+        {
+          "countryCode": "BA",
+          "countryHebName": "בוסניה הרצגובינה"
+        },
+        {
+          "countryCode": "BB",
+          "countryHebName": "ברבדוס"
+        },
+        {
+          "countryCode": "BE",
+          "countryHebName": "בלגיה"
+        },
+        {
+          "countryCode": "BG",
+          "countryHebName": "בולגריה"
+        },
+        {
+          "countryCode": "BH",
+          "countryHebName": "בחריין"
+        },
+        {
+          "countryCode": "BM",
+          "countryHebName": "ברמודה"
+        },
+        {
+          "countryCode": "BO",
+          "countryHebName": "בוליביה"
+        },
+        {
+          "countryCode": "BR",
+          "countryHebName": "ברזיל"
+        },
+        {
+          "countryCode": "BS",
+          "countryHebName": "איי בהאמה"
+        },
+        {
+          "countryCode": "BW",
+          "countryHebName": "בוטסואנה"
+        },
+        {
+          "countryCode": "BY",
+          "countryHebName": "בלארוס"
+        },
+        {
+          "countryCode": "BZ",
+          "countryHebName": "בליז"
+        },
+        {
+          "countryCode": "CA",
+          "countryHebName": "קנדה"
+        },
+        {
+          "countryCode": "CD",
+          "countryHebName": "הרפובליקה הדמוקרטית של קונגו"
+        },
+        {
+          "countryCode": "CG",
+          "countryHebName": "קונגו"
+        },
+        {
+          "countryCode": "CH",
+          "countryHebName": "שוויץ"
+        },
+        {
+          "countryCode": "CI",
+          "countryHebName": "חוף השנהב"
+        },
+        {
+          "countryCode": "CN",
+          "countryHebName": "סין"
+        },
+        {
+          "countryCode": "CO",
+          "countryHebName": "קולומביה"
+        },
+        {
+          "countryCode": "CR",
+          "countryHebName": "קוסטה ריקה"
+        },
+        {
+          "countryCode": "CY",
+          "countryHebName": "קפריסין"
+        },
+        {
+          "countryCode": "DE",
+          "countryHebName": "גרמניה"
+        },
+        {
+          "countryCode": "DK",
+          "countryHebName": "דנמרק"
+        },
+        {
+          "countryCode": "DM",
+          "countryHebName": "דומיניקה"
+        },
+        {
+          "countryCode": "DO",
+          "countryHebName": "הרפובליקה הדומיניקנית"
+        },
+        {
+          "countryCode": "EC",
+          "countryHebName": "אקוודור"
+        },
+        {
+          "countryCode": "EE",
+          "countryHebName": "אסטוניה"
+        },
+        {
+          "countryCode": "ET",
+          "countryHebName": "אתיופיה"
+        },
+        {
+          "countryCode": "FI",
+          "countryHebName": "פינלנד"
+        },
+        {
+          "countryCode": "FO",
+          "countryHebName": "איי פארו"
+        },
+        {
+          "countryCode": "FR",
+          "countryHebName": "צרפת"
+        },
+        {
+          "countryCode": "GA",
+          "countryHebName": "גבון"
+        },
+        {
+          "countryCode": "GD",
+          "countryHebName": "גרנאדה"
+        },
+        {
+          "countryCode": "GE",
+          "countryHebName": "גיאורגיה"
+        },
+        {
+          "countryCode": "GH",
+          "countryHebName": "גאנה"
+        },
+        {
+          "countryCode": "GP",
+          "countryHebName": "גוואדלופ"
+        },
+        {
+          "countryCode": "GR",
+          "countryHebName": "יוון"
+        },
+        {
+          "countryCode": "HK",
+          "countryHebName": "הונג קונג"
+        },
+        {
+          "countryCode": "HN",
+          "countryHebName": "הונדורס"
+        },
+        {
+          "countryCode": "HR",
+          "countryHebName": "קרואטיה"
+        },
+        {
+          "countryCode": "HT",
+          "countryHebName": "האיטי"
+        },
+        {
+          "countryCode": "HU",
+          "countryHebName": "הונגריה"
+        },
+        {
+          "countryCode": "IE",
+          "countryHebName": "אירלנד"
+        },
+        {
+          "countryCode": "IN",
+          "countryHebName": "הודו"
+        },
+        {
+          "countryCode": "IS",
+          "countryHebName": "איסלנד"
+        },
+        {
+          "countryCode": "IT",
+          "countryHebName": "איטליה"
+        },
+        {
+          "countryCode": "JO",
+          "countryHebName": "ירדן"
+        },
+        {
+          "countryCode": "JP",
+          "countryHebName": "יפן"
+        },
+        {
+          "countryCode": "KE",
+          "countryHebName": "קניה"
+        },
+        {
+          "countryCode": "KH",
+          "countryHebName": "קמבודיה"
+        },
+        {
+          "countryCode": "KN",
+          "countryHebName": "סנט קיטס ונוויס"
+        },
+        {
+          "countryCode": "KR",
+          "countryHebName": "קוריאה הדרומית"
+        },
+        {
+          "countryCode": "KY",
+          "countryHebName": "איי קיימן"
+        },
+        {
+          "countryCode": "KZ",
+          "countryHebName": "קזחסטן"
+        },
+        {
+          "countryCode": "LC",
+          "countryHebName": "סנט לוסיה"
+        },
+        {
+          "countryCode": "LI",
+          "countryHebName": "ליכטנשטיין"
+        },
+        {
+          "countryCode": "LK",
+          "countryHebName": "סרי לנקה"
+        },
+        {
+          "countryCode": "LS",
+          "countryHebName": "לסוטו"
+        },
+        {
+          "countryCode": "LT",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "LU",
+          "countryHebName": "לוקסמבורג"
+        },
+        {
+          "countryCode": "LV",
+          "countryHebName": "לטביה"
+        },
+        {
+          "countryCode": "MA",
+          "countryHebName": "מרוקו"
+        },
+        {
+          "countryCode": "MC",
+          "countryHebName": "מונקו"
+        },
+        {
+          "countryCode": "MD",
+          "countryHebName": "מולדובה"
+        },
+        {
+          "countryCode": "XK",
+          "countryHebName": "קוסובו"
+        },
+        {
+          "countryCode": "MG",
+          "countryHebName": "מדגסקר"
+        },
+        {
+          "countryCode": "MK",
+          "countryHebName": "מקדוניה"
+        },
+        {
+          "countryCode": "AE",
+          "countryHebName": "איחוד האמירויות הערביות"
+        },
+        {
+          "countryCode": "GB",
+          "countryHebName": "בריטניה (כולל סקוטלנד)"
+        },
+        {
+          "countryCode": "JM",
+          "countryHebName": "ג'מייקה"
+        },
+        {
+          "countryCode": "GT",
+          "countryHebName": "גוואטמלה"
+        },
+        {
+          "countryCode": "EG",
+          "countryHebName": "מצרים (דרום סיני בלבד)"
+        },
+        {
+          "countryCode": "ES",
+          "countryHebName": "ספרד (כולל האיים הקנריים והבאלריים)"
+        },
+        {
+          "countryCode": "FJ",
+          "countryHebName": "פיג'י"
+        },
+        {
+          "countryCode": "CL",
+          "countryHebName": "צ'ילה"
+        },
+        {
+          "countryCode": "CZ",
+          "countryHebName": "צ'כיה"
+        },
+        {
+          "countryCode": "KG",
+          "countryHebName": "קירגיסטן"
+        },
+        {
+          "countryCode": "MO",
+          "countryHebName": "מקאו"
+        },
+        {
+          "countryCode": "MQ",
+          "countryHebName": "מרטיניק"
+        },
+        {
+          "countryCode": "MS",
+          "countryHebName": "מונטסראט"
+        },
+        {
+          "countryCode": "MT",
+          "countryHebName": "מלטה"
+        },
+        {
+          "countryCode": "MU",
+          "countryHebName": "מאוריציוס"
+        },
+        {
+          "countryCode": "MW",
+          "countryHebName": "מלאווי"
+        },
+        {
+          "countryCode": "MX",
+          "countryHebName": "מקסיקו"
+        },
+        {
+          "countryCode": "MZ",
+          "countryHebName": "מוזמביק"
+        },
+        {
+          "countryCode": "NG",
+          "countryHebName": "ניגריה"
+        },
+        {
+          "countryCode": "NI",
+          "countryHebName": "ניקרגואה"
+        },
+        {
+          "countryCode": "NL",
+          "countryHebName": "הולנד"
+        },
+        {
+          "countryCode": "NO",
+          "countryHebName": "נורבגיה"
+        },
+        {
+          "countryCode": "NP",
+          "countryHebName": "נפאל"
+        },
+        {
+          "countryCode": "NZ",
+          "countryHebName": "ניו זילנד"
+        },
+        {
+          "countryCode": "PA",
+          "countryHebName": "פנמה"
+        },
+        {
+          "countryCode": "PE",
+          "countryHebName": "פרו"
+        },
+        {
+          "countryCode": "PF",
+          "countryHebName": "פולינזיה הצרפתית"
+        },
+        {
+          "countryCode": "PG",
+          "countryHebName": "פפואה ניו גינאה"
+        },
+        {
+          "countryCode": "PH",
+          "countryHebName": "פיליפינים"
+        },
+        {
+          "countryCode": "PL",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "PR",
+          "countryHebName": "פורטו ריקו"
+        },
+        {
+          "countryCode": "PY",
+          "countryHebName": "פרגוואי"
+        },
+        {
+          "countryCode": "RO",
+          "countryHebName": "רומניה"
+        },
+        {
+          "countryCode": "RS",
+          "countryHebName": "סרביה"
+        },
+        {
+          "countryCode": "RU",
+          "countryHebName": "רוסיה"
+        },
+        {
+          "countryCode": "RW",
+          "countryHebName": "רואנדה"
+        },
+        {
+          "countryCode": "SC",
+          "countryHebName": "סיישל"
+        },
+        {
+          "countryCode": "SE",
+          "countryHebName": "שוודיה"
+        },
+        {
+          "countryCode": "SG",
+          "countryHebName": "סינגפור"
+        },
+        {
+          "countryCode": "SI",
+          "countryHebName": "סלובניה"
+        },
+        {
+          "countryCode": "SK",
+          "countryHebName": "סלובקיה"
+        },
+        {
+          "countryCode": "SR",
+          "countryHebName": "סורינאם"
+        },
+        {
+          "countryCode": "SV",
+          "countryHebName": "אל סלוודור"
+        },
+        {
+          "countryCode": "TC",
+          "countryHebName": "איי טרקס וקייקוס"
+        },
+        {
+          "countryCode": "TG",
+          "countryHebName": "טוגו"
+        },
+        {
+          "countryCode": "TH",
+          "countryHebName": "תאילנד"
+        },
+        {
+          "countryCode": "TJ",
+          "countryHebName": "טגיקיסטן"
+        },
+        {
+          "countryCode": "TR",
+          "countryHebName": "טורקיה"
+        },
+        {
+          "countryCode": "TT",
+          "countryHebName": "טרינידד וטובגו"
+        },
+        {
+          "countryCode": "TW",
+          "countryHebName": "טאיוואן"
+        },
+        {
+          "countryCode": "TZ",
+          "countryHebName": "טנזניה"
+        },
+        {
+          "countryCode": "UA",
+          "countryHebName": "אוקראינה"
+        },
+        {
+          "countryCode": "UG",
+          "countryHebName": "אוגנדה"
+        },
+        {
+          "countryCode": "US",
+          "countryHebName": "ארה\"ב"
+        },
+        {
+          "countryCode": "UY",
+          "countryHebName": "אורוגוואי"
+        },
+        {
+          "countryCode": "UZ",
+          "countryHebName": "אוזבקיסטן"
+        },
+        {
+          "countryCode": "VC",
+          "countryHebName": "סנט וינסנט והגרנדינים"
+        },
+        {
+          "countryCode": "VE",
+          "countryHebName": "ונצואלה"
+        },
+        {
+          "countryCode": "VG",
+          "countryHebName": "איי הבתולה הבריטיים"
+        },
+        {
+          "countryCode": "VN",
+          "countryHebName": "וייטנאם"
+        },
+        {
+          "countryCode": "ZA",
+          "countryHebName": "דרום אפריקה"
+        },
+        {
+          "countryCode": "ZM",
+          "countryHebName": "זמביה"
+        },
+        {
+          "countryCode": "NE",
+          "countryHebName": "ניז'ר"
+        },
+        {
+          "countryCode": "ME",
+          "countryHebName": "מונטנגרו"
+        },
+        {
+          "countryCode": "AZ",
+          "countryHebName": "אזרבייג'ן"
+        },
+        {
+          "countryCode": "PT",
+          "countryHebName": "פורטוגל (כולל איי מדיירה והאיים האזוריים)"
+        },
+        {
+          "countryCode": "TD",
+          "countryHebName": "צ'אד"
+        },
+        {
+          "countryCode": "ID",
+          "countryHebName": "אינדונזיה"
+        }
+      ],
+      "countryNotSupportedList": [
+        {
+          "countryCode": "BT",
+          "countryHebName": "בהוטן"
+        },
+        {
+          "countryCode": "PT1",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "LB",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "SY",
+          "countryHebName": "סרביה"
+        }
+      ],
+      "countrySupportedDictionary": {
+        "א": "אנדורה, אנטיגואה וברבודה, אנגווילה, אלבניה, ארמניה, ארגנטינה, אוסטריה, אוסטרליה, ארובה, איי בהאמה, אקוודור, אסטוניה, אתיופיה, איי פארו, אירלנד, איסלנד, איטליה, איי קיימן, איחוד האמירויות הערביות, אל סלוודור, איי טרקס וקייקוס, אוקראינה, אוגנדה, ארה\"ב, אורוגוואי, אוזבקיסטן, איי הבתולה הבריטיים, אזרבייג'ן, אינדונזיה",
+        "ב": "בוסניה הרצגובינה, ברבדוס, בלגיה, בולגריה, בחריין, ברמודה, בוליביה, ברזיל, בוטסואנה, בלארוס, בליז, בריטניה (כולל סקוטלנד)",
+        "ג": "גרמניה, גבון, גרנאדה, גיאורגיה, גאנה, גוואדלופ, ג'מייקה, גוואטמלה",
+        "ד": "דנמרק, דומיניקה, דרום אפריקה",
+        "ה": "האנטילים ההולנדיים, הרפובליקה הדמוקרטית של קונגו, הרפובליקה הדומיניקנית, הונג קונג, הונדורס, האיטי, הונגריה, הודו, הולנד",
+        "ו": "ונצואלה, וייטנאם",
+        "ז": "זמביה",
+        "ח": "חוף השנהב",
+        "ט": "טוגו, טגיקיסטן, טורקיה, טרינידד וטובגו, טאיוואן, טנזניה",
+        "י": "יוון, ירדן, יפן",
+        "ל": "ליכטנשטיין, לסוטו, ליטא, לוקסמבורג, לטביה",
+        "מ": "מרוקו, מונקו, מולדובה, מדגסקר, מקדוניה, מצרים (דרום סיני בלבד), מקאו, מרטיניק, מונטסראט, מלטה, מאוריציוס, מלאווי, מקסיקו, מוזמביק, מונטנגרו",
+        "נ": "ניגריה, ניקרגואה, נורבגיה, נפאל, ניו זילנד, ניז'ר",
+        "ס": "סין, סנט קיטס ונוויס, סנט לוסיה, סרי לנקה, ספרד (כולל האיים הקנריים והבאלריים), סרביה, סיישל, סינגפור, סלובניה, סלובקיה, סורינאם, סנט וינסנט והגרנדינים",
+        "פ": "פינלנד, פיג'י, פנמה, פרו, פולינזיה הצרפתית, פפואה ניו גינאה, פיליפינים, פולין, פורטו ריקו, פרגוואי, פורטוגל (כולל איי מדיירה והאיים האזוריים)",
+        "צ": "צרפת, צ'ילה, צ'כיה, צ'אד",
+        "ק": "קנדה, קונגו, קולומביה, קוסטה ריקה, קפריסין, קרואטיה, קניה, קמבודיה, קוריאה הדרומית, קזחסטן, קוסובו, קירגיסטן",
+        "ר": "רומניה, רוסיה, רואנדה",
+        "ש": "שוויץ, שוודיה",
+        "ת": "תאילנד"
+      },
+      "tagTextSecondary": "כולל שיחות מקומיות",
+      "socCode": "FMWH998",
+      "isRecurringPayment": null,
+      "textInsideTooltipPackage": null,
+      "textUnderPackage": "מגיעה לך חבילת גלישה 5GB נוספת לבני משפחה ב – 49 ₪ בלבד",
+      "isSearch": false,
+      "matchType": "Null",
+      "countrySearchedButNotSupported": null,
+      "numberOfTripAllowed": null,
+      "isGiveFamilyBonus": true,
+      "isFamilyBonus": false,
+      "packageCodeFamilyBonus": "HULMISH",
+      "socCodeFamilyBonus": "HULMISH",
+      "familyPackageDescriptionFromPackageManager": "חבילה מוזלת לבני משפחה",
+      "isShelfBusinessIndividual": false,
+      "socDescription": null,
+      "socCatalogId": "SOC_FMWH998"
+    },
+    {
+      "blockId": "36777",
+      "labelEpi": "",
+      "titleEpi": "כל מה שצריך לחודש",
+      "packageDuration": 30,
+      "packageBankExpirationDate": "02.05.2026",
+      "type": "VoiceSmsData",
+      "packageSegment": "Unknown",
+      "isBankOrByUse": "Bank",
+      "packageDetailsList": [
+        {
+          "voice": {
+            "unit": "MultiFeatures",
+            "value": 250,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "sms": {
+            "unit": "Occurrences Call",
+            "value": 250,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "data": {
+            "unit": "GB",
+            "value": 50,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "countrySupportedList": null
+        }
+      ],
+      "iconAppEpi": null,
+      "price": 299.0,
+      "priceDeleted": 0.0,
+      "buttonValue": "לרכישה",
+      "policiesEpi": "/globalassets/pdf/abraod/30009.pdf",
+      "dataForApp": {
+        "hasDataForApp": true,
+        "isUnlimitedDataForApp": true,
+        "valueDataForApp": null,
+        "unit": "Empty"
+      },
+      "importantInfo": [
+        "מכסת הדקות מתייחסת לשיחות יוצאות למספרים ישראלים, שיחות נכנסות, ומקומיות בלבד",
+        "תעריף דקת שיחה יוצאת למספרים ישראלים/שיחה נכנסת לאחר סיום כמות הדקות בחבילה הוא ₪2.5 לדקה , כל עוד החבילה בתוקף, ותעריף דקת שיחה מקומית לאחר סיום כמות הדקות בחבילה הוא ₪4.5 לדקה, כל עוד החבילה בתוקף",
+        "תעריף הודעה יוצאת לאחר סיום כמות ההודעות בחבילה הוא ₪2.5 להודעה , כל עוד החבילה בתוקף",
+        "החבילה כוללת תעריף מוזל של ₪4.5 לדקת שיחה בינלאומית, כל עוד החבילה בתוקף",
+        "לאחר סיום תוקף החבילה, תעריף דקת שיחה למספר ישראלי/ בינלאומי/ מקומי הוא ₪19.9",
+        "חבילת הגלישה כוללת רכיב גלישה ללא הגבלה ב - 5 אפליקציות נבחרות: WhatsApp, Instagram, Skype, Facebook, Waze. השימוש באפליקציות הנבחרות אינו צורך מנפח הגלישה הכלול בחבילת הגלישה כל עוד החבילה בתוקף ונותר נפח גלישה לניצול במסגרתה, ובכפוף לשימוש סביר והוגן לצורך אישי במכשיר הקו הסלולרי בו נרכשה החבילה.",
+        "מכסת הדקות מתייחסת לשיחות יוצאות למספרים ישראלים ושיחות מקומיות במדינת היעד  ושיחות נכנסות בלבד מכסת הדקות מתייחסת לשיחות יוצאות ונכנסות למספרים ישראלים ומקומיים במדינת היעד. תעריף דקת שיחה יוצאת/נכנסת למספרים ישראלים לאחר סיום כמות הדקות בחבילה הוא ₪2.5 לדקה, כל עוד החבילה בתוקף. תעריף דקת שיחה יוצאת/נכנסת למספרים מקומיים לאחר סיום כמות הדקות בחבילה הוא ₪4.5 לדקה, כל עוד החבילה בתוקף. תעריף הודעה יוצאת לאחר סיום כמות ההודעות בחבילה הוא ₪2.5 להודעה, כל עוד החבילה בתוקף. החבילה כוללת תעריף מוזל של ₪4.5 לדקת שיחה בינלאומית, כל עוד החבילה בתוקף. החבילה כוללת גלישה חופשית לאפליקציות נבחרות. הטבת הגלישה באפליקציות נבחרות תהיה בתוקף כל עוד נותר נפח גלישה לניצול במסגרת חבילת הגלישה הבסיסית. החבילה אינה תקפה באניות ובמטוסים. לאחר סיום תוקף החבילה, תעריף דקת שיחה למספר ישראלי/בינלאומית/מקומית הוא 19.90 ₪. לתשומת ליבך, קיימים מפעילים אשר אינם תומכים ברשת דור 3 ודור 2 – כך שלא ניתן לבצע שימוש ברשתות מפעילים אלו במכשירי דור 2, 3 וכן לא ניתן לבצע שימושי שיחה ברשתות אלו במכשירים שאינם תומכים ב.-VOLTE"
+      ],
+      "displayImportantToKnow": true,
+      "countrySupportedList": [
+        {
+          "countryCode": "AD",
+          "countryHebName": "אנדורה"
+        },
+        {
+          "countryCode": "AG",
+          "countryHebName": "אנטיגואה וברבודה"
+        },
+        {
+          "countryCode": "AI",
+          "countryHebName": "אנגווילה"
+        },
+        {
+          "countryCode": "AL",
+          "countryHebName": "אלבניה"
+        },
+        {
+          "countryCode": "AM",
+          "countryHebName": "ארמניה"
+        },
+        {
+          "countryCode": "AN",
+          "countryHebName": "האנטילים ההולנדיים"
+        },
+        {
+          "countryCode": "AR",
+          "countryHebName": "ארגנטינה"
+        },
+        {
+          "countryCode": "AT",
+          "countryHebName": "אוסטריה"
+        },
+        {
+          "countryCode": "AU",
+          "countryHebName": "אוסטרליה"
+        },
+        {
+          "countryCode": "AW",
+          "countryHebName": "ארובה"
+        },
+        {
+          "countryCode": "BA",
+          "countryHebName": "בוסניה הרצגובינה"
+        },
+        {
+          "countryCode": "BB",
+          "countryHebName": "ברבדוס"
+        },
+        {
+          "countryCode": "BE",
+          "countryHebName": "בלגיה"
+        },
+        {
+          "countryCode": "BG",
+          "countryHebName": "בולגריה"
+        },
+        {
+          "countryCode": "BH",
+          "countryHebName": "בחריין"
+        },
+        {
+          "countryCode": "BM",
+          "countryHebName": "ברמודה"
+        },
+        {
+          "countryCode": "BO",
+          "countryHebName": "בוליביה"
+        },
+        {
+          "countryCode": "BR",
+          "countryHebName": "ברזיל"
+        },
+        {
+          "countryCode": "BS",
+          "countryHebName": "איי בהאמה"
+        },
+        {
+          "countryCode": "BW",
+          "countryHebName": "בוטסואנה"
+        },
+        {
+          "countryCode": "BY",
+          "countryHebName": "בלארוס"
+        },
+        {
+          "countryCode": "BZ",
+          "countryHebName": "בליז"
+        },
+        {
+          "countryCode": "CA",
+          "countryHebName": "קנדה"
+        },
+        {
+          "countryCode": "CD",
+          "countryHebName": "הרפובליקה הדמוקרטית של קונגו"
+        },
+        {
+          "countryCode": "CG",
+          "countryHebName": "קונגו"
+        },
+        {
+          "countryCode": "CH",
+          "countryHebName": "שוויץ"
+        },
+        {
+          "countryCode": "CI",
+          "countryHebName": "חוף השנהב"
+        },
+        {
+          "countryCode": "CN",
+          "countryHebName": "סין"
+        },
+        {
+          "countryCode": "CO",
+          "countryHebName": "קולומביה"
+        },
+        {
+          "countryCode": "CR",
+          "countryHebName": "קוסטה ריקה"
+        },
+        {
+          "countryCode": "CY",
+          "countryHebName": "קפריסין"
+        },
+        {
+          "countryCode": "DE",
+          "countryHebName": "גרמניה"
+        },
+        {
+          "countryCode": "DK",
+          "countryHebName": "דנמרק"
+        },
+        {
+          "countryCode": "DM",
+          "countryHebName": "דומיניקה"
+        },
+        {
+          "countryCode": "DO",
+          "countryHebName": "הרפובליקה הדומיניקנית"
+        },
+        {
+          "countryCode": "EC",
+          "countryHebName": "אקוודור"
+        },
+        {
+          "countryCode": "EE",
+          "countryHebName": "אסטוניה"
+        },
+        {
+          "countryCode": "ET",
+          "countryHebName": "אתיופיה"
+        },
+        {
+          "countryCode": "FI",
+          "countryHebName": "פינלנד"
+        },
+        {
+          "countryCode": "FO",
+          "countryHebName": "איי פארו"
+        },
+        {
+          "countryCode": "FR",
+          "countryHebName": "צרפת"
+        },
+        {
+          "countryCode": "GA",
+          "countryHebName": "גבון"
+        },
+        {
+          "countryCode": "GD",
+          "countryHebName": "גרנאדה"
+        },
+        {
+          "countryCode": "GE",
+          "countryHebName": "גיאורגיה"
+        },
+        {
+          "countryCode": "GH",
+          "countryHebName": "גאנה"
+        },
+        {
+          "countryCode": "GP",
+          "countryHebName": "גוואדלופ"
+        },
+        {
+          "countryCode": "GR",
+          "countryHebName": "יוון"
+        },
+        {
+          "countryCode": "HK",
+          "countryHebName": "הונג קונג"
+        },
+        {
+          "countryCode": "HN",
+          "countryHebName": "הונדורס"
+        },
+        {
+          "countryCode": "HR",
+          "countryHebName": "קרואטיה"
+        },
+        {
+          "countryCode": "HT",
+          "countryHebName": "האיטי"
+        },
+        {
+          "countryCode": "HU",
+          "countryHebName": "הונגריה"
+        },
+        {
+          "countryCode": "IE",
+          "countryHebName": "אירלנד"
+        },
+        {
+          "countryCode": "IN",
+          "countryHebName": "הודו"
+        },
+        {
+          "countryCode": "IS",
+          "countryHebName": "איסלנד"
+        },
+        {
+          "countryCode": "IT",
+          "countryHebName": "איטליה"
+        },
+        {
+          "countryCode": "JO",
+          "countryHebName": "ירדן"
+        },
+        {
+          "countryCode": "JP",
+          "countryHebName": "יפן"
+        },
+        {
+          "countryCode": "KE",
+          "countryHebName": "קניה"
+        },
+        {
+          "countryCode": "KH",
+          "countryHebName": "קמבודיה"
+        },
+        {
+          "countryCode": "KN",
+          "countryHebName": "סנט קיטס ונוויס"
+        },
+        {
+          "countryCode": "KR",
+          "countryHebName": "קוריאה הדרומית"
+        },
+        {
+          "countryCode": "KY",
+          "countryHebName": "איי קיימן"
+        },
+        {
+          "countryCode": "KZ",
+          "countryHebName": "קזחסטן"
+        },
+        {
+          "countryCode": "LC",
+          "countryHebName": "סנט לוסיה"
+        },
+        {
+          "countryCode": "LI",
+          "countryHebName": "ליכטנשטיין"
+        },
+        {
+          "countryCode": "LK",
+          "countryHebName": "סרי לנקה"
+        },
+        {
+          "countryCode": "LS",
+          "countryHebName": "לסוטו"
+        },
+        {
+          "countryCode": "LT",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "LU",
+          "countryHebName": "לוקסמבורג"
+        },
+        {
+          "countryCode": "LV",
+          "countryHebName": "לטביה"
+        },
+        {
+          "countryCode": "MA",
+          "countryHebName": "מרוקו"
+        },
+        {
+          "countryCode": "MC",
+          "countryHebName": "מונקו"
+        },
+        {
+          "countryCode": "MD",
+          "countryHebName": "מולדובה"
+        },
+        {
+          "countryCode": "XK",
+          "countryHebName": "קוסובו"
+        },
+        {
+          "countryCode": "MG",
+          "countryHebName": "מדגסקר"
+        },
+        {
+          "countryCode": "MK",
+          "countryHebName": "מקדוניה"
+        },
+        {
+          "countryCode": "AE",
+          "countryHebName": "איחוד האמירויות הערביות"
+        },
+        {
+          "countryCode": "GB",
+          "countryHebName": "בריטניה (כולל סקוטלנד)"
+        },
+        {
+          "countryCode": "JM",
+          "countryHebName": "ג'מייקה"
+        },
+        {
+          "countryCode": "GT",
+          "countryHebName": "גוואטמלה"
+        },
+        {
+          "countryCode": "EG",
+          "countryHebName": "מצרים (דרום סיני בלבד)"
+        },
+        {
+          "countryCode": "ES",
+          "countryHebName": "ספרד (כולל האיים הקנריים והבאלריים)"
+        },
+        {
+          "countryCode": "FJ",
+          "countryHebName": "פיג'י"
+        },
+        {
+          "countryCode": "CL",
+          "countryHebName": "צ'ילה"
+        },
+        {
+          "countryCode": "CZ",
+          "countryHebName": "צ'כיה"
+        },
+        {
+          "countryCode": "KG",
+          "countryHebName": "קירגיסטן"
+        },
+        {
+          "countryCode": "MO",
+          "countryHebName": "מקאו"
+        },
+        {
+          "countryCode": "MQ",
+          "countryHebName": "מרטיניק"
+        },
+        {
+          "countryCode": "MS",
+          "countryHebName": "מונטסראט"
+        },
+        {
+          "countryCode": "MT",
+          "countryHebName": "מלטה"
+        },
+        {
+          "countryCode": "MU",
+          "countryHebName": "מאוריציוס"
+        },
+        {
+          "countryCode": "MW",
+          "countryHebName": "מלאווי"
+        },
+        {
+          "countryCode": "MX",
+          "countryHebName": "מקסיקו"
+        },
+        {
+          "countryCode": "MZ",
+          "countryHebName": "מוזמביק"
+        },
+        {
+          "countryCode": "NG",
+          "countryHebName": "ניגריה"
+        },
+        {
+          "countryCode": "NI",
+          "countryHebName": "ניקרגואה"
+        },
+        {
+          "countryCode": "NL",
+          "countryHebName": "הולנד"
+        },
+        {
+          "countryCode": "NO",
+          "countryHebName": "נורבגיה"
+        },
+        {
+          "countryCode": "NP",
+          "countryHebName": "נפאל"
+        },
+        {
+          "countryCode": "NZ",
+          "countryHebName": "ניו זילנד"
+        },
+        {
+          "countryCode": "PA",
+          "countryHebName": "פנמה"
+        },
+        {
+          "countryCode": "PE",
+          "countryHebName": "פרו"
+        },
+        {
+          "countryCode": "PF",
+          "countryHebName": "פולינזיה הצרפתית"
+        },
+        {
+          "countryCode": "PG",
+          "countryHebName": "פפואה ניו גינאה"
+        },
+        {
+          "countryCode": "PH",
+          "countryHebName": "פיליפינים"
+        },
+        {
+          "countryCode": "PL",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "PR",
+          "countryHebName": "פורטו ריקו"
+        },
+        {
+          "countryCode": "PY",
+          "countryHebName": "פרגוואי"
+        },
+        {
+          "countryCode": "RO",
+          "countryHebName": "רומניה"
+        },
+        {
+          "countryCode": "RS",
+          "countryHebName": "סרביה"
+        },
+        {
+          "countryCode": "RU",
+          "countryHebName": "רוסיה"
+        },
+        {
+          "countryCode": "RW",
+          "countryHebName": "רואנדה"
+        },
+        {
+          "countryCode": "SC",
+          "countryHebName": "סיישל"
+        },
+        {
+          "countryCode": "SE",
+          "countryHebName": "שוודיה"
+        },
+        {
+          "countryCode": "SG",
+          "countryHebName": "סינגפור"
+        },
+        {
+          "countryCode": "SI",
+          "countryHebName": "סלובניה"
+        },
+        {
+          "countryCode": "SK",
+          "countryHebName": "סלובקיה"
+        },
+        {
+          "countryCode": "SR",
+          "countryHebName": "סורינאם"
+        },
+        {
+          "countryCode": "SV",
+          "countryHebName": "אל סלוודור"
+        },
+        {
+          "countryCode": "TC",
+          "countryHebName": "איי טרקס וקייקוס"
+        },
+        {
+          "countryCode": "TG",
+          "countryHebName": "טוגו"
+        },
+        {
+          "countryCode": "TH",
+          "countryHebName": "תאילנד"
+        },
+        {
+          "countryCode": "TJ",
+          "countryHebName": "טגיקיסטן"
+        },
+        {
+          "countryCode": "TR",
+          "countryHebName": "טורקיה"
+        },
+        {
+          "countryCode": "TT",
+          "countryHebName": "טרינידד וטובגו"
+        },
+        {
+          "countryCode": "TW",
+          "countryHebName": "טאיוואן"
+        },
+        {
+          "countryCode": "TZ",
+          "countryHebName": "טנזניה"
+        },
+        {
+          "countryCode": "UA",
+          "countryHebName": "אוקראינה"
+        },
+        {
+          "countryCode": "UG",
+          "countryHebName": "אוגנדה"
+        },
+        {
+          "countryCode": "US",
+          "countryHebName": "ארה\"ב"
+        },
+        {
+          "countryCode": "UY",
+          "countryHebName": "אורוגוואי"
+        },
+        {
+          "countryCode": "UZ",
+          "countryHebName": "אוזבקיסטן"
+        },
+        {
+          "countryCode": "VC",
+          "countryHebName": "סנט וינסנט והגרנדינים"
+        },
+        {
+          "countryCode": "VE",
+          "countryHebName": "ונצואלה"
+        },
+        {
+          "countryCode": "VG",
+          "countryHebName": "איי הבתולה הבריטיים"
+        },
+        {
+          "countryCode": "VN",
+          "countryHebName": "וייטנאם"
+        },
+        {
+          "countryCode": "ZA",
+          "countryHebName": "דרום אפריקה"
+        },
+        {
+          "countryCode": "ZM",
+          "countryHebName": "זמביה"
+        },
+        {
+          "countryCode": "NE",
+          "countryHebName": "ניז'ר"
+        },
+        {
+          "countryCode": "ME",
+          "countryHebName": "מונטנגרו"
+        },
+        {
+          "countryCode": "AZ",
+          "countryHebName": "אזרבייג'ן"
+        },
+        {
+          "countryCode": "PT",
+          "countryHebName": "פורטוגל (כולל איי מדיירה והאיים האזוריים)"
+        },
+        {
+          "countryCode": "TD",
+          "countryHebName": "צ'אד"
+        },
+        {
+          "countryCode": "ID",
+          "countryHebName": "אינדונזיה"
+        }
+      ],
+      "countryNotSupportedList": [
+        {
+          "countryCode": "BT",
+          "countryHebName": "בהוטן"
+        },
+        {
+          "countryCode": "PT1",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "LB",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "SY",
+          "countryHebName": "סרביה"
+        }
+      ],
+      "countrySupportedDictionary": {
+        "א": "אנדורה, אנטיגואה וברבודה, אנגווילה, אלבניה, ארמניה, ארגנטינה, אוסטריה, אוסטרליה, ארובה, איי בהאמה, אקוודור, אסטוניה, אתיופיה, איי פארו, אירלנד, איסלנד, איטליה, איי קיימן, איחוד האמירויות הערביות, אל סלוודור, איי טרקס וקייקוס, אוקראינה, אוגנדה, ארה\"ב, אורוגוואי, אוזבקיסטן, איי הבתולה הבריטיים, אזרבייג'ן, אינדונזיה",
+        "ב": "בוסניה הרצגובינה, ברבדוס, בלגיה, בולגריה, בחריין, ברמודה, בוליביה, ברזיל, בוטסואנה, בלארוס, בליז, בריטניה (כולל סקוטלנד)",
+        "ג": "גרמניה, גבון, גרנאדה, גיאורגיה, גאנה, גוואדלופ, ג'מייקה, גוואטמלה",
+        "ד": "דנמרק, דומיניקה, דרום אפריקה",
+        "ה": "האנטילים ההולנדיים, הרפובליקה הדמוקרטית של קונגו, הרפובליקה הדומיניקנית, הונג קונג, הונדורס, האיטי, הונגריה, הודו, הולנד",
+        "ו": "ונצואלה, וייטנאם",
+        "ז": "זמביה",
+        "ח": "חוף השנהב",
+        "ט": "טוגו, טגיקיסטן, טורקיה, טרינידד וטובגו, טאיוואן, טנזניה",
+        "י": "יוון, ירדן, יפן",
+        "ל": "ליכטנשטיין, לסוטו, ליטא, לוקסמבורג, לטביה",
+        "מ": "מרוקו, מונקו, מולדובה, מדגסקר, מקדוניה, מצרים (דרום סיני בלבד), מקאו, מרטיניק, מונטסראט, מלטה, מאוריציוס, מלאווי, מקסיקו, מוזמביק, מונטנגרו",
+        "נ": "ניגריה, ניקרגואה, נורבגיה, נפאל, ניו זילנד, ניז'ר",
+        "ס": "סין, סנט קיטס ונוויס, סנט לוסיה, סרי לנקה, ספרד (כולל האיים הקנריים והבאלריים), סרביה, סיישל, סינגפור, סלובניה, סלובקיה, סורינאם, סנט וינסנט והגרנדינים",
+        "פ": "פינלנד, פיג'י, פנמה, פרו, פולינזיה הצרפתית, פפואה ניו גינאה, פיליפינים, פולין, פורטו ריקו, פרגוואי, פורטוגל (כולל איי מדיירה והאיים האזוריים)",
+        "צ": "צרפת, צ'ילה, צ'כיה, צ'אד",
+        "ק": "קנדה, קונגו, קולומביה, קוסטה ריקה, קפריסין, קרואטיה, קניה, קמבודיה, קוריאה הדרומית, קזחסטן, קוסובו, קירגיסטן",
+        "ר": "רומניה, רוסיה, רואנדה",
+        "ש": "שוויץ, שוודיה",
+        "ת": "תאילנד"
+      },
+      "tagTextSecondary": "כולל שיחות מקומיות",
+      "socCode": "FMWH267",
+      "isRecurringPayment": null,
+      "textInsideTooltipPackage": null,
+      "textUnderPackage": "מגיעה לך חבילת גלישה 5GB נוספת לבני משפחה ב – 49 ₪ בלבד",
+      "isSearch": false,
+      "matchType": "Null",
+      "countrySearchedButNotSupported": null,
+      "numberOfTripAllowed": null,
+      "isGiveFamilyBonus": true,
+      "isFamilyBonus": false,
+      "packageCodeFamilyBonus": "HULMISH",
+      "socCodeFamilyBonus": "HULMISH",
+      "familyPackageDescriptionFromPackageManager": "חבילה מוזלת לבני משפחה",
+      "isShelfBusinessIndividual": false,
+      "socDescription": null,
+      "socCatalogId": "SOC_FMWH267"
+    },
+    {
+      "blockId": "83840",
+      "labelEpi": "",
+      "titleEpi": "בלי לבדוק כל רגע",
+      "packageDuration": 30,
+      "packageBankExpirationDate": "02.05.2026",
+      "type": "VoiceSmsData",
+      "packageSegment": "Unknown",
+      "isBankOrByUse": "Bank",
+      "packageDetailsList": [
+        {
+          "voice": {
+            "unit": "MultiFeatures",
+            "value": 300,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "sms": {
+            "unit": "Occurrences Call",
+            "value": 300,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "data": {
+            "unit": "GB",
+            "value": 60,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "countrySupportedList": null
+        }
+      ],
+      "iconAppEpi": null,
+      "price": 329.0,
+      "priceDeleted": 0.0,
+      "buttonValue": "לרכישה",
+      "policiesEpi": "/globalassets/pdf/abraod/--/30125.pdf",
+      "dataForApp": {
+        "hasDataForApp": true,
+        "isUnlimitedDataForApp": true,
+        "valueDataForApp": null,
+        "unit": "Empty"
+      },
+      "importantInfo": [
+        "מכסת הדקות מתייחסת לשיחות יוצאות למספרים ישראלים, שיחות נכנסות, ומקומיות בלבד",
+        "תעריף דקת שיחה יוצאת למספרים ישראלים/שיחה נכנסת לאחר סיום כמות הדקות בחבילה הוא ₪2.5 לדקה , כל עוד החבילה בתוקף, ותעריף דקת שיחה מקומית לאחר סיום כמות הדקות בחבילה הוא ₪4.5 לדקה, כל עוד החבילה בתוקף",
+        "תעריף הודעה יוצאת לאחר סיום כמות ההודעות בחבילה הוא ₪2.5 להודעה , כל עוד החבילה בתוקף",
+        "החבילה כוללת תעריף מוזל של ₪4.5 לדקת שיחה בינלאומית, כל עוד החבילה בתוקף",
+        "לאחר סיום תוקף החבילה, תעריף דקת שיחה למספר ישראלי/ בינלאומי/ מקומי הוא ₪19.9",
+        "חבילת הגלישה כוללת רכיב גלישה ללא הגבלה ב - 5 אפליקציות נבחרות: WhatsApp, Instagram, Skype, Facebook, Waze. השימוש באפליקציות הנבחרות אינו צורך מנפח הגלישה הכלול בחבילת הגלישה כל עוד החבילה בתוקף ונותר נפח גלישה לניצול במסגרתה, ובכפוף לשימוש סביר והוגן לצורך אישי במכשיר הקו הסלולרי בו נרכשה החבילה.",
+        "על מנת .ליהנות מחבילת הגלישה בחו\"ל, על מכשירכם להיות פתוח לגלישה בעת נדידה. בסיום נפח הגלישה הכלול בחבילה הגלישה תחסם, אלא אם כן תרכשו חבילת גלישה נוספת. לתשומת לבכם, קיימים יישומים (כגון: סנכרון אוטומטי של דואר אלקטרוני) הצורכים נפח נתונים, גם מבלי שתעשה פעולה יזומה על ידכם.  כמו כן, החבילה אינה תקפה באוניות ומטוסים. לשימוש בירדן יש לפתוח את המכשיר לגלישה.  לתשומת ליבך, קיימים מפעילים אשר אינם תומכים ברשת דור 3 ודור 2 – כך שלא ניתן לבצע שימוש ברשתות מפעילים אלו במכשירי דור 2, 3 וכן לא ניתן לבצע שימושי שיחה ברשתות אלו במכשירים שאינם תומכים ב-VOLTE"
+      ],
+      "displayImportantToKnow": true,
+      "countrySupportedList": [
+        {
+          "countryCode": "AD",
+          "countryHebName": "אנדורה"
+        },
+        {
+          "countryCode": "AG",
+          "countryHebName": "אנטיגואה וברבודה"
+        },
+        {
+          "countryCode": "AI",
+          "countryHebName": "אנגווילה"
+        },
+        {
+          "countryCode": "AL",
+          "countryHebName": "אלבניה"
+        },
+        {
+          "countryCode": "AM",
+          "countryHebName": "ארמניה"
+        },
+        {
+          "countryCode": "AN",
+          "countryHebName": "האנטילים ההולנדיים"
+        },
+        {
+          "countryCode": "AR",
+          "countryHebName": "ארגנטינה"
+        },
+        {
+          "countryCode": "AT",
+          "countryHebName": "אוסטריה"
+        },
+        {
+          "countryCode": "AU",
+          "countryHebName": "אוסטרליה"
+        },
+        {
+          "countryCode": "AW",
+          "countryHebName": "ארובה"
+        },
+        {
+          "countryCode": "BA",
+          "countryHebName": "בוסניה הרצגובינה"
+        },
+        {
+          "countryCode": "BB",
+          "countryHebName": "ברבדוס"
+        },
+        {
+          "countryCode": "BE",
+          "countryHebName": "בלגיה"
+        },
+        {
+          "countryCode": "BG",
+          "countryHebName": "בולגריה"
+        },
+        {
+          "countryCode": "BH",
+          "countryHebName": "בחריין"
+        },
+        {
+          "countryCode": "BM",
+          "countryHebName": "ברמודה"
+        },
+        {
+          "countryCode": "BO",
+          "countryHebName": "בוליביה"
+        },
+        {
+          "countryCode": "BR",
+          "countryHebName": "ברזיל"
+        },
+        {
+          "countryCode": "BS",
+          "countryHebName": "איי בהאמה"
+        },
+        {
+          "countryCode": "BW",
+          "countryHebName": "בוטסואנה"
+        },
+        {
+          "countryCode": "BY",
+          "countryHebName": "בלארוס"
+        },
+        {
+          "countryCode": "BZ",
+          "countryHebName": "בליז"
+        },
+        {
+          "countryCode": "CA",
+          "countryHebName": "קנדה"
+        },
+        {
+          "countryCode": "CD",
+          "countryHebName": "הרפובליקה הדמוקרטית של קונגו"
+        },
+        {
+          "countryCode": "CG",
+          "countryHebName": "קונגו"
+        },
+        {
+          "countryCode": "CH",
+          "countryHebName": "שוויץ"
+        },
+        {
+          "countryCode": "CI",
+          "countryHebName": "חוף השנהב"
+        },
+        {
+          "countryCode": "CN",
+          "countryHebName": "סין"
+        },
+        {
+          "countryCode": "CO",
+          "countryHebName": "קולומביה"
+        },
+        {
+          "countryCode": "CR",
+          "countryHebName": "קוסטה ריקה"
+        },
+        {
+          "countryCode": "CY",
+          "countryHebName": "קפריסין"
+        },
+        {
+          "countryCode": "DE",
+          "countryHebName": "גרמניה"
+        },
+        {
+          "countryCode": "DK",
+          "countryHebName": "דנמרק"
+        },
+        {
+          "countryCode": "DM",
+          "countryHebName": "דומיניקה"
+        },
+        {
+          "countryCode": "DO",
+          "countryHebName": "הרפובליקה הדומיניקנית"
+        },
+        {
+          "countryCode": "EC",
+          "countryHebName": "אקוודור"
+        },
+        {
+          "countryCode": "EE",
+          "countryHebName": "אסטוניה"
+        },
+        {
+          "countryCode": "ET",
+          "countryHebName": "אתיופיה"
+        },
+        {
+          "countryCode": "FI",
+          "countryHebName": "פינלנד"
+        },
+        {
+          "countryCode": "FO",
+          "countryHebName": "איי פארו"
+        },
+        {
+          "countryCode": "FR",
+          "countryHebName": "צרפת"
+        },
+        {
+          "countryCode": "GA",
+          "countryHebName": "גבון"
+        },
+        {
+          "countryCode": "GD",
+          "countryHebName": "גרנאדה"
+        },
+        {
+          "countryCode": "GE",
+          "countryHebName": "גיאורגיה"
+        },
+        {
+          "countryCode": "GH",
+          "countryHebName": "גאנה"
+        },
+        {
+          "countryCode": "GP",
+          "countryHebName": "גוואדלופ"
+        },
+        {
+          "countryCode": "GR",
+          "countryHebName": "יוון"
+        },
+        {
+          "countryCode": "HK",
+          "countryHebName": "הונג קונג"
+        },
+        {
+          "countryCode": "HN",
+          "countryHebName": "הונדורס"
+        },
+        {
+          "countryCode": "HR",
+          "countryHebName": "קרואטיה"
+        },
+        {
+          "countryCode": "HT",
+          "countryHebName": "האיטי"
+        },
+        {
+          "countryCode": "HU",
+          "countryHebName": "הונגריה"
+        },
+        {
+          "countryCode": "IE",
+          "countryHebName": "אירלנד"
+        },
+        {
+          "countryCode": "IN",
+          "countryHebName": "הודו"
+        },
+        {
+          "countryCode": "IS",
+          "countryHebName": "איסלנד"
+        },
+        {
+          "countryCode": "IT",
+          "countryHebName": "איטליה"
+        },
+        {
+          "countryCode": "JO",
+          "countryHebName": "ירדן"
+        },
+        {
+          "countryCode": "JP",
+          "countryHebName": "יפן"
+        },
+        {
+          "countryCode": "KE",
+          "countryHebName": "קניה"
+        },
+        {
+          "countryCode": "KH",
+          "countryHebName": "קמבודיה"
+        },
+        {
+          "countryCode": "KN",
+          "countryHebName": "סנט קיטס ונוויס"
+        },
+        {
+          "countryCode": "KR",
+          "countryHebName": "קוריאה הדרומית"
+        },
+        {
+          "countryCode": "KY",
+          "countryHebName": "איי קיימן"
+        },
+        {
+          "countryCode": "KZ",
+          "countryHebName": "קזחסטן"
+        },
+        {
+          "countryCode": "LC",
+          "countryHebName": "סנט לוסיה"
+        },
+        {
+          "countryCode": "LI",
+          "countryHebName": "ליכטנשטיין"
+        },
+        {
+          "countryCode": "LK",
+          "countryHebName": "סרי לנקה"
+        },
+        {
+          "countryCode": "LS",
+          "countryHebName": "לסוטו"
+        },
+        {
+          "countryCode": "LT",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "LU",
+          "countryHebName": "לוקסמבורג"
+        },
+        {
+          "countryCode": "LV",
+          "countryHebName": "לטביה"
+        },
+        {
+          "countryCode": "MA",
+          "countryHebName": "מרוקו"
+        },
+        {
+          "countryCode": "MC",
+          "countryHebName": "מונקו"
+        },
+        {
+          "countryCode": "MD",
+          "countryHebName": "מולדובה"
+        },
+        {
+          "countryCode": "XK",
+          "countryHebName": "קוסובו"
+        },
+        {
+          "countryCode": "MG",
+          "countryHebName": "מדגסקר"
+        },
+        {
+          "countryCode": "MK",
+          "countryHebName": "מקדוניה"
+        },
+        {
+          "countryCode": "AE",
+          "countryHebName": "איחוד האמירויות הערביות"
+        },
+        {
+          "countryCode": "GB",
+          "countryHebName": "בריטניה (כולל סקוטלנד)"
+        },
+        {
+          "countryCode": "JM",
+          "countryHebName": "ג'מייקה"
+        },
+        {
+          "countryCode": "GT",
+          "countryHebName": "גוואטמלה"
+        },
+        {
+          "countryCode": "EG",
+          "countryHebName": "מצרים (דרום סיני בלבד)"
+        },
+        {
+          "countryCode": "ES",
+          "countryHebName": "ספרד (כולל האיים הקנריים והבאלריים)"
+        },
+        {
+          "countryCode": "FJ",
+          "countryHebName": "פיג'י"
+        },
+        {
+          "countryCode": "CL",
+          "countryHebName": "צ'ילה"
+        },
+        {
+          "countryCode": "CZ",
+          "countryHebName": "צ'כיה"
+        },
+        {
+          "countryCode": "KG",
+          "countryHebName": "קירגיסטן"
+        },
+        {
+          "countryCode": "MO",
+          "countryHebName": "מקאו"
+        },
+        {
+          "countryCode": "MQ",
+          "countryHebName": "מרטיניק"
+        },
+        {
+          "countryCode": "MS",
+          "countryHebName": "מונטסראט"
+        },
+        {
+          "countryCode": "MT",
+          "countryHebName": "מלטה"
+        },
+        {
+          "countryCode": "MU",
+          "countryHebName": "מאוריציוס"
+        },
+        {
+          "countryCode": "MW",
+          "countryHebName": "מלאווי"
+        },
+        {
+          "countryCode": "MX",
+          "countryHebName": "מקסיקו"
+        },
+        {
+          "countryCode": "MZ",
+          "countryHebName": "מוזמביק"
+        },
+        {
+          "countryCode": "NG",
+          "countryHebName": "ניגריה"
+        },
+        {
+          "countryCode": "NI",
+          "countryHebName": "ניקרגואה"
+        },
+        {
+          "countryCode": "NL",
+          "countryHebName": "הולנד"
+        },
+        {
+          "countryCode": "NO",
+          "countryHebName": "נורבגיה"
+        },
+        {
+          "countryCode": "NP",
+          "countryHebName": "נפאל"
+        },
+        {
+          "countryCode": "NZ",
+          "countryHebName": "ניו זילנד"
+        },
+        {
+          "countryCode": "PA",
+          "countryHebName": "פנמה"
+        },
+        {
+          "countryCode": "PE",
+          "countryHebName": "פרו"
+        },
+        {
+          "countryCode": "PF",
+          "countryHebName": "פולינזיה הצרפתית"
+        },
+        {
+          "countryCode": "PG",
+          "countryHebName": "פפואה ניו גינאה"
+        },
+        {
+          "countryCode": "PH",
+          "countryHebName": "פיליפינים"
+        },
+        {
+          "countryCode": "PL",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "PR",
+          "countryHebName": "פורטו ריקו"
+        },
+        {
+          "countryCode": "PY",
+          "countryHebName": "פרגוואי"
+        },
+        {
+          "countryCode": "RO",
+          "countryHebName": "רומניה"
+        },
+        {
+          "countryCode": "RS",
+          "countryHebName": "סרביה"
+        },
+        {
+          "countryCode": "RU",
+          "countryHebName": "רוסיה"
+        },
+        {
+          "countryCode": "RW",
+          "countryHebName": "רואנדה"
+        },
+        {
+          "countryCode": "SC",
+          "countryHebName": "סיישל"
+        },
+        {
+          "countryCode": "SE",
+          "countryHebName": "שוודיה"
+        },
+        {
+          "countryCode": "SG",
+          "countryHebName": "סינגפור"
+        },
+        {
+          "countryCode": "SI",
+          "countryHebName": "סלובניה"
+        },
+        {
+          "countryCode": "SK",
+          "countryHebName": "סלובקיה"
+        },
+        {
+          "countryCode": "SR",
+          "countryHebName": "סורינאם"
+        },
+        {
+          "countryCode": "SV",
+          "countryHebName": "אל סלוודור"
+        },
+        {
+          "countryCode": "TC",
+          "countryHebName": "איי טרקס וקייקוס"
+        },
+        {
+          "countryCode": "TG",
+          "countryHebName": "טוגו"
+        },
+        {
+          "countryCode": "TH",
+          "countryHebName": "תאילנד"
+        },
+        {
+          "countryCode": "TJ",
+          "countryHebName": "טגיקיסטן"
+        },
+        {
+          "countryCode": "TR",
+          "countryHebName": "טורקיה"
+        },
+        {
+          "countryCode": "TT",
+          "countryHebName": "טרינידד וטובגו"
+        },
+        {
+          "countryCode": "TW",
+          "countryHebName": "טאיוואן"
+        },
+        {
+          "countryCode": "TZ",
+          "countryHebName": "טנזניה"
+        },
+        {
+          "countryCode": "UA",
+          "countryHebName": "אוקראינה"
+        },
+        {
+          "countryCode": "UG",
+          "countryHebName": "אוגנדה"
+        },
+        {
+          "countryCode": "US",
+          "countryHebName": "ארה\"ב"
+        },
+        {
+          "countryCode": "UY",
+          "countryHebName": "אורוגוואי"
+        },
+        {
+          "countryCode": "UZ",
+          "countryHebName": "אוזבקיסטן"
+        },
+        {
+          "countryCode": "VC",
+          "countryHebName": "סנט וינסנט והגרנדינים"
+        },
+        {
+          "countryCode": "VE",
+          "countryHebName": "ונצואלה"
+        },
+        {
+          "countryCode": "VG",
+          "countryHebName": "איי הבתולה הבריטיים"
+        },
+        {
+          "countryCode": "VN",
+          "countryHebName": "וייטנאם"
+        },
+        {
+          "countryCode": "ZA",
+          "countryHebName": "דרום אפריקה"
+        },
+        {
+          "countryCode": "ZM",
+          "countryHebName": "זמביה"
+        },
+        {
+          "countryCode": "NE",
+          "countryHebName": "ניז'ר"
+        },
+        {
+          "countryCode": "ME",
+          "countryHebName": "מונטנגרו"
+        },
+        {
+          "countryCode": "AZ",
+          "countryHebName": "אזרבייג'ן"
+        },
+        {
+          "countryCode": "PT",
+          "countryHebName": "פורטוגל (כולל איי מדיירה והאיים האזוריים)"
+        },
+        {
+          "countryCode": "TD",
+          "countryHebName": "צ'אד"
+        },
+        {
+          "countryCode": "ID",
+          "countryHebName": "אינדונזיה"
+        }
+      ],
+      "countryNotSupportedList": [
+        {
+          "countryCode": "BT",
+          "countryHebName": "בהוטן"
+        },
+        {
+          "countryCode": "PT1",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "LB",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "SY",
+          "countryHebName": "סרביה"
+        }
+      ],
+      "countrySupportedDictionary": {
+        "א": "אנדורה, אנטיגואה וברבודה, אנגווילה, אלבניה, ארמניה, ארגנטינה, אוסטריה, אוסטרליה, ארובה, איי בהאמה, אקוודור, אסטוניה, אתיופיה, איי פארו, אירלנד, איסלנד, איטליה, איי קיימן, איחוד האמירויות הערביות, אל סלוודור, איי טרקס וקייקוס, אוקראינה, אוגנדה, ארה\"ב, אורוגוואי, אוזבקיסטן, איי הבתולה הבריטיים, אזרבייג'ן, אינדונזיה",
+        "ב": "בוסניה הרצגובינה, ברבדוס, בלגיה, בולגריה, בחריין, ברמודה, בוליביה, ברזיל, בוטסואנה, בלארוס, בליז, בריטניה (כולל סקוטלנד)",
+        "ג": "גרמניה, גבון, גרנאדה, גיאורגיה, גאנה, גוואדלופ, ג'מייקה, גוואטמלה",
+        "ד": "דנמרק, דומיניקה, דרום אפריקה",
+        "ה": "האנטילים ההולנדיים, הרפובליקה הדמוקרטית של קונגו, הרפובליקה הדומיניקנית, הונג קונג, הונדורס, האיטי, הונגריה, הודו, הולנד",
+        "ו": "ונצואלה, וייטנאם",
+        "ז": "זמביה",
+        "ח": "חוף השנהב",
+        "ט": "טוגו, טגיקיסטן, טורקיה, טרינידד וטובגו, טאיוואן, טנזניה",
+        "י": "יוון, ירדן, יפן",
+        "ל": "ליכטנשטיין, לסוטו, ליטא, לוקסמבורג, לטביה",
+        "מ": "מרוקו, מונקו, מולדובה, מדגסקר, מקדוניה, מצרים (דרום סיני בלבד), מקאו, מרטיניק, מונטסראט, מלטה, מאוריציוס, מלאווי, מקסיקו, מוזמביק, מונטנגרו",
+        "נ": "ניגריה, ניקרגואה, נורבגיה, נפאל, ניו זילנד, ניז'ר",
+        "ס": "סין, סנט קיטס ונוויס, סנט לוסיה, סרי לנקה, ספרד (כולל האיים הקנריים והבאלריים), סרביה, סיישל, סינגפור, סלובניה, סלובקיה, סורינאם, סנט וינסנט והגרנדינים",
+        "פ": "פינלנד, פיג'י, פנמה, פרו, פולינזיה הצרפתית, פפואה ניו גינאה, פיליפינים, פולין, פורטו ריקו, פרגוואי, פורטוגל (כולל איי מדיירה והאיים האזוריים)",
+        "צ": "צרפת, צ'ילה, צ'כיה, צ'אד",
+        "ק": "קנדה, קונגו, קולומביה, קוסטה ריקה, קפריסין, קרואטיה, קניה, קמבודיה, קוריאה הדרומית, קזחסטן, קוסובו, קירגיסטן",
+        "ר": "רומניה, רוסיה, רואנדה",
+        "ש": "שוויץ, שוודיה",
+        "ת": "תאילנד"
+      },
+      "tagTextSecondary": "כולל שיחות מקומיות",
+      "socCode": "FMWH0047",
+      "isRecurringPayment": null,
+      "textInsideTooltipPackage": null,
+      "textUnderPackage": "",
+      "isSearch": false,
+      "matchType": "Null",
+      "countrySearchedButNotSupported": null,
+      "numberOfTripAllowed": null,
+      "isGiveFamilyBonus": true,
+      "isFamilyBonus": false,
+      "packageCodeFamilyBonus": "HULMISH",
+      "socCodeFamilyBonus": "HULMISH",
+      "familyPackageDescriptionFromPackageManager": "",
+      "isShelfBusinessIndividual": false,
+      "socDescription": null,
+      "socCatalogId": "SOC_FMWH0047"
+    },
+    {
+      "blockId": "20545",
+      "labelEpi": "",
+      "titleEpi": "גולשים בגדול",
+      "packageDuration": 30,
+      "packageBankExpirationDate": "02.05.2026",
+      "type": "Data",
+      "packageSegment": "Unknown",
+      "isBankOrByUse": "Bank",
+      "packageDetailsList": [
+        {
+          "voice": {
+            "unit": null,
+            "value": null,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "sms": {
+            "unit": null,
+            "value": null,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "data": {
+            "unit": "GB",
+            "value": 40,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "countrySupportedList": null
+        }
+      ],
+      "iconAppEpi": null,
+      "price": 269.0,
+      "priceDeleted": 0.0,
+      "buttonValue": "לרכישה",
+      "policiesEpi": "/globalassets/pdf/abraod/31.10.24/30086.pdf",
+      "dataForApp": {
+        "hasDataForApp": true,
+        "isUnlimitedDataForApp": true,
+        "valueDataForApp": null,
+        "unit": "Empty"
+      },
+      "importantInfo": [
+        "חבילת הגלישה כוללת רכיב גלישה ללא הגבלה ב - 5 אפליקציות נבחרות: WhatsApp, Instagram, Skype, Facebook, Waze. השימוש באפליקציות הנבחרות אינו צורך מנפח הגלישה הכלול בחבילת הגלישה כל עוד החבילה בתוקף ונותר נפח גלישה לניצול במסגרתה, ובכפוף לשימוש סביר והוגן לצורך אישי במכשיר הקו הסלולרי בו נרכשה החבילה.",
+        "החבילה כוללת גלישה ללא הגבלה לאפליקציות נבחרות (whatsApp, Skype, Waze, Facebook ,אינטגרם).  הטבת הגלישה באפליקציות נבחרות תהיה בתוקף כל עוד נותר נפח גלישה לניצול במסגרת חבילת הגלישה הבסיסית.  אנא ודאו כי היעד אליו אתם טסים נכלל בחבילה. לשימוש בירדן יש לפתוח את המכשיר לגלישה. על מנת ליהנות מחבילת הגלישה בחו\"ל, על מכשירכם להיות פתוח לגלישה בעת נדידה. בסיום נפח חבילת הגלישה מכשירכם יחסם לגלישה בחו\"ל, למעט אם תהיו מנויים על הסדר גלישה אחר. לתשומת לבכם, קיימים יישומים (כגון: סנכרון אוטומטי של דואר אלקטרוני) הצורכים נפח נתונים, גם מבלי שתיעשה פעולה יזומה על ידכם. החבילה אינה תקפה באניות ובמטוסים. לתשומת ליבך, קיימים מפעילים אשר אינם תומכים ברשת דור 3 ודור 2 – כך שלא ניתן לבצע שימוש ברשתות מפעילים אלו במכשירי דור 2, 3 וכן לא ניתן לבצע שימושי שיחה ברשתות אלו במכשירים שאינם תומכים ב-VOLTE"
+      ],
+      "displayImportantToKnow": true,
+      "countrySupportedList": [
+        {
+          "countryCode": "AD",
+          "countryHebName": "אנדורה"
+        },
+        {
+          "countryCode": "AG",
+          "countryHebName": "אנטיגואה וברבודה"
+        },
+        {
+          "countryCode": "AI",
+          "countryHebName": "אנגווילה"
+        },
+        {
+          "countryCode": "AL",
+          "countryHebName": "אלבניה"
+        },
+        {
+          "countryCode": "AM",
+          "countryHebName": "ארמניה"
+        },
+        {
+          "countryCode": "AN",
+          "countryHebName": "האנטילים ההולנדיים"
+        },
+        {
+          "countryCode": "AR",
+          "countryHebName": "ארגנטינה"
+        },
+        {
+          "countryCode": "AT",
+          "countryHebName": "אוסטריה"
+        },
+        {
+          "countryCode": "AU",
+          "countryHebName": "אוסטרליה"
+        },
+        {
+          "countryCode": "AW",
+          "countryHebName": "ארובה"
+        },
+        {
+          "countryCode": "BA",
+          "countryHebName": "בוסניה הרצגובינה"
+        },
+        {
+          "countryCode": "BB",
+          "countryHebName": "ברבדוס"
+        },
+        {
+          "countryCode": "BE",
+          "countryHebName": "בלגיה"
+        },
+        {
+          "countryCode": "BG",
+          "countryHebName": "בולגריה"
+        },
+        {
+          "countryCode": "BH",
+          "countryHebName": "בחריין"
+        },
+        {
+          "countryCode": "BM",
+          "countryHebName": "ברמודה"
+        },
+        {
+          "countryCode": "BO",
+          "countryHebName": "בוליביה"
+        },
+        {
+          "countryCode": "BR",
+          "countryHebName": "ברזיל"
+        },
+        {
+          "countryCode": "BS",
+          "countryHebName": "איי בהאמה"
+        },
+        {
+          "countryCode": "BW",
+          "countryHebName": "בוטסואנה"
+        },
+        {
+          "countryCode": "BY",
+          "countryHebName": "בלארוס"
+        },
+        {
+          "countryCode": "BZ",
+          "countryHebName": "בליז"
+        },
+        {
+          "countryCode": "CA",
+          "countryHebName": "קנדה"
+        },
+        {
+          "countryCode": "CD",
+          "countryHebName": "הרפובליקה הדמוקרטית של קונגו"
+        },
+        {
+          "countryCode": "CG",
+          "countryHebName": "קונגו"
+        },
+        {
+          "countryCode": "CH",
+          "countryHebName": "שוויץ"
+        },
+        {
+          "countryCode": "CI",
+          "countryHebName": "חוף השנהב"
+        },
+        {
+          "countryCode": "CN",
+          "countryHebName": "סין"
+        },
+        {
+          "countryCode": "CO",
+          "countryHebName": "קולומביה"
+        },
+        {
+          "countryCode": "CR",
+          "countryHebName": "קוסטה ריקה"
+        },
+        {
+          "countryCode": "CY",
+          "countryHebName": "קפריסין"
+        },
+        {
+          "countryCode": "DE",
+          "countryHebName": "גרמניה"
+        },
+        {
+          "countryCode": "DK",
+          "countryHebName": "דנמרק"
+        },
+        {
+          "countryCode": "DM",
+          "countryHebName": "דומיניקה"
+        },
+        {
+          "countryCode": "DO",
+          "countryHebName": "הרפובליקה הדומיניקנית"
+        },
+        {
+          "countryCode": "EC",
+          "countryHebName": "אקוודור"
+        },
+        {
+          "countryCode": "EE",
+          "countryHebName": "אסטוניה"
+        },
+        {
+          "countryCode": "ET",
+          "countryHebName": "אתיופיה"
+        },
+        {
+          "countryCode": "FI",
+          "countryHebName": "פינלנד"
+        },
+        {
+          "countryCode": "FO",
+          "countryHebName": "איי פארו"
+        },
+        {
+          "countryCode": "FR",
+          "countryHebName": "צרפת"
+        },
+        {
+          "countryCode": "GA",
+          "countryHebName": "גבון"
+        },
+        {
+          "countryCode": "GD",
+          "countryHebName": "גרנאדה"
+        },
+        {
+          "countryCode": "GE",
+          "countryHebName": "גיאורגיה"
+        },
+        {
+          "countryCode": "GH",
+          "countryHebName": "גאנה"
+        },
+        {
+          "countryCode": "GP",
+          "countryHebName": "גוואדלופ"
+        },
+        {
+          "countryCode": "GR",
+          "countryHebName": "יוון"
+        },
+        {
+          "countryCode": "HK",
+          "countryHebName": "הונג קונג"
+        },
+        {
+          "countryCode": "HN",
+          "countryHebName": "הונדורס"
+        },
+        {
+          "countryCode": "HR",
+          "countryHebName": "קרואטיה"
+        },
+        {
+          "countryCode": "HT",
+          "countryHebName": "האיטי"
+        },
+        {
+          "countryCode": "HU",
+          "countryHebName": "הונגריה"
+        },
+        {
+          "countryCode": "IE",
+          "countryHebName": "אירלנד"
+        },
+        {
+          "countryCode": "IN",
+          "countryHebName": "הודו"
+        },
+        {
+          "countryCode": "IS",
+          "countryHebName": "איסלנד"
+        },
+        {
+          "countryCode": "IT",
+          "countryHebName": "איטליה"
+        },
+        {
+          "countryCode": "JO",
+          "countryHebName": "ירדן"
+        },
+        {
+          "countryCode": "JP",
+          "countryHebName": "יפן"
+        },
+        {
+          "countryCode": "KE",
+          "countryHebName": "קניה"
+        },
+        {
+          "countryCode": "KH",
+          "countryHebName": "קמבודיה"
+        },
+        {
+          "countryCode": "KN",
+          "countryHebName": "סנט קיטס ונוויס"
+        },
+        {
+          "countryCode": "KR",
+          "countryHebName": "קוריאה הדרומית"
+        },
+        {
+          "countryCode": "KY",
+          "countryHebName": "איי קיימן"
+        },
+        {
+          "countryCode": "KZ",
+          "countryHebName": "קזחסטן"
+        },
+        {
+          "countryCode": "LC",
+          "countryHebName": "סנט לוסיה"
+        },
+        {
+          "countryCode": "LI",
+          "countryHebName": "ליכטנשטיין"
+        },
+        {
+          "countryCode": "LK",
+          "countryHebName": "סרי לנקה"
+        },
+        {
+          "countryCode": "LS",
+          "countryHebName": "לסוטו"
+        },
+        {
+          "countryCode": "LT",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "LU",
+          "countryHebName": "לוקסמבורג"
+        },
+        {
+          "countryCode": "LV",
+          "countryHebName": "לטביה"
+        },
+        {
+          "countryCode": "MA",
+          "countryHebName": "מרוקו"
+        },
+        {
+          "countryCode": "MC",
+          "countryHebName": "מונקו"
+        },
+        {
+          "countryCode": "MD",
+          "countryHebName": "מולדובה"
+        },
+        {
+          "countryCode": "XK",
+          "countryHebName": "קוסובו"
+        },
+        {
+          "countryCode": "MG",
+          "countryHebName": "מדגסקר"
+        },
+        {
+          "countryCode": "MK",
+          "countryHebName": "מקדוניה"
+        },
+        {
+          "countryCode": "AE",
+          "countryHebName": "איחוד האמירויות הערביות"
+        },
+        {
+          "countryCode": "GB",
+          "countryHebName": "בריטניה (כולל סקוטלנד)"
+        },
+        {
+          "countryCode": "JM",
+          "countryHebName": "ג'מייקה"
+        },
+        {
+          "countryCode": "GT",
+          "countryHebName": "גוואטמלה"
+        },
+        {
+          "countryCode": "EG",
+          "countryHebName": "מצרים (דרום סיני בלבד)"
+        },
+        {
+          "countryCode": "ES",
+          "countryHebName": "ספרד (כולל האיים הקנריים והבאלריים)"
+        },
+        {
+          "countryCode": "FJ",
+          "countryHebName": "פיג'י"
+        },
+        {
+          "countryCode": "CL",
+          "countryHebName": "צ'ילה"
+        },
+        {
+          "countryCode": "CZ",
+          "countryHebName": "צ'כיה"
+        },
+        {
+          "countryCode": "KG",
+          "countryHebName": "קירגיסטן"
+        },
+        {
+          "countryCode": "MO",
+          "countryHebName": "מקאו"
+        },
+        {
+          "countryCode": "MQ",
+          "countryHebName": "מרטיניק"
+        },
+        {
+          "countryCode": "MS",
+          "countryHebName": "מונטסראט"
+        },
+        {
+          "countryCode": "MT",
+          "countryHebName": "מלטה"
+        },
+        {
+          "countryCode": "MU",
+          "countryHebName": "מאוריציוס"
+        },
+        {
+          "countryCode": "MW",
+          "countryHebName": "מלאווי"
+        },
+        {
+          "countryCode": "MX",
+          "countryHebName": "מקסיקו"
+        },
+        {
+          "countryCode": "MZ",
+          "countryHebName": "מוזמביק"
+        },
+        {
+          "countryCode": "NG",
+          "countryHebName": "ניגריה"
+        },
+        {
+          "countryCode": "NI",
+          "countryHebName": "ניקרגואה"
+        },
+        {
+          "countryCode": "NL",
+          "countryHebName": "הולנד"
+        },
+        {
+          "countryCode": "NO",
+          "countryHebName": "נורבגיה"
+        },
+        {
+          "countryCode": "NP",
+          "countryHebName": "נפאל"
+        },
+        {
+          "countryCode": "NZ",
+          "countryHebName": "ניו זילנד"
+        },
+        {
+          "countryCode": "PA",
+          "countryHebName": "פנמה"
+        },
+        {
+          "countryCode": "PE",
+          "countryHebName": "פרו"
+        },
+        {
+          "countryCode": "PF",
+          "countryHebName": "פולינזיה הצרפתית"
+        },
+        {
+          "countryCode": "PG",
+          "countryHebName": "פפואה ניו גינאה"
+        },
+        {
+          "countryCode": "PH",
+          "countryHebName": "פיליפינים"
+        },
+        {
+          "countryCode": "PL",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "PR",
+          "countryHebName": "פורטו ריקו"
+        },
+        {
+          "countryCode": "PY",
+          "countryHebName": "פרגוואי"
+        },
+        {
+          "countryCode": "RO",
+          "countryHebName": "רומניה"
+        },
+        {
+          "countryCode": "RS",
+          "countryHebName": "סרביה"
+        },
+        {
+          "countryCode": "RU",
+          "countryHebName": "רוסיה"
+        },
+        {
+          "countryCode": "RW",
+          "countryHebName": "רואנדה"
+        },
+        {
+          "countryCode": "SC",
+          "countryHebName": "סיישל"
+        },
+        {
+          "countryCode": "SE",
+          "countryHebName": "שוודיה"
+        },
+        {
+          "countryCode": "SG",
+          "countryHebName": "סינגפור"
+        },
+        {
+          "countryCode": "SI",
+          "countryHebName": "סלובניה"
+        },
+        {
+          "countryCode": "SK",
+          "countryHebName": "סלובקיה"
+        },
+        {
+          "countryCode": "SR",
+          "countryHebName": "סורינאם"
+        },
+        {
+          "countryCode": "SV",
+          "countryHebName": "אל סלוודור"
+        },
+        {
+          "countryCode": "TC",
+          "countryHebName": "איי טרקס וקייקוס"
+        },
+        {
+          "countryCode": "TG",
+          "countryHebName": "טוגו"
+        },
+        {
+          "countryCode": "TH",
+          "countryHebName": "תאילנד"
+        },
+        {
+          "countryCode": "TJ",
+          "countryHebName": "טגיקיסטן"
+        },
+        {
+          "countryCode": "TR",
+          "countryHebName": "טורקיה"
+        },
+        {
+          "countryCode": "TT",
+          "countryHebName": "טרינידד וטובגו"
+        },
+        {
+          "countryCode": "TW",
+          "countryHebName": "טאיוואן"
+        },
+        {
+          "countryCode": "TZ",
+          "countryHebName": "טנזניה"
+        },
+        {
+          "countryCode": "UA",
+          "countryHebName": "אוקראינה"
+        },
+        {
+          "countryCode": "UG",
+          "countryHebName": "אוגנדה"
+        },
+        {
+          "countryCode": "US",
+          "countryHebName": "ארה\"ב"
+        },
+        {
+          "countryCode": "UY",
+          "countryHebName": "אורוגוואי"
+        },
+        {
+          "countryCode": "UZ",
+          "countryHebName": "אוזבקיסטן"
+        },
+        {
+          "countryCode": "VC",
+          "countryHebName": "סנט וינסנט והגרנדינים"
+        },
+        {
+          "countryCode": "VE",
+          "countryHebName": "ונצואלה"
+        },
+        {
+          "countryCode": "VG",
+          "countryHebName": "איי הבתולה הבריטיים"
+        },
+        {
+          "countryCode": "VN",
+          "countryHebName": "וייטנאם"
+        },
+        {
+          "countryCode": "ZA",
+          "countryHebName": "דרום אפריקה"
+        },
+        {
+          "countryCode": "ZM",
+          "countryHebName": "זמביה"
+        },
+        {
+          "countryCode": "NE",
+          "countryHebName": "ניז'ר"
+        },
+        {
+          "countryCode": "ME",
+          "countryHebName": "מונטנגרו"
+        },
+        {
+          "countryCode": "AZ",
+          "countryHebName": "אזרבייג'ן"
+        },
+        {
+          "countryCode": "PT",
+          "countryHebName": "פורטוגל (כולל איי מדיירה והאיים האזוריים)"
+        },
+        {
+          "countryCode": "TD",
+          "countryHebName": "צ'אד"
+        },
+        {
+          "countryCode": "ID",
+          "countryHebName": "אינדונזיה"
+        }
+      ],
+      "countryNotSupportedList": [
+        {
+          "countryCode": "BT",
+          "countryHebName": "בהוטן"
+        },
+        {
+          "countryCode": "PT1",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "LB",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "SY",
+          "countryHebName": "סרביה"
+        }
+      ],
+      "countrySupportedDictionary": {
+        "א": "אנדורה, אנטיגואה וברבודה, אנגווילה, אלבניה, ארמניה, ארגנטינה, אוסטריה, אוסטרליה, ארובה, איי בהאמה, אקוודור, אסטוניה, אתיופיה, איי פארו, אירלנד, איסלנד, איטליה, איי קיימן, איחוד האמירויות הערביות, אל סלוודור, איי טרקס וקייקוס, אוקראינה, אוגנדה, ארה\"ב, אורוגוואי, אוזבקיסטן, איי הבתולה הבריטיים, אזרבייג'ן, אינדונזיה",
+        "ב": "בוסניה הרצגובינה, ברבדוס, בלגיה, בולגריה, בחריין, ברמודה, בוליביה, ברזיל, בוטסואנה, בלארוס, בליז, בריטניה (כולל סקוטלנד)",
+        "ג": "גרמניה, גבון, גרנאדה, גיאורגיה, גאנה, גוואדלופ, ג'מייקה, גוואטמלה",
+        "ד": "דנמרק, דומיניקה, דרום אפריקה",
+        "ה": "האנטילים ההולנדיים, הרפובליקה הדמוקרטית של קונגו, הרפובליקה הדומיניקנית, הונג קונג, הונדורס, האיטי, הונגריה, הודו, הולנד",
+        "ו": "ונצואלה, וייטנאם",
+        "ז": "זמביה",
+        "ח": "חוף השנהב",
+        "ט": "טוגו, טגיקיסטן, טורקיה, טרינידד וטובגו, טאיוואן, טנזניה",
+        "י": "יוון, ירדן, יפן",
+        "ל": "ליכטנשטיין, לסוטו, ליטא, לוקסמבורג, לטביה",
+        "מ": "מרוקו, מונקו, מולדובה, מדגסקר, מקדוניה, מצרים (דרום סיני בלבד), מקאו, מרטיניק, מונטסראט, מלטה, מאוריציוס, מלאווי, מקסיקו, מוזמביק, מונטנגרו",
+        "נ": "ניגריה, ניקרגואה, נורבגיה, נפאל, ניו זילנד, ניז'ר",
+        "ס": "סין, סנט קיטס ונוויס, סנט לוסיה, סרי לנקה, ספרד (כולל האיים הקנריים והבאלריים), סרביה, סיישל, סינגפור, סלובניה, סלובקיה, סורינאם, סנט וינסנט והגרנדינים",
+        "פ": "פינלנד, פיג'י, פנמה, פרו, פולינזיה הצרפתית, פפואה ניו גינאה, פיליפינים, פולין, פורטו ריקו, פרגוואי, פורטוגל (כולל איי מדיירה והאיים האזוריים)",
+        "צ": "צרפת, צ'ילה, צ'כיה, צ'אד",
+        "ק": "קנדה, קונגו, קולומביה, קוסטה ריקה, קפריסין, קרואטיה, קניה, קמבודיה, קוריאה הדרומית, קזחסטן, קוסובו, קירגיסטן",
+        "ר": "רומניה, רוסיה, רואנדה",
+        "ש": "שוויץ, שוודיה",
+        "ת": "תאילנד"
+      },
+      "tagTextSecondary": "",
+      "socCode": "FMWH717",
+      "isRecurringPayment": null,
+      "textInsideTooltipPackage": null,
+      "textUnderPackage": "מגיעה לך חבילת גלישה 5GB נוספת לבני משפחה ב – 49 ₪ בלבד",
+      "isSearch": false,
+      "matchType": "Null",
+      "countrySearchedButNotSupported": null,
+      "numberOfTripAllowed": null,
+      "isGiveFamilyBonus": true,
+      "isFamilyBonus": false,
+      "packageCodeFamilyBonus": "HULMISH",
+      "socCodeFamilyBonus": "HULMISH",
+      "familyPackageDescriptionFromPackageManager": "חבילה מוזלת לבני משפחה",
+      "isShelfBusinessIndividual": false,
+      "socDescription": null,
+      "socCatalogId": "SOC_FMWH717"
+    },
+    {
+      "blockId": "51430",
+      "labelEpi": "",
+      "titleEpi": "כל מה שצריך לחודשיים",
+      "packageDuration": 60,
+      "packageBankExpirationDate": "01.06.2026",
+      "type": "VoiceSmsData",
+      "packageSegment": "Unknown",
+      "isBankOrByUse": "Bank",
+      "packageDetailsList": [
+        {
+          "voice": {
+            "unit": "MultiFeatures",
+            "value": 450,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "sms": {
+            "unit": "Occurrences Call",
+            "value": 450,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "data": {
+            "unit": "GB",
+            "value": 70,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "countrySupportedList": null
+        }
+      ],
+      "iconAppEpi": null,
+      "price": 499.0,
+      "priceDeleted": 0.0,
+      "buttonValue": "לרכישה",
+      "policiesEpi": "/globalassets/pdf/abraod/30087.pdf",
+      "dataForApp": {
+        "hasDataForApp": false,
+        "isUnlimitedDataForApp": false,
+        "valueDataForApp": null,
+        "unit": "Empty"
+      },
+      "importantInfo": [
+        "מכסת הדקות מתייחסת לשיחות יוצאות למספרים ישראלים, שיחות נכנסות, ומקומיות בלבד",
+        "תעריף דקת שיחה יוצאת למספרים ישראלים/שיחה נכנסת לאחר סיום כמות הדקות בחבילה הוא ₪2.5 לדקה , כל עוד החבילה בתוקף, ותעריף דקת שיחה מקומית לאחר סיום כמות הדקות בחבילה הוא ₪4.5 לדקה, כל עוד החבילה בתוקף",
+        "תעריף הודעה יוצאת לאחר סיום כמות ההודעות בחבילה הוא ₪2.5 להודעה , כל עוד החבילה בתוקף",
+        "החבילה כוללת תעריף מוזל של ₪4.5 לדקת שיחה בינלאומית, כל עוד החבילה בתוקף",
+        "לאחר סיום תוקף החבילה, תעריף דקת שיחה למספר ישראלי/ בינלאומי/ מקומי הוא ₪19.9",
+        "על מנת .ליהנות מחבילת הגלישה בחו\"ל, על מכשירכם להיות פתוח לגלישה בעת נדידה. בסיום נפח הגלישה הכלול בחבילה הגלישה תחסם, אלא אם כן תרכשו חבילת גלישה נוספת. לתשומת לבכם, קיימים יישומים (כגון: סנכרון אוטומטי של דואר אלקטרוני) הצורכים נפח נתונים, גם מבלי שתעשה פעולה יזומה על ידכם.  כמו כן, החבילה אינה תקפה באוניות ומטוסים. לשימוש בירדן יש לפתוח את המכשיר לגלישה.  לתשומת ליבך, קיימים מפעילים אשר אינם תומכים ברשת דור 3 ודור 2 – כך שלא ניתן לבצע שימוש ברשתות מפעילים אלו במכשירי דור 2, 3 וכן לא ניתן לבצע שימושי שיחה ברשתות אלו במכשירים שאינם תומכים ב-VOLTE"
+      ],
+      "displayImportantToKnow": true,
+      "countrySupportedList": [
+        {
+          "countryCode": "AD",
+          "countryHebName": "אנדורה"
+        },
+        {
+          "countryCode": "AG",
+          "countryHebName": "אנטיגואה וברבודה"
+        },
+        {
+          "countryCode": "AI",
+          "countryHebName": "אנגווילה"
+        },
+        {
+          "countryCode": "AL",
+          "countryHebName": "אלבניה"
+        },
+        {
+          "countryCode": "AM",
+          "countryHebName": "ארמניה"
+        },
+        {
+          "countryCode": "AN",
+          "countryHebName": "האנטילים ההולנדיים"
+        },
+        {
+          "countryCode": "AR",
+          "countryHebName": "ארגנטינה"
+        },
+        {
+          "countryCode": "AT",
+          "countryHebName": "אוסטריה"
+        },
+        {
+          "countryCode": "AU",
+          "countryHebName": "אוסטרליה"
+        },
+        {
+          "countryCode": "AW",
+          "countryHebName": "ארובה"
+        },
+        {
+          "countryCode": "BA",
+          "countryHebName": "בוסניה הרצגובינה"
+        },
+        {
+          "countryCode": "BB",
+          "countryHebName": "ברבדוס"
+        },
+        {
+          "countryCode": "BE",
+          "countryHebName": "בלגיה"
+        },
+        {
+          "countryCode": "BG",
+          "countryHebName": "בולגריה"
+        },
+        {
+          "countryCode": "BH",
+          "countryHebName": "בחריין"
+        },
+        {
+          "countryCode": "BM",
+          "countryHebName": "ברמודה"
+        },
+        {
+          "countryCode": "BO",
+          "countryHebName": "בוליביה"
+        },
+        {
+          "countryCode": "BR",
+          "countryHebName": "ברזיל"
+        },
+        {
+          "countryCode": "BS",
+          "countryHebName": "איי בהאמה"
+        },
+        {
+          "countryCode": "BW",
+          "countryHebName": "בוטסואנה"
+        },
+        {
+          "countryCode": "BY",
+          "countryHebName": "בלארוס"
+        },
+        {
+          "countryCode": "BZ",
+          "countryHebName": "בליז"
+        },
+        {
+          "countryCode": "CA",
+          "countryHebName": "קנדה"
+        },
+        {
+          "countryCode": "CD",
+          "countryHebName": "הרפובליקה הדמוקרטית של קונגו"
+        },
+        {
+          "countryCode": "CG",
+          "countryHebName": "קונגו"
+        },
+        {
+          "countryCode": "CH",
+          "countryHebName": "שוויץ"
+        },
+        {
+          "countryCode": "CI",
+          "countryHebName": "חוף השנהב"
+        },
+        {
+          "countryCode": "CN",
+          "countryHebName": "סין"
+        },
+        {
+          "countryCode": "CO",
+          "countryHebName": "קולומביה"
+        },
+        {
+          "countryCode": "CR",
+          "countryHebName": "קוסטה ריקה"
+        },
+        {
+          "countryCode": "CY",
+          "countryHebName": "קפריסין"
+        },
+        {
+          "countryCode": "DE",
+          "countryHebName": "גרמניה"
+        },
+        {
+          "countryCode": "DK",
+          "countryHebName": "דנמרק"
+        },
+        {
+          "countryCode": "DM",
+          "countryHebName": "דומיניקה"
+        },
+        {
+          "countryCode": "DO",
+          "countryHebName": "הרפובליקה הדומיניקנית"
+        },
+        {
+          "countryCode": "EC",
+          "countryHebName": "אקוודור"
+        },
+        {
+          "countryCode": "EE",
+          "countryHebName": "אסטוניה"
+        },
+        {
+          "countryCode": "ET",
+          "countryHebName": "אתיופיה"
+        },
+        {
+          "countryCode": "FI",
+          "countryHebName": "פינלנד"
+        },
+        {
+          "countryCode": "FO",
+          "countryHebName": "איי פארו"
+        },
+        {
+          "countryCode": "FR",
+          "countryHebName": "צרפת"
+        },
+        {
+          "countryCode": "GA",
+          "countryHebName": "גבון"
+        },
+        {
+          "countryCode": "GD",
+          "countryHebName": "גרנאדה"
+        },
+        {
+          "countryCode": "GE",
+          "countryHebName": "גיאורגיה"
+        },
+        {
+          "countryCode": "GH",
+          "countryHebName": "גאנה"
+        },
+        {
+          "countryCode": "GP",
+          "countryHebName": "גוואדלופ"
+        },
+        {
+          "countryCode": "GR",
+          "countryHebName": "יוון"
+        },
+        {
+          "countryCode": "HK",
+          "countryHebName": "הונג קונג"
+        },
+        {
+          "countryCode": "HN",
+          "countryHebName": "הונדורס"
+        },
+        {
+          "countryCode": "HR",
+          "countryHebName": "קרואטיה"
+        },
+        {
+          "countryCode": "HT",
+          "countryHebName": "האיטי"
+        },
+        {
+          "countryCode": "HU",
+          "countryHebName": "הונגריה"
+        },
+        {
+          "countryCode": "IE",
+          "countryHebName": "אירלנד"
+        },
+        {
+          "countryCode": "IN",
+          "countryHebName": "הודו"
+        },
+        {
+          "countryCode": "IS",
+          "countryHebName": "איסלנד"
+        },
+        {
+          "countryCode": "IT",
+          "countryHebName": "איטליה"
+        },
+        {
+          "countryCode": "JO",
+          "countryHebName": "ירדן"
+        },
+        {
+          "countryCode": "JP",
+          "countryHebName": "יפן"
+        },
+        {
+          "countryCode": "KE",
+          "countryHebName": "קניה"
+        },
+        {
+          "countryCode": "KH",
+          "countryHebName": "קמבודיה"
+        },
+        {
+          "countryCode": "KN",
+          "countryHebName": "סנט קיטס ונוויס"
+        },
+        {
+          "countryCode": "KR",
+          "countryHebName": "קוריאה הדרומית"
+        },
+        {
+          "countryCode": "KY",
+          "countryHebName": "איי קיימן"
+        },
+        {
+          "countryCode": "KZ",
+          "countryHebName": "קזחסטן"
+        },
+        {
+          "countryCode": "LC",
+          "countryHebName": "סנט לוסיה"
+        },
+        {
+          "countryCode": "LI",
+          "countryHebName": "ליכטנשטיין"
+        },
+        {
+          "countryCode": "LK",
+          "countryHebName": "סרי לנקה"
+        },
+        {
+          "countryCode": "LS",
+          "countryHebName": "לסוטו"
+        },
+        {
+          "countryCode": "LT",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "LU",
+          "countryHebName": "לוקסמבורג"
+        },
+        {
+          "countryCode": "LV",
+          "countryHebName": "לטביה"
+        },
+        {
+          "countryCode": "MA",
+          "countryHebName": "מרוקו"
+        },
+        {
+          "countryCode": "MC",
+          "countryHebName": "מונקו"
+        },
+        {
+          "countryCode": "MD",
+          "countryHebName": "מולדובה"
+        },
+        {
+          "countryCode": "XK",
+          "countryHebName": "קוסובו"
+        },
+        {
+          "countryCode": "MG",
+          "countryHebName": "מדגסקר"
+        },
+        {
+          "countryCode": "MK",
+          "countryHebName": "מקדוניה"
+        },
+        {
+          "countryCode": "AE",
+          "countryHebName": "איחוד האמירויות הערביות"
+        },
+        {
+          "countryCode": "GB",
+          "countryHebName": "בריטניה (כולל סקוטלנד)"
+        },
+        {
+          "countryCode": "JM",
+          "countryHebName": "ג'מייקה"
+        },
+        {
+          "countryCode": "GT",
+          "countryHebName": "גוואטמלה"
+        },
+        {
+          "countryCode": "EG",
+          "countryHebName": "מצרים (דרום סיני בלבד)"
+        },
+        {
+          "countryCode": "ES",
+          "countryHebName": "ספרד (כולל האיים הקנריים והבאלריים)"
+        },
+        {
+          "countryCode": "FJ",
+          "countryHebName": "פיג'י"
+        },
+        {
+          "countryCode": "CL",
+          "countryHebName": "צ'ילה"
+        },
+        {
+          "countryCode": "CZ",
+          "countryHebName": "צ'כיה"
+        },
+        {
+          "countryCode": "KG",
+          "countryHebName": "קירגיסטן"
+        },
+        {
+          "countryCode": "MO",
+          "countryHebName": "מקאו"
+        },
+        {
+          "countryCode": "MQ",
+          "countryHebName": "מרטיניק"
+        },
+        {
+          "countryCode": "MS",
+          "countryHebName": "מונטסראט"
+        },
+        {
+          "countryCode": "MT",
+          "countryHebName": "מלטה"
+        },
+        {
+          "countryCode": "MU",
+          "countryHebName": "מאוריציוס"
+        },
+        {
+          "countryCode": "MW",
+          "countryHebName": "מלאווי"
+        },
+        {
+          "countryCode": "MX",
+          "countryHebName": "מקסיקו"
+        },
+        {
+          "countryCode": "MZ",
+          "countryHebName": "מוזמביק"
+        },
+        {
+          "countryCode": "NG",
+          "countryHebName": "ניגריה"
+        },
+        {
+          "countryCode": "NI",
+          "countryHebName": "ניקרגואה"
+        },
+        {
+          "countryCode": "NL",
+          "countryHebName": "הולנד"
+        },
+        {
+          "countryCode": "NO",
+          "countryHebName": "נורבגיה"
+        },
+        {
+          "countryCode": "NP",
+          "countryHebName": "נפאל"
+        },
+        {
+          "countryCode": "NZ",
+          "countryHebName": "ניו זילנד"
+        },
+        {
+          "countryCode": "PA",
+          "countryHebName": "פנמה"
+        },
+        {
+          "countryCode": "PE",
+          "countryHebName": "פרו"
+        },
+        {
+          "countryCode": "PF",
+          "countryHebName": "פולינזיה הצרפתית"
+        },
+        {
+          "countryCode": "PG",
+          "countryHebName": "פפואה ניו גינאה"
+        },
+        {
+          "countryCode": "PH",
+          "countryHebName": "פיליפינים"
+        },
+        {
+          "countryCode": "PL",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "PR",
+          "countryHebName": "פורטו ריקו"
+        },
+        {
+          "countryCode": "PY",
+          "countryHebName": "פרגוואי"
+        },
+        {
+          "countryCode": "RO",
+          "countryHebName": "רומניה"
+        },
+        {
+          "countryCode": "RS",
+          "countryHebName": "סרביה"
+        },
+        {
+          "countryCode": "RU",
+          "countryHebName": "רוסיה"
+        },
+        {
+          "countryCode": "RW",
+          "countryHebName": "רואנדה"
+        },
+        {
+          "countryCode": "SC",
+          "countryHebName": "סיישל"
+        },
+        {
+          "countryCode": "SE",
+          "countryHebName": "שוודיה"
+        },
+        {
+          "countryCode": "SG",
+          "countryHebName": "סינגפור"
+        },
+        {
+          "countryCode": "SI",
+          "countryHebName": "סלובניה"
+        },
+        {
+          "countryCode": "SK",
+          "countryHebName": "סלובקיה"
+        },
+        {
+          "countryCode": "SR",
+          "countryHebName": "סורינאם"
+        },
+        {
+          "countryCode": "SV",
+          "countryHebName": "אל סלוודור"
+        },
+        {
+          "countryCode": "TC",
+          "countryHebName": "איי טרקס וקייקוס"
+        },
+        {
+          "countryCode": "TG",
+          "countryHebName": "טוגו"
+        },
+        {
+          "countryCode": "TH",
+          "countryHebName": "תאילנד"
+        },
+        {
+          "countryCode": "TJ",
+          "countryHebName": "טגיקיסטן"
+        },
+        {
+          "countryCode": "TR",
+          "countryHebName": "טורקיה"
+        },
+        {
+          "countryCode": "TT",
+          "countryHebName": "טרינידד וטובגו"
+        },
+        {
+          "countryCode": "TW",
+          "countryHebName": "טאיוואן"
+        },
+        {
+          "countryCode": "TZ",
+          "countryHebName": "טנזניה"
+        },
+        {
+          "countryCode": "UA",
+          "countryHebName": "אוקראינה"
+        },
+        {
+          "countryCode": "UG",
+          "countryHebName": "אוגנדה"
+        },
+        {
+          "countryCode": "US",
+          "countryHebName": "ארה\"ב"
+        },
+        {
+          "countryCode": "UY",
+          "countryHebName": "אורוגוואי"
+        },
+        {
+          "countryCode": "UZ",
+          "countryHebName": "אוזבקיסטן"
+        },
+        {
+          "countryCode": "VC",
+          "countryHebName": "סנט וינסנט והגרנדינים"
+        },
+        {
+          "countryCode": "VE",
+          "countryHebName": "ונצואלה"
+        },
+        {
+          "countryCode": "VG",
+          "countryHebName": "איי הבתולה הבריטיים"
+        },
+        {
+          "countryCode": "VN",
+          "countryHebName": "וייטנאם"
+        },
+        {
+          "countryCode": "ZA",
+          "countryHebName": "דרום אפריקה"
+        },
+        {
+          "countryCode": "ZM",
+          "countryHebName": "זמביה"
+        },
+        {
+          "countryCode": "NE",
+          "countryHebName": "ניז'ר"
+        },
+        {
+          "countryCode": "ME",
+          "countryHebName": "מונטנגרו"
+        },
+        {
+          "countryCode": "AZ",
+          "countryHebName": "אזרבייג'ן"
+        },
+        {
+          "countryCode": "PT",
+          "countryHebName": "פורטוגל (כולל איי מדיירה והאיים האזוריים)"
+        },
+        {
+          "countryCode": "TD",
+          "countryHebName": "צ'אד"
+        },
+        {
+          "countryCode": "ID",
+          "countryHebName": "אינדונזיה"
+        }
+      ],
+      "countryNotSupportedList": [
+        {
+          "countryCode": "BT",
+          "countryHebName": "בהוטן"
+        },
+        {
+          "countryCode": "PT1",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "LB",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "SY",
+          "countryHebName": "סרביה"
+        }
+      ],
+      "countrySupportedDictionary": {
+        "א": "אנדורה, אנטיגואה וברבודה, אנגווילה, אלבניה, ארמניה, ארגנטינה, אוסטריה, אוסטרליה, ארובה, איי בהאמה, אקוודור, אסטוניה, אתיופיה, איי פארו, אירלנד, איסלנד, איטליה, איי קיימן, איחוד האמירויות הערביות, אל סלוודור, איי טרקס וקייקוס, אוקראינה, אוגנדה, ארה\"ב, אורוגוואי, אוזבקיסטן, איי הבתולה הבריטיים, אזרבייג'ן, אינדונזיה",
+        "ב": "בוסניה הרצגובינה, ברבדוס, בלגיה, בולגריה, בחריין, ברמודה, בוליביה, ברזיל, בוטסואנה, בלארוס, בליז, בריטניה (כולל סקוטלנד)",
+        "ג": "גרמניה, גבון, גרנאדה, גיאורגיה, גאנה, גוואדלופ, ג'מייקה, גוואטמלה",
+        "ד": "דנמרק, דומיניקה, דרום אפריקה",
+        "ה": "האנטילים ההולנדיים, הרפובליקה הדמוקרטית של קונגו, הרפובליקה הדומיניקנית, הונג קונג, הונדורס, האיטי, הונגריה, הודו, הולנד",
+        "ו": "ונצואלה, וייטנאם",
+        "ז": "זמביה",
+        "ח": "חוף השנהב",
+        "ט": "טוגו, טגיקיסטן, טורקיה, טרינידד וטובגו, טאיוואן, טנזניה",
+        "י": "יוון, ירדן, יפן",
+        "ל": "ליכטנשטיין, לסוטו, ליטא, לוקסמבורג, לטביה",
+        "מ": "מרוקו, מונקו, מולדובה, מדגסקר, מקדוניה, מצרים (דרום סיני בלבד), מקאו, מרטיניק, מונטסראט, מלטה, מאוריציוס, מלאווי, מקסיקו, מוזמביק, מונטנגרו",
+        "נ": "ניגריה, ניקרגואה, נורבגיה, נפאל, ניו זילנד, ניז'ר",
+        "ס": "סין, סנט קיטס ונוויס, סנט לוסיה, סרי לנקה, ספרד (כולל האיים הקנריים והבאלריים), סרביה, סיישל, סינגפור, סלובניה, סלובקיה, סורינאם, סנט וינסנט והגרנדינים",
+        "פ": "פינלנד, פיג'י, פנמה, פרו, פולינזיה הצרפתית, פפואה ניו גינאה, פיליפינים, פולין, פורטו ריקו, פרגוואי, פורטוגל (כולל איי מדיירה והאיים האזוריים)",
+        "צ": "צרפת, צ'ילה, צ'כיה, צ'אד",
+        "ק": "קנדה, קונגו, קולומביה, קוסטה ריקה, קפריסין, קרואטיה, קניה, קמבודיה, קוריאה הדרומית, קזחסטן, קוסובו, קירגיסטן",
+        "ר": "רומניה, רוסיה, רואנדה",
+        "ש": "שוויץ, שוודיה",
+        "ת": "תאילנד"
+      },
+      "tagTextSecondary": "כולל שיחות מקומיות",
+      "socCode": "FMWH720",
+      "isRecurringPayment": null,
+      "textInsideTooltipPackage": null,
+      "textUnderPackage": "",
+      "isSearch": false,
+      "matchType": "Null",
+      "countrySearchedButNotSupported": null,
+      "numberOfTripAllowed": null,
+      "isGiveFamilyBonus": false,
+      "isFamilyBonus": false,
+      "packageCodeFamilyBonus": null,
+      "socCodeFamilyBonus": null,
+      "familyPackageDescriptionFromPackageManager": "",
+      "isShelfBusinessIndividual": false,
+      "socDescription": null,
+      "socCatalogId": "SOC_FMWH720"
+    },
+    {
+      "blockId": "20539",
+      "labelEpi": "",
+      "titleEpi": "גולשים בסטייל",
+      "packageDuration": 30,
+      "packageBankExpirationDate": "02.05.2026",
+      "type": "Data",
+      "packageSegment": "Unknown",
+      "isBankOrByUse": "Bank",
+      "packageDetailsList": [
+        {
+          "voice": {
+            "unit": null,
+            "value": null,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "sms": {
+            "unit": null,
+            "value": null,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "data": {
+            "unit": "GB",
+            "value": 10,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "countrySupportedList": null
+        }
+      ],
+      "iconAppEpi": null,
+      "price": 199.0,
+      "priceDeleted": 0.0,
+      "buttonValue": "לרכישה",
+      "policiesEpi": "/globalassets/pdf/abraod/05.22/17463-0923-10-hul4209--hul4210.pdf",
+      "dataForApp": {
+        "hasDataForApp": true,
+        "isUnlimitedDataForApp": true,
+        "valueDataForApp": null,
+        "unit": "Empty"
+      },
+      "importantInfo": [
+        "חבילת הגלישה כוללת רכיב גלישה ללא הגבלה ב - 5 אפליקציות נבחרות: WhatsApp, Instagram, Skype, Facebook, Waze. השימוש באפליקציות הנבחרות אינו צורך מנפח הגלישה הכלול בחבילת הגלישה כל עוד החבילה בתוקף ונותר נפח גלישה לניצול במסגרתה, ובכפוף לשימוש סביר והוגן לצורך אישי במכשיר הקו הסלולרי בו נרכשה החבילה.",
+        " אנא ודאו כי היעד אליו אתם טסים נכלל בחבילה. לשימוש בירדן יש לפתוח את המכשיר לגלישה. על מנת ליהנות מחבילת הגלישה בחו\"ל, על מכשירכם להיות פתוח לגלישה בעת נדידה. בסיום נפח חבילת הגלישה מכשירכם יחסם לגלישה בחו\"ל, למעט אם תהיו מנויים על הסדר גלישה אחר. לתשומת לבכם, קיימים יישומים (כגון: סנכרון אוטומטי של דואר אלקטרוני) הצורכים נפח נתונים, גם מבלי שתיעשה פעולה יזומה על ידכם. החבילה אינה תקפה באניות ובמטוסים לתשומת ליבך, קיימים מפעילים אשר אינם תומכים ברשת דור 3 ודור 2 – כך שלא ניתן לבצע שימוש ברשתות מפעילים אלו במכשירי דור 2, 3 וכן לא ניתן לבצע שימושי שיחה ברשתות אלו במכשירים שאינם תומכים ב-VOLTE"
+      ],
+      "displayImportantToKnow": true,
+      "countrySupportedList": [
+        {
+          "countryCode": "AD",
+          "countryHebName": "אנדורה"
+        },
+        {
+          "countryCode": "AG",
+          "countryHebName": "אנטיגואה וברבודה"
+        },
+        {
+          "countryCode": "AI",
+          "countryHebName": "אנגווילה"
+        },
+        {
+          "countryCode": "AL",
+          "countryHebName": "אלבניה"
+        },
+        {
+          "countryCode": "AM",
+          "countryHebName": "ארמניה"
+        },
+        {
+          "countryCode": "AN",
+          "countryHebName": "האנטילים ההולנדיים"
+        },
+        {
+          "countryCode": "AR",
+          "countryHebName": "ארגנטינה"
+        },
+        {
+          "countryCode": "AT",
+          "countryHebName": "אוסטריה"
+        },
+        {
+          "countryCode": "AU",
+          "countryHebName": "אוסטרליה"
+        },
+        {
+          "countryCode": "AW",
+          "countryHebName": "ארובה"
+        },
+        {
+          "countryCode": "BA",
+          "countryHebName": "בוסניה הרצגובינה"
+        },
+        {
+          "countryCode": "BB",
+          "countryHebName": "ברבדוס"
+        },
+        {
+          "countryCode": "BE",
+          "countryHebName": "בלגיה"
+        },
+        {
+          "countryCode": "BG",
+          "countryHebName": "בולגריה"
+        },
+        {
+          "countryCode": "BH",
+          "countryHebName": "בחריין"
+        },
+        {
+          "countryCode": "BM",
+          "countryHebName": "ברמודה"
+        },
+        {
+          "countryCode": "BO",
+          "countryHebName": "בוליביה"
+        },
+        {
+          "countryCode": "BR",
+          "countryHebName": "ברזיל"
+        },
+        {
+          "countryCode": "BS",
+          "countryHebName": "איי בהאמה"
+        },
+        {
+          "countryCode": "BW",
+          "countryHebName": "בוטסואנה"
+        },
+        {
+          "countryCode": "BY",
+          "countryHebName": "בלארוס"
+        },
+        {
+          "countryCode": "BZ",
+          "countryHebName": "בליז"
+        },
+        {
+          "countryCode": "CA",
+          "countryHebName": "קנדה"
+        },
+        {
+          "countryCode": "CD",
+          "countryHebName": "הרפובליקה הדמוקרטית של קונגו"
+        },
+        {
+          "countryCode": "CG",
+          "countryHebName": "קונגו"
+        },
+        {
+          "countryCode": "CH",
+          "countryHebName": "שוויץ"
+        },
+        {
+          "countryCode": "CI",
+          "countryHebName": "חוף השנהב"
+        },
+        {
+          "countryCode": "CN",
+          "countryHebName": "סין"
+        },
+        {
+          "countryCode": "CO",
+          "countryHebName": "קולומביה"
+        },
+        {
+          "countryCode": "CR",
+          "countryHebName": "קוסטה ריקה"
+        },
+        {
+          "countryCode": "CY",
+          "countryHebName": "קפריסין"
+        },
+        {
+          "countryCode": "DE",
+          "countryHebName": "גרמניה"
+        },
+        {
+          "countryCode": "DK",
+          "countryHebName": "דנמרק"
+        },
+        {
+          "countryCode": "DM",
+          "countryHebName": "דומיניקה"
+        },
+        {
+          "countryCode": "DO",
+          "countryHebName": "הרפובליקה הדומיניקנית"
+        },
+        {
+          "countryCode": "EC",
+          "countryHebName": "אקוודור"
+        },
+        {
+          "countryCode": "EE",
+          "countryHebName": "אסטוניה"
+        },
+        {
+          "countryCode": "ET",
+          "countryHebName": "אתיופיה"
+        },
+        {
+          "countryCode": "FI",
+          "countryHebName": "פינלנד"
+        },
+        {
+          "countryCode": "FO",
+          "countryHebName": "איי פארו"
+        },
+        {
+          "countryCode": "FR",
+          "countryHebName": "צרפת"
+        },
+        {
+          "countryCode": "GA",
+          "countryHebName": "גבון"
+        },
+        {
+          "countryCode": "GD",
+          "countryHebName": "גרנאדה"
+        },
+        {
+          "countryCode": "GE",
+          "countryHebName": "גיאורגיה"
+        },
+        {
+          "countryCode": "GH",
+          "countryHebName": "גאנה"
+        },
+        {
+          "countryCode": "GP",
+          "countryHebName": "גוואדלופ"
+        },
+        {
+          "countryCode": "GR",
+          "countryHebName": "יוון"
+        },
+        {
+          "countryCode": "HK",
+          "countryHebName": "הונג קונג"
+        },
+        {
+          "countryCode": "HN",
+          "countryHebName": "הונדורס"
+        },
+        {
+          "countryCode": "HR",
+          "countryHebName": "קרואטיה"
+        },
+        {
+          "countryCode": "HT",
+          "countryHebName": "האיטי"
+        },
+        {
+          "countryCode": "HU",
+          "countryHebName": "הונגריה"
+        },
+        {
+          "countryCode": "IE",
+          "countryHebName": "אירלנד"
+        },
+        {
+          "countryCode": "IN",
+          "countryHebName": "הודו"
+        },
+        {
+          "countryCode": "IS",
+          "countryHebName": "איסלנד"
+        },
+        {
+          "countryCode": "IT",
+          "countryHebName": "איטליה"
+        },
+        {
+          "countryCode": "JO",
+          "countryHebName": "ירדן"
+        },
+        {
+          "countryCode": "JP",
+          "countryHebName": "יפן"
+        },
+        {
+          "countryCode": "KE",
+          "countryHebName": "קניה"
+        },
+        {
+          "countryCode": "KH",
+          "countryHebName": "קמבודיה"
+        },
+        {
+          "countryCode": "KN",
+          "countryHebName": "סנט קיטס ונוויס"
+        },
+        {
+          "countryCode": "KR",
+          "countryHebName": "קוריאה הדרומית"
+        },
+        {
+          "countryCode": "KY",
+          "countryHebName": "איי קיימן"
+        },
+        {
+          "countryCode": "KZ",
+          "countryHebName": "קזחסטן"
+        },
+        {
+          "countryCode": "LC",
+          "countryHebName": "סנט לוסיה"
+        },
+        {
+          "countryCode": "LI",
+          "countryHebName": "ליכטנשטיין"
+        },
+        {
+          "countryCode": "LK",
+          "countryHebName": "סרי לנקה"
+        },
+        {
+          "countryCode": "LS",
+          "countryHebName": "לסוטו"
+        },
+        {
+          "countryCode": "LT",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "LU",
+          "countryHebName": "לוקסמבורג"
+        },
+        {
+          "countryCode": "LV",
+          "countryHebName": "לטביה"
+        },
+        {
+          "countryCode": "MA",
+          "countryHebName": "מרוקו"
+        },
+        {
+          "countryCode": "MC",
+          "countryHebName": "מונקו"
+        },
+        {
+          "countryCode": "MD",
+          "countryHebName": "מולדובה"
+        },
+        {
+          "countryCode": "XK",
+          "countryHebName": "קוסובו"
+        },
+        {
+          "countryCode": "MG",
+          "countryHebName": "מדגסקר"
+        },
+        {
+          "countryCode": "MK",
+          "countryHebName": "מקדוניה"
+        },
+        {
+          "countryCode": "AE",
+          "countryHebName": "איחוד האמירויות הערביות"
+        },
+        {
+          "countryCode": "GB",
+          "countryHebName": "בריטניה (כולל סקוטלנד)"
+        },
+        {
+          "countryCode": "JM",
+          "countryHebName": "ג'מייקה"
+        },
+        {
+          "countryCode": "GT",
+          "countryHebName": "גוואטמלה"
+        },
+        {
+          "countryCode": "EG",
+          "countryHebName": "מצרים (דרום סיני בלבד)"
+        },
+        {
+          "countryCode": "ES",
+          "countryHebName": "ספרד (כולל האיים הקנריים והבאלריים)"
+        },
+        {
+          "countryCode": "FJ",
+          "countryHebName": "פיג'י"
+        },
+        {
+          "countryCode": "CL",
+          "countryHebName": "צ'ילה"
+        },
+        {
+          "countryCode": "CZ",
+          "countryHebName": "צ'כיה"
+        },
+        {
+          "countryCode": "KG",
+          "countryHebName": "קירגיסטן"
+        },
+        {
+          "countryCode": "MO",
+          "countryHebName": "מקאו"
+        },
+        {
+          "countryCode": "MQ",
+          "countryHebName": "מרטיניק"
+        },
+        {
+          "countryCode": "MS",
+          "countryHebName": "מונטסראט"
+        },
+        {
+          "countryCode": "MT",
+          "countryHebName": "מלטה"
+        },
+        {
+          "countryCode": "MU",
+          "countryHebName": "מאוריציוס"
+        },
+        {
+          "countryCode": "MW",
+          "countryHebName": "מלאווי"
+        },
+        {
+          "countryCode": "MX",
+          "countryHebName": "מקסיקו"
+        },
+        {
+          "countryCode": "MZ",
+          "countryHebName": "מוזמביק"
+        },
+        {
+          "countryCode": "NG",
+          "countryHebName": "ניגריה"
+        },
+        {
+          "countryCode": "NI",
+          "countryHebName": "ניקרגואה"
+        },
+        {
+          "countryCode": "NL",
+          "countryHebName": "הולנד"
+        },
+        {
+          "countryCode": "NO",
+          "countryHebName": "נורבגיה"
+        },
+        {
+          "countryCode": "NP",
+          "countryHebName": "נפאל"
+        },
+        {
+          "countryCode": "NZ",
+          "countryHebName": "ניו זילנד"
+        },
+        {
+          "countryCode": "PA",
+          "countryHebName": "פנמה"
+        },
+        {
+          "countryCode": "PE",
+          "countryHebName": "פרו"
+        },
+        {
+          "countryCode": "PF",
+          "countryHebName": "פולינזיה הצרפתית"
+        },
+        {
+          "countryCode": "PG",
+          "countryHebName": "פפואה ניו גינאה"
+        },
+        {
+          "countryCode": "PH",
+          "countryHebName": "פיליפינים"
+        },
+        {
+          "countryCode": "PL",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "PR",
+          "countryHebName": "פורטו ריקו"
+        },
+        {
+          "countryCode": "PY",
+          "countryHebName": "פרגוואי"
+        },
+        {
+          "countryCode": "RO",
+          "countryHebName": "רומניה"
+        },
+        {
+          "countryCode": "RS",
+          "countryHebName": "סרביה"
+        },
+        {
+          "countryCode": "RU",
+          "countryHebName": "רוסיה"
+        },
+        {
+          "countryCode": "RW",
+          "countryHebName": "רואנדה"
+        },
+        {
+          "countryCode": "SC",
+          "countryHebName": "סיישל"
+        },
+        {
+          "countryCode": "SE",
+          "countryHebName": "שוודיה"
+        },
+        {
+          "countryCode": "SG",
+          "countryHebName": "סינגפור"
+        },
+        {
+          "countryCode": "SI",
+          "countryHebName": "סלובניה"
+        },
+        {
+          "countryCode": "SK",
+          "countryHebName": "סלובקיה"
+        },
+        {
+          "countryCode": "SR",
+          "countryHebName": "סורינאם"
+        },
+        {
+          "countryCode": "SV",
+          "countryHebName": "אל סלוודור"
+        },
+        {
+          "countryCode": "TC",
+          "countryHebName": "איי טרקס וקייקוס"
+        },
+        {
+          "countryCode": "TG",
+          "countryHebName": "טוגו"
+        },
+        {
+          "countryCode": "TH",
+          "countryHebName": "תאילנד"
+        },
+        {
+          "countryCode": "TJ",
+          "countryHebName": "טגיקיסטן"
+        },
+        {
+          "countryCode": "TR",
+          "countryHebName": "טורקיה"
+        },
+        {
+          "countryCode": "TT",
+          "countryHebName": "טרינידד וטובגו"
+        },
+        {
+          "countryCode": "TW",
+          "countryHebName": "טאיוואן"
+        },
+        {
+          "countryCode": "TZ",
+          "countryHebName": "טנזניה"
+        },
+        {
+          "countryCode": "UA",
+          "countryHebName": "אוקראינה"
+        },
+        {
+          "countryCode": "UG",
+          "countryHebName": "אוגנדה"
+        },
+        {
+          "countryCode": "US",
+          "countryHebName": "ארה\"ב"
+        },
+        {
+          "countryCode": "UY",
+          "countryHebName": "אורוגוואי"
+        },
+        {
+          "countryCode": "UZ",
+          "countryHebName": "אוזבקיסטן"
+        },
+        {
+          "countryCode": "VC",
+          "countryHebName": "סנט וינסנט והגרנדינים"
+        },
+        {
+          "countryCode": "VE",
+          "countryHebName": "ונצואלה"
+        },
+        {
+          "countryCode": "VG",
+          "countryHebName": "איי הבתולה הבריטיים"
+        },
+        {
+          "countryCode": "VN",
+          "countryHebName": "וייטנאם"
+        },
+        {
+          "countryCode": "ZA",
+          "countryHebName": "דרום אפריקה"
+        },
+        {
+          "countryCode": "ZM",
+          "countryHebName": "זמביה"
+        },
+        {
+          "countryCode": "NE",
+          "countryHebName": "ניז'ר"
+        },
+        {
+          "countryCode": "ME",
+          "countryHebName": "מונטנגרו"
+        },
+        {
+          "countryCode": "AZ",
+          "countryHebName": "אזרבייג'ן"
+        },
+        {
+          "countryCode": "PT",
+          "countryHebName": "פורטוגל (כולל איי מדיירה והאיים האזוריים)"
+        },
+        {
+          "countryCode": "TD",
+          "countryHebName": "צ'אד"
+        },
+        {
+          "countryCode": "ID",
+          "countryHebName": "אינדונזיה"
+        }
+      ],
+      "countryNotSupportedList": [
+        {
+          "countryCode": "BT",
+          "countryHebName": "בהוטן"
+        },
+        {
+          "countryCode": "PT1",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "LB",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "SY",
+          "countryHebName": "סרביה"
+        }
+      ],
+      "countrySupportedDictionary": {
+        "א": "אנדורה, אנטיגואה וברבודה, אנגווילה, אלבניה, ארמניה, ארגנטינה, אוסטריה, אוסטרליה, ארובה, איי בהאמה, אקוודור, אסטוניה, אתיופיה, איי פארו, אירלנד, איסלנד, איטליה, איי קיימן, איחוד האמירויות הערביות, אל סלוודור, איי טרקס וקייקוס, אוקראינה, אוגנדה, ארה\"ב, אורוגוואי, אוזבקיסטן, איי הבתולה הבריטיים, אזרבייג'ן, אינדונזיה",
+        "ב": "בוסניה הרצגובינה, ברבדוס, בלגיה, בולגריה, בחריין, ברמודה, בוליביה, ברזיל, בוטסואנה, בלארוס, בליז, בריטניה (כולל סקוטלנד)",
+        "ג": "גרמניה, גבון, גרנאדה, גיאורגיה, גאנה, גוואדלופ, ג'מייקה, גוואטמלה",
+        "ד": "דנמרק, דומיניקה, דרום אפריקה",
+        "ה": "האנטילים ההולנדיים, הרפובליקה הדמוקרטית של קונגו, הרפובליקה הדומיניקנית, הונג קונג, הונדורס, האיטי, הונגריה, הודו, הולנד",
+        "ו": "ונצואלה, וייטנאם",
+        "ז": "זמביה",
+        "ח": "חוף השנהב",
+        "ט": "טוגו, טגיקיסטן, טורקיה, טרינידד וטובגו, טאיוואן, טנזניה",
+        "י": "יוון, ירדן, יפן",
+        "ל": "ליכטנשטיין, לסוטו, ליטא, לוקסמבורג, לטביה",
+        "מ": "מרוקו, מונקו, מולדובה, מדגסקר, מקדוניה, מצרים (דרום סיני בלבד), מקאו, מרטיניק, מונטסראט, מלטה, מאוריציוס, מלאווי, מקסיקו, מוזמביק, מונטנגרו",
+        "נ": "ניגריה, ניקרגואה, נורבגיה, נפאל, ניו זילנד, ניז'ר",
+        "ס": "סין, סנט קיטס ונוויס, סנט לוסיה, סרי לנקה, ספרד (כולל האיים הקנריים והבאלריים), סרביה, סיישל, סינגפור, סלובניה, סלובקיה, סורינאם, סנט וינסנט והגרנדינים",
+        "פ": "פינלנד, פיג'י, פנמה, פרו, פולינזיה הצרפתית, פפואה ניו גינאה, פיליפינים, פולין, פורטו ריקו, פרגוואי, פורטוגל (כולל איי מדיירה והאיים האזוריים)",
+        "צ": "צרפת, צ'ילה, צ'כיה, צ'אד",
+        "ק": "קנדה, קונגו, קולומביה, קוסטה ריקה, קפריסין, קרואטיה, קניה, קמבודיה, קוריאה הדרומית, קזחסטן, קוסובו, קירגיסטן",
+        "ר": "רומניה, רוסיה, רואנדה",
+        "ש": "שוויץ, שוודיה",
+        "ת": "תאילנד"
+      },
+      "tagTextSecondary": "",
+      "socCode": "HUL4209",
+      "isRecurringPayment": null,
+      "textInsideTooltipPackage": null,
+      "textUnderPackage": "",
+      "isSearch": false,
+      "matchType": "Null",
+      "countrySearchedButNotSupported": null,
+      "numberOfTripAllowed": null,
+      "isGiveFamilyBonus": false,
+      "isFamilyBonus": false,
+      "packageCodeFamilyBonus": null,
+      "socCodeFamilyBonus": null,
+      "familyPackageDescriptionFromPackageManager": "",
+      "isShelfBusinessIndividual": false,
+      "socDescription": null,
+      "socCatalogId": "SOC_HUL4209"
+    },
+    {
+      "blockId": "20543",
+      "labelEpi": "",
+      "titleEpi": "גולשים ומדברים ",
+      "packageDuration": 14,
+      "packageBankExpirationDate": "16.04.2026",
+      "type": "VoiceSmsData",
+      "packageSegment": "Unknown",
+      "isBankOrByUse": "Bank",
+      "packageDetailsList": [
+        {
+          "voice": {
+            "unit": "MultiFeatures",
+            "value": 50,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "sms": {
+            "unit": "Occurrences Call",
+            "value": 50,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "data": {
+            "unit": "GB",
+            "value": 4,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "countrySupportedList": null
+        }
+      ],
+      "iconAppEpi": null,
+      "price": 199.0,
+      "priceDeleted": 0.0,
+      "buttonValue": "לרכישה",
+      "policiesEpi": "/globalassets/pdf/abraod/30108.pdf",
+      "dataForApp": {
+        "hasDataForApp": false,
+        "isUnlimitedDataForApp": false,
+        "valueDataForApp": null,
+        "unit": "Empty"
+      },
+      "importantInfo": [
+        "מכסת הדקות מתייחסת לשיחות יוצאות למספרים ישראלים, שיחות נכנסות, ומקומיות בלבד",
+        "תעריף דקת שיחה יוצאת למספרים ישראלים/שיחה נכנסת לאחר סיום כמות הדקות בחבילה הוא ₪2.5 לדקה , כל עוד החבילה בתוקף, ותעריף דקת שיחה מקומית לאחר סיום כמות הדקות בחבילה הוא ₪4.5 לדקה, כל עוד החבילה בתוקף",
+        "תעריף הודעה יוצאת לאחר סיום כמות ההודעות בחבילה הוא ₪2.5 להודעה , כל עוד החבילה בתוקף",
+        "החבילה כוללת תעריף מוזל של ₪4.5 לדקת שיחה בינלאומית, כל עוד החבילה בתוקף",
+        "לאחר סיום תוקף החבילה, תעריף דקת שיחה למספר ישראלי/ בינלאומי/ מקומי הוא ₪19.9",
+        "החבילה אינה תקפה באניות ובמטוסים. תעריף דקת שיחה בינלאומית ומקומית – 4.5 ₪, כל עוד לא הסתיימה החבילה. לאחר סיומה, תעריף דקת שיחה בינלאומית ומקומית  הוא 19.90 ₪.  לתשומת ליבך, קיימים מפעילים אשר אינם תומכים ברשת דור 3 ודור 2 – כך שלא ניתן לבצע שימוש ברשתות מפעילים אלו במכשירי דור 2, 3 וכן לא ניתן לבצע שימושי שיחה ברשתות אלו במכשירים שאינם תומכים ב-VOLTE"
+      ],
+      "displayImportantToKnow": true,
+      "countrySupportedList": [
+        {
+          "countryCode": "AD",
+          "countryHebName": "אנדורה"
+        },
+        {
+          "countryCode": "AG",
+          "countryHebName": "אנטיגואה וברבודה"
+        },
+        {
+          "countryCode": "AI",
+          "countryHebName": "אנגווילה"
+        },
+        {
+          "countryCode": "AL",
+          "countryHebName": "אלבניה"
+        },
+        {
+          "countryCode": "AM",
+          "countryHebName": "ארמניה"
+        },
+        {
+          "countryCode": "AN",
+          "countryHebName": "האנטילים ההולנדיים"
+        },
+        {
+          "countryCode": "AR",
+          "countryHebName": "ארגנטינה"
+        },
+        {
+          "countryCode": "AT",
+          "countryHebName": "אוסטריה"
+        },
+        {
+          "countryCode": "AU",
+          "countryHebName": "אוסטרליה"
+        },
+        {
+          "countryCode": "AW",
+          "countryHebName": "ארובה"
+        },
+        {
+          "countryCode": "BA",
+          "countryHebName": "בוסניה הרצגובינה"
+        },
+        {
+          "countryCode": "BB",
+          "countryHebName": "ברבדוס"
+        },
+        {
+          "countryCode": "BE",
+          "countryHebName": "בלגיה"
+        },
+        {
+          "countryCode": "BG",
+          "countryHebName": "בולגריה"
+        },
+        {
+          "countryCode": "BH",
+          "countryHebName": "בחריין"
+        },
+        {
+          "countryCode": "BM",
+          "countryHebName": "ברמודה"
+        },
+        {
+          "countryCode": "BO",
+          "countryHebName": "בוליביה"
+        },
+        {
+          "countryCode": "BR",
+          "countryHebName": "ברזיל"
+        },
+        {
+          "countryCode": "BS",
+          "countryHebName": "איי בהאמה"
+        },
+        {
+          "countryCode": "BW",
+          "countryHebName": "בוטסואנה"
+        },
+        {
+          "countryCode": "BY",
+          "countryHebName": "בלארוס"
+        },
+        {
+          "countryCode": "BZ",
+          "countryHebName": "בליז"
+        },
+        {
+          "countryCode": "CA",
+          "countryHebName": "קנדה"
+        },
+        {
+          "countryCode": "CD",
+          "countryHebName": "הרפובליקה הדמוקרטית של קונגו"
+        },
+        {
+          "countryCode": "CG",
+          "countryHebName": "קונגו"
+        },
+        {
+          "countryCode": "CH",
+          "countryHebName": "שוויץ"
+        },
+        {
+          "countryCode": "CI",
+          "countryHebName": "חוף השנהב"
+        },
+        {
+          "countryCode": "CN",
+          "countryHebName": "סין"
+        },
+        {
+          "countryCode": "CO",
+          "countryHebName": "קולומביה"
+        },
+        {
+          "countryCode": "CR",
+          "countryHebName": "קוסטה ריקה"
+        },
+        {
+          "countryCode": "CY",
+          "countryHebName": "קפריסין"
+        },
+        {
+          "countryCode": "DE",
+          "countryHebName": "גרמניה"
+        },
+        {
+          "countryCode": "DK",
+          "countryHebName": "דנמרק"
+        },
+        {
+          "countryCode": "DM",
+          "countryHebName": "דומיניקה"
+        },
+        {
+          "countryCode": "DO",
+          "countryHebName": "הרפובליקה הדומיניקנית"
+        },
+        {
+          "countryCode": "EC",
+          "countryHebName": "אקוודור"
+        },
+        {
+          "countryCode": "EE",
+          "countryHebName": "אסטוניה"
+        },
+        {
+          "countryCode": "ET",
+          "countryHebName": "אתיופיה"
+        },
+        {
+          "countryCode": "FI",
+          "countryHebName": "פינלנד"
+        },
+        {
+          "countryCode": "FO",
+          "countryHebName": "איי פארו"
+        },
+        {
+          "countryCode": "FR",
+          "countryHebName": "צרפת"
+        },
+        {
+          "countryCode": "GA",
+          "countryHebName": "גבון"
+        },
+        {
+          "countryCode": "GD",
+          "countryHebName": "גרנאדה"
+        },
+        {
+          "countryCode": "GE",
+          "countryHebName": "גיאורגיה"
+        },
+        {
+          "countryCode": "GH",
+          "countryHebName": "גאנה"
+        },
+        {
+          "countryCode": "GP",
+          "countryHebName": "גוואדלופ"
+        },
+        {
+          "countryCode": "GR",
+          "countryHebName": "יוון"
+        },
+        {
+          "countryCode": "HK",
+          "countryHebName": "הונג קונג"
+        },
+        {
+          "countryCode": "HN",
+          "countryHebName": "הונדורס"
+        },
+        {
+          "countryCode": "HR",
+          "countryHebName": "קרואטיה"
+        },
+        {
+          "countryCode": "HT",
+          "countryHebName": "האיטי"
+        },
+        {
+          "countryCode": "HU",
+          "countryHebName": "הונגריה"
+        },
+        {
+          "countryCode": "IE",
+          "countryHebName": "אירלנד"
+        },
+        {
+          "countryCode": "IN",
+          "countryHebName": "הודו"
+        },
+        {
+          "countryCode": "IS",
+          "countryHebName": "איסלנד"
+        },
+        {
+          "countryCode": "IT",
+          "countryHebName": "איטליה"
+        },
+        {
+          "countryCode": "JO",
+          "countryHebName": "ירדן"
+        },
+        {
+          "countryCode": "JP",
+          "countryHebName": "יפן"
+        },
+        {
+          "countryCode": "KE",
+          "countryHebName": "קניה"
+        },
+        {
+          "countryCode": "KH",
+          "countryHebName": "קמבודיה"
+        },
+        {
+          "countryCode": "KN",
+          "countryHebName": "סנט קיטס ונוויס"
+        },
+        {
+          "countryCode": "KR",
+          "countryHebName": "קוריאה הדרומית"
+        },
+        {
+          "countryCode": "KY",
+          "countryHebName": "איי קיימן"
+        },
+        {
+          "countryCode": "KZ",
+          "countryHebName": "קזחסטן"
+        },
+        {
+          "countryCode": "LC",
+          "countryHebName": "סנט לוסיה"
+        },
+        {
+          "countryCode": "LI",
+          "countryHebName": "ליכטנשטיין"
+        },
+        {
+          "countryCode": "LK",
+          "countryHebName": "סרי לנקה"
+        },
+        {
+          "countryCode": "LS",
+          "countryHebName": "לסוטו"
+        },
+        {
+          "countryCode": "LT",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "LU",
+          "countryHebName": "לוקסמבורג"
+        },
+        {
+          "countryCode": "LV",
+          "countryHebName": "לטביה"
+        },
+        {
+          "countryCode": "MA",
+          "countryHebName": "מרוקו"
+        },
+        {
+          "countryCode": "MC",
+          "countryHebName": "מונקו"
+        },
+        {
+          "countryCode": "MD",
+          "countryHebName": "מולדובה"
+        },
+        {
+          "countryCode": "XK",
+          "countryHebName": "קוסובו"
+        },
+        {
+          "countryCode": "MG",
+          "countryHebName": "מדגסקר"
+        },
+        {
+          "countryCode": "MK",
+          "countryHebName": "מקדוניה"
+        },
+        {
+          "countryCode": "AE",
+          "countryHebName": "איחוד האמירויות הערביות"
+        },
+        {
+          "countryCode": "GB",
+          "countryHebName": "בריטניה (כולל סקוטלנד)"
+        },
+        {
+          "countryCode": "JM",
+          "countryHebName": "ג'מייקה"
+        },
+        {
+          "countryCode": "GT",
+          "countryHebName": "גוואטמלה"
+        },
+        {
+          "countryCode": "EG",
+          "countryHebName": "מצרים (דרום סיני בלבד)"
+        },
+        {
+          "countryCode": "ES",
+          "countryHebName": "ספרד (כולל האיים הקנריים והבאלריים)"
+        },
+        {
+          "countryCode": "FJ",
+          "countryHebName": "פיג'י"
+        },
+        {
+          "countryCode": "CL",
+          "countryHebName": "צ'ילה"
+        },
+        {
+          "countryCode": "CZ",
+          "countryHebName": "צ'כיה"
+        },
+        {
+          "countryCode": "KG",
+          "countryHebName": "קירגיסטן"
+        },
+        {
+          "countryCode": "MO",
+          "countryHebName": "מקאו"
+        },
+        {
+          "countryCode": "MQ",
+          "countryHebName": "מרטיניק"
+        },
+        {
+          "countryCode": "MS",
+          "countryHebName": "מונטסראט"
+        },
+        {
+          "countryCode": "MT",
+          "countryHebName": "מלטה"
+        },
+        {
+          "countryCode": "MU",
+          "countryHebName": "מאוריציוס"
+        },
+        {
+          "countryCode": "MW",
+          "countryHebName": "מלאווי"
+        },
+        {
+          "countryCode": "MX",
+          "countryHebName": "מקסיקו"
+        },
+        {
+          "countryCode": "MZ",
+          "countryHebName": "מוזמביק"
+        },
+        {
+          "countryCode": "NG",
+          "countryHebName": "ניגריה"
+        },
+        {
+          "countryCode": "NI",
+          "countryHebName": "ניקרגואה"
+        },
+        {
+          "countryCode": "NL",
+          "countryHebName": "הולנד"
+        },
+        {
+          "countryCode": "NO",
+          "countryHebName": "נורבגיה"
+        },
+        {
+          "countryCode": "NP",
+          "countryHebName": "נפאל"
+        },
+        {
+          "countryCode": "NZ",
+          "countryHebName": "ניו זילנד"
+        },
+        {
+          "countryCode": "PA",
+          "countryHebName": "פנמה"
+        },
+        {
+          "countryCode": "PE",
+          "countryHebName": "פרו"
+        },
+        {
+          "countryCode": "PF",
+          "countryHebName": "פולינזיה הצרפתית"
+        },
+        {
+          "countryCode": "PG",
+          "countryHebName": "פפואה ניו גינאה"
+        },
+        {
+          "countryCode": "PH",
+          "countryHebName": "פיליפינים"
+        },
+        {
+          "countryCode": "PL",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "PR",
+          "countryHebName": "פורטו ריקו"
+        },
+        {
+          "countryCode": "PY",
+          "countryHebName": "פרגוואי"
+        },
+        {
+          "countryCode": "RO",
+          "countryHebName": "רומניה"
+        },
+        {
+          "countryCode": "RS",
+          "countryHebName": "סרביה"
+        },
+        {
+          "countryCode": "RU",
+          "countryHebName": "רוסיה"
+        },
+        {
+          "countryCode": "RW",
+          "countryHebName": "רואנדה"
+        },
+        {
+          "countryCode": "SC",
+          "countryHebName": "סיישל"
+        },
+        {
+          "countryCode": "SE",
+          "countryHebName": "שוודיה"
+        },
+        {
+          "countryCode": "SG",
+          "countryHebName": "סינגפור"
+        },
+        {
+          "countryCode": "SI",
+          "countryHebName": "סלובניה"
+        },
+        {
+          "countryCode": "SK",
+          "countryHebName": "סלובקיה"
+        },
+        {
+          "countryCode": "SR",
+          "countryHebName": "סורינאם"
+        },
+        {
+          "countryCode": "SV",
+          "countryHebName": "אל סלוודור"
+        },
+        {
+          "countryCode": "TC",
+          "countryHebName": "איי טרקס וקייקוס"
+        },
+        {
+          "countryCode": "TG",
+          "countryHebName": "טוגו"
+        },
+        {
+          "countryCode": "TH",
+          "countryHebName": "תאילנד"
+        },
+        {
+          "countryCode": "TJ",
+          "countryHebName": "טגיקיסטן"
+        },
+        {
+          "countryCode": "TR",
+          "countryHebName": "טורקיה"
+        },
+        {
+          "countryCode": "TT",
+          "countryHebName": "טרינידד וטובגו"
+        },
+        {
+          "countryCode": "TW",
+          "countryHebName": "טאיוואן"
+        },
+        {
+          "countryCode": "TZ",
+          "countryHebName": "טנזניה"
+        },
+        {
+          "countryCode": "UA",
+          "countryHebName": "אוקראינה"
+        },
+        {
+          "countryCode": "UG",
+          "countryHebName": "אוגנדה"
+        },
+        {
+          "countryCode": "US",
+          "countryHebName": "ארה\"ב"
+        },
+        {
+          "countryCode": "UY",
+          "countryHebName": "אורוגוואי"
+        },
+        {
+          "countryCode": "UZ",
+          "countryHebName": "אוזבקיסטן"
+        },
+        {
+          "countryCode": "VC",
+          "countryHebName": "סנט וינסנט והגרנדינים"
+        },
+        {
+          "countryCode": "VE",
+          "countryHebName": "ונצואלה"
+        },
+        {
+          "countryCode": "VG",
+          "countryHebName": "איי הבתולה הבריטיים"
+        },
+        {
+          "countryCode": "VN",
+          "countryHebName": "וייטנאם"
+        },
+        {
+          "countryCode": "ZA",
+          "countryHebName": "דרום אפריקה"
+        },
+        {
+          "countryCode": "ZM",
+          "countryHebName": "זמביה"
+        },
+        {
+          "countryCode": "NE",
+          "countryHebName": "ניז'ר"
+        },
+        {
+          "countryCode": "ME",
+          "countryHebName": "מונטנגרו"
+        },
+        {
+          "countryCode": "AZ",
+          "countryHebName": "אזרבייג'ן"
+        },
+        {
+          "countryCode": "PT",
+          "countryHebName": "פורטוגל (כולל איי מדיירה והאיים האזוריים)"
+        },
+        {
+          "countryCode": "TD",
+          "countryHebName": "צ'אד"
+        },
+        {
+          "countryCode": "ID",
+          "countryHebName": "אינדונזיה"
+        }
+      ],
+      "countryNotSupportedList": [
+        {
+          "countryCode": "BT",
+          "countryHebName": "בהוטן"
+        },
+        {
+          "countryCode": "PT1",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "LB",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "SY",
+          "countryHebName": "סרביה"
+        }
+      ],
+      "countrySupportedDictionary": {
+        "א": "אנדורה, אנטיגואה וברבודה, אנגווילה, אלבניה, ארמניה, ארגנטינה, אוסטריה, אוסטרליה, ארובה, איי בהאמה, אקוודור, אסטוניה, אתיופיה, איי פארו, אירלנד, איסלנד, איטליה, איי קיימן, איחוד האמירויות הערביות, אל סלוודור, איי טרקס וקייקוס, אוקראינה, אוגנדה, ארה\"ב, אורוגוואי, אוזבקיסטן, איי הבתולה הבריטיים, אזרבייג'ן, אינדונזיה",
+        "ב": "בוסניה הרצגובינה, ברבדוס, בלגיה, בולגריה, בחריין, ברמודה, בוליביה, ברזיל, בוטסואנה, בלארוס, בליז, בריטניה (כולל סקוטלנד)",
+        "ג": "גרמניה, גבון, גרנאדה, גיאורגיה, גאנה, גוואדלופ, ג'מייקה, גוואטמלה",
+        "ד": "דנמרק, דומיניקה, דרום אפריקה",
+        "ה": "האנטילים ההולנדיים, הרפובליקה הדמוקרטית של קונגו, הרפובליקה הדומיניקנית, הונג קונג, הונדורס, האיטי, הונגריה, הודו, הולנד",
+        "ו": "ונצואלה, וייטנאם",
+        "ז": "זמביה",
+        "ח": "חוף השנהב",
+        "ט": "טוגו, טגיקיסטן, טורקיה, טרינידד וטובגו, טאיוואן, טנזניה",
+        "י": "יוון, ירדן, יפן",
+        "ל": "ליכטנשטיין, לסוטו, ליטא, לוקסמבורג, לטביה",
+        "מ": "מרוקו, מונקו, מולדובה, מדגסקר, מקדוניה, מצרים (דרום סיני בלבד), מקאו, מרטיניק, מונטסראט, מלטה, מאוריציוס, מלאווי, מקסיקו, מוזמביק, מונטנגרו",
+        "נ": "ניגריה, ניקרגואה, נורבגיה, נפאל, ניו זילנד, ניז'ר",
+        "ס": "סין, סנט קיטס ונוויס, סנט לוסיה, סרי לנקה, ספרד (כולל האיים הקנריים והבאלריים), סרביה, סיישל, סינגפור, סלובניה, סלובקיה, סורינאם, סנט וינסנט והגרנדינים",
+        "פ": "פינלנד, פיג'י, פנמה, פרו, פולינזיה הצרפתית, פפואה ניו גינאה, פיליפינים, פולין, פורטו ריקו, פרגוואי, פורטוגל (כולל איי מדיירה והאיים האזוריים)",
+        "צ": "צרפת, צ'ילה, צ'כיה, צ'אד",
+        "ק": "קנדה, קונגו, קולומביה, קוסטה ריקה, קפריסין, קרואטיה, קניה, קמבודיה, קוריאה הדרומית, קזחסטן, קוסובו, קירגיסטן",
+        "ר": "רומניה, רוסיה, רואנדה",
+        "ש": "שוויץ, שוודיה",
+        "ת": "תאילנד"
+      },
+      "tagTextSecondary": "כולל שיחות מקומיות",
+      "socCode": "FMWH995",
+      "isRecurringPayment": null,
+      "textInsideTooltipPackage": null,
+      "textUnderPackage": "",
+      "isSearch": false,
+      "matchType": "Null",
+      "countrySearchedButNotSupported": null,
+      "numberOfTripAllowed": null,
+      "isGiveFamilyBonus": false,
+      "isFamilyBonus": false,
+      "packageCodeFamilyBonus": null,
+      "socCodeFamilyBonus": null,
+      "familyPackageDescriptionFromPackageManager": "",
+      "isShelfBusinessIndividual": false,
+      "socDescription": null,
+      "socCatalogId": "SOC_FMWH995"
+    },
+    {
+      "blockId": "42279",
+      "labelEpi": "",
+      "titleEpi": "גלישה בקטנה",
+      "packageDuration": 7,
+      "packageBankExpirationDate": "09.04.2026",
+      "type": "Data",
+      "packageSegment": "Unknown",
+      "isBankOrByUse": "Bank",
+      "packageDetailsList": [
+        {
+          "voice": {
+            "unit": null,
+            "value": null,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "sms": {
+            "unit": null,
+            "value": null,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "data": {
+            "unit": "GB",
+            "value": 2,
+            "priceByUsage": null,
+            "unitByUsage": null,
+            "isUnlimited": false,
+            "quantity": null
+          },
+          "countrySupportedList": null
+        }
+      ],
+      "iconAppEpi": null,
+      "price": 149.0,
+      "priceDeleted": 0.0,
+      "buttonValue": "לרכישה",
+      "policiesEpi": "/globalassets/pdf/30027-0623-01-hul4539--hul4540.pdf",
+      "dataForApp": {
+        "hasDataForApp": false,
+        "isUnlimitedDataForApp": false,
+        "valueDataForApp": null,
+        "unit": "Empty"
+      },
+      "importantInfo": [
+        "על מנת .ליהנות מחבילת הגלישה בחו\"ל, על מכשירכם להיות פתוח לגלישה בעת נדידה. בסיום נפח הגלישה הכלול בחבילה הגלישה תחסם, אלא אם כן תרכשו חבילת גלישה נוספת. לתשומת לבכם, קיימים יישומים (כגון: סנכרון אוטומטי של דואר אלקטרוני) הצורכים נפח נתונים, גם מבלי שתעשה פעולה יזומה על ידכם.  כמו כן, החבילה אינה תקפה באוניות ומטוסים. לשימוש בירדן יש לפתוח את המכשיר לגלישה.  לתשומת ליבך, קיימים מפעילים אשר אינם תומכים ברשת דור 3 ודור 2 – כך שלא ניתן לבצע שימוש ברשתות מפעילים אלו במכשירי דור 2, 3 וכן לא ניתן לבצע שימושי שיחה ברשתות אלו במכשירים שאינם תומכים ב-VOLTE"
+      ],
+      "displayImportantToKnow": true,
+      "countrySupportedList": [
+        {
+          "countryCode": "AD",
+          "countryHebName": "אנדורה"
+        },
+        {
+          "countryCode": "AG",
+          "countryHebName": "אנטיגואה וברבודה"
+        },
+        {
+          "countryCode": "AI",
+          "countryHebName": "אנגווילה"
+        },
+        {
+          "countryCode": "AL",
+          "countryHebName": "אלבניה"
+        },
+        {
+          "countryCode": "AM",
+          "countryHebName": "ארמניה"
+        },
+        {
+          "countryCode": "AN",
+          "countryHebName": "האנטילים ההולנדיים"
+        },
+        {
+          "countryCode": "AR",
+          "countryHebName": "ארגנטינה"
+        },
+        {
+          "countryCode": "AT",
+          "countryHebName": "אוסטריה"
+        },
+        {
+          "countryCode": "AU",
+          "countryHebName": "אוסטרליה"
+        },
+        {
+          "countryCode": "AW",
+          "countryHebName": "ארובה"
+        },
+        {
+          "countryCode": "BA",
+          "countryHebName": "בוסניה הרצגובינה"
+        },
+        {
+          "countryCode": "BB",
+          "countryHebName": "ברבדוס"
+        },
+        {
+          "countryCode": "BE",
+          "countryHebName": "בלגיה"
+        },
+        {
+          "countryCode": "BG",
+          "countryHebName": "בולגריה"
+        },
+        {
+          "countryCode": "BH",
+          "countryHebName": "בחריין"
+        },
+        {
+          "countryCode": "BM",
+          "countryHebName": "ברמודה"
+        },
+        {
+          "countryCode": "BO",
+          "countryHebName": "בוליביה"
+        },
+        {
+          "countryCode": "BR",
+          "countryHebName": "ברזיל"
+        },
+        {
+          "countryCode": "BS",
+          "countryHebName": "איי בהאמה"
+        },
+        {
+          "countryCode": "BW",
+          "countryHebName": "בוטסואנה"
+        },
+        {
+          "countryCode": "BY",
+          "countryHebName": "בלארוס"
+        },
+        {
+          "countryCode": "BZ",
+          "countryHebName": "בליז"
+        },
+        {
+          "countryCode": "CA",
+          "countryHebName": "קנדה"
+        },
+        {
+          "countryCode": "CD",
+          "countryHebName": "הרפובליקה הדמוקרטית של קונגו"
+        },
+        {
+          "countryCode": "CG",
+          "countryHebName": "קונגו"
+        },
+        {
+          "countryCode": "CH",
+          "countryHebName": "שוויץ"
+        },
+        {
+          "countryCode": "CI",
+          "countryHebName": "חוף השנהב"
+        },
+        {
+          "countryCode": "CN",
+          "countryHebName": "סין"
+        },
+        {
+          "countryCode": "CO",
+          "countryHebName": "קולומביה"
+        },
+        {
+          "countryCode": "CR",
+          "countryHebName": "קוסטה ריקה"
+        },
+        {
+          "countryCode": "CY",
+          "countryHebName": "קפריסין"
+        },
+        {
+          "countryCode": "DE",
+          "countryHebName": "גרמניה"
+        },
+        {
+          "countryCode": "DK",
+          "countryHebName": "דנמרק"
+        },
+        {
+          "countryCode": "DM",
+          "countryHebName": "דומיניקה"
+        },
+        {
+          "countryCode": "DO",
+          "countryHebName": "הרפובליקה הדומיניקנית"
+        },
+        {
+          "countryCode": "EC",
+          "countryHebName": "אקוודור"
+        },
+        {
+          "countryCode": "EE",
+          "countryHebName": "אסטוניה"
+        },
+        {
+          "countryCode": "ET",
+          "countryHebName": "אתיופיה"
+        },
+        {
+          "countryCode": "FI",
+          "countryHebName": "פינלנד"
+        },
+        {
+          "countryCode": "FO",
+          "countryHebName": "איי פארו"
+        },
+        {
+          "countryCode": "FR",
+          "countryHebName": "צרפת"
+        },
+        {
+          "countryCode": "GA",
+          "countryHebName": "גבון"
+        },
+        {
+          "countryCode": "GD",
+          "countryHebName": "גרנאדה"
+        },
+        {
+          "countryCode": "GE",
+          "countryHebName": "גיאורגיה"
+        },
+        {
+          "countryCode": "GH",
+          "countryHebName": "גאנה"
+        },
+        {
+          "countryCode": "GP",
+          "countryHebName": "גוואדלופ"
+        },
+        {
+          "countryCode": "GR",
+          "countryHebName": "יוון"
+        },
+        {
+          "countryCode": "HK",
+          "countryHebName": "הונג קונג"
+        },
+        {
+          "countryCode": "HN",
+          "countryHebName": "הונדורס"
+        },
+        {
+          "countryCode": "HR",
+          "countryHebName": "קרואטיה"
+        },
+        {
+          "countryCode": "HT",
+          "countryHebName": "האיטי"
+        },
+        {
+          "countryCode": "HU",
+          "countryHebName": "הונגריה"
+        },
+        {
+          "countryCode": "IE",
+          "countryHebName": "אירלנד"
+        },
+        {
+          "countryCode": "IN",
+          "countryHebName": "הודו"
+        },
+        {
+          "countryCode": "IS",
+          "countryHebName": "איסלנד"
+        },
+        {
+          "countryCode": "IT",
+          "countryHebName": "איטליה"
+        },
+        {
+          "countryCode": "JO",
+          "countryHebName": "ירדן"
+        },
+        {
+          "countryCode": "JP",
+          "countryHebName": "יפן"
+        },
+        {
+          "countryCode": "KE",
+          "countryHebName": "קניה"
+        },
+        {
+          "countryCode": "KH",
+          "countryHebName": "קמבודיה"
+        },
+        {
+          "countryCode": "KN",
+          "countryHebName": "סנט קיטס ונוויס"
+        },
+        {
+          "countryCode": "KR",
+          "countryHebName": "קוריאה הדרומית"
+        },
+        {
+          "countryCode": "KY",
+          "countryHebName": "איי קיימן"
+        },
+        {
+          "countryCode": "KZ",
+          "countryHebName": "קזחסטן"
+        },
+        {
+          "countryCode": "LC",
+          "countryHebName": "סנט לוסיה"
+        },
+        {
+          "countryCode": "LI",
+          "countryHebName": "ליכטנשטיין"
+        },
+        {
+          "countryCode": "LK",
+          "countryHebName": "סרי לנקה"
+        },
+        {
+          "countryCode": "LS",
+          "countryHebName": "לסוטו"
+        },
+        {
+          "countryCode": "LT",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "LU",
+          "countryHebName": "לוקסמבורג"
+        },
+        {
+          "countryCode": "LV",
+          "countryHebName": "לטביה"
+        },
+        {
+          "countryCode": "MA",
+          "countryHebName": "מרוקו"
+        },
+        {
+          "countryCode": "MC",
+          "countryHebName": "מונקו"
+        },
+        {
+          "countryCode": "MD",
+          "countryHebName": "מולדובה"
+        },
+        {
+          "countryCode": "XK",
+          "countryHebName": "קוסובו"
+        },
+        {
+          "countryCode": "MG",
+          "countryHebName": "מדגסקר"
+        },
+        {
+          "countryCode": "MK",
+          "countryHebName": "מקדוניה"
+        },
+        {
+          "countryCode": "AE",
+          "countryHebName": "איחוד האמירויות הערביות"
+        },
+        {
+          "countryCode": "GB",
+          "countryHebName": "בריטניה (כולל סקוטלנד)"
+        },
+        {
+          "countryCode": "JM",
+          "countryHebName": "ג'מייקה"
+        },
+        {
+          "countryCode": "GT",
+          "countryHebName": "גוואטמלה"
+        },
+        {
+          "countryCode": "EG",
+          "countryHebName": "מצרים (דרום סיני בלבד)"
+        },
+        {
+          "countryCode": "ES",
+          "countryHebName": "ספרד (כולל האיים הקנריים והבאלריים)"
+        },
+        {
+          "countryCode": "FJ",
+          "countryHebName": "פיג'י"
+        },
+        {
+          "countryCode": "CL",
+          "countryHebName": "צ'ילה"
+        },
+        {
+          "countryCode": "CZ",
+          "countryHebName": "צ'כיה"
+        },
+        {
+          "countryCode": "KG",
+          "countryHebName": "קירגיסטן"
+        },
+        {
+          "countryCode": "MO",
+          "countryHebName": "מקאו"
+        },
+        {
+          "countryCode": "MQ",
+          "countryHebName": "מרטיניק"
+        },
+        {
+          "countryCode": "MS",
+          "countryHebName": "מונטסראט"
+        },
+        {
+          "countryCode": "MT",
+          "countryHebName": "מלטה"
+        },
+        {
+          "countryCode": "MU",
+          "countryHebName": "מאוריציוס"
+        },
+        {
+          "countryCode": "MW",
+          "countryHebName": "מלאווי"
+        },
+        {
+          "countryCode": "MX",
+          "countryHebName": "מקסיקו"
+        },
+        {
+          "countryCode": "MZ",
+          "countryHebName": "מוזמביק"
+        },
+        {
+          "countryCode": "NG",
+          "countryHebName": "ניגריה"
+        },
+        {
+          "countryCode": "NI",
+          "countryHebName": "ניקרגואה"
+        },
+        {
+          "countryCode": "NL",
+          "countryHebName": "הולנד"
+        },
+        {
+          "countryCode": "NO",
+          "countryHebName": "נורבגיה"
+        },
+        {
+          "countryCode": "NP",
+          "countryHebName": "נפאל"
+        },
+        {
+          "countryCode": "NZ",
+          "countryHebName": "ניו זילנד"
+        },
+        {
+          "countryCode": "PA",
+          "countryHebName": "פנמה"
+        },
+        {
+          "countryCode": "PE",
+          "countryHebName": "פרו"
+        },
+        {
+          "countryCode": "PF",
+          "countryHebName": "פולינזיה הצרפתית"
+        },
+        {
+          "countryCode": "PG",
+          "countryHebName": "פפואה ניו גינאה"
+        },
+        {
+          "countryCode": "PH",
+          "countryHebName": "פיליפינים"
+        },
+        {
+          "countryCode": "PL",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "PR",
+          "countryHebName": "פורטו ריקו"
+        },
+        {
+          "countryCode": "PY",
+          "countryHebName": "פרגוואי"
+        },
+        {
+          "countryCode": "RO",
+          "countryHebName": "רומניה"
+        },
+        {
+          "countryCode": "RS",
+          "countryHebName": "סרביה"
+        },
+        {
+          "countryCode": "RU",
+          "countryHebName": "רוסיה"
+        },
+        {
+          "countryCode": "RW",
+          "countryHebName": "רואנדה"
+        },
+        {
+          "countryCode": "SC",
+          "countryHebName": "סיישל"
+        },
+        {
+          "countryCode": "SE",
+          "countryHebName": "שוודיה"
+        },
+        {
+          "countryCode": "SG",
+          "countryHebName": "סינגפור"
+        },
+        {
+          "countryCode": "SI",
+          "countryHebName": "סלובניה"
+        },
+        {
+          "countryCode": "SK",
+          "countryHebName": "סלובקיה"
+        },
+        {
+          "countryCode": "SR",
+          "countryHebName": "סורינאם"
+        },
+        {
+          "countryCode": "SV",
+          "countryHebName": "אל סלוודור"
+        },
+        {
+          "countryCode": "TC",
+          "countryHebName": "איי טרקס וקייקוס"
+        },
+        {
+          "countryCode": "TG",
+          "countryHebName": "טוגו"
+        },
+        {
+          "countryCode": "TH",
+          "countryHebName": "תאילנד"
+        },
+        {
+          "countryCode": "TJ",
+          "countryHebName": "טגיקיסטן"
+        },
+        {
+          "countryCode": "TR",
+          "countryHebName": "טורקיה"
+        },
+        {
+          "countryCode": "TT",
+          "countryHebName": "טרינידד וטובגו"
+        },
+        {
+          "countryCode": "TW",
+          "countryHebName": "טאיוואן"
+        },
+        {
+          "countryCode": "TZ",
+          "countryHebName": "טנזניה"
+        },
+        {
+          "countryCode": "UA",
+          "countryHebName": "אוקראינה"
+        },
+        {
+          "countryCode": "UG",
+          "countryHebName": "אוגנדה"
+        },
+        {
+          "countryCode": "US",
+          "countryHebName": "ארה\"ב"
+        },
+        {
+          "countryCode": "UY",
+          "countryHebName": "אורוגוואי"
+        },
+        {
+          "countryCode": "UZ",
+          "countryHebName": "אוזבקיסטן"
+        },
+        {
+          "countryCode": "VC",
+          "countryHebName": "סנט וינסנט והגרנדינים"
+        },
+        {
+          "countryCode": "VE",
+          "countryHebName": "ונצואלה"
+        },
+        {
+          "countryCode": "VG",
+          "countryHebName": "איי הבתולה הבריטיים"
+        },
+        {
+          "countryCode": "VN",
+          "countryHebName": "וייטנאם"
+        },
+        {
+          "countryCode": "ZA",
+          "countryHebName": "דרום אפריקה"
+        },
+        {
+          "countryCode": "ZM",
+          "countryHebName": "זמביה"
+        },
+        {
+          "countryCode": "NE",
+          "countryHebName": "ניז'ר"
+        },
+        {
+          "countryCode": "ME",
+          "countryHebName": "מונטנגרו"
+        },
+        {
+          "countryCode": "AZ",
+          "countryHebName": "אזרבייג'ן"
+        },
+        {
+          "countryCode": "PT",
+          "countryHebName": "פורטוגל (כולל איי מדיירה והאיים האזוריים)"
+        },
+        {
+          "countryCode": "TD",
+          "countryHebName": "צ'אד"
+        },
+        {
+          "countryCode": "ID",
+          "countryHebName": "אינדונזיה"
+        }
+      ],
+      "countryNotSupportedList": [
+        {
+          "countryCode": "BT",
+          "countryHebName": "בהוטן"
+        },
+        {
+          "countryCode": "PT1",
+          "countryHebName": "פולין"
+        },
+        {
+          "countryCode": "LB",
+          "countryHebName": "ליטא"
+        },
+        {
+          "countryCode": "SY",
+          "countryHebName": "סרביה"
+        }
+      ],
+      "countrySupportedDictionary": {
+        "א": "אנדורה, אנטיגואה וברבודה, אנגווילה, אלבניה, ארמניה, ארגנטינה, אוסטריה, אוסטרליה, ארובה, איי בהאמה, אקוודור, אסטוניה, אתיופיה, איי פארו, אירלנד, איסלנד, איטליה, איי קיימן, איחוד האמירויות הערביות, אל סלוודור, איי טרקס וקייקוס, אוקראינה, אוגנדה, ארה\"ב, אורוגוואי, אוזבקיסטן, איי הבתולה הבריטיים, אזרבייג'ן, אינדונזיה",
+        "ב": "בוסניה הרצגובינה, ברבדוס, בלגיה, בולגריה, בחריין, ברמודה, בוליביה, ברזיל, בוטסואנה, בלארוס, בליז, בריטניה (כולל סקוטלנד)",
+        "ג": "גרמניה, גבון, גרנאדה, גיאורגיה, גאנה, גוואדלופ, ג'מייקה, גוואטמלה",
+        "ד": "דנמרק, דומיניקה, דרום אפריקה",
+        "ה": "האנטילים ההולנדיים, הרפובליקה הדמוקרטית של קונגו, הרפובליקה הדומיניקנית, הונג קונג, הונדורס, האיטי, הונגריה, הודו, הולנד",
+        "ו": "ונצואלה, וייטנאם",
+        "ז": "זמביה",
+        "ח": "חוף השנהב",
+        "ט": "טוגו, טגיקיסטן, טורקיה, טרינידד וטובגו, טאיוואן, טנזניה",
+        "י": "יוון, ירדן, יפן",
+        "ל": "ליכטנשטיין, לסוטו, ליטא, לוקסמבורג, לטביה",
+        "מ": "מרוקו, מונקו, מולדובה, מדגסקר, מקדוניה, מצרים (דרום סיני בלבד), מקאו, מרטיניק, מונטסראט, מלטה, מאוריציוס, מלאווי, מקסיקו, מוזמביק, מונטנגרו",
+        "נ": "ניגריה, ניקרגואה, נורבגיה, נפאל, ניו זילנד, ניז'ר",
+        "ס": "סין, סנט קיטס ונוויס, סנט לוסיה, סרי לנקה, ספרד (כולל האיים הקנריים והבאלריים), סרביה, סיישל, סינגפור, סלובניה, סלובקיה, סורינאם, סנט וינסנט והגרנדינים",
+        "פ": "פינלנד, פיג'י, פנמה, פרו, פולינזיה הצרפתית, פפואה ניו גינאה, פיליפינים, פולין, פורטו ריקו, פרגוואי, פורטוגל (כולל איי מדיירה והאיים האזוריים)",
+        "צ": "צרפת, צ'ילה, צ'כיה, צ'אד",
+        "ק": "קנדה, קונגו, קולומביה, קוסטה ריקה, קפריסין, קרואטיה, קניה, קמבודיה, קוריאה הדרומית, קזחסטן, קוסובו, קירגיסטן",
+        "ר": "רומניה, רוסיה, רואנדה",
+        "ש": "שוויץ, שוודיה",
+        "ת": "תאילנד"
+      },
+      "tagTextSecondary": "",
+      "socCode": "HUL4539",
+      "isRecurringPayment": null,
+      "textInsideTooltipPackage": null,
+      "textUnderPackage": "",
+      "isSearch": false,
+      "matchType": "Null",
+      "countrySearchedButNotSupported": null,
+      "numberOfTripAllowed": null,
+      "isGiveFamilyBonus": false,
+      "isFamilyBonus": false,
+      "packageCodeFamilyBonus": null,
+      "socCodeFamilyBonus": null,
+      "familyPackageDescriptionFromPackageManager": "",
+      "isShelfBusinessIndividual": false,
+      "socDescription": null,
+      "socCatalogId": "SOC_HUL4539"
+    }
+  ]
+}

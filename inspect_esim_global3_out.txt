@@ -1,0 +1,499 @@
+
+======================================================================
+SIMTLV DEEP DIVE
+======================================================================
+  .elementor-col-25.elementor-top-column: 12 cards
+
+  CARD [0] class='elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-3deccad'
+  FULL TEXT:
+גלובלי 3GB
+כרטיס סים גלובלי - בנפח 3GB
+59
+₪
+בתוקף ל - 30 ימים
+ תמיכה ב-127 מדינות!*
+ ניתן להרחבת נפח הגלישה
+ ניתן לבצע טעינות חוזרות לשימוש עתידי
+לרכישה
+במידה ויש לכם מכשיר תומך eSIM , תוכלו לרכוש חבילה וירטואלית בהתאם ליעד הנסיעה. קישור בתחתית העמוד
+SIMTLV
+  ---
+
+  CARD [1] class='elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-4f6a58d'
+  FULL TEXT:
+גלובלי 5GB
+כרטיס סים גלובלי - בנפח 5GB
+79
+₪
+בתוקף ל - 30 ימים
+ תמיכה ב-127 מדינות!*
+ ניתן להרחבת נפח הגלישה
+ ניתן לבצע טעינות חוזרות לשימוש עתידי
+לרכישה
+במידה ויש לכם מכשיר תומך eSIM , תוכלו לרכוש חבילה וירטואלית בהתאם ליעד הנסיעה. קישור בתחתית העמוד
+SIMTLV
+  ---
+
+  CARD [2] class='elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-3f18050'
+  FULL TEXT:
+גלובלי 10GB
+כרטיס סים גלובלי - בנפח 10GB
+99₪
+88
+₪
+בתוקף ל - 30 ימים
+ תמיכה ב-127 מדינות!*
+ ניתן להרחבת נפח הגלישה
+ ניתן לבצע טעינות חוזרות לשימוש עתידי
+לרכישה
+במידה ויש לכם מכשיר תומך eSIM , תוכלו לרכוש חבילה וירטואלית בהתאם ליעד הנסיעה. קישור בתחתית העמוד
+TOP SELLER
+  ---
+
+  CARD [3] class='elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-f213ed9'
+  FULL TEXT:
+גלובלי 20GB
+כרטיס סים גלובלי - בנפח 20GB
+139
+₪
+בתוקף ל - 30 ימים
+ תמיכה ב-127 מדינות!*
+ ניתן להרחבת נפח הגלישה
+ ניתן לבצע טעינות חוזרות לשימוש עתידי
+לרכישה
+במידה ויש לכם מכשיר תומך eSIM , תוכלו לרכוש חבילה וירטואלית בהתאם ליעד הנסיעה. קישור בתחתית העמוד
+SIMTLV
+  ---
+
+  CARD [4] class='elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-67dc961'
+  FULL TEXT:
+3GB
+כרטיס סים גלובלי - בנפח 3GB
+59
+₪
+בתוקף ל - 7 ימים
+ 
+לרכישה
+3GB
+  ---
+
+  CARD [5] class='elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-0b4abdd'
+  FULL TEXT:
+5GB
+כרטיס סים גלובלי - בנפח 5GB
+79
+₪
+בתוקף ל - 14 ימים
+ 
+לרכישה
+5GB
+  ---
+
+  CARD [6] class='elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-9fac8ee'
+  FULL TEXT:
+10GB
+כרטיס סים גלובלי - בנפח 10GB
+99₪
+88
+₪
+בתוקף ל - 30 ימים
+ 
+לרכישה
+10GB
+  ---
+
+  CARD [7] class='elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-3eb37f9'
+  FULL TEXT:
+20GB
+כרטיס סים גלובלי - בנפח 20GB
+149
+₪
+בתוקף ל - 30 ימים
+ 
+לרכישה
+20GB
+  ---
+
+  CARD [8] class='elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-1e0cce27'
+  FULL TEXT:
+03-3302796
+טיפול בהזמנות - orders@simtlv.co.il
+ARIDAR ADVANCED SOLUTIONS. LTD
+Hidden GA4 Link
+  ---
+
+  CARD [9] class='elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-775e27e9'
+  FULL TEXT:
+מידע ויצירת קשר
+בדיקת IMEI
+מכשירי טלפון תומכי – eSIM
+אודות
+תנאי שימוש
+ביטול עסקה
+מדיניות משלוחים ואספקה
+מדיניות הפרטיות
+הצהרת נגישות
+יצירת קשר
+השכרת רכב בחו"ל
+  ---
+
+  CARD [10] class='elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-2579362c'
+  FULL TEXT:
+תפריט מהיר
+ראשי
+eSIM
+סים גלובלי
+סים לארה״ב
+סים לשאר העולם
+טעינה חוזרת
+מספרים מקומיים
+מדריכים
+  ---
+
+  CARD [11] class='elementor-column elementor-col-25 elementor-top-column elementor-element elementor-element-5daa1b33'
+  FULL TEXT:
+מועדון המבצעים שלנו
+name
+Email
+הירשמו
+  ---
+
+  .elementor-price-table: 8 found
+
+  TABLE [0]:
+גלובלי 3GB
+כרטיס סים גלובלי - בנפח 3GB
+59
+₪
+בתוקף ל - 30 ימים
+ תמיכה ב-127 מדינות!*
+ ניתן להרחבת נפח הגלישה
+ ניתן לבצע טעינות חוזרות לשימוש עתידי
+לרכישה
+במידה ויש לכם מכשיר תומך eSIM , תוכלו לרכוש חבילה וירטואלית בהתאם ליעד הנסיעה. קישור בתחתית העמוד
+  HTML:
+
+							<div class="elementor-price-table__header">
+											<h3 class="elementor-price-table__heading">
+						גלובלי 3GB						</h3>
+					
+											<span class="elementor-price-table__subheading">
+							כרטיס סים גלובלי - בנפח 3GB						</span>
+									</div>
+			
+			<div class="elementor-price-table__price">
+																	<span class="elementor-price-table__integer-part">
+						59					</span>
+				
+				
+				<span class="elementor-price-table__currency">₪</span>
+									<span class="elementor-price-table__period elementor-typo-excluded">בתוקף ל - 30 ימים</span>							</div>
+
+							<ul class="elementor-price-table__features-list">
+											<li class="elementor-repeater-item-eba4bb6">
+							<div class="elementor-price-table__feature-inner">
+								<i aria-hidden="true" class="far fa-check-circle"></i>																	<span>
+										תמיכה ב-127 מדינות!*									</span>
+																</div>
+						</li>
+											<li class="elementor-repeater-item-09a7b2c">
+							<div class="elementor-price-table__feature-inner">
+								<i aria-hidden="true" class="far fa-check-circle"></i>																	<span>
+										ניתן להרחבת נפח הגלישה 									</span>
+																</div>
+						</li>
+											<li class="elementor-repeater-item-b43b6a3">
+							<div class="elementor-price-table__feature-inner">
+								<i aria-hidden="true" class="far fa-check-circle"></i>																	<span>
+										ניתן לבצע טעינות חוזרות לשימוש עתידי									</span>
+																</div>
+						</li>
+									</ul>
+			
+							<div class="elementor-price-table__footer">
+											<a class="elementor-price-table__button elementor-button elementor-size-md" href="https://simtlv.co.il/global/?s_country%5B%5D=AT&amp;s_country%5B%5D=IT&amp;s_country%5B%5D=IS&amp;s_country%5B%5D=IE&amp;s_country%5B%5D=GB&amp;s_country%5B%5D=EE&amp;s_country%5B%5D=BG&amp;s_country%5B%5D=BE&amp;s_country%5B%5D=DE&amp;s_country%5B%5D=DK&amp;s_country%5B%5D=IC&amp;s_country%5B%5D=NL&amp;s_country%5B%5D=HU&am
+
+  TABLE [1]:
+גלובלי 5GB
+כרטיס סים גלובלי - בנפח 5GB
+79
+₪
+בתוקף ל - 30 ימים
+ תמיכה ב-127 מדינות!*
+ ניתן להרחבת נפח הגלישה
+ ניתן לבצע טעינות חוזרות לשימוש עתידי
+לרכישה
+במידה ויש לכם מכשיר תומך eSIM , תוכלו לרכוש חבילה וירטואלית בהתאם ליעד הנסיעה. קישור בתחתית העמוד
+  HTML:
+
+							<div class="elementor-price-table__header">
+											<h3 class="elementor-price-table__heading">
+						גלובלי 5GB						</h3>
+					
+											<span class="elementor-price-table__subheading">
+							כרטיס סים גלובלי - בנפח 5GB						</span>
+									</div>
+			
+			<div class="elementor-price-table__price">
+																	<span class="elementor-price-table__integer-part">
+						79					</span>
+				
+				
+				<span class="elementor-price-table__currency">₪</span>
+									<span class="elementor-price-table__period elementor-typo-excluded">בתוקף ל - 30 ימים</span>							</div>
+
+							<ul class="elementor-price-table__features-list">
+											<li class="elementor-repeater-item-eba4bb6">
+							<div class="elementor-price-table__feature-inner">
+								<i aria-hidden="true" class="far fa-check-circle"></i>																	<span>
+										<span style="font-family: Roboto, sans-serif;font-size: 14px;font-style: normal;font-weight: 400">תמיכה ב-127 מדינות!*</span><span style="font-family: Roboto, sans-serif;font-size: 14px;font-style: normal;font-weight: 400"></span>									</span>
+																</div>
+						</li>
+											<li class="elementor-repeater-item-09a7b2c">
+							<div class="elementor-price-table__feature-inner">
+								<i aria-hidden="true" class="far fa-check-circle"></i>																	<span>
+										ניתן להרחבת נפח הגלישה 									</span>
+																</div>
+						</li>
+											<li class="elementor-repeater-item-b43b6a3">
+							<div class="elementor-price-table__feature-inner">
+								<i aria-hidden="true" class="far fa-check-circle"></i>																	<span>
+										ניתן לבצע טעינות חוזרות לשימוש עתידי									</span>
+																</div>
+						</li>
+									</ul>
+			
+							<div class="elementor-price-table__footer">
+											<a class="elementor-price-table__button elementor-button elementor-size-md" href="https://simtlv.co.il/global/?s_country%5B%5D=AT&amp;s_country%5B%5D=IT&amp;s_country%5B%5D=IS&amp;s_country%5B%5D=IE
+
+  TABLE [2]:
+גלובלי 10GB
+כרטיס סים גלובלי - בנפח 10GB
+99₪
+88
+₪
+בתוקף ל - 30 ימים
+ תמיכה ב-127 מדינות!*
+ ניתן להרחבת נפח הגלישה
+ ניתן לבצע טעינות חוזרות לשימוש עתידי
+לרכישה
+במידה ויש לכם מכשיר תומך eSIM , תוכלו לרכוש חבילה וירטואלית בהתאם ליעד הנסיעה. קישור בתחתית העמוד
+  HTML:
+
+							<div class="elementor-price-table__header">
+											<h3 class="elementor-price-table__heading">
+						גלובלי 10GB						</h3>
+					
+											<span class="elementor-price-table__subheading">
+							כרטיס סים גלובלי - בנפח 10GB						</span>
+									</div>
+			
+			<div class="elementor-price-table__price">
+									<div class="elementor-price-table__original-price elementor-typo-excluded">
+						99<span class="elementor-price-table__currency">₪</span>					</div>
+																	<span class="elementor-price-table__integer-part">
+						88					</span>
+				
+				
+				<span class="elementor-price-table__currency">₪</span>
+									<span class="elementor-price-table__period elementor-typo-excluded">בתוקף ל - 30 ימים</span>							</div>
+
+							<ul class="elementor-price-table__features-list">
+											<li class="elementor-repeater-item-eba4bb6">
+							<div class="elementor-price-table__feature-inner">
+								<i aria-hidden="true" class="far fa-check-circle"></i>																	<span>
+										<span style="font-family: Roboto, sans-serif;font-size: 14px;font-style: normal;font-weight: 400">תמיכה ב-127 מדינות!*</span><span style="font-family: Roboto, sans-serif;font-size: 14px;font-style: normal;font-weight: 400"></span>									</span>
+																</div>
+						</li>
+											<li class="elementor-repeater-item-09a7b2c">
+							<div class="elementor-price-table__feature-inner">
+								<i aria-hidden="true" class="far fa-check-circle"></i>																	<span>
+										ניתן להרחבת נפח הגלישה 									</span>
+																</div>
+						</li>
+											<li class="elementor-repeater-item-b43b6a3">
+							<div class="elementor-price-table__feature-inner">
+								<i aria-hidden="true" class="far fa-check-circle"></i>																	<span>
+										ניתן לבצע טעינות חוזרות לשימוש עתידי									</span>
+																</div>
+						</li>
+									</ul>
+			
+							<div class="elementor-price-table__footer">
+											<a class="elementor-price-table__butt
+
+  TABLE [3]:
+גלובלי 20GB
+כרטיס סים גלובלי - בנפח 20GB
+139
+₪
+בתוקף ל - 30 ימים
+ תמיכה ב-127 מדינות!*
+ ניתן להרחבת נפח הגלישה
+ ניתן לבצע טעינות חוזרות לשימוש עתידי
+לרכישה
+במידה ויש לכם מכשיר תומך eSIM , תוכלו לרכוש חבילה וירטואלית בהתאם ליעד הנסיעה. קישור בתחתית העמוד
+  HTML:
+
+							<div class="elementor-price-table__header">
+											<h3 class="elementor-price-table__heading">
+						גלובלי 20GB						</h3>
+					
+											<span class="elementor-price-table__subheading">
+							כרטיס סים גלובלי - בנפח 20GB						</span>
+									</div>
+			
+			<div class="elementor-price-table__price">
+																	<span class="elementor-price-table__integer-part">
+						139					</span>
+				
+				
+				<span class="elementor-price-table__currency">₪</span>
+									<span class="elementor-price-table__period elementor-typo-excluded">בתוקף ל - 30 ימים</span>							</div>
+
+							<ul class="elementor-price-table__features-list">
+											<li class="elementor-repeater-item-eba4bb6">
+							<div class="elementor-price-table__feature-inner">
+								<i aria-hidden="true" class="far fa-check-circle"></i>																	<span>
+										תמיכה ב-127 מדינות!*									</span>
+																</div>
+						</li>
+											<li class="elementor-repeater-item-09a7b2c">
+							<div class="elementor-price-table__feature-inner">
+								<i aria-hidden="true" class="far fa-check-circle"></i>																	<span>
+										ניתן להרחבת נפח הגלישה 									</span>
+																</div>
+						</li>
+											<li class="elementor-repeater-item-b43b6a3">
+							<div class="elementor-price-table__feature-inner">
+								<i aria-hidden="true" class="far fa-check-circle"></i>																	<span>
+										ניתן לבצע טעינות חוזרות לשימוש עתידי									</span>
+																</div>
+						</li>
+									</ul>
+			
+							<div class="elementor-price-table__footer">
+											<a class="elementor-price-table__button elementor-button elementor-size-md" href="https://simtlv.co.il/global/?s_country%5B%5D=AT&amp;s_country%5B%5D=IT&amp;s_country%5B%5D=IS&amp;s_country%5B%5D=IE&amp;s_country%5B%5D=GB&amp;s_country%5B%5D=EE&amp;s_country%5B%5D=BG&amp;s_country%5B%5D=BE&amp;s_country%5B%5D=DE&amp;s_country%5B%5D=DK&amp;s_country%5B%5D=IC&amp;s_country%5B%5D=NL&amp;s_country%5B%5D=HU
+
+  TABLE [4]:
+3GB
+כרטיס סים גלובלי - בנפח 3GB
+59
+₪
+בתוקף ל - 7 ימים
+ 
+לרכישה
+  HTML:
+
+							<div class="elementor-price-table__header">
+											<h3 class="elementor-price-table__heading">
+						3GB						</h3>
+					
+											<span class="elementor-price-table__subheading">
+							כרטיס סים גלובלי - בנפח 3GB						</span>
+									</div>
+			
+			<div class="elementor-price-table__price">
+																	<span class="elementor-price-table__integer-part">
+						59					</span>
+				
+				
+				<span class="elementor-price-table__currency">₪</span>
+									<span class="elementor-price-table__period elementor-typo-excluded">בתוקף ל - 7 ימים</span>							</div>
+
+							<ul class="elementor-price-table__features-list">
+											<li class="elementor-repeater-item-57425e6">
+							<div class="elementor-price-table__feature-inner">
+																&nbsp;							</div>
+						</li>
+									</ul>
+			
+							<div class="elementor-price-table__footer">
+											<a class="elementor-price-table__button elementor-button elementor-size-md" href="https://simtlv.co.il/product/global-3gb-esim-59/">
+							לרכישה						</a>
+					
+									</div>
+					
+
+  TABLE [5]:
+5GB
+כרטיס סים גלובלי - בנפח 5GB
+79
+₪
+בתוקף ל - 14 ימים
+ 
+לרכישה
+  HTML:
+
+							<div class="elementor-price-table__header">
+											<h3 class="elementor-price-table__heading">
+						5GB						</h3>
+					
+											<span class="elementor-price-table__subheading">
+							כרטיס סים גלובלי - בנפח 5GB						</span>
+									</div>
+			
+			<div class="elementor-price-table__price">
+																	<span class="elementor-price-table__integer-part">
+						79					</span>
+				
+				
+				<span class="elementor-price-table__currency">₪</span>
+									<span class="elementor-price-table__period elementor-typo-excluded">בתוקף ל - 14 ימים</span>							</div>
+
+							<ul class="elementor-price-table__features-list">
+											<li class="elementor-repeater-item-b43b6a3">
+							<div class="elementor-price-table__feature-inner">
+																&nbsp;							</div>
+						</li>
+									</ul>
+			
+							<div class="elementor-price-table__footer">
+											<a class="elementor-price-table__button elementor-button elementor-size-md" href="https://simtlv.co.il/product/global-5gb-esim-59/">
+							לרכישה						</a>
+					
+									</div>
+					
+
+  TABLE [6]:
+10GB
+כרטיס סים גלובלי - בנפח 10GB
+99₪
+88
+₪
+בתוקף ל - 30 ימים
+ 
+לרכישה
+  HTML:
+
+							<div class="elementor-price-table__header">
+											<h3 class="elementor-price-table__heading">
+						10GB						</h3>
+					
+											<span class="elementor-price-table__subheading">
+							כרטיס סים גלובלי - בנפח 10GB						</span>
+									</div>
+			
+			<div class="elementor-price-table__price">
+									<div class="elementor-price-table__original-price elementor-typo-excluded">
+						99<span class="elementor-price-table__currency">₪</span>					</div>
+																	<span class="elementor-price-table__integer-part">
+						88					</span>
+				
+				
+				<span class="elementor-price-table__currency">₪</span>
+									<span class="elementor-price-table__period elementor-typo-excluded">בתוקף ל - 30 ימים</span>							</div>
+
+							<ul class="elementor-price-table__features-list">
+											<li class="elementor-repeater-item-b43b6a3">
+							<div class="elementor-price-table__feature-inner">
+																&nbsp;							</div>
+						</li>
+									</ul>
+			
+							<div class="elementor-price-table__footer">
+											<a class="elementor-price-table__button elementor-button elementor-size-md" href="https://simtlv.co.il/product/global-61-10gb-30days-esim/">
+							לרכישה						</a>
+					
+									</div>
+					

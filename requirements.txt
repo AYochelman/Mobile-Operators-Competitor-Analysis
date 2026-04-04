@@ -4,3 +4,5 @@ apscheduler
 requests
 pytest
 openpyxl
+pywebpush
+Pillow

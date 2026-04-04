@@ -1,0 +1,141 @@
+Selector '.abroad-package-client': 3 elements
+  [0] visible=True classes=abroad-package-client abroad-package-client__family-shadow 
+       text='המושלמת לחו"ל חבילה ל-30 ימים 20 GB שיחות 100\xa0דקות הודעות סמס 100\xa0הודעות כולל שיחות מקומיות 249₪ לרכישה מדינות כלולות> ח'
+  [1] visible=True classes=abroad-package-client abroad-package-client__family-shadow 
+       text='כל מה שצריך לחודש חבילה ל-30 ימים 50 GB כולל גלישה חופשית באפליקציות נבחרות שיחות 250\xa0דקות הודעות סמס 250\xa0הודעות כולל שי'
+  [2] visible=True classes=abroad-package-client  
+       text='בלי לבדוק כל רגע חבילה ל-30 ימים 60 GB כולל גלישה חופשית באפליקציות נבחרות שיחות 300\xa0דקות הודעות סמס 300\xa0הודעות כולל שיח'
+Selector '[class*=abroad]': 141 elements
+  [0] visible=True classes=cellcom-abroad-block 
+       text='טסים עם סלקום חו"ל ונשארים עם המספר שלכם בכל מקום חיפוש חבילה אזור אישי מנוי עסקי לאן טסים? אפשר לבחור עד חמישה יעדים בא'
+  [1] visible=True classes=abroad-lobby-background
+       text=''
+  [2] visible=True classes=cellcom-abroad-page-wrapper mr-auto ml-auto 
+       text='טסים עם סלקום חו"ל ונשארים עם המספר שלכם בכל מקום חיפוש חבילה אזור אישי מנוי עסקי לאן טסים? אפשר לבחור עד חמישה יעדים בא'
+  [3] visible=True classes=cellcom-abroad-lobby-container container
+       text='טסים עם סלקום חו"ל ונשארים עם המספר שלכם בכל מקום חיפוש חבילה אזור אישי מנוי עסקי לאן טסים? אפשר לבחור עד חמישה יעדים בא'
+  [4] visible=True classes=pr-0 pl-0 m-auto abroad-market-popular__desktop container
+       text='המושלמת לחו"ל חבילה ל-30 ימים 20 GB שיחות 100\xa0דקות הודעות סמס 100\xa0הודעות כולל שיחות מקומיות 249₪ לרכישה מדינות כלולות> ח'
+  [5] visible=True classes=mb-5 abroad-market-popular__desktop__item-one col-4 col
+       text='המושלמת לחו"ל חבילה ל-30 ימים 20 GB שיחות 100\xa0דקות הודעות סמס 100\xa0הודעות כולל שיחות מקומיות 249₪ לרכישה מדינות כלולות> ח'
+  [6] visible=True classes=abroad-package-client__container
+       text='המושלמת לחו"ל חבילה ל-30 ימים 20 GB שיחות 100\xa0דקות הודעות סמס 100\xa0הודעות כולל שיחות מקומיות 249₪ לרכישה מדינות כלולות> ח'
+  [7] visible=True classes=abroad-package-client abroad-package-client__family-shadow 
+       text='המושלמת לחו"ל חבילה ל-30 ימים 20 GB שיחות 100\xa0דקות הודעות סמס 100\xa0הודעות כולל שיחות מקומיות 249₪ לרכישה מדינות כלולות> ח'
+Selector '[class*=package]': 135 elements
+  [0] visible=True classes=packages-wrapper
+       text='חבילות חו"ל המשתלמות שלנו המושלמת לחו"ל חבילה ל-30 ימים 20 GB שיחות 100\xa0דקות הודעות סמס 100\xa0הודעות כולל שיחות מקומיות 24'
+  [1] visible=True classes=packages-holder
+       text='המושלמת לחו"ל חבילה ל-30 ימים 20 GB שיחות 100\xa0דקות הודעות סמס 100\xa0הודעות כולל שיחות מקומיות 249₪ לרכישה מדינות כלולות> ח'
+  [2] visible=True classes=abroad-package-client__container
+       text='המושלמת לחו"ל חבילה ל-30 ימים 20 GB שיחות 100\xa0דקות הודעות סמס 100\xa0הודעות כולל שיחות מקומיות 249₪ לרכישה מדינות כלולות> ח'
+  [3] visible=True classes=abroad-package-client abroad-package-client__family-shadow 
+       text='המושלמת לחו"ל חבילה ל-30 ימים 20 GB שיחות 100\xa0דקות הודעות סמס 100\xa0הודעות כולל שיחות מקומיות 249₪ לרכישה מדינות כלולות> ח'
+  [4] visible=True classes=abroad-package-client__start-card
+       text='המושלמת לחו"ל חבילה ל-30 ימים 20 GB שיחות 100\xa0דקות הודעות סמס 100\xa0הודעות'
+  [5] visible=True classes=abroad-package-client__title
+       text='המושלמת לחו"ל'
+  [6] visible=False classes=abroad-package-client__separator
+       text=''
+  [7] visible=True classes=abroad-package-client__duration
+       text='חבילה ל-30 ימים'
+FULL PAGE HTML (first 15000 chars):
+<!DOCTYPE html><html lang="he" data-attrs="html" class="uni-toolbar-browser-chrome uni-toolbar-browser-chrome-145"><head><meta http-equiv="origin-trial" content="A7vZI3v+Gz7JfuRolKNM4Aff6zaGuT7X0mf3wtoZTnKv6497cVMnhy03KDqX7kBz/q/iidW7srW31oQbBt4VhgoAAACUeyJvcmlnaW4iOiJodHRwczovL3d3dy5nb29nbGUuY29tOjQ0MyIsImZlYXR1cmUiOiJEaXNhYmxlVGhpcmRQYXJ0eVN0b3JhZ2VQYXJ0aXRpb25pbmczIiwiZXhwaXJ5IjoxNzU3OTgwODAwLCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=="><meta charset="UTF-8"><meta name="viewport" content="width=device-width,height=device-height,initial-scale=1"><meta http-equiv="X-UA-Compatible" content="ie=edge"><meta name="cellsrcArea" content="General"><meta name="cellsrcSubArea" content="Web"><meta name="System" content="CellcomDigitalSite"><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/destination?id=G-D41EXP1SBW&amp;cx=c&amp;gtm=4e6411h1"></script><script type="text/javascript" async="" src="https://widgetver.zoomengage.com/js/za_widget_420a.js"></script><script type="text/javascript" async="" src="https://widgetapi.zoomengage.com/widget.js?id=19763655&amp;secure&amp;9862433"></script><script type="text/javascript" async="" src="https://snap.licdn.com/li.lms-analytics/insight.min.js"></script><script type="text/javascript" async="" src="https://connect.facebook.net/en_US/fbevents.js"></script><script type="text/javascript" async="" src="https://widgetcdn.zoomengage.com/19763655-7c8d/6/widget.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-DKY5SL7VJD&amp;cx=c&amp;gtm=4e6411h1"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=DC-15293834&amp;cx=c&amp;gtm=4e6411h1"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=AW-16451399360&amp;cx=c&amp;gtm=4e6411h1"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=AW-1023402945&amp;cx=c&amp;gtm=4e6411h1"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-D41EXP1SBW&amp;cx=c&amp;gtm=4e6411h1"></script><script type="text/javascript" async="" charset="utf-8" src="https://www.gstatic.com/recaptcha/releases/kUYUkUlSyqkjTSMaN2w3RaOh/recaptcha__en.js" crossorigin="anonymous" integrity="sha384-p0z9Du3Dwf3ZTlFDRLUo9qWChfInAzC61KfZjxqsWFq5OGFzbrOOAw4oIQc6AMn7"></script><script src="https://connect.facebook.net/signals/config/3005613659481184?v=2.9.291&amp;r=stable&amp;domain=cellcom.co.il&amp;hme=295b1b33901e14aeab879c0b58f907ef4d5f44fdd19814310771af911c5f6ac8&amp;ex_m=102%2C198%2C147%2C22%2C70%2C71%2C139%2C66%2C65%2C11%2C155%2C88%2C16%2C132%2C124%2C37%2C73%2C76%2C130%2C152%2C157%2C8%2C4%2C5%2C7%2C6%2C3%2C89%2C99%2C158%2C163%2C212%2C60%2C179%2C180%2C53%2C267%2C30%2C72%2C224%2C223%2C222%2C23%2C32%2C101%2C59%2C10%2C61%2C95%2C96%2C97%2C103%2C127%2C31%2C29%2C129%2C126%2C125%2C148%2C74%2C151%2C149%2C150%2C48%2C58%2C120%2C15%2C154%2C43%2C254%2C255%2C253%2C26%2C27%2C28%2C46%2C140%2C75%2C110%2C18%2C20%2C42%2C38%2C40%2C39%2C81%2C90%2C94%2C108%2C138%2C141%2C44%2C109%2C24%2C21%2C116%2C67%2C35%2C143%2C142%2C144%2C135%2C133%2C25%2C34%2C57%2C107%2C153%2C68%2C17%2C145%2C112%2C79%2C64%2C19%2C83%2C84%2C113%2C82%2C33%2C284%2C205%2C194%2C195%2C193%2C287%2C279%2C50%2C206%2C105%2C128%2C78%2C118%2C52%2C45%2C47%2C111%2C117%2C123%2C56%2C62%2C51%2C54%2C98%2C156%2C1%2C121%2C14%2C119%2C12%2C2%2C55%2C91%2C63%2C115%2C87%2C86%2C159%2C160%2C92%2C93%2C9%2C122%2C100%2C49%2C136%2C85%2C77%2C69%2C114%2C104%2C41%2C137%2C0%2C80%2C131%2C134%2C146%2C36%2C106%2C13%2C161" async=""></script><script async="" src="https://connect.facebook.net/en_US/fbevents.js"></script><script async="" src="https://www.googletagmanager.com/gtm.js?id=GTM-P2SNVT3"></script><script id="domainDetector">!function(){var o="CLC";window.location.hostname.includes("golan.co.il")&&(o="GLN"),window.__DOMAIN_MARKET_CODE__=o,sessionStorage.setItem("domainMarketCode",o)}()</script><script>window.addEventListener("beforeunload",(()=>{})),window.addEventListener("load",(()=>{performance.navigation.type}))</script><script id="prerenderStart">window.prerenderReady=!1</script><script id="prerenderReady">document.addEventListener("DOMContentLoaded",(function(){try{const e=Date.now(),n=25e3,t=setInterval((()=>{try{const a=Date.now()-e,r=document.getElementById("epi-page-container"),o=r&&r.children.length>0;if(document.title&&o||a>=n){clearInterval(t),window.prerenderReady=!0;const n=Date.now()-e,a=performance.getEntriesByType("navigation")[0],r=a?a.loadEventEnd-a.startTime:null;window.dataLayer=window.dataLayer||[],window.dataLayer.push({event:"pageKpiMetrics",reactRenderTimeMs:n,pageLoadTimeMs:r,reactRendered:o})}}catch(e){console.warn("Polling error:",e),clearInterval(t)}}),250)}catch(e){console.error("Prerender script failed to initialize:",e)}}))</script><script id="preloadStartPage">!async function(){const e=await async function(){const e=performance.now();try{await fetch(`/favicon.ico?cb=${Date.now()}`,{cache:"no-store",mode:"no-cors"})}catch(e){}return performance.now()-e}();let t,o;e<50?(t="very-fast",o=6e3):e<100?(t="fast",o=8e3):e<250?(t="medium",o=12e3):e<500?(t="slow",o=18e3):e<1e3?(t="very-slow",o=6e4):(t="extremely-slow",o=18e4);let n,c,a=!1;const r=new Promise(((e,t)=>{n=t=>{a||(a=!0,clearTimeout(i),e(t))},c=e=>{a||(a=!0,clearTimeout(i),t(e))}}));window.__startPagePreload=function(){return r};const s=new AbortController,i=setTimeout((()=>{a||(s.abort(),c(new Error("Preload timeout")))}),o);fetch("https://contentepi.cellcom.co.il/api/episerver/v2.0/content/914?expand=*",{method:"GET",headers:{Accept:"application/json","Accept-Language":""},mode:"cors",signal:s.signal}).then((e=>e.json())).then((e=>{n(e)})).catch((e=>{c(e)}))}()</script><script defer="defer" src="https://cellcom.co.il/Spa/Scripts/lib.b74b99ac0d41e8831620.js"></script><script defer="defer" src="https://cellcom.co.il/Spa/Scripts/app.dc787df94323de23934f.js"></script><link href="https://cellcom.co.il/Spa/Styles/styles.4008b8d054a4483614e8.css" rel="stylesheet">
+
+
+<script type="text/javascript" id="_cls_detector" src="https://cdn.glassboxcdn.com/poc/cellcom/p/detector-dom.min.js" async="true" data-clsconfig="reportURI=https://report.c1101.gbqofs.io/k5dlhazk/reporting/60c29e41-1dab-2a8d-0d1b-6be9c65cc9cf/cls_report;recordErrors=true;recordScrolls=true;recordMouseMoves=true;"></script>
+
+
+
+
+<script id="gbConfig" src="https://cdn.glassboxcdn.com/poc/cellcom/p/config.js"></script><script id="_cls_detector" src="https://cdn.gbqofs.com/sv/b/detector-bootstrap.min.js" type="module" data-clsconfig="reportURI=https://report.c1101.gbqofs.io/k5dlhazk/reporting/60c29e41-1dab-2a8d-0d1b-6be9c65cc9cf/cls_report;recordErrors=true;recordScrolls=true;recordMouseMoves=true;"></script><style id="cms-theme-colors">:root {
+}</style><script id="PluroAi_Accessibility">
+      (function() {
+        var e = document.createElement('script');
+        e.async = true;
+        e.defer = true;
+        e.setAttribute("type", "text/javascript");
+        e.setAttribute("src", "https://my.pluro.ai/unitoolbar.js?lang=he");
+        document.getElementsByTagName("head")[0].appendChild(e);
+      })();
+    </script><script async="" defer="" type="text/javascript" src="https://my.pluro.ai/unitoolbar.js?lang=he"></script><script id="gtmScriptId">
+      (function(w,d,s,l,i){
+        w[l]=w[l]||[];
+        w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
+        var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s), dl=l!='dataLayer'?'&l='+l:'';
+        j.async=true;
+        j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+        f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-P2SNVT3');
+    </script><script id="script-5" src="https://www.google.com/recaptcha/api.js?render=6Lfdn98UAAAAAP0Hryf898rV70y6TuwWgJEV7ytW" async=""></script><script id="faceBookPixelScriptId">
+      !(function(f,b,e,v,n,t,s){
+        if(f.fbq)return;
+        n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;
+        n.push=n;
+        n.loaded=!0;
+        n.version='2.0';
+        n.queue=[];
+        t=b.createElement(e);t.async=!0;
+        t.src=v;
+        s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s);
+      })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '3005613659481184');
+      fbq('track', 'PageView');
+    </script><title>סלקום חו"ל - מבחר חבילות סלולר לחו"ל - גלישה ושיחות בחו"ל :: סלקום</title><link rel="canonical" href="https://cellcom.co.il/AbroadMain/lobby/" data-rh="true"><link rel="shortcut icon" href="/Spa/favicon.ico" type="image/x-icon" data-rh="true"><meta name="description" content=" מגוון חבילות סלולר - חבילות גלישה בחול, גלישה ללא הגבלה, שיחות לישראל ובינלאומיות, SMS ועוד. בחרו יעד ורכשו בקלות חבילת חו&quot;ל במחירים מיוחדים באתר." data-rh="true"><meta name="searchKeyWords" content="" data-rh="true"><meta name="keywords" content="Abroad Lobby" data-rh="true"><meta property="og:title" content="סלקום חו&quot;ל - מבחר חבילות סלולר לחו&quot;ל - גלישה ושיחות בחו&quot;ל" data-rh="true"><meta property="og:image" content="https://contentepi.cellcom.co.ilundefined" data-rh="true"><meta property="og:image:width" content="1200" data-rh="true"><meta property="og:image:height" content="630" data-rh="true"><meta property="og:description" content=" מגוון חבילות סלולר - חבילות גלישה בחול, גלישה ללא הגבלה, שיחות לישראל ובינלאומיות, SMS ועוד. בחרו יעד ורכשו בקלות חבילת חו&quot;ל במחירים מיוחדים באתר." data-rh="true"><meta name="format-detection" content="telephone=no" data-rh="true"><meta property="og:type" content="website" data-rh="true"><meta property="og:site_name" content="Cellcom" data-rh="true"><script type="application/ld+json" data-rh="true">{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [{
+    "@type": "Question",
+    "name": "איזו חבילת חול מתאימה לי?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "אם חשוב לך להיות מחובר לרשת וגם להתעדכן טלפונית עם המשפחה והחברים. אנו ממליצים לך לבחור בחבילה הכוללת גלישה. שיחות והודעות. אם אתה מעוניין להיות מחובר לרשת האינטרנט לאורך זמן, אנו ממליצים לך לבחור בחבילת הגלישה.אם אתה מעוניין בשיחות והודעות בלבד למספרים ישראליים אנו ממילצים לך לבחור בחבילה לפי שימושכם"
+    }
+  },{
+    "@type": "Question",
+    "name": "למה כדאי לי לרכוש חבילת סלקום חול?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "שימוש בטלפון הסלולרי בחו\"ל ללא חבילה עלול להוביל לעלויות גבוהות. מתכנן נסיעה? יש להיערך מבעוד מועד עם חבילה מתאימה על מנת שתוכל להתמש במכשיר באופן האופטמאלי עבורך. אנו מזמינים אותך לרכוש את החבילה לצרכיך מתוך מגוון החבילות שאנו מציעים"
+    }
+  },{
+    "@type": "Question",
+    "name": "אני רוצה לגלוש בחול - מה עליי לעשות?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "יש שני שלבים פשוטים שצריך לבצע כדי לגלוש בחו\"ל - ראשית.יש לרכוש חבילת גלישה בהתאם לאופי השימושים ולמשך הנסיעה. שנית יש לאפשר את נדידת הנתונים במכשיר המאפשרות גלישה רגילה שלא באמצעות חיבור לרשת WiFi"
+    }
+  },{
+    "@type": "Question",
+    "name": "האם ניתן להוציא/לקבל שיחות והודעות בחול גם ללא רכישת חבילה?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "כן, ניתן לבצע שיחות והודעות גם ללא חבילה . אך אם ברצונכם לדבר ולסמס בחול אנחנו ממליצים לכם לרכוש את אחת מחבילות סלקום חול הכוללת דקות והודעות עלמנת להוזיל את עלויות השימוש. במידה ולא רכשתם חבילה הכוללת שימושי דקות והודעות שימושיכם יחויבו לפי תעריפון השימושים הכללי"
+    }
+  },{
+    "@type": "Question",
+    "name": "אני טס עוד שבוע לחול, מתי לרכוש את החבילה?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "אנו ממליצים לא להמתין לרגע האחרון (כדי למנוע מצב של שכחה..) אלא לרכוש חבילה מתאימה טרם הנסיעה. סלקום חול מאפשרת לרכוש חבילות בכל מועד ולבחור תאריך עתידי לתחילת החבילה - בעת ההמראה מישראל."
+    }
+  },{
+    "@type": "Question",
+    "name": "אני מבקר במספר מדינות בנסיעה אחת. האם חבילה אחת מספיקה?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "בכל חבילה באתר סלקום מופיע פירוט של מדינות הנכללות בחבילה. החבילות שלנו תקפות במגוון רחב של יעדים, אך יש לבדוק כי המדינות השונות נכללות באותה החבילה. למשל, אתה טס ל-5 ימים באוסטריה ואיטליה? חבילת \"חול חופשי 2GB\" למשך 7 ימים, בה נהנים מגלישה. כוללת מספר רב של יעדים דוגמת אוסטריה ואיטליה. ולכן, החבילה מעניקה לך מעטפת מלאה במקרה כזה. מומלץ לוודא זאת בכל שילוב של יעדים שונים."
+    }
+  },{
+    "@type": "Question",
+    "name": "שכחתי לרכוש חבילה לחול - מה עושים עכשיו?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "באפשרותך לרכוש חבילה בכל שלב, גם בעת השהייה בחו\"ל. מומלץ לעשות זאת דרך האתר או במוקד סלקום חו\"ל בטלפון 972-52-998-6919+."
+    }
+  }]
+}
+</script><script type="text/javascript" src="https://my.pluro.ai/unitoolbar.class.js?v=1775237914498&amp;l=he"></script><link rel="stylesheet" type="text/css" href="https://my.pluro.ai/unitoolbar.min.css?v=4.4.22&amp;l=en"><script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script><script type="text/javascript" async="" src="https://googleads.g.doubleclick.net/pagead/viewthroughconversion/16451399360/?random=1775237915124&amp;cv=11&amp;fst=1775237915124&amp;bg=ffffff&amp;guid=ON&amp;async=1&amp;en=gtag.config&amp;gtm=45be6411h1v9213885550z8833905359za20gzb833905359zd833905359xec&amp;gcd=13l3l3l3l1l1&amp;dma=0&amp;tag_exp=0~115938466~115938468~116991817&amp;u_w=1280&amp;u_h=720&amp;url=https%3A%2F%2Fcellcom.co.il%2FAbroadMain%2Flobby%2F&amp;frm=0&amp;tiba=%D7%A1%D7%9C%D7%A7%D7%95%D7%9D%20%D7%97%D7%95%22%D7%9C%20-%20%D7%9E%D7%91%D7%97%D7%A8%20%D7%97%D7%91%D7%99%D7%9C%D7%95%D7%AA%20%D7%A1%D7%9C%D7%95%D7%9C%D7%A8%20%D7%9C%D7%97%D7%95%22%D7%9C%20-%20%D7%92%D7%9C%D7%99%D7%A9%D7%94%20%D7%95%D7%A9%D7%99%D7%97&amp;hn=www.googleadservices.com&amp;npa=0&amp;pscdl=noapi&amp;auid=1998360000.1775237915&amp;uaa=x86&amp;uab=64&amp;uafvl=Not%253AA-Brand%3B99.0.0.0%7CHeadlessChrome%3B145.0.7632.6%7CChromium%3B145.0.7632.6&amp;uamb=0&amp;uam=&amp;uap=Windows&amp;uapv=10.0.0&amp;uaw=0&amp;data=event%3Dgtag.config&amp;rfmt=3&amp;fmt=4"></script><script type="text/javascript" async="" src="https://googleads.g.doubleclick.net/pagead/viewthroughconversion/1023402945/?random=1775237915237&amp;cv=11&amp;fst=1775237915237&amp;bg=ffffff&amp;guid=ON&amp;async=1&amp;en=gtag.config&amp;gtm=45be6411h1v872841398z8833905359za20gzb833905359zd833905359xec&amp;gcd=13l3l3l3l1l1&amp;dma=0&amp;tag_exp=0~115616986~115938466~115938468~116991816~118398309&amp;u_w=1280&amp;u_h=720&amp;url=https%3A%2F%2Fcellcom.co.il%2FAbroadMain%2Flobby%2F&amp;frm=0&amp;tiba=%D7%A1%D7%9C%D7%A7%D7%95%D7%9D%20%D7%97%D7%95%22%D7%9C%20-%20%D7%9E%D7%91%D7%97%D7%A8%20%D7%97%D7%91%D7%99%D7%9C%D7%95%D7%AA%20%D7%A1%D7%9C%D7%95%D7%9C%D7%A8%20%D7%9C%D7%97%D7%95%22%D7%9C%20-%20%D7%92%D7%9C%D7%99%D7%A9%D7%94%20%D7%95%D7%A9%D7%99%D7%97&amp;hn=www.googleadservices.com&amp;npa=0&amp;pscdl=noapi&amp;auid=199836000
