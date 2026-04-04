@@ -104,10 +104,19 @@ def api_scrape_abroad_now():
         from change_detector import detect_changes
         old_plans = get_abroad_plans(db_path=_db_path())
         new_plans = sc.scrape_all_abroad()
-        changes = detect_changes(old_plans, new_plans)
+        # If abroad_changes is empty (first run), seed all plans as new_plan
+        existing_changes = get_abroad_changes(limit=1, db_path=_db_path())
+        if not existing_changes:
+            seed = [{"carrier": p["carrier"], "plan_name": p["plan_name"],
+                     "change_type": "new_plan", "old_val": None, "new_val": p.get("price")}
+                    for p in new_plans]
+            save_abroad_changes(seed, db_path=_db_path())
+            changes = seed
+        else:
+            changes = detect_changes(old_plans, new_plans)
+            if changes:
+                save_abroad_changes(changes, db_path=_db_path())
         save_abroad_plans(new_plans, db_path=_db_path())
-        if changes:
-            save_abroad_changes(changes, db_path=_db_path())
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-abroad-now failed: {e}", exc_info=True)
