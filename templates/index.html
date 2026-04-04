@@ -153,6 +153,11 @@
   .chat-examples { padding: 0 14px 10px; display: flex; flex-wrap: wrap; gap: 6px; }
   .chat-example { font-size: 11px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 20px; padding: 4px 10px; cursor: pointer; color: #374151; transition: all 0.15s; }
   .chat-example:hover { background: #eff6ff; border-color: #6366f1; color: #4f46e5; }
+  @media (max-width: 600px) {
+    .chat-panel { max-height: 42svh; max-height: 42dvh; max-width: 100%; left: 0; right: 0; margin: 0; }
+    .chat-input { font-size: 16px; }
+    .chat-input-row { padding-bottom: max(10px, env(safe-area-inset-bottom, 10px)); }
+  }
 
   /* Refresh button */
   .refresh-btn { display: flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; color: #15803d; cursor: pointer; font-size: 13px; font-weight: 600; padding: 7px 13px; transition: all 0.2s; flex-shrink: 0; font-family: inherit; }
@@ -1377,7 +1382,17 @@ const chatSend     = document.getElementById('chatSend');
 const chatExamples = document.getElementById('chatExamples');
 
 function openChat()  { chatOverlay.classList.add('open'); chatPanel.classList.add('open'); chatInput.focus(); }
-function closeChat() { chatOverlay.classList.remove('open'); chatPanel.classList.remove('open'); }
+function closeChat() { chatOverlay.classList.remove('open'); chatPanel.classList.remove('open'); chatPanel.style.bottom = ''; }
+
+// Visual Viewport API — מזיז את הפאנל מעל המקלדת ב-iOS
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    if (chatPanel.classList.contains('open')) {
+      const offsetFromBottom = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+      chatPanel.style.bottom = offsetFromBottom > 0 ? offsetFromBottom + 'px' : '';
+    }
+  });
+}
 
 chatFab.addEventListener('click', openChat);
 chatClose.addEventListener('click', closeChat);
