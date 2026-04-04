@@ -43,6 +43,15 @@ def init_db(db_path=None):
                 auth       TEXT NOT NULL,
                 created_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS abroad_changes (
+                id          INTEGER PRIMARY KEY,
+                carrier     TEXT NOT NULL,
+                plan_name   TEXT NOT NULL,
+                change_type TEXT NOT NULL,
+                old_val     TEXT,
+                new_val     TEXT,
+                changed_at  TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS abroad_plans (
                 id         INTEGER PRIMARY KEY,
                 carrier    TEXT NOT NULL,
@@ -163,6 +172,41 @@ def get_abroad_plans(carrier=None, db_path=None):
                 "extras": json.loads(r[7]) if r[7] else [],
                 "scraped_at": r[8]
             }
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def save_abroad_changes(changes, db_path=None):
+    conn = _connect(db_path)
+    try:
+        now = datetime.now().isoformat()
+        for ch in changes:
+            conn.execute(
+                "INSERT INTO abroad_changes (carrier, plan_name, change_type, old_val, new_val, changed_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (ch["carrier"], ch["plan_name"], ch["change_type"],
+                 str(ch["old_val"]) if ch.get("old_val") is not None else None,
+                 str(ch["new_val"]) if ch.get("new_val") is not None else None,
+                 now)
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_abroad_changes(limit=50, db_path=None):
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT carrier, plan_name, change_type, old_val, new_val, changed_at "
+            "FROM abroad_changes ORDER BY changed_at DESC, id DESC LIMIT ?",
+            (limit,)
+        ).fetchall()
+        return [
+            {"carrier": r[0], "plan_name": r[1], "change_type": r[2],
+             "old_val": r[3], "new_val": r[4], "changed_at": r[5]}
             for r in rows
         ]
     finally:

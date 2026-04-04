@@ -2,7 +2,7 @@ import json
 import os
 import logging
 from flask import Flask, jsonify, render_template, request, make_response, send_from_directory
-from db import init_db, get_plans, get_changes, get_abroad_plans
+from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_changes
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -88,15 +88,27 @@ def api_abroad_plans():
     return jsonify(plans)
 
 
+@app.route("/api/abroad-changes")
+def api_abroad_changes():
+    limit = int(request.args.get("limit", 50))
+    changes = get_abroad_changes(limit=limit, db_path=_db_path())
+    return jsonify(changes)
+
+
 @app.route("/api/scrape-abroad-now")
 def api_scrape_abroad_now():
-    """Manual trigger: scrape abroad packages and save to DB."""
+    """Manual trigger: scrape abroad packages, detect changes, save to DB."""
     try:
         import scraper as sc
-        from db import save_abroad_plans
-        plans = sc.scrape_all_abroad()
-        save_abroad_plans(plans, db_path=_db_path())
-        return jsonify({"plans": len(plans), "status": "ok"})
+        from db import save_abroad_plans, save_abroad_changes
+        from change_detector import detect_changes
+        old_plans = get_abroad_plans(db_path=_db_path())
+        new_plans = sc.scrape_all_abroad()
+        changes = detect_changes(old_plans, new_plans)
+        save_abroad_plans(new_plans, db_path=_db_path())
+        if changes:
+            save_abroad_changes(changes, db_path=_db_path())
+        return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-abroad-now failed: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
