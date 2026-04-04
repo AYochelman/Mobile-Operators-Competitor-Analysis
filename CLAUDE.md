@@ -8,10 +8,10 @@ Flask app that scrapes 5 Israeli carriers twice daily, shows a Hebrew RTL compar
 
 ## Architecture
 - **app.py** — Flask server + APScheduler (scrape at 10:00 + 16:00, email report at 09:00). Listens on 0.0.0.0 for ngrok access. Auto-generates VAPID keys on first run.
-- **scraper.py** — Playwright sync scraper for all 5 carriers
-- **db.py** — SQLite (data/plans.db): `plans` table (price REAL) + `changes` history + `push_subscriptions` table
+- **scraper.py** — Playwright sync scraper for all 5 carriers (domestic + abroad)
+- **db.py** — SQLite (data/plans.db): `plans` + `changes` + `push_subscriptions` + `abroad_plans` + `abroad_changes` tables
 - **change_detector.py** — Pure function: detect_changes(old, new) → change list
-- **notifier.py** — format_message(), send_notification() (Telegram), send_whatsapp() (Green API), send_email_report() (SendGrid), send_push_notifications() (Web Push)
+- **notifier.py** — format_message(), format_abroad_message(), send_notification() (Telegram), send_whatsapp() (Green API), send_email_report() (SendGrid), send_push_notifications() (Web Push)
 - **excel_report.py** — Builds daily Excel workbook (1 sheet/carrier, yellow rows = changed in 24h)
 - **config.json** — All credentials and settings (including auto-generated VAPID keys)
 - **templates/index.html** — RTL Hebrew **Minimal Clean** light UI with PWA support + bell button 🔔
@@ -21,20 +21,22 @@ Flask app that scrapes 5 Israeli carriers twice daily, shows a Hebrew RTL compar
 - **start_ngrok.bat** — One-click ngrok tunnel launcher
 
 ## Carriers
-| Key | Hebrew | Plans |
-|-----|--------|-------|
-| partner | פרטנר | 5 |
-| pelephone | פלאפון | 5 |
-| hotmobile | הוט מובייל | 6 |
-| cellcom | סלקום | 6 |
-| mobile019 | 019 | 8 |
+| Key | Hebrew | Domestic Plans | Abroad Plans |
+|-----|--------|---------------|--------------|
+| partner | פרטנר | 5 | 7 |
+| pelephone | פלאפון | 5 | ~20 (deduped) |
+| hotmobile | הוט מובייל | 6 | 6 |
+| cellcom | סלקום | 6 | 11 (8 via API + 3 silent roamers) |
+| mobile019 | 019 | 8 | 3 |
 
 ## Schedule
-- **10:00 + 16:00** — scrape all 5 carriers, detect changes, send Telegram + Web Push if changes
+- **10:00 + 16:00** — scrape all 5 carriers (domestic + abroad), detect changes, send Telegram + Web Push if changes
 - **09:00** — send daily Excel email report via SendGrid
 
 ## Notifications
 - **Telegram**: bot @Mass_Marketbot, token in config.json, chat_id: 6024815382
+  - Domestic changes: `📱 השוואת סלולר | עדכון HH:MM`
+  - Abroad changes: `✈️ חבילות חו"ל | עדכון HH:MM` (separate message)
 - **WhatsApp**: Green API (instance 7107569664), phone field empty (disabled)
 - **Email**: SendGrid API → alon.yoch@gmail.com → alonyoch@pelephone.co.il
 - **Web Push**: VAPID keys auto-generated, stored in config.json, subscriptions in SQLite
@@ -71,9 +73,16 @@ Note: VAPID keys are auto-generated on first run if missing. Do not delete them 
 - **Bell button 🔔**: click in app header to subscribe to push notifications
 - **Test push**: browse to `/api/push/test`
 
-## PWA Routes (app.py)
+## API Routes (app.py)
+- `GET /` — main dashboard
 - `GET /sw.js` — service worker (Content-Type: application/javascript, no-cache)
-- `GET /api/push/vapid-public-key` — returns VAPID public key for browser subscription
+- `GET /api/plans` — domestic plans JSON
+- `GET /api/changes` — domestic change history JSON
+- `GET /api/abroad-plans` — abroad plans JSON
+- `GET /api/abroad-changes` — abroad change history JSON
+- `GET /api/scrape-now` — manual trigger: scrape domestic plans
+- `GET /api/scrape-abroad-now` — manual trigger: scrape abroad plans + detect changes
+- `GET /api/push/vapid-public-key` — returns VAPID public key
 - `POST /api/push/subscribe` — saves push subscription to DB
 - `DELETE /api/push/unsubscribe` — removes push subscription from DB
 - `GET /api/push/test` — sends test push to all subscribers
@@ -87,25 +96,39 @@ Note: VAPID keys are auto-generated on first run if missing. Do not delete them 
 
 ## UI Features (templates/index.html)
 - **Design**: Minimal Clean light theme (white cards, gray background, blue accents, pastel carrier badges)
+- **Tab bar** (top, centered): 📱 חבילות Mass Market | ✈️ חבילות חו"ל
 - Plan name shown at TOP of each card (blue, bold)
 - Carrier badge + price + details below
 - Creator credit: "נוצר ע"י אלון יוכלמן" in header
-- **Sidebar filters**: חברה, גלישה, גלישה בחו"ל, דור רשת (5G בלבד), שינויים אחרונים, מיון
+- Last update shown with **date + time** (e.g. 04/04/2026 16:00)
+- Change badges on cards: חדש (green) / שינוי מחיר (orange) / הוסרה (orange)
+- **Sidebar filters (domestic)**: חברה, גלישה, גלישה בחו"ל, דור רשת (5G), חידושים, מיון
+- **Sidebar filters (abroad)**: חברה, גלישה, תקופה (ימים), מיון
+- Recent changes list: clickable items → filter to carrier + scroll+highlight card
 - Roaming filter: checks extras for "חו"ל" + digit + GB/גלישה pattern
-- Recent changes filter: shows plans changed in last 24h/48h/7 days
 - 5G filter: matches plan_name or extras containing "5G"
 - No-cache headers to prevent browser caching issues
 - Bell button 🔔 in header: green when subscribed, grey when not
 - PWA meta tags: theme-color, apple-mobile-web-app-capable, manifest link
 
-## Scraper Details
-- `_parse_price()` returns float (no rounding) — e.g. 39.90 not 40
-- `plans.price` column is REAL in SQLite
-- Partner extras: `.mid_white .inc span > span` deduplicated + `.free_apps span`
-- Pelephone extras: `.mid_white .inc span > span` deduplicated + `.free_apps span`
-- Hot Mobile extras: parsed from hidden `input[id^="planDetails-"]` JSON field
-- 019 extras: `.blist li` elements
-- 019 data_gb: searches all `.blist li` for "גלישה"/"GB"/"MB" line specifically (not first li)
+## Abroad Scraper Details (scraper.py)
+- `scrape_all_abroad()` → calls all 5 per-carrier abroad scrapers
+- **Pelephone**: `.package` cards, clicks `.btn_more_packs.more_show` to reveal hidden plans, dedupes by (name, days, price)
+- **Cellcom**: uses internal REST API `POST digital-api.cellcom.co.il/api/abroad/GetPackagePopular` for 8 lobby plans + DOM scrape of `/AbroadMain/Silent_roamers-old/` for 3 more
+- **Partner**: `.package-wrapper` cards, clicks "לצפייה בחבילות נוספות" to reveal 3 more
+- **Hot Mobile**: `.lobby2022_dealsItem` cards, clicks "לחבילות נוספות" to reveal hidden cards
+- **019**: `.item_pack` cards, all visible upfront
+- abroad plan fields: carrier, plan_name, price, days, data_gb, minutes, sms, extras
+- First run seeds `abroad_changes` with all plans as `new_plan` so badges appear immediately
+
+## DB Tables
+| Table | Key fields |
+|-------|-----------|
+| plans | carrier, plan_name, price, data_gb, minutes, extras, scraped_at |
+| changes | carrier, plan_name, change_type, old_val, new_val, changed_at |
+| abroad_plans | carrier, plan_name, price, days, data_gb, minutes, sms, extras, scraped_at |
+| abroad_changes | carrier, plan_name, change_type, old_val, new_val, changed_at |
+| push_subscriptions | endpoint, p256dh, auth, created_at |
 
 ## data_gb Format
 - `None` → "ללא הגבלה" (unlimited)
@@ -136,7 +159,8 @@ python "D:/השוואת MASS MARKET/app.py"
 1. `taskkill /F /IM python.exe`
 2. `python "D:/השוואת MASS MARKET/app.py"`
 3. Browse to `http://localhost:5000/api/scrape-now`
-4. Hard refresh browser: Ctrl+Shift+R
+4. Browse to `http://localhost:5000/api/scrape-abroad-now`
+5. Hard refresh browser: Ctrl+Shift+R
 
 ## Tests
 ```bash
