@@ -169,6 +169,27 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin { display: inline-block; animation: spin 0.9s linear infinite; }
 
+  /* Countries modal */
+  .countries-link { color: #2563eb; text-decoration: underline; cursor: pointer; font-size: inherit; }
+  .countries-link:hover { color: #1d4ed8; }
+  .countries-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+  .countries-modal-overlay.open { display: flex; }
+  .countries-modal { background: #fff; border-radius: 14px; padding: 24px 28px; max-width: 520px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.18); position: relative; direction: rtl; }
+  .countries-modal h3 { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 12px; }
+  .countries-modal .countries-note { font-size: 12px; color: #6b7280; margin-bottom: 14px; line-height: 1.6; border-right: 3px solid #e5e7eb; padding-right: 10px; }
+  .countries-modal .countries-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .countries-modal .country-tag { background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 3px 10px; font-size: 13px; color: #374151; }
+  .countries-modal .country-tag.starred { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+  .countries-modal .country-tag.starred::after { content: " *"; color: #3b82f6; font-weight: 700; }
+  .countries-modal-close { position: absolute; top: 14px; left: 18px; background: none; border: none; font-size: 22px; cursor: pointer; color: #9ca3af; line-height: 1; }
+  .countries-modal-close:hover { color: #374151; }
+
+  /* Cellcom apps modal */
+  .apps-modal-grid { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 16px; }
+  .app-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .app-item img { width: 56px; height: 56px; border-radius: 14px; object-fit: contain; box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
+  .app-item span { font-size: 12px; color: #374151; font-weight: 500; }
+
   /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -181,8 +202,8 @@
 
 <div class="header">
   <div>
-    <h1>📱 השוואת חבילות סלולר</h1>
-    <div class="sub">פלאפון · פרטנר · הוט מובייל · סלקום · 019 &nbsp;|&nbsp; <span style="color:#9ca3af;font-size:11px;">נוצר ע"י אלון יוכלמן</span></div>
+    <h1>📱 סקירת מתחרים</h1>
+    <div class="sub">נוצר ע"י אלון יוכלמן</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
     <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
@@ -826,7 +847,15 @@ function renderAbroadCard(plan) {
     ? `<div class="detail-row"><span class="detail-label">SMS</span><span class="detail-value">${smsVal}</span></div>`
     : '';
   const extrasHtml = plan.extras?.length
-    ? `<div class="extras">${plan.extras.slice(0,4).map(e => `<span>${e}</span>`).join('')}</div>`
+    ? `<div class="extras">${plan.extras.slice(0,4).map(e => {
+        if (plan.carrier === 'mobile019' && e.includes('לרשימה')) {
+          return `<span>${e.replace('לרשימה', '<a href="#" class="countries-link" onclick="openCountriesModal(event)">לרשימה</a>')}</span>`;
+        }
+        if (plan.carrier === 'cellcom' && e.includes('גלישה חופשית באפליקציות נבחרות')) {
+          return `<span>${e.replace('גלישה חופשית באפליקציות נבחרות', '<a href="#" class="countries-link" onclick="openCellcomAppsModal(event)">גלישה חופשית באפליקציות נבחרות</a>')}</span>`;
+        }
+        return `<span>${e}</span>`;
+      }).join('')}</div>`
     : '';
 
   const abroadCardId = 'acard-' + (plan.carrier + '|' + plan.plan_name).replace(/[^a-zA-Z0-9\u0590-\u05ff]/g, '_');
@@ -1460,6 +1489,94 @@ async function sendChatMessage() {
 
 bellBtn.addEventListener('click', togglePush);
 initServiceWorker();
+
+// ── 019 Countries Modal ────────────────────────────────────────────────────
+const COUNTRIES_019 = [
+  { name: 'אוסטריה' }, { name: 'אוסטרליה' }, { name: 'אזרבייג\'אן' },
+  { name: 'איחוד האמירויות' }, { name: 'איטליה' }, { name: 'איסלנד' },
+  { name: 'אירלנד' }, { name: 'אלבניה' }, { name: 'אסטוניה' },
+  { name: 'ארה"ב', starred: true }, { name: 'ארמניה' }, { name: 'בולגריה' },
+  { name: 'בלגיה' }, { name: 'בריטניה' }, { name: 'גאורגיה' },
+  { name: 'גאנה' }, { name: 'גרמניה' }, { name: 'דנמרק' },
+  { name: 'דרום אפריקה' }, { name: 'דרום קוראיה' }, { name: 'הולנד' },
+  { name: 'הונג קונג' }, { name: 'הונגריה' }, { name: 'טג\'יקיסטן' },
+  { name: 'טורקיה' }, { name: 'טייוואן', starred: true }, { name: 'יוון' },
+  { name: 'לוקסמבורג' }, { name: 'לטביה' }, { name: 'ליטא' },
+  { name: 'ליכטנשטיין' }, { name: 'מונטנגרו' }, { name: 'מלטה' },
+  { name: 'מקדוניה' }, { name: 'מצרים' }, { name: 'מרוקו' },
+  { name: 'נורבגיה' }, { name: 'סין' }, { name: 'סינגפור', starred: true },
+  { name: 'סלובניה' }, { name: 'סלובקיה' }, { name: 'ספרד' },
+  { name: 'סרביה' }, { name: 'פולין' }, { name: 'פורטוגל' },
+  { name: 'פינלנד' }, { name: 'צ\'כיה' }, { name: 'צרפת' },
+  { name: 'קזחסטן' }, { name: 'קירגיזסטן' }, { name: 'קנדה', starred: true },
+  { name: 'קפריסין' }, { name: 'קרואטיה' }, { name: 'רומניה' },
+  { name: 'רוסיה' }, { name: 'שבדיה' }, { name: 'שוויץ' }, { name: 'תאילנד' }
+];
+
+// ── Cellcom Apps Modal ─────────────────────────────────────────────────────
+const CELLCOM_APPS = [
+  { name: 'WhatsApp',  logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg' },
+  { name: 'Instagram', logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg' },
+  { name: 'Skype',     logo: 'https://upload.wikimedia.org/wikipedia/commons/6/60/Skype_logo_%282019%E2%80%93present%29.svg' },
+  { name: 'Facebook',  logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg' },
+  { name: 'Waze',      logo: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/Waze_logo_2023.svg' },
+];
+let _appsBuilt = false;
+function openCellcomAppsModal(e) {
+  e.preventDefault();
+  if (!_appsBuilt) {
+    document.getElementById('cellcomAppsList').innerHTML = CELLCOM_APPS
+      .map(a => `<div class="app-item"><img src="${a.logo}" alt="${a.name}" onerror="this.style.display='none'"><span>${a.name}</span></div>`)
+      .join('');
+    _appsBuilt = true;
+  }
+  document.getElementById('cellcomAppsModal').classList.add('open');
+}
+function closeCellcomAppsModal() {
+  document.getElementById('cellcomAppsModal').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'cellcomAppsModal') closeCellcomAppsModal();
+});
+
+let _countriesBuilt = false;
+function openCountriesModal(e) {
+  e.preventDefault();
+  if (!_countriesBuilt) {
+    document.getElementById('countriesList').innerHTML = COUNTRIES_019
+      .map(c => `<span class="country-tag${c.starred ? ' starred' : ''}">${c.name}</span>`)
+      .join('');
+    _countriesBuilt = true;
+  }
+  document.getElementById('countriesModal').classList.add('open');
+}
+function closeCountriesModal() {
+  document.getElementById('countriesModal').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'countriesModal') closeCountriesModal();
+});
 </script>
+
+<!-- Cellcom Apps Modal -->
+<div class="countries-modal-overlay" id="cellcomAppsModal">
+  <div class="countries-modal" style="max-width:420px;text-align:center;">
+    <button class="countries-modal-close" onclick="closeCellcomAppsModal()">×</button>
+    <h3>📱 אפליקציות נבחרות — גלישה חופשית</h3>
+    <div class="countries-note" style="text-align:right;">חבילת הגלישה כוללת רכיב גלישה ללא הגבלה ב-5 אפליקציות נבחרות:</div>
+    <div class="apps-modal-grid" id="cellcomAppsList"></div>
+  </div>
+</div>
+
+<!-- 019 Countries Modal -->
+<div class="countries-modal-overlay" id="countriesModal">
+  <div class="countries-modal">
+    <button class="countries-modal-close" onclick="closeCountriesModal()">×</button>
+    <h3>🌍 רשימת יעדים — 019 חו"ל</h3>
+    <div class="countries-note">ביעדים המסומנים ב-* תתאפשר קבלה והוצאת שיחות רק למכשיר התומך בשיחות בדור 4 VoLTE</div>
+    <div class="countries-list" id="countriesList"></div>
+  </div>
+</div>
+
 </body>
 </html>
