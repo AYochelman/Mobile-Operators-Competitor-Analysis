@@ -56,8 +56,16 @@ def detect_changes(old_plans, new_plans):
                     "old_val": old_desc, "new_val": new_desc
                 })
 
+    # carriers that returned ≥1 plan in the new scrape
+    carriers_with_new_data = {p["carrier"] for p in new_plans}
+
     for key in old_map:
         if key not in new_map:
+            # Guard: if scraper returned 0 plans for this carrier, skip removal.
+            # This prevents false "removed" badges when Incapsula / bot-detection
+            # blocks the scraper and it returns an empty list.
+            if key[0] not in carriers_with_new_data:
+                continue
             changes.append({
                 "carrier": key[0], "plan_name": key[1],
                 "change_type": "removed_plan",
