@@ -183,12 +183,18 @@
   .countries-modal .country-tag.starred::after { content: " *"; color: #3b82f6; font-weight: 700; }
   .countries-modal-close { position: absolute; top: 14px; left: 18px; background: none; border: none; font-size: 22px; cursor: pointer; color: #9ca3af; line-height: 1; }
   .countries-modal-close:hover { color: #374151; }
+  .countries-group { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+  .countries-group-letter { font-size: 15px; font-weight: 700; color: #2563eb; min-width: 22px; padding-top: 2px; }
+  .countries-group-items { display: flex; flex-wrap: wrap; gap: 5px; }
 
-  /* Cellcom apps modal */
-  .apps-modal-grid { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 16px; }
-  .app-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .app-item img { width: 56px; height: 56px; border-radius: 14px; object-fit: contain; box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
-  .app-item span { font-size: 12px; color: #374151; font-weight: 500; }
+  /* Apps modals (Cellcom + Pelephone) */
+  .apps-modal-grid { display: flex; justify-content: center; gap: 12px; flex-wrap: nowrap; margin-top: 16px; }
+  .apps-modal-grid.scrollable { justify-content: flex-start; overflow-x: auto; padding-bottom: 6px; }
+  .app-item { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+  .app-item img { width: 42px; height: 42px; border-radius: 10px; object-fit: contain; box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
+  .app-item.sm img { width: 34px; height: 34px; border-radius: 8px; }
+  .app-item.sm span { font-size: 10px; }
+  .app-item span { font-size: 11px; color: #374151; font-weight: 500; }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; }
@@ -854,8 +860,30 @@ function renderAbroadCard(plan) {
         if (plan.carrier === 'cellcom' && e.includes('גלישה חופשית באפליקציות נבחרות')) {
           return `<span>${e.replace('גלישה חופשית באפליקציות נבחרות', '<a href="#" class="countries-link" onclick="openCellcomAppsModal(event)">גלישה חופשית באפליקציות נבחרות</a>')}</span>`;
         }
+        if (plan.carrier === 'pelephone' && e.includes('גלישה חופשית באפליקציות')) {
+          const parts = e.split('\n').map(p => p.trim()).filter(Boolean);
+          const appsSpan = `<span><a href="#" class="countries-link" onclick="openPelephoneAppsModal(event)">${parts[0]}</a></span>`;
+          const restSpans = parts.slice(1).map(p => `<span>${p}</span>`).join('');
+          return appsSpan + restSpans;
+        }
         return `<span>${e}</span>`;
       }).join('')}</div>`
+    : '';
+
+  const pelephoneLink = plan.carrier === 'pelephone'
+    ? `<div class="extras"><span><a href="#" class="countries-link" data-plan="${plan.plan_name.replace(/"/g,'&quot;')}" onclick="openPelephoneCountriesModal(event, this.dataset.plan)">לרשימת המדינות ✈️</a></span></div>`
+    : '';
+
+  const cellcomCountriesLink = plan.carrier === 'cellcom'
+    ? `<div class="extras"><span><a href="#" class="countries-link" onclick="openCellcomCountriesModal(event)">מדינות כלולות ✈️</a></span></div>`
+    : '';
+
+  const partnerCountriesLink = plan.carrier === 'partner'
+    ? `<div class="extras"><span><a href="#" class="countries-link" onclick="openPartnerCountriesModal(event)">מדינות כלולות ✈️</a></span></div>`
+    : '';
+
+  const hotmobileCountriesLink = plan.carrier === 'hotmobile'
+    ? `<div class="extras"><span><a href="#" class="countries-link" onclick="openHotmobileCountriesModal(event)">מדינות כלולות ✈️</a></span></div>`
     : '';
 
   const abroadCardId = 'acard-' + (plan.carrier + '|' + plan.plan_name).replace(/[^a-zA-Z0-9\u0590-\u05ff]/g, '_');
@@ -872,7 +900,7 @@ function renderAbroadCard(plan) {
         ${minutesRow}
         ${smsRow}
       </div>
-      ${extrasHtml}
+      ${extrasHtml}${pelephoneLink}${cellcomCountriesLink}${partnerCountriesLink}${hotmobileCountriesLink}
     </div>`;
 }
 
@@ -1515,11 +1543,12 @@ const COUNTRIES_019 = [
 
 // ── Cellcom Apps Modal ─────────────────────────────────────────────────────
 const CELLCOM_APPS = [
-  { name: 'WhatsApp',  logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg' },
-  { name: 'Instagram', logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg' },
-  { name: 'Skype',     logo: 'https://upload.wikimedia.org/wikipedia/commons/6/60/Skype_logo_%282019%E2%80%93present%29.svg' },
-  { name: 'Facebook',  logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg' },
-  { name: 'Waze',      logo: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/Waze_logo_2023.svg' },
+  { name: 'WhatsApp',    logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg' },
+  { name: 'Instagram',   logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg' },
+  { name: 'Facebook',    logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg' },
+  { name: 'TikTok',      logo: 'https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg' },
+  { name: 'Google Maps', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/bd/Google_Maps_Logo_2020.svg' },
+  { name: 'Waze',        logo: 'https://img.icons8.com/color/96/waze.png' },
 ];
 let _appsBuilt = false;
 function openCellcomAppsModal(e) {
@@ -1556,7 +1585,273 @@ function closeCountriesModal() {
 document.addEventListener('click', function(e) {
   if (e.target.id === 'countriesModal') closeCountriesModal();
 });
+
+// ── Hotmobile Countries Modal ──────────────────────────────────────────────
+const COUNTRIES_HOTMOBILE = [
+  { letter: 'א', countries: ['אוזבקיסטן','אוסטריה','אוסטרליה','אוקראינה','אזרבייג\'ן','איחוד האמירויות הערביות','איטליה','איי בהאמה','איי הבתולה (ארה"ב)','איי הבתולה (בריטניה)','איי טורקס וקאיקוס','איי פארו','איי קיימן','אינדונזיה','איסלנד','אירלנד','אלבניה','אנגווילה','אנטיגואה וברבודה','אסטוניה','ארגנטינה','ארמניה','ארצות הברית'] },
+  { letter: 'ב', countries: ['בולגריה','בוסניה הרצגובינה','בחריין','בלגיה','ברבדוס','ברזיל','בריטניה'] },
+  { letter: 'ג', countries: ['ג\'מייקה','ג\'רזי','גאנה','גיאורגיה','גרמניה','גרנדה'] },
+  { letter: 'ד', countries: ['דומיניקה','דנמרק','דרום אפריקה','דרום קוריאה'] },
+  { letter: 'ה', countries: ['האנטילים ההולנדיים','הודו','הולנד','הונג קונג','הונגריה','הרפובליקה הדומיניקנית'] },
+  { letter: 'ו', countries: ['וייטנאם','ותיקן'] },
+  { letter: 'ט', countries: ['טורקיה','טיוואן','טנזניה'] },
+  { letter: 'י', countries: ['יוון','יפן'] },
+  { letter: 'ל', countries: ['לוקסמבורג','לטביה','ליטא','ליכטנשטיין'] },
+  { letter: 'מ', countries: ['מאוריציוס','מולדובה','מונטנגרו','מונטסראט','מונקו','מלטה','מקאו','מקסיקו','מרוקו'] },
+  { letter: 'נ', countries: ['נורווגיה','ניו זילנד','נפאל'] },
+  { letter: 'ס', countries: ['סאן מרינו','סין','סינגפור','סלובניה','סלובקיה','סנט וינסנט והגרנדינים','סנט לוסיה','סנט קיטס ונוויס','ספרד','סרביה','סרי לנקה'] },
+  { letter: 'פ', countries: ['פולין','פורטו ריקו','פורטוגל','פיליפינים','פינלנד','פנמה','פרו'] },
+  { letter: 'צ', countries: ['צ\'ילה','צ\'כיה','צרפת'] },
+  { letter: 'ק', countries: ['קולומביה','קוסטה ריקה','קזחסטן','קמבודיה','קנדה','קפריסין','קרואטיה'] },
+  { letter: 'ר', countries: ['רומניה','רוסיה'] },
+  { letter: 'ש', countries: ['שוודיה','שוויץ'] },
+  { letter: 'ת', countries: ['תאילנד'] },
+];
+let _hotmobileCountriesBuilt = false;
+function openHotmobileCountriesModal(e) {
+  e.preventDefault();
+  if (!_hotmobileCountriesBuilt) {
+    document.getElementById('hotmobileCountriesList').innerHTML = COUNTRIES_HOTMOBILE.map(group => `
+      <div class="countries-group">
+        <div class="countries-group-letter">${group.letter}</div>
+        <div class="countries-group-items">${group.countries.map(c => `<span class="country-tag">${c}</span>`).join('')}</div>
+      </div>`).join('');
+    _hotmobileCountriesBuilt = true;
+  }
+  document.getElementById('hotmobileCountriesModal').classList.add('open');
+}
+function closeHotmobileCountriesModal() {
+  document.getElementById('hotmobileCountriesModal').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'hotmobileCountriesModal') closeHotmobileCountriesModal();
+});
+
+// ── Partner Countries Modal ────────────────────────────────────────────────
+const COUNTRIES_PARTNER = [
+  { letter: 'א', countries: ['אוזבקיסטן','אוסטריה','אוסטרליה','אוקראינה','אורוגוואי','אזרבייז\'אן','איחוד האמירויות (כולל דובאי ואבו דאבי)','איטליה','איי הבתולה הבריטיים','איי טרקס וקייקוס','אינדונזיה','איסלנד','אירלנד','אל סלבדור','אלבניה','אנגווילה','אנגליה','אנדורה','אנטיגואה וברבודה','אסטוניה','אקוודור','ארגנטינה','ארה"ב','ארמניה','אתיופיה'] },
+  { letter: 'ב', countries: ['בהאמה','בולגריה','בוליביה','בוסניה','בוצואנה','בילרוס','בלגיה','ברבדוס','ברזיל'] },
+  { letter: 'ג', countries: ['ג\'מייקה','ג\'רזי','גאורגיה','גאנה','גבון','גואטמלה','גרמניה','גרנדה'] },
+  { letter: 'ד', countries: ['דומיניקה','דנמרק','דרום אפריקה'] },
+  { letter: 'ה', countries: ['הודו','הולנד','הונג קונג','הונגריה','הונדורס','הרפובליקה הדומיניקנית'] },
+  { letter: 'ו', countries: ['ויאטנם','ונצואלה'] },
+  { letter: 'ט', countries: ['טאיוואן','טג\'יקיסטן','טנזניה'] },
+  { letter: 'י', countries: ['יוון','יפן','ירדן'] },
+  { letter: 'ל', countries: ['לוקסמבורג','לטביה','ליטא','ליכטנשטיין'] },
+  { letter: 'מ', countries: ['מאוריציוס','מדגסקר','מולדובה','מונטנגרו','מונסראט','מונקו','מלטה','מקאו','מקדוניה','מקסיקו','מרוקו'] },
+  { letter: 'נ', countries: ['נורווגיה','ניגר','ניגריה','ניו זילנד','ניקרגואה','נפאל'] },
+  { letter: 'ס', countries: ['סיישל, איי','סין','סינגפור','סלובניה','סלובקיה','סנט וינסנט והגרנדינים','סנט לוסיה','סנט קיטס ונוויס','ספרד','סרביה','סרי לנקה'] },
+  { letter: 'פ', countries: ['פוארטו ריקו','פולין','פורטוגל','פיליפינים','פינלנד','פנמה','פרגוואי','פרו'] },
+  { letter: 'צ', countries: ['צ\'ילה','צ\'כיה','צרפת'] },
+  { letter: 'ק', countries: ['קולומביה','קונגו הדמוקרטית','קוסובו','קוסטה ריקה','קוריאה הדרומית','קזחסטן','קיימן איילנד','קירגיזסטן','קמבודיה','קנדה','קניה','קפריסין','קרואטיה'] },
+  { letter: 'ר', countries: ['רומניה','רוסיה'] },
+  { letter: 'ש', countries: ['שבדיה','שוויץ'] },
+  { letter: 'ת', countries: ['תאילנד','תורכיה'] },
+];
+let _partnerCountriesBuilt = false;
+function openPartnerCountriesModal(e) {
+  e.preventDefault();
+  if (!_partnerCountriesBuilt) {
+    document.getElementById('partnerCountriesList').innerHTML = COUNTRIES_PARTNER.map(group => `
+      <div class="countries-group">
+        <div class="countries-group-letter">${group.letter}</div>
+        <div class="countries-group-items">${group.countries.map(c => `<span class="country-tag">${c}</span>`).join('')}</div>
+      </div>`).join('');
+    _partnerCountriesBuilt = true;
+  }
+  document.getElementById('partnerCountriesModal').classList.add('open');
+}
+function closePartnerCountriesModal() {
+  document.getElementById('partnerCountriesModal').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'partnerCountriesModal') closePartnerCountriesModal();
+});
+
+// ── Cellcom Countries Modal ────────────────────────────────────────────────
+const COUNTRIES_CELLCOM = [
+  { letter: 'א', countries: ['אנדורה','אנטיגואה וברבודה','אנגווילה','אלבניה','ארמניה','ארגנטינה','אוסטריה','אוסטרליה','ארובה','איי בהאמה','אקוודור','אסטוניה','אתיופיה','איי פארו','אירלנד','איסלנד','איטליה','איי קיימן','איחוד האמירויות הערביות','אל סלוודור','איי טרקס וקייקוס','אוקראינה','אוגנדה','ארה"ב','אורוגוואי','אוזבקיסטן','איי הבתולה הבריטיים','אזרבייג\'ן','אינדונזיה'] },
+  { letter: 'ב', countries: ['בוסניה הרצגובינה','ברבדוס','בלגיה','בולגריה','בחריין','ברמודה','בוליביה','ברזיל','בוטסואנה','בלארוס','בליז','בריטניה (כולל סקוטלנד)'] },
+  { letter: 'ג', countries: ['גרמניה','גבון','גרנאדה','גיאורגיה','גאנה','גוואדלופ','ג\'מייקה','גוואטמלה'] },
+  { letter: 'ד', countries: ['דנמרק','דומיניקה','דרום אפריקה'] },
+  { letter: 'ה', countries: ['האנטילים ההולנדיים','הרפובליקה הדמוקרטית של קונגו','הרפובליקה הדומיניקנית','הונג קונג','הונדורס','האיטי','הונגריה','הודו','הולנד'] },
+  { letter: 'ו', countries: ['ונצואלה','וייטנאם'] },
+  { letter: 'ז', countries: ['זמביה'] },
+  { letter: 'ח', countries: ['חוף השנהב'] },
+  { letter: 'ט', countries: ['טוגו','טגיקיסטן','טורקיה','טרינידד וטובגו','טאיוואן','טנזניה'] },
+  { letter: 'י', countries: ['יוון','ירדן','יפן'] },
+  { letter: 'ל', countries: ['ליכטנשטיין','לסוטו','ליטא','לוקסמבורג','לטביה'] },
+  { letter: 'מ', countries: ['מרוקו','מונקו','מולדובה','מדגסקר','מקדוניה','מצרים (דרום סיני בלבד)','מקאו','מרטיניק','מונטסראט','מלטה','מאוריציוס','מלאווי','מקסיקו','מוזמביק','מונטנגרו'] },
+  { letter: 'נ', countries: ['ניגריה','ניקרגואה','נורבגיה','נפאל','ניו זילנד','ניז\'ר'] },
+  { letter: 'ס', countries: ['סין','סנט קיטס ונוויס','סנט לוסיה','סרי לנקה','ספרד (כולל האיים הקנריים והבאלריים)','סרביה','סיישל','סינגפור','סלובניה','סלובקיה','סורינאם','סנט וינסנט והגרנדינים'] },
+  { letter: 'פ', countries: ['פינלנד','פיג\'י','פנמה','פרו','פולינזיה הצרפתית','פפואה ניו גינאה','פיליפינים','פולין','פורטו ריקו','פרגוואי','פורטוגל (כולל איי מדיירה והאיים האזוריים)'] },
+  { letter: 'צ', countries: ['צרפת','צ\'ילה','צ\'כיה','צ\'אד'] },
+  { letter: 'ק', countries: ['קנדה','קונגו','קולומביה','קוסטה ריקה','קפריסין','קרואטיה','קניה','קמבודיה','קוריאה הדרומית','קזחסטן','קוסובו','קירגיסטן'] },
+  { letter: 'ר', countries: ['רומניה','רוסיה','רואנדה'] },
+  { letter: 'ש', countries: ['שוויץ','שוודיה'] },
+  { letter: 'ת', countries: ['תאילנד'] },
+];
+let _cellcomCountriesBuilt = false;
+function openCellcomCountriesModal(e) {
+  e.preventDefault();
+  if (!_cellcomCountriesBuilt) {
+    document.getElementById('cellcomCountriesList').innerHTML = COUNTRIES_CELLCOM.map(group => `
+      <div class="countries-group">
+        <div class="countries-group-letter">${group.letter}</div>
+        <div class="countries-group-items">${group.countries.map(c => `<span class="country-tag">${c}</span>`).join('')}</div>
+      </div>`).join('');
+    _cellcomCountriesBuilt = true;
+  }
+  document.getElementById('cellcomCountriesModal').classList.add('open');
+}
+function closeCellcomCountriesModal() {
+  document.getElementById('cellcomCountriesModal').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'cellcomCountriesModal') closeCellcomCountriesModal();
+});
+
+// ── Pelephone Apps Modal ───────────────────────────────────────────────────
+const PELEPHONE_APPS = [
+  { name: 'Facebook',    logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg' },
+  { name: 'Waze',        logo: 'https://img.icons8.com/color/96/waze.png' },
+  { name: 'Snapchat',    logo: 'https://img.icons8.com/color/96/snapchat.png' },
+  { name: 'Instagram',   logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg' },
+  { name: 'WhatsApp',    logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg' },
+  { name: 'Google Maps', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/bd/Google_Maps_Logo_2020.svg' },
+  { name: 'Tripadvisor', logo: 'https://img.icons8.com/color/96/tripadvisor.png' },
+  { name: 'YouTube',     logo: 'https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg' },
+  { name: 'Netflix',     logo: 'https://upload.wikimedia.org/wikipedia/commons/7/75/Netflix_icon.svg' },
+  { name: 'TikTok',      logo: 'https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg' },
+  { name: 'ChatGPT',     logo: 'https://img.icons8.com/color/96/chatgpt.png' },
+  { name: 'Gemini',      logo: 'https://img.icons8.com/color/96/google-gemini.png' },
+];
+let _pelephoneAppsBuilt = false;
+function openPelephoneAppsModal(e) {
+  e.preventDefault();
+  if (!_pelephoneAppsBuilt) {
+    document.getElementById('pelephoneAppsList').innerHTML = PELEPHONE_APPS
+      .map(a => `<div class="app-item sm"><img src="${a.logo}" alt="${a.name}" onerror="this.style.display='none'"><span>${a.name}</span></div>`)
+      .join('');
+    _pelephoneAppsBuilt = true;
+  }
+  document.getElementById('pelephoneAppsModal').classList.add('open');
+}
+function closePelephoneAppsModal() {
+  document.getElementById('pelephoneAppsModal').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'pelephoneAppsModal') closePelephoneAppsModal();
+});
+
+// ── Pelephone Countries Modal ──────────────────────────────────────────────
+const COUNTRIES_PELEPHONE = [
+  { letter: 'א', countries: ['אוגנדה','אוזבקיסטן','אוסטריה','אוסטרליה','אוקראינה','אורוגווי','אזרביגאן','איחוד האמירויות','איטליה','איי בהאמה','איי הבתולה (ארה"ב)','איי הבתולה (הבריטית)','איי טורקס וקייקוס','איי סיישל','איי פארו','איי קיימן','אינדונזיה','איסלנד','אירלנד','אל-סלוודור','אלבניה','אנגווילה','אנגליה (כולל צפון אירלנד, ווילס, סקוטלנד, ג\'רסי, גרנסי, האי מאן)','אנדורה','אנטיגואה וברבודה','אנטילים הולנדיים','אסטוניה','אקוודור-איי גאלאפגוס','ארגנטינה','ארובה','ארמניה','ארצות הברית','אתיופיה'] },
+  { letter: 'ב', countries: ['בוטצואנה','בולגריה','בוליביה','בוסניה הרצגובינה','בורקינה פסו','בחריין','בלארוס','בלגיה','בליז','בנין','ברבדוס','ברזיל','ברמודה'] },
+  { letter: 'ג', countries: ['גאורגיה','גאנה','גבון','גואטמלה','גואם','גוודאלופ והאיים','גיאנה','גיאנה הצרפתית','גיברלטר','גיניאה','גיניאה ביסאו','ג\'מאיקה','גרמניה','גרנדה'] },
+  { letter: 'ד', countries: ['דומיניקה','דנמרק','דרום אפריקה','דרום קוריאה'] },
+  { letter: 'ה', countries: ['האיטי','הודו (לא כולל ג\'אמו,קשמיר,חבל לדאק,לה)','הולנד','הונג-קונג','הונגריה','הונדורס','הרפ\' הדומיניקנית'] },
+  { letter: 'ו', countries: ['ויאטנם','ונואטו'] },
+  { letter: 'ז', countries: ['זימבבאוה','זמביה'] },
+  { letter: 'ח', countries: ['חוף השנהב'] },
+  { letter: 'ט', countries: ['טגיקיסטן','טוגו','טונגה','טורקיה','טיואן','טנזניה','טרינידד וטובגו'] },
+  { letter: 'י', countries: ['יוון','יפן','ירדן'] },
+  { letter: 'ל', countries: ['לאוס','לוקסמבורג','לטביה','ליבריה','ליטא','ליכטנשטיין','לסוטו'] },
+  { letter: 'מ', countries: ['מאוריציוס','מדגסקר מלגש','מוזמביק','מולדובה','מונגוליה','מונטנגרו','מונטסראט','מונקו','מלאווי','מלטה','מקאו','מקדוניה','מקסיקו','מרוקו','מרטיניק'] },
+  { letter: 'נ', countries: ['נאורו','נורבגיה','ניגריה','ניו-זילנד','ניזר','ניקרגואה','נפאל'] },
+  { letter: 'ס', countries: ['סואזילנד','סורינאם','סין','סינגפור','סלובניה','סלובקיה','סמואה מערבית','סנגל','סנט וינסנט והגרנדינס','סנט לוסיה','סנט קיטס ונביס','ספרד ואיים קנריים','סרביה','סרי לנקה'] },
+  { letter: 'פ', countries: ['פולין','פולינזיה צרפתית','פורטו ריקו','פורטוגל (כולל מדירה)','פיג\'י','פיליפינים','פינלנד','פנמה','פפואה','פרגוואי','פרו'] },
+  { letter: 'צ', countries: ['צאד','צ\'ילה','צכיה','צרפת'] },
+  { letter: 'ק', countries: ['קולומביה','קונגו','קונגו הדמוקרטית','קוסובו','קוסטה-ריקה','קזחסטן','קייפ ורדה','קירגיסטן','קמבודיה','קמרון','קנדה','קניה','קפריסין','קרואטיה'] },
+  { letter: 'ר', countries: ['רואנדה','רומניה','רוסיה'] },
+  { letter: 'ש', countries: ['שבדיה','שוויץ'] },
+  { letter: 'ת', countries: ['תאילנד'] },
+];
+
+// מדינות ספציפיות לחבילות מסוימות (match לפי includes בשם החבילה)
+// חשוב: 'special+' חייב להגיע לפני 'special' כדי שה-find יתאים נכון
+const PELEPHONE_SPECIFIC_COUNTRIES = [
+  { match: 'special+', countries: ['נמיביה', 'קובה'],
+    title: '🌍 יעדים — special+ גלישה ב-MB' },
+  { match: 'special',  countries: ['איי שלמה', 'אנגולה', 'בהוטן', 'גינאה המשוונית', 'גמביה', 'סיירה לאונה'],
+    title: '🌍 יעדים — special גלישה ב-MB' },
+  { match: 'מצרים',   countries: ['מצרים'],
+    title: '🌍 יעדים — חבילת מצרים' },
+  { match: 'אמריקה',  countries: ['ארצות הברית', 'קנדה'],
+    title: '🌍 יעדים — ביג אמריקה' },
+];
+
+function _renderCountriesGrouped(data) {
+  return data.map(group => `
+    <div class="countries-group">
+      <div class="countries-group-letter">${group.letter}</div>
+      <div class="countries-group-items">${group.countries.map(c => `<span class="country-tag">${c}</span>`).join('')}</div>
+    </div>`).join('');
+}
+function _renderCountriesFlat(arr) {
+  return `<div class="countries-group-items" style="flex-wrap:wrap;display:flex;gap:5px;">${arr.map(c => `<span class="country-tag">${c}</span>`).join('')}</div>`;
+}
+
+function openPelephoneCountriesModal(e, planName) {
+  e.preventDefault();
+  let title = 'רשימת יעדים — פלאפון חו"ל';
+  let html;
+  if (planName) {
+    const specific = PELEPHONE_SPECIFIC_COUNTRIES.find(r => planName.includes(r.match));
+    if (specific) {
+      title = specific.title;
+      html = _renderCountriesFlat(specific.countries);
+    }
+  }
+  if (!html) html = _renderCountriesGrouped(COUNTRIES_PELEPHONE);
+  document.getElementById('pelephoneModalTitle').textContent = title;
+  document.getElementById('pelephoneCountriesList').innerHTML = html;
+  document.getElementById('pelephoneCountriesModal').classList.add('open');
+}
+function closePelephoneCountriesModal() {
+  document.getElementById('pelephoneCountriesModal').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'pelephoneCountriesModal') closePelephoneCountriesModal();
+});
 </script>
+
+<!-- Hotmobile Countries Modal -->
+<div class="countries-modal-overlay" id="hotmobileCountriesModal">
+  <div class="countries-modal" style="max-width:600px;">
+    <button class="countries-modal-close" onclick="closeHotmobileCountriesModal()">×</button>
+    <h3>🌍 מדינות כלולות — הוט מובייל חו"ל</h3>
+    <div id="hotmobileCountriesList"></div>
+  </div>
+</div>
+
+<!-- Partner Countries Modal -->
+<div class="countries-modal-overlay" id="partnerCountriesModal">
+  <div class="countries-modal" style="max-width:600px;">
+    <button class="countries-modal-close" onclick="closePartnerCountriesModal()">×</button>
+    <h3>🌍 מדינות כלולות — פרטנר חו"ל</h3>
+    <div id="partnerCountriesList"></div>
+  </div>
+</div>
+
+<!-- Cellcom Countries Modal -->
+<div class="countries-modal-overlay" id="cellcomCountriesModal">
+  <div class="countries-modal" style="max-width:600px;">
+    <button class="countries-modal-close" onclick="closeCellcomCountriesModal()">×</button>
+    <h3>🌍 מדינות כלולות — סלקום חו"ל</h3>
+    <div id="cellcomCountriesList"></div>
+  </div>
+</div>
+
+<!-- Pelephone Apps Modal -->
+<div class="countries-modal-overlay" id="pelephoneAppsModal">
+  <div class="countries-modal" style="max-width:680px;">
+    <button class="countries-modal-close" onclick="closePelephoneAppsModal()">×</button>
+    <h3>📱 גלישה חופשית באפליקציות — פלאפון חו"ל</h3>
+    <div class="countries-note" style="text-align:right;">גלישה בחו"ל באפליקציות מובילות ללא צריכה מנפח הגלישה שבחבילה:</div>
+    <div class="apps-modal-grid scrollable" id="pelephoneAppsList"></div>
+  </div>
+</div>
 
 <!-- Cellcom Apps Modal -->
 <div class="countries-modal-overlay" id="cellcomAppsModal">
@@ -1575,6 +1870,15 @@ document.addEventListener('click', function(e) {
     <h3>🌍 רשימת יעדים — 019 חו"ל</h3>
     <div class="countries-note">ביעדים המסומנים ב-* תתאפשר קבלה והוצאת שיחות רק למכשיר התומך בשיחות בדור 4 VoLTE</div>
     <div class="countries-list" id="countriesList"></div>
+  </div>
+</div>
+
+<!-- Pelephone Countries Modal -->
+<div class="countries-modal-overlay" id="pelephoneCountriesModal">
+  <div class="countries-modal">
+    <button class="countries-modal-close" onclick="closePelephoneCountriesModal()">×</button>
+    <h3 id="pelephoneModalTitle">🌍 רשימת יעדים — פלאפון חו"ל</h3>
+    <div class="countries-list" id="pelephoneCountriesList"></div>
   </div>
 </div>
 

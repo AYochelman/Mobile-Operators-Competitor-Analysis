@@ -330,13 +330,20 @@ def scrape_pelephone_abroad(page):
         period_text = period_el.inner_text().strip() if period_el else ""
         price_text  = price_el.inner_text().strip()  if price_el  else ""
         ttl_text = ttl_el.inner_text().strip()
-        name = re.sub(r'\s+', ' ', ttl_text.replace(period_text, "").replace(price_text, "")).strip()
+        raw_name = ttl_text.replace(period_text, "").replace(price_text, "").replace("להזמנה", "").replace("›", "")
+        raw_name = re.sub(r'₪\d+', '', raw_name)   # strip crossed-out prices like ₪319
+        name = re.sub(r'\s+', ' ', raw_name).strip()
         price = _parse_price(price_text)
         days  = _parse_days(period_text)
         gb_el  = card.query_selector(".data .g_d_s .g")
         min_el = card.query_selector(".data .g_d_s .d")
         sms_el = card.query_selector(".data .g_d_s .s")
         gb      = _parse_gb(gb_el.inner_text())       if gb_el  else None
+        # Fallback: MB-tier plans store value elsewhere; search entire .data block
+        if gb is None:
+            data_el = card.query_selector(".data")
+            if data_el:
+                gb = _parse_gb(data_el.inner_text())
         minutes = _parse_minutes(min_el.inner_text()) if min_el else None
         sms     = _parse_sms(sms_el.inner_text())     if sms_el else None
         extras = []
