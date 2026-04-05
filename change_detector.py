@@ -1,3 +1,18 @@
+def _coerce(v):
+    """Normalize a field value to a canonical numeric type.
+    Handles str/int/float mismatches that arise from SQLite TEXT vs INTEGER storage.
+    '7000' and 7000 and 7000.0 all become int 7000.
+    Returns None unchanged; non-numeric strings returned as-is.
+    """
+    if v is None:
+        return None
+    try:
+        f = float(v)
+        return int(f) if f == int(f) else f
+    except (ValueError, TypeError):
+        return v
+
+
 def detect_changes(old_plans, new_plans):
     """
     Compare two lists of plan dicts.
@@ -52,11 +67,13 @@ def detect_changes(old_plans, new_plans):
                     "old_val": old_extras, "new_val": new_extras
                 })
             # Detect changes in detail fields (days, data_gb, minutes, sms)
+            # Use _coerce() to avoid false positives from str/int type mismatches
+            # (e.g. DB stores '7000' as TEXT but scraper returns int 7000)
             changed = []
             for field, label in DETAIL_FIELDS.items():
                 old_v = old_plan.get(field)
                 new_v = new_plan.get(field)
-                if (old_v is not None or new_v is not None) and old_v != new_v:
+                if (old_v is not None or new_v is not None) and _coerce(old_v) != _coerce(new_v):
                     changed.append((label, old_v, new_v))
             if changed:
                 old_desc = ", ".join(f"{lb}: {o}" for lb, o, _ in changed)
