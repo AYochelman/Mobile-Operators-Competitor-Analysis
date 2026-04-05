@@ -348,6 +348,7 @@ def api_chat():
                 lines.append(
                     f"  {p['carrier']} | {p['plan_name']} | {fmt_price(p.get('price'))} | "
                     f"{p.get('days','')} ימים | {fmt_gb(p.get('data_gb'))}"
+                    + (f" | extras: {';'.join(p['extras'])}" if p.get('extras') else "")
                 )
 
         # Global plans
@@ -359,6 +360,7 @@ def api_chat():
                 lines.append(
                     f"  {p['carrier']} | {p['plan_name']} | {fmt_price(p.get('price'))} | "
                     f"{p.get('days','')} ימים | {fmt_gb(p.get('data_gb'))}"
+                    + (f" | extras: {';'.join(p['extras'])}" if p.get('extras') else "")
                 )
 
         # Content services
