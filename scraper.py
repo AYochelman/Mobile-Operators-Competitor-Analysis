@@ -313,8 +313,8 @@ def scrape_019(_page=None):
 
 def scrape_pelephone_abroad(page):
     page.goto("https://www.pelephone.co.il/digitalsite/heb/abroad/packages/",
-              timeout=30000, wait_until="networkidle")
-    page.wait_for_timeout(2000)
+              timeout=40000, wait_until="load")
+    page.wait_for_timeout(3000)
     more_btn = page.query_selector(".btn_more_packs.more_show")
     if more_btn and more_btn.is_visible():
         more_btn.click()
