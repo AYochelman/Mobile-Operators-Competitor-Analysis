@@ -25,7 +25,18 @@ def detect_changes(old_plans, new_plans):
             })
         else:
             old_plan = old_map[key]
-            if old_plan.get("price") != new_plan.get("price"):
+            # For global plans priced in foreign currency (USD/EUR),
+            # compare original_price — not the ILS-converted price —
+            # so exchange-rate fluctuations don't trigger false alerts.
+            currency = old_plan.get("currency") or new_plan.get("currency")
+            if currency and currency != "ILS":
+                old_price_cmp = old_plan.get("original_price")
+                new_price_cmp = new_plan.get("original_price")
+            else:
+                old_price_cmp = old_plan.get("price")
+                new_price_cmp = new_plan.get("price")
+
+            if old_price_cmp != new_price_cmp:
                 changes.append({
                     "carrier": key[0], "plan_name": key[1],
                     "change_type": "price_change",
