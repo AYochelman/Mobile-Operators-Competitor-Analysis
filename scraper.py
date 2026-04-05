@@ -536,47 +536,63 @@ def scrape_hotmobile_abroad(page):
     return plans
 
 
-def scrape_019_abroad(page):
-    page.goto(
-        "https://019mobile.co.il/%d7%92%d7%9c%d7%99%d7%a9%d7%94-%d7%91%d7%97%d7%95%d7%9c-"
-        "%d7%97%d7%91%d7%99%d7%9c%d7%94-%d7%9c%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%95%d7%aa-"
-        "%d7%90%d7%99%d7%a0%d7%98%d7%a8%d7%a0%d7%98/",
-        timeout=30000, wait_until="networkidle"
+def scrape_019_abroad(_page=None):
+    """019 abroad is behind Incapsula — uses same Stealth session as scrape_019."""
+    from playwright_stealth import Stealth
+    _STEALTH_UA = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
     )
-    page.wait_for_timeout(2000)
-    plans = []
-    for card in page.query_selector_all(".item_pack"):
-        name_el  = card.query_selector("h3.title")
-        price_el = card.query_selector(".price_gb .price")
-        gb_el    = card.query_selector(".price_gb .gb")
-        blist_els = card.query_selector_all(".blist li")
-        name = "לא ידוע"
-        if name_el:
-            badge = name_el.query_selector(".badge")
-            badge_text = badge.inner_text().strip() if badge else ""
-            name = name_el.inner_text().strip().replace(badge_text, "").strip()
-        price = None
-        if price_el:
-            price = _parse_price(price_el.inner_text().replace("₪", "").strip())
-        gb = _parse_gb(gb_el.inner_text()) if gb_el else None
-        days, minutes = None, None
-        extras = []
-        for li_el in blist_els:
-            text = li_el.inner_text().strip()
-            if not text:
-                continue
-            if "למשך" in text and "ימים" in text:
-                days = _parse_days(text)
-            elif "דק" in text:
-                strong = li_el.query_selector("strong")
-                minutes = _parse_minutes(strong.inner_text() if strong else text)
-            else:
-                extras.append(text)
-        if name and name != "לא ידוע":
-            plans.append({"carrier": "mobile019", "plan_name": name, "price": price,
-                          "days": days, "data_gb": gb, "minutes": minutes,
-                          "sms": None, "extras": extras})
-    return plans
+    with Stealth().use_sync(sync_playwright()) as pw:
+        browser = pw.chromium.launch(headless=True)
+        page = browser.new_page()
+        try:
+            page.goto(
+                "https://019mobile.co.il/%d7%92%d7%9c%d7%99%d7%a9%d7%94-%d7%91%d7%97%d7%95%d7%9c-"
+                "%d7%97%d7%91%d7%99%d7%9c%d7%94-%d7%9c%d7%97%d7%95%d7%9c-%d7%97%d7%91%d7%99%d7%9c%d7%95%d7%aa-"
+                "%d7%90%d7%99%d7%a0%d7%98%d7%a8%d7%a0%d7%98/",
+                timeout=40000, wait_until="load"
+            )
+            page.wait_for_timeout(5000)
+
+            if len(page.content()) < 10000:
+                logger.warning("scrape_019_abroad: Incapsula block detected. Returning [].")
+                return []
+
+            plans = []
+            for card in page.query_selector_all(".item_pack"):
+                name_el  = card.query_selector("h3.title")
+                price_el = card.query_selector(".price_gb .price")
+                gb_el    = card.query_selector(".price_gb .gb")
+                blist_els = card.query_selector_all(".blist li")
+                name = "לא ידוע"
+                if name_el:
+                    badge = name_el.query_selector(".badge")
+                    badge_text = badge.inner_text().strip() if badge else ""
+                    name = name_el.inner_text().strip().replace(badge_text, "").strip()
+                price = _parse_price(price_el.inner_text().replace("₪", "").strip()) if price_el else None
+                gb = _parse_gb(gb_el.inner_text()) if gb_el else None
+                days, minutes = None, None
+                extras = []
+                for li_el in blist_els:
+                    text = li_el.inner_text().strip()
+                    if not text:
+                        continue
+                    if "למשך" in text and "ימים" in text:
+                        days = _parse_days(text)
+                    elif "דק" in text:
+                        strong = li_el.query_selector("strong")
+                        minutes = _parse_minutes(strong.inner_text() if strong else text)
+                    else:
+                        extras.append(text)
+                if name and name != "לא ידוע":
+                    plans.append({"carrier": "mobile019", "plan_name": name, "price": price,
+                                  "days": days, "data_gb": gb, "minutes": minutes,
+                                  "sms": None, "extras": extras})
+            return plans
+        finally:
+            browser.close()
 
 
 # ── Global eSIM scrapers ───────────────────────────────────────────────────
