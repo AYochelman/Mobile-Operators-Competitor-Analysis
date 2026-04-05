@@ -79,14 +79,20 @@ def _parse_sms(text):
 def scrape_all():
     """Scrape all 5 carriers sequentially. Returns flat list of plan dicts."""
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"]
+        )
         page = browser.new_page()
         plans = []
         for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom, scrape_019]:
             try:
                 result = fn(page)
-                logger.info(f"{fn.__name__}: {len(result)} plans")
-                plans.extend(result)
+                if not result:
+                    logger.warning(f"{fn.__name__}: returned 0 plans — possible bot-block or selector change. Skipping to avoid false 'removed' alerts.")
+                else:
+                    logger.info(f"{fn.__name__}: {len(result)} plans")
+                    plans.extend(result)
             except Exception as e:
                 logger.error(f"{fn.__name__} failed: {e}", exc_info=True)
         browser.close()
@@ -244,28 +250,63 @@ def scrape_cellcom(page):
     return plans
 
 
-def scrape_019(page):
-    page.goto("https://019mobile.co.il/חבילות-סלולר/", timeout=30000, wait_until="networkidle")
-    page.wait_for_selector(".list .item", timeout=15000)
-    plans = []
-    for card in page.query_selector_all(".list .item:not(.item_hor)"):
-        name_el  = card.query_selector("h3.title")
-        price_el = card.query_selector(".price")
-        extras   = [el.inner_text().strip() for el in card.query_selector_all(".blist li") if el.inner_text().strip()]
-        # Find data (GB/MB) specifically from the "גלישה" line in extras
-        gb = None
-        for item_el in card.query_selector_all(".blist li"):
-            text = item_el.inner_text().strip()
-            if "גלישה" in text or ("GB" in text and "גלישה" not in text) or "MB" in text.upper():
-                if "גלישה" in text or re.search(r"\d+\s*(GB|MB|gb|mb)", text):
-                    gb = _parse_gb(text)
-                    break
-        name  = name_el.inner_text().strip()  if name_el  else "לא ידוע"
-        price = _parse_price(price_el.inner_text()) if price_el else None
-        if name and name != "לא ידוע":
-            plans.append({"carrier": "mobile019", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": None, "extras": extras})
-    return plans
+def scrape_019(_page=None):
+    """
+    019 is behind Incapsula WAF.
+    Uses playwright-stealth + fresh isolated session to bypass bot detection.
+    The _page argument is accepted but ignored (019 needs its own stealth session).
+    """
+    _STEALTH_UA = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    )
+    from playwright_stealth import Stealth
+    with Stealth().use_sync(sync_playwright()) as pw:
+        browser = pw.chromium.launch(headless=True)
+        p019 = browser.new_page()
+        try:
+            p019.goto(
+                "https://019mobile.co.il/חבילות-סלולר/",
+                timeout=40000, wait_until="load"
+            )
+            p019.wait_for_timeout(5000)
+
+            # Guard against Incapsula challenge page (< 10 KB = not real content)
+            if len(p019.content()) < 10000:
+                logger.warning("scrape_019: Incapsula block detected — page too small. Returning [].")
+                return []
+
+            plans = []
+            for card in p019.query_selector_all(".item_pack"):
+                name_el  = card.query_selector("h3.title")
+                price_el = card.query_selector(".price_gb .price") or card.query_selector(".price")
+                gb_el    = card.query_selector(".price_gb .gb")
+
+                name = "לא ידוע"
+                if name_el:
+                    badge = name_el.query_selector(".badge")
+                    badge_text = badge.inner_text().strip() if badge else ""
+                    name = name_el.inner_text().strip().replace(badge_text, "").strip()
+
+                price = _parse_price(price_el.inner_text().replace("₪", "").strip()) if price_el else None
+                gb    = _parse_gb(gb_el.inner_text()) if gb_el else None
+
+                extras = []
+                for li_el in card.query_selector_all(".blist li"):
+                    text = li_el.inner_text().strip()
+                    if not text:
+                        continue
+                    if gb is None and re.search(r"\d+\s*(GB|MB|gb|mb)", text):
+                        gb = _parse_gb(text)
+                    extras.append(text)
+
+                if name and name != "לא ידוע":
+                    plans.append({"carrier": "mobile019", "plan_name": name, "price": price,
+                                  "data_gb": gb, "minutes": None, "extras": extras})
+            return plans
+        finally:
+            browser.close()
 
 
 # ── Abroad / Roaming scrapers ──────────────────────────────────────────────
@@ -1002,8 +1043,11 @@ def scrape_all_global():
         for name, fn in jobs:
             try:
                 result = fn(page)
-                logger.info(f"{name}: {len(result)} global plans")
-                plans.extend(result)
+                if not result:
+                    logger.warning(f"{name}: returned 0 plans — possible bot-block or selector change. Skipping.")
+                else:
+                    logger.info(f"{name}: {len(result)} global plans")
+                    plans.extend(result)
             except Exception as e:
                 logger.error(f"{name} failed: {e}", exc_info=True)
         browser.close()
@@ -1274,15 +1318,21 @@ def scrape_all_content():
 def scrape_all_abroad():
     """Scrape abroad packages from all 5 carriers. Returns flat list of plan dicts."""
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"]
+        )
         page = browser.new_page()
         plans = []
         for fn in [scrape_partner_abroad, scrape_pelephone_abroad,
                    scrape_hotmobile_abroad, scrape_cellcom_abroad, scrape_019_abroad]:
             try:
                 result = fn(page)
-                logger.info(f"{fn.__name__}: {len(result)} abroad plans")
-                plans.extend(result)
+                if not result:
+                    logger.warning(f"{fn.__name__}: returned 0 plans — possible bot-block or selector change. Skipping.")
+                else:
+                    logger.info(f"{fn.__name__}: {len(result)} abroad plans")
+                    plans.extend(result)
             except Exception as e:
                 logger.error(f"{fn.__name__} failed: {e}", exc_info=True)
         browser.close()
