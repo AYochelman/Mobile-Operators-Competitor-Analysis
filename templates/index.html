@@ -1117,6 +1117,24 @@ function renderGlobalCard(plan) {
     xpGlobalCountriesLink = `<div class="extras"><span><a href="#" class="countries-link" onclick="openXphoneGlobalModal(event,'${modalType}')">מדינות כלולות ✈️</a></span></div>`;
   }
 
+  let sailyRegionCountriesLink = '';
+  if (plan.carrier === 'saily' && plan.extras && plan.extras[0]) {
+    const regionNameMap = {
+      'אפריקה': 'africa',
+      'אסיה ואוקיאניה': 'asia',
+      'איי הקריביים': 'caribbean',
+      'אירופה': 'europe',
+      'גלובלי': 'global',
+      'אמריקה הלטינית': 'latam',
+      'המזרח התיכון וצפון אפריקה': 'mena',
+      'צפון אמריקה': 'na'
+    };
+    const regionKey = regionNameMap[plan.extras[0]];
+    if (regionKey) {
+      sailyRegionCountriesLink = '<div class="extras"><span><a href="#" class="countries-link" onclick="openSailyRegionModal(event,\'' + regionKey + '\')">מדינות כלולות ✈️</a></span></div>';
+    }
+  }
+
   return `
     <div class="plan-card">
       ${badge}
@@ -1133,7 +1151,7 @@ function renderGlobalCard(plan) {
         ${minutesRow}
         ${smsRow}
       </div>
-      ${extrasHtml}${xpGlobalCountriesLink}
+      ${extrasHtml}${xpGlobalCountriesLink}${sailyRegionCountriesLink}
     </div>`;
 }
 
@@ -1824,7 +1842,7 @@ document.addEventListener('click', function(e) {
 // ── Partner Countries Modal ────────────────────────────────────────────────
 const COUNTRIES_PARTNER = [
   { letter: 'א', countries: ['אוזבקיסטן','אוסטריה','אוסטרליה','אוקראינה','אורוגוואי','אזרבייז\'אן','איחוד האמירויות (כולל דובאי ואבו דאבי)','איטליה','איי הבתולה הבריטיים','איי טרקס וקייקוס','אינדונזיה','איסלנד','אירלנד','אל סלבדור','אלבניה','אנגווילה','אנגליה','אנדורה','אנטיגואה וברבודה','אסטוניה','אקוודור','ארגנטינה','ארה"ב','ארמניה','אתיופיה'] },
-  { letter: 'ב', countries: ['בהאמה','בולגריה','בוליביה','בוסניה','בוצואנה','בילרוס','בלגיה','ברבדוס','ברזיל'] },
+  { letter: 'ב', countries: ['איי הבהאמה','בולגריה','בוליביה','בוסניה','בוצואנה','בילרוס','בלגיה','ברבדוס','ברזיל'] },
   { letter: 'ג', countries: ['ג\'מייקה','ג\'רזי','גאורגיה','גאנה','גבון','גואטמלה','גרמניה','גרנדה'] },
   { letter: 'ד', countries: ['דומיניקה','דנמרק','דרום אפריקה'] },
   { letter: 'ה', countries: ['הודו','הולנד','הונג קונג','הונגריה','הונדורס','הרפובליקה הדומיניקנית'] },
@@ -2095,6 +2113,14 @@ const COUNTRIES_XPHONE_GLOBAL_WORLD = [
   'לוקסמבורג','לטביה','ליטא','ליכטנשטיין','נורווגיה','סלובניה','סלובקיה',
   'ספרד','פולין','פורטוגל','פינלנד',"צ'כיה",'צרפת','קפריסין היוונית','קרואטיה','רומניה','שבדיה','תאילנד'
 ];
+const COUNTRIES_SAILY_AFRICA = ['אלג\'יריה','בנין','בוצוואנה','בורקינה פאסו','קמרון','כף ורדה','הרפובליקה המרכז-אפריקנית','צ\'אד','חוף השנהב','מצרים','אסוואטיני','גאבון','גאנה','גינאה','גינאה-ביסאו','קניה','ליבריה','מדגסקר','מלאווי','מאלי','מאוריציוס','ניגריה','רפובליקת קונגו','רואנדה','סנגל','סיישל','סיירה לאונה','דרום אפריקה','סודן','טנזניה','הרפובליקה הדמוקרטית של קונגו','טוגו','אוגנדה','זמביה'];
+const COUNTRIES_SAILY_ASIA = ['אוסטרליה','סין','הונג קונג','הודו','אינדונזיה','יפן','קזחסטן','מקאו','מלזיה','ניו זילנד','פקיסטן','הפיליפינים','סינגפור','דרום קוריאה','סרי לנקה','טייוואן','תאילנד','אוזבקיסטן','וייטנאם'];
+const COUNTRIES_SAILY_CARIBBEAN = ['אנגווילה','אנטיגואה וברבודה','ארובה','איי הבהאמה','ברבדוס','ברמודה','בונייר','איי הבתולה הבריטיים','איי קיימן','קוראסאו','דומיניקה','גיאנה הצרפתית','גרנדה','גוואדלופ','האיטי','ג\'מייקה','מרטיניק','מונטסראט','פנמה','פוארטו ריקו','סן ברתלמי','סנט קיטס ונוויס','סנט לוסיה','סן מרטן','סנט וינסנט והגרנדינים','סינט מארטן','טרינידד וטובגו','איי טרקס וקייקוס','ארצות הברית'];
+const COUNTRIES_SAILY_EUROPE = ['אוסטריה','בלגיה','בולגריה','קרואטיה','קפריסין','צ\'כיה','דנמרק','אסטוניה','פינלנד','צרפת','גרמניה','גיברלטר','יוון','הונגריה','איסלנד','אירלנד','איטליה','לטביה','ליכטנשטיין','ליטא','לוקסמבורג','מלטה','הולנד','נורבגיה','פולין','פורטוגל','רומניה','סן מרינו','סלובקיה','סלובניה','ספרד','שבדיה','שוויץ','טורקיה','בריטניה'];
+const COUNTRIES_SAILY_GLOBAL = ['אפגניסטן','אלבניה','אלג\'יריה','אנדורה','ארגנטינה','ארמניה','אוסטרליה','אוסטריה','אזרבייג\'ן','בנגלדש','בלגיה','בוליביה','בוסניה והרצגובינה','ברזיל','בולגריה','קמבודיה','קנדה','צ\'ילה','סין','קולומביה','קוסטה ריקה','קרואטיה','קפריסין','צ\'כיה','דנמרק','הרפובליקה הדומיניקנית','אקוודור','מצרים','אל סלבדור','אסטוניה','איי פארו','פיג\'י','פינלנד','צרפת','גיאנה הצרפתית','גאורגיה','גרמניה','גאנה','גיברלטר','יוון','גוואדלופ','גואם','גואטמלה','גרנזי','הונדורס','הונג קונג','הונגריה','איסלנד','הודו','אינדונזיה','עיראק','אירלנד','ישראל','איטליה','ג\'מייקה','יפן','ג\'רזי','ירדן','קזחסטן','קוסובו','כווית','לאוס','לטביה','ליכטנשטיין','ליטא','לוקסמבורג','מקאו','מלזיה','מלטה','מרטיניק','מאוריציוס','מקסיקו','מולדובה','מונקו','מונטנגרו','מרוקו','מוזמביק','הולנד','ניו זילנד','ניקרגואה','ניגריה','נורבגיה','עומן','פקיסטן','פנמה','פרגוואי','פרו','הפיליפינים','פולין','פורטוגל','פוארטו ריקו','קטאר','ראוניון','רומניה','רואנדה','סן ברתלמי','סן מרטן','סמואה','ערב הסעודית','סרביה','סינגפור','סלובקיה','סלובניה','דרום אפריקה','דרום קוריאה','ספרד','סרי לנקה','שבדיה','שוויץ','טייוואן','טנזניה','תאילנד','תוניסיה','טורקיה','אוקראינה','איחוד האמירויות','בריטניה','ארצות הברית','אורוגוואי','אוזבקיסטן','וייטנאם'];
+const COUNTRIES_SAILY_LATAM = ['ארגנטינה','בוליביה','ברזיל','צ\'ילה','קולומביה','קוסטה ריקה','אקוודור','אל סלבדור','מקסיקו','פרגוואי','פרו','אורוגוואי'];
+const COUNTRIES_SAILY_MENA = ['אלג\'יריה','ארמניה','בחריין','קפריסין','מצרים','גאורגיה','עיראק','ישראל','ירדן','כווית','מרוקו','עומן','קטאר','ערב הסעודית','דרום סודן','סודן','תוניסיה','טורקיה','איחוד האמירויות'];
+const COUNTRIES_SAILY_NA = ['קנדה','ארצות הברית'];
 let _xpGlobalEuropeBuilt = false, _xpGlobalWorldBuilt = false;
 function openXphoneGlobalModal(e, type) {
   e.preventDefault();
@@ -2113,6 +2139,26 @@ function openXphoneGlobalModal(e, type) {
     }
     document.getElementById('xpGlobalWorldModal').classList.add('open');
   }
+}
+function openSailyRegionModal(event, regionKey) {
+  event.preventDefault();
+  const regionMap = {
+    'africa': { title: 'אפריקה', countries: COUNTRIES_SAILY_AFRICA },
+    'asia': { title: 'אסיה ואוקיאניה', countries: COUNTRIES_SAILY_ASIA },
+    'caribbean': { title: 'איי הקריביים', countries: COUNTRIES_SAILY_CARIBBEAN },
+    'europe': { title: 'אירופה', countries: COUNTRIES_SAILY_EUROPE },
+    'global': { title: 'גלובלי', countries: COUNTRIES_SAILY_GLOBAL },
+    'latam': { title: 'אמריקה הלטינית', countries: COUNTRIES_SAILY_LATAM },
+    'mena': { title: 'המזרח התיכון וצפון אפריקה', countries: COUNTRIES_SAILY_MENA },
+    'na': { title: 'צפון אמריקה', countries: COUNTRIES_SAILY_NA }
+  };
+  const r = regionMap[regionKey];
+  if (!r) return;
+  const modal = document.getElementById('countriesModal');
+  document.getElementById('countriesModalTitle').textContent = r.title + ' — מדינות כלולות';
+  const list = document.getElementById('countriesModalList');
+  list.innerHTML = r.countries.map(c => '<span class="country-tag">' + c + '</span>').join('');
+  modal.style.display = 'flex';
 }
 function closeXpGlobalEuropeModal() { document.getElementById('xpGlobalEuropeModal').classList.remove('open'); }
 function closeXpGlobalWorldModal()  { document.getElementById('xpGlobalWorldModal').classList.remove('open'); }
