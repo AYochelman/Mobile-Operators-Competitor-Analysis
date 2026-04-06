@@ -15,6 +15,13 @@ const TABS = [
   { id: 'content', label: '📺 שירותי תוכן' },
 ]
 
+const KNOWN_REGIONS = new Set([
+  'אירופה','אסיה','אסיה ואוקיאניה','אפריקה','גלובלי','קריביים','איי הקריביים',
+  'אמריקה הלטינית','צפון אמריקה','המזרח התיכון','המזרח התיכון וצפון אפריקה',
+  'דרום מזרח אסיה','סקנדינביה','בלקן','מזרח אירופה','מרכז אמריקה','אוקיאניה',
+  'סין + הונג קונג + מקאו','יפן וקוריאה','יפן וסין',
+])
+
 const CARRIERS = [
   { id: 'partner', label: 'פרטנר' }, { id: 'pelephone', label: 'פלאפון' },
   { id: 'hotmobile', label: 'הוט מובייל' }, { id: 'cellcom', label: 'סלקום' },
@@ -40,7 +47,7 @@ export default function DashboardPage() {
   const [changes, setChanges] = useState({ domestic: [], abroad: [], global: [], content: [] })
   const [filters, setFilters] = useState({
     carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', roaming: 'all',
-    globalProvider: 'all', destination: 'all', days: 'all',
+    globalProvider: 'all', destination: 'all', region: 'all', days: 'all',
     contentCarrier: 'all', contentService: 'all',
   })
   const [countryModal, setCountryModal] = useState(null)
@@ -109,7 +116,8 @@ export default function DashboardPage() {
     }
     if (tab === 'global') {
       if (f.globalProvider !== 'all') result = result.filter(p => p.carrier === f.globalProvider)
-      if (f.destination !== 'all') result = result.filter(p => p.extras && p.extras[0] === f.destination)
+      if (f.region !== 'all') result = result.filter(p => p.extras && p.extras[0] === f.region)
+      else if (f.destination !== 'all') result = result.filter(p => p.extras && p.extras[0] === f.destination)
     }
     if (tab === 'content') {
       const NA = ['לא נמצא', 'שגיאה', 'לא זמין']
@@ -142,12 +150,20 @@ export default function DashboardPage() {
     return result
   }, [plans, tab, filters])
 
-  // Destinations for global tab
+  // Regions for global tab
+  const globalRegions = useMemo(() => {
+    if (tab !== 'global') return []
+    let src = plans.global
+    if (filters.globalProvider !== 'all') src = src.filter(p => p.carrier === filters.globalProvider)
+    return [...new Set(src.filter(p => p.extras && p.extras[0] && KNOWN_REGIONS.has(p.extras[0])).map(p => p.extras[0]))].sort((a, b) => a.localeCompare(b, 'he'))
+  }, [plans.global, tab, filters.globalProvider])
+
+  // Destinations (countries only, exclude regions) for global tab
   const globalDestinations = useMemo(() => {
     if (tab !== 'global') return []
     let src = plans.global
     if (filters.globalProvider !== 'all') src = src.filter(p => p.carrier === filters.globalProvider)
-    return [...new Set(src.filter(p => p.extras && p.extras[0] && !/\d/.test(p.extras[0])).map(p => p.extras[0]))].sort((a, b) => a.localeCompare(b, 'he'))
+    return [...new Set(src.filter(p => p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(p.extras[0])).map(p => p.extras[0]))].sort((a, b) => a.localeCompare(b, 'he'))
   }, [plans.global, tab, filters.globalProvider])
 
   // Content services list
@@ -193,7 +209,7 @@ export default function DashboardPage() {
         {TABS.map(t => (
           <button
             key={t.id}
-            onClick={() => { setTab(t.id); setFilter('carrier', 'all'); setFilter('globalProvider', 'all'); setFilter('destination', 'all') }}
+            onClick={() => { setTab(t.id); setFilter('carrier', 'all'); setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
             className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0
               ${tab === t.id ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
           >
@@ -223,13 +239,27 @@ export default function DashboardPage() {
           <div>
             <p className="text-xs font-medium text-gray-500 mb-2">ספק</p>
             <div className="flex flex-wrap gap-1.5">
-              <FilterTag label="כולם" active={filters.globalProvider === 'all'} onClick={() => { setFilter('globalProvider', 'all'); setFilter('destination', 'all') }} count={plans.global?.length} />
+              <FilterTag label="כולם" active={filters.globalProvider === 'all'} onClick={() => { setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }} count={plans.global?.length} />
               {GLOBAL_PROVIDERS.map(p => {
                 const cnt = plans.global?.filter(x => x.carrier === p.id).length || 0
                 if (!cnt) return null
-                return <FilterTag key={p.id} label={p.label} active={filters.globalProvider === p.id} onClick={() => { setFilter('globalProvider', p.id); setFilter('destination', 'all') }} count={cnt} />
+                return <FilterTag key={p.id} label={p.label} active={filters.globalProvider === p.id} onClick={() => { setFilter('globalProvider', p.id); setFilter('destination', 'all'); setFilter('region', 'all') }} count={cnt} />
               })}
             </div>
+          </div>
+        )}
+
+        {tab === 'global' && globalRegions.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2">אזור</p>
+            <select
+              value={filters.region}
+              onChange={e => { setFilter('region', e.target.value); if (e.target.value !== 'all') setFilter('destination', 'all') }}
+              className={`border rounded-lg px-3 py-1.5 text-sm ${filters.region !== 'all' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+            >
+              <option value="all">כל האזורים ({globalRegions.length})</option>
+              {globalRegions.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
           </div>
         )}
 
@@ -238,7 +268,7 @@ export default function DashboardPage() {
             <p className="text-xs font-medium text-gray-500 mb-2">מדינה</p>
             <select
               value={filters.destination}
-              onChange={e => setFilter('destination', e.target.value)}
+              onChange={e => { setFilter('destination', e.target.value); if (e.target.value !== 'all') setFilter('region', 'all') }}
               className={`border rounded-lg px-3 py-1.5 text-sm ${filters.destination !== 'all' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
             >
               <option value="all">כל המדינות ({globalDestinations.length})</option>
