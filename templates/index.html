@@ -48,6 +48,7 @@
   .dot-simtlv            { background: #ef4444; }
   .dot-world8            { background: #f97316; }
   .dot-xphone_global     { background: #0d9488; }
+  .dot-saily             { background: #7c3aed; }
   .badge-tuki            { color: #0369a1; background: #e0f2fe; }
   .badge-globalesim      { color: #15803d; background: #dcfce7; }
   .badge-airalo          { color: #b45309; background: #fef3c7; }
@@ -56,6 +57,7 @@
   .badge-simtlv          { color: #b91c1c; background: #fee2e2; }
   .badge-world8          { color: #c2410c; background: #ffedd5; }
   .badge-xphone_global   { color: #0f766e; background: #ccfbf1; }
+  .badge-saily           { color: #5b21b6; background: #ede9fe; }
   .esim-badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 8px; background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; margin-right: 4px; vertical-align: middle; }
 
   .tag-group { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -291,6 +293,10 @@
         <span class="dot dot-xphone_global"></span> XPhone Global
         <span class="count-badge" id="gcnt-xphone_global">—</span>
       </button>
+      <button class="carrier-btn" data-global-carrier="saily">
+        <span class="dot dot-saily"></span> Saily
+        <span class="count-badge" id="gcnt-saily">—</span>
+      </button>
     </div>
 
     <div class="sidebar-section domestic-section abroad-section">
@@ -418,6 +424,13 @@
       </div>
     </div>
 
+
+    <div class="sidebar-section global-section" style="display:none" id="globalDestSection">
+      <div class="sidebar-title">מדינה</div>
+      <select id="globalDestFilter" class="sidebar-select">
+        <option value="all">כל המדינות</option>
+      </select>
+    </div>
 
     <div class="sidebar-section global-section" style="display:none">
       <div class="sidebar-title">גלישה</div>
@@ -580,7 +593,7 @@ const CARRIER_LABELS = {
 const GLOBAL_LABELS = {
   tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
   pelephone_global: 'GlobalSIM - Pelephone', esimo: 'eSIMo',
-  simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global'
+  simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily'
 };
 
 let allPlans = [];
@@ -598,7 +611,7 @@ let recentContentChangeTypes = {};
 let currentTab = 'domestic';
 let state        = { carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', changes: 'all', roaming: 'all' };
 let abroadState  = { carrier: 'all', gb: 'all', days: 'all', sort: 'price_asc', destination: 'all' };
-let globalState  = { carrier: 'all', gb: 'all', days: 'all', currency: 'all', sort: 'price_asc' };
+let globalState  = { carrier: 'all', gb: 'all', days: 'all', currency: 'all', sort: 'price_asc', destination: 'all' };
 let contentState = { carrier: 'all', service: 'all' };
 const CONTENT_SERVICES = ['eSIM שעון', 'סייבר', 'נורטון', 'שיר בהמתנה', 'תא קולי'];
 
@@ -688,7 +701,7 @@ function updateCountBadges() {
     allGlobalPlans.forEach(p => { counts[p.carrier] = (counts[p.carrier] || 0) + 1; });
     const allEl = document.getElementById('gcnt-all');
     if (allEl) allEl.textContent = allGlobalPlans.length;
-    ['tuki','globalesim','airalo','pelephone_global','esimo','simtlv','world8','xphone_global'].forEach(c => {
+    ['tuki','globalesim','airalo','pelephone_global','esimo','simtlv','world8','xphone_global','saily'].forEach(c => {
       const el = document.getElementById(`gcnt-${c}`);
       if (el) el.textContent = counts[c] || 0;
     });
@@ -998,14 +1011,39 @@ async function loadGlobalData() {
     recentGlobalChangeTypes[key] = c.change_type;
   });
 
+  _initGlobalDestFilter();
   updateCountBadges();
   renderGlobal();
+}
+
+function _initGlobalDestFilter() {
+  const sel = document.getElementById('globalDestFilter');
+  // Reset to just the default option
+  while (sel.options.length > 1) sel.remove(1);
+  // Collect unique country names from plans that have them (extras[0])
+  const countries = [...new Set(
+    allGlobalPlans.filter(p => p.extras && p.extras[0]).map(p => p.extras[0])
+  )].sort((a, b) => a.localeCompare(b, 'he'));
+  countries.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    sel.appendChild(opt);
+  });
+  // Show/hide the section based on whether there are countries
+  const section = document.getElementById('globalDestSection');
+  if (section) section.style.display = countries.length ? '' : 'none';
+  sel.addEventListener('change', () => {
+    globalState.destination = sel.value;
+    sel.classList.toggle('active', sel.value !== 'all');
+    renderGlobal();
+  });
 }
 
 function filterAndSortGlobal(plans) {
   let r = plans;
   const s = globalState;
   if (s.carrier !== 'all')    r = r.filter(p => p.carrier === s.carrier);
+  if (s.destination !== 'all') r = r.filter(p => p.extras && p.extras[0] === s.destination);
   if (s.gb === '0-5')         r = r.filter(p => p.data_gb !== null && p.data_gb <= 5);
   if (s.gb === '5-15')        r = r.filter(p => p.data_gb !== null && p.data_gb > 5 && p.data_gb <= 15);
   if (s.gb === '15+')         r = r.filter(p => p.data_gb !== null && p.data_gb > 15);
@@ -1181,6 +1219,10 @@ document.querySelectorAll('.carrier-btn[data-global-carrier]').forEach(btn => {
     document.querySelectorAll('.carrier-btn[data-global-carrier]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     globalState.carrier = btn.dataset.globalCarrier;
+    // Reset destination filter when switching provider
+    globalState.destination = 'all';
+    const gdf = document.getElementById('globalDestFilter');
+    if (gdf) { gdf.value = 'all'; gdf.classList.remove('active'); }
     updateCountBadges();
     renderGlobal();
   });
