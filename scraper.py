@@ -2287,6 +2287,79 @@ def scrape_saily_regions(_page=None, usd_rate=None):
     return all_plans
 
 
+HOLAFLY_REGIONS = {
+    "esim-asia":                    "\u05d0\u05e1\u05d9\u05d4",
+    "esim-europe":                  "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
+    "esim-south-america":           "\u05d0\u05de\u05e8\u05d9\u05e7\u05d4 \u05d4\u05dc\u05d8\u05d9\u05e0\u05d9\u05ea",
+    "esim-northamerica":            "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
+    "oceania":                      "\u05d0\u05d5\u05e7\u05d9\u05d0\u05e0\u05d9\u05d4",
+    "esim-caribbean":               "\u05e7\u05e8\u05d9\u05d1\u05d9\u05d9\u05dd",
+    "sudeste-asiatico":             "\u05d3\u05e8\u05d5\u05dd \u05de\u05d6\u05e8\u05d7 \u05d0\u05e1\u05d9\u05d4",
+    "china-hong-kong-macau":        "\u05e1\u05d9\u05df + \u05d4\u05d5\u05e0\u05d2 \u05e7\u05d5\u05e0\u05d2 + \u05de\u05e7\u05d0\u05d5",
+    "japon-corea":                  "\u05d9\u05e4\u05df \u05d5\u05e7\u05d5\u05e8\u05d9\u05d0\u05d4",
+    "japon-china":                  "\u05d9\u05e4\u05df \u05d5\u05e1\u05d9\u05df",
+    "escandinavia":                 "\u05e1\u05e7\u05e0\u05d3\u05d9\u05e0\u05d1\u05d9\u05d4",
+    "centroamerica":                "\u05de\u05e8\u05db\u05d6 \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
+    "balkans":                      "\u05d1\u05dc\u05e7\u05df",
+    "europa-oriental":              "\u05de\u05d6\u05e8\u05d7 \u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
+}
+
+
+def scrape_holafly_regions(_page=None, usd_rate=None):
+    """Scrape Holafly regional eSIM plans via Shopify product JSON API (no Playwright needed).
+    All Holafly regional plans offer unlimited data. Filters to key durations only."""
+    import urllib.request, json as _json, time as _time
+
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    all_plans = []
+    success_count = 0
+
+    for slug, region_heb in HOLAFLY_REGIONS.items():
+        try:
+            url = f"https://holafly-esim.myshopify.com/products/{slug}.json"
+            req = urllib.request.Request(url, headers={"User-Agent": ua})
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                data = _json.loads(resp.read())
+
+            variants = data.get("product", {}).get("variants", [])
+            for v in variants:
+                sku = v.get("sku") or ""
+                title = v.get("title") or ""
+                m = re.search(r"(\d+)-days?", sku)
+                if not m:
+                    m = re.search(r"(\d+)\s*d[ií]as?", title)
+                if not m:
+                    continue
+                days = int(m.group(1))
+                if days not in _HOLAFLY_KEY_DAYS:
+                    continue
+
+                price_usd = _parse_price(str(v.get("price", "")))
+                if price_usd is None:
+                    continue
+
+                price_ils = round(price_usd * usd_rate, 2)
+                plan_name = f"{region_heb} \u2013 \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4 \u2013 {days} \u05d9\u05de\u05d9\u05dd"
+                all_plans.append(_make_global_plan(
+                    "holafly", plan_name, price_ils, "USD", price_usd,
+                    data_gb=None,  # unlimited
+                    days=days, esim=True, extras=[region_heb]
+                ))
+
+            success_count += 1
+            _time.sleep(0.2)
+
+        except Exception as exc:
+            logger.warning(f"Holafly region {slug}: {exc}")
+            continue
+
+    logger.info(f"Holafly regions: {len(all_plans)} plans from {success_count}/{len(HOLAFLY_REGIONS)} regions")
+    return all_plans
+
+
 def scrape_all_global():
     """Scrape global eSIM packages from all 7 providers. Returns flat list of plan dicts."""
     usd_rate = _get_usd_to_ils()
@@ -2309,6 +2382,7 @@ def scrape_all_global():
             ("scrape_saily_regions",        lambda pg: scrape_saily_regions(pg, usd_rate)),
             ("scrape_esimio_destinations",  lambda pg: scrape_esimio_destinations(pg, usd_rate)),
             ("scrape_holafly_global",       lambda pg: scrape_holafly_global(pg, usd_rate)),
+            ("scrape_holafly_regions",      lambda pg: scrape_holafly_regions(pg, usd_rate)),
         ]
         for name, fn in jobs:
             try:
