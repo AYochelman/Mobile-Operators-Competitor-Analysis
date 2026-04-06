@@ -1518,6 +1518,190 @@ def scrape_xphone_global(page=None):
             browser.close()
 
 
+SAILY_SLUG_TO_HEBREW = {
+    "afghanistan": "\u05d0\u05e4\u05d2\u05e0\u05d9\u05e1\u05d8\u05df", "albania": "\u05d0\u05dc\u05d1\u05e0\u05d9\u05d4",
+    "algeria": "\u05d0\u05dc\u05d2'\u05d9\u05e8\u05d9\u05d4", "andorra": "\u05d0\u05e0\u05d3\u05d5\u05e8\u05d4",
+    "anguilla": "\u05d0\u05e0\u05d2\u05d5\u05d5\u05d9\u05dc\u05d4", "antigua-and-barbuda": "\u05d0\u05e0\u05d8\u05d9\u05d2\u05d5\u05d0\u05d4 \u05d5\u05d1\u05e8\u05d1\u05d5\u05d3\u05d4",
+    "argentina": "\u05d0\u05e8\u05d2\u05e0\u05d8\u05d9\u05e0\u05d4", "armenia": "\u05d0\u05e8\u05de\u05e0\u05d9\u05d4",
+    "aruba": "\u05d0\u05e8\u05d5\u05d1\u05d4", "australia": "\u05d0\u05d5\u05e1\u05d8\u05e8\u05dc\u05d9\u05d4",
+    "austria": "\u05d0\u05d5\u05e1\u05d8\u05e8\u05d9\u05d4", "azerbaijan": "\u05d0\u05d6\u05e8\u05d1\u05d9\u05d9\u05d2'\u05df",
+    "bahamas": "\u05d0\u05d9\u05d9 \u05d1\u05d4\u05d0\u05de\u05d4", "bahrain": "\u05d1\u05d7\u05e8\u05d9\u05d9\u05df",
+    "bangladesh": "\u05d1\u05e0\u05d2\u05dc\u05d3\u05e9", "barbados": "\u05d1\u05e8\u05d1\u05d3\u05d5\u05e1",
+    "belgium": "\u05d1\u05dc\u05d2\u05d9\u05d4", "belize": "\u05d1\u05dc\u05d9\u05d6",
+    "benin": "\u05d1\u05e0\u05d9\u05df", "bermuda": "\u05d1\u05e8\u05de\u05d5\u05d3\u05d4",
+    "bolivia": "\u05d1\u05d5\u05dc\u05d9\u05d1\u05d9\u05d4", "bonaire": "\u05d1\u05d5\u05e0\u05d9\u05d9\u05e8",
+    "bosnia-and-herzegovina": "\u05d1\u05d5\u05e1\u05e0\u05d9\u05d4 \u05d5\u05d4\u05e8\u05e6\u05d2\u05d5\u05d1\u05d9\u05e0\u05d4",
+    "botswana": "\u05d1\u05d5\u05e6\u05d5\u05d5\u05d0\u05e0\u05d4", "brazil": "\u05d1\u05e8\u05d6\u05d9\u05dc",
+    "british-virgin-islands": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 (\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4)",
+    "brunei": "\u05d1\u05e8\u05d5\u05e0\u05d9\u05d9", "bulgaria": "\u05d1\u05d5\u05dc\u05d2\u05e8\u05d9\u05d4",
+    "burkina-faso": "\u05d1\u05d5\u05e8\u05e7\u05d9\u05e0\u05d4 \u05e4\u05d0\u05e1\u05d5",
+    "cambodia": "\u05e7\u05de\u05d1\u05d5\u05d3\u05d9\u05d4", "cameroon": "\u05e7\u05de\u05e8\u05d5\u05df",
+    "canada": "\u05e7\u05e0\u05d3\u05d4", "cape-verde": "\u05db\u05e3 \u05d5\u05e8\u05d3\u05d4",
+    "cayman-islands": "\u05d0\u05d9\u05d9 \u05e7\u05d9\u05d9\u05de\u05df",
+    "central-african-republic": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4 \u05d4\u05de\u05e8\u05db\u05d6-\u05d0\u05e4\u05e8\u05d9\u05e7\u05d0\u05d9\u05ea",
+    "chad": "\u05e6'\u05d0\u05d3", "chile": "\u05e6'\u05d9\u05dc\u05d4",
+    "china": "\u05e1\u05d9\u05df", "colombia": "\u05e7\u05d5\u05dc\u05d5\u05de\u05d1\u05d9\u05d4",
+    "costa-rica": "\u05e7\u05d5\u05e1\u05d8\u05d4 \u05e8\u05d9\u05e7\u05d4",
+    "cote-d-ivoire": "\u05d7\u05d5\u05e3 \u05d4\u05e9\u05e0\u05d4\u05d1", "croatia": "\u05e7\u05e8\u05d5\u05d0\u05d8\u05d9\u05d4",
+    "curacao": "\u05e7\u05d5\u05e8\u05d0\u05e1\u05d0\u05d5", "cyprus": "\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df",
+    "czech-republic": "\u05e6'\u05db\u05d9\u05d4",
+    "democratic-republic-of-congo": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4 \u05d4\u05d3\u05de\u05d5\u05e7\u05e8\u05d8\u05d9\u05ea \u05e9\u05dc \u05e7\u05d5\u05e0\u05d2\u05d5",
+    "denmark": "\u05d3\u05e0\u05de\u05e8\u05e7", "dominica": "\u05d3\u05d5\u05de\u05d9\u05e0\u05d9\u05e7\u05d4",
+    "dominican-republic": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4 \u05d4\u05d3\u05d5\u05de\u05d9\u05e0\u05d9\u05e7\u05e0\u05d9\u05ea",
+    "east-timor": "\u05d8\u05d9\u05de\u05d5\u05e8-\u05dc\u05e1\u05d8\u05d4",
+    "ecuador": "\u05d0\u05e7\u05d5\u05d5\u05d3\u05d5\u05e8", "egypt": "\u05de\u05e6\u05e8\u05d9\u05dd",
+    "el-salvador": "\u05d0\u05dc \u05e1\u05dc\u05d1\u05d3\u05d5\u05e8", "estonia": "\u05d0\u05e1\u05d8\u05d5\u05e0\u05d9\u05d4",
+    "eswatini": "\u05d0\u05e1\u05d5\u05d5\u05d8\u05d9\u05e0\u05d9", "faroe-islands": "\u05d0\u05d9\u05d9 \u05e4\u05d0\u05e8\u05d5",
+    "fiji": "\u05e4\u05d9\u05d2'\u05d9", "finland": "\u05e4\u05d9\u05e0\u05dc\u05e0\u05d3",
+    "france": "\u05e6\u05e8\u05e4\u05ea", "french-guiana": "\u05d2\u05d9\u05d0\u05e0\u05d4 \u05d4\u05e6\u05e8\u05e4\u05ea\u05d9\u05ea",
+    "french-polynesia": "\u05e4\u05d5\u05dc\u05d9\u05e0\u05d6\u05d9\u05d4 \u05d4\u05e6\u05e8\u05e4\u05ea\u05d9\u05ea",
+    "gabon": "\u05d2\u05d1\u05d5\u05df", "gambia": "\u05d2\u05de\u05d1\u05d9\u05d4",
+    "georgia": "\u05d2\u05d0\u05d5\u05e8\u05d2\u05d9\u05d4", "germany": "\u05d2\u05e8\u05de\u05e0\u05d9\u05d4",
+    "ghana": "\u05d2\u05d0\u05e0\u05d4", "gibraltar": "\u05d2\u05d9\u05d1\u05e8\u05dc\u05d8\u05e8",
+    "greece": "\u05d9\u05d5\u05d5\u05df", "greenland": "\u05d2\u05e8\u05d9\u05e0\u05dc\u05e0\u05d3",
+    "grenada": "\u05d2\u05e8\u05e0\u05d3\u05d4", "guadeloupe": "\u05d2\u05d5\u05d5\u05d0\u05d3\u05dc\u05d5\u05e4",
+    "guam": "\u05d2\u05d5\u05d0\u05dd", "guatemala": "\u05d2\u05d5\u05d0\u05d8\u05de\u05dc\u05d4",
+    "guernsey": "\u05d2\u05e8\u05e0\u05d6\u05d9", "guinea-bissau": "\u05d2\u05d9\u05e0\u05d0\u05d4 \u05d1\u05d9\u05e1\u05d0\u05d5",
+    "guinea": "\u05d2\u05d9\u05e0\u05d0\u05d4", "guyana": "\u05d2\u05d9\u05d0\u05e0\u05d4",
+    "haiti": "\u05d4\u05d0\u05d9\u05d8\u05d9", "honduras": "\u05d4\u05d5\u05e0\u05d3\u05d5\u05e8\u05e1",
+    "hong-kong": "\u05d4\u05d5\u05e0\u05d2 \u05e7\u05d5\u05e0\u05d2", "hungary": "\u05d4\u05d5\u05e0\u05d2\u05e8\u05d9\u05d4",
+    "iceland": "\u05d0\u05d9\u05e1\u05dc\u05e0\u05d3", "india": "\u05d4\u05d5\u05d3\u05d5",
+    "indonesia": "\u05d0\u05d9\u05e0\u05d3\u05d5\u05e0\u05d6\u05d9\u05d4", "iraq": "\u05e2\u05d9\u05e8\u05d0\u05e7",
+    "ireland": "\u05d0\u05d9\u05e8\u05dc\u05e0\u05d3", "isle-of-man": "\u05d4\u05d0\u05d9 \u05de\u05d0\u05df",
+    "israel": "\u05d9\u05e9\u05e8\u05d0\u05dc", "italy": "\u05d0\u05d9\u05d8\u05dc\u05d9\u05d4",
+    "jamaica": "\u05d2'\u05de\u05d9\u05d9\u05e7\u05d4", "japan": "\u05d9\u05e4\u05df",
+    "jersey": "\u05d2'\u05e8\u05d6\u05d9", "jordan": "\u05d9\u05e8\u05d3\u05df",
+    "kazakhstan": "\u05e7\u05d6\u05d7\u05e1\u05d8\u05df", "kenya": "\u05e7\u05e0\u05d9\u05d4",
+    "kosovo": "\u05e7\u05d5\u05e1\u05d5\u05d1\u05d5", "kuwait": "\u05db\u05d5\u05d5\u05d9\u05d9\u05ea",
+    "kyrgyzstan": "\u05e7\u05d9\u05e8\u05d2\u05d9\u05d6\u05e1\u05d8\u05df", "laos": "\u05dc\u05d0\u05d5\u05e1",
+    "latvia": "\u05dc\u05d8\u05d5\u05d5\u05d9\u05d4", "lesotho": "\u05dc\u05e1\u05d5\u05d8\u05d5",
+    "liberia": "\u05dc\u05d9\u05d1\u05e8\u05d9\u05d4", "liechtenstein": "\u05dc\u05d9\u05db\u05d8\u05e0\u05e9\u05d8\u05d9\u05d9\u05df",
+    "lithuania": "\u05dc\u05d9\u05d8\u05d0", "luxembourg": "\u05dc\u05d5\u05e7\u05e1\u05de\u05d1\u05d5\u05e8\u05d2",
+    "macau": "\u05de\u05e7\u05d0\u05d5", "macedonia": "\u05de\u05e7\u05d3\u05d5\u05e0\u05d9\u05d4",
+    "madagascar": "\u05de\u05d3\u05d2\u05e1\u05e7\u05e8", "malawi": "\u05de\u05dc\u05d0\u05d5\u05d5\u05d9",
+    "malaysia": "\u05de\u05dc\u05d6\u05d9\u05d4", "maldives": "\u05de\u05dc\u05d3\u05d9\u05d1\u05d9\u05d9\u05dd",
+    "mali": "\u05de\u05d0\u05dc\u05d9", "malta": "\u05de\u05dc\u05d8\u05d4",
+    "martinique": "\u05de\u05e8\u05d8\u05d9\u05e0\u05d9\u05e7", "mauritania": "\u05de\u05d0\u05d5\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4",
+    "mauritius": "\u05de\u05d0\u05d5\u05e8\u05d9\u05e6\u05d9\u05d5\u05e1", "mayotte": "\u05de\u05d0\u05d9\u05d5\u05d8",
+    "mexico": "\u05de\u05e7\u05e1\u05d9\u05e7\u05d5", "moldova": "\u05de\u05d5\u05dc\u05d3\u05d5\u05d1\u05d4",
+    "monaco": "\u05de\u05d5\u05e0\u05e7\u05d5", "mongolia": "\u05de\u05d5\u05e0\u05d2\u05d5\u05dc\u05d9\u05d4",
+    "montenegro": "\u05de\u05d5\u05e0\u05d8\u05e0\u05d2\u05e8\u05d5", "montserrat": "\u05de\u05d5\u05e0\u05e1\u05e8\u05d0\u05d8",
+    "morocco": "\u05de\u05e8\u05d5\u05e7\u05d5", "mozambique": "\u05de\u05d5\u05d6\u05de\u05d1\u05d9\u05e7",
+    "namibia": "\u05e0\u05de\u05d9\u05d1\u05d9\u05d4", "nauru": "\u05e0\u05d0\u05d5\u05e8\u05d5",
+    "nepal": "\u05e0\u05e4\u05d0\u05dc", "netherlands-antilles": "\u05d0\u05e0\u05d8\u05d9\u05dc\u05d9\u05dd \u05d4\u05d4\u05d5\u05dc\u05e0\u05d3\u05d9\u05dd",
+    "netherlands": "\u05d4\u05d5\u05dc\u05e0\u05d3", "new-zealand": "\u05e0\u05d9\u05d5 \u05d6\u05d9\u05dc\u05e0\u05d3",
+    "nicaragua": "\u05e0\u05d9\u05e7\u05e8\u05d2\u05d5\u05d0\u05d4", "niger": "\u05e0\u05d9\u05d6'\u05e8",
+    "nigeria": "\u05e0\u05d9\u05d2\u05e8\u05d9\u05d4",
+    "northern-mariana-islands": "\u05d0\u05d9\u05d9 \u05de\u05e8\u05d9\u05d0\u05e0\u05d4 \u05d4\u05e6\u05e4\u05d5\u05e0\u05d9\u05d9\u05dd",
+    "norway": "\u05e0\u05d5\u05e8\u05d1\u05d2\u05d9\u05d4", "oman": "\u05e2\u05d5\u05de\u05d0\u05df",
+    "pakistan": "\u05e4\u05e7\u05d9\u05e1\u05d8\u05df", "panama": "\u05e4\u05e0\u05de\u05d4",
+    "papua-new-guinea": "\u05e4\u05e4\u05d5\u05d0\u05d4 \u05d2\u05d9\u05e0\u05d0\u05d4 \u05d4\u05d7\u05d3\u05e9\u05d4",
+    "paraguay": "\u05e4\u05e8\u05d2\u05d5\u05d5\u05d0\u05d9", "peru": "\u05e4\u05e8\u05d5",
+    "philippines": "\u05d4\u05e4\u05d9\u05dc\u05d9\u05e4\u05d9\u05e0\u05d9\u05dd", "poland": "\u05e4\u05d5\u05dc\u05d9\u05df",
+    "portugal": "\u05e4\u05d5\u05e8\u05d8\u05d5\u05d2\u05dc", "puerto-rico": "\u05e4\u05d5\u05d0\u05e8\u05d8\u05d5 \u05e8\u05d9\u05e7\u05d5",
+    "qatar": "\u05e7\u05d8\u05e8", "republic-of-congo": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4 \u05e9\u05dc \u05e7\u05d5\u05e0\u05d2\u05d5",
+    "reunion": "\u05e8\u05d0\u05d5\u05e0\u05d9\u05d5\u05df", "romania": "\u05e8\u05d5\u05de\u05e0\u05d9\u05d4",
+    "rwanda": "\u05e8\u05d5\u05d0\u05e0\u05d3\u05d4", "saint-barthelemy": "\u05e1\u05df \u05d1\u05e8\u05ea\u05dc\u05de\u05d9",
+    "saint-kitts-and-nevis": "\u05e1\u05e0\u05d8 \u05e7\u05d9\u05d8\u05e1 \u05d5\u05e0\u05d5\u05d5\u05d9\u05e1",
+    "saint-lucia": "\u05e1\u05e0\u05d8 \u05dc\u05d5\u05e1\u05d9\u05d4", "saint-martin": "\u05e1\u05df \u05de\u05e8\u05d8\u05df",
+    "saint-vincent-and-grenadines": "\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d2\u05e8\u05e0\u05d3\u05d9\u05e0\u05d9\u05dd",
+    "samoa": "\u05e1\u05de\u05d5\u05d0\u05d4", "san-marino": "\u05e1\u05df \u05de\u05e8\u05d9\u05e0\u05d5",
+    "saudi-arabia": "\u05e2\u05e8\u05d1 \u05d4\u05e1\u05e2\u05d5\u05d3\u05d9\u05ea", "senegal": "\u05e1\u05e0\u05d2\u05dc",
+    "serbia": "\u05e1\u05e8\u05d1\u05d9\u05d4", "seychelles": "\u05d0\u05d9\u05d9 \u05e1\u05d9\u05d9\u05e9\u05dc",
+    "sierra-leone": "\u05e1\u05d9\u05d9\u05e8\u05d4 \u05dc\u05d0\u05d5\u05e0\u05d4", "singapore": "\u05e1\u05d9\u05e0\u05d2\u05e4\u05d5\u05e8",
+    "sint-maarten": "\u05e1\u05d9\u05e0\u05d8 \u05de\u05d0\u05e8\u05d8\u05df", "slovakia": "\u05e1\u05dc\u05d5\u05d1\u05e7\u05d9\u05d4",
+    "slovenia": "\u05e1\u05dc\u05d5\u05d1\u05e0\u05d9\u05d4", "south-africa": "\u05d3\u05e8\u05d5\u05dd \u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "south-korea": "\u05d3\u05e8\u05d5\u05dd \u05e7\u05d5\u05e8\u05d9\u05d0\u05d4", "south-sudan": "\u05d3\u05e8\u05d5\u05dd \u05e1\u05d5\u05d3\u05df",
+    "spain": "\u05e1\u05e4\u05e8\u05d3", "sri-lanka": "\u05e1\u05e8\u05d9 \u05dc\u05e0\u05e7\u05d4",
+    "sudan": "\u05e1\u05d5\u05d3\u05df", "suriname": "\u05e1\u05d5\u05e8\u05d9\u05e0\u05d0\u05dd",
+    "sweden": "\u05e9\u05d1\u05d3\u05d9\u05d4", "switzerland": "\u05e9\u05d5\u05d5\u05d9\u05e5",
+    "taiwan": "\u05d8\u05d9\u05d9\u05d5\u05d5\u05d0\u05df", "tajikistan": "\u05d8\u05d2'\u05d9\u05e7\u05d9\u05e1\u05d8\u05df",
+    "tanzania": "\u05d8\u05e0\u05d6\u05e0\u05d9\u05d4", "thailand": "\u05ea\u05d0\u05d9\u05dc\u05e0\u05d3",
+    "togo": "\u05d8\u05d5\u05d2\u05d5", "tonga": "\u05d8\u05d5\u05e0\u05d2\u05d4",
+    "trinidad-and-tobago": "\u05d8\u05e8\u05d9\u05e0\u05d9\u05d3\u05d3 \u05d5\u05d8\u05d5\u05d1\u05d2\u05d5",
+    "tunisia": "\u05ea\u05d5\u05e0\u05d9\u05e1\u05d9\u05d4", "turkey": "\u05d8\u05d5\u05e8\u05e7\u05d9\u05d4",
+    "turks-and-caicos-islands": "\u05d0\u05d9\u05d9 \u05d8\u05d5\u05e8\u05e7\u05e1 \u05d5\u05e7\u05d0\u05d9\u05e7\u05d5\u05e1",
+    "uganda": "\u05d0\u05d5\u05d2\u05e0\u05d3\u05d4", "ukraine": "\u05d0\u05d5\u05e7\u05e8\u05d0\u05d9\u05e0\u05d4",
+    "united-arab-emirates": "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea",
+    "united-kingdom": "\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4", "united-states": "\u05d0\u05e8\u05e6\u05d5\u05ea \u05d4\u05d1\u05e8\u05d9\u05ea",
+    "uruguay": "\u05d0\u05d5\u05e8\u05d5\u05d2\u05d5\u05d0\u05d9",
+    "us-virgin-islands": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 \u05d4\u05d0\u05de\u05e8\u05d9\u05e7\u05e0\u05d9\u05dd",
+    "uzbekistan": "\u05d0\u05d5\u05d6\u05d1\u05e7\u05d9\u05e1\u05d8\u05df", "vanuatu": "\u05d5\u05e0\u05d5\u05d0\u05d8\u05d5",
+    "venezuela": "\u05d5\u05e0\u05e6\u05d5\u05d0\u05dc\u05d4", "vietnam": "\u05d5\u05d9\u05d9\u05d8\u05e0\u05d0\u05dd",
+    "zambia": "\u05d6\u05de\u05d1\u05d9\u05d4", "zimbabwe": "\u05d6\u05d9\u05de\u05d1\u05d0\u05d1\u05d5\u05d5\u05d4",
+}
+
+
+def scrape_saily_global(_page=None, usd_rate=None):
+    """Scrape Saily eSIM plans from all ~199 country pages."""
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    all_plans = []
+    JS_EXTRACT = """() => {
+        const plans = [];
+        document.querySelectorAll('[data-testid^="destination-hero-plan-card"]').forEach(card => {
+            const gbEl = card.querySelector('[class*="body-md-medium"]');
+            const gb = gbEl ? gbEl.textContent.trim() : '';
+            let days = '';
+            const daysEls = card.querySelectorAll('[class*="body-sm-medium"]');
+            for (const el of daysEls) {
+                const t = el.textContent.trim();
+                if (t.includes('day')) { days = t; break; }
+            }
+            if (!days) {
+                const sel = card.querySelector('select');
+                if (sel && sel.options.length > 0) {
+                    const opt = sel.options[sel.selectedIndex] || sel.options[0];
+                    days = opt ? opt.text.trim() : '';
+                }
+            }
+            const discEl = card.querySelector('[data-testid="pricing-card-discount-price"]');
+            const origEl = card.querySelector('[data-testid="pricing-card-original-price"]');
+            const priceEl = discEl || origEl;
+            const price = priceEl ? priceEl.textContent.trim() : '';
+            if (gb && days && price) plans.push({gb, days, price});
+        });
+        return plans;
+    }"""
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        page = browser.new_page(user_agent=ua)
+        for slug, country_heb in SAILY_SLUG_TO_HEBREW.items():
+            try:
+                page.goto(f"https://saily.com/esim-{slug}/", timeout=20000, wait_until="domcontentloaded")
+                page.wait_for_timeout(1500)
+                raw = page.evaluate(JS_EXTRACT)
+                for item in raw:
+                    gb_text    = item["gb"]    # "1 GB", "Unlimited GB"
+                    days_text  = item["days"]  # "7 days", "30 days"
+                    price_text = item["price"] # "US$3.99"
+                    gb   = _parse_gb(gb_text)  # None = unlimited
+                    m    = re.search(r"(\d+)\s*day", days_text)
+                    days = int(m.group(1)) if m else None
+                    price_usd = _parse_price(price_text.replace("US$", "").strip())
+                    if price_usd is None or days is None:
+                        continue
+                    price_ils = round(price_usd * usd_rate, 2)
+                    if gb is None:
+                        gb_str = "\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4"  # ללא הגבלה
+                    elif gb >= 1:
+                        gb_str = f"{int(gb)}GB"
+                    else:
+                        gb_str = f"{round(gb * 1024)}MB"
+                    plan_name = f"{country_heb} \u2013 {gb_str} \u2013 {days} \u05d9\u05de\u05d9\u05dd"  # – N ימים
+                    all_plans.append(_make_global_plan(
+                        "saily", plan_name, price_ils, "USD", price_usd,
+                        gb, days, esim=True, extras=[country_heb]
+                    ))
+            except Exception as exc:
+                logger.warning(f"Saily {slug}: {exc}")
+                continue
+        browser.close()
+    logger.info(f"Saily global: {len(all_plans)} plans from {len(SAILY_SLUG_TO_HEBREW)} countries")
+    return all_plans
+
+
 def scrape_all_global():
     """Scrape global eSIM packages from all 7 providers. Returns flat list of plan dicts."""
     usd_rate = _get_usd_to_ils()
@@ -1536,6 +1720,7 @@ def scrape_all_global():
             ("scrape_simtlv_global",        scrape_simtlv_global),
             ("scrape_world8_global",        scrape_world8_global),
             ("scrape_xphone_global",        scrape_xphone_global),
+            ("scrape_saily_global",         lambda pg: scrape_saily_global(pg, usd_rate)),
         ]
         for name, fn in jobs:
             try:
