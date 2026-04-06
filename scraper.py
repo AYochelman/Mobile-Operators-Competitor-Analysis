@@ -2322,6 +2322,18 @@ HOLAFLY_REGIONS = {
     "europa-oriental":              "\u05de\u05d6\u05e8\u05d7 \u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
 }
 
+# Middle East & Africa don't have Shopify API — hardcoded key prices (USD)
+_HOLAFLY_NON_SHOPIFY_REGIONS = {
+    "\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df": {  # המזרח התיכון
+        1: 9.90, 3: 25.90, 5: 36.90, 7: 42.90, 10: 52.90,
+        15: 79.90, 20: 106.90, 30: 161.90, 60: 256.90, 90: 322.90,
+    },
+    "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4": {  # אפריקה
+        1: 9.90, 3: 25.90, 5: 36.90, 7: 42.90, 10: 52.90,
+        15: 79.90, 20: 106.90, 30: 161.90, 60: 256.90, 90: 322.90,
+    },
+}
+
 
 def scrape_holafly_regions(_page=None, usd_rate=None):
     """Scrape Holafly regional eSIM plans via Shopify product JSON API (no Playwright needed).
@@ -2374,7 +2386,18 @@ def scrape_holafly_regions(_page=None, usd_rate=None):
             logger.warning(f"Holafly region {slug}: {exc}")
             continue
 
-    logger.info(f"Holafly regions: {len(all_plans)} plans from {success_count}/{len(HOLAFLY_REGIONS)} regions")
+    # Add non-Shopify regions (Middle East & Africa) from hardcoded prices
+    for region_heb, prices in _HOLAFLY_NON_SHOPIFY_REGIONS.items():
+        for days, price_usd in prices.items():
+            price_ils = round(price_usd * usd_rate, 2)
+            plan_name = f"{region_heb} \u2013 \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4 \u2013 {days} \u05d9\u05de\u05d9\u05dd"
+            all_plans.append(_make_global_plan(
+                "holafly", plan_name, price_ils, "USD", price_usd,
+                data_gb=None, days=days, esim=True, extras=[region_heb]
+            ))
+        success_count += 1
+
+    logger.info(f"Holafly regions: {len(all_plans)} plans from {success_count}/{len(HOLAFLY_REGIONS) + len(_HOLAFLY_NON_SHOPIFY_REGIONS)} regions")
     return all_plans
 
 

@@ -61,6 +61,8 @@ export const HOLAFLY_SCANDINAVIA = ['דנמרק','פינלנד','איסלנד','
 export const HOLAFLY_CENTRAL_AMERICA = ['קוסטה ריקה','אל סלבדור','גואטמלה','הונדורס','ניקרגואה','פנמה'];
 export const HOLAFLY_BALKANS = ['אלבניה','בוסניה והרצגובינה','קוסובו','מונטנגרו','מקדוניה הצפונית','סרביה'];
 export const HOLAFLY_EASTERN_EUROPE = ['בלארוס','מולדובה'];
+export const HOLAFLY_MIDDLE_EAST = ['ארמניה','אזרבייג\'ן','קפריסין','איחוד האמירויות','מצרים','ישראל','ירדן','עומן','קטאר','ערב הסעודית','טורקיה'];
+export const HOLAFLY_AFRICA = ['אלג\'יריה','בוצוואנה','קמרון','הרפובליקה המרכז-אפריקנית','צ\'אד','קונגו הדמוקרטית','מצרים','אסוואטיני','גאבון','גאנה','גינאה-ביסאו','חוף השנהב','קניה','ליבריה','מדגסקר','מלאווי','מאלי','מרוקו','מאוריציוס','מוזמביק','ניגריה','רפובליקת קונגו','סנגל','סיישל','דרום אפריקה','טנזניה','תוניסיה','אוגנדה','זמביה'];
 
 // ── XPhone Global (already in old dashboard, repeating here) ─────────
 export const XPHONE_EUROPE = ['אוסטריה','איטליה','איי פארו','אירלנד','אסטוניה','בריטניה','גרמניה','דנמרק','הולנד','הונגריה','יוון','לטביה','ליטא','נורבגיה','סלובניה','סלובקיה','ספרד','פולין','פורטוגל','פינלנד',"צ'כיה",'צרפת','קפריסין היוונית','קרואטיה','רומניה','שבדיה'];
@@ -109,6 +111,8 @@ export function getCountriesForPlan(plan) {
       'מרכז אמריקה': HOLAFLY_CENTRAL_AMERICA,
       'בלקן': HOLAFLY_BALKANS,
       'מזרח אירופה': HOLAFLY_EASTERN_EUROPE,
+      'המזרח התיכון': HOLAFLY_MIDDLE_EAST,
+      'אפריקה': HOLAFLY_AFRICA,
     };
     if (extras[0] && HOLAFLY_REGION_MAP[extras[0]]) {
       return { title: 'Holafly — ' + extras[0], countries: HOLAFLY_REGION_MAP[extras[0]] };
