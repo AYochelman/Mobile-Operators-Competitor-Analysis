@@ -51,7 +51,11 @@ export default function PlanCard({ plan, type = 'domestic', changeType }) {
       )}
 
       {/* Plan name (hidden for content — service name shown in section header) */}
-      {!isContent && <h3 className="text-sm font-bold text-blue-600 mb-2 leading-snug">{plan.plan_name}</h3>}
+      {!isContent && <h3 className="text-sm font-bold text-blue-600 mb-2 leading-snug">{
+        (plan.plan_name || '').split(' – ').map((part, i, arr) => (
+          <span key={i}>{i > 0 && ' – '}<bdi>{part}</bdi></span>
+        ))
+      }</h3>}
 
       {/* Carrier badge */}
       <Badge color={badgeColor} className="mb-3">{label}</Badge>
@@ -67,6 +71,15 @@ export default function PlanCard({ plan, type = 'domestic', changeType }) {
         )}
       </div>
 
+      {/* Roaming badge for domestic plans */}
+      {!isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e)) && (
+        <div className="mb-2">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+            ✈️ כולל גלישה בחו״ל
+          </span>
+        </div>
+      )}
+
       {/* Details */}
       <div className="space-y-1 text-sm text-gray-600 text-right">
         {!isContent && (
@@ -78,7 +91,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType }) {
         {(isAbroad || isGlobal) && plan.days && (
           <div className="flex justify-between">
             <span>תקופה</span>
-            <span className="font-medium">{plan.days > 60 ? (plan.days >= 365 ? `${(plan.days / 365).toFixed(plan.days % 365 === 0 ? 0 : 1)} שנים` : `${Math.round(plan.days / 30)} חודשים`) : `${plan.days} ימים`}</span>
+            <span className="font-medium" dir="rtl">{plan.days > 60 ? (plan.days >= 365 ? `${(plan.days / 365).toFixed(plan.days % 365 === 0 ? 0 : 1)} שנים` : `${Math.round(plan.days / 30)} חודשים`) : `${plan.days} ימים`}</span>
           </div>
         )}
         {plan.minutes && (
