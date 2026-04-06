@@ -714,7 +714,7 @@ function updateCountBadges() {
     allGlobalPlans.forEach(p => { counts[p.carrier] = (counts[p.carrier] || 0) + 1; });
     const allEl = document.getElementById('gcnt-all');
     if (allEl) allEl.textContent = allGlobalPlans.length;
-    ['tuki','globalesim','airalo','pelephone_global','esimo','simtlv','world8','xphone_global','saily'].forEach(c => {
+    ['tuki','globalesim','airalo','pelephone_global','esimo','simtlv','world8','xphone_global','saily','holafly','esimio'].forEach(c => {
       const el = document.getElementById(`gcnt-${c}`);
       if (el) el.textContent = counts[c] || 0;
     });
@@ -2154,17 +2154,18 @@ function openSailyRegionModal(event, regionKey) {
   };
   const r = regionMap[regionKey];
   if (!r) return;
-  const modal = document.getElementById('countriesModal');
-  document.getElementById('countriesModalTitle').textContent = r.title + ' — מדינות כלולות';
-  const list = document.getElementById('countriesModalList');
+  document.getElementById('sailyRegionModalTitle').textContent = '🌍 ' + r.title + ' — מדינות כלולות';
+  const list = document.getElementById('sailyRegionModalList');
   list.innerHTML = r.countries.map(c => '<span class="country-tag">' + c + '</span>').join('');
-  modal.style.display = 'flex';
+  document.getElementById('sailyRegionModal').classList.add('open');
 }
+function closeSailyRegionModal() { document.getElementById('sailyRegionModal').classList.remove('open'); }
 function closeXpGlobalEuropeModal() { document.getElementById('xpGlobalEuropeModal').classList.remove('open'); }
 function closeXpGlobalWorldModal()  { document.getElementById('xpGlobalWorldModal').classList.remove('open'); }
 document.addEventListener('click', function(e) {
   if (e.target.id === 'xpGlobalEuropeModal') closeXpGlobalEuropeModal();
   if (e.target.id === 'xpGlobalWorldModal')  closeXpGlobalWorldModal();
+  if (e.target.id === 'sailyRegionModal')    closeSailyRegionModal();
 });
 
 // Init destination filter after all country arrays are defined
@@ -2263,6 +2264,15 @@ _initDestFilter();
     <h3>🌍 רשימת יעדים — 019 חו"ל</h3>
     <div class="countries-note">ביעדים המסומנים ב-* תתאפשר קבלה והוצאת שיחות רק למכשיר התומך בשיחות בדור 4 VoLTE</div>
     <div class="countries-list" id="countriesList"></div>
+  </div>
+</div>
+
+<!-- Saily Region Countries Modal -->
+<div class="countries-modal-overlay" id="sailyRegionModal">
+  <div class="countries-modal" style="max-width:620px;">
+    <button class="countries-modal-close" onclick="closeSailyRegionModal()">×</button>
+    <h3 id="sailyRegionModalTitle">🌍 מדינות כלולות</h3>
+    <div class="countries-list" id="sailyRegionModalList"></div>
   </div>
 </div>
 

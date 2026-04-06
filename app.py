@@ -2,6 +2,7 @@ import json
 import os
 import logging
 from flask import Flask, jsonify, render_template, request, make_response, send_from_directory
+from flask_cors import CORS
 from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_changes, get_global_plans, get_global_changes, \
                get_content_plans, get_content_changes
 
@@ -12,6 +13,7 @@ CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.j
 
 app = Flask(__name__)
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
 def load_config():
