@@ -30,6 +30,9 @@ export const api = {
   // Scrape
   scrapeAll: () => fetchApi('/api/scrape-all-now'),
 
+  // Chat
+  chat: (question) => fetchApi('/api/chat', { method: 'POST', body: JSON.stringify({ question }) }),
+
   // Push
   getVapidKey: () => fetchApi('/api/push/vapid-public-key'),
   subscribe: (sub) => fetchApi('/api/push/subscribe', { method: 'POST', body: JSON.stringify(sub) }),

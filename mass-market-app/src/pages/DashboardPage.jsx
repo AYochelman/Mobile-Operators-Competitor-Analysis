@@ -39,7 +39,7 @@ export default function DashboardPage() {
   const [plans, setPlans] = useState({ domestic: [], abroad: [], global: [], content: [] })
   const [changes, setChanges] = useState({ domestic: [], abroad: [], global: [], content: [] })
   const [filters, setFilters] = useState({
-    carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all',
+    carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', roaming: 'all',
     globalProvider: 'all', destination: 'all', days: 'all',
     contentCarrier: 'all', contentService: 'all',
   })
@@ -97,6 +97,15 @@ export default function DashboardPage() {
 
     if (tab === 'domestic' || tab === 'abroad') {
       if (f.carrier !== 'all') result = result.filter(p => p.carrier === f.carrier)
+    }
+    // Gen (5G) filter — domestic only
+    if (tab === 'domestic' && f.gen !== 'all') {
+      if (f.gen === '5g') result = result.filter(p => (p.plan_name && p.plan_name.includes('5G')) || (p.extras && p.extras.some(e => e.includes('5G'))))
+      if (f.gen === '4g') result = result.filter(p => !(p.plan_name && p.plan_name.includes('5G')) && !(p.extras && p.extras.some(e => e.includes('5G'))))
+    }
+    // Roaming filter — domestic only
+    if (tab === 'domestic' && f.roaming === 'yes') {
+      result = result.filter(p => p.extras && p.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+/.test(e) && /GB|גלישה/i.test(e)))
     }
     if (tab === 'global') {
       if (f.globalProvider !== 'all') result = result.filter(p => p.carrier === f.globalProvider)
@@ -259,6 +268,27 @@ export default function DashboardPage() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Gen + Roaming (domestic only) */}
+        {tab === 'domestic' && (
+          <div className="flex flex-wrap gap-4">
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2">דור רשת</p>
+              <div className="flex flex-wrap gap-1.5">
+                <FilterTag label="כולם" active={filters.gen === 'all'} onClick={() => setFilter('gen', 'all')} />
+                <FilterTag label="דור 4" active={filters.gen === '4g'} onClick={() => setFilter('gen', '4g')} />
+                <FilterTag label="דור 5" active={filters.gen === '5g'} onClick={() => setFilter('gen', '5g')} />
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2">גלישה בחו"ל</p>
+              <div className="flex flex-wrap gap-1.5">
+                <FilterTag label="כולם" active={filters.roaming === 'all'} onClick={() => setFilter('roaming', 'all')} />
+                <FilterTag label="כולל חו״ל" active={filters.roaming === 'yes'} onClick={() => setFilter('roaming', 'yes')} />
+              </div>
+            </div>
+          </div>
         )}
 
         {/* GB + Days + Sort (shared) */}

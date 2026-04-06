@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import Badge from './ui/Badge'
+import CountryModal from './CountryModal'
+import { getCountriesForPlan } from '../data/globalCountries'
 
 const CARRIER_COLORS = {
   partner: 'pink', pelephone: 'blue', hotmobile: 'orange', cellcom: 'green',
@@ -26,10 +29,12 @@ function formatGB(gb) {
   return `${gb}GB`
 }
 
-export default function PlanCard({ plan, type = 'domestic', changeType, onCountryClick }) {
+export default function PlanCard({ plan, type = 'domestic', changeType }) {
+  const [showCountries, setShowCountries] = useState(false)
   const isGlobal = type === 'global'
   const isAbroad = type === 'abroad'
   const isContent = type === 'content'
+  const countryData = isGlobal ? getCountriesForPlan(plan) : null
   const carrier = plan.carrier
   const label = isGlobal ? (GLOBAL_LABELS[carrier] || carrier) : (CARRIER_LABELS[carrier] || carrier)
   const badgeColor = isGlobal ? (GLOBAL_COLORS[carrier] || 'gray') : (CARRIER_COLORS[carrier] || 'gray')
@@ -40,7 +45,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, onCountr
     : null
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow relative">
+    <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow relative text-right">
       {changeBadge && (
         <Badge color={changeBadge.color} className="absolute top-3 left-3">{changeBadge.text}</Badge>
       )}
@@ -57,13 +62,13 @@ export default function PlanCard({ plan, type = 'domestic', changeType, onCountr
         <span className="text-2xl font-bold text-gray-900">{String(plan.price).startsWith('₪') ? plan.price : `₪${plan.price}`}</span>
         {!isGlobal && !isContent && <span className="text-xs text-gray-500 mr-1">לחודש</span>}
         {isContent && <span className="text-xs text-gray-500 mr-1">לחודש</span>}
-        {isGlobal && plan.original_price && (
+        {isGlobal && plan.original_price && plan.currency && plan.currency !== 'ILS' && (
           <div className="text-xs text-gray-400 mt-0.5">${plan.original_price} {plan.currency}</div>
         )}
       </div>
 
       {/* Details */}
-      <div className="space-y-1 text-sm text-gray-600">
+      <div className="space-y-1 text-sm text-gray-600 text-right">
         {!isContent && (
           <div className="flex justify-between">
             <span>גלישה</span>
@@ -73,12 +78,12 @@ export default function PlanCard({ plan, type = 'domestic', changeType, onCountr
         {(isAbroad || isGlobal) && plan.days && (
           <div className="flex justify-between">
             <span>תקופה</span>
-            <span className="font-medium">{plan.days} ימים</span>
+            <span className="font-medium">{plan.days > 60 ? (plan.days >= 365 ? `${(plan.days / 365).toFixed(plan.days % 365 === 0 ? 0 : 1)} שנים` : `${Math.round(plan.days / 30)} חודשים`) : `${plan.days} ימים`}</span>
           </div>
         )}
         {plan.minutes && (
           <div className="flex justify-between">
-            <span>שיחות</span>
+            <span>דקות שיחה</span>
             <span className="font-medium">{plan.minutes}</span>
           </div>
         )}
@@ -88,14 +93,11 @@ export default function PlanCard({ plan, type = 'domestic', changeType, onCountr
             <span className="font-medium">{plan.sms}</span>
           </div>
         )}
-        {isContent && plan.free_trial && (
-          <div className="flex justify-between">
-            <span>🎁 תקופת חינם</span>
-            <span className="font-medium">{plan.free_trial}</span>
-          </div>
+        {isContent && plan.free_trial && !['ללא תקופת חינם', '—', ''].includes(plan.free_trial) && (
+          <div className="text-sm text-gray-600">🎁 {plan.free_trial}</div>
         )}
         {isContent && plan.note && (
-          <div className="mt-1 text-xs text-gray-400">{plan.note}</div>
+          <div className="text-xs text-gray-400">{plan.note}</div>
         )}
       </div>
 
@@ -112,13 +114,21 @@ export default function PlanCard({ plan, type = 'domestic', changeType, onCountr
       )}
 
       {/* Country link for global regional plans */}
-      {onCountryClick && (
-        <button
-          onClick={onCountryClick}
-          className="mt-3 text-xs text-blue-500 hover:text-blue-700 transition-colors"
-        >
-          מדינות כלולות ✈️
-        </button>
+      {countryData && (
+        <>
+          <button
+            onClick={() => setShowCountries(true)}
+            className="mt-3 text-xs text-blue-500 hover:text-blue-700 transition-colors"
+          >
+            מדינות כלולות ({countryData.countries.length}) ✈️
+          </button>
+          <CountryModal
+            open={showCountries}
+            onClose={() => setShowCountries(false)}
+            title={countryData.title}
+            countries={countryData.countries}
+          />
+        </>
       )}
     </div>
   )
