@@ -1525,7 +1525,7 @@ SAILY_SLUG_TO_HEBREW = {
     "argentina": "\u05d0\u05e8\u05d2\u05e0\u05d8\u05d9\u05e0\u05d4", "armenia": "\u05d0\u05e8\u05de\u05e0\u05d9\u05d4",
     "aruba": "\u05d0\u05e8\u05d5\u05d1\u05d4", "australia": "\u05d0\u05d5\u05e1\u05d8\u05e8\u05dc\u05d9\u05d4",
     "austria": "\u05d0\u05d5\u05e1\u05d8\u05e8\u05d9\u05d4", "azerbaijan": "\u05d0\u05d6\u05e8\u05d1\u05d9\u05d9\u05d2'\u05df",
-    "bahamas": "\u05d0\u05d9\u05d9 \u05d1\u05d4\u05d0\u05de\u05d4", "bahrain": "\u05d1\u05d7\u05e8\u05d9\u05d9\u05df",
+    "bahamas": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05d4\u05d0\u05de\u05d4", "bahrain": "\u05d1\u05d7\u05e8\u05d9\u05d9\u05df",
     "bangladesh": "\u05d1\u05e0\u05d2\u05dc\u05d3\u05e9", "barbados": "\u05d1\u05e8\u05d1\u05d3\u05d5\u05e1",
     "belgium": "\u05d1\u05dc\u05d2\u05d9\u05d4", "belize": "\u05d1\u05dc\u05d9\u05d6",
     "benin": "\u05d1\u05e0\u05d9\u05df", "bermuda": "\u05d1\u05e8\u05de\u05d5\u05d3\u05d4",
@@ -1716,7 +1716,7 @@ ESIMIO_SLUG_TO_HEBREW = {
     "austria": "\u05d0\u05d5\u05e1\u05d8\u05e8\u05d9\u05d4",
     "azerbaijan": "\u05d0\u05d6\u05e8\u05d1\u05d9\u05d9\u05d2'\u05df",
     "azores": "\u05d0\u05d6\u05d5\u05e8\u05d9\u05dd",
-    "bahamas": "\u05d0\u05d9\u05d9 \u05d1\u05d4\u05d0\u05de\u05d4",
+    "bahamas": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05d4\u05d0\u05de\u05d4",
     "bahrain": "\u05d1\u05d7\u05e8\u05d9\u05d9\u05df",
     "bangladesh": "\u05d1\u05e0\u05d2\u05dc\u05d3\u05e9",
     "barbados": "\u05d1\u05e8\u05d1\u05d3\u05d5\u05e1",
@@ -1974,7 +1974,7 @@ HOLAFLY_SLUG_TO_HEBREW = {
     "australia": "\u05d0\u05d5\u05e1\u05d8\u05e8\u05dc\u05d9\u05d4",
     "austria": "\u05d0\u05d5\u05e1\u05d8\u05e8\u05d9\u05d4",
     "azerbaijan": "\u05d0\u05d6\u05e8\u05d1\u05d9\u05d9\u05d2'\u05df",
-    "bahamas": "\u05d0\u05d9\u05d9 \u05d1\u05d4\u05d0\u05de\u05d4",
+    "bahamas": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05d4\u05d0\u05de\u05d4",
     "bahrain": "\u05d1\u05d7\u05e8\u05d9\u05d9\u05df",
     "bangladesh": "\u05d1\u05e0\u05d2\u05dc\u05d3\u05e9",
     "barbados": "\u05d1\u05e8\u05d1\u05d3\u05d5\u05e1",
@@ -2205,6 +2205,88 @@ def scrape_holafly_global(_page=None, usd_rate=None):
     return all_plans
 
 
+SAILY_REGIONS = {
+    "africa":                       "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "asia-and-oceania":             "\u05d0\u05e1\u05d9\u05d4 \u05d5\u05d0\u05d5\u05e7\u05d9\u05d0\u05e0\u05d9\u05d4",
+    "caribbean-islands":            "\u05d0\u05d9\u05d9 \u05d4\u05e7\u05e8\u05d9\u05d1\u05d9\u05d9\u05dd",
+    "europe":                       "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
+    "global":                       "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9",
+    "latin-america":                "\u05d0\u05de\u05e8\u05d9\u05e7\u05d4 \u05d4\u05dc\u05d8\u05d9\u05e0\u05d9\u05ea",
+    "middle-east-and-north-africa": "\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df \u05d5\u05e6\u05e4\u05d5\u05df \u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "north-america":                "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
+}
+
+
+def scrape_saily_regions(_page=None, usd_rate=None):
+    """Scrape Saily regional eSIM plans from 8 region pages."""
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    all_plans = []
+    JS_EXTRACT = """() => {
+        const plans = [];
+        document.querySelectorAll('[data-testid^="destination-hero-plan-card"]').forEach(card => {
+            const gbEl = card.querySelector('[class*="body-md-medium"]');
+            const gb = gbEl ? gbEl.textContent.trim() : '';
+            let days = '';
+            const daysEls = card.querySelectorAll('[class*="body-sm-medium"]');
+            for (const el of daysEls) {
+                const t = el.textContent.trim();
+                if (t.includes('day')) { days = t; break; }
+            }
+            if (!days) {
+                const sel = card.querySelector('select');
+                if (sel && sel.options.length > 0) {
+                    const opt = sel.options[sel.selectedIndex] || sel.options[0];
+                    days = opt ? opt.text.trim() : '';
+                }
+            }
+            const discEl = card.querySelector('[data-testid="pricing-card-discount-price"]');
+            const origEl = card.querySelector('[data-testid="pricing-card-original-price"]');
+            const priceEl = discEl || origEl;
+            const price = priceEl ? priceEl.textContent.trim() : '';
+            if (gb && days && price) plans.push({gb, days, price});
+        });
+        return plans;
+    }"""
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        page = browser.new_page(user_agent=ua)
+        for slug, region_heb in SAILY_REGIONS.items():
+            try:
+                page.goto(f"https://saily.com/esim-{slug}/", timeout=20000, wait_until="domcontentloaded")
+                page.wait_for_timeout(2000)
+                raw = page.evaluate(JS_EXTRACT)
+                for item in raw:
+                    gb_text    = item["gb"]
+                    days_text  = item["days"]
+                    price_text = item["price"]
+                    gb   = _parse_gb(gb_text)
+                    m    = re.search(r"(\d+)\s*day", days_text)
+                    days = int(m.group(1)) if m else None
+                    price_usd = _parse_price(price_text.replace("US$", "").strip())
+                    if price_usd is None or days is None:
+                        continue
+                    price_ils = round(price_usd * usd_rate, 2)
+                    if gb is None:
+                        gb_str = "\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4"
+                    elif gb >= 1:
+                        gb_str = f"{int(gb)}GB"
+                    else:
+                        gb_str = f"{round(gb * 1024)}MB"
+                    plan_name = f"{region_heb} \u2013 {gb_str} \u2013 {days} \u05d9\u05de\u05d9\u05dd"
+                    all_plans.append(_make_global_plan(
+                        "saily", plan_name, price_ils, "USD", price_usd,
+                        gb, days, esim=True, extras=[region_heb]
+                    ))
+            except Exception as exc:
+                logger.warning(f"Saily region {slug}: {exc}")
+                continue
+        browser.close()
+    logger.info(f"Saily regions: {len(all_plans)} plans from {len(SAILY_REGIONS)} regions")
+    return all_plans
+
+
 def scrape_all_global():
     """Scrape global eSIM packages from all 7 providers. Returns flat list of plan dicts."""
     usd_rate = _get_usd_to_ils()
@@ -2224,6 +2306,7 @@ def scrape_all_global():
             ("scrape_world8_global",        scrape_world8_global),
             ("scrape_xphone_global",        scrape_xphone_global),
             ("scrape_saily_global",         lambda pg: scrape_saily_global(pg, usd_rate)),
+            ("scrape_saily_regions",        lambda pg: scrape_saily_regions(pg, usd_rate)),
             ("scrape_esimio_destinations",  lambda pg: scrape_esimio_destinations(pg, usd_rate)),
             ("scrape_holafly_global",       lambda pg: scrape_holafly_global(pg, usd_rate)),
         ]
