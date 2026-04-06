@@ -1195,19 +1195,39 @@ def scrape_pelephone_globalsim(page):
     seen_gb_days = set()
     for card in page.query_selector_all(".packs > div[id^='p']"):
         name_el  = card.query_selector(".pack_top .name span")
+        name2_el = card.query_selector(".pack_top .name.name2")
         price_el = card.query_selector(".pack_top .price")
         valid_el = card.query_selector(".supperlative")
         txt_el   = card.query_selector(".new_txt")
-        esim_el  = card.query_selector(".best_offer img[alt*='סים'], .best_offer img[alt*='eSIM'], .best_offer img")
-        if not name_el or not price_el:
+        esim_el  = card.query_selector(".best_offer img[alt*='\u05e1\u05d9\u05dd'], .best_offer img[alt*='eSIM'], .best_offer img")
+        if not price_el:
             continue
-        gb_text    = name_el.inner_text().strip()
-        price_text = price_el.inner_text().replace("₪", "").strip()
-        gb    = _parse_gb(gb_text)
+        price_text = price_el.inner_text().replace("\u20aa", "").strip()
         price = _parse_price(price_text)
-        if gb is None or price is None:
+        if price is None:
             continue
-        dedup_key = (gb, price)
+
+        # Detect voice-only plans (name2 class)
+        is_voice_plan = name2_el is not None and (not name_el or "\u05d3\u05e7\u05d5\u05ea" in (name2_el.inner_text() or ""))
+        if is_voice_plan:
+            full_text = name2_el.inner_text().strip()
+            m_min = re.search(r"(\d+)", full_text)
+            voice_minutes = int(m_min.group(1)) if m_min else 0
+            gb = 0
+            gb_text = f"{voice_minutes} \u05d3\u05e7\u05d5\u05ea"
+            plan_minutes = voice_minutes
+            plan_extras = ["\u05d3\u05e7\u05d5\u05ea \u05dc\u05d9\u05e9\u05e8\u05d0\u05dc \u05d5\u05d1\u05d7\u05d5\"\u05dc"]
+        else:
+            if not name_el:
+                continue
+            gb_text = name_el.inner_text().strip()
+            gb = _parse_gb(gb_text)
+            if gb is None:
+                continue
+            plan_minutes = None
+            plan_extras = []
+
+        dedup_key = (gb_text, price)
         if dedup_key in seen_gb_days:
             continue
         seen_gb_days.add(dedup_key)
@@ -1217,25 +1237,23 @@ def scrape_pelephone_globalsim(page):
             if len(spans) >= 2:
                 num  = spans[0].inner_text().strip()
                 unit = spans[1].inner_text().strip()
-                if "שנ" in unit:
+                if "\u05e9\u05e0" in unit:
                     try: days = int(num) * 365
                     except: pass
-                elif "יום" in unit or "ימים" in unit:
+                elif "\u05d9\u05d5\u05dd" in unit or "\u05d9\u05de\u05d9\u05dd" in unit:
                     days = _parse_days(f"{num} {unit}")
-        minutes = None
-        extras  = []
-        if txt_el:
+        if not is_voice_plan and txt_el:
             t = txt_el.inner_text().strip()
             if t:
-                m = re.search(r"(\d+)\s*דקות", t)
+                m = re.search(r"(\d+)\s*\u05d3\u05e7\u05d5\u05ea", t)
                 if m:
-                    minutes = int(m.group(1))
-                extras.append(t)
+                    plan_minutes = int(m.group(1))
+                plan_extras.append(t)
         esim = esim_el is not None
         name = f"GlobalSIM {gb_text}"
         plans.append(_make_global_plan(
             "pelephone_global", name, price, "ILS", price,
-            gb, days, minutes=minutes, esim=esim, extras=extras
+            gb, days, minutes=plan_minutes, esim=esim, extras=plan_extras
         ))
     logger.info(f"Pelephone GlobalSIM: {len(plans)} plans")
     return plans
