@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    direction: rtl;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  body {
+    @apply bg-gray-50 text-gray-900 min-h-screen;
+  }
+}
