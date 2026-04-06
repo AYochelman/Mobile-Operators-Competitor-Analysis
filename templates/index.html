@@ -169,6 +169,11 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin { display: inline-block; animation: spin 0.9s linear infinite; }
 
+  /* Sidebar select (destination filter) */
+  .sidebar-select { width: 100%; padding: 7px 10px; border: 1.5px solid #e5e7eb; border-radius: 8px; background: #fff; font-size: 13px; color: #374151; cursor: pointer; direction: rtl; font-family: inherit; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 10px center; }
+  .sidebar-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+  .sidebar-select.active { border-color: #2563eb; background-color: #eff6ff; color: #1d4ed8; }
+
   /* Countries modal */
   .countries-link { color: #2563eb; text-decoration: underline; cursor: pointer; font-size: inherit; }
   .countries-link:hover { color: #1d4ed8; }
@@ -354,6 +359,13 @@
     </div>
 
     <!-- Abroad-only sections -->
+    <div class="sidebar-section abroad-section" style="display:none">
+      <div class="sidebar-title">יעד</div>
+      <select id="abroadDestFilter" class="sidebar-select">
+        <option value="all">כל היעדים</option>
+      </select>
+    </div>
+
     <div class="sidebar-section abroad-section" style="display:none">
       <div class="sidebar-title">גלישה</div>
       <div class="tag-group">
@@ -561,7 +573,7 @@ let recentContentChangeKeys = new Set();
 let recentContentChangeTypes = {};
 let currentTab = 'domestic';
 let state        = { carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', changes: 'all', roaming: 'all' };
-let abroadState  = { carrier: 'all', gb: 'all', days: 'all', sort: 'price_asc' };
+let abroadState  = { carrier: 'all', gb: 'all', days: 'all', sort: 'price_asc', destination: 'all' };
 let globalState  = { carrier: 'all', gb: 'all', days: 'all', currency: 'all', sort: 'price_asc' };
 let contentState = { carrier: 'all', service: 'all' };
 const CONTENT_SERVICES = ['eSIM שעון', 'סייבר', 'נורטון', 'שיר בהמתנה', 'תא קולי'];
@@ -809,14 +821,15 @@ async function loadAbroadData() {
 function filterAndSortAbroad(plans) {
   let r = plans;
   const s = abroadState;
-  if (s.carrier !== 'all') r = r.filter(p => p.carrier === s.carrier);
-  if (s.gb === '0-5')       r = r.filter(p => p.data_gb !== null && p.data_gb <= 5);
-  if (s.gb === '5-15')      r = r.filter(p => p.data_gb !== null && p.data_gb > 5 && p.data_gb <= 15);
-  if (s.gb === '15+')       r = r.filter(p => p.data_gb !== null && p.data_gb > 15);
-  if (s.gb === 'unlimited') r = r.filter(p => p.data_gb === null);
-  if (s.days === '1-7')     r = r.filter(p => p.days !== null && p.days <= 7);
-  if (s.days === '8-30')    r = r.filter(p => p.days !== null && p.days > 7 && p.days <= 30);
-  if (s.days === '30+')     r = r.filter(p => p.days !== null && p.days > 30);
+  if (s.carrier !== 'all')    r = r.filter(p => p.carrier === s.carrier);
+  if (s.destination !== 'all') r = r.filter(p => getPlanCountries(p).has(s.destination));
+  if (s.gb === '0-5')         r = r.filter(p => p.data_gb !== null && p.data_gb <= 5);
+  if (s.gb === '5-15')        r = r.filter(p => p.data_gb !== null && p.data_gb > 5 && p.data_gb <= 15);
+  if (s.gb === '15+')         r = r.filter(p => p.data_gb !== null && p.data_gb > 15);
+  if (s.gb === 'unlimited')   r = r.filter(p => p.data_gb === null);
+  if (s.days === '1-7')       r = r.filter(p => p.days !== null && p.days <= 7);
+  if (s.days === '8-30')      r = r.filter(p => p.days !== null && p.days > 7 && p.days <= 30);
+  if (s.days === '30+')       r = r.filter(p => p.days !== null && p.days > 30);
   if (s.sort === 'price_asc')  r = [...r].sort((a,b) => (a.price ?? 9999) - (b.price ?? 9999));
   if (s.sort === 'price_desc') r = [...r].sort((a,b) => (b.price ?? 0) - (a.price ?? 0));
   if (s.sort === 'gb_desc')    r = [...r].sort((a,b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999));
@@ -1586,6 +1599,58 @@ document.addEventListener('click', function(e) {
   if (e.target.id === 'countriesModal') closeCountriesModal();
 });
 
+// ── Abroad Destination Filter ──────────────────────────────────────────────
+function _flattenGrouped(arr) {
+  return new Set(arr.flatMap(g => g.countries));
+}
+
+// Built after all COUNTRIES_* arrays are defined (below in this script)
+let _CARRIER_FLAT = {};
+let _PELEPHONE_FLAT = new Set();
+let _ALL_ABROAD_DEST = [];
+
+function _initDestFilter() {
+  _CARRIER_FLAT = {
+    cellcom:   _flattenGrouped(COUNTRIES_CELLCOM),
+    partner:   _flattenGrouped(COUNTRIES_PARTNER),
+    hotmobile: _flattenGrouped(COUNTRIES_HOTMOBILE),
+    mobile019: new Set(COUNTRIES_019.map(c => c.name)),
+  };
+  _PELEPHONE_FLAT = _flattenGrouped(COUNTRIES_PELEPHONE);
+
+  _ALL_ABROAD_DEST = [...new Set([
+    ..._CARRIER_FLAT.cellcom,
+    ..._CARRIER_FLAT.partner,
+    ..._CARRIER_FLAT.hotmobile,
+    ..._CARRIER_FLAT.mobile019,
+    ..._PELEPHONE_FLAT,
+    ...PELEPHONE_SPECIFIC_COUNTRIES.flatMap(r => r.countries),
+  ])].sort((a, b) => a.localeCompare(b, 'he'));
+
+  const sel = document.getElementById('abroadDestFilter');
+  _ALL_ABROAD_DEST.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    sel.appendChild(opt);
+  });
+
+  sel.addEventListener('change', () => {
+    abroadState.destination = sel.value;
+    sel.classList.toggle('active', sel.value !== 'all');
+    renderAbroad();
+  });
+}
+
+function getPlanCountries(plan) {
+  if (plan.carrier === 'pelephone') {
+    const specific = PELEPHONE_SPECIFIC_COUNTRIES.find(r => plan.plan_name.includes(r.match));
+    if (specific) return new Set(specific.countries);
+    return _PELEPHONE_FLAT;
+  }
+  return _CARRIER_FLAT[plan.carrier] || new Set();
+}
+
 // ── Hotmobile Countries Modal ──────────────────────────────────────────────
 const COUNTRIES_HOTMOBILE = [
   { letter: 'א', countries: ['אוזבקיסטן','אוסטריה','אוסטרליה','אוקראינה','אזרבייג\'ן','איחוד האמירויות הערביות','איטליה','איי בהאמה','איי הבתולה (ארה"ב)','איי הבתולה (בריטניה)','איי טורקס וקאיקוס','איי פארו','איי קיימן','אינדונזיה','איסלנד','אירלנד','אלבניה','אנגווילה','אנטיגואה וברבודה','אסטוניה','ארגנטינה','ארמניה','ארצות הברית'] },
@@ -1814,6 +1879,9 @@ function closePelephoneCountriesModal() {
 document.addEventListener('click', function(e) {
   if (e.target.id === 'pelephoneCountriesModal') closePelephoneCountriesModal();
 });
+
+// Init destination filter after all country arrays are defined
+_initDestFilter();
 </script>
 
 <!-- Hotmobile Countries Modal -->
