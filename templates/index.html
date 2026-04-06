@@ -37,6 +37,8 @@
   .dot-hotmobile { background: #ff5722; }
   .dot-cellcom   { background: #4caf50; }
   .dot-mobile019 { background: #9c27b0; }
+  .dot-xphone    { background: #0d9488; }
+  .dot-wecom     { background: #d97706; }
   .dot-all       { background: linear-gradient(135deg,#e91e63,#2196f3); }
   .dot-tuki              { background: #0ea5e9; }
   .dot-globalesim        { background: #22c55e; }
@@ -45,6 +47,7 @@
   .dot-esimo             { background: #8b5cf6; }
   .dot-simtlv            { background: #ef4444; }
   .dot-world8            { background: #f97316; }
+  .dot-xphone_global     { background: #0d9488; }
   .badge-tuki            { color: #0369a1; background: #e0f2fe; }
   .badge-globalesim      { color: #15803d; background: #dcfce7; }
   .badge-airalo          { color: #b45309; background: #fef3c7; }
@@ -52,6 +55,7 @@
   .badge-esimo           { color: #7e22ce; background: #f3e8ff; }
   .badge-simtlv          { color: #b91c1c; background: #fee2e2; }
   .badge-world8          { color: #c2410c; background: #ffedd5; }
+  .badge-xphone_global   { color: #0f766e; background: #ccfbf1; }
   .esim-badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 8px; background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; margin-right: 4px; vertical-align: middle; }
 
   .tag-group { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -79,6 +83,8 @@
   .badge-hotmobile { color: #c2410c; background: #ffedd5; }
   .badge-cellcom   { color: #15803d; background: #dcfce7; }
   .badge-mobile019 { color: #7e22ce; background: #f3e8ff; }
+  .badge-xphone    { color: #0f766e; background: #ccfbf1; }
+  .badge-wecom     { color: #92400e; background: #fef3c7; }
 
   .price { font-size: 30px; font-weight: 700; color: #111827; line-height: 1; }
   .price sup { font-size: 14px; vertical-align: super; font-weight: 400; color: #6b7280; }
@@ -191,6 +197,9 @@
   .countries-group { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
   .countries-group-letter { font-size: 15px; font-weight: 700; color: #2563eb; min-width: 22px; padding-top: 2px; }
   .countries-group-items { display: flex; flex-wrap: wrap; gap: 5px; }
+  /* Condition notes below cards */
+  .plan-condition-notes { margin-top: 8px; border-top: 1px solid #f3f4f6; padding-top: 6px; }
+  .condition-note { font-size: 10px; color: #9ca3af; line-height: 1.5; }
 
   /* Apps modals (Cellcom + Pelephone) */
   .apps-modal-grid { display: flex; justify-content: center; gap: 12px; flex-wrap: nowrap; margin-top: 16px; }
@@ -278,6 +287,10 @@
         <span class="dot dot-world8"></span> 8 World
         <span class="count-badge" id="gcnt-world8">—</span>
       </button>
+      <button class="carrier-btn" data-global-carrier="xphone_global">
+        <span class="dot dot-xphone_global"></span> XPhone Global
+        <span class="count-badge" id="gcnt-xphone_global">—</span>
+      </button>
     </div>
 
     <div class="sidebar-section domestic-section abroad-section">
@@ -305,6 +318,14 @@
       <button class="carrier-btn" data-carrier="mobile019">
         <span class="dot dot-mobile019"></span> 019
         <span class="count-badge" id="cnt-mobile019">—</span>
+      </button>
+      <button class="carrier-btn" data-carrier="xphone">
+        <span class="dot dot-xphone"></span> XPhone
+        <span class="count-badge" id="cnt-xphone">—</span>
+      </button>
+      <button class="carrier-btn" data-carrier="wecom">
+        <span class="dot dot-wecom"></span> We-Com
+        <span class="count-badge" id="cnt-wecom">—</span>
       </button>
     </div>
 
@@ -456,6 +477,9 @@
       <button class="carrier-btn" data-content-carrier="pelephone">
         <span class="dot dot-pelephone"></span> פלאפון
       </button>
+      <button class="carrier-btn" data-content-carrier="wecom">
+        <span class="dot dot-wecom"></span> We-Com
+      </button>
     </div>
 
     <div class="sidebar-section content-section" style="display:none">
@@ -551,12 +575,12 @@
 <script>
 const CARRIER_LABELS = {
   partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל',
-  cellcom: 'סלקום', mobile019: '019'
+  cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com'
 };
 const GLOBAL_LABELS = {
   tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
   pelephone_global: 'GlobalSIM - Pelephone', esimo: 'eSIMo',
-  simtlv: 'SimTLV', world8: '8 World'
+  simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global'
 };
 
 let allPlans = [];
@@ -599,6 +623,10 @@ function switchTab(tab) {
     } else if (isContent) {
       s.style.display = tab === 'content' ? '' : 'none';
     }
+  });
+  // Hide domestic-only carrier buttons (e.g. XPhone) when on abroad tab
+  document.querySelectorAll('.carrier-btn.domestic-only').forEach(b => {
+    b.style.display = tab === 'abroad' ? 'none' : '';
   });
   document.getElementById('domesticContent').style.display  = tab === 'domestic' ? '' : 'none';
   document.getElementById('abroadContent').style.display    = tab === 'abroad'   ? '' : 'none';
@@ -660,7 +688,7 @@ function updateCountBadges() {
     allGlobalPlans.forEach(p => { counts[p.carrier] = (counts[p.carrier] || 0) + 1; });
     const allEl = document.getElementById('gcnt-all');
     if (allEl) allEl.textContent = allGlobalPlans.length;
-    ['tuki','globalesim','airalo','pelephone_global','esimo','simtlv','world8'].forEach(c => {
+    ['tuki','globalesim','airalo','pelephone_global','esimo','simtlv','world8','xphone_global'].forEach(c => {
       const el = document.getElementById(`gcnt-${c}`);
       if (el) el.textContent = counts[c] || 0;
     });
@@ -671,7 +699,7 @@ function updateCountBadges() {
     const counts = {};
     plans.forEach(p => { counts[p.carrier] = (counts[p.carrier] || 0) + 1; });
     document.getElementById('cnt-all').textContent = plans.length;
-    ['partner','pelephone','hotmobile','cellcom','mobile019'].forEach(c => {
+    ['partner','pelephone','hotmobile','cellcom','mobile019','xphone','wecom'].forEach(c => {
       const el = document.getElementById(`cnt-${c}`);
       if (el) el.textContent = counts[c] || 0;
     });
@@ -737,7 +765,7 @@ function filterAndSort(plans) {
   );
   if (state.changes === 'recent')  r = r.filter(p => recentChangeKeys.has(`${p.carrier}|${p.plan_name}`));
   if (state.roaming === 'yes')     r = r.filter(p =>
-    p.extras && p.extras.some(e => e.includes('חו"ל') && /\d/.test(e) && (e.includes('GB') || e.includes('גלישה')))
+    p.extras && p.extras.some(e => /חו["״]ל/.test(e) && /\d/.test(e) && (e.includes('GB') || e.includes('גלישה')))
   );
   if (state.sort === 'price_asc')  r = [...r].sort((a,b) => (a.price ?? 9999) - (b.price ?? 9999));
   if (state.sort === 'price_desc') r = [...r].sort((a,b) => (b.price ?? 0) - (a.price ?? 0));
@@ -758,14 +786,33 @@ function renderCard(plan) {
            :                       `${plan.data_gb}GB`;
   const priceNum = plan.price !== null ? (Number.isInteger(plan.price) ? plan.price : plan.price.toFixed(2)) : null;
   const price    = priceNum !== null ? `<sup>₪</sup>${priceNum}` : '—';
-  const extrasHtml = plan.extras?.length
-    ? `<div class="extras">${plan.extras.slice(0,4).map(e => `<span>${e}</span>`).join('')}</div>`
-    : '';
   const minutesVal = plan.minutes === -1 ? 'ללא הגבלה'
                    : plan.minutes > 0    ? `${plan.minutes.toLocaleString()} דקות`
                    : null;
   const minutesRow = minutesVal
     ? `<div class="detail-row"><span class="detail-label">שיחות</span><span class="detail-value">${minutesVal}</span></div>`
+    : '';
+
+  // Separate regular extras from condition notes (starting with *)
+  const regularExtras = (plan.extras || []).filter(e => !e.startsWith('* '));
+  const conditionNotes = (plan.extras || []).filter(e => e.startsWith('* ')).map(e => e.slice(2));
+  const maxExtras = plan.carrier === 'wecom' ? 8 : 4;
+  const extrasHtml = regularExtras.length
+    ? `<div class="extras">${regularExtras.slice(0, maxExtras).map(e => `<span>${e}</span>`).join('')}</div>`
+    : '';
+  const notesHtml = conditionNotes.length
+    ? `<div class="plan-condition-notes">${conditionNotes.map(n => `<div class="condition-note">* ${n}</div>`).join('')}</div>`
+    : '';
+
+  // "מדינות כלולות" link for wecom Global plans (have abroad data)
+  const wecomCountriesLink = (plan.carrier === 'wecom' && plan.plan_name.toLowerCase().includes('global'))
+    ? `<div class="extras"><span><a href="#" class="countries-link" onclick="openWecomCountriesModal(event)">מדינות כלולות ✈️</a></span></div>`
+    : '';
+
+  // "מדינות כלולות" link for xphone plans that have abroad data in extras
+  const xphoneCountriesLink = (plan.carrier === 'xphone' &&
+    (plan.extras || []).some(e => /בחו["״]ל/.test(e) && /GB/.test(e)))
+    ? `<div class="extras"><span><a href="#" class="countries-link" onclick="openXphoneCountriesModal(event)">מדינות כלולות ✈️</a></span></div>`
     : '';
 
   const cardId = 'card-' + (plan.carrier + '|' + plan.plan_name).replace(/[^a-zA-Z0-9\u0590-\u05ff]/g, '_');
@@ -780,7 +827,7 @@ function renderCard(plan) {
         <div class="detail-row"><span class="detail-label">גלישה</span><span class="detail-value">${gb}</span></div>
         ${minutesRow}
       </div>
-      ${extrasHtml}
+      ${extrasHtml}${wecomCountriesLink}${xphoneCountriesLink}${notesHtml}
     </div>`;
 }
 
@@ -899,6 +946,10 @@ function renderAbroadCard(plan) {
     ? `<div class="extras"><span><a href="#" class="countries-link" onclick="openHotmobileCountriesModal(event)">מדינות כלולות ✈️</a></span></div>`
     : '';
 
+  const wecomAbroadCountriesLink = plan.carrier === 'wecom'
+    ? `<div class="extras"><span><a href="#" class="countries-link" onclick="openWecomCountriesModal(event)">מדינות כלולות ✈️</a></span></div>`
+    : '';
+
   const abroadCardId = 'acard-' + (plan.carrier + '|' + plan.plan_name).replace(/[^a-zA-Z0-9\u0590-\u05ff]/g, '_');
   return `
     <div class="plan-card" id="${abroadCardId}">
@@ -913,7 +964,7 @@ function renderAbroadCard(plan) {
         ${minutesRow}
         ${smsRow}
       </div>
-      ${extrasHtml}${pelephoneLink}${cellcomCountriesLink}${partnerCountriesLink}${hotmobileCountriesLink}
+      ${extrasHtml}${pelephoneLink}${cellcomCountriesLink}${partnerCountriesLink}${hotmobileCountriesLink}${wecomAbroadCountriesLink}
     </div>`;
 }
 
@@ -1008,6 +1059,13 @@ function renderGlobalCard(plan) {
     : '';
   const label = GLOBAL_LABELS[plan.carrier] || plan.carrier;
 
+  // "מדינות כלולות" link for XPhone Global plans — two country lists by region
+  let xpGlobalCountriesLink = '';
+  if (plan.carrier === 'xphone_global') {
+    const modalType = plan.plan_name.startsWith('אירופה') ? 'europe' : 'world';
+    xpGlobalCountriesLink = `<div class="extras"><span><a href="#" class="countries-link" onclick="openXphoneGlobalModal(event,'${modalType}')">מדינות כלולות ✈️</a></span></div>`;
+  }
+
   return `
     <div class="plan-card">
       ${badge}
@@ -1024,7 +1082,7 @@ function renderGlobalCard(plan) {
         ${minutesRow}
         ${smsRow}
       </div>
-      ${extrasHtml}
+      ${extrasHtml}${xpGlobalCountriesLink}
     </div>`;
 }
 
@@ -1319,8 +1377,10 @@ function renderContent() {
     return;
   }
 
+  const NA_VALUES = ['לא נמצא', 'שגיאה', 'לא זמין'];
   body.innerHTML = services.map(svc => {
-    const svcPlans = plans.filter(p => p.service === svc);
+    const svcPlans = plans.filter(p => p.service === svc)
+      .filter(p => !(p.price && NA_VALUES.some(v => p.price.includes(v))));
     if (!svcPlans.length) return '';
     return `
       <div class="content-service-section">
@@ -1615,16 +1675,25 @@ function _initDestFilter() {
     partner:   _flattenGrouped(COUNTRIES_PARTNER),
     hotmobile: _flattenGrouped(COUNTRIES_HOTMOBILE),
     mobile019: new Set(COUNTRIES_019.map(c => c.name)),
+    wecom:     new Set(COUNTRIES_WECOM),
   };
   _PELEPHONE_FLAT = _flattenGrouped(COUNTRIES_PELEPHONE);
+
+  // XPhone abroad plans are destination-specific — all 13 unique destinations across 3 tabs
+  const XPHONE_ABROAD_DESTS = [
+    'הולנד','מלטה','אירלנד','שבדיה','יוון','ארצות הברית',
+    'אוסטרליה','איטליה','בריטניה','גרמניה','הונגריה','צרפת','קפריסין היוונית'
+  ];
 
   _ALL_ABROAD_DEST = [...new Set([
     ..._CARRIER_FLAT.cellcom,
     ..._CARRIER_FLAT.partner,
     ..._CARRIER_FLAT.hotmobile,
     ..._CARRIER_FLAT.mobile019,
+    ..._CARRIER_FLAT.wecom,
     ..._PELEPHONE_FLAT,
     ...PELEPHONE_SPECIFIC_COUNTRIES.flatMap(r => r.countries),
+    ...XPHONE_ABROAD_DESTS,
   ])].sort((a, b) => a.localeCompare(b, 'he'));
 
   const sel = document.getElementById('abroadDestFilter');
@@ -1648,6 +1717,11 @@ function getPlanCountries(plan) {
     if (specific) return new Set(specific.countries);
     return _PELEPHONE_FLAT;
   }
+  // XPhone abroad plans: plan_name = "{dest} — {tab_label}", extract destination part
+  if (plan.carrier === 'xphone') {
+    const dest = plan.plan_name.includes(' — ') ? plan.plan_name.split(' — ')[0] : plan.plan_name;
+    return new Set([dest]);
+  }
   return _CARRIER_FLAT[plan.carrier] || new Set();
 }
 
@@ -1669,7 +1743,7 @@ const COUNTRIES_HOTMOBILE = [
   { letter: 'צ', countries: ['צ\'ילה','צ\'כיה','צרפת'] },
   { letter: 'ק', countries: ['קולומביה','קוסטה ריקה','קזחסטן','קמבודיה','קנדה','קפריסין','קרואטיה'] },
   { letter: 'ר', countries: ['רומניה','רוסיה'] },
-  { letter: 'ש', countries: ['שוודיה','שוויץ'] },
+  { letter: 'ש', countries: ['שבדיה','שוויץ'] },
   { letter: 'ת', countries: ['תאילנד'] },
 ];
 let _hotmobileCountriesBuilt = false;
@@ -1753,7 +1827,7 @@ const COUNTRIES_CELLCOM = [
   { letter: 'צ', countries: ['צרפת','צ\'ילה','צ\'כיה','צ\'אד'] },
   { letter: 'ק', countries: ['קנדה','קונגו','קולומביה','קוסטה ריקה','קפריסין','קרואטיה','קניה','קמבודיה','קוריאה הדרומית','קזחסטן','קוסובו','קירגיסטן'] },
   { letter: 'ר', countries: ['רומניה','רוסיה','רואנדה'] },
-  { letter: 'ש', countries: ['שוויץ','שוודיה'] },
+  { letter: 'ש', countries: ['שוויץ','שבדיה'] },
   { letter: 'ת', countries: ['תאילנד'] },
 ];
 let _cellcomCountriesBuilt = false;
@@ -1880,9 +1954,159 @@ document.addEventListener('click', function(e) {
   if (e.target.id === 'pelephoneCountriesModal') closePelephoneCountriesModal();
 });
 
+// ── We-Com Countries Modal ─────────────────────────────────────────────────
+const COUNTRIES_WECOM = [
+  'אוסטריה','אוקראינה','איטליה','איסלנד','אירלנד','אלבניה','אנגליה','אנדורה','ארצות הברית',
+  'בולגריה','בלגיה',
+  'גאורגיה',"ג'רזי",'גרמניה','גרנדה',
+  'דנמרק','דרום אפריקה',
+  'הולנד','הונג קונג','הונגריה',
+  'טורקיה','טאיוואן','טנזניה',
+  'יוון',
+  'לטביה','ליטא','לוקסמבורג','ליכטנשטיין',
+  'מדגסקר','מולדובה','מוסראט','מלטה','מקדוניה',
+  'ניו זילנד','ניזר','נורבגיה',
+  'סין','סלובניה','סלובקיה','ספרד','סרביה',
+  'פולין','פורטוגל','פינלנד',
+  "צ'כיה","צ'ילה",'צרפת',
+  'קנדה','קוריאה','קפריסין','קרואטיה',
+  'רומניה','רוסיה',
+  'שבדיה','שוויץ',
+  'תאילנד',
+];
+let _wecomCountriesBuilt = false;
+function openWecomCountriesModal(e) {
+  e.preventDefault();
+  if (!_wecomCountriesBuilt) {
+    document.getElementById('wecomCountriesList').innerHTML =
+      COUNTRIES_WECOM.map(c => `<span class="country-tag">${c}</span>`).join('');
+    _wecomCountriesBuilt = true;
+  }
+  document.getElementById('wecomCountriesModal').classList.add('open');
+}
+function closeWecomCountriesModal() {
+  document.getElementById('wecomCountriesModal').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'wecomCountriesModal') closeWecomCountriesModal();
+});
+
+// ── XPhone Countries Modal ─────────────────────────────────────────────────
+const COUNTRIES_XPHONE = [
+  'אוסטריה','אוסטרליה','איחוד האמירויות הערביות','איטליה','איי פארו','איסלנד','אירלנד','אסטוניה','ארצות הברית',
+  'בולגריה','בלגיה','בריטניה',
+  'גרמניה',
+  'דנמרק',
+  'הולנד','הונגריה',
+  'טורקיה',
+  'יוון',
+  'לוקסמבורג','לטביה','ליטא','ליכטנשטיין',
+  'מלטה',
+  'נורווגיה',
+  'סלובניה','סלובקיה','ספרד','סרביה',
+  'פולין','פורטוגל','פינלנד',
+  "צ'כיה",'צרפת',
+  'קפריסין היוונית','קרואטיה',
+  'רומניה','רוסיה',
+  'שבדיה','שוויץ',
+  'תאילנד','תוניסיה',
+];
+let _xphoneCountriesBuilt = false;
+function openXphoneCountriesModal(e) {
+  e.preventDefault();
+  if (!_xphoneCountriesBuilt) {
+    document.getElementById('xphoneCountriesList').innerHTML =
+      COUNTRIES_XPHONE.map(c => `<span class="country-tag">${c}</span>`).join('');
+    _xphoneCountriesBuilt = true;
+  }
+  document.getElementById('xphoneCountriesModal').classList.add('open');
+}
+function closeXphoneCountriesModal() {
+  document.getElementById('xphoneCountriesModal').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'xphoneCountriesModal') closeXphoneCountriesModal();
+});
+
+// ── XPhone Global Countries Modals ─────────────────────────────────────────
+const COUNTRIES_XPHONE_GLOBAL_EUROPE = [
+  'אוסטריה','איטליה','איי פארו','אירלנד','אסטוניה','בריטניה','גרמניה','דנמרק',
+  'הולנד','הונגריה','יוון','לטביה','ליטא','נורבגיה','סלובניה','סלובקיה',
+  'ספרד','פולין','פורטוגל','פינלנד',"צ'כיה",'צרפת','קפריסין היוונית','קרואטיה','רומניה','שבדיה'
+];
+const COUNTRIES_XPHONE_GLOBAL_WORLD = [
+  'אוסטריה','אוסטרליה','איטליה','איי פארו','איסלנד','אירלנד','אסטוניה','ארצות הברית*',
+  'בולגריה','בלגיה','בריטניה','גרמניה','דנמרק','הולנד','הונגריה','יוון',
+  'לוקסמבורג','לטביה','ליטא','ליכטנשטיין','נורווגיה','סלובניה','סלובקיה',
+  'ספרד','פולין','פורטוגל','פינלנד',"צ'כיה",'צרפת','קפריסין היוונית','קרואטיה','רומניה','שבדיה','תאילנד'
+];
+let _xpGlobalEuropeBuilt = false, _xpGlobalWorldBuilt = false;
+function openXphoneGlobalModal(e, type) {
+  e.preventDefault();
+  if (type === 'europe') {
+    if (!_xpGlobalEuropeBuilt) {
+      document.getElementById('xpGlobalEuropeList').innerHTML =
+        COUNTRIES_XPHONE_GLOBAL_EUROPE.map(c => `<span class="country-tag">${c}</span>`).join('');
+      _xpGlobalEuropeBuilt = true;
+    }
+    document.getElementById('xpGlobalEuropeModal').classList.add('open');
+  } else {
+    if (!_xpGlobalWorldBuilt) {
+      document.getElementById('xpGlobalWorldList').innerHTML =
+        COUNTRIES_XPHONE_GLOBAL_WORLD.map(c => `<span class="country-tag">${c}</span>`).join('');
+      _xpGlobalWorldBuilt = true;
+    }
+    document.getElementById('xpGlobalWorldModal').classList.add('open');
+  }
+}
+function closeXpGlobalEuropeModal() { document.getElementById('xpGlobalEuropeModal').classList.remove('open'); }
+function closeXpGlobalWorldModal()  { document.getElementById('xpGlobalWorldModal').classList.remove('open'); }
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'xpGlobalEuropeModal') closeXpGlobalEuropeModal();
+  if (e.target.id === 'xpGlobalWorldModal')  closeXpGlobalWorldModal();
+});
+
 // Init destination filter after all country arrays are defined
 _initDestFilter();
 </script>
+
+<!-- XPhone Countries Modal -->
+<div class="countries-modal-overlay" id="xphoneCountriesModal">
+  <div class="countries-modal" style="max-width:600px;">
+    <button class="countries-modal-close" onclick="closeXphoneCountriesModal()">×</button>
+    <h3>🌍 רשימת המדינות</h3>
+    <div class="countries-note">להלן רשימת המדינות אשר בהן החבילה ניתנת לשימוש</div>
+    <div id="xphoneCountriesList" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;justify-content:flex-end;"></div>
+  </div>
+</div>
+
+<!-- XPhone Global — Europe Countries Modal -->
+<div class="countries-modal-overlay" id="xpGlobalEuropeModal">
+  <div class="countries-modal" style="max-width:620px;">
+    <button class="countries-modal-close" onclick="closeXpGlobalEuropeModal()">×</button>
+    <h3>🇪🇺 רשימת המדינות בחבילות אירופה</h3>
+    <div id="xpGlobalEuropeList" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;justify-content:flex-end;"></div>
+  </div>
+</div>
+
+<!-- XPhone Global — World Countries Modal -->
+<div class="countries-modal-overlay" id="xpGlobalWorldModal">
+  <div class="countries-modal" style="max-width:620px;">
+    <button class="countries-modal-close" onclick="closeXpGlobalWorldModal()">×</button>
+    <h3>🌍 רשימת המדינות הכלולות בחבילה</h3>
+    <div class="countries-note" style="font-size:11px;color:#9ca3af;margin-top:4px;">* ארצות הברית — בתנאים מיוחדים</div>
+    <div id="xpGlobalWorldList" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;justify-content:flex-end;"></div>
+  </div>
+</div>
+
+<!-- We-Com Countries Modal -->
+<div class="countries-modal-overlay" id="wecomCountriesModal">
+  <div class="countries-modal" style="max-width:600px;">
+    <button class="countries-modal-close" onclick="closeWecomCountriesModal()">×</button>
+    <h3>🌍 רשימת מדינות כלולות בחבילת Global</h3>
+    <div id="wecomCountriesList" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;justify-content:flex-end;"></div>
+  </div>
+</div>
 
 <!-- Hotmobile Countries Modal -->
 <div class="countries-modal-overlay" id="hotmobileCountriesModal">

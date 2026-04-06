@@ -76,8 +76,360 @@ def _parse_sms(text):
     return int(match.group(1)) if match else None
 
 
+_XPHONE_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+
+def scrape_xphone(_page=None):
+    """Scrape XPhone domestic plans. Uses own fresh session with UA to bypass AWS WAF.
+    Parses plan data from body text since CSS selectors are unavailable under WAF."""
+    from playwright.sync_api import sync_playwright as _sp
+    with _sp() as pw:
+        browser = pw.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"]
+        )
+        page = browser.new_page(user_agent=_XPHONE_UA)
+        try:
+            page.goto("https://xphone.co.il/cellularplans/", timeout=40000, wait_until="domcontentloaded")
+            page.wait_for_timeout(5000)
+            body = page.evaluate("document.body.innerText") or ""
+
+            if "confirm you are human" in body.lower() or len(body) < 500:
+                logger.warning("scrape_xphone: WAF block detected. Returning [].")
+                return []
+
+            # Parse from body text: plan blocks separated by known plan names
+            PLAN_NAMES = [
+                "FOREVER PLUS 5G",  # must come before FOREVER PLUS
+                "FOREVER PLUS",
+                "Young 50GB",
+                "צוברים וגולשים 1GB בחו\"ל – 5G",
+                "צוברים וגולשים 1GB בחו\"ל",
+                "GLOBAL 5G",  # before GLOBAL 5 and GLOBAL 3
+                "GLOBAL 5",
+                "GLOBAL 3",
+            ]
+
+            # Extract block of text for each plan
+            plans = []
+            for plan_name in PLAN_NAMES:
+                start = body.find(plan_name)
+                if start == -1:
+                    continue
+                # End = start of next plan name (or 900 chars max)
+                end = len(body)
+                for other in PLAN_NAMES:
+                    if other == plan_name:
+                        continue
+                    pos = body.find(other, start + len(plan_name))
+                    if pos != -1 and pos < end:
+                        end = pos
+                block = body[start:min(start + 900, end)]
+
+                # ── Price ──────────────────────────────────────────────────
+                # On XPhone, price appears on line BEFORE ₪ (e.g. "34.90\n₪")
+                price_m = re.search(r'(\d+(?:\.\d+)?)\s*\n\s*\u20aa', block)
+                if not price_m:
+                    price_m = re.search(r'\u20aa\s*(\d+(?:\.\d+)?)', block)
+                if price_m:
+                    v = float(price_m.group(1))
+                    price = int(v) if v == int(v) else v
+                else:
+                    price = None
+
+                # ── Domestic GB ─────────────────────────────────────────────
+                # Look for "NGB גלישה בישראל" bullet (not the header subtitle)
+                gb_israel = re.search(r'(\d+)\s*GB\s+גלישה\s+בישראל', block, re.IGNORECASE)
+                if gb_israel:
+                    gb = int(gb_israel.group(1))
+                elif 'ללא הגבלה' in block:
+                    gb = None  # unlimited
+                else:
+                    gb = None
+
+                # ── Minutes ─────────────────────────────────────────────────
+                minutes_m = re.search(r"([\d,]+)\s*דק", block)
+                minutes = int(minutes_m.group(1).replace(',', '')) if minutes_m else None
+
+                # ── Extras ──────────────────────────────────────────────────
+                SKIP_X = {'להצטרפות', 'לפרטי החבילה', 'לרשימת היעדים', 'בלבד!',
+                          'גלישה בישראל', plan_name}
+                extras = []
+                for line in block.split('\n'):
+                    line = line.strip()
+                    if (line and line not in SKIP_X
+                            and '\u20aa' not in line
+                            and 'להצטרפות' not in line
+                            and 'לפרטי' not in line
+                            and 'לרשימת' not in line
+                            and not re.match(r'^[\d.,]+$', line)):
+                        extras.append(line)
+                seen_e, clean_extras = set(), []
+                for e in extras:
+                    if e not in seen_e and len(e) > 2:
+                        seen_e.add(e); clean_extras.append(e)
+                    if len(clean_extras) >= 5: break
+
+                plans.append({"carrier": "xphone", "plan_name": plan_name, "price": price,
+                              "data_gb": gb, "minutes": minutes, "extras": clean_extras})
+            return plans
+        finally:
+            browser.close()
+
+
+def scrape_xphone_abroad(_page=None):
+    """Scrape XPhone abroad plans from all 3 tabs on xphone.co.il/roaming."""
+    from playwright.sync_api import sync_playwright as _sp
+    with _sp() as pw:
+        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        page = browser.new_page(user_agent=_XPHONE_UA)
+        try:
+            page.goto("https://xphone.co.il/roaming", timeout=40000, wait_until="domcontentloaded")
+            page.wait_for_timeout(4000)
+            body = page.evaluate("document.body.innerText") or ""
+            if "confirm you are human" in body.lower() or len(body) < 500:
+                logger.warning("scrape_xphone_abroad: WAF block detected. Returning [].")
+                return []
+
+            TAB_CONFIGS = [
+                {"label": "\u05d2\u05dc\u05d9\u05e9\u05d4 \u05d1\u05dc\u05d1\u05d3",   # גלישה בלבד
+                 "destinations": ["\u05d4\u05d5\u05dc\u05e0\u05d3", "\u05de\u05dc\u05d8\u05d4",
+                                  "\u05d0\u05d9\u05e8\u05dc\u05e0\u05d3", "\u05e9\u05d1\u05d3\u05d9\u05d4",
+                                  "\u05d9\u05d5\u05d5\u05df", "\u05d0\u05e8\u05e6\u05d5\u05ea \u05d4\u05d1\u05e8\u05d9\u05ea"],
+                 "has_data": True, "has_calls": False},
+                {"label": "\u05d2\u05d5\u05dc\u05e9\u05d9\u05dd \u05d5\u05de\u05d3\u05d1\u05e8\u05d9\u05dd",   # גולשים ומדברים
+                 "destinations": ["\u05d0\u05d5\u05e1\u05d8\u05e8\u05dc\u05d9\u05d4",
+                                  "\u05d0\u05d9\u05d8\u05dc\u05d9\u05d4", "\u05d0\u05d9\u05e8\u05dc\u05e0\u05d3",
+                                  "\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4", "\u05d2\u05e8\u05de\u05e0\u05d9\u05d4",
+                                  "\u05d4\u05d5\u05e0\u05d2\u05e8\u05d9\u05d4", "\u05d9\u05d5\u05d5\u05df",
+                                  "\u05e6\u05e8\u05e4\u05ea", "\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df \u05d4\u05d9\u05d5\u05d5\u05e0\u05d9\u05ea"],
+                 "has_data": True, "has_calls": True},
+                {"label": "\u05de\u05d3\u05d1\u05e8\u05d9\u05dd \u05d5\u05de\u05e1\u05de\u05e1\u05d9\u05dd",   # מדברים ומסמסים
+                 "destinations": ["\u05d0\u05d9\u05d8\u05dc\u05d9\u05d4", "\u05d9\u05d5\u05d5\u05df"],
+                 "has_data": False, "has_calls": True},
+            ]
+
+            all_plans = []
+            for tab in TAB_CONFIGS:
+                # Click the tab button
+                for el in page.query_selector_all("button, a, span, div"):
+                    if (el.inner_text() or "").strip() == tab["label"]:
+                        el.click()
+                        page.wait_for_timeout(2000)
+                        break
+
+                body = page.evaluate("document.body.innerText") or ""
+                # Narrow to the plan cards section only
+                sec_s = body.find("\u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05dc\u05e4\u05d9 \u05de\u05d3\u05d9\u05e0\u05d4")  # חבילות לפי מדינה
+                sec_e = body.find("\u05dc\u05e8\u05db\u05d9\u05e9\u05ea \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05d1\u05d0\u05de\u05e6\u05e2\u05d5\u05ea")  # לרכישת חבילות באמצעות
+                section = body[sec_s:sec_e] if sec_s >= 0 and sec_e > sec_s else body
+
+                for dest in tab["destinations"]:
+                    start = section.find(dest)
+                    if start == -1:
+                        continue
+                    end = len(section)
+                    for other in tab["destinations"]:
+                        if other == dest:
+                            continue
+                        pos = section.find(other, start + len(dest))
+                        if pos != -1 and pos < end:
+                            end = pos
+                    block = section[start:min(start + 400, end)]
+
+                    plan_name = f"{dest} \u2014 {tab['label']}"  # em-dash separator
+
+                    # Price: number immediately before ₪
+                    price_m = re.search(r'(\d+(?:\.\d+)?)\s*\n\s*\u20aa', block)
+                    if not price_m:
+                        price_m = re.search(r'\u20aa\s*(\d+(?:\.\d+)?)', block)
+                    if price_m:
+                        v = float(price_m.group(1))
+                        price = int(v) if v == int(v) else v
+                    else:
+                        price = None
+
+                    # GB (data tabs only)
+                    gb = None
+                    if tab["has_data"]:
+                        gb_m = re.search(r'(\d+)\s*GB', block, re.IGNORECASE)
+                        if gb_m:
+                            gb = int(gb_m.group(1))
+
+                    # Days
+                    days_m = re.search(r'ל[-\u2013\s]?(\d+)\s+ימים', block)
+                    days = int(days_m.group(1)) if days_m else None
+
+                    # Minutes & SMS (calls tabs)
+                    minutes, sms = None, None
+                    if tab["has_calls"]:
+                        min_m = re.search(r'(\d+)[^\u20aa\d]*?דקות', block)
+                        minutes = int(min_m.group(1)) if min_m else None
+                        sms_m = re.search(r'(\d+)\s+SMS', block)
+                        sms = int(sms_m.group(1)) if sms_m else minutes  # fallback = minutes
+
+                    extras = []
+                    if minutes:
+                        extras.append(f"{minutes} \u05d3\u05e7\u05d5\u05ea \u05d5-{sms} SMS")  # X דקות ו-Y SMS
+
+                    all_plans.append({"carrier": "xphone", "plan_name": plan_name,
+                                      "price": price, "days": days, "data_gb": gb,
+                                      "minutes": minutes, "sms": sms, "extras": extras})
+            return all_plans
+        finally:
+            browser.close()
+
+
+_WECOM_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+
+
+def _scrape_wecom_page(page, url, name_prefix, already_navigated=False):
+    """Helper: navigate to url (unless already_navigated), find headings starting with name_prefix, parse cards."""
+    if not already_navigated:
+        page.goto(url, timeout=30000, wait_until="networkidle")
+        page.wait_for_timeout(2000)
+    plans = []
+
+    for h_el in page.query_selector_all('.elementor-heading-title, h2, h3, h4'):
+        name = h_el.inner_text().strip()
+        if not name.lower().startswith(name_prefix):
+            continue
+
+        block_text = h_el.evaluate(r"""el => {
+            let p = el;
+            for (let i = 0; i < 12; i++) {
+                p = p.parentElement;
+                if (!p) break;
+                const t = (p.innerText || '').trim();
+                if ((t.includes('\u20aa') || /\d+\.\d+/.test(t)) && t.length > 20 && t.length < 3000) return t;
+            }
+            return '';
+        }""")
+
+        if not block_text:
+            continue
+
+        # Parse price: on We-Com the price appears BEFORE ₪ (e.g. "29.90\n₪\nלחודש")
+        price_m = re.search(r'(\d+(?:\.\d+)?)\s*\n\s*\u20aa', block_text)
+        if not price_m:
+            price_m = re.search(r'\u20aa\s*(\d+(?:\.\d+)?)', block_text)
+        if price_m:
+            v = float(price_m.group(1))
+            price = int(v) if v == int(v) else v
+        else:
+            price = None
+
+        if name_prefix == 'wefly':
+            # Abroad plans: parse GB and days from block
+            gb   = _parse_gb(block_text)
+            days = _parse_days(block_text)
+
+            # Extras: meaningful lines only (skip noise and redundant lines)
+            extras = []
+            for line in block_text.split('\n'):
+                line = line.strip()
+                if (line and line != name
+                        and '\u20aa' not in line
+                        and 'לחודש' not in line
+                        and 'אונליין' not in line
+                        and 'פרטי' not in line
+                        and 'רשימת' not in line
+                        and not re.match(r'^[\d.,\s]+(?:GB|MB)?$', line, re.IGNORECASE)  # skip bare GB numbers
+                        and not re.match(r'^[\d.,]+$', line)):
+                    extras.append(line)
+            seen_e, clean_extras = set(), []
+            for e in extras:
+                if e not in seen_e and len(e) > 2:
+                    seen_e.add(e); clean_extras.append(e)
+                if len(clean_extras) >= 4: break
+
+            plans.append({"carrier": "wecom", "plan_name": name, "price": price,
+                          "days": days, "data_gb": gb, "minutes": None, "sms": None,
+                          "extras": clean_extras})
+        else:
+            # Domestic plans: all have unlimited domestic data → gb = None always
+            gb = None
+
+            # Parse minutes from "X,000 דקות" line
+            minutes_m = re.search(r'([\d,]+)\s*דקות', block_text)
+            minutes = int(minutes_m.group(1).replace(',', '')) if minutes_m else None
+
+            # Extract extras: include useful bullets from both בארץ and בחו"ל sections
+            SKIP_DOMESTIC = {'בארץ:', 'בחו"ל:', 'בחו״ל:', 'השארת פרטים', 'הצטרפות אונליין >',
+                             'פרטי החבילה', 'לרשימת המדינות', 'מחירון שיחות והודעות',
+                             'מכשירים הנתמכים ב-5G', 'מכשירים הנתמכים ב5G'}
+            extras = []
+            for line in block_text.split('\n'):
+                line = line.strip()
+                if not line or line == name:
+                    continue
+                # Footnote lines (starting with *): strip prefix and include as condition note
+                if re.match(r'^\*', line):
+                    note = line.lstrip('* ').strip()
+                    if note and len(note) > 2:
+                        extras.append('* ' + note)
+                    continue
+                # Skip noisy/navigation lines
+                if ('\u20aa' in line or 'לחודש' in line or line in SKIP_DOMESTIC
+                        or 'אונליין' in line or 'פרטי' in line or 'מכשירים' in line
+                        or 'מחירון' in line or 'רשימת' in line
+                        or re.match(r'^[\d.,]+$', line)):
+                    continue
+                extras.append(line)
+            seen_e, clean_extras = set(), []
+            for e in extras:
+                if e not in seen_e and len(e) > 2:
+                    seen_e.add(e); clean_extras.append(e)
+                if len(clean_extras) >= 8: break
+
+            plans.append({"carrier": "wecom", "plan_name": name, "price": price,
+                          "data_gb": gb, "minutes": minutes, "extras": clean_extras})
+
+    seen_names, deduped = set(), []
+    for p in plans:
+        if p["plan_name"] not in seen_names:
+            seen_names.add(p["plan_name"]); deduped.append(p)
+    return deduped
+
+
+def scrape_wecom(_page=None):
+    """Scrape We-Com domestic plans. Uses own fresh session with UA."""
+    from playwright.sync_api import sync_playwright as _sp
+    with _sp() as pw:
+        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        page = browser.new_page(user_agent=_WECOM_UA)
+        try:
+            return _scrape_wecom_page(page, "https://we-com.co.il/cellular-packages/", "wecom")
+        finally:
+            browser.close()
+
+
+def scrape_wecom_abroad(_page=None):
+    """Scrape We-Com abroad (wefly) packages. Uses own fresh session with UA."""
+    from playwright.sync_api import sync_playwright as _sp
+    with _sp() as pw:
+        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        page = browser.new_page(user_agent=_WECOM_UA)
+        try:
+            # Click "show more" to reveal all packages
+            page.goto("https://we-com.co.il/roaming/", timeout=30000, wait_until="networkidle")
+            page.wait_for_timeout(2000)
+            for btn in page.query_selector_all("a, button"):
+                txt = (btn.inner_text() or "").strip()
+                if "נוספות" in txt or "עוד חבילות" in txt or "לצפייה" in txt:
+                    try:
+                        btn.scroll_into_view_if_needed()
+                        btn.click()
+                        page.wait_for_timeout(1500)
+                    except Exception:
+                        pass
+                    break
+            return _scrape_wecom_page(page, "https://we-com.co.il/roaming/", "wefly", already_navigated=True)
+        finally:
+            browser.close()
+
+
 def scrape_all():
-    """Scrape all 5 carriers sequentially. Returns flat list of plan dicts."""
+    """Scrape all carriers sequentially. Returns flat list of plan dicts."""
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -85,7 +437,7 @@ def scrape_all():
         )
         page = browser.new_page()
         plans = []
-        for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom, scrape_019]:
+        for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom, scrape_xphone, scrape_wecom, scrape_019]:
             try:
                 result = fn(page)
                 if not result:
@@ -1045,6 +1397,127 @@ def scrape_world8_global(page):
     return plans
 
 
+def scrape_xphone_global(page=None):
+    """Scrape XPhone global eSIM plans (אירופה + גלובלי) from xphone.co.il/roaming."""
+    from playwright.sync_api import sync_playwright as _sp
+    with _sp() as pw:
+        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        pg = browser.new_page(user_agent=_XPHONE_UA)
+        try:
+            pg.goto("https://xphone.co.il/roaming", timeout=40000, wait_until="domcontentloaded")
+            pg.wait_for_timeout(4000)
+            body = pg.evaluate("document.body.innerText") or ""
+            if "confirm you are human" in body.lower() or len(body) < 500:
+                logger.warning("scrape_xphone_global: WAF block detected.")
+                return []
+
+            TAB_CONFIGS = [
+                {"label": "\u05d2\u05dc\u05d9\u05e9\u05d4 \u05d1\u05dc\u05d1\u05d3",      # גלישה בלבד
+                 "has_calls": False},
+                {"label": "\u05d2\u05d5\u05dc\u05e9\u05d9\u05dd \u05d5\u05de\u05d3\u05d1\u05e8\u05d9\u05dd",  # גולשים ומדברים
+                 "has_calls": True},
+            ]
+            REGIONS = [
+                "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",   # אירופה
+                "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9",   # גלובלי
+            ]
+            SEC_GLOBAL = "\u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05d2\u05dc\u05d5\u05d1\u05dc\u05d9\u05d5\u05ea"   # חבילות גלובליות
+            # End-of-cards marker (contact form text that follows the plan cards)
+            SEC_END    = "\u05dc\u05e8\u05db\u05d9\u05e9\u05ea \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05d1\u05d0\u05de\u05e6\u05e2\u05d5\u05ea"  # לרכישת חבילות באמצעות
+
+            all_plans = []
+
+            for tab in TAB_CONFIGS:
+                # 1. Click the top-level tab button (גלישה בלבד / גולשים ומדברים)
+                for el in pg.query_selector_all("button, a, span, div"):
+                    if (el.inner_text() or "").strip() == tab["label"]:
+                        el.click()
+                        pg.wait_for_timeout(2000)
+                        break
+
+                # 2. Click "חבילות גלובליות" sub-nav to show region-based (not destination) plans
+                for el in pg.query_selector_all("a, button, span, div"):
+                    if (el.inner_text() or "").strip() == SEC_GLOBAL:
+                        el.click()
+                        pg.wait_for_timeout(2000)
+                        break
+
+                body = pg.evaluate("document.body.innerText") or ""
+
+                # Narrow to section between "חבילות גלובליות" header and end-of-cards marker
+                sec_s = body.find(SEC_GLOBAL)
+                sec_e = body.find(SEC_END, sec_s + len(SEC_GLOBAL))
+                if sec_s == -1:
+                    logger.warning(f"scrape_xphone_global: global section not found for tab {tab['label']}")
+                    continue
+                section = body[sec_s: (sec_e if sec_e > sec_s else sec_s + 3000)]
+
+                # Find all region card starts
+                card_starts = []
+                for region in REGIONS:
+                    pos = 0
+                    while True:
+                        idx = section.find(region, pos)
+                        if idx == -1:
+                            break
+                        card_starts.append((idx, region))
+                        pos = idx + len(region)
+                card_starts.sort(key=lambda x: x[0])
+
+                for i, (start, region) in enumerate(card_starts):
+                    end = card_starts[i + 1][0] if i + 1 < len(card_starts) else min(start + 400, len(section))
+                    block = section[start:end]
+
+                    # GB
+                    gb_m = re.search(r'(\d+)\s*GB', block, re.IGNORECASE)
+                    gb = int(gb_m.group(1)) if gb_m else None
+
+                    # Price: number BEFORE ₪ (format: "120\n₪\nבלבד!")
+                    price_m = re.search(r'(\d+(?:\.\d+)?)\s*\n\s*\u20aa', block)
+                    if not price_m:
+                        price_m = re.search(r'\u20aa\s*\n?\s*(\d+(?:\.\d+)?)', block)
+                    if price_m is None:
+                        continue
+                    v = float(price_m.group(1))
+                    price = int(v) if v == int(v) else v
+
+                    # Days
+                    days_m = re.search(r'ל[-\u2013\s]?(\d+)\s+\u05d9\u05de\u05d9\u05dd', block)  # ל-N ימים
+                    days = int(days_m.group(1)) if days_m else None
+
+                    # Minutes + SMS for calls tabs
+                    minutes, sms = None, None
+                    if tab["has_calls"]:
+                        min_m = re.search(r'(\d+)[^\u20aa\d]*?\u05d3\u05e7\u05d5\u05ea', block)  # N דקות
+                        minutes = int(min_m.group(1)) if min_m else None
+                        sms_m = re.search(r'(\d+)\s+SMS', block)
+                        sms = int(sms_m.group(1)) if sms_m else minutes
+
+                    plan_name = (f"{region} {gb}GB \u2014 {tab['label']}"
+                                 if gb else f"{region} \u2014 {tab['label']}")
+
+                    extras = []
+                    if minutes:
+                        extras.append(f"{minutes} \u05d3\u05e7\u05d5\u05ea \u05d5-{sms} SMS")  # N דקות ו-N SMS
+
+                    all_plans.append(_make_global_plan(
+                        "xphone_global", plan_name, price, "ILS", price,
+                        gb, days, minutes=minutes, sms=sms, esim=True, extras=extras
+                    ))
+
+            # Dedupe by plan_name (same plan may repeat across page sections)
+            seen, deduped = set(), []
+            for p in all_plans:
+                if p["plan_name"] not in seen:
+                    seen.add(p["plan_name"])
+                    deduped.append(p)
+
+            logger.info(f"XPhone global: {len(deduped)} plans")
+            return deduped
+        finally:
+            browser.close()
+
+
 def scrape_all_global():
     """Scrape global eSIM packages from all 7 providers. Returns flat list of plan dicts."""
     usd_rate = _get_usd_to_ils()
@@ -1062,6 +1535,7 @@ def scrape_all_global():
             ("scrape_esimo_global",         lambda pg: scrape_esimo_global(pg, usd_rate)),
             ("scrape_simtlv_global",        scrape_simtlv_global),
             ("scrape_world8_global",        scrape_world8_global),
+            ("scrape_xphone_global",        scrape_xphone_global),
         ]
         for name, fn in jobs:
             try:
@@ -1120,6 +1594,9 @@ CONTENT_SERVICES = [
     {"service": "נורטון", "carrier": "cellcom",
      "url": "https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/",
      "strategy": "cellcom_hub", "page_keyword": "נורטון מובייל", "free_trial": "ללא תקופת חינם"},
+    {"service": "נורטון", "carrier": "wecom",
+     "url": "https://we-com.co.il/norton360/",
+     "strategy": "keyword_scan", "price_keyword": "7.90", "free_trial": "חודש ראשון מתנה"},
     # ── שיר בהמתנה ─────────────────────────────────────────────────────────
     {"service": "שיר בהמתנה", "carrier": "pelephone",
      "url": "https://www.pelephone.co.il/digitalsite/heb/content-products/songwaiting/lobby/",
@@ -1348,7 +1825,8 @@ def scrape_all_abroad():
         page = browser.new_page()
         plans = []
         for fn in [scrape_partner_abroad, scrape_pelephone_abroad,
-                   scrape_hotmobile_abroad, scrape_cellcom_abroad, scrape_019_abroad]:
+                   scrape_hotmobile_abroad, scrape_cellcom_abroad, scrape_wecom_abroad,
+                   scrape_xphone_abroad, scrape_019_abroad]:
             try:
                 result = fn(page)
                 if not result:
