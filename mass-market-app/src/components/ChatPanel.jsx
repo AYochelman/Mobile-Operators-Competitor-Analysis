@@ -58,7 +58,7 @@ export default function ChatPanel() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-20 left-5 z-50 w-[340px] max-w-[calc(100vw-40px)] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden" style={{ maxHeight: '70vh' }}>
+        <div className="fixed bottom-20 left-5 z-50 w-[340px] max-w-[calc(100vw-40px)] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-fade-in-up" style={{ maxHeight: '70vh' }}>
           {/* Header */}
           <div className="bg-blue-600 text-white px-4 py-3 flex items-center justify-between flex-shrink-0">
             <h3 className="text-sm font-bold">💬 צריך עזרה?</h3>

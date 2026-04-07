@@ -334,7 +334,7 @@ export default function DashboardPage() {
 
         {/* Expandable filter rows */}
         {filtersOpen && (
-          <div className="space-y-3 py-3 border-t border-gray-100 animate-in fade-in duration-200">
+          <div className="space-y-3 py-3 border-t border-gray-100 animate-slide-down">
             {/* Carrier/Provider */}
             {(tab === 'domestic' || tab === 'abroad') && (
               <div>
