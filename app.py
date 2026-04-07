@@ -588,6 +588,123 @@ def api_push_test():
     return jsonify({"sent": n})
 
 
+# ── User management (Supabase) ────────────────────────────────────────────
+
+@app.route("/api/users")
+@require_api_key
+def api_get_users():
+    """List all users from Supabase via direct DB connection."""
+    import psycopg2
+    try:
+        conn = psycopg2.connect(
+            host='db.gmfefvjdmgzluwffzrzj.supabase.co',
+            port=5432, dbname='postgres', user='postgres',
+            password='P2VwLA9KfosTlUHu', sslmode='require'
+        )
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT u.id, u.email, u.created_at, COALESCE(r.role, 'viewer') as role
+            FROM auth.users u
+            LEFT JOIN public.user_roles r ON u.id = r.user_id
+            ORDER BY u.created_at DESC
+        """)
+        users = [{'id': str(row[0]), 'email': row[1], 'created_at': str(row[2]), 'role': row[3]} for row in cur.fetchall()]
+        conn.close()
+        return jsonify(users)
+    except Exception as e:
+        logger.error(f"get users failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/api/users", methods=["POST"])
+@require_api_key
+def api_create_user():
+    """Create a new user in Supabase."""
+    import psycopg2
+    import urllib.request
+    data = request.get_json(force=True)
+    email = data.get('email', '')
+    password = data.get('password', '')
+    role = data.get('role', 'viewer')
+    if not email or not password:
+        return jsonify({"error": "email and password required"}), 400
+    try:
+        # Create user via Supabase Auth API
+        url = 'https://gmfefvjdmgzluwffzrzj.supabase.co/auth/v1/signup'
+        payload = json.dumps({'email': email, 'password': password}).encode()
+        req = urllib.request.Request(url, payload, method='POST')
+        req.add_header('apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtZmVmdmpkbWd6bHV3ZmZ6cnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTcwNzIsImV4cCI6MjA5MTA5MzA3Mn0.8RAX8o8yPHXSTYk_Fc3bmlk5fz4X5sl53k0SWNbHlvM')
+        req.add_header('Content-Type', 'application/json')
+        resp = urllib.request.urlopen(req, timeout=10)
+        result = json.loads(resp.read())
+        user_id = result.get('id') or result.get('user', {}).get('id')
+
+        # Confirm email + set role
+        conn = psycopg2.connect(
+            host='db.gmfefvjdmgzluwffzrzj.supabase.co',
+            port=5432, dbname='postgres', user='postgres',
+            password='P2VwLA9KfosTlUHu', sslmode='require'
+        )
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute('UPDATE auth.users SET email_confirmed_at = now() WHERE id = %s', (user_id,))
+        cur.execute("INSERT INTO public.user_roles (user_id, role) VALUES (%s, %s) ON CONFLICT (user_id) DO UPDATE SET role = %s", (user_id, role, role))
+        conn.close()
+
+        return jsonify({"status": "created", "user_id": user_id}), 201
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        logger.error(f"create user failed: {body}")
+        return jsonify({"error": "Failed to create user"}), 500
+    except Exception as e:
+        logger.error(f"create user failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/api/users/<user_id>", methods=["DELETE"])
+@require_api_key
+def api_delete_user(user_id):
+    """Delete a user from Supabase."""
+    import psycopg2
+    try:
+        conn = psycopg2.connect(
+            host='db.gmfefvjdmgzluwffzrzj.supabase.co',
+            port=5432, dbname='postgres', user='postgres',
+            password='P2VwLA9KfosTlUHu', sslmode='require'
+        )
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute('DELETE FROM public.user_roles WHERE user_id = %s', (user_id,))
+        cur.execute('DELETE FROM auth.users WHERE id = %s', (user_id,))
+        conn.close()
+        return jsonify({"status": "deleted"})
+    except Exception as e:
+        logger.error(f"delete user failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/api/users/<user_id>/role", methods=["POST"])
+@require_api_key
+def api_update_user_role(user_id):
+    """Update a user's role."""
+    import psycopg2
+    data = request.get_json(force=True)
+    role = data.get('role', 'viewer')
+    if role not in ('admin', 'viewer'):
+        return jsonify({"error": "role must be admin or viewer"}), 400
+    try:
+        conn = psycopg2.connect(
+            host='db.gmfefvjdmgzluwffzrzj.supabase.co',
+            port=5432, dbname='postgres', user='postgres',
+            password='P2VwLA9KfosTlUHu', sslmode='require'
+        )
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute("INSERT INTO public.user_roles (user_id, role) VALUES (%s, %s) ON CONFLICT (user_id) DO UPDATE SET role = %s", (user_id, role, role))
+        conn.close()
+        return jsonify({"status": "updated", "role": role})
+    except Exception as e:
+        logger.error(f"update role failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
 # ── Main ───────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
