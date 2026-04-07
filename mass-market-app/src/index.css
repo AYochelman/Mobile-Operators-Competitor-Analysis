@@ -23,11 +23,114 @@
     background-color: rgba(59, 130, 246, 0.15);
     color: inherit;
   }
+
+  /* Easing curves */
+  :root {
+    --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  }
 }
 
 @layer utilities {
-  /* Smooth transitions for interactive elements */
+  /* Smooth base transition */
   .transition-smooth {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s var(--ease-out);
+  }
+}
+
+/* ── Animations ──────────────────────────────────────────────── */
+
+/* Fade in + slide up — for cards and content */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Fade in — for overlays and modals */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Slide down — for dropdowns and filters */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Gentle pulse — for loading indicators */
+@keyframes gentlePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Animation classes */
+.animate-fade-in-up {
+  animation: fadeInUp 0.35s var(--ease-out) both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s var(--ease-out) both;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.2s var(--ease-out) both;
+}
+
+.animate-gentle-pulse {
+  animation: gentlePulse 1.8s var(--ease-in-out) infinite;
+}
+
+/* Stagger delays for card grids */
+.stagger-1 { animation-delay: 0.03s; }
+.stagger-2 { animation-delay: 0.06s; }
+.stagger-3 { animation-delay: 0.09s; }
+.stagger-4 { animation-delay: 0.12s; }
+.stagger-5 { animation-delay: 0.15s; }
+.stagger-6 { animation-delay: 0.18s; }
+
+/* Interactive hover — cards */
+.hover-lift {
+  transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Interactive hover — buttons */
+.hover-press {
+  transition: transform 0.15s var(--ease-out);
+}
+.hover-press:active {
+  transform: scale(0.97);
+}
+
+/* Tab underline slide */
+.tab-underline {
+  position: relative;
+}
+.tab-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transition: transform 0.25s var(--ease-out);
+}
+.tab-underline.active::after,
+.tab-underline[data-active="true"]::after {
+  transform: scaleX(1);
+}
+
+/* Reduced motion — respect accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

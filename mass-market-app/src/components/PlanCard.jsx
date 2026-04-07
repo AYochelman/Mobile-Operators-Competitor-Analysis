@@ -73,7 +73,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType }) {
   const hasRoaming = !isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
 
   return (
-    <div className="bg-white rounded-2xl p-5 hover:shadow-md transition-all duration-200 shadow-sm relative group text-right">
+    <div className="bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up">
       {/* Change indicator dot */}
       {changeType && CHANGE_DOT[changeType] && (
         <span
