@@ -10,7 +10,7 @@ import {
 } from '../data/globalCountries'
 
 const TABS = [
-  { id: 'domestic', label: 'Mass Market' },
+  { id: 'domestic', label: 'חבילות סלולר' },
   { id: 'abroad', label: 'חו"ל' },
   { id: 'global', label: 'גלובלי' },
 ]
@@ -57,6 +57,7 @@ const KNOWN_REGIONS = new Set([
   'סין + הונג קונג + מקאו','יפן וקוריאה','יפן וסין',
   'אסיה פסיפיק','מרכז אסיה','צפון אפריקה',
   'אמריקה הדרומית','דרום אמריקה',
+  'אירופה+','שוויץ+','גוודלופ','קפריסין+',
 ])
 
 export default function ComparePage() {
