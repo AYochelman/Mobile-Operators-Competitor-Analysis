@@ -191,9 +191,8 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">השוואת חבילות סלולר</h1>
           {lastUpdate && (
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-sm text-gray-600">
               עדכון אחרון: {new Date(lastUpdate).toLocaleDateString('he-IL')} {lastUpdate.slice(11, 16)}
             </p>
           )}
@@ -206,7 +205,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto pb-2 mb-4 scrollbar-hide">
+      <div className="flex justify-center gap-1 overflow-x-auto pb-2 mb-4 scrollbar-hide">
         {TABS.map(t => (
           <button
             key={t.id}

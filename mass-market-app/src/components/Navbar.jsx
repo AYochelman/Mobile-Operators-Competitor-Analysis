@@ -15,9 +15,9 @@ export default function Navbar() {
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo */}
-        <NavLink to="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-blue-600">Mass Market</span>
-          <span className="text-xs text-gray-400 hidden sm:inline">השוואת חבילות סלולר</span>
+        <NavLink to="/" className="flex flex-col">
+          <span className="text-xl font-bold text-blue-600">Mobile carriers Competitor Analysis</span>
+          <span className="text-xs text-gray-400">Made By Alon Yochelman</span>
         </NavLink>
 
         {/* Nav links - desktop */}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import Button from '../components/ui/Button'
@@ -7,25 +7,41 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { signIn, user } = useAuth()
+  const [submitting, setSubmitting] = useState(false)
+  const { signIn, user, loading } = useAuth()
   const navigate = useNavigate()
 
-  if (user) { navigate('/', { replace: true }); return null }
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/', { replace: true })
+    }
+  }, [user, loading, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    setLoading(true)
+    setSubmitting(true)
     try {
       await signIn(email, password)
-      navigate('/')
+      // onAuthStateChange will set user → useEffect will redirect
     } catch (err) {
       setError(err.message || 'שגיאה בהתחברות')
-    } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
+
+  // Show spinner while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+      </div>
+    )
+  }
+
+  // Already logged in — will redirect via useEffect
+  if (user) return null
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -52,8 +68,8 @@ export default function LoginPage() {
             />
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? '⏳ מתחבר...' : 'כניסה'}
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? '⏳ מתחבר...' : 'כניסה'}
           </Button>
         </form>
       </div>
