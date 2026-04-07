@@ -3,6 +3,11 @@ import { api } from '../lib/api'
 import Spinner from '../components/ui/Spinner'
 import FilterTag from '../components/ui/FilterTag'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import {
+  AIRALO_DISCOVER, GLOBALESIM_COUNTRIES, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
+  PELEPHONE_GLOBAL_COUNTRIES, ESIMO_COUNTRIES, WORLD8_WORLDWIDE, WORLD8_EUROPE_USA,
+  XPHONE_EUROPE, XPHONE_WORLD, getCountriesForPlan
+} from '../data/globalCountries'
 
 const TABS = [
   { id: 'domestic', label: 'Mass Market' },
@@ -95,17 +100,61 @@ export default function ComparePage() {
   const getLabel = (id) => carrierOptions.find(x => x.id === id)?.label || id
   const getColor = (id) => carrierOptions.find(x => x.id === id)?.color || '#888'
 
-  // Regions (global only)
-  const availableRegions = useMemo(() => {
-    if (tab !== 'global') return []
-    return [...new Set(plans.filter(p => p.extras && p.extras[0] && KNOWN_REGIONS.has(p.extras[0])).map(p => p.extras[0]))].sort((a, b) => a.localeCompare(b, 'he'))
-  }, [plans, tab])
+  // Static country lists for carriers that don't store country in extras
+  const CARRIER_COUNTRY_LISTS = useMemo(() => ({
+    tuki: TUKI_COUNTRIES,
+    globalesim: GLOBALESIM_COUNTRIES,
+    airalo: AIRALO_DISCOVER,
+    pelephone_global: PELEPHONE_GLOBAL_COUNTRIES,
+    esimo: ESIMO_COUNTRIES,
+    simtlv: SIMTLV_COUNTRIES,
+    world8: [...new Set([...WORLD8_WORLDWIDE, ...WORLD8_EUROPE_USA])],
+    xphone_global: [...new Set([...XPHONE_EUROPE, ...XPHONE_WORLD])],
+  }), [])
 
-  // Destinations/countries (global = non-region extras, abroad = from getPlanCountries not available here so skip)
-  const availableDestinations = useMemo(() => {
-    if (tab !== 'global') return []
-    return [...new Set(plans.filter(p => p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(p.extras[0])).map(p => p.extras[0]))].sort((a, b) => a.localeCompare(b, 'he'))
-  }, [plans, tab])
+  // Build complete country → carriers mapping
+  const { availableRegions, availableDestinations, countryCarrierMap } = useMemo(() => {
+    if (tab !== 'global') return { availableRegions: [], availableDestinations: [], countryCarrierMap: {} }
+
+    const map = {} // country → Set of carrier ids
+
+    // From extras[0] (saily, holafly, esimio per-country plans)
+    plans.forEach(p => {
+      if (p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(p.extras[0])) {
+        if (!map[p.extras[0]]) map[p.extras[0]] = new Set()
+        map[p.extras[0]].add(p.carrier)
+      }
+    })
+
+    // From static country lists (tuki, airalo, globalesim, etc.)
+    Object.entries(CARRIER_COUNTRY_LISTS).forEach(([carrier, countries]) => {
+      // Only add if carrier has plans in data
+      if (plans.some(p => p.carrier === carrier)) {
+        countries.forEach(country => {
+          if (!map[country]) map[country] = new Set()
+          map[country].add(carrier)
+        })
+      }
+    })
+
+    // Also index saily/holafly/esimio regional plans' included countries
+    plans.forEach(p => {
+      if (p.extras && p.extras[0] && KNOWN_REGIONS.has(p.extras[0])) {
+        const data = getCountriesForPlan(p)
+        if (data && data.countries) {
+          data.countries.forEach(country => {
+            if (!map[country]) map[country] = new Set()
+            map[country].add(p.carrier)
+          })
+        }
+      }
+    })
+
+    const regions = [...new Set(plans.filter(p => p.extras && p.extras[0] && KNOWN_REGIONS.has(p.extras[0])).map(p => p.extras[0]))].sort((a, b) => a.localeCompare(b, 'he'))
+    const destinations = Object.keys(map).sort((a, b) => a.localeCompare(b, 'he'))
+
+    return { availableRegions: regions, availableDestinations: destinations, countryCarrierMap: map }
+  }, [plans, tab, CARRIER_COUNTRY_LISTS])
 
   // Filter + sort plans
   const filteredPlans = useMemo(() => {
@@ -122,7 +171,22 @@ export default function ComparePage() {
     if (regionFilter !== 'all') {
       result = result.filter(p => p.extras && p.extras[0] === regionFilter)
     } else if (destinationFilter !== 'all') {
-      result = result.filter(p => p.extras && p.extras[0] === destinationFilter)
+      // Get carriers that cover this country
+      const carriersForCountry = countryCarrierMap[destinationFilter] || new Set()
+      result = result.filter(p => {
+        // Direct match (saily/holafly/esimio per-country plans)
+        if (p.extras && p.extras[0] === destinationFilter) return true
+        // Carrier covers this country via static list or regional plan
+        if (carriersForCountry.has(p.carrier)) {
+          // For per-country providers, only show if extras matches
+          if (['saily', 'holafly', 'esimio'].includes(p.carrier) && p.extras && p.extras[0] && !KNOWN_REGIONS.has(p.extras[0])) {
+            return p.extras[0] === destinationFilter
+          }
+          // For regional/global carriers (tuki, airalo, etc.), show all their plans
+          return true
+        }
+        return false
+      })
     }
 
     if (showDays && daysFilter !== 'all') {
@@ -254,7 +318,10 @@ export default function ComparePage() {
               className={`border rounded-lg px-3 py-1.5 text-xs ${destinationFilter !== 'all' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
             >
               <option value="all">כל המדינות ({availableDestinations.length})</option>
-              {availableDestinations.map(c => <option key={c} value={c}>{c}</option>)}
+              {availableDestinations.map(c => {
+                const n = countryCarrierMap[c] ? countryCarrierMap[c].size : 0
+                return <option key={c} value={c}>{c} ({n} ספקים)</option>
+              })}
             </select>
           </div>
         )}
