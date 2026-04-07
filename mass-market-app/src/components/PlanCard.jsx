@@ -100,17 +100,17 @@ export default function PlanCard({ plan, type = 'domestic', changeType }) {
 
       {/* Price */}
       <div className="mb-3">
-        <span className="text-3xl font-bold text-gray-900 tracking-tight">{String(plan.price).startsWith('₪') ? plan.price : `₪${plan.price}`}</span>
+        <div className="text-3xl font-bold text-gray-900 tracking-tight">{String(plan.price).startsWith('₪') ? plan.price : `₪${plan.price}`}</div>
         {isGlobal && plan.original_price && plan.currency && plan.currency !== 'ILS' && (
-          <span className="text-[11px] text-gray-400 mr-2">${plan.original_price} {plan.currency}</span>
+          <div className="text-[11px] text-gray-400 mt-0.5" dir="ltr">{plan.currency} ${plan.original_price}</div>
         )}
       </div>
 
       {/* Info line — dot separated */}
       {infoParts.length > 0 && (
-        <p className="text-sm text-gray-500 mb-3" dir="rtl">
+        <p className="text-sm text-gray-500 mb-3">
           {infoParts.map((part, i) => (
-            <span key={i}>{i > 0 && <span className="mx-1.5 text-gray-300">&#183;</span>}{part}</span>
+            <span key={i}>{i > 0 && <span className="mx-1.5 text-gray-300">·</span>}<bdi>{part}</bdi></span>
           ))}
         </p>
       )}
