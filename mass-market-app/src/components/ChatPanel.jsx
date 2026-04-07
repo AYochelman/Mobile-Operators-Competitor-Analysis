@@ -51,9 +51,9 @@ export default function ChatPanel() {
       {/* FAB button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-5 left-5 z-50 w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center text-xl"
+        className="fixed bottom-5 left-5 z-50 px-4 h-10 rounded-full bg-gray-900 text-white shadow-lg hover:bg-gray-800 transition-all flex items-center justify-center text-xs font-semibold tracking-wide"
       >
-        {open ? '✕' : '🤖'}
+        {open ? '✕' : 'Ask AI'}
       </button>
 
       {/* Chat panel */}

@@ -110,6 +110,17 @@ def init_db(db_path=None):
                 new_val     TEXT,
                 changed_at  TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS price_alerts (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_email     TEXT NOT NULL,
+                tab            TEXT NOT NULL DEFAULT 'domestic',
+                carrier        TEXT,
+                plan_pattern   TEXT,
+                threshold      REAL NOT NULL,
+                active         INTEGER NOT NULL DEFAULT 1,
+                last_triggered TEXT,
+                created_at     TEXT NOT NULL
+            );
         """)
         conn.commit()
     finally:
@@ -511,5 +522,72 @@ def get_changes(limit=20, db_path=None):
              "old_val": r[3], "new_val": r[4], "changed_at": r[5]}
             for r in rows
         ]
+    finally:
+        conn.close()
+
+
+# ── Price Alerts CRUD ─────────────────────────────────────────────────────
+
+def save_price_alert(user_email, tab, carrier, plan_pattern, threshold, db_path=None):
+    """Create a new price alert."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO price_alerts (user_email, tab, carrier, plan_pattern, threshold, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (user_email, tab, carrier or None, plan_pattern or None,
+             threshold, datetime.now().isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_price_alerts(user_email=None, active_only=True, db_path=None):
+    """Get alerts, optionally filtered by user."""
+    conn = _connect(db_path)
+    try:
+        conditions = []
+        params = []
+        if user_email:
+            conditions.append("user_email = ?")
+            params.append(user_email)
+        if active_only:
+            conditions.append("active = 1")
+        where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+        rows = conn.execute(
+            f"SELECT id, user_email, tab, carrier, plan_pattern, threshold, active, last_triggered, created_at "
+            f"FROM price_alerts {where} ORDER BY created_at DESC",
+            params
+        ).fetchall()
+        return [
+            {"id": r[0], "user_email": r[1], "tab": r[2], "carrier": r[3],
+             "plan_pattern": r[4], "threshold": r[5], "active": bool(r[6]),
+             "last_triggered": r[7], "created_at": r[8]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def delete_price_alert(alert_id, db_path=None):
+    """Delete an alert by ID."""
+    conn = _connect(db_path)
+    try:
+        conn.execute("DELETE FROM price_alerts WHERE id = ?", (alert_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def update_alert_triggered(alert_id, db_path=None):
+    """Mark alert as triggered (set last_triggered to now)."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "UPDATE price_alerts SET last_triggered = ? WHERE id = ?",
+            (datetime.now().isoformat(), alert_id)
+        )
+        conn.commit()
     finally:
         conn.close()
