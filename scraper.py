@@ -2519,6 +2519,44 @@ def scrape_tuki_regions(page, usd_rate):
     return all_plans
 
 
+# GlobaleSIM regional plans — all regions share same pricing (ILS)
+_GLOBALESIM_REGION_PLANS = [
+    # (gb, days, price_ils, minutes)
+    (1, 3, 29, None),
+    (3, 14, 69, None),
+    (6, 30, 89, None),
+    (10, 30, 109, None),
+    (1, 3, 54, 50),    # with 50 min
+    (3, 14, 94, 50),
+    (6, 30, 114, 50),
+    (10, 30, 134, 50),
+]
+
+GLOBALESIM_REGIONS = {
+    "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4": "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
+    "\u05d0\u05e1\u05d9\u05d4": "\u05d0\u05e1\u05d9\u05d4",
+    "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4": "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
+    "\u05d3\u05e8\u05d5\u05dd \u05d0\u05de\u05e8\u05d9\u05e7\u05d4": "\u05d3\u05e8\u05d5\u05dd \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
+    "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4": "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "\u05d0\u05d5\u05e7\u05d9\u05d0\u05e0\u05d9\u05d4": "\u05d0\u05d5\u05e7\u05d9\u05d0\u05e0\u05d9\u05d4",
+    "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9": "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9",
+}
+
+def scrape_globalesim_regions(page):
+    """GlobaleSIM regional plans \u2014 hardcoded ILS prices (same for all regions)."""
+    all_plans = []
+    for region_heb in GLOBALESIM_REGIONS.keys():
+        for (gb, days, price, minutes) in _GLOBALESIM_REGION_PLANS:
+            suffix = " + 50 \u05d3\u05e7\u05d5\u05ea" if minutes else ""
+            plan_name = f"{region_heb} \u2013 {gb}GB{suffix} \u2013 {days} \u05d9\u05de\u05d9\u05dd"
+            all_plans.append(_make_global_plan(
+                "globalesim", plan_name, price, "ILS", price,
+                data_gb=gb, days=days, minutes=minutes, esim=True, extras=[region_heb]
+            ))
+    logger.info(f"GlobaleSIM regions: {len(all_plans)} plans from {len(GLOBALESIM_REGIONS)} regions")
+    return all_plans
+
+
 def scrape_all_global():
     """Scrape global eSIM packages from all 7 providers. Returns flat list of plan dicts."""
     usd_rate = _get_usd_to_ils()
@@ -2532,6 +2570,7 @@ def scrape_all_global():
             ("scrape_tuki_global",          lambda pg: scrape_tuki_global(pg, usd_rate)),
             ("scrape_tuki_regions",        lambda pg: scrape_tuki_regions(pg, usd_rate)),
             ("scrape_globalesim_global",    scrape_globalesim_global),
+            ("scrape_globalesim_regions",   scrape_globalesim_regions),
             ("scrape_airalo_global",        lambda pg: scrape_airalo_global(pg, usd_rate)),
             ("scrape_pelephone_globalsim",  scrape_pelephone_globalsim),
             ("scrape_esimo_global",         lambda pg: scrape_esimo_global(pg, usd_rate)),
