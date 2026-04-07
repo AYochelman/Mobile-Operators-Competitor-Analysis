@@ -212,39 +212,46 @@ export default function DashboardPage() {
     if (!filteredPlans.length) return
     const TAB_NAMES = { domestic: 'Mass Market', abroad: 'חו"ל', global: 'גלובלי', content: 'תוכן' }
     const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io' }
+    const GB_HEB = { 'all': 'הכל', '0-5': '0-5GB', '5-15': '5-15GB', '15-100': '15-100GB', '100+': '100+GB', 'unlimited': 'ללא הגבלה' }
+    const DAYS_HEB = { 'all': 'הכל', '1-7': '1-7 ימים', '8-30': '8-30 ימים', '30+': '30+ ימים' }
 
-    const rows = filteredPlans.map(p => {
-      const row = { 'ספק': CARRIER_HEB[p.carrier] || p.carrier }
-      if (tab === 'content') {
-        row['שירות'] = p.service || ''
-      } else {
-        row['שם חבילה'] = p.plan_name || ''
-      }
-      row['מחיר ₪'] = p.price
-      if (!['content'].includes(tab)) {
-        row['גלישה GB'] = p.data_gb === null ? 'ללא הגבלה' : p.data_gb
-      }
-      if (['abroad', 'global'].includes(tab) && p.days) {
-        row['ימים'] = p.days
-      }
-      if (p.minutes) row['דקות'] = p.minutes
-      if (p.sms) row['SMS'] = p.sms
-      if (tab === 'global' && p.original_price && p.currency !== 'ILS') {
-        row['מחיר מקורי'] = p.original_price
-        row['מטבע'] = p.currency
-      }
-      if (tab === 'content' && p.free_trial) row['תקופת חינם'] = p.free_trial
-      if (p.extras && p.extras.length) row['הערות'] = p.extras.join(' | ')
-      return row
-    })
+    // Build filter summary title
+    const parts = [`קטגוריה: ${TAB_NAMES[tab]}`]
+    if (filters.carrier !== 'all') parts.push(`ספק: ${CARRIER_HEB[filters.carrier] || filters.carrier}`)
+    if (filters.globalProvider !== 'all') parts.push(`ספק: ${CARRIER_HEB[filters.globalProvider] || filters.globalProvider}`)
+    if (filters.region !== 'all') parts.push(`אזור: ${filters.region}`)
+    if (filters.destination !== 'all') parts.push(`מדינה: ${filters.destination}`)
+    if (filters.gb !== 'all') parts.push(`גלישה: ${GB_HEB[filters.gb] || filters.gb}`)
+    if (filters.days !== 'all') parts.push(`תקופה: ${DAYS_HEB[filters.days] || filters.days}`)
+    if (filters.gen !== 'all') parts.push(`דור: ${filters.gen === '5g' ? 'דור 5' : 'דור 4'}`)
+    if (filters.roaming === 'yes') parts.push('כולל חו"ל')
+    if (filters.contentService !== 'all') parts.push(`שירות: ${filters.contentService}`)
+    const filterTitle = parts.join(' | ')
 
-    const ws = XLSX.utils.json_to_sheet(rows)
-    // RTL
-    ws['!cols'] = Object.keys(rows[0] || {}).map(() => ({ wch: 20 }))
+    // Build rows — fixed columns only
+    const rows = filteredPlans.map(p => ({
+      'ספק': CARRIER_HEB[p.carrier] || p.carrier,
+      'שם חבילה': p.plan_name || p.service || '',
+      'מחיר ₪': typeof p.price === 'string' ? p.price.replace('₪', '') : p.price,
+      'גלישה GB': p.data_gb === null ? 'ללא הגבלה' : p.data_gb,
+      'ימים': p.days || '',
+      'דקות': p.minutes || '',
+      'SMS': p.sms || '',
+    }))
+
+    // Create sheet with title row first
+    const ws = XLSX.utils.aoa_to_sheet([[filterTitle], [`${filteredPlans.length} חבילות | ${new Date().toLocaleDateString('he-IL')}`], []])
+    // Merge title row across all columns
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }]
+    // Append data rows starting at row 4
+    XLSX.utils.sheet_add_json(ws, rows, { origin: 'A4' })
+    // Column widths
+    ws['!cols'] = [{ wch: 15 }, { wch: 35 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }]
+
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, TAB_NAMES[tab] || tab)
-    XLSX.writeFile(wb, `mass-market-${tab}-${new Date().toISOString().slice(0,10)}.xlsx`)
-  }, [filteredPlans, tab])
+    XLSX.writeFile(wb, `mass-market-${tab}-${new Date().toISOString().slice(0, 10)}.xlsx`)
+  }, [filteredPlans, tab, filters])
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 pb-20 md:pb-6">
