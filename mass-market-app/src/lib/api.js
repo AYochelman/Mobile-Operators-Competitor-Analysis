@@ -2,7 +2,7 @@ const API_BASE = import.meta.env.VITE_API_URL || ''
 
 async function fetchApi(path, options = {}) {
   const url = `${API_BASE}${path}`
-  const headers = { 'Content-Type': 'application/json', ...options.headers }
+  const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', ...options.headers }
 
   // Add auth token if available
   const token = localStorage.getItem('auth_token')
