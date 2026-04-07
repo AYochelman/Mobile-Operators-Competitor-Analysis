@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { api } from '../lib/api'
+import * as XLSX from 'xlsx'
 import PlanCard from '../components/PlanCard'
 import CountryModal from '../components/CountryModal'
 import FilterTag from '../components/ui/FilterTag'
@@ -207,6 +208,44 @@ export default function DashboardPage() {
 
   const setFilter = (key, value) => setFilters(prev => ({ ...prev, [key]: value }))
 
+  const exportToExcel = useCallback(() => {
+    if (!filteredPlans.length) return
+    const TAB_NAMES = { domestic: 'Mass Market', abroad: 'חו"ל', global: 'גלובלי', content: 'תוכן' }
+    const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io' }
+
+    const rows = filteredPlans.map(p => {
+      const row = { 'ספק': CARRIER_HEB[p.carrier] || p.carrier }
+      if (tab === 'content') {
+        row['שירות'] = p.service || ''
+      } else {
+        row['שם חבילה'] = p.plan_name || ''
+      }
+      row['מחיר ₪'] = p.price
+      if (!['content'].includes(tab)) {
+        row['גלישה GB'] = p.data_gb === null ? 'ללא הגבלה' : p.data_gb
+      }
+      if (['abroad', 'global'].includes(tab) && p.days) {
+        row['ימים'] = p.days
+      }
+      if (p.minutes) row['דקות'] = p.minutes
+      if (p.sms) row['SMS'] = p.sms
+      if (tab === 'global' && p.original_price && p.currency !== 'ILS') {
+        row['מחיר מקורי'] = p.original_price
+        row['מטבע'] = p.currency
+      }
+      if (tab === 'content' && p.free_trial) row['תקופת חינם'] = p.free_trial
+      if (p.extras && p.extras.length) row['הערות'] = p.extras.join(' | ')
+      return row
+    })
+
+    const ws = XLSX.utils.json_to_sheet(rows)
+    // RTL
+    ws['!cols'] = Object.keys(rows[0] || {}).map(() => ({ wch: 20 }))
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, TAB_NAMES[tab] || tab)
+    XLSX.writeFile(wb, `mass-market-${tab}-${new Date().toISOString().slice(0,10)}.xlsx`)
+  }, [filteredPlans, tab])
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 pb-20 md:pb-6">
       {/* Header row */}
@@ -266,6 +305,11 @@ export default function DashboardPage() {
 
           <div className="flex items-center gap-3">
             <span className="text-[11px] text-gray-400">{filteredPlans.length} חבילות</span>
+            {filteredPlans.length > 0 && (
+              <button onClick={exportToExcel} className="text-[11px] text-blue-500 hover:text-blue-700 transition-colors" title="ייצוא ל-Excel">
+                📥 Excel
+              </button>
+            )}
             {/* Sort pills */}
             {tab !== 'content' && (
               <div className="flex items-center gap-0.5">
