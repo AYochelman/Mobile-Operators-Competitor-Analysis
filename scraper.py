@@ -2633,14 +2633,41 @@ SPARKS_REGIONS = {
 }
 
 
+SPARKS_COUNTRY_TO_HEBREW_EXTRA = {
+    "united-states": "\u05d0\u05e8\u05e6\u05d5\u05ea \u05d4\u05d1\u05e8\u05d9\u05ea",
+    "united-kingdom": "\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4",
+    "south-korea": "\u05d3\u05e8\u05d5\u05dd \u05e7\u05d5\u05e8\u05d9\u05d0\u05d4",
+    "south-africa": "\u05d3\u05e8\u05d5\u05dd \u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "hong-kong": "\u05d4\u05d5\u05e0\u05d2 \u05e7\u05d5\u05e0\u05d2",
+    "new-zealand": "\u05e0\u05d9\u05d5 \u05d6\u05d9\u05dc\u05e0\u05d3",
+    "sri-lanka": "\u05e1\u05e8\u05d9 \u05dc\u05e0\u05e7\u05d4",
+    "costa-rica": "\u05e7\u05d5\u05e1\u05d8\u05d4 \u05e8\u05d9\u05e7\u05d4",
+    "dominican-republic": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4 \u05d4\u05d3\u05d5\u05de\u05d9\u05e0\u05d9\u05e7\u05e0\u05d9\u05ea",
+    "el-salvador": "\u05d0\u05dc \u05e1\u05dc\u05d1\u05d3\u05d5\u05e8",
+    "burkina-faso": "\u05d1\u05d5\u05e8\u05e7\u05d9\u05e0\u05d4 \u05e4\u05d0\u05e1\u05d5",
+    "saudi-arabia": "\u05e2\u05e8\u05d1 \u05d4\u05e1\u05e2\u05d5\u05d3\u05d9\u05ea",
+    "trinidad-and-tobago": "\u05d8\u05e8\u05d9\u05e0\u05d9\u05d3\u05d3 \u05d5\u05d8\u05d5\u05d1\u05d2\u05d5",
+    "czech-republic": "\u05e6'\u05db\u05d9\u05d4",
+    "ivory-coast": "\u05d7\u05d5\u05e3 \u05d4\u05e9\u05e0\u05d4\u05d1",
+    "papua-new-guinea": "\u05e4\u05e4\u05d5\u05d0\u05d4 \u05d2\u05d9\u05e0\u05d0\u05d4 \u05d4\u05d7\u05d3\u05e9\u05d4",
+    "north-macedonia": "\u05de\u05e7\u05d3\u05d5\u05e0\u05d9\u05d4 \u05d4\u05e6\u05e4\u05d5\u05e0\u05d9\u05ea",
+    "cape-verde": "\u05db\u05e3 \u05d5\u05e8\u05d3\u05d4",
+    "guinea-bissau": "\u05d2\u05d9\u05e0\u05d0\u05d4-\u05d1\u05d9\u05e1\u05d0\u05d5",
+    "united-arab-emirates": "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea",
+    "bosnia-and-herzegovina": "\u05d1\u05d5\u05e1\u05e0\u05d9\u05d4 \u05d5\u05d4\u05e8\u05e6\u05d2\u05d5\u05d1\u05d9\u05e0\u05d4",
+}
+
+
 def scrape_sparks_global(_page=None, usd_rate=None):
-    """Scrape Sparks Travel eSIM plans \u2014 regional plans (hardcoded) + per-country via Playwright."""
+    """Scrape Sparks Travel eSIM plans \u2014 regional (hardcoded) + per-country (API)."""
+    import urllib.request, json as _json
+
     if usd_rate is None:
         usd_rate = _get_usd_to_ils()
 
     all_plans = []
 
-    # Regional plans (hardcoded, known pricing)
+    # 1. Regional plans (hardcoded)
     for region_heb, plans_data in SPARKS_REGIONS.items():
         for (gb, days), price_usd in plans_data.items():
             price_ils = round(price_usd * usd_rate, 2)
@@ -2650,47 +2677,38 @@ def scrape_sparks_global(_page=None, usd_rate=None):
                 data_gb=gb, days=days, esim=True, extras=[region_heb]
             ))
 
-    # Per-country plans via Playwright
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124"
+    # 2. Per-country plans via API
     try:
-        with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-            page = browser.new_page(user_agent=ua)
-            page.goto("https://sparks.travel/", timeout=30000, wait_until="domcontentloaded")
-            page.wait_for_timeout(3000)
+        import os
+        data_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sparks_travel_data.json")
+        if os.path.exists(data_file):
+            with open(data_file, encoding="utf-8") as f:
+                data = _json.load(f)
 
-            # Extract all plan data from the page's JavaScript
-            raw = page.evaluate("""() => {
-                const plans = [];
-                document.querySelectorAll('[class*="plan"], [class*="package"], [class*="card"]').forEach(card => {
-                    const text = card.innerText;
-                    const gbMatch = text.match(/(\\d+)\\s*GB/i);
-                    const daysMatch = text.match(/(\\d+)\\s*(?:days?|\u05d9\u05de\u05d9\u05dd)/i);
-                    const priceMatch = text.match(/\\$\\s*(\\d+(?:\\.\\d+)?)/);
-                    if (gbMatch && priceMatch) {
-                        plans.push({
-                            gb: parseInt(gbMatch[1]),
-                            days: daysMatch ? parseInt(daysMatch[1]) : 60,
-                            price: parseFloat(priceMatch[1]),
-                            text: text.substring(0, 100)
-                        });
-                    }
-                });
-                return plans;
-            }""")
+            for country in data.get("countries", []):
+                country_name = country.get("country_name", "")
+                # Convert to Hebrew using slug
+                slug = country_name.lower().replace(" ", "-")
+                country_heb = SAILY_SLUG_TO_HEBREW.get(slug)
+                if not country_heb:
+                    country_heb = SPARKS_COUNTRY_TO_HEBREW_EXTRA.get(slug, country_name)
 
-            if raw:
-                for item in raw:
-                    price_ils = round(item['price'] * usd_rate, 2)
-                    plan_name = f"Sparks \u2013 {item['gb']}GB \u2013 {item['days']} \u05d9\u05de\u05d9\u05dd"
+                for plan in country.get("plans", []):
+                    gb = plan.get("data_gb")
+                    days = plan.get("validity_days", 60)
+                    price_usd = plan.get("price_usd")
+                    if not gb or not price_usd:
+                        continue
+                    price_ils = round(price_usd * usd_rate, 2)
+                    plan_name = f"{country_heb} \u2013 {int(gb)}GB \u2013 {days} \u05d9\u05de\u05d9\u05dd"
                     all_plans.append(_make_global_plan(
-                        "sparks", plan_name, price_ils, "USD", item['price'],
-                        data_gb=item['gb'], days=item['days'], esim=True, extras=[]
+                        "sparks", plan_name, price_ils, "USD", price_usd,
+                        data_gb=gb, days=days, esim=True, extras=[country_heb]
                     ))
-
-            browser.close()
+        else:
+            logger.warning("Sparks data file not found \u2014 only regional plans available")
     except Exception as e:
-        logger.warning(f"Sparks Playwright scrape: {e}")
+        logger.warning(f"Sparks per-country: {e}")
 
     logger.info(f"Sparks global: {len(all_plans)} plans")
     return all_plans
