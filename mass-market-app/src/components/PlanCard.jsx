@@ -67,8 +67,8 @@ export default function PlanCard({ plan, type = 'domestic', changeType }) {
 
   // Extras — filter out app-related text if we have an apps link
   const extras = plan.extras ? plan.extras.filter(e => !(appsData && /אפליקציות/.test(e))) : []
-  const visibleExtras = showAllExtras ? extras : extras.slice(0, 2)
-  const hiddenCount = extras.length - 2
+  const visibleExtras = extras
+  const hiddenCount = 0
 
   const hasRoaming = !isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
 
