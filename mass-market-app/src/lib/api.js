@@ -32,6 +32,23 @@ export const api = {
     headers: { 'X-API-Key': import.meta.env.VITE_API_KEY || '' }
   }),
 
+  // Users (admin)
+  getUsers: () => fetchApi('/api/users', {
+    headers: { 'X-API-Key': import.meta.env.VITE_API_KEY || '' }
+  }),
+  createUser: (data) => fetchApi('/api/users', {
+    method: 'POST', body: JSON.stringify(data),
+    headers: { 'X-API-Key': import.meta.env.VITE_API_KEY || '' }
+  }),
+  deleteUser: (id) => fetchApi(`/api/users/${id}`, {
+    method: 'DELETE',
+    headers: { 'X-API-Key': import.meta.env.VITE_API_KEY || '' }
+  }),
+  updateUserRole: (id, role) => fetchApi(`/api/users/${id}/role`, {
+    method: 'POST', body: JSON.stringify({ role }),
+    headers: { 'X-API-Key': import.meta.env.VITE_API_KEY || '' }
+  }),
+
   // Chat
   chat: (question) => fetchApi('/api/chat', { method: 'POST', body: JSON.stringify({ question }) }),
 
