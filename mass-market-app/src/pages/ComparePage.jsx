@@ -46,6 +46,7 @@ const CARRIERS_BY_TAB = {
     { id: 'saily', label: 'Saily', color: '#7c3aed' },
     { id: 'holafly', label: 'Holafly', color: '#ea580c' },
     { id: 'esimio', label: 'eSIM.io', color: '#2563eb' },
+    { id: 'sparks', label: 'Sparks', color: '#f59e0b' },
   ],
 }
 

@@ -2611,6 +2611,91 @@ def scrape_globalesim_regions(page):
     return all_plans
 
 
+# ── Sparks Travel eSIM ──────────────────────────────────────────────────
+
+SPARKS_REGIONS = {
+    "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4+": {  # אירופה+
+        (1, 60): 3.40, (2, 60): 5.00, (3, 60): 6.50, (5, 60): 8.60,
+        (10, 60): 14.70, (15, 60): 21.80, (30, 90): 42.60, (50, 120): 68.30,
+    },
+    "\u05e9\u05d5\u05d5\u05d9\u05e5+": {  # שוויץ+
+        (1, 60): 3.40, (2, 60): 4.20, (3, 60): 4.90, (5, 60): 6.30,
+        (10, 60): 9.80, (15, 60): 14.40, (30, 90): 28.30, (50, 120): 46.80,
+    },
+    "\u05d2\u05d5\u05d5\u05d3\u05dc\u05d5\u05e4": {  # גוודלופ
+        (1, 60): 8.50, (2, 60): 10.80, (3, 60): 12.80, (5, 60): 16.90,
+        (10, 60): 30.50, (15, 60): 45.10, (30, 90): 89.60, (50, 120): 149.40,
+    },
+    "\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df+": {  # קפריסין+
+        (1, 60): 8.50, (2, 60): 10.80, (3, 60): 12.80, (5, 60): 16.90,
+        (10, 60): 30.50, (15, 60): 45.10, (30, 90): 89.60, (50, 120): 149.40,
+    },
+}
+
+
+def scrape_sparks_global(_page=None, usd_rate=None):
+    """Scrape Sparks Travel eSIM plans \u2014 regional plans (hardcoded) + per-country via Playwright."""
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+
+    all_plans = []
+
+    # Regional plans (hardcoded, known pricing)
+    for region_heb, plans_data in SPARKS_REGIONS.items():
+        for (gb, days), price_usd in plans_data.items():
+            price_ils = round(price_usd * usd_rate, 2)
+            plan_name = f"{region_heb} \u2013 {gb}GB \u2013 {days} \u05d9\u05de\u05d9\u05dd"
+            all_plans.append(_make_global_plan(
+                "sparks", plan_name, price_ils, "USD", price_usd,
+                data_gb=gb, days=days, esim=True, extras=[region_heb]
+            ))
+
+    # Per-country plans via Playwright
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124"
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+            page = browser.new_page(user_agent=ua)
+            page.goto("https://sparks.travel/", timeout=30000, wait_until="domcontentloaded")
+            page.wait_for_timeout(3000)
+
+            # Extract all plan data from the page's JavaScript
+            raw = page.evaluate("""() => {
+                const plans = [];
+                document.querySelectorAll('[class*="plan"], [class*="package"], [class*="card"]').forEach(card => {
+                    const text = card.innerText;
+                    const gbMatch = text.match(/(\\d+)\\s*GB/i);
+                    const daysMatch = text.match(/(\\d+)\\s*(?:days?|\u05d9\u05de\u05d9\u05dd)/i);
+                    const priceMatch = text.match(/\\$\\s*(\\d+(?:\\.\\d+)?)/);
+                    if (gbMatch && priceMatch) {
+                        plans.push({
+                            gb: parseInt(gbMatch[1]),
+                            days: daysMatch ? parseInt(daysMatch[1]) : 60,
+                            price: parseFloat(priceMatch[1]),
+                            text: text.substring(0, 100)
+                        });
+                    }
+                });
+                return plans;
+            }""")
+
+            if raw:
+                for item in raw:
+                    price_ils = round(item['price'] * usd_rate, 2)
+                    plan_name = f"Sparks \u2013 {item['gb']}GB \u2013 {item['days']} \u05d9\u05de\u05d9\u05dd"
+                    all_plans.append(_make_global_plan(
+                        "sparks", plan_name, price_ils, "USD", item['price'],
+                        data_gb=item['gb'], days=item['days'], esim=True, extras=[]
+                    ))
+
+            browser.close()
+    except Exception as e:
+        logger.warning(f"Sparks Playwright scrape: {e}")
+
+    logger.info(f"Sparks global: {len(all_plans)} plans")
+    return all_plans
+
+
 def scrape_all_global():
     """Scrape global eSIM packages from all 7 providers. Returns flat list of plan dicts."""
     usd_rate = _get_usd_to_ils()
@@ -2638,6 +2723,7 @@ def scrape_all_global():
             ("scrape_esimio_regions",       lambda pg: scrape_esimio_regions(pg, usd_rate)),
             ("scrape_holafly_global",       lambda pg: scrape_holafly_global(pg, usd_rate)),
             ("scrape_holafly_regions",      lambda pg: scrape_holafly_regions(pg, usd_rate)),
+            ("scrape_sparks_global",        lambda pg: scrape_sparks_global(pg, usd_rate)),
         ]
         for name, fn in jobs:
             try:
