@@ -3,50 +3,58 @@ import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
+// Dev mode: skip Supabase auth entirely during local development
+const DEV_MODE = !import.meta.env.PROD
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [role, setRole] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!supabase) {
-      // No Supabase configured — run in demo mode (admin)
-      setUser({ email: 'demo@massmarket.co.il' })
+    if (DEV_MODE || !supabase) {
+      // Local dev — auto-login as admin
+      setUser({ email: 'alon.yoch@gmail.com', id: 'dev' })
       setRole('admin')
       setLoading(false)
       return
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) fetchRole(session.user.id)
-      else setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) fetchRole(session.user.id)
-      else { setRole(null); setLoading(false) }
-    })
+    // Production: use Supabase Auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          setUser(session.user)
+          try {
+            const { data } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .single()
+            setRole(data?.role || 'viewer')
+          } catch {
+            setRole('viewer')
+          }
+        } else {
+          setUser(null)
+          setRole(null)
+        }
+        setLoading(false)
+      }
+    )
 
     return () => subscription.unsubscribe()
   }, [])
 
-  async function fetchRole(userId) {
-    const { data } = await supabase.from('user_roles').select('role').eq('user_id', userId).single()
-    setRole(data?.role || 'viewer')
-    setLoading(false)
-  }
-
   const signIn = async (email, password) => {
+    if (DEV_MODE) return
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
   }
 
   const signOut = async () => {
+    if (DEV_MODE) return
     await supabase?.auth.signOut()
-    setUser(null)
-    setRole(null)
   }
 
   return (

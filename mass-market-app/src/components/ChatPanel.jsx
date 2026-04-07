@@ -53,7 +53,7 @@ export default function ChatPanel() {
         onClick={() => setOpen(!open)}
         className="fixed bottom-5 left-5 z-50 w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center text-xl"
       >
-        {open ? '✕' : '💬'}
+        {open ? '✕' : '🤖'}
       </button>
 
       {/* Chat panel */}
