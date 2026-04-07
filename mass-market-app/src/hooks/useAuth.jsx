@@ -3,8 +3,8 @@ import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
-// Dev mode: skip Supabase auth entirely during local development
-const DEV_MODE = !import.meta.env.PROD
+// Dev mode: only when explicitly enabled via env var
+const DEV_MODE = import.meta.env.VITE_DEV_AUTH === 'true'
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)

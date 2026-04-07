@@ -74,26 +74,28 @@ Imported from `D:\השוואת מתחרים - שירותי תוכן\` Streamlit 
 - **Web Push**: VAPID keys auto-generated, stored in config.json, subscriptions in SQLite
 
 ## Credentials (config.json)
+All credentials stored in `config.json` (not committed to git). Structure:
 ```json
 {
-  "telegram_bot_token": "8740382640:AAH6JFoyooa9HoT-aL9cAsbTN8QDenx_WaI",
-  "telegram_chat_id": "6024815382",
+  "telegram_bot_token": "<TELEGRAM_BOT_TOKEN>",
+  "telegram_chat_id": "<CHAT_ID>",
   "schedule_times": ["10:00", "16:00"],
   "notify_on_changes_only": true,
-  "greenapi_url": "https://7107.api.greenapi.com",
-  "greenapi_instance": "7107569664",
-  "greenapi_token": "7538a29c287a42359016621d434566a6115b43c6685043889a",
+  "greenapi_url": "<GREENAPI_URL>",
+  "greenapi_instance": "<INSTANCE_ID>",
+  "greenapi_token": "<GREENAPI_TOKEN>",
   "whatsapp_phone": "",
-  "sendgrid_api_key": "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",
-  "email_sender": "alon.yoch@gmail.com",
-  "email_recipient": "alonyoch@pelephone.co.il",
+  "sendgrid_api_key": "<SENDGRID_API_KEY>",
+  "email_sender": "<SENDER_EMAIL>",
+  "email_recipient": "<RECIPIENT_EMAIL>",
   "email_report_time": "09:00",
-  "vapid_private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
-  "vapid_public_key": "BMFFJCUEsyEOdw...",
-  "vapid_email": "mailto:alon.yoch@gmail.com"
+  "vapid_private_key": "<AUTO_GENERATED>",
+  "vapid_public_key": "<AUTO_GENERATED>",
+  "vapid_email": "mailto:<EMAIL>"
 }
 ```
 Note: VAPID keys are auto-generated on first run if missing. Do not delete them after generation.
+**SECURITY: Never commit config.json or real credentials to git.**
 
 ## PWA + Ngrok Setup
 - **ngrok.exe** lives at `D:\השוואת MASS MARKET\ngrok.exe`

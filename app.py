@@ -1,6 +1,8 @@
 import json
 import os
 import logging
+import secrets
+from functools import wraps
 from flask import Flask, jsonify, render_template, request, make_response, send_from_directory
 from flask_cors import CORS
 from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_changes, get_global_plans, get_global_changes, \
@@ -13,7 +15,50 @@ CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.j
 
 app = Flask(__name__)
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+# CORS: restrict to known origins
+ALLOWED_ORIGINS = [
+    "http://localhost:5000", "http://localhost:5173", "http://localhost:5174",
+    "http://127.0.0.1:5000", "http://127.0.0.1:5173",
+]
+# Add ngrok/netlify URLs from environment if set
+_extra_origins = os.environ.get("ALLOWED_ORIGINS", "")
+if _extra_origins:
+    ALLOWED_ORIGINS.extend(_extra_origins.split(","))
+CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS}})
+
+# ── API Key auth for sensitive endpoints ───────────────────────────────
+def _get_api_key():
+    """Get or generate API key from config."""
+    try:
+        cfg = load_config()
+        key = cfg.get("api_key")
+        if key:
+            return key
+    except:
+        pass
+    # Generate and save a new key
+    key = secrets.token_urlsafe(32)
+    try:
+        cfg = load_config()
+        cfg["api_key"] = key
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+        logger.info(f"Generated new API key: {key}")
+    except:
+        pass
+    return key
+
+def require_api_key(f):
+    """Decorator to require X-API-Key header for sensitive endpoints."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        provided = request.headers.get("X-API-Key") or request.args.get("api_key")
+        expected = _get_api_key()
+        if not provided or provided != expected:
+            return jsonify({"error": "Unauthorized — API key required"}), 401
+        return f(*args, **kwargs)
+    return decorated
 
 
 def load_config():
@@ -79,7 +124,10 @@ def api_plans():
 
 @app.route("/api/changes")
 def api_changes():
-    limit = int(request.args.get("limit", 20))
+    try:
+        limit = min(int(request.args.get("limit", 20)), 500)
+    except (ValueError, TypeError):
+        limit = 20
     changes = get_changes(limit=limit, db_path=_db_path())
     return jsonify(changes)
 
@@ -100,12 +148,16 @@ def api_global_plans():
 
 @app.route("/api/global-changes")
 def api_global_changes():
-    limit = int(request.args.get("limit", 50))
+    try:
+        limit = min(int(request.args.get("limit", 50)), 500)
+    except (ValueError, TypeError):
+        limit = 50
     changes = get_global_changes(limit=limit, db_path=_db_path())
     return jsonify(changes)
 
 
 @app.route("/api/scrape-global-now")
+@require_api_key
 def api_scrape_global_now():
     """Manual trigger: scrape global eSIM packages, detect changes, save to DB."""
     try:
@@ -129,17 +181,21 @@ def api_scrape_global_now():
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-global-now failed: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"API error: {e}", exc_info=True); return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/api/abroad-changes")
 def api_abroad_changes():
-    limit = int(request.args.get("limit", 50))
+    try:
+        limit = min(int(request.args.get("limit", 50)), 500)
+    except (ValueError, TypeError):
+        limit = 50
     changes = get_abroad_changes(limit=limit, db_path=_db_path())
     return jsonify(changes)
 
 
 @app.route("/api/scrape-abroad-now")
+@require_api_key
 def api_scrape_abroad_now():
     """Manual trigger: scrape abroad packages, detect changes, save to DB."""
     try:
@@ -164,10 +220,11 @@ def api_scrape_abroad_now():
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-abroad-now failed: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"API error: {e}", exc_info=True); return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/api/scrape-all-now")
+@require_api_key
 def api_scrape_all_now():
     """Scrape ALL tabs: domestic + abroad + global in one call."""
     try:
@@ -238,7 +295,7 @@ def api_scrape_all_now():
         return jsonify(results)
     except Exception as e:
         logger.error(f"scrape-all-now failed: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"API error: {e}", exc_info=True); return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/api/content-plans")
@@ -251,12 +308,16 @@ def api_content_plans():
 
 @app.route("/api/content-changes")
 def api_content_changes():
-    limit = int(request.args.get("limit", 50))
+    try:
+        limit = min(int(request.args.get("limit", 50)), 500)
+    except (ValueError, TypeError):
+        limit = 50
     changes = get_content_changes(limit=limit, db_path=_db_path())
     return jsonify(changes)
 
 
 @app.route("/api/scrape-content-now")
+@require_api_key
 def api_scrape_content_now():
     """Manual trigger: scrape content services, detect changes, save to DB."""
     try:
@@ -272,10 +333,11 @@ def api_scrape_content_now():
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-content-now failed: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"API error: {e}", exc_info=True); return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/api/scrape-now")
+@require_api_key
 def api_scrape_now():
     """Manual trigger for testing. Debug endpoint."""
     try:
@@ -293,7 +355,7 @@ def api_scrape_now():
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-now failed: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"API error: {e}", exc_info=True); return jsonify({"error": "Internal server error"}), 500
 
 
 # ── Push Notification Routes ───────────────────────────────────────────────
@@ -422,7 +484,7 @@ def api_chat():
 
     except Exception as e:
         logger.error(f"chat failed: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"API error: {e}", exc_info=True); return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/api/push/vapid-public-key")
@@ -455,6 +517,7 @@ def api_push_unsubscribe():
 
 
 @app.route("/api/push/test")
+@require_api_key
 def api_push_test():
     """Debug: send a test push notification to all subscribed devices."""
     config = load_config()
@@ -578,6 +641,7 @@ if __name__ == "__main__":
     scheduler.start()
     logger.info("Flask starting → http://0.0.0.0:5000")
     try:
-        app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
+        host = os.environ.get("FLASK_HOST", "127.0.0.1")  # Use 0.0.0.0 only for ngrok/LAN
+        app.run(host=host, port=5000, debug=False, use_reloader=False)
     finally:
         scheduler.shutdown()

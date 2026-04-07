@@ -598,6 +598,10 @@
 </div>
 
 <script>
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 const CARRIER_LABELS = {
   partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל',
   cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com'
@@ -741,12 +745,12 @@ function renderChangesList(changes) {
                  c.change_type === 'new_plan'     ? '✨' :
                  c.change_type === 'removed_plan' ? '❌' : '🔄';
     const cardId = 'card-' + (c.carrier + '|' + c.plan_name).replace(/[^a-zA-Z0-9\u0590-\u05ff]/g, '_');
-    return `<div onclick="navigateToPlan('${c.carrier}','${c.plan_name.replace(/'/g,"\\'")}','${cardId}')"
+    return `<div onclick="navigateToPlan('${escHtml(c.carrier)}','${escHtml(c.plan_name.replace(/'/g,"\\'"))}','${cardId}')"
       style="margin-bottom:5px;padding:6px 8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;transition:background 0.15s,border-color 0.15s;"
       onmouseover="this.style.background='#eff6ff';this.style.borderColor='#93c5fd'"
       onmouseout="this.style.background='#f9fafb';this.style.borderColor='#e5e7eb'">
-      ${type} <b style="color:#111827">${name}</b><br>
-      <span style="color:#6b7280;font-size:10px;">${c.plan_name}</span>
+      ${type} <b style="color:#111827">${escHtml(name)}</b><br>
+      <span style="color:#6b7280;font-size:10px;">${escHtml(c.plan_name)}</span>
     </div>`;
   }).join('');
 }
@@ -824,10 +828,10 @@ function renderCard(plan) {
   const conditionNotes = (plan.extras || []).filter(e => e.startsWith('* ')).map(e => e.slice(2));
   const maxExtras = plan.carrier === 'wecom' ? 8 : 4;
   const extrasHtml = regularExtras.length
-    ? `<div class="extras">${regularExtras.slice(0, maxExtras).map(e => `<span>${e}</span>`).join('')}</div>`
+    ? `<div class="extras">${regularExtras.slice(0, maxExtras).map(e => `<span>${escHtml(e)}</span>`).join('')}</div>`
     : '';
   const notesHtml = conditionNotes.length
-    ? `<div class="plan-condition-notes">${conditionNotes.map(n => `<div class="condition-note">* ${n}</div>`).join('')}</div>`
+    ? `<div class="plan-condition-notes">${conditionNotes.map(n => `<div class="condition-note">* ${escHtml(n)}</div>`).join('')}</div>`
     : '';
 
   // "מדינות כלולות" link for wecom Global plans (have abroad data)
@@ -845,8 +849,8 @@ function renderCard(plan) {
   return `
     <div class="plan-card" id="${cardId}">
       ${badge}
-      <div class="plan-name" title="${plan.plan_name}">${plan.plan_name}</div>
-      <span class="carrier-badge badge-${plan.carrier}">${CARRIER_LABELS[plan.carrier] || plan.carrier}</span>
+      <div class="plan-name" title="${escHtml(plan.plan_name)}">${escHtml(plan.plan_name)}</div>
+      <span class="carrier-badge badge-${plan.carrier}">${escHtml(CARRIER_LABELS[plan.carrier] || plan.carrier)}</span>
       <div class="price">${price}</div>
       <div class="price-note">₪ לחודש</div>
       <div class="details">
@@ -941,18 +945,18 @@ function renderAbroadCard(plan) {
   const extrasHtml = plan.extras?.length
     ? `<div class="extras">${plan.extras.slice(0,4).map(e => {
         if (plan.carrier === 'mobile019' && e.includes('לרשימה')) {
-          return `<span>${e.replace('לרשימה', '<a href="#" class="countries-link" onclick="openCountriesModal(event)">לרשימה</a>')}</span>`;
+          return `<span>${escHtml(e).replace('לרשימה', '<a href="#" class="countries-link" onclick="openCountriesModal(event)">לרשימה</a>')}</span>`;
         }
         if (plan.carrier === 'cellcom' && e.includes('גלישה חופשית באפליקציות נבחרות')) {
-          return `<span>${e.replace('גלישה חופשית באפליקציות נבחרות', '<a href="#" class="countries-link" onclick="openCellcomAppsModal(event)">גלישה חופשית באפליקציות נבחרות</a>')}</span>`;
+          return `<span>${escHtml(e).replace('גלישה חופשית באפליקציות נבחרות', '<a href="#" class="countries-link" onclick="openCellcomAppsModal(event)">גלישה חופשית באפליקציות נבחרות</a>')}</span>`;
         }
         if (plan.carrier === 'pelephone' && e.includes('גלישה חופשית באפליקציות')) {
           const parts = e.split('\n').map(p => p.trim()).filter(Boolean);
-          const appsSpan = `<span><a href="#" class="countries-link" onclick="openPelephoneAppsModal(event)">${parts[0]}</a></span>`;
-          const restSpans = parts.slice(1).map(p => `<span>${p}</span>`).join('');
+          const appsSpan = `<span><a href="#" class="countries-link" onclick="openPelephoneAppsModal(event)">${escHtml(parts[0])}</a></span>`;
+          const restSpans = parts.slice(1).map(p => `<span>${escHtml(p)}</span>`).join('');
           return appsSpan + restSpans;
         }
-        return `<span>${e}</span>`;
+        return `<span>${escHtml(e)}</span>`;
       }).join('')}</div>`
     : '';
 
@@ -980,8 +984,8 @@ function renderAbroadCard(plan) {
   return `
     <div class="plan-card" id="${abroadCardId}">
       ${badge}
-      <div class="plan-name" title="${plan.plan_name}">${plan.plan_name}</div>
-      <span class="carrier-badge badge-${plan.carrier}">${CARRIER_LABELS[plan.carrier] || plan.carrier}</span>
+      <div class="plan-name" title="${escHtml(plan.plan_name)}">${escHtml(plan.plan_name)}</div>
+      <span class="carrier-badge badge-${plan.carrier}">${escHtml(CARRIER_LABELS[plan.carrier] || plan.carrier)}</span>
       <div class="price">${price}</div>
       <div class="price-note">₪ לחבילה</div>
       <div class="details">
@@ -1088,7 +1092,7 @@ function renderGlobalCard(plan) {
 
   // Original price in native currency
   const origLabel = plan.original_price && plan.currency && plan.currency !== 'ILS'
-    ? `<span style="font-size:10px;color:#9ca3af;margin-right:4px;">(${plan.original_price} ${plan.currency})</span>`
+    ? `<span style="font-size:10px;color:#9ca3af;margin-right:4px;">(${escHtml(String(plan.original_price))} ${escHtml(plan.currency)})</span>`
     : '';
 
   const daysRow = plan.days
@@ -1106,7 +1110,7 @@ function renderGlobalCard(plan) {
     : '';
   const esimTag = plan.esim ? '<span class="esim-badge">eSIM</span>' : '';
   const extrasHtml = plan.extras?.length
-    ? `<div class="extras">${plan.extras.slice(0,4).map(e => `<span>${e}</span>`).join('')}</div>`
+    ? `<div class="extras">${plan.extras.slice(0,4).map(e => `<span>${escHtml(e)}</span>`).join('')}</div>`
     : '';
   const label = GLOBAL_LABELS[plan.carrier] || plan.carrier;
 
@@ -1138,9 +1142,9 @@ function renderGlobalCard(plan) {
   return `
     <div class="plan-card">
       ${badge}
-      <div class="plan-name" title="${plan.plan_name}">${plan.plan_name}</div>
+      <div class="plan-name" title="${escHtml(plan.plan_name)}">${escHtml(plan.plan_name)}</div>
       <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;">
-        <span class="carrier-badge badge-${plan.carrier}">${label}</span>
+        <span class="carrier-badge badge-${plan.carrier}">${escHtml(label)}</span>
         ${esimTag}
       </div>
       <div class="price">${price}</div>
@@ -1413,17 +1417,17 @@ function renderContentCard(plan) {
   // Price may already include ₪ symbol from scraper
   const displayPrice = plan.price ? plan.price.replace(/^₪\s*/, '') : '';
   const priceHtml = priceOk
-    ? `<div class="content-price-val"><sup>₪</sup>${displayPrice}</div><div class="content-price-mo">₪ לחודש</div>`
-    : `<div class="content-na">${plan.price || 'לא זמין'}</div>`;
+    ? `<div class="content-price-val"><sup>₪</sup>${escHtml(displayPrice)}</div><div class="content-price-mo">₪ לחודש</div>`
+    : `<div class="content-na">${escHtml(plan.price || 'לא זמין')}</div>`;
   const trialHtml = plan.free_trial
-    ? `<div class="content-trial">${plan.free_trial}</div>` : '';
+    ? `<div class="content-trial">${escHtml(plan.free_trial)}</div>` : '';
   const noteHtml  = plan.note
-    ? `<div class="content-note">${plan.note}</div>` : '';
+    ? `<div class="content-note">${escHtml(plan.note)}</div>` : '';
 
   return `
     <div class="content-card">
       ${badge}
-      <span class="carrier-badge badge-${plan.carrier}">${CARRIER_LABELS[plan.carrier] || plan.carrier}</span>
+      <span class="carrier-badge badge-${plan.carrier}">${escHtml(CARRIER_LABELS[plan.carrier] || plan.carrier)}</span>
       ${priceHtml}
       ${trialHtml}
       ${noteHtml}
@@ -1457,7 +1461,7 @@ function renderContent() {
     if (!svcPlans.length) return '';
     return `
       <div class="content-service-section">
-        <div class="content-service-title">📺 ${svc}</div>
+        <div class="content-service-title">📺 ${escHtml(svc)}</div>
         <div class="content-cards-grid">
           ${svcPlans.map(renderContentCard).join('')}
         </div>
