@@ -1,4 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'https://terra-nonrestrained-overpiteously.ngrok-free.dev'
+const API_KEY = import.meta.env.VITE_API_KEY || 'laJBcM3Y5lOkKylKrDSOgrb-43Pt2REEk6H2NRaicJs'
 
 async function fetchApi(path, options = {}) {
   const url = `${API_BASE}${path}`
@@ -29,24 +30,24 @@ export const api = {
 
   // Scrape (requires API key)
   scrapeAll: () => fetchApi('/api/scrape-all-now', {
-    headers: { 'X-API-Key': import.meta.env.VITE_API_KEY || '' }
+    headers: { 'X-API-Key': API_KEY }
   }),
 
   // Users (admin)
   getUsers: () => fetchApi('/api/users', {
-    headers: { 'X-API-Key': import.meta.env.VITE_API_KEY || '' }
+    headers: { 'X-API-Key': API_KEY }
   }),
   createUser: (data) => fetchApi('/api/users', {
     method: 'POST', body: JSON.stringify(data),
-    headers: { 'X-API-Key': import.meta.env.VITE_API_KEY || '' }
+    headers: { 'X-API-Key': API_KEY }
   }),
   deleteUser: (id) => fetchApi(`/api/users/${id}`, {
     method: 'DELETE',
-    headers: { 'X-API-Key': import.meta.env.VITE_API_KEY || '' }
+    headers: { 'X-API-Key': API_KEY }
   }),
   updateUserRole: (id, role) => fetchApi(`/api/users/${id}/role`, {
     method: 'POST', body: JSON.stringify({ role }),
-    headers: { 'X-API-Key': import.meta.env.VITE_API_KEY || '' }
+    headers: { 'X-API-Key': API_KEY }
   }),
 
   // Chat
