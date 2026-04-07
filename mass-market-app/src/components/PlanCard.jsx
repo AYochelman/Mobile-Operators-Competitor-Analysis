@@ -3,6 +3,8 @@ import Badge from './ui/Badge'
 import CountryModal from './CountryModal'
 import { getCountriesForPlan } from '../data/globalCountries'
 import { getCountriesForAbroadPlan } from '../data/abroadCountries'
+import { getAppsForAbroadPlan } from '../data/abroadApps'
+import AppsModal from './AppsModal'
 
 const CARRIER_COLORS = {
   partner: 'pink', pelephone: 'blue', hotmobile: 'orange', cellcom: 'green',
@@ -32,10 +34,12 @@ function formatGB(gb) {
 
 export default function PlanCard({ plan, type = 'domestic', changeType }) {
   const [showCountries, setShowCountries] = useState(false)
+  const [showApps, setShowApps] = useState(false)
   const isGlobal = type === 'global'
   const isAbroad = type === 'abroad'
   const isContent = type === 'content'
   const countryData = isGlobal ? getCountriesForPlan(plan) : isAbroad ? getCountriesForAbroadPlan(plan) : null
+  const appsData = isAbroad ? getAppsForAbroadPlan(plan) : null
   const carrier = plan.carrier
   const label = isGlobal ? (GLOBAL_LABELS[carrier] || carrier) : (CARRIER_LABELS[carrier] || carrier)
   const badgeColor = isGlobal ? (GLOBAL_COLORS[carrier] || 'gray') : (CARRIER_COLORS[carrier] || 'gray')
@@ -141,6 +145,23 @@ export default function PlanCard({ plan, type = 'domestic', changeType }) {
             onClose={() => setShowCountries(false)}
             title={countryData.title}
             countries={countryData.countries}
+          />
+        </>
+      )}
+
+      {appsData && (
+        <>
+          <button
+            onClick={() => setShowApps(true)}
+            className="mt-1 text-xs text-purple-500 hover:text-purple-700 transition-colors"
+          >
+            גלישה חופשית באפליקציות 📱
+          </button>
+          <AppsModal
+            open={showApps}
+            onClose={() => setShowApps(false)}
+            title={appsData.title}
+            apps={appsData.apps}
           />
         </>
       )}
