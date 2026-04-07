@@ -18,12 +18,12 @@ const GLOBAL_LABELS = {
   tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
   pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV',
   world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
-  holafly: 'Holafly', esimio: 'eSIM.io',
+  holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
   esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
-  saily: 'purple', holafly: 'orange', esimio: 'blue',
+  saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber',
 }
 
 const CHANGE_DOT = {

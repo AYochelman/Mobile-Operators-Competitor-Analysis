@@ -111,6 +111,12 @@ export const SAILY_REGIONS = {
   'צפון אמריקה': ['קנדה','ארצות הברית'],
 };
 
+// ── Sparks Travel Regions ────────────────────────────────────────────
+export const SPARKS_EUROPE_PLUS = ['אלבניה','אוסטריה','בלגיה','בולגריה','קרואטיה','קפריסין','צ\'כיה','דנמרק','אסטוניה','פינלנד','צרפת','גרמניה','יוון','הונגריה','איסלנד','אירלנד','ישראל','איטליה','קזחסטן','קירגיזסטן','לטביה','ליכטנשטיין','ליטא','לוקסמבורג','מלטה','מולדובה','מונטנגרו','הולנד','נורבגיה','פולין','פורטוגל','רומניה','סלובקיה','סלובניה','ספרד','שבדיה','שוויץ','טורקיה','אוקראינה','בריטניה','ארצות הברית','אוזבקיסטן'];
+export const SPARKS_SWITZERLAND_PLUS = ['אוסטריה','צרפת','גרמניה','איטליה','שוויץ'];
+export const SPARKS_GUADELOUPE = ['גיאנה הצרפתית','גוואדלופ'];
+export const SPARKS_CYPRUS_PLUS = ['קפריסין','טורקיה'];
+
 /**
  * Get country list for a global plan.
  * Returns { title, countries } or null if no data available.
@@ -241,6 +247,20 @@ export function getCountriesForPlan(plan) {
       return { title: '8 World — אירופה וארה"ב', countries: WORLD8_EUROPE_USA };
     }
     return { title: '8 World — כל העולם', countries: WORLD8_WORLDWIDE };
+  }
+
+  // ── Sparks Travel ──
+  if (carrier === 'sparks') {
+    const SPARKS_REGION_MAP = {
+      '\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4+': SPARKS_EUROPE_PLUS,
+      '\u05e9\u05d5\u05d5\u05d9\u05e5+': SPARKS_SWITZERLAND_PLUS,
+      '\u05d2\u05d5\u05d5\u05d3\u05dc\u05d5\u05e4': SPARKS_GUADELOUPE,
+      '\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df+': SPARKS_CYPRUS_PLUS,
+    };
+    if (extras[0] && SPARKS_REGION_MAP[extras[0]]) {
+      return { title: 'Sparks \u2014 ' + extras[0], countries: SPARKS_REGION_MAP[extras[0]] };
+    }
+    return null;
   }
 
   // ── XPhone Global ──
