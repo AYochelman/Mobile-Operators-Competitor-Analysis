@@ -92,6 +92,9 @@ def _db_path():
 
 def _ensure_vapid_keys(config_path):
     """Generate VAPID keys on first run and save to config.json."""
+    if not os.path.exists(config_path):
+        logger.info("No config.json found — skipping VAPID key generation (cloud mode)")
+        return
     with open(config_path, encoding="utf-8") as f:
         cfg = json.load(f)
     if cfg.get("vapid_public_key") and cfg.get("vapid_private_key"):
@@ -114,6 +117,9 @@ def _ensure_vapid_keys(config_path):
     except Exception as e:
         logger.error(f"VAPID key generation failed: {e}")
 
+
+# Initialize DB on import (needed for gunicorn which skips __main__)
+init_db()
 
 # ── Routes ─────────────────────────────────────────────────────────────────
 
