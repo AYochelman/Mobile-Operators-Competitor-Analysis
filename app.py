@@ -63,8 +63,26 @@ def require_api_key(f):
 
 
 def load_config():
-    with open(CONFIG_PATH, encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(CONFIG_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        # Fallback to environment variables (for cloud deployment)
+        return {
+            "telegram_bot_token": os.environ.get("TELEGRAM_BOT_TOKEN", ""),
+            "telegram_chat_id": os.environ.get("TELEGRAM_CHAT_ID", ""),
+            "schedule_times": json.loads(os.environ.get("SCHEDULE_TIMES", '["10:00","16:00"]')),
+            "notify_on_changes_only": True,
+            "sendgrid_api_key": os.environ.get("SENDGRID_API_KEY", ""),
+            "email_sender": os.environ.get("EMAIL_SENDER", ""),
+            "email_recipient": os.environ.get("EMAIL_RECIPIENT", ""),
+            "email_report_time": "09:00",
+            "api_key": os.environ.get("API_KEY", ""),
+            "anthropic_api_key": os.environ.get("ANTHROPIC_API_KEY", ""),
+            "vapid_private_key": os.environ.get("VAPID_PRIVATE_KEY", ""),
+            "vapid_public_key": os.environ.get("VAPID_PUBLIC_KEY", ""),
+            "vapid_email": os.environ.get("VAPID_EMAIL", ""),
+        }
 
 
 def _db_path():
