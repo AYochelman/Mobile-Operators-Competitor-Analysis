@@ -1,5 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'https://terra-nonrestrained-overpiteously.ngrok-free.dev'
-const API_KEY = import.meta.env.VITE_API_KEY || 'laJBcM3Y5lOkKylKrDSOgrb-43Pt2REEk6H2NRaicJs'
+const API_BASE = import.meta.env.VITE_API_URL || ''
+const API_KEY = import.meta.env.VITE_API_KEY || ''
 
 async function fetchApi(path, options = {}) {
   const url = `${API_BASE}${path}`
