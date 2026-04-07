@@ -1,14 +1,18 @@
 export default function Badge({ children, color = 'gray', className = '' }) {
   const colors = {
-    gray: 'bg-gray-100 text-gray-700',
-    blue: 'bg-blue-100 text-blue-700',
-    green: 'bg-green-100 text-green-700',
-    orange: 'bg-orange-100 text-orange-700',
-    red: 'bg-red-100 text-red-700',
-    purple: 'bg-purple-100 text-purple-700',
-    pink: 'bg-pink-100 text-pink-700',
-    teal: 'bg-teal-100 text-teal-700',
-    amber: 'bg-amber-100 text-amber-700',
+    gray: 'bg-gray-50 text-gray-600',
+    blue: 'bg-blue-50 text-blue-600',
+    green: 'bg-emerald-50 text-emerald-600',
+    orange: 'bg-amber-50 text-amber-600',
+    red: 'bg-red-50 text-red-600',
+    purple: 'bg-violet-50 text-violet-600',
+    pink: 'bg-pink-50 text-pink-600',
+    teal: 'bg-teal-50 text-teal-600',
+    amber: 'bg-amber-50 text-amber-600',
   }
-  return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colors[color] || colors.gray} ${className}`}>{children}</span>
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold tracking-wide ${colors[color] || colors.gray} ${className}`}>
+      {children}
+    </span>
+  )
 }

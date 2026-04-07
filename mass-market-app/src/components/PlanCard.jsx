@@ -26,15 +26,29 @@ const GLOBAL_COLORS = {
   saily: 'purple', holafly: 'orange', esimio: 'blue',
 }
 
+const CHANGE_DOT = {
+  new_plan: 'bg-emerald-400',
+  price_change: 'bg-amber-400',
+  removed_plan: 'bg-red-400',
+}
+
 function formatGB(gb) {
   if (gb === null || gb === undefined) return 'ללא הגבלה'
   if (gb < 1) return `${Math.round(gb * 1024)}MB`
   return `${gb}GB`
 }
 
+function formatDays(days) {
+  if (!days) return null
+  if (days >= 365) return `${(days / 365).toFixed(days % 365 === 0 ? 0 : 1)} שנים`
+  if (days > 60) return `${Math.round(days / 30)} חודשים`
+  return `${days} ימים`
+}
+
 export default function PlanCard({ plan, type = 'domestic', changeType }) {
   const [showCountries, setShowCountries] = useState(false)
   const [showApps, setShowApps] = useState(false)
+  const [showAllExtras, setShowAllExtras] = useState(false)
   const isGlobal = type === 'global'
   const isAbroad = type === 'abroad'
   const isContent = type === 'content'
@@ -44,126 +58,129 @@ export default function PlanCard({ plan, type = 'domestic', changeType }) {
   const label = isGlobal ? (GLOBAL_LABELS[carrier] || carrier) : (CARRIER_LABELS[carrier] || carrier)
   const badgeColor = isGlobal ? (GLOBAL_COLORS[carrier] || 'gray') : (CARRIER_COLORS[carrier] || 'gray')
 
-  const changeBadge = changeType === 'new_plan' ? { text: 'חדש', color: 'green' }
-    : changeType === 'price_change' ? { text: 'שינוי מחיר', color: 'orange' }
-    : changeType === 'removed_plan' ? { text: 'הוסרה', color: 'red' }
-    : null
+  // Build info line: data + period, dot-separated
+  const infoParts = []
+  if (!isContent) infoParts.push(formatGB(plan.data_gb))
+  if ((isAbroad || isGlobal) && plan.days) infoParts.push(formatDays(plan.days))
+  if (plan.minutes) infoParts.push(`${plan.minutes} דקות`)
+  if (plan.sms) infoParts.push(`${plan.sms} SMS`)
+
+  // Extras — filter out app-related text if we have an apps link
+  const extras = plan.extras ? plan.extras.filter(e => !(appsData && /אפליקציות/.test(e))) : []
+  const visibleExtras = showAllExtras ? extras : extras.slice(0, 2)
+  const hiddenCount = extras.length - 2
+
+  const hasRoaming = !isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow relative text-right">
-      {changeBadge && (
-        <Badge color={changeBadge.color} className="absolute top-3 left-3">{changeBadge.text}</Badge>
+    <div className="bg-white rounded-2xl p-5 hover:shadow-md transition-all duration-200 shadow-sm relative group text-right">
+      {/* Change indicator dot */}
+      {changeType && CHANGE_DOT[changeType] && (
+        <span
+          className={`absolute top-4 left-4 w-2 h-2 rounded-full ${CHANGE_DOT[changeType]}`}
+          title={changeType === 'new_plan' ? 'חדש' : changeType === 'price_change' ? 'שינוי מחיר' : 'הוסרה'}
+        />
       )}
 
-      {/* Plan name (hidden for content — service name shown in section header) */}
-      {!isContent && <h3 className="text-sm font-bold text-blue-600 mb-2 leading-snug">{
-        (plan.plan_name || '').split(' – ').map((part, i, arr) => (
-          <span key={i}>{i > 0 && ' – '}<bdi>{part}</bdi></span>
-        ))
-      }</h3>}
+      {/* Carrier badge — top right */}
+      <div className="flex items-center gap-1.5 mb-3">
+        <Badge color={badgeColor}>{label}</Badge>
+        {isGlobal && plan.esim && <Badge color="green">eSIM</Badge>}
+        {hasRoaming && <Badge color="blue">חו״ל</Badge>}
+      </div>
 
-      {/* Carrier badge */}
-      <Badge color={badgeColor} className="mb-3">{label}</Badge>
-      {isGlobal && plan.esim && <Badge color="green" className="mb-3 mr-1">eSIM</Badge>}
+      {/* Plan name */}
+      {!isContent && (
+        <h3 className="text-[13px] font-semibold text-gray-800 mb-3 leading-relaxed">{
+          (plan.plan_name || '').split(' – ').map((part, i) => (
+            <span key={i}>{i > 0 && <span className="text-gray-300"> - </span>}<bdi>{part}</bdi></span>
+          ))
+        }</h3>
+      )}
 
       {/* Price */}
       <div className="mb-3">
-        <span className="text-2xl font-bold text-gray-900">{String(plan.price).startsWith('₪') ? plan.price : `₪${plan.price}`}</span>
-        {!isGlobal && !isContent && <span className="text-xs text-gray-500 mr-1">לחודש</span>}
-        {isContent && <span className="text-xs text-gray-500 mr-1">לחודש</span>}
+        <span className="text-3xl font-bold text-gray-900 tracking-tight">{String(plan.price).startsWith('₪') ? plan.price : `₪${plan.price}`}</span>
         {isGlobal && plan.original_price && plan.currency && plan.currency !== 'ILS' && (
-          <div className="text-xs text-gray-400 mt-0.5">${plan.original_price} {plan.currency}</div>
+          <span className="text-[11px] text-gray-400 mr-2">${plan.original_price} {plan.currency}</span>
         )}
       </div>
 
-      {/* Roaming badge for domestic plans */}
-      {!isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e)) && (
-        <div className="mb-2">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
-            ✈️ כולל גלישה בחו״ל
-          </span>
-        </div>
+      {/* Info line — dot separated */}
+      {infoParts.length > 0 && (
+        <p className="text-sm text-gray-500 mb-3" dir="rtl">
+          {infoParts.map((part, i) => (
+            <span key={i}>{i > 0 && <span className="mx-1.5 text-gray-300">&#183;</span>}{part}</span>
+          ))}
+        </p>
       )}
 
-      {/* Details */}
-      <div className="space-y-1 text-sm text-gray-600 text-right">
-        {!isContent && (
-          <div className="flex justify-between">
-            <span>גלישה</span>
-            <span className="font-medium">{formatGB(plan.data_gb)}</span>
-          </div>
-        )}
-        {(isAbroad || isGlobal) && plan.days && (
-          <div className="flex justify-between">
-            <span>תקופה</span>
-            <span className="font-medium" dir="rtl">{plan.days > 60 ? (plan.days >= 365 ? `${(plan.days / 365).toFixed(plan.days % 365 === 0 ? 0 : 1)} שנים` : `${Math.round(plan.days / 30)} חודשים`) : `${plan.days} ימים`}</span>
-          </div>
-        )}
-        {plan.minutes && (
-          <div className="flex justify-between">
-            <span>דקות שיחה</span>
-            <span className="font-medium">{plan.minutes}</span>
-          </div>
-        )}
-        {plan.sms && (
-          <div className="flex justify-between">
-            <span>SMS</span>
-            <span className="font-medium">{plan.sms}</span>
-          </div>
-        )}
-        {isContent && plan.free_trial && !['ללא תקופת חינם', '—', ''].includes(plan.free_trial) && (
-          <div className="text-sm text-gray-600">🎁 {plan.free_trial}</div>
-        )}
-        {isContent && plan.note && (
-          <div className="text-xs text-gray-400">{plan.note}</div>
-        )}
-      </div>
+      {/* Content-specific fields */}
+      {isContent && plan.free_trial && !['ללא תקופת חינם', '—', ''].includes(plan.free_trial) && (
+        <p className="text-xs text-gray-500 mb-2">🎁 {plan.free_trial}</p>
+      )}
+      {isContent && plan.note && (
+        <p className="text-[11px] text-gray-400 mb-2">{plan.note}</p>
+      )}
 
       {/* Extras */}
-      {plan.extras && plan.extras.length > 0 && (
+      {extras.length > 0 && (
         <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
-          {plan.extras.map((extra, i) => (
-            <div key={i} className="text-xs text-gray-500 flex items-start gap-1">
-              <span className="text-blue-400 mt-0.5">✦</span>
+          {visibleExtras.map((extra, i) => (
+            <div key={i} className="text-[11px] text-gray-400 flex items-start gap-1.5">
+              <span className="text-gray-300 mt-px shrink-0">&#10022;</span>
               <span>{extra}</span>
             </div>
           ))}
+          {hiddenCount > 0 && !showAllExtras && (
+            <button
+              onClick={() => setShowAllExtras(true)}
+              className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              +{hiddenCount} נוספים
+            </button>
+          )}
         </div>
       )}
 
-      {/* Country link for global regional plans */}
-      {countryData && (
-        <>
-          <button
-            onClick={() => setShowCountries(true)}
-            className="mt-3 text-xs text-blue-500 hover:text-blue-700 transition-colors"
-          >
-            מדינות כלולות ({countryData.countries.length}) ✈️
-          </button>
-          <CountryModal
-            open={showCountries}
-            onClose={() => setShowCountries(false)}
-            title={countryData.title}
-            countries={countryData.countries}
-          />
-        </>
+      {/* Country / Apps links */}
+      {(countryData || appsData) && (
+        <div className="mt-3 pt-2 border-t border-gray-50 flex items-center gap-3">
+          {countryData && (
+            <button
+              onClick={() => setShowCountries(true)}
+              className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              מדינות ({countryData.countries.length}) &larr;
+            </button>
+          )}
+          {appsData && (
+            <button
+              onClick={() => setShowApps(true)}
+              className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              אפליקציות &larr;
+            </button>
+          )}
+        </div>
       )}
 
+      {/* Modals */}
+      {countryData && (
+        <CountryModal
+          open={showCountries}
+          onClose={() => setShowCountries(false)}
+          title={countryData.title}
+          countries={countryData.countries}
+        />
+      )}
       {appsData && (
-        <>
-          <button
-            onClick={() => setShowApps(true)}
-            className="mt-1 text-xs text-purple-500 hover:text-purple-700 transition-colors"
-          >
-            גלישה חופשית באפליקציות 📱
-          </button>
-          <AppsModal
-            open={showApps}
-            onClose={() => setShowApps(false)}
-            title={appsData.title}
-            apps={appsData.apps}
-          />
-        </>
+        <AppsModal
+          open={showApps}
+          onClose={() => setShowApps(false)}
+          title={appsData.title}
+          apps={appsData.apps}
+        />
       )}
     </div>
   )
