@@ -44,11 +44,21 @@ const CARRIERS_BY_TAB = {
   ],
 }
 
+const KNOWN_REGIONS = new Set([
+  'אירופה','אסיה','אסיה ואוקיאניה','אפריקה','גלובלי','קריביים','איי הקריביים',
+  'אמריקה הלטינית','צפון אמריקה','המזרח התיכון','המזרח התיכון וצפון אפריקה',
+  'דרום מזרח אסיה','סקנדינביה','בלקן','מזרח אירופה','מרכז אמריקה','אוקיאניה',
+  'סין + הונג קונג + מקאו','יפן וקוריאה','יפן וסין',
+  'אסיה פסיפיק','מרכז אסיה','צפון אפריקה',
+])
+
 export default function ComparePage() {
   const [tab, setTab] = useState('domestic')
   const [selectedCarriers, setSelectedCarriers] = useState([])
   const [gbFilter, setGbFilter] = useState('all')
   const [daysFilter, setDaysFilter] = useState('all')
+  const [regionFilter, setRegionFilter] = useState('all')
+  const [destinationFilter, setDestinationFilter] = useState('all')
   const [sortBy, setSortBy] = useState('price_asc')
   const [allData, setAllData] = useState({ domestic: [], abroad: [], global: [] })
   const [loading, setLoading] = useState(true)
@@ -68,6 +78,8 @@ export default function ComparePage() {
     setSelectedCarriers([])
     setGbFilter('all')
     setDaysFilter('all')
+    setRegionFilter('all')
+    setDestinationFilter('all')
     setSortBy('price_asc')
   }, [tab])
 
@@ -83,6 +95,18 @@ export default function ComparePage() {
   const getLabel = (id) => carrierOptions.find(x => x.id === id)?.label || id
   const getColor = (id) => carrierOptions.find(x => x.id === id)?.color || '#888'
 
+  // Regions (global only)
+  const availableRegions = useMemo(() => {
+    if (tab !== 'global') return []
+    return [...new Set(plans.filter(p => p.extras && p.extras[0] && KNOWN_REGIONS.has(p.extras[0])).map(p => p.extras[0]))].sort((a, b) => a.localeCompare(b, 'he'))
+  }, [plans, tab])
+
+  // Destinations/countries (global = non-region extras, abroad = from getPlanCountries not available here so skip)
+  const availableDestinations = useMemo(() => {
+    if (tab !== 'global') return []
+    return [...new Set(plans.filter(p => p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(p.extras[0])).map(p => p.extras[0]))].sort((a, b) => a.localeCompare(b, 'he'))
+  }, [plans, tab])
+
   // Filter + sort plans
   const filteredPlans = useMemo(() => {
     let result = plans.filter(p => selectedCarriers.includes(p.carrier))
@@ -93,6 +117,12 @@ export default function ComparePage() {
       else if (gbFilter === '5-15') result = result.filter(p => p.data_gb !== null && p.data_gb > 5 && p.data_gb <= 15)
       else if (gbFilter === '15-100') result = result.filter(p => p.data_gb !== null && p.data_gb > 15 && p.data_gb <= 100)
       else if (gbFilter === '100+') result = result.filter(p => p.data_gb !== null && p.data_gb > 100)
+    }
+
+    if (regionFilter !== 'all') {
+      result = result.filter(p => p.extras && p.extras[0] === regionFilter)
+    } else if (destinationFilter !== 'all') {
+      result = result.filter(p => p.extras && p.extras[0] === destinationFilter)
     }
 
     if (showDays && daysFilter !== 'all') {
@@ -198,6 +228,34 @@ export default function ComparePage() {
                 <FilterTag key={val} label={label} active={daysFilter === val} onClick={() => setDaysFilter(val)} />
               ))}
             </div>
+          </div>
+        )}
+
+        {tab === 'global' && availableRegions.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2">אזור</p>
+            <select
+              value={regionFilter}
+              onChange={e => { setRegionFilter(e.target.value); if (e.target.value !== 'all') setDestinationFilter('all') }}
+              className={`border rounded-lg px-3 py-1.5 text-xs ${regionFilter !== 'all' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+            >
+              <option value="all">כל האזורים ({availableRegions.length})</option>
+              {availableRegions.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+        )}
+
+        {tab === 'global' && availableDestinations.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2">מדינה</p>
+            <select
+              value={destinationFilter}
+              onChange={e => { setDestinationFilter(e.target.value); if (e.target.value !== 'all') setRegionFilter('all') }}
+              className={`border rounded-lg px-3 py-1.5 text-xs ${destinationFilter !== 'all' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+            >
+              <option value="all">כל המדינות ({availableDestinations.length})</option>
+              {availableDestinations.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
         )}
 
