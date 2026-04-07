@@ -50,7 +50,7 @@ export default function ComparePage() {
             <button
               key={c}
               onClick={() => setSelectedCarriers(prev =>
-                prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c].slice(0, 5)
+                prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]
               )}
               className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                 selectedCarriers.includes(c) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'

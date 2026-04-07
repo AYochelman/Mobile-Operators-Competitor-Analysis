@@ -6,7 +6,8 @@ from functools import wraps
 from flask import Flask, jsonify, render_template, request, make_response, send_from_directory
 from flask_cors import CORS
 from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_changes, get_global_plans, get_global_changes, \
-               get_content_plans, get_content_changes
+               get_content_plans, get_content_changes, \
+               save_price_alert, get_price_alerts, delete_price_alert, update_alert_triggered
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -356,6 +357,39 @@ def api_scrape_now():
     except Exception as e:
         logger.error(f"scrape-now failed: {e}", exc_info=True)
         logger.error(f"API error: {e}", exc_info=True); return jsonify({"error": "Internal server error"}), 500
+
+
+# ── Price Alerts Routes ────────────────────────────────────────────────────
+
+@app.route("/api/alerts", methods=["GET"])
+def api_get_alerts():
+    user_email = request.args.get("user_email", "")
+    alerts = get_price_alerts(user_email=user_email or None, db_path=_db_path())
+    return jsonify(alerts)
+
+
+@app.route("/api/alerts", methods=["POST"])
+def api_create_alert():
+    data = request.get_json(force=True)
+    try:
+        save_price_alert(
+            user_email=data.get("user_email", ""),
+            tab=data.get("tab", "domestic"),
+            carrier=data.get("carrier", ""),
+            plan_pattern=data.get("plan_pattern", ""),
+            threshold=float(data.get("threshold", 0)),
+            db_path=_db_path()
+        )
+        return jsonify({"status": "created"}), 201
+    except Exception as e:
+        logger.error(f"create alert failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/alerts/<int:alert_id>", methods=["DELETE"])
+def api_delete_alert(alert_id):
+    delete_price_alert(alert_id, db_path=_db_path())
+    return jsonify({"status": "deleted"})
 
 
 # ── Push Notification Routes ───────────────────────────────────────────────

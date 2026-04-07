@@ -27,11 +27,18 @@ export const api = {
   getContentPlans: () => fetchApi('/api/content-plans'),
   getContentChanges: () => fetchApi('/api/content-changes'),
 
-  // Scrape
-  scrapeAll: () => fetchApi('/api/scrape-all-now'),
+  // Scrape (requires API key)
+  scrapeAll: () => fetchApi('/api/scrape-all-now', {
+    headers: { 'X-API-Key': import.meta.env.VITE_API_KEY || '' }
+  }),
 
   // Chat
   chat: (question) => fetchApi('/api/chat', { method: 'POST', body: JSON.stringify({ question }) }),
+
+  // Alerts
+  getAlerts: (email) => fetchApi(`/api/alerts?user_email=${encodeURIComponent(email)}`),
+  createAlert: (alert) => fetchApi('/api/alerts', { method: 'POST', body: JSON.stringify(alert) }),
+  deleteAlert: (id) => fetchApi(`/api/alerts/${id}`, { method: 'DELETE' }),
 
   // Push
   getVapidKey: () => fetchApi('/api/push/vapid-public-key'),
