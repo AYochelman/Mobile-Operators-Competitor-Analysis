@@ -2401,6 +2401,82 @@ def scrape_holafly_regions(_page=None, usd_rate=None):
     return all_plans
 
 
+ESIMIO_REGIONS = {
+    "esim-europe": "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
+    "esim-africa": "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "esim-asia-pacific": "\u05d0\u05e1\u05d9\u05d4 \u05e4\u05e1\u05d9\u05e4\u05d9\u05e7",
+    "esim-balkans": "\u05d1\u05dc\u05e7\u05df",
+    "esim-carribean": "\u05e7\u05e8\u05d9\u05d1\u05d9\u05d9\u05dd",
+    "esim-latin-america": "\u05d0\u05de\u05e8\u05d9\u05e7\u05d4 \u05d4\u05dc\u05d8\u05d9\u05e0\u05d9\u05ea",
+    "esim-central-asia": "\u05de\u05e8\u05db\u05d6 \u05d0\u05e1\u05d9\u05d4",
+    "esim-middle-east": "\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df",
+    "esim-north-africa": "\u05e6\u05e4\u05d5\u05df \u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "esim-north-america": "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
+}
+
+
+def scrape_esimio_regions(_page=None, usd_rate=None):
+    """Scrape eSIM.io regional eSIM plans (10 regions)."""
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    all_plans = []
+    JS_EXTRACT = """() => {
+        const results = [];
+        const headings = document.querySelectorAll('h5');
+        for (const h of headings) {
+            const text = h.textContent.trim();
+            const m = text.match(/(\\d+(?:\\.\\d+)?)\\s*(GB|MB)\\s*\\/\\s*\\$(\\d+(?:\\.\\d+)?)/i);
+            if (!m) continue;
+            const amount = parseFloat(m[1]);
+            const unit = m[2].toUpperCase();
+            const price = parseFloat(m[3]);
+            if (unit === 'MB' && amount <= 1) continue;
+            if (price === 0) continue;
+            results.push({amount, unit, price});
+        }
+        return results;
+    }"""
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"]
+        )
+        page = browser.new_page(user_agent=ua)
+        for slug, region_heb in ESIMIO_REGIONS.items():
+            try:
+                page.goto(
+                    f"https://esim.io/regions/{slug}",
+                    timeout=20000, wait_until="domcontentloaded"
+                )
+                page.wait_for_timeout(1500)
+                raw = page.evaluate(JS_EXTRACT)
+                for item in raw:
+                    amount = item["amount"]
+                    unit = item["unit"]
+                    price_usd = item["price"]
+                    if unit == "MB":
+                        gb = round(amount / 1024, 4)
+                    else:
+                        gb = int(amount) if amount == int(amount) else amount
+                    if gb < 1:
+                        continue
+                    days = 30
+                    price_ils = round(price_usd * usd_rate, 2)
+                    gb_str = f"{int(gb)}GB" if gb == int(gb) else f"{gb}GB"
+                    plan_name = f"{region_heb} \u2013 {gb_str} \u2013 30 \u05d9\u05de\u05d9\u05dd"
+                    all_plans.append(_make_global_plan(
+                        "esimio", plan_name, price_ils, "USD", price_usd,
+                        gb, days, esim=True, extras=[region_heb]
+                    ))
+            except Exception as exc:
+                logger.warning(f"eSIM.io region {slug}: {exc}")
+                continue
+        browser.close()
+    logger.info(f"eSIM.io regions: {len(all_plans)} plans from {len(ESIMIO_REGIONS)} regions")
+    return all_plans
+
+
 def scrape_all_global():
     """Scrape global eSIM packages from all 7 providers. Returns flat list of plan dicts."""
     usd_rate = _get_usd_to_ils()
@@ -2422,6 +2498,7 @@ def scrape_all_global():
             ("scrape_saily_global",         lambda pg: scrape_saily_global(pg, usd_rate)),
             ("scrape_saily_regions",        lambda pg: scrape_saily_regions(pg, usd_rate)),
             ("scrape_esimio_destinations",  lambda pg: scrape_esimio_destinations(pg, usd_rate)),
+            ("scrape_esimio_regions",       lambda pg: scrape_esimio_regions(pg, usd_rate)),
             ("scrape_holafly_global",       lambda pg: scrape_holafly_global(pg, usd_rate)),
             ("scrape_holafly_regions",      lambda pg: scrape_holafly_regions(pg, usd_rate)),
         ]
