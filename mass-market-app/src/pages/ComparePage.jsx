@@ -80,13 +80,17 @@ export default function ComparePage() {
   }, [])
 
   useEffect(() => {
+    resetFilters()
+  }, [tab])
+
+  const resetFilters = () => {
     setSelectedCarriers([])
     setGbFilter('all')
     setDaysFilter('all')
     setRegionFilter('all')
     setDestinationFilter('all')
     setSortBy('price_asc')
-  }, [tab])
+  }
 
   const plans = allData[tab] || []
   const carrierOptions = CARRIERS_BY_TAB[tab] || []
@@ -235,7 +239,14 @@ export default function ComparePage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
-      <h1 className="text-xl font-bold mb-4">⚖️ השוואת מחירים</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold">⚖️ השוואת מחירים</h1>
+        {(selectedCarriers.length > 0 || gbFilter !== 'all' || daysFilter !== 'all' || regionFilter !== 'all' || destinationFilter !== 'all') && (
+          <button onClick={resetFilters} className="text-xs text-red-500 hover:text-red-700 transition-colors">
+            🔄 איפוס
+          </button>
+        )}
+      </div>
 
       {/* Tab selector */}
       <div className="flex gap-1 mb-4">
@@ -308,7 +319,16 @@ export default function ComparePage() {
             <p className="text-xs font-medium text-gray-500 mb-2">אזור</p>
             <select
               value={regionFilter}
-              onChange={e => { setRegionFilter(e.target.value); if (e.target.value !== 'all') setDestinationFilter('all') }}
+              onChange={e => {
+                const val = e.target.value
+                setRegionFilter(val)
+                if (val !== 'all') {
+                  setDestinationFilter('all')
+                  // Auto-select carriers that have plans for this region
+                  const regionCarriers = [...new Set(plans.filter(p => p.extras && p.extras[0] === val).map(p => p.carrier))]
+                  setSelectedCarriers(regionCarriers)
+                }
+              }}
               className={`border rounded-lg px-3 py-1.5 text-xs ${regionFilter !== 'all' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
             >
               <option value="all">כל האזורים ({availableRegions.length})</option>
@@ -322,7 +342,16 @@ export default function ComparePage() {
             <p className="text-xs font-medium text-gray-500 mb-2">מדינה</p>
             <select
               value={destinationFilter}
-              onChange={e => { setDestinationFilter(e.target.value); if (e.target.value !== 'all') setRegionFilter('all') }}
+              onChange={e => {
+                const val = e.target.value
+                setDestinationFilter(val)
+                if (val !== 'all') {
+                  setRegionFilter('all')
+                  // Auto-select carriers that cover this country
+                  const carriers = countryCarrierMap[val]
+                  if (carriers) setSelectedCarriers([...carriers])
+                }
+              }}
               className={`border rounded-lg px-3 py-1.5 text-xs ${destinationFilter !== 'all' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
             >
               <option value="all">כל המדינות ({availableDestinations.length})</option>
