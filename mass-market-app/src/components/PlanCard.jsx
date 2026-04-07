@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Badge from './ui/Badge'
 import CountryModal from './CountryModal'
 import { getCountriesForPlan } from '../data/globalCountries'
+import { getCountriesForAbroadPlan } from '../data/abroadCountries'
 
 const CARRIER_COLORS = {
   partner: 'pink', pelephone: 'blue', hotmobile: 'orange', cellcom: 'green',
@@ -34,7 +35,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType }) {
   const isGlobal = type === 'global'
   const isAbroad = type === 'abroad'
   const isContent = type === 'content'
-  const countryData = isGlobal ? getCountriesForPlan(plan) : null
+  const countryData = isGlobal ? getCountriesForPlan(plan) : isAbroad ? getCountriesForAbroadPlan(plan) : null
   const carrier = plan.carrier
   const label = isGlobal ? (GLOBAL_LABELS[carrier] || carrier) : (CARRIER_LABELS[carrier] || carrier)
   const badgeColor = isGlobal ? (GLOBAL_COLORS[carrier] || 'gray') : (CARRIER_COLORS[carrier] || 'gray')
