@@ -2519,6 +2519,60 @@ def scrape_tuki_regions(page, usd_rate):
     return all_plans
 
 
+def scrape_tuki_local(page, usd_rate):
+    """Scrape Tuki per-country eSIM plans via their JSON API."""
+    import urllib.request, json as _json
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124"
+    all_plans = []
+
+    try:
+        url = "https://www.tuki-esim.co.il/ds/api/globalsim/data/?lcid=1037&pageControlId=21412"
+        req = urllib.request.Request(url, headers={"User-Agent": ua})
+        resp = urllib.request.urlopen(req, timeout=30)
+        raw = resp.read().decode("utf-8")
+        # Response is JS assignment: datasource.globalsimData={...}
+        json_str = raw.split("=", 1)[1]
+        data = _json.loads(json_str)
+
+        countries = data.get("countries", [])
+        packages = data.get("packages", [])
+
+        # Build package lookup by id
+        pkg_by_id = {p["id"]: p for p in packages}
+
+        for country in countries:
+            country_heb = country.get("nameHeb", "")
+            pkg_ids = country.get("countryPackagesIds", [])
+            if not country_heb or not pkg_ids:
+                continue
+
+            for pid in pkg_ids:
+                pkg = pkg_by_id.get(pid)
+                if not pkg:
+                    continue
+                try:
+                    gb = float(pkg.get("gigaDataByte", 0))
+                    days = int(pkg.get("validityPeriodDays", 30))
+                    price_usd = float(pkg.get("price", 0))
+                except (ValueError, TypeError):
+                    continue
+                if gb <= 0 or price_usd <= 0:
+                    continue
+
+                price_ils = round(price_usd * usd_rate, 2)
+                plan_name = f"{country_heb} \u2013 {int(gb)}GB \u2013 {days} \u05d9\u05de\u05d9\u05dd"
+                all_plans.append(_make_global_plan(
+                    "tuki", plan_name, price_ils, "USD", price_usd,
+                    data_gb=gb, days=days, esim=True, extras=[country_heb]
+                ))
+
+        logger.info(f"Tuki local: {len(all_plans)} per-country plans from {len(countries)} countries")
+    except Exception as e:
+        logger.error(f"Tuki local API failed: {e}", exc_info=True)
+
+    return all_plans
+
+
 # GlobaleSIM regional plans — all regions share same pricing (ILS)
 _GLOBALESIM_REGION_PLANS = [
     # (gb, days, price_ils, minutes)
@@ -2569,6 +2623,7 @@ def scrape_all_global():
         jobs = [
             ("scrape_tuki_global",          lambda pg: scrape_tuki_global(pg, usd_rate)),
             ("scrape_tuki_regions",        lambda pg: scrape_tuki_regions(pg, usd_rate)),
+            ("scrape_tuki_local",          lambda pg: scrape_tuki_local(pg, usd_rate)),
             ("scrape_globalesim_global",    scrape_globalesim_global),
             ("scrape_globalesim_regions",   scrape_globalesim_regions),
             ("scrape_airalo_global",        lambda pg: scrape_airalo_global(pg, usd_rate)),
