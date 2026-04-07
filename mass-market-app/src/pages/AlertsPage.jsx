@@ -5,7 +5,7 @@ import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
 
 const TABS = [
-  { id: 'domestic', label: 'Mass Market', icon: '📱' },
+  { id: 'domestic', label: 'חבילות סלולר', icon: '📱' },
   { id: 'abroad', label: 'חו"ל', icon: '✈️' },
   { id: 'global', label: 'גלובלי', icon: '🌍' },
 ]
@@ -39,7 +39,7 @@ const CARRIER_COLORS = {
   esimo: 'purple', simtlv: 'teal', world8: 'pink', saily: 'blue', holafly: 'green',
 }
 
-const TAB_LABELS = { domestic: 'Mass Market', abroad: 'חו"ל', global: 'גלובלי' }
+const TAB_LABELS = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי' }
 
 function carrierLabel(id) {
   const all = [...CARRIERS, ...GLOBAL_PROVIDERS]
