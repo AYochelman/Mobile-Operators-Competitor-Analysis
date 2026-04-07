@@ -171,21 +171,29 @@ export default function ComparePage() {
     if (regionFilter !== 'all') {
       result = result.filter(p => p.extras && p.extras[0] === regionFilter)
     } else if (destinationFilter !== 'all') {
-      // Get carriers that cover this country
       const carriersForCountry = countryCarrierMap[destinationFilter] || new Set()
       result = result.filter(p => {
-        // Direct match (saily/holafly/esimio per-country plans)
-        if (p.extras && p.extras[0] === destinationFilter) return true
-        // Carrier covers this country via static list or regional plan
-        if (carriersForCountry.has(p.carrier)) {
-          // For per-country providers, only show if extras matches
-          if (['saily', 'holafly', 'esimio'].includes(p.carrier) && p.extras && p.extras[0] && !KNOWN_REGIONS.has(p.extras[0])) {
-            return p.extras[0] === destinationFilter
-          }
-          // For regional/global carriers (tuki, airalo, etc.), show all their plans
-          return true
+        if (!carriersForCountry.has(p.carrier)) return false
+
+        const ext = p.extras && p.extras[0]
+
+        // Per-country plan (extras[0] = country name, not a region)
+        if (ext && !KNOWN_REGIONS.has(ext) && !/\d/.test(ext)) {
+          return ext === destinationFilter
         }
-        return false
+
+        // Regional plan (extras[0] = region name like "אירופה")
+        if (ext && KNOWN_REGIONS.has(ext)) {
+          const regionData = getCountriesForPlan(p)
+          if (regionData && regionData.countries) {
+            return regionData.countries.includes(destinationFilter)
+          }
+          return false
+        }
+
+        // Global carriers without extras (tuki, airalo, simtlv, etc.)
+        // — already verified via carriersForCountry
+        return true
       })
     }
 
