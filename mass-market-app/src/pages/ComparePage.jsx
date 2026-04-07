@@ -44,29 +44,12 @@ const CARRIERS_BY_TAB = {
   ],
 }
 
-const COMPARE_MODES = {
-  domestic: [
-    { id: 'gb_range', label: 'טווח גלישה' },
-    { id: 'cheapest', label: 'המחיר הזול ביותר' },
-    { id: 'plan_count', label: 'כמות חבילות' },
-  ],
-  abroad: [
-    { id: 'gb_range', label: 'טווח גלישה' },
-    { id: 'days_range', label: 'תוקף חבילה' },
-    { id: 'cheapest', label: 'המחיר הזול ביותר' },
-  ],
-  global: [
-    { id: 'gb_range', label: 'טווח גלישה' },
-    { id: 'days_range', label: 'תוקף חבילה' },
-    { id: 'cheapest', label: 'המחיר הזול ביותר' },
-    { id: 'country_count', label: 'כמות מדינות' },
-  ],
-}
-
 export default function ComparePage() {
   const [tab, setTab] = useState('domestic')
-  const [compareMode, setCompareMode] = useState('gb_range')
   const [selectedCarriers, setSelectedCarriers] = useState([])
+  const [gbFilter, setGbFilter] = useState('all')
+  const [daysFilter, setDaysFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('price_asc')
   const [allData, setAllData] = useState({ domestic: [], abroad: [], global: [] })
   const [loading, setLoading] = useState(true)
 
@@ -81,121 +64,70 @@ export default function ComparePage() {
     }).catch(() => setLoading(false))
   }, [])
 
-  // Reset carriers and mode when tab changes
   useEffect(() => {
     setSelectedCarriers([])
-    setCompareMode('gb_range')
+    setGbFilter('all')
+    setDaysFilter('all')
+    setSortBy('price_asc')
   }, [tab])
 
   const plans = allData[tab] || []
   const carrierOptions = CARRIERS_BY_TAB[tab] || []
-  const modes = COMPARE_MODES[tab] || []
+  const showDays = tab === 'abroad' || tab === 'global'
 
-  // Available carriers (only those with plans)
   const availableCarriers = useMemo(() => {
     const inData = new Set(plans.map(p => p.carrier))
     return carrierOptions.filter(c => inData.has(c.id))
   }, [plans, carrierOptions])
 
-  const getLabel = (id) => {
-    const c = carrierOptions.find(x => x.id === id)
-    return c ? c.label : id
-  }
-  const getColor = (id) => {
-    const c = carrierOptions.find(x => x.id === id)
-    return c ? c.color : '#888'
-  }
+  const getLabel = (id) => carrierOptions.find(x => x.id === id)?.label || id
+  const getColor = (id) => carrierOptions.find(x => x.id === id)?.color || '#888'
 
+  // Filter + sort plans
+  const filteredPlans = useMemo(() => {
+    let result = plans.filter(p => selectedCarriers.includes(p.carrier))
+
+    if (gbFilter !== 'all') {
+      if (gbFilter === 'unlimited') result = result.filter(p => p.data_gb === null)
+      else if (gbFilter === '0-5') result = result.filter(p => p.data_gb !== null && p.data_gb <= 5)
+      else if (gbFilter === '5-15') result = result.filter(p => p.data_gb !== null && p.data_gb > 5 && p.data_gb <= 15)
+      else if (gbFilter === '15-100') result = result.filter(p => p.data_gb !== null && p.data_gb > 15 && p.data_gb <= 100)
+      else if (gbFilter === '100+') result = result.filter(p => p.data_gb !== null && p.data_gb > 100)
+    }
+
+    if (showDays && daysFilter !== 'all') {
+      if (daysFilter === '1-7') result = result.filter(p => p.days && p.days <= 7)
+      else if (daysFilter === '8-30') result = result.filter(p => p.days && p.days > 7 && p.days <= 30)
+      else if (daysFilter === '30+') result = result.filter(p => p.days && p.days > 30)
+    }
+
+    if (sortBy === 'price_asc') result = [...result].sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999))
+    else if (sortBy === 'price_desc') result = [...result].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
+    else if (sortBy === 'gb_desc') result = [...result].sort((a, b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999))
+
+    return result
+  }, [plans, selectedCarriers, gbFilter, daysFilter, sortBy, showDays])
+
+  // Chart: average price per carrier
   const chartData = useMemo(() => {
     if (selectedCarriers.length === 0) return []
-    const filtered = plans.filter(p => selectedCarriers.includes(p.carrier))
 
-    if (compareMode === 'gb_range') {
-      const ranges = tab === 'domestic'
-        ? ['ללא הגבלה', '0-100GB', '100-500GB', '500+GB']
-        : ['ללא הגבלה', '0-5GB', '5-15GB', '15+GB']
-      return ranges.map(range => {
-        const row = { name: range }
-        selectedCarriers.forEach(c => {
-          const cp = filtered.filter(p => p.carrier === c)
-          let matched
-          if (range === 'ללא הגבלה') matched = cp.filter(p => p.data_gb === null)
-          else if (range === '0-100GB') matched = cp.filter(p => p.data_gb !== null && p.data_gb <= 100)
-          else if (range === '100-500GB') matched = cp.filter(p => p.data_gb !== null && p.data_gb > 100 && p.data_gb <= 500)
-          else if (range === '500+GB') matched = cp.filter(p => p.data_gb !== null && p.data_gb > 500)
-          else if (range === '0-5GB') matched = cp.filter(p => p.data_gb !== null && p.data_gb <= 5)
-          else if (range === '5-15GB') matched = cp.filter(p => p.data_gb !== null && p.data_gb > 5 && p.data_gb <= 15)
-          else if (range === '15+GB') matched = cp.filter(p => p.data_gb !== null && p.data_gb > 15)
-          else matched = []
-          row[c] = matched.length ? Math.round(matched.reduce((s, p) => s + (p.price || 0), 0) / matched.length) : null
-        })
-        return row
-      })
-    }
+    return selectedCarriers.map(c => {
+      const cp = filteredPlans.filter(p => p.carrier === c && p.price)
+      if (!cp.length) return null
+      return {
+        name: getLabel(c),
+        'מחיר מינימום': Math.min(...cp.map(p => p.price)),
+        'מחיר ממוצע': Math.round(cp.reduce((s, p) => s + p.price, 0) / cp.length),
+        'מחיר מקסימום': Math.max(...cp.map(p => p.price)),
+        fill: getColor(c),
+      }
+    }).filter(Boolean)
+  }, [filteredPlans, selectedCarriers])
 
-    if (compareMode === 'days_range') {
-      const ranges = ['1-7 ימים', '8-30 ימים', '30+ ימים']
-      return ranges.map(range => {
-        const row = { name: range }
-        selectedCarriers.forEach(c => {
-          const cp = filtered.filter(p => p.carrier === c)
-          let matched
-          if (range === '1-7 ימים') matched = cp.filter(p => p.days && p.days <= 7)
-          else if (range === '8-30 ימים') matched = cp.filter(p => p.days && p.days > 7 && p.days <= 30)
-          else matched = cp.filter(p => p.days && p.days > 30)
-          row[c] = matched.length ? Math.round(matched.reduce((s, p) => s + (p.price || 0), 0) / matched.length) : null
-        })
-        return row
-      })
-    }
-
-    if (compareMode === 'cheapest') {
-      return [{ name: 'מחיר מינימום', ...Object.fromEntries(
-        selectedCarriers.map(c => {
-          const cp = filtered.filter(p => p.carrier === c && p.price)
-          const min = cp.length ? Math.min(...cp.map(p => p.price)) : null
-          return [c, min]
-        })
-      )}, { name: 'מחיר ממוצע', ...Object.fromEntries(
-        selectedCarriers.map(c => {
-          const cp = filtered.filter(p => p.carrier === c && p.price)
-          const avg = cp.length ? Math.round(cp.reduce((s, p) => s + p.price, 0) / cp.length) : null
-          return [c, avg]
-        })
-      )}, { name: 'מחיר מקסימום', ...Object.fromEntries(
-        selectedCarriers.map(c => {
-          const cp = filtered.filter(p => p.carrier === c && p.price)
-          const max = cp.length ? Math.max(...cp.map(p => p.price)) : null
-          return [c, max]
-        })
-      )}]
-    }
-
-    if (compareMode === 'plan_count') {
-      return [{ name: 'כמות חבילות', ...Object.fromEntries(
-        selectedCarriers.map(c => [c, filtered.filter(p => p.carrier === c).length])
-      )}]
-    }
-
-    if (compareMode === 'country_count') {
-      return [{ name: 'מדינות', ...Object.fromEntries(
-        selectedCarriers.map(c => {
-          const countries = new Set(filtered.filter(p => p.carrier === c && p.extras && p.extras[0]).map(p => p.extras[0]))
-          return [c, countries.size]
-        })
-      )}]
-    }
-
-    return []
-  }, [plans, selectedCarriers, compareMode, tab])
-
-  const yLabel = compareMode === 'plan_count' || compareMode === 'country_count' ? '' : '₪'
-  const tooltipFormat = (val) => {
-    if (val === null) return '—'
-    if (compareMode === 'plan_count') return `${val} חבילות`
-    if (compareMode === 'country_count') return `${val} מדינות`
-    return `₪${val}`
-  }
+  const GB_OPTIONS = tab === 'domestic'
+    ? [['all', 'הכל'], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['100+', '100+GB'], ['unlimited', 'ללא הגבלה']]
+    : [['all', 'הכל'], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['unlimited', 'ללא הגבלה']]
 
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
 
@@ -218,18 +150,8 @@ export default function ComparePage() {
         ))}
       </div>
 
-      {/* Compare mode */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-        <p className="text-xs font-medium text-gray-500 mb-2">השווה לפי:</p>
-        <div className="flex flex-wrap gap-1.5">
-          {modes.map(m => (
-            <FilterTag key={m.id} label={m.label} active={compareMode === m.id} onClick={() => setCompareMode(m.id)} />
-          ))}
-        </div>
-      </div>
-
       {/* Carrier selection */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-medium text-gray-500">בחר ספקים:</p>
           <button
@@ -257,30 +179,100 @@ export default function ComparePage() {
         </div>
       </div>
 
-      {/* Chart */}
-      {selectedCarriers.length > 0 && chartData.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <h2 className="text-sm font-bold mb-4">
-            {compareMode === 'gb_range' && 'מחיר ממוצע לפי טווח גלישה'}
-            {compareMode === 'days_range' && 'מחיר ממוצע לפי תוקף חבילה'}
-            {compareMode === 'cheapest' && 'טווח מחירים (מינימום / ממוצע / מקסימום)'}
-            {compareMode === 'plan_count' && 'כמות חבילות לפי ספק'}
-            {compareMode === 'country_count' && 'כמות מדינות לפי ספק'}
-          </h2>
+      {/* Filters — all combinable */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 space-y-3">
+        <div>
+          <p className="text-xs font-medium text-gray-500 mb-2">גלישה</p>
+          <div className="flex flex-wrap gap-1.5">
+            {GB_OPTIONS.map(([val, label]) => (
+              <FilterTag key={val} label={label} active={gbFilter === val} onClick={() => setGbFilter(val)} />
+            ))}
+          </div>
+        </div>
+
+        {showDays && (
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2">תוקף</p>
+            <div className="flex flex-wrap gap-1.5">
+              {[['all', 'הכל'], ['1-7', '1-7 ימים'], ['8-30', '8-30 ימים'], ['30+', '30+ ימים']].map(([val, label]) => (
+                <FilterTag key={val} label={label} active={daysFilter === val} onClick={() => setDaysFilter(val)} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <p className="text-xs font-medium text-gray-500 mb-2">מיון</p>
+          <div className="flex flex-wrap gap-1.5">
+            <FilterTag label="מחיר ↑" active={sortBy === 'price_asc'} onClick={() => setSortBy('price_asc')} />
+            <FilterTag label="מחיר ↓" active={sortBy === 'price_desc'} onClick={() => setSortBy('price_desc')} />
+            <FilterTag label="GB ↓" active={sortBy === 'gb_desc'} onClick={() => setSortBy('gb_desc')} />
+          </div>
+        </div>
+      </div>
+
+      {/* Results count */}
+      {selectedCarriers.length > 0 && (
+        <p className="text-[11px] text-gray-400 mb-3">{filteredPlans.length} חבילות נמצאו</p>
+      )}
+
+      {/* Chart: price range per carrier */}
+      {chartData.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+          <h2 className="text-sm font-bold mb-4">טווח מחירים לפי ספק (מינימום / ממוצע / מקסימום)</h2>
           <div style={{ direction: 'ltr' }}>
-            <ResponsiveContainer width="100%" height={380}>
+            <ResponsiveContainer width="100%" height={350}>
               <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis label={yLabel ? { value: yLabel, position: 'insideTopLeft' } : undefined} tick={{ fontSize: 12 }} />
-                <Tooltip formatter={tooltipFormat} />
+                <YAxis label={{ value: '₪', position: 'insideTopLeft' }} tick={{ fontSize: 12 }} />
+                <Tooltip formatter={(val) => `₪${val}`} />
                 <Legend />
-                {selectedCarriers.map(c => (
-                  <Bar key={c} dataKey={c} name={getLabel(c)} fill={getColor(c)} radius={[4, 4, 0, 0]} />
-                ))}
+                <Bar dataKey="מחיר מינימום" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="מחיר ממוצע" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="מחיר מקסימום" fill="#ef4444" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      )}
+
+      {/* Comparison table */}
+      {filteredPlans.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm" dir="rtl">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">ספק</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">שם חבילה</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">מחיר ₪</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">גלישה</th>
+                  {showDays && <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">ימים</th>}
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">דקות</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPlans.slice(0, 50).map((p, i) => (
+                  <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50">
+                    <td className="px-4 py-2 text-xs">
+                      <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium text-white" style={{ backgroundColor: getColor(p.carrier) }}>
+                        {getLabel(p.carrier)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-xs text-gray-700"><bdi>{p.plan_name}</bdi></td>
+                    <td className="px-4 py-2 text-xs font-bold text-gray-900">₪{p.price}</td>
+                    <td className="px-4 py-2 text-xs text-gray-600">{p.data_gb === null ? 'ללא הגבלה' : `${p.data_gb}GB`}</td>
+                    {showDays && <td className="px-4 py-2 text-xs text-gray-600">{p.days || '—'}</td>}
+                    <td className="px-4 py-2 text-xs text-gray-600">{p.minutes || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {filteredPlans.length > 50 && (
+            <p className="text-center text-[11px] text-gray-400 py-2">מציג 50 מתוך {filteredPlans.length}</p>
+          )}
         </div>
       )}
 
