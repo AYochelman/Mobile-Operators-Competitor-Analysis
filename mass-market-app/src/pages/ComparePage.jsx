@@ -67,6 +67,7 @@ export default function ComparePage() {
   const [gbFilter, setGbFilter] = useState('all')
   const [daysFilter, setDaysFilter] = useState('all')
   const [regionFilter, setRegionFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
   const [destinationFilter, setDestinationFilter] = useState('all')
   const [sortBy, setSortBy] = useState('price_asc')
   const [allData, setAllData] = useState({ domestic: [], abroad: [], global: [] })
@@ -93,6 +94,7 @@ export default function ComparePage() {
     setDaysFilter('all')
     setRegionFilter('all')
     setDestinationFilter('all')
+    setSearchQuery('')
     setSortBy('price_asc')
   }
 
@@ -291,51 +293,69 @@ export default function ComparePage() {
             </div>
           )}
 
-          {tab === 'global' && availableRegions.length > 0 && (
-            <div>
-              <p className="text-[11px] font-medium text-gray-500 mb-1.5">אזור</p>
-              <select
-                value={regionFilter}
-                onChange={e => {
-                  const val = e.target.value
-                  setRegionFilter(val)
-                  if (val !== 'all') {
-                    setDestinationFilter('all')
-                    const regionCarriers = [...new Set(plans.filter(p => p.extras && p.extras[0] === val).map(p => p.carrier))]
-                    setSelectedCarriers(regionCarriers)
-                  }
-                }}
-                className={`w-full border rounded-lg px-2 py-1 text-xs ${regionFilter !== 'all' ? 'border-[#5c3317] bg-[#faf5ee]' : 'border-gray-200'}`}
-              >
-                <option value="all">כל האזורים ({availableRegions.length})</option>
-                {availableRegions.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-          )}
-
-          {tab === 'global' && availableDestinations.length > 0 && (
-            <div>
-              <p className="text-[11px] font-medium text-gray-500 mb-1.5">מדינה</p>
-              <select
-                value={destinationFilter}
-                onChange={e => {
-                  const val = e.target.value
-                  setDestinationFilter(val)
-                  if (val !== 'all') {
-                    setRegionFilter('all')
-                    const carriers = countryCarrierMap[val]
-                    if (carriers) setSelectedCarriers([...carriers])
-                  }
-                }}
-                className={`w-full border rounded-lg px-2 py-1 text-xs ${destinationFilter !== 'all' ? 'border-[#5c3317] bg-[#faf5ee]' : 'border-gray-200'}`}
-              >
-                <option value="all">כל המדינות ({availableDestinations.length})</option>
-                {availableDestinations.map(c => {
-                  const n = countryCarrierMap[c] ? countryCarrierMap[c].size : 0
-                  return <option key={c} value={c}>{c} ({n} ספקים)</option>
-                })}
-              </select>
-            </div>
+          {tab === 'global' && (
+            <>
+              {/* Search input */}
+              <div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="חפש אזור או מדינה..."
+                  className="w-full border border-gray-200 rounded-lg px-2 py-1 text-xs focus:border-[#5c3317] focus:ring-1 focus:ring-[#5c3317] outline-none"
+                />
+              </div>
+              {/* Region + Country side by side */}
+              <div className="grid grid-cols-2 gap-2">
+                {availableRegions.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1">אזור</p>
+                    <select
+                      value={regionFilter}
+                      onChange={e => {
+                        const val = e.target.value
+                        setRegionFilter(val)
+                        setSearchQuery('')
+                        if (val !== 'all') {
+                          setDestinationFilter('all')
+                          const regionCarriers = [...new Set(plans.filter(p => p.extras && p.extras[0] === val).map(p => p.carrier))]
+                          setSelectedCarriers(regionCarriers)
+                        }
+                      }}
+                      className={`w-full border rounded-lg px-2 py-1 text-xs ${regionFilter !== 'all' ? 'border-[#5c3317] bg-[#faf5ee]' : 'border-gray-200'}`}
+                    >
+                      <option value="all">כל האזורים ({availableRegions.length})</option>
+                      {availableRegions.filter(r => !searchQuery || r.includes(searchQuery)).map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                )}
+                {availableDestinations.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1">מדינה</p>
+                    <select
+                      value={destinationFilter}
+                      onChange={e => {
+                        const val = e.target.value
+                        setDestinationFilter(val)
+                        setSearchQuery('')
+                        if (val !== 'all') {
+                          setRegionFilter('all')
+                          const carriers = countryCarrierMap[val]
+                          if (carriers) setSelectedCarriers([...carriers])
+                        }
+                      }}
+                      className={`w-full border rounded-lg px-2 py-1 text-xs ${destinationFilter !== 'all' ? 'border-[#5c3317] bg-[#faf5ee]' : 'border-gray-200'}`}
+                    >
+                      <option value="all">כל המדינות ({availableDestinations.length})</option>
+                      {availableDestinations.filter(c => !searchQuery || c.includes(searchQuery)).map(c => {
+                        const n = countryCarrierMap[c] ? countryCarrierMap[c].size : 0
+                        return <option key={c} value={c}>{c} ({n})</option>
+                      })}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           <div>
