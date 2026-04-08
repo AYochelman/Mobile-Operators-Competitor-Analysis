@@ -45,7 +45,7 @@ function formatDays(days) {
   return `${days} ימים`
 }
 
-export default function PlanCard({ plan, type = 'domestic', changeType }) {
+export default function PlanCard({ plan, type = 'domestic', changeType, highlighted }) {
   const [showCountries, setShowCountries] = useState(false)
   const [showApps, setShowApps] = useState(false)
   const [showAllExtras, setShowAllExtras] = useState(false)
@@ -73,7 +73,9 @@ export default function PlanCard({ plan, type = 'domestic', changeType }) {
   const hasRoaming = !isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up">
+    <div className={`bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up ${highlighted ? 'ring-2 ring-amber-400 shadow-amber-100 shadow-lg animate-pulse-highlight' : ''}`}
+      ref={highlighted ? (el) => { if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }) } : undefined}
+    >
       {/* Change indicator dot */}
       {changeType && CHANGE_DOT[changeType] && (
         <span

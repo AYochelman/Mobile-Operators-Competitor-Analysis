@@ -95,6 +95,16 @@
   animation: gentlePulse 1.8s var(--ease-in-out) infinite;
 }
 
+/* Highlight pulse — for recommended plan from chat */
+@keyframes pulseHighlight {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
+  50% { box-shadow: 0 0 16px 4px rgba(251, 191, 36, 0.3); }
+}
+
+.animate-pulse-highlight {
+  animation: pulseHighlight 1.5s var(--ease-in-out) 3;
+}
+
 /* Stagger delays for card grids */
 .stagger-1 { animation-delay: 0.03s; }
 .stagger-2 { animation-delay: 0.06s; }
