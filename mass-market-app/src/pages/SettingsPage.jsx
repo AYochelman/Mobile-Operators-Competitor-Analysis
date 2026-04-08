@@ -130,7 +130,6 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-      <h1 className="text-xl font-bold">Mobile Operators Competitor Analysis</h1>
 
       {/* Scrape controls */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
