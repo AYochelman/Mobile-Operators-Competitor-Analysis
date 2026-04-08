@@ -267,27 +267,106 @@ export default function ComparePage() {
         ))}
       </div>
 
-      {/* All filters in one panel */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 space-y-3">
-        {/* Carriers */}
-        <div>
+      {/* Two-column filters: right = filters, left = carriers */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_200px] gap-3 mb-4">
+        {/* Right column — Filters */}
+        <div className="bg-white rounded-xl border border-gray-200 p-3 space-y-2.5">
+          <div>
+            <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
+            <div className="flex flex-wrap gap-1">
+              {GB_OPTIONS.map(([val, label]) => (
+                <FilterTag key={val} label={label} active={gbFilter === val} onClick={() => setGbFilter(val)} />
+              ))}
+            </div>
+          </div>
+
+          {showDays && (
+            <div>
+              <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
+              <div className="flex flex-wrap gap-1">
+                {[['all', 'הכל'], ['1-7', '1-7 ימים'], ['8-30', '8-30 ימים'], ['30+', '30+ ימים']].map(([val, label]) => (
+                  <FilterTag key={val} label={label} active={daysFilter === val} onClick={() => setDaysFilter(val)} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tab === 'global' && availableRegions.length > 0 && (
+            <div>
+              <p className="text-[11px] font-medium text-gray-500 mb-1.5">אזור</p>
+              <select
+                value={regionFilter}
+                onChange={e => {
+                  const val = e.target.value
+                  setRegionFilter(val)
+                  if (val !== 'all') {
+                    setDestinationFilter('all')
+                    const regionCarriers = [...new Set(plans.filter(p => p.extras && p.extras[0] === val).map(p => p.carrier))]
+                    setSelectedCarriers(regionCarriers)
+                  }
+                }}
+                className={`w-full border rounded-lg px-2 py-1 text-xs ${regionFilter !== 'all' ? 'border-[#5c3317] bg-[#faf5ee]' : 'border-gray-200'}`}
+              >
+                <option value="all">כל האזורים ({availableRegions.length})</option>
+                {availableRegions.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+          )}
+
+          {tab === 'global' && availableDestinations.length > 0 && (
+            <div>
+              <p className="text-[11px] font-medium text-gray-500 mb-1.5">מדינה</p>
+              <select
+                value={destinationFilter}
+                onChange={e => {
+                  const val = e.target.value
+                  setDestinationFilter(val)
+                  if (val !== 'all') {
+                    setRegionFilter('all')
+                    const carriers = countryCarrierMap[val]
+                    if (carriers) setSelectedCarriers([...carriers])
+                  }
+                }}
+                className={`w-full border rounded-lg px-2 py-1 text-xs ${destinationFilter !== 'all' ? 'border-[#5c3317] bg-[#faf5ee]' : 'border-gray-200'}`}
+              >
+                <option value="all">כל המדינות ({availableDestinations.length})</option>
+                {availableDestinations.map(c => {
+                  const n = countryCarrierMap[c] ? countryCarrierMap[c].size : 0
+                  return <option key={c} value={c}>{c} ({n} ספקים)</option>
+                })}
+              </select>
+            </div>
+          )}
+
+          <div>
+            <p className="text-[11px] font-medium text-gray-500 mb-1.5">מיון</p>
+            <div className="flex flex-wrap gap-1">
+              <FilterTag label="מחיר ↑" active={sortBy === 'price_asc'} onClick={() => setSortBy('price_asc')} />
+              <FilterTag label="מחיר ↓" active={sortBy === 'price_desc'} onClick={() => setSortBy('price_desc')} />
+              <FilterTag label="GB ↓" active={sortBy === 'gb_desc'} onClick={() => setSortBy('gb_desc')} />
+          </div>
+        </div>
+      </div>
+
+        {/* Left column — Carriers */}
+        <div className="bg-white rounded-xl border border-gray-200 p-3">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-medium text-gray-500">ספקים</p>
+            <p className="text-[11px] font-medium text-gray-500">ספקים</p>
             <button
               onClick={() => setSelectedCarriers(prev => prev.length === availableCarriers.length ? [] : availableCarriers.map(c => c.id))}
               className="text-[10px] text-[#8a6a4a] hover:text-[#3b1f0d]"
             >
-              {selectedCarriers.length === availableCarriers.length ? 'נקה הכל' : 'בחר הכל'}
+              {selectedCarriers.length === availableCarriers.length ? 'נקה' : 'הכל'}
             </button>
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-col gap-1">
             {availableCarriers.map(c => (
               <button
                 key={c.id}
                 onClick={() => setSelectedCarriers(prev =>
                   prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id]
                 )}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150 ${
+                className={`px-2 py-1 rounded-md text-[11px] font-medium text-right transition-all duration-150 ${
                   selectedCarriers.includes(c.id) ? 'text-white' : 'text-[#8a6a4a] hover:text-[#3b1f0d] hover:bg-[#f5ede0]'
                 }`}
                 style={selectedCarriers.includes(c.id) ? { backgroundColor: c.color } : {}}
@@ -295,85 +374,6 @@ export default function ComparePage() {
                 {c.label}
               </button>
             ))}
-          </div>
-        </div>
-
-        {/* GB */}
-        <div>
-          <p className="text-xs font-medium text-gray-500 mb-2">גלישה</p>
-          <div className="flex flex-wrap gap-1.5">
-            {GB_OPTIONS.map(([val, label]) => (
-              <FilterTag key={val} label={label} active={gbFilter === val} onClick={() => setGbFilter(val)} />
-            ))}
-          </div>
-        </div>
-
-        {showDays && (
-          <div>
-            <p className="text-xs font-medium text-gray-500 mb-2">תוקף</p>
-            <div className="flex flex-wrap gap-1.5">
-              {[['all', 'הכל'], ['1-7', '1-7 ימים'], ['8-30', '8-30 ימים'], ['30+', '30+ ימים']].map(([val, label]) => (
-                <FilterTag key={val} label={label} active={daysFilter === val} onClick={() => setDaysFilter(val)} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {tab === 'global' && availableRegions.length > 0 && (
-          <div>
-            <p className="text-xs font-medium text-gray-500 mb-2">אזור</p>
-            <select
-              value={regionFilter}
-              onChange={e => {
-                const val = e.target.value
-                setRegionFilter(val)
-                if (val !== 'all') {
-                  setDestinationFilter('all')
-                  // Auto-select carriers that have plans for this region
-                  const regionCarriers = [...new Set(plans.filter(p => p.extras && p.extras[0] === val).map(p => p.carrier))]
-                  setSelectedCarriers(regionCarriers)
-                }
-              }}
-              className={`border rounded-lg px-3 py-1.5 text-xs ${regionFilter !== 'all' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
-            >
-              <option value="all">כל האזורים ({availableRegions.length})</option>
-              {availableRegions.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
-        )}
-
-        {tab === 'global' && availableDestinations.length > 0 && (
-          <div>
-            <p className="text-xs font-medium text-gray-500 mb-2">מדינה</p>
-            <select
-              value={destinationFilter}
-              onChange={e => {
-                const val = e.target.value
-                setDestinationFilter(val)
-                if (val !== 'all') {
-                  setRegionFilter('all')
-                  // Auto-select carriers that cover this country
-                  const carriers = countryCarrierMap[val]
-                  if (carriers) setSelectedCarriers([...carriers])
-                }
-              }}
-              className={`border rounded-lg px-3 py-1.5 text-xs ${destinationFilter !== 'all' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
-            >
-              <option value="all">כל המדינות ({availableDestinations.length})</option>
-              {availableDestinations.map(c => {
-                const n = countryCarrierMap[c] ? countryCarrierMap[c].size : 0
-                return <option key={c} value={c}>{c} ({n} ספקים)</option>
-              })}
-            </select>
-          </div>
-        )}
-
-        <div>
-          <p className="text-xs font-medium text-gray-500 mb-2">מיון</p>
-          <div className="flex flex-wrap gap-1.5">
-            <FilterTag label="מחיר ↑" active={sortBy === 'price_asc'} onClick={() => setSortBy('price_asc')} />
-            <FilterTag label="מחיר ↓" active={sortBy === 'price_desc'} onClick={() => setSortBy('price_desc')} />
-            <FilterTag label="GB ↓" active={sortBy === 'gb_desc'} onClick={() => setSortBy('gb_desc')} />
           </div>
         </div>
       </div>
