@@ -68,7 +68,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 | File | Purpose |
 |------|---------|
 | app.py | Flask server, API routes, APScheduler, CORS, API key auth |
-| scraper.py | 31 Playwright scrapers (domestic + abroad + global + content) |
+| scraper.py | 40+ scrapers (domestic + abroad + global per-country/regional + content) |
 | db.py | SQLite CRUD — 9 tables with UPSERT logic |
 | change_detector.py | Diff old vs new plans, detect price/extras/details changes |
 | notifier.py | Format + send notifications (Telegram, Email, Web Push) |
@@ -82,13 +82,12 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 |------|---------|
 | pages/DashboardPage.jsx | Main 4-tab view (domestic/abroad/global/content) with filters |
 | pages/ComparePage.jsx | Price comparison charts (Recharts) |
-| pages/TrendsPage.jsx | Historical price change graphs |
-| pages/AlertsPage.jsx | Personal price alerts (placeholder) |
+| pages/AlertsPage.jsx | Personal price alerts with DB persistence |
 | pages/SettingsPage.jsx | Admin panel — scrape triggers, user management |
 | components/Logo.jsx | MOCA brand logo (bolt + wordmark), sizes: xs/sm/md |
 | components/PlanCard.jsx | Universal plan card with country/apps modals |
 | components/ChatPanel.jsx | AI chat (🤖 floating button → /api/chat) |
-| data/globalCountries.js | Country lists for 11 global providers + getCountriesForPlan() |
+| data/globalCountries.js | Country lists for 13 global providers + getCountriesForPlan() |
 | data/abroadCountries.js | Country lists for 7 domestic carriers + getCountriesForAbroadPlan() |
 | data/abroadApps.js | Free app lists (Cellcom 6 apps, Pelephone 12 apps) |
 | hooks/useAuth.jsx | Supabase Auth + dev mode (VITE_DEV_AUTH=true) |
@@ -168,5 +167,24 @@ To migrate to full Tailwind theme (Approach 3), add `tailwind.config.js` with a 
 ### React (mass-market-app/.env)
 - `VITE_SUPABASE_URL` — Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` — Supabase anon key
-- `VITE_API_URL` — Flask API base URL (empty = proxy via Vite)
+- `VITE_API_URL` — Flask API base URL (empty = proxy via Vite, fallback hardcoded to ngrok URL)
+- `VITE_API_KEY` — Flask API key for protected endpoints (fallback hardcoded)
 - `VITE_DEV_AUTH` — set to "true" for auto-login as admin in dev
+
+## Deployment
+
+- **Frontend**: Netlify (https://lucent-kulfi-f037ad.netlify.app) — auto-deploys from GitHub, or drag `mass-market-app/dist` manually
+- **Backend**: Local Flask + ngrok tunnel (https://terra-nonrestrained-overpiteously.ngrok-free.dev)
+- **Auth**: Supabase (https://gmfefvjdmgzluwffzrzj.supabase.co)
+- **Code**: GitHub (https://github.com/AYochelman/Mobile-Operators-Competitor-Analysis)
+- **Build command**: `cd mass-market-app && npm install && npm run build`
+- **Publish directory**: `mass-market-app/dist`
+- Netlify env vars must include: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL, VITE_API_KEY
+- All API requests include `ngrok-skip-browser-warning: true` header
+
+## Key UI Components
+
+- **SearchableSelect** (`components/ui/SearchableSelect.jsx`): Custom dropdown with search input, renders via React Portal to avoid clipping
+- **PlanCard**: Universal card for all plan types, supports highlight animation from chat
+- **ChatPanel**: AI chat with clickable carrier names that navigate to filtered dashboard
+- **FilterTag**: Compact filter toggle pill used across Dashboard and Compare pages
