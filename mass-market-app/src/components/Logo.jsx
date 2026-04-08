@@ -6,8 +6,9 @@ const CONFIG = {
   md: { boltW: 28, boltH: 27, wordmarkSize: 18,   subtextSize: 9   },
 }
 
-export default function Logo({ size = 'md' }) {
-  const { boltW, boltH, wordmarkSize, subtextSize } = CONFIG[size]
+export default function Logo({ size = 'md', showSubtext = true }) {
+  const { boltW, boltH, wordmarkSize, subtextSize: cfgSubtext } = CONFIG[size]
+  const subtextSize = showSubtext ? cfgSubtext : null
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

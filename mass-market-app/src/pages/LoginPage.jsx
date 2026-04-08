@@ -45,7 +45,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo + Brand */}
         <div className="text-center mb-8 flex flex-col items-center">
-          <Logo size="md" />
+          <Logo size="md" showSubtext={false} />
           <p className="text-moca-sub text-sm mt-3 tracking-wide">
             <span className="font-bold text-moca-espresso">M</span>obile{' '}
             <span className="font-bold text-moca-espresso">O</span>perators{' '}
