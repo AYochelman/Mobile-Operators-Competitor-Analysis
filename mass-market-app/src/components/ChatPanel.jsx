@@ -141,14 +141,14 @@ export default function ChatPanel() {
       {/* FAB button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-5 left-5 z-50 px-4 h-10 rounded-full bg-moca-bolt text-white shadow-lg hover:bg-moca-dark transition-all flex items-center justify-center text-xs font-semibold tracking-wide"
+        className="fixed bottom-16 md:bottom-5 left-5 z-50 px-4 h-10 rounded-full bg-moca-bolt text-white shadow-lg hover:bg-moca-dark transition-all flex items-center justify-center text-xs font-semibold tracking-wide"
       >
         {open ? '✕' : 'Ask AI'}
       </button>
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-20 left-5 z-50 w-[340px] max-w-[calc(100vw-40px)] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-fade-in-up" style={{ maxHeight: '70vh' }}>
+        <div className="fixed bottom-[7.5rem] md:bottom-20 left-5 z-50 w-[340px] max-w-[calc(100vw-40px)] bg-white rounded-xl shadow-2xl border border-moca-border flex flex-col overflow-hidden animate-fade-in-up" style={{ maxHeight: '60vh' }}>
           {/* Header */}
           <div className="bg-moca-bolt text-white px-4 py-3 flex items-center justify-between flex-shrink-0">
             <h3 className="text-sm font-bold">💬 צריך עזרה?</h3>
