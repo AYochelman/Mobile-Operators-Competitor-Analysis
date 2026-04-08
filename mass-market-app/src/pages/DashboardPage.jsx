@@ -380,34 +380,12 @@ export default function DashboardPage() {
                 Excel
               </button>
             )}
-            {/* Sort — segmented control */}
-            {tab !== 'content' && (
-              <div className="flex items-center border border-moca-border rounded-lg overflow-hidden bg-moca-cream">
-                {[
-                  { val: 'price_asc', label: 'מחיר ↑' },
-                  { val: 'price_desc', label: 'מחיר ↓' },
-                  { val: 'gb_desc', label: 'GB ↓' },
-                ].map(({ val, label }) => (
-                  <button
-                    key={val}
-                    onClick={() => setFilter('sort', val)}
-                    className={`px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
-                      filters.sort === val
-                        ? 'bg-moca-bolt text-white'
-                        : 'text-moca-sub hover:bg-moca-sand hover:text-moca-text'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
         {/* Expandable filter rows — 2-column layout */}
         {filtersOpen && (
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_200px] gap-3 py-3 border-t border-gray-100 animate-slide-down items-start">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-3 py-3 border-t border-gray-100 animate-slide-down items-start">
             {/* Right column — Filters */}
             <div className="space-y-2">
               {/* GB + Days side by side (non-content tabs) */}
@@ -495,6 +473,32 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
+
+              {/* Sort */}
+              {tab !== 'content' && (
+                <div>
+                  <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">מיון</p>
+                  <div className="flex items-center border border-moca-border rounded-lg overflow-hidden bg-moca-cream w-fit">
+                    {[
+                      { val: 'price_asc', label: 'מחיר ↑' },
+                      { val: 'price_desc', label: 'מחיר ↓' },
+                      { val: 'gb_desc', label: 'GB ↓' },
+                    ].map(({ val, label }) => (
+                      <button
+                        key={val}
+                        onClick={() => setFilter('sort', val)}
+                        className={`px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
+                          filters.sort === val
+                            ? 'bg-moca-bolt text-white'
+                            : 'text-moca-sub hover:bg-moca-sand hover:text-moca-text'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Left column — Carriers/Providers */}
@@ -514,7 +518,7 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-2 gap-1">
                     <button
                       onClick={() => setFilter('carrier', 'all')}
-                      className={`px-1 py-1.5 rounded-md text-[10px] font-medium text-center transition-all duration-150 ${
+                      className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 ${
                         filters.carrier === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                       }`}
                     >
@@ -527,7 +531,7 @@ export default function DashboardPage() {
                         <button
                           key={c.id}
                           onClick={() => setFilter('carrier', c.id)}
-                          className={`px-1 py-1.5 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
+                          className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 truncate ${
                             filters.carrier === c.id ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                           }`}
                         >
@@ -554,7 +558,7 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-3 gap-1">
                     <button
                       onClick={() => { setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
-                      className={`px-1 py-1.5 rounded-md text-[9px] font-medium text-center transition-all duration-150 ${
+                      className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 ${
                         filters.globalProvider === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                       }`}
                     >
@@ -567,7 +571,7 @@ export default function DashboardPage() {
                         <button
                           key={p.id}
                           onClick={() => { setFilter('globalProvider', p.id); setFilter('destination', 'all'); setFilter('region', 'all') }}
-                          className={`px-1 py-1.5 rounded-md text-[9px] font-medium text-center transition-all duration-150 truncate ${
+                          className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 truncate ${
                             filters.globalProvider === p.id ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                           }`}
                         >
@@ -588,7 +592,7 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-2 gap-1">
                     <button
                       onClick={() => setFilter('contentCarrier', 'all')}
-                      className={`px-1 py-1.5 rounded-md text-[10px] font-medium text-center transition-all duration-150 ${
+                      className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 ${
                         filters.contentCarrier === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                       }`}
                     >
@@ -598,7 +602,7 @@ export default function DashboardPage() {
                       <button
                         key={c}
                         onClick={() => setFilter('contentCarrier', c)}
-                        className={`px-1 py-1.5 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
+                        className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 truncate ${
                           filters.contentCarrier === c ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                         }`}
                       >
