@@ -2835,7 +2835,16 @@ def scrape_voye_global(_page=None, usd_rate=None):
                 dest_heb = name  # last resort
 
             price_ils = round(price_usd * usd_rate, 2)
-            gb_str = f"{data_gb}GB" if data_gb else "\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4"
+
+            # Build plan name and extras
+            plan_extras = [dest_heb]
+            if is_unlimited:
+                # Unlimited = 3GB/day high-speed, then throttled
+                gb_str = "3GB/\u05d9\u05d5\u05dd"  # 3GB/יום
+                plan_extras.append("\u05e2\u05d3 3GB \u05d1\u05de\u05d4\u05d9\u05e8\u05d5\u05ea \u05d2\u05d1\u05d5\u05d4\u05d4 \u05dc\u05d9\u05d5\u05dd. \u05dc\u05d0\u05d7\u05e8 \u05de\u05db\u05df \u05d4\u05de\u05d4\u05d9\u05e8\u05d5\u05ea \u05de\u05d5\u05d0\u05d8\u05ea, \u05d0\u05da \u05ea\u05d5\u05de\u05da \u05d1\u05e4\u05d5\u05e0\u05e7\u05e6\u05d9\u05d5\u05ea \u05d1\u05e1\u05d9\u05e1\u05d9\u05d5\u05ea. \u05d4\u05de\u05db\u05e1\u05d4 \u05de\u05ea\u05d0\u05e4\u05e1\u05ea \u05de\u05d3\u05d9 \u05d9\u05d5\u05dd.")
+            else:
+                gb_str = f"{data_gb}GB" if data_gb else ""
+
             days_str = f"{days} \u05d9\u05de\u05d9\u05dd" if days else ""
             plan_name = f"{dest_heb} \u2013 {gb_str}"
             if days_str:
@@ -2844,7 +2853,7 @@ def scrape_voye_global(_page=None, usd_rate=None):
             all_plans.append(_make_global_plan(
                 "voye", plan_name, price_ils, "USD", price_usd,
                 data_gb=data_gb, days=days, minutes=minutes, sms=sms,
-                esim=True, extras=[dest_heb]
+                esim=True, extras=plan_extras
             ))
 
         page_num += 1
