@@ -359,14 +359,14 @@ export default function ComparePage() {
               {selectedCarriers.length === availableCarriers.length ? 'נקה' : 'הכל'}
             </button>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="grid grid-cols-2 gap-1">
             {availableCarriers.map(c => (
               <button
                 key={c.id}
                 onClick={() => setSelectedCarriers(prev =>
                   prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id]
                 )}
-                className={`px-2 py-1 rounded-md text-[11px] font-medium text-right transition-all duration-150 ${
+                className={`px-1.5 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
                   selectedCarriers.includes(c.id) ? 'text-white' : 'text-[#8a6a4a] hover:text-[#3b1f0d] hover:bg-[#f5ede0]'
                 }`}
                 style={selectedCarriers.includes(c.id) ? { backgroundColor: c.color } : {}}
