@@ -43,7 +43,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-[9998] bottom-full mb-1 w-full bg-white rounded-lg border border-gray-200 shadow-xl max-h-[250px] overflow-hidden animate-fade-in">
+        <div className="fixed z-[9999] bg-white rounded-lg border border-gray-200 shadow-2xl max-h-[250px] overflow-hidden animate-fade-in" style={{ width: ref.current?.offsetWidth || 200, top: (ref.current?.getBoundingClientRect().bottom || 0) + 4, left: ref.current?.getBoundingClientRect().left || 0 }}>
           {/* Search input */}
           <div className="p-1.5 border-b border-gray-100">
             <input
