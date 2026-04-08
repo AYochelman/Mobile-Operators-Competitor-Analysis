@@ -1,24 +1,57 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 
 export default function SearchableSelect({ value, onChange, options, placeholder = 'בחר...', className = '' }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const ref = useRef(null)
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 })
+  const triggerRef = useRef(null)
+  const dropdownRef = useRef(null)
   const inputRef = useRef(null)
+
+  // Calculate position when opening
+  const updatePosition = useCallback(() => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect()
+      setPos({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      })
+    }
+  }, [])
 
   // Close on click outside
   useEffect(() => {
+    if (!open) return
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+      if (triggerRef.current?.contains(e.target)) return
+      if (dropdownRef.current?.contains(e.target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  // Focus search input when opened
-  useEffect(() => {
-    if (open && inputRef.current) inputRef.current.focus()
   }, [open])
+
+  // Focus input + calc position when opened
+  useEffect(() => {
+    if (open) {
+      updatePosition()
+      setTimeout(() => inputRef.current?.focus(), 50)
+    }
+  }, [open, updatePosition])
+
+  // Update position on scroll/resize
+  useEffect(() => {
+    if (!open) return
+    const onScroll = () => updatePosition()
+    window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [open, updatePosition])
 
   const filtered = search
     ? options.filter(o => o.label.includes(search))
@@ -28,8 +61,14 @@ export default function SearchableSelect({ value, onChange, options, placeholder
     ? placeholder
     : (options.find(o => o.value === value)?.label || value)
 
+  const handleSelect = (val) => {
+    onChange(val)
+    setOpen(false)
+    setSearch('')
+  }
+
   return (
-    <div ref={ref} className={`relative ${className}`}>
+    <div ref={triggerRef} className={`relative ${className}`}>
       {/* Trigger button */}
       <button
         onClick={() => { setOpen(!open); setSearch('') }}
@@ -41,11 +80,21 @@ export default function SearchableSelect({ value, onChange, options, placeholder
         <span className="text-gray-400 text-[10px] mr-1">{open ? '▴' : '▾'}</span>
       </button>
 
-      {/* Dropdown */}
-      {open && (
-        <div className="fixed z-[9999] bg-white rounded-lg border border-gray-200 shadow-2xl max-h-[250px] overflow-hidden animate-fade-in" style={{ width: ref.current?.offsetWidth || 200, top: (ref.current?.getBoundingClientRect().bottom || 0) + 4, left: ref.current?.getBoundingClientRect().left || 0 }}>
+      {/* Dropdown via Portal */}
+      {open && createPortal(
+        <div
+          ref={dropdownRef}
+          className="bg-white rounded-lg border border-gray-200 shadow-2xl max-h-[220px] overflow-hidden"
+          style={{
+            position: 'fixed',
+            zIndex: 99999,
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+          }}
+        >
           {/* Search input */}
-          <div className="p-1.5 border-b border-gray-100">
+          <div className="p-1.5 border-b border-gray-100 sticky top-0 bg-white">
             <input
               ref={inputRef}
               type="text"
@@ -57,10 +106,9 @@ export default function SearchableSelect({ value, onChange, options, placeholder
           </div>
 
           {/* Options list */}
-          <div className="overflow-y-auto max-h-[200px]">
-            {/* "All" option */}
+          <div className="overflow-y-auto max-h-[170px]">
             <button
-              onClick={() => { onChange('all'); setOpen(false); setSearch('') }}
+              onClick={() => handleSelect('all')}
               className={`w-full text-right px-2.5 py-1.5 text-xs hover:bg-moca-cream transition-colors ${
                 value === 'all' ? 'bg-moca-cream font-medium text-moca-text' : 'text-gray-600'
               }`}
@@ -71,7 +119,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
             {filtered.map(o => (
               <button
                 key={o.value}
-                onClick={() => { onChange(o.value); setOpen(false); setSearch('') }}
+                onClick={() => handleSelect(o.value)}
                 className={`w-full text-right px-2.5 py-1.5 text-xs hover:bg-moca-cream transition-colors ${
                   value === o.value ? 'bg-moca-cream font-medium text-moca-text' : 'text-gray-600'
                 }`}
@@ -84,7 +132,8 @@ export default function SearchableSelect({ value, onChange, options, placeholder
               <p className="px-2.5 py-2 text-xs text-gray-400 text-center">לא נמצאו תוצאות</p>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
