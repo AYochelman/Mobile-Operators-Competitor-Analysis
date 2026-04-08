@@ -388,9 +388,9 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-3 py-3 border-t border-gray-100 animate-slide-down items-start relative" style={{overflow: 'visible'}}>
             {/* Right column — Filters */}
             <div className="space-y-2" style={{overflow: 'visible'}}>
-              {/* GB + Days side by side (non-content tabs) */}
-              {tab !== 'content' && (
-                <div className={(tab === 'abroad' || tab === 'global') ? 'grid grid-cols-2 gap-3' : ''}>
+              {/* Domestic: Row 1 = גלישה | גלישה בחו"ל */}
+              {tab === 'domestic' && (
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
                     <div className="flex flex-wrap gap-1">
@@ -399,20 +399,61 @@ export default function DashboardPage() {
                       ))}
                     </div>
                   </div>
-                  {(tab === 'abroad' || tab === 'global') && (
-                    <div>
-                      <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
-                      <div className="flex flex-wrap gap-1">
-                        {['all', '1-7', '8-30', '30+'].map(v => (
-                          <FilterTag key={v} label={v === 'all' ? 'הכל' : v === '30+' ? '30+ ימים' : `${v} ימים`} active={filters.days === v} onClick={() => setFilter('days', v)} />
-                        ))}
-                      </div>
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה בחו"ל</p>
+                    <div className="flex flex-wrap gap-1">
+                      <FilterTag label="כולם" active={filters.roaming === 'all'} onClick={() => setFilter('roaming', 'all')} />
+                      <FilterTag label="כולל חו״ל" active={filters.roaming === 'yes'} onClick={() => setFilter('roaming', 'yes')} />
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 
-              {/* Region + Country side by side with SearchableSelect (global tab) */}
+              {/* Domestic: Row 2 = דור רשת | מיון */}
+              {tab === 'domestic' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">דור רשת</p>
+                    <div className="flex flex-wrap gap-1">
+                      <FilterTag label="כולם" active={filters.gen === 'all'} onClick={() => setFilter('gen', 'all')} />
+                      <FilterTag label="4G" active={filters.gen === '4g'} onClick={() => setFilter('gen', '4g')} />
+                      <FilterTag label="5G" active={filters.gen === '5g'} onClick={() => setFilter('gen', '5g')} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">מיון</p>
+                    <div className="flex flex-wrap gap-1">
+                      <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
+                      <FilterTag label="מחיר ↓" active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
+                      <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Abroad/Global: Row 1 = גלישה | תוקף */}
+              {(tab === 'abroad' || tab === 'global') && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
+                    <div className="flex flex-wrap gap-1">
+                      {['all', '0-5', '5-15', '15-100', '100+', 'unlimited'].map(v => (
+                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === 'unlimited' ? 'ללא הגבלה' : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
+                    <div className="flex flex-wrap gap-1">
+                      {['all', '1-7', '8-30', '30+'].map(v => (
+                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === '30+' ? '30+ ימים' : `${v} ימים`} active={filters.days === v} onClick={() => setFilter('days', v)} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Global: Row 2 = אזור | מדינה */}
               {tab === 'global' && (globalRegions.length > 0 || globalDestinations.length > 0) && (
                 <div className="grid grid-cols-2 gap-3">
                   {globalRegions.length > 0 && (
@@ -440,23 +481,14 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Gen + Roaming side by side (domestic tab) */}
-              {tab === 'domestic' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">דור רשת</p>
-                    <div className="flex flex-wrap gap-1">
-                      <FilterTag label="כולם" active={filters.gen === 'all'} onClick={() => setFilter('gen', 'all')} />
-                      <FilterTag label="4G" active={filters.gen === '4g'} onClick={() => setFilter('gen', '4g')} />
-                      <FilterTag label="5G" active={filters.gen === '5g'} onClick={() => setFilter('gen', '5g')} />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה בחו"ל</p>
-                    <div className="flex flex-wrap gap-1">
-                      <FilterTag label="כולם" active={filters.roaming === 'all'} onClick={() => setFilter('roaming', 'all')} />
-                      <FilterTag label="כולל חו״ל" active={filters.roaming === 'yes'} onClick={() => setFilter('roaming', 'yes')} />
-                    </div>
+              {/* Abroad/Global: Sort row — same FilterTag style */}
+              {(tab === 'abroad' || tab === 'global') && (
+                <div>
+                  <p className="text-[11px] font-medium text-gray-500 mb-1.5">מיון</p>
+                  <div className="flex flex-wrap gap-1">
+                    <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
+                    <FilterTag label="מחיר ↓" active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
+                    <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
                   </div>
                 </div>
               )}
@@ -469,32 +501,6 @@ export default function DashboardPage() {
                     <FilterTag label="כולם" active={filters.contentService === 'all'} onClick={() => setFilter('contentService', 'all')} />
                     {contentServices.map(s => (
                       <FilterTag key={s} label={s} active={filters.contentService === s} onClick={() => setFilter('contentService', s)} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Sort */}
-              {tab !== 'content' && (
-                <div>
-                  <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">מיון</p>
-                  <div className="flex items-center border border-moca-border rounded-lg overflow-hidden bg-moca-cream w-fit">
-                    {[
-                      { val: 'price_asc', label: 'מחיר ↑' },
-                      { val: 'price_desc', label: 'מחיר ↓' },
-                      { val: 'gb_desc', label: 'GB ↓' },
-                    ].map(({ val, label }) => (
-                      <button
-                        key={val}
-                        onClick={() => setFilter('sort', val)}
-                        className={`px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
-                          filters.sort === val
-                            ? 'bg-moca-bolt text-white'
-                            : 'text-moca-sub hover:bg-moca-sand hover:text-moca-text'
-                        }`}
-                      >
-                        {label}
-                      </button>
                     ))}
                   </div>
                 </div>
