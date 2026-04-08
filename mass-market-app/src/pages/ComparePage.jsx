@@ -247,14 +247,13 @@ export default function ComparePage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">⚖️ השוואת מחירים</h1>
-        {(selectedCarriers.length > 0 || gbFilter !== 'all' || daysFilter !== 'all' || regionFilter !== 'all' || destinationFilter !== 'all') && (
+      {(selectedCarriers.length > 0 || gbFilter !== 'all' || daysFilter !== 'all' || regionFilter !== 'all' || destinationFilter !== 'all') && (
+        <div className="flex justify-end mb-2">
           <button onClick={resetFilters} className="text-xs text-moca-sub hover:text-moca-bolt hover:bg-moca-cream px-2 py-1 rounded-md transition-colors">
             איפוס
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Tab selector */}
       <div className="flex gap-1 mb-4">
