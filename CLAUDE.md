@@ -3,11 +3,11 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-Israeli cellular plan comparison system with two frontends:
+Israeli cellular plan comparison system branded **MOCA** (Mobile Operators Competitor Analysis), with two frontends:
 - **Legacy dashboard**: Flask-served HTML at localhost:5000 (templates/index.html)
 - **New React app**: Vite + Tailwind + Supabase Auth at localhost:5173 (mass-market-app/)
 
-Both frontends consume the same Flask REST API. The system scrapes 7 domestic carriers + 11 global eSIM providers twice daily, detects price changes, and sends notifications via Telegram/Email/Web Push.
+Both frontends consume the same Flask REST API. The system scrapes 7 domestic carriers + 13 global eSIM providers twice daily, detects price changes, and sends notifications via Telegram/Email/Web Push.
 
 ## Commands
 
@@ -85,6 +85,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 | pages/TrendsPage.jsx | Historical price change graphs |
 | pages/AlertsPage.jsx | Personal price alerts (placeholder) |
 | pages/SettingsPage.jsx | Admin panel — scrape triggers, user management |
+| components/Logo.jsx | MOCA brand logo (bolt + wordmark), sizes: xs/sm/md |
 | components/PlanCard.jsx | Universal plan card with country/apps modals |
 | components/ChatPanel.jsx | AI chat (🤖 floating button → /api/chat) |
 | data/globalCountries.js | Country lists for 11 global providers + getCountriesForPlan() |
@@ -98,7 +99,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 
 **Domestic (7)**: partner, pelephone, hotmobile, cellcom, mobile019, xphone, wecom
 **Abroad (7)**: same carriers, per-country roaming plans
-**Global eSIM (13)**: tuki, globalesim, airalo, pelephone_global, esimo, simtlv, world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (183 countries + 10 regions), sparks, voye (157 countries + 5 regions + global)
+**Global eSIM (13)**: tuki, globalesim, airalo, pelephone_global, esimo, simtlv, world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (183 countries + 10 regions), sparks (143 countries), voye (157 countries + 5 regions + global)
 **Content (5 services × 4 carriers)**: eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי
 
 ## Database Schema (SQLite — data/plans.db)
@@ -130,6 +131,17 @@ change_detector.py compares old vs new plan lists by (carrier, plan_name) key:
 - React app: dev mode auth requires explicit `VITE_DEV_AUTH=true` in .env
 - Production auth: Supabase with user_roles table (admin/viewer)
 - Flask binds to 127.0.0.1 by default (set FLASK_HOST=0.0.0.0 for ngrok)
+
+## Brand & UI
+
+The React app uses a **mocha-latte** color palette (Approach 2 — neutral components only):
+- Body background: `#f2e8d8`
+- Primary actions / active states: `#5c3317` (espresso)
+- Hover backgrounds: `#f5ede0` (cream)
+- Carrier/provider badge colors (blue, green, orange, etc.) are intentionally preserved
+
+PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` prop (xs/sm/md).
+To migrate to full Tailwind theme (Approach 3), add `tailwind.config.js` with a `moca` color scale — all current arbitrary values are already consistent.
 
 ## Conventions
 
