@@ -2839,9 +2839,32 @@ def scrape_voye_global(_page=None, usd_rate=None):
             # Build plan name and extras
             plan_extras = [dest_heb]
             if is_unlimited:
-                # Unlimited = 3GB/day high-speed, then throttled
-                gb_str = "3GB/\u05d9\u05d5\u05dd"  # 3GB/יום
-                plan_extras.append("\u05e2\u05d3 3GB \u05d1\u05de\u05d4\u05d9\u05e8\u05d5\u05ea \u05d2\u05d1\u05d5\u05d4\u05d4 \u05dc\u05d9\u05d5\u05dd. \u05dc\u05d0\u05d7\u05e8 \u05de\u05db\u05df \u05d4\u05de\u05d4\u05d9\u05e8\u05d5\u05ea \u05de\u05d5\u05d0\u05d8\u05ea, \u05d0\u05da \u05ea\u05d5\u05de\u05da \u05d1\u05e4\u05d5\u05e0\u05e7\u05e6\u05d9\u05d5\u05ea \u05d1\u05e1\u05d9\u05e1\u05d9\u05d5\u05ea. \u05d4\u05de\u05db\u05e1\u05d4 \u05de\u05ea\u05d0\u05e4\u05e1\u05ea \u05de\u05d3\u05d9 \u05d9\u05d5\u05dd.")
+                # Daily limit varies by country
+                _VOYE_15GB_COUNTRIES = {
+                    "turkey", "canada", "brazil", "argentina",
+                    "\u05d8\u05d5\u05e8\u05e7\u05d9\u05d4", "\u05e7\u05e0\u05d3\u05d4", "\u05d1\u05e8\u05d6\u05d9\u05dc", "\u05d0\u05e8\u05d2\u05e0\u05d8\u05d9\u05e0\u05d4",
+                }
+                _VOYE_2GB_COUNTRIES = {
+                    "mexico", "\u05de\u05e7\u05e1\u05d9\u05e7\u05d5",
+                }
+                # Check country slug from categories
+                country_slug_lower = ""
+                for cs in cats_list:
+                    if cs not in ("global", "global-voice", "uncategorized", "esim", "e-sim",
+                                  "data-plans", "unlimited", "data-with-calls", "cruise",
+                                  "asia", "europe", "latin-america", "middle-east", "north-america", "regional"):
+                        country_slug_lower = cs
+                        break
+
+                if country_slug_lower in _VOYE_2GB_COUNTRIES or (dest_heb and dest_heb in _VOYE_2GB_COUNTRIES):
+                    daily_gb = "2"
+                elif country_slug_lower in _VOYE_15GB_COUNTRIES or (dest_heb and dest_heb in _VOYE_15GB_COUNTRIES):
+                    daily_gb = "1.5"
+                else:
+                    daily_gb = "3"
+
+                gb_str = f"{daily_gb}GB/\u05d9\u05d5\u05dd"  # XGB/יום
+                plan_extras.append(f"\u05e2\u05d3 {daily_gb}GB \u05d1\u05de\u05d4\u05d9\u05e8\u05d5\u05ea \u05d2\u05d1\u05d5\u05d4\u05d4 \u05dc\u05d9\u05d5\u05dd. \u05dc\u05d0\u05d7\u05e8 \u05de\u05db\u05df \u05d4\u05de\u05d4\u05d9\u05e8\u05d5\u05ea \u05de\u05d5\u05d0\u05d8\u05ea, \u05d0\u05da \u05ea\u05d5\u05de\u05da \u05d1\u05e4\u05d5\u05e0\u05e7\u05e6\u05d9\u05d5\u05ea \u05d1\u05e1\u05d9\u05e1\u05d9\u05d5\u05ea. \u05d4\u05de\u05db\u05e1\u05d4 \u05de\u05ea\u05d0\u05e4\u05e1\u05ea \u05de\u05d3\u05d9 \u05d9\u05d5\u05dd.")
             else:
                 gb_str = f"{data_gb}GB" if data_gb else ""
 
