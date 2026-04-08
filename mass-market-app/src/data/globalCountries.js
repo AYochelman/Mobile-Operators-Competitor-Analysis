@@ -252,7 +252,7 @@ export function getCountriesForPlan(plan) {
   // ── Sparks Travel ──
   if (carrier === 'sparks') {
     const SPARKS_REGION_MAP = {
-      '\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4+': SPARKS_EUROPE_PLUS,
+      '\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4': SPARKS_EUROPE_PLUS,
       '\u05e9\u05d5\u05d5\u05d9\u05e5+': SPARKS_SWITZERLAND_PLUS,
       '\u05d2\u05d5\u05d5\u05d3\u05dc\u05d5\u05e4': SPARKS_GUADELOUPE,
       '\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df+': SPARKS_CYPRUS_PLUS,
