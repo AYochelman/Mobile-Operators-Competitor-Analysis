@@ -107,9 +107,11 @@ export default function DashboardPage() {
         setFiltersOpen(true)
       }
       if (urlHighlight) {
-        setHighlightPlan(urlHighlight)
-        // Clear highlight after 5 seconds
-        setTimeout(() => setHighlightPlan(null), 5000)
+        // Delay highlight until data loads
+        setTimeout(() => {
+          setHighlightPlan(urlHighlight)
+          setTimeout(() => setHighlightPlan(null), 6000)
+        }, 2000)
       }
       setSearchParams({}, { replace: true })
     }
@@ -521,7 +523,7 @@ export default function DashboardPage() {
                 plan={plan}
                 type={tab}
                 changeType={changeLookup[key]}
-                highlighted={highlightPlan && (plan.plan_name || '').includes(highlightPlan)}
+                highlighted={highlightPlan && ((plan.plan_name || '').includes(highlightPlan) || (plan.carrier || '') === highlightPlan)}
               />
             )
           })}
