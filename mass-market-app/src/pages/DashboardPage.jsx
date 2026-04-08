@@ -88,6 +88,7 @@ export default function DashboardPage() {
   const [countryModal, setCountryModal] = useState(null)
   const [highlightPlan, setHighlightPlan] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(null)
+  const [visibleCount, setVisibleCount] = useState(50)
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -275,7 +276,10 @@ export default function DashboardPage() {
     setScraping(false)
   }
 
-  const setFilter = (key, value) => setFilters(prev => ({ ...prev, [key]: value }))
+  const setFilter = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }))
+    setVisibleCount(50)
+  }
 
   const exportToExcel = useCallback(() => {
     if (!filteredPlans.length) return
@@ -358,7 +362,7 @@ export default function DashboardPage() {
         {TABS.map(t => (
           <button
             key={t.id}
-            onClick={() => { setTab(t.id); setFilter('carrier', 'all'); setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
+            onClick={() => { setTab(t.id); setVisibleCount(50); setFilter('carrier', 'all'); setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
             className={`relative px-4 py-2.5 text-[13px] font-medium transition-all duration-150
               ${tab === t.id
                 ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-2 after:h-[2px] after:bg-moca-bolt after:rounded-full'
@@ -648,33 +652,41 @@ export default function DashboardPage() {
 
       {/* Plan cards grid */}
       {!loading && tab !== 'content' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredPlans.map((plan, i) => {
-            const key = `${plan.carrier}|${plan.plan_name}`
-            return (
-              <PlanCard
-                key={key + i}
-                plan={plan}
-                type={tab}
-                changeType={changeLookup[key]}
-                highlighted={highlightPlan && (() => {
-                  const h = highlightPlan.toLowerCase().replace(/[\s\-–]+/g, ' ')
-                  const name = (plan.plan_name || '').toLowerCase().replace(/[\s\-–]+/g, ' ')
-                  // Match by carrier ID
-                  if (plan.carrier === highlightPlan) return true
-                  // Match by plan name containing highlight text
-                  if (name.includes(h)) return true
-                  // Match by highlight containing plan name
-                  if (h.length > 5 && name.includes(h.slice(0, 15))) return true
-                  // Match first word of highlight in plan name (country match)
-                  const firstWord = h.split(' ')[0]
-                  if (firstWord.length > 2 && name.includes(firstWord)) return true
-                  return false
-                })()}
-              />
-            )
-          })}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredPlans.slice(0, visibleCount).map((plan, i) => {
+              const key = `${plan.carrier}|${plan.plan_name}`
+              return (
+                <PlanCard
+                  key={key + i}
+                  plan={plan}
+                  type={tab}
+                  changeType={changeLookup[key]}
+                  highlighted={highlightPlan && (() => {
+                    const h = highlightPlan.toLowerCase().replace(/[\s\-–]+/g, ' ')
+                    const name = (plan.plan_name || '').toLowerCase().replace(/[\s\-–]+/g, ' ')
+                    if (plan.carrier === highlightPlan) return true
+                    if (name.includes(h)) return true
+                    if (h.length > 5 && name.includes(h.slice(0, 15))) return true
+                    const firstWord = h.split(' ')[0]
+                    if (firstWord.length > 2 && name.includes(firstWord)) return true
+                    return false
+                  })()}
+                />
+              )
+            })}
+          </div>
+          {visibleCount < filteredPlans.length && (
+            <div className="text-center mt-4">
+              <button
+                onClick={() => setVisibleCount(prev => prev + 50)}
+                className="text-sm text-moca-bolt hover:text-moca-dark px-4 py-2 rounded-lg border border-moca-border hover:bg-moca-cream transition-colors"
+              >
+                {'\u05D4\u05E6\u05D2 \u05E2\u05D5\u05D3'} ({filteredPlans.length - visibleCount} {'\u05E0\u05D5\u05E1\u05E4\u05D9\u05DD'})
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Content: grouped by service */}

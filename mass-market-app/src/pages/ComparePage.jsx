@@ -73,6 +73,7 @@ export default function ComparePage() {
   const [sortBy, setSortBy] = useState('price_asc')
   const [allData, setAllData] = useState({ domestic: [], abroad: [], global: [] })
   const [loading, setLoading] = useState(true)
+  const [tableVisibleCount, setTableVisibleCount] = useState(50)
 
   useEffect(() => {
     Promise.all([
@@ -89,6 +90,11 @@ export default function ComparePage() {
     resetFilters()
   }, [tab])
 
+  // Reset table pagination when filters change
+  useEffect(() => {
+    setTableVisibleCount(50)
+  }, [selectedCarriers, gbFilter, daysFilter, regionFilter, destinationFilter, sortBy])
+
   const resetFilters = () => {
     setSelectedCarriers([])
     setGbFilter('all')
@@ -97,6 +103,7 @@ export default function ComparePage() {
     setDestinationFilter('all')
     setSearchQuery('')
     setSortBy('price_asc')
+    setTableVisibleCount(50)
   }
 
   const plans = allData[tab] || []
@@ -426,7 +433,7 @@ export default function ComparePage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredPlans.slice(0, 50).map((p, i) => (
+                {filteredPlans.slice(0, tableVisibleCount).map((p, i) => (
                   <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50">
                     <td className="px-4 py-2 text-xs">
                       <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium text-white" style={{ backgroundColor: getColor(p.carrier) }}>
@@ -443,8 +450,15 @@ export default function ComparePage() {
               </tbody>
             </table>
           </div>
-          {filteredPlans.length > 50 && (
-            <p className="text-center text-[11px] text-gray-400 py-2">מציג 50 מתוך {filteredPlans.length}</p>
+          {tableVisibleCount < filteredPlans.length && (
+            <div className="text-center py-2">
+              <button
+                onClick={() => setTableVisibleCount(prev => prev + 50)}
+                className="text-sm text-moca-bolt hover:text-moca-dark px-4 py-2 rounded-lg border border-moca-border hover:bg-moca-cream transition-colors"
+              >
+                {'\u05D4\u05E6\u05D2 \u05E2\u05D5\u05D3'} ({filteredPlans.length - tableVisibleCount} {'\u05E0\u05D5\u05E1\u05E4\u05D9\u05DD'})
+              </button>
+            </div>
           )}
         </div>
       )}
