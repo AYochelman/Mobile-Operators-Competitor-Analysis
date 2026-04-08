@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import Button from '../components/ui/Button'
+import Logo from '../components/Logo'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -11,7 +11,6 @@ export default function LoginPage() {
   const { signIn, user, loading } = useAuth()
   const navigate = useNavigate()
 
-  // Redirect to dashboard if already logged in
   useEffect(() => {
     if (!loading && user) {
       navigate('/', { replace: true })
@@ -24,54 +23,66 @@ export default function LoginPage() {
     setSubmitting(true)
     try {
       await signIn(email, password)
-      // onAuthStateChange will set user → useEffect will redirect
     } catch (err) {
       setError(err.message || 'שגיאה בהתחברות')
       setSubmitting(false)
     }
   }
 
-  // Show spinner while checking auth state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+      <div className="min-h-screen flex items-center justify-center bg-moca-bg">
+        <div className="animate-spin h-8 w-8 border-4 border-moca-bolt border-t-transparent rounded-full" />
       </div>
     )
   }
 
-  // Already logged in — will redirect via useEffect
   if (user) return null
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-moca-bg px-4">
       <div className="w-full max-w-sm">
+        {/* Logo + Brand */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-blue-600">Mobile Operators Competitor Analysis</h1>
-          <p className="text-gray-500 mt-2">Made By Alon Yochelman</p>
+          <Logo size="md" />
+          <p className="text-moca-sub text-xs mt-2 tracking-wide">Competitive Intelligence Platform</p>
         </div>
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+
+        {/* Login card */}
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-moca-border p-7 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">אימייל</label>
+            <label className="block text-xs font-medium text-moca-text mb-1.5">אימייל</label>
             <input
               type="email" value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:ring-2 focus:ring-moca-bolt/30 focus:border-moca-bolt outline-none transition-all"
               placeholder="name@example.com" required dir="ltr"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">סיסמה</label>
+            <label className="block text-xs font-medium text-moca-text mb-1.5">סיסמה</label>
             <input
               type="password" value={password} onChange={e => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:ring-2 focus:ring-moca-bolt/30 focus:border-moca-bolt outline-none transition-all"
               placeholder="••••••••" required dir="ltr"
             />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button type="submit" className="w-full" disabled={submitting}>
+
+          {error && (
+            <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-moca-bolt text-white font-medium py-2.5 rounded-xl hover:bg-moca-dark disabled:opacity-50 transition-colors hover-press"
+          >
             {submitting ? '⏳ מתחבר...' : 'כניסה'}
-          </Button>
+          </button>
         </form>
+
+        <p className="text-center text-[10px] text-moca-muted mt-6">
+          Made by Alon Yochelman
+        </p>
       </div>
     </div>
   )
