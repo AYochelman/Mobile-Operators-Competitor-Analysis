@@ -1,0 +1,225 @@
+{
+  "provider": "saily",
+  "display_name": "Saily",
+  "base_url": "https://saily.com",
+  "all_destinations_url": "https://saily.com/all-destinations/",
+  "scrape_notes": {
+    "tab": "Click 'Region' tab on all-destinations page to see region links",
+    "plan_section": "Plans are in text under 'Choose an eSIM data plan for {region}' or 'Choose your data plan'",
+    "country_list": "Click 'View country list (N)' button to expand country modal",
+    "unlimited_plans": "Unlimited plans use a <select> dropdown for day duration; price changes on selection",
+    "discount_prices": "Some plans show discounted price (e.g. US$32.39) with original price crossed out (e.g. US$35.99)",
+    "currency": "All prices in USD",
+    "saily_credits": "All plans include '3% in Saily credits' cashback"
+  },
+  "regions": [
+    {
+      "name": "Africa",
+      "slug": "esim-africa",
+      "url": "https://saily.com/esim-africa/",
+      "country_count": 34,
+      "plans": [
+        { "data_gb": 1, "days": 7, "price_usd": 14.99, "discounted": false }
+      ],
+      "countries": [
+        "Algeria", "Benin", "Botswana", "Burkina Faso", "Cameroon",
+        "Cape Verde", "Central African Republic", "Chad", "Cote d'Ivoire",
+        "Egypt", "Eswatini", "Gabon", "Ghana", "Guinea", "Guinea-Bissau",
+        "Kenya", "Liberia", "Madagascar", "Malawi", "Mali", "Mauritius",
+        "Nigeria", "Republic of Congo", "Rwanda", "Senegal", "Seychelles",
+        "Sierra Leone", "South Africa", "Sudan", "Tanzania",
+        "The Democratic Republic of Congo", "Togo", "Uganda", "Zambia"
+      ]
+    },
+    {
+      "name": "Asia and Oceania",
+      "slug": "esim-asia-and-oceania",
+      "url": "https://saily.com/esim-asia-and-oceania/",
+      "country_count": 19,
+      "plans": [
+        { "data_gb": 1, "days": 7, "price_usd": 4.99, "discounted": false },
+        { "data_gb": 3, "days": 30, "price_usd": 12.49, "discounted": false },
+        { "data_gb": 5, "days": 30, "price_usd": 19.49, "discounted": false },
+        { "data_gb": 10, "days": 30, "price_usd": 32.39, "original_price_usd": 35.99, "discounted": true },
+        { "data_gb": 25, "days": 60, "price_usd": 44.09, "original_price_usd": 48.99, "discounted": true },
+        { "data_gb": "Unlimited", "days": 5, "price_usd": 19.79, "original_price_usd": 21.99, "discounted": true },
+        { "data_gb": "Unlimited", "days": 10, "price_usd": 35.09, "original_price_usd": 38.99, "discounted": true },
+        { "data_gb": "Unlimited", "days": 15, "price_usd": 49.49, "original_price_usd": 54.99, "discounted": true },
+        { "data_gb": "Unlimited", "days": 20, "price_usd": 60.29, "original_price_usd": 66.99, "discounted": true },
+        { "data_gb": "Unlimited", "days": 25, "price_usd": 68.39, "original_price_usd": 75.99, "discounted": true },
+        { "data_gb": "Unlimited", "days": 30, "price_usd": 73.79, "original_price_usd": 81.99, "discounted": true }
+      ],
+      "countries": [
+        "Australia", "China", "Hong Kong", "India", "Indonesia",
+        "Japan", "Kazakhstan", "Macau", "Malaysia", "New Zealand",
+        "Pakistan", "Philippines", "Singapore", "South Korea", "Sri Lanka",
+        "Taiwan", "Thailand", "Uzbekistan", "Vietnam"
+      ]
+    },
+    {
+      "name": "Caribbean Islands",
+      "slug": "esim-caribbean-islands",
+      "url": "https://saily.com/esim-caribbean-islands/",
+      "country_count": 29,
+      "plans": [
+        { "data_gb": 1, "days": 7, "price_usd": 8.99, "discounted": false },
+        { "data_gb": 3, "days": 30, "price_usd": 20.99, "discounted": false },
+        { "data_gb": 5, "days": 30, "price_usd": 33.99, "discounted": false },
+        { "data_gb": 10, "days": 30, "price_usd": 42.29, "original_price_usd": 46.99, "discounted": true }
+      ],
+      "countries": [
+        "Anguilla", "Antigua and Barbuda", "Aruba", "Bahamas", "Barbados",
+        "Bermuda", "Bonaire", "British Virgin Islands", "Cayman Islands",
+        "Curacao", "Dominica", "French Guiana", "Grenada", "Guadeloupe",
+        "Haiti", "Jamaica", "Martinique", "Montserrat", "Panama",
+        "Puerto Rico", "Saint Barthelemy", "Saint Kitts and Nevis",
+        "Saint Lucia", "Saint Martin", "Saint Vincent and the Grenadines",
+        "Sint Maarten (Dutch part)", "Trinidad and Tobago",
+        "Turks and Caicos Islands", "United States"
+      ]
+    },
+    {
+      "name": "Europe",
+      "slug": "esim-europe",
+      "url": "https://saily.com/esim-europe/",
+      "country_count": 35,
+      "plans": [
+        { "data_gb": 1, "days": 7, "price_usd": 4.99, "discounted": false },
+        { "data_gb": 3, "days": 30, "price_usd": 12.49, "discounted": false },
+        { "data_gb": 5, "days": 30, "price_usd": 19.49, "discounted": false },
+        { "data_gb": 10, "days": 30, "price_usd": 32.39, "original_price_usd": 35.99, "discounted": true },
+        { "data_gb": 50, "days": 90, "price_usd": 86.39, "original_price_usd": 95.99, "discounted": true },
+        { "data_gb": "Unlimited", "days": 7, "price_usd": 26.09, "original_price_usd": 28.99, "discounted": true, "note": "5GB/Day without a speed limit, then Unlimited data at up to 1 Mbps" },
+        { "data_gb": "Unlimited", "days": 10, "price_usd": 32.39, "original_price_usd": 35.99, "discounted": true },
+        { "data_gb": "Unlimited", "days": 15, "price_usd": 44.99, "original_price_usd": 49.99, "discounted": true },
+        { "data_gb": "Unlimited", "days": 20, "price_usd": 53.99, "original_price_usd": 59.99, "discounted": true },
+        { "data_gb": "Unlimited", "days": 25, "price_usd": 59.39, "original_price_usd": 65.99, "discounted": true },
+        { "data_gb": "Unlimited", "days": 30, "price_usd": 64.79, "original_price_usd": 71.99, "discounted": true }
+      ],
+      "countries": [
+        "Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus",
+        "Czech Republic", "Denmark", "Estonia", "Finland", "France",
+        "Germany", "Gibraltar", "Greece", "Hungary", "Iceland",
+        "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania",
+        "Luxembourg", "Malta", "Netherlands", "Norway", "Poland",
+        "Portugal", "Romania", "San Marino", "Slovakia", "Slovenia",
+        "Spain", "Sweden", "Switzerland", "Turkey", "United Kingdom"
+      ]
+    },
+    {
+      "name": "Global",
+      "slug": "esim-global",
+      "url": "https://saily.com/esim-global/",
+      "country_count": 121,
+      "plans": [
+        { "data_gb": 1, "days": 7, "price_usd": 8.99, "discounted": false },
+        { "data_gb": 2, "days": 15, "price_usd": 16.49, "discounted": false },
+        { "data_gb": 5, "days": 60, "price_usd": 33.99, "discounted": false },
+        { "data_gb": 10, "days": 180, "price_usd": 51.29, "original_price_usd": 56.99, "discounted": true },
+        { "data_gb": 20, "days": 365, "price_usd": 60.29, "original_price_usd": 66.99, "discounted": true }
+      ],
+      "countries": [
+        "Afghanistan", "Albania", "Algeria", "Andorra", "Argentina",
+        "Armenia", "Australia", "Austria", "Azerbaijan", "Bangladesh",
+        "Belgium", "Bolivia", "Bosnia and Herzegovina", "Brazil", "Bulgaria",
+        "Cambodia", "Canada", "Chile", "China", "Colombia",
+        "Costa Rica", "Croatia", "Cyprus", "Czech Republic", "Denmark",
+        "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Estonia",
+        "Faroe Islands", "Fiji", "Finland", "France", "French Guiana",
+        "Georgia", "Germany", "Ghana", "Gibraltar", "Greece",
+        "Guadeloupe", "Guam", "Guatemala", "Guernsey", "Honduras",
+        "Hong Kong", "Hungary", "Iceland", "India", "Indonesia",
+        "Iraq", "Ireland", "Israel", "Italy", "Jamaica",
+        "Japan", "Jersey", "Jordan", "Kazakhstan", "Kosovo",
+        "Kuwait", "Lao People's Democratic Republic", "Latvia", "Liechtenstein", "Lithuania",
+        "Luxembourg", "Macau", "Malaysia", "Malta", "Martinique",
+        "Mauritius", "Mexico", "Moldova", "Monaco", "Montenegro",
+        "Morocco", "Mozambique", "Netherlands", "New Zealand", "Nicaragua",
+        "Nigeria", "Norway", "Oman", "Pakistan", "Panama",
+        "Paraguay", "Peru", "Philippines", "Poland", "Portugal",
+        "Puerto Rico", "Qatar", "Reunion", "Romania", "Rwanda",
+        "Saint Barthelemy", "Saint Martin", "Samoa", "Saudi Arabia", "Serbia",
+        "Singapore", "Slovakia", "Slovenia", "South Africa", "South Korea",
+        "Spain", "Sri Lanka", "Sweden", "Switzerland", "Taiwan",
+        "Tanzania", "Thailand", "Tunisia", "Turkey", "Ukraine",
+        "United Arab Emirates", "United Kingdom", "United States", "Uruguay",
+        "Uzbekistan", "Vietnam"
+      ]
+    },
+    {
+      "name": "Latin America",
+      "slug": "esim-latin-america",
+      "url": "https://saily.com/esim-latin-america/",
+      "country_count": 12,
+      "plans": [
+        { "data_gb": 1, "days": 7, "price_usd": 7.99, "discounted": false },
+        { "data_gb": 2, "days": 15, "price_usd": 13.99, "discounted": false },
+        { "data_gb": 3, "days": 30, "price_usd": 20.99, "discounted": false },
+        { "data_gb": 5, "days": 30, "price_usd": 31.99, "discounted": false },
+        { "data_gb": 10, "days": 30, "price_usd": 40.49, "original_price_usd": 44.99, "discounted": true }
+      ],
+      "countries": [
+        "Argentina", "Bolivia", "Brazil", "Chile", "Colombia",
+        "Costa Rica", "Ecuador", "El Salvador", "Mexico", "Paraguay",
+        "Peru", "Uruguay"
+      ]
+    },
+    {
+      "name": "Middle East and North Africa",
+      "slug": "esim-middle-east-and-north-africa",
+      "url": "https://saily.com/esim-middle-east-and-north-africa/",
+      "country_count": 19,
+      "plans": [
+        { "data_gb": 1, "days": 7, "price_usd": 7.49, "discounted": false },
+        { "data_gb": 2, "days": 15, "price_usd": 11.99, "discounted": false },
+        { "data_gb": 3, "days": 30, "price_usd": 14.99, "discounted": false }
+      ],
+      "countries": [
+        "Algeria", "Armenia", "Bahrain", "Cyprus", "Egypt",
+        "Georgia", "Iraq", "Israel", "Jordan", "Kuwait",
+        "Morocco", "Oman", "Qatar", "Saudi Arabia", "South Sudan",
+        "Sudan", "Tunisia", "Turkey", "United Arab Emirates"
+      ]
+    },
+    {
+      "name": "North America",
+      "slug": "esim-north-america",
+      "url": "https://saily.com/esim-north-america/",
+      "country_count": 2,
+      "plans": [
+        { "data_gb": 1, "days": 7, "price_usd": 5.99, "discounted": false },
+        { "data_gb": 2, "days": 15, "price_usd": 11.49, "discounted": false },
+        { "data_gb": 3, "days": 30, "price_usd": 15.99, "discounted": false },
+        { "data_gb": 5, "days": 30, "price_usd": 23.99, "discounted": false },
+        { "data_gb": 10, "days": 30, "price_usd": 39.59, "original_price_usd": 43.99, "discounted": true }
+      ],
+      "countries": [
+        "Canada", "United States"
+      ]
+    }
+  ],
+  "dom_selectors": {
+    "plan_section_heading": "text matching 'Choose an eSIM data plan for' or 'Choose your data plan'",
+    "plan_cards": "Cards containing: data amount (GB text), validity (days text), price (US$ text)",
+    "gb_buttons": "button elements with text like '1 GB', '3 GB', etc. (plan selector)",
+    "country_list_button": "button containing 'View country list'",
+    "country_list_modal": "Elements with class containing 'country' - shows after clicking button",
+    "unlimited_day_select": "<select> element with <option> elements like '5 days', '10 days', etc.",
+    "discount_indicator": "Text 'Save 10%' or 'Special deal' appears before discounted plans",
+    "discounted_price": "First US$ price is discounted, second US$ price is original (crossed out)"
+  },
+  "scrape_strategy_for_code": {
+    "method": "Playwright sync",
+    "steps": [
+      "1. Navigate to region URL (e.g. https://saily.com/esim-africa/)",
+      "2. Wait for page to load (networkidle)",
+      "3. Extract plan text using regex on body.innerText: /(\\d+ GB|Unlimited GB)\\s*\\n\\s*(\\d+ days?)\\s*\\n\\s*(US\\$[\\d.]+)/",
+      "4. For discounted plans, also capture original price: second US$ amount after the discounted one",
+      "5. For Unlimited plans: find <select> with day options, iterate each <option>, select it, wait 600ms, read updated price",
+      "6. Click 'View country list' button",
+      "7. Extract countries from body.innerText using: /Country list\\s*\\n([\\s\\S]*?)(?:\\d+\\s*GB\\n|\\nKey features|\\nDescription)/",
+      "8. Remove first line (region name header) from country list",
+      "9. Clean country list: filter lines with length 1-60 chars"
+    ]
+  }
+}

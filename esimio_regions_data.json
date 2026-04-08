@@ -1,0 +1,173 @@
+{
+  "provider": "eSIM.io",
+  "source_url": "https://esim.io/regions",
+  "scraped_at": "2026-04-07",
+  "total_regions": 10,
+  "total_plans": 67,
+  "regions": [
+    {
+      "region_name": "Europe",
+      "url_slug": "esim-europe",
+      "url": "https://esim.io/regions/esim-europe",
+      "country_count": 38,
+      "plans": [
+        {"gb": 1, "price_usd": 3.90, "days": 30},
+        {"gb": 2, "price_usd": 7.50, "days": 30},
+        {"gb": 3, "price_usd": 9.90, "days": 30},
+        {"gb": 5, "price_usd": 14.90, "days": 30},
+        {"gb": 10, "price_usd": 19.00, "days": 30},
+        {"gb": 20, "price_usd": 34.00, "days": 30},
+        {"gb": 50, "price_usd": 79.00, "days": 30},
+        {"gb": 100, "price_usd": 99.00, "days": 30}
+      ],
+      "country_codes": ["DEU","AUT","BEL","GBR","BGR","CZE","DNK","EST","FIN","FRA","HRV","NLD","IRL","ESP","SWE","CHE","ITA","ISL","CYP","KKT","LVA","LIE","LTU","LUX","HUN","MLT","NOR","POL","PRT","ROU","SRB","SNM","SVK","SVN","TUR","UKR","GRC","XSC"],
+      "countries": ["Germany","Austria","Belgium","United Kingdom","Bulgaria","Czech Republic","Denmark","Estonia","Finland","France","Croatia","Netherlands","Ireland","Spain","Sweden","Switzerland","Italy","Iceland","Cyprus","Northern Cyprus","Latvia","Liechtenstein","Lithuania","Luxembourg","Hungary","Malta","Norway","Poland","Portugal","Romania","Serbia","San Marino","Slovakia","Slovenia","Turkey","Ukraine","Greece","Scotland"]
+    },
+    {
+      "region_name": "Africa",
+      "url_slug": "esim-africa",
+      "url": "https://esim.io/regions/esim-africa",
+      "country_count": 25,
+      "plans": [
+        {"gb": 1, "price_usd": 15.00, "days": 30},
+        {"gb": 2, "price_usd": 29.00, "days": 30},
+        {"gb": 3, "price_usd": 39.00, "days": 30},
+        {"gb": 5, "price_usd": 59.00, "days": 30},
+        {"gb": 10, "price_usd": 89.00, "days": 30},
+        {"gb": 20, "price_usd": 145.00, "days": 30}
+      ],
+      "country_codes": ["BEN","DZA","TCD","COD","MAR","GAB","GHA","ZAF","KEN","COG","MDG","MWI","MUS","MTT","EGY","NER","NGA","REU","RWA","SEN","SDN","TZA","TUN","UGA","ZMB"],
+      "countries": ["Benin","Algeria","Chad","Democratic Republic of the Congo","Morocco","Gabon","Ghana","South Africa","Kenya","Republic of the Congo","Madagascar","Malawi","Mauritius","Mayotte","Egypt","Niger","Nigeria","Reunion","Rwanda","Senegal","Sudan","Tanzania","Tunisia","Uganda","Zambia"]
+    },
+    {
+      "region_name": "Asia Pacific",
+      "url_slug": "esim-asia-pacific",
+      "url": "https://esim.io/regions/esim-asia-pacific",
+      "country_count": 18,
+      "plans": [
+        {"gb": 1, "price_usd": 6.90, "days": 30},
+        {"gb": 2, "price_usd": 12.90, "days": 30},
+        {"gb": 3, "price_usd": 18.00, "days": 30},
+        {"gb": 5, "price_usd": 26.00, "days": 30},
+        {"gb": 10, "price_usd": 45.00, "days": 30},
+        {"gb": 20, "price_usd": 79.00, "days": 30},
+        {"gb": 50, "price_usd": 140.00, "days": 30}
+      ],
+      "country_codes": ["AUS","CHN","IDN","PHL","KOR","IND","HKG","JPN","KHM","MAC","LAO","MYS","SGP","LKA","THA","TWN","VNM","NZL"],
+      "countries": ["Australia","China","Indonesia","Philippines","South Korea","India","Hong Kong","Japan","Cambodia","Macau","Laos","Malaysia","Singapore","Sri Lanka","Thailand","Taiwan","Vietnam","New Zealand"]
+    },
+    {
+      "region_name": "Balkans",
+      "url_slug": "esim-balkans",
+      "url": "https://esim.io/regions/esim-balkans",
+      "country_count": 11,
+      "plans": [
+        {"gb": 1, "price_usd": 4.90, "days": 30},
+        {"gb": 2, "price_usd": 9.00, "days": 30},
+        {"gb": 3, "price_usd": 13.00, "days": 30},
+        {"gb": 5, "price_usd": 19.00, "days": 30},
+        {"gb": 10, "price_usd": 35.00, "days": 30},
+        {"gb": 20, "price_usd": 59.00, "days": 30},
+        {"gb": 50, "price_usd": 109.00, "days": 30}
+      ],
+      "country_codes": ["ALB","BIH","BGR","HRV","MNE","MKD","ROU","SRB","SVN","TUR","GRC"],
+      "countries": ["Albania","Bosnia and Herzegovina","Bulgaria","Croatia","Montenegro","North Macedonia","Romania","Serbia","Slovenia","Turkey","Greece"]
+    },
+    {
+      "region_name": "Caribbean",
+      "url_slug": "esim-carribean",
+      "url": "https://esim.io/regions/esim-carribean",
+      "country_count": 39,
+      "plans": [
+        {"gb": 1, "price_usd": 19.00, "days": 30},
+        {"gb": 2, "price_usd": 35.00, "days": 30},
+        {"gb": 3, "price_usd": 51.00, "days": 30},
+        {"gb": 5, "price_usd": 82.00, "days": 30},
+        {"gb": 10, "price_usd": 160.00, "days": 30}
+      ],
+      "country_codes": ["AIA","ATG","ARB","BHS","BRB","BLZ","BMU","ANT","VGB","CYM","CUW","DOM","DMA","SLV","GUF","GRD","GLP","GTM","GUY","HAT","HND","JAM","CRI","CUB","MSR","NIC","PAN","PRI","STB","KNA","LCA","STF","VCT","SUR","TTO","TCA","SAB","STE","STM"],
+      "countries": ["Anguilla","Antigua and Barbuda","Aruba","Bahamas","Barbados","Belize","Bermuda","Netherlands Antilles","British Virgin Islands","Cayman Islands","Curacao","Dominican Republic","Dominica","El Salvador","French Guiana","Grenada","Guadeloupe","Guatemala","Guyana","Haiti","Honduras","Jamaica","Costa Rica","Cuba","Montserrat","Nicaragua","Panama","Puerto Rico","Saint Barthelemy","Saint Kitts and Nevis","Saint Lucia","Saint Martin","Saint Vincent and the Grenadines","Suriname","Trinidad and Tobago","Turks and Caicos Islands","Saba","Sint Eustatius","Sint Maarten"]
+    },
+    {
+      "region_name": "Latin America",
+      "url_slug": "esim-latin-america",
+      "url": "https://esim.io/regions/esim-latin-america",
+      "country_count": 19,
+      "plans": [
+        {"gb": 1, "price_usd": 9.90, "days": 30},
+        {"gb": 2, "price_usd": 19.00, "days": 30},
+        {"gb": 3, "price_usd": 27.00, "days": 30},
+        {"gb": 5, "price_usd": 42.00, "days": 30},
+        {"gb": 10, "price_usd": 79.00, "days": 30}
+      ],
+      "country_codes": ["ARG","BOL","BRA","ECU","SLV","GUF","GTM","HND","COL","CRI","MEX","NIC","PAN","PRY","PER","CHL","URY","VEN","PRI"],
+      "countries": ["Argentina","Bolivia","Brazil","Ecuador","El Salvador","French Guiana","Guatemala","Honduras","Colombia","Costa Rica","Mexico","Nicaragua","Panama","Paraguay","Peru","Chile","Uruguay","Venezuela","Puerto Rico"]
+    },
+    {
+      "region_name": "Central Asia",
+      "url_slug": "esim-central-asia",
+      "url": "https://esim.io/regions/esim-central-asia",
+      "country_count": 3,
+      "plans": [
+        {"gb": 1, "price_usd": 4.50, "days": 30},
+        {"gb": 2, "price_usd": 7.90, "days": 30},
+        {"gb": 3, "price_usd": 10.90, "days": 30},
+        {"gb": 5, "price_usd": 17.90, "days": 30},
+        {"gb": 10, "price_usd": 29.00, "days": 30},
+        {"gb": 20, "price_usd": 49.00, "days": 30},
+        {"gb": 50, "price_usd": 99.00, "days": 30}
+      ],
+      "country_codes": ["KAZ","KGZ","UZB"],
+      "countries": ["Kazakhstan","Kyrgyzstan","Uzbekistan"]
+    },
+    {
+      "region_name": "Middle East",
+      "url_slug": "esim-middle-east",
+      "url": "https://esim.io/regions/esim-middle-east",
+      "country_count": 10,
+      "plans": [
+        {"gb": 1, "price_usd": 6.50, "days": 30},
+        {"gb": 2, "price_usd": 12.00, "days": 30},
+        {"gb": 3, "price_usd": 17.50, "days": 30},
+        {"gb": 5, "price_usd": 25.00, "days": 30},
+        {"gb": 10, "price_usd": 45.00, "days": 30},
+        {"gb": 20, "price_usd": 79.00, "days": 30}
+      ],
+      "country_codes": ["BHR","ARE","IRQ","ISR","QAT","KWT","EGY","SAU","TUN","JOR"],
+      "countries": ["Bahrain","United Arab Emirates","Iraq","Israel","Qatar","Kuwait","Egypt","Saudi Arabia","Tunisia","Jordan"]
+    },
+    {
+      "region_name": "North Africa",
+      "url_slug": "esim-north-africa",
+      "url": "https://esim.io/regions/esim-north-africa",
+      "country_count": 4,
+      "plans": [
+        {"gb": 1, "price_usd": 6.90, "days": 30},
+        {"gb": 2, "price_usd": 12.90, "days": 30},
+        {"gb": 3, "price_usd": 17.00, "days": 30},
+        {"gb": 5, "price_usd": 24.00, "days": 30},
+        {"gb": 10, "price_usd": 45.00, "days": 30},
+        {"gb": 20, "price_usd": 79.00, "days": 30},
+        {"gb": 50, "price_usd": 160.00, "days": 30}
+      ],
+      "country_codes": ["MAR","EGY","TUN","DZA"],
+      "countries": ["Morocco","Egypt","Tunisia","Algeria"]
+    },
+    {
+      "region_name": "North America",
+      "url_slug": "esim-north-america",
+      "url": "https://esim.io/regions/esim-north-america",
+      "country_count": 3,
+      "plans": [
+        {"gb": 1, "price_usd": 6.50, "days": 30},
+        {"gb": 2, "price_usd": 11.90, "days": 30},
+        {"gb": 3, "price_usd": 16.50, "days": 30},
+        {"gb": 5, "price_usd": 25.00, "days": 30},
+        {"gb": 10, "price_usd": 44.00, "days": 30},
+        {"gb": 20, "price_usd": 79.00, "days": 30}
+      ],
+      "country_codes": ["USA","CAN","MEX"],
+      "countries": ["United States","Canada","Mexico"]
+    }
+  ]
+}
