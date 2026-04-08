@@ -116,8 +116,7 @@ export default function AlertsPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6" dir="rtl">
-      <div className="flex items-center justify-between mb-5">
-        <h1 className="text-xl font-bold text-gray-800">התראות מחיר</h1>
+      <div className="flex items-center justify-end mb-5">
         <Button
           variant={showForm ? 'secondary' : 'primary'}
           size="sm"
