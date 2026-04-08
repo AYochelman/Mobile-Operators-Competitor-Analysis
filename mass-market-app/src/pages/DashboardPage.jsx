@@ -294,7 +294,7 @@ export default function DashboardPage() {
           <button
             onClick={handleScrape}
             disabled={scraping}
-            className="text-[11px] text-gray-400 hover:text-gray-600 disabled:opacity-50 transition-colors"
+            className="text-[11px] text-moca-sub hover:text-moca-bolt disabled:opacity-50 transition-colors"
           >
             {scraping ? '⏳ מעדכן...' : '🔄 עדכן'}
           </button>
