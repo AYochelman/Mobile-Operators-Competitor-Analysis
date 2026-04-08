@@ -8,19 +8,19 @@
     -moz-osx-font-smoothing: grayscale;
   }
   body {
-    @apply bg-[#fafafa] text-gray-900 min-h-screen;
+    @apply bg-[#f9f4ee] text-gray-900 min-h-screen;
   }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb { background: #c4a882; border-radius: 3px; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
   /* Selection */
   ::selection {
-    background-color: rgba(59, 130, 246, 0.15);
+    background-color: rgba(92, 51, 23, 0.12);
     color: inherit;
   }
 
