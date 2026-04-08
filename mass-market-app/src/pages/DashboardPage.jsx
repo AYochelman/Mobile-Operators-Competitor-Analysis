@@ -629,7 +629,20 @@ export default function DashboardPage() {
                 plan={plan}
                 type={tab}
                 changeType={changeLookup[key]}
-                highlighted={highlightPlan && ((plan.plan_name || '').includes(highlightPlan) || (plan.carrier || '') === highlightPlan)}
+                highlighted={highlightPlan && (() => {
+                  const h = highlightPlan.toLowerCase().replace(/[\s\-–]+/g, ' ')
+                  const name = (plan.plan_name || '').toLowerCase().replace(/[\s\-–]+/g, ' ')
+                  // Match by carrier ID
+                  if (plan.carrier === highlightPlan) return true
+                  // Match by plan name containing highlight text
+                  if (name.includes(h)) return true
+                  // Match by highlight containing plan name
+                  if (h.length > 5 && name.includes(h.slice(0, 15))) return true
+                  // Match first word of highlight in plan name (country match)
+                  const firstWord = h.split(' ')[0]
+                  if (firstWord.length > 2 && name.includes(firstWord)) return true
+                  return false
+                })()}
               />
             )
           })}
