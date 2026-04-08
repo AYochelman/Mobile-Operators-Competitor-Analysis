@@ -246,8 +246,8 @@ export default function ComparePage() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold">⚖️ השוואת מחירים</h1>
         {(selectedCarriers.length > 0 || gbFilter !== 'all' || daysFilter !== 'all' || regionFilter !== 'all' || destinationFilter !== 'all') && (
-          <button onClick={resetFilters} className="text-xs text-red-500 hover:text-red-700 transition-colors">
-            🔄 איפוס
+          <button onClick={resetFilters} className="text-xs text-[#8a6a4a] hover:text-[#5c3317] hover:bg-[#f5ede0] px-2 py-1 rounded-md transition-colors">
+            איפוס
           </button>
         )}
       </div>
