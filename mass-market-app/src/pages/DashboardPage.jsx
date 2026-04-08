@@ -10,11 +10,34 @@ import Spinner from '../components/ui/Spinner'
 import Button from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
 
+const TAB_ICONS = {
+  domestic: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12" y2="18.01" />
+    </svg>
+  ),
+  abroad: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+    </svg>
+  ),
+  global: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  ),
+  content: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="15" rx="2" ry="2" /><polyline points="17 2 12 7 7 2" />
+    </svg>
+  ),
+}
+
 const TABS = [
-  { id: 'domestic', label: 'חבילות סלולר', icon: '📱' },
-  { id: 'abroad', label: 'חו"ל', icon: '✈️' },
-  { id: 'global', label: 'גלובלי', icon: '🌍' },
-  { id: 'content', label: 'תוכן', icon: '📺' },
+  { id: 'domestic', label: 'חבילות סלולר' },
+  { id: 'abroad', label: 'חו"ל' },
+  { id: 'global', label: 'גלובלי' },
+  { id: 'content', label: 'תוכן' },
 ]
 
 const KNOWN_REGIONS = new Set([
@@ -321,7 +344,7 @@ export default function DashboardPage() {
                 : 'text-moca-muted hover:text-moca-bolt'
               }`}
           >
-            <span className="hidden sm:inline">{t.icon} </span>
+            <span className="hidden sm:inline-flex items-center gap-1.5">{TAB_ICONS[t.id]}</span>
             {t.label}
           </button>
         ))}
