@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx'
 import PlanCard from '../components/PlanCard'
 import CountryModal from '../components/CountryModal'
 import FilterTag from '../components/ui/FilterTag'
+import SearchableSelect from '../components/ui/SearchableSelect'
 import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import Button from '../components/ui/Button'
@@ -404,79 +405,88 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Expandable filter rows */}
+        {/* Expandable filter rows — 2-column layout */}
         {filtersOpen && (
-          <div className="space-y-3 py-3 border-t border-gray-100 animate-slide-down">
-            {/* Carrier/Provider */}
-            {(tab === 'domestic' || tab === 'abroad') && (
-              <div>
-                <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">חברה</p>
-                <div className="flex flex-wrap gap-1">
-                  <FilterTag label="כולם" active={filters.carrier === 'all'} onClick={() => setFilter('carrier', 'all')} />
-                  {CARRIERS.map(c => {
-                    const cnt = plans[tab]?.filter(p => p.carrier === c.id).length || 0
-                    if (!cnt) return null
-                    return <FilterTag key={c.id} label={c.label} active={filters.carrier === c.id} onClick={() => setFilter('carrier', c.id)} />
-                  })}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_200px] gap-3 py-3 border-t border-gray-100 animate-slide-down items-start">
+            {/* Right column — Filters */}
+            <div className="space-y-2">
+              {/* GB + Days side by side (non-content tabs) */}
+              {tab !== 'content' && (
+                <div className={(tab === 'abroad' || tab === 'global') ? 'grid grid-cols-2 gap-3' : ''}>
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
+                    <div className="flex flex-wrap gap-1">
+                      {['all', '0-5', '5-15', '15-100', '100+', 'unlimited'].map(v => (
+                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === 'unlimited' ? 'ללא הגבלה' : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
+                      ))}
+                    </div>
+                  </div>
+                  {(tab === 'abroad' || tab === 'global') && (
+                    <div>
+                      <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
+                      <div className="flex flex-wrap gap-1">
+                        {['all', '1-7', '8-30', '30+'].map(v => (
+                          <FilterTag key={v} label={v === 'all' ? 'הכל' : v === '30+' ? '30+ ימים' : `${v} ימים`} active={filters.days === v} onClick={() => setFilter('days', v)} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
 
-            {tab === 'global' && (
-              <div>
-                <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">ספק</p>
-                <div className="flex flex-wrap gap-1">
-                  <FilterTag label="כולם" active={filters.globalProvider === 'all'} onClick={() => { setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }} />
-                  {GLOBAL_PROVIDERS.map(p => {
-                    const cnt = plans.global?.filter(x => x.carrier === p.id).length || 0
-                    if (!cnt) return null
-                    return <FilterTag key={p.id} label={p.label} active={filters.globalProvider === p.id} onClick={() => { setFilter('globalProvider', p.id); setFilter('destination', 'all'); setFilter('region', 'all') }} />
-                  })}
+              {/* Region + Country side by side with SearchableSelect (global tab) */}
+              {tab === 'global' && (globalRegions.length > 0 || globalDestinations.length > 0) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {globalRegions.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-medium text-gray-500 mb-1">אזור</p>
+                      <SearchableSelect
+                        value={filters.region}
+                        onChange={val => { setFilter('region', val); if (val !== 'all') setFilter('destination', 'all') }}
+                        options={globalRegions.map(r => ({ value: r, label: r }))}
+                        placeholder={`כל האזורים (${globalRegions.length})`}
+                      />
+                    </div>
+                  )}
+                  {globalDestinations.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-medium text-gray-500 mb-1">מדינה</p>
+                      <SearchableSelect
+                        value={filters.destination}
+                        onChange={val => { setFilter('destination', val); if (val !== 'all') setFilter('region', 'all') }}
+                        options={globalDestinations.map(c => ({ value: c, label: c }))}
+                        placeholder={`כל המדינות (${globalDestinations.length})`}
+                      />
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
 
-            {tab === 'global' && globalRegions.length > 0 && (
-              <div>
-                <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">אזור</p>
-                <select
-                  value={filters.region}
-                  onChange={e => { setFilter('region', e.target.value); if (e.target.value !== 'all') setFilter('destination', 'all') }}
-                  className={`border rounded-lg px-2.5 py-1 text-xs transition-colors ${filters.region !== 'all' ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-500'}`}
-                >
-                  <option value="all">כל האזורים ({globalRegions.length})</option>
-                  {globalRegions.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
-              </div>
-            )}
-
-            {tab === 'global' && globalDestinations.length > 0 && (
-              <div>
-                <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">מדינה</p>
-                <select
-                  value={filters.destination}
-                  onChange={e => { setFilter('destination', e.target.value); if (e.target.value !== 'all') setFilter('region', 'all') }}
-                  className={`border rounded-lg px-2.5 py-1 text-xs transition-colors ${filters.destination !== 'all' ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-500'}`}
-                >
-                  <option value="all">כל המדינות ({globalDestinations.length})</option>
-                  {globalDestinations.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-            )}
-
-            {tab === 'content' && (
-              <>
-                <div>
-                  <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">חברה</p>
-                  <div className="flex flex-wrap gap-1">
-                    <FilterTag label="כולם" active={filters.contentCarrier === 'all'} onClick={() => setFilter('contentCarrier', 'all')} />
-                    {['cellcom', 'partner', 'hotmobile', 'pelephone'].map(c => (
-                      <FilterTag key={c} label={CARRIERS.find(x => x.id === c)?.label || c} active={filters.contentCarrier === c} onClick={() => setFilter('contentCarrier', c)} />
-                    ))}
+              {/* Gen + Roaming side by side (domestic tab) */}
+              {tab === 'domestic' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">דור רשת</p>
+                    <div className="flex flex-wrap gap-1">
+                      <FilterTag label="כולם" active={filters.gen === 'all'} onClick={() => setFilter('gen', 'all')} />
+                      <FilterTag label="4G" active={filters.gen === '4g'} onClick={() => setFilter('gen', '4g')} />
+                      <FilterTag label="5G" active={filters.gen === '5g'} onClick={() => setFilter('gen', '5g')} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה בחו"ל</p>
+                    <div className="flex flex-wrap gap-1">
+                      <FilterTag label="כולם" active={filters.roaming === 'all'} onClick={() => setFilter('roaming', 'all')} />
+                      <FilterTag label="כולל חו״ל" active={filters.roaming === 'yes'} onClick={() => setFilter('roaming', 'yes')} />
+                    </div>
                   </div>
                 </div>
+              )}
+
+              {/* Content service filter (content tab) */}
+              {tab === 'content' && (
                 <div>
-                  <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">שירות</p>
+                  <p className="text-[11px] font-medium text-gray-500 mb-1.5">שירות</p>
                   <div className="flex flex-wrap gap-1">
                     <FilterTag label="כולם" active={filters.contentService === 'all'} onClick={() => setFilter('contentService', 'all')} />
                     {contentServices.map(s => (
@@ -484,53 +494,121 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 </div>
-              </>
-            )}
+              )}
+            </div>
 
-            {/* Gen + Roaming (domestic only) */}
-            {tab === 'domestic' && (
-              <div className="flex flex-wrap gap-6">
+            {/* Left column — Carriers/Providers */}
+            <div>
+              {/* Domestic / Abroad carriers */}
+              {(tab === 'domestic' || tab === 'abroad') && (
                 <div>
-                  <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">דור רשת</p>
-                  <div className="flex flex-wrap gap-1">
-                    <FilterTag label="כולם" active={filters.gen === 'all'} onClick={() => setFilter('gen', 'all')} />
-                    <FilterTag label="4G" active={filters.gen === '4g'} onClick={() => setFilter('gen', '4g')} />
-                    <FilterTag label="5G" active={filters.gen === '5g'} onClick={() => setFilter('gen', '5g')} />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[11px] font-medium text-gray-500">חברות</p>
+                    <button
+                      onClick={() => setFilter('carrier', filters.carrier === 'all' ? '' : 'all')}
+                      className="text-[10px] text-moca-sub hover:text-moca-text"
+                    >
+                      {filters.carrier === 'all' ? '' : 'הכל'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
+                    <button
+                      onClick={() => setFilter('carrier', 'all')}
+                      className={`px-1 py-1.5 rounded-md text-[10px] font-medium text-center transition-all duration-150 ${
+                        filters.carrier === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                      }`}
+                    >
+                      כולם
+                    </button>
+                    {CARRIERS.map(c => {
+                      const cnt = plans[tab]?.filter(p => p.carrier === c.id).length || 0
+                      if (!cnt) return null
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => setFilter('carrier', c.id)}
+                          className={`px-1 py-1.5 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
+                            filters.carrier === c.id ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                          }`}
+                        >
+                          {c.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
+              )}
+
+              {/* Global providers */}
+              {tab === 'global' && (
                 <div>
-                  <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">גלישה בחו"ל</p>
-                  <div className="flex flex-wrap gap-1">
-                    <FilterTag label="כולם" active={filters.roaming === 'all'} onClick={() => setFilter('roaming', 'all')} />
-                    <FilterTag label="כולל חו״ל" active={filters.roaming === 'yes'} onClick={() => setFilter('roaming', 'yes')} />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[11px] font-medium text-gray-500">ספקים</p>
+                    <button
+                      onClick={() => { setFilter('globalProvider', filters.globalProvider === 'all' ? '' : 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
+                      className="text-[10px] text-moca-sub hover:text-moca-text"
+                    >
+                      {filters.globalProvider === 'all' ? '' : 'הכל'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    <button
+                      onClick={() => { setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
+                      className={`px-1 py-1.5 rounded-md text-[9px] font-medium text-center transition-all duration-150 ${
+                        filters.globalProvider === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                      }`}
+                    >
+                      כולם
+                    </button>
+                    {GLOBAL_PROVIDERS.map(p => {
+                      const cnt = plans.global?.filter(x => x.carrier === p.id).length || 0
+                      if (!cnt) return null
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => { setFilter('globalProvider', p.id); setFilter('destination', 'all'); setFilter('region', 'all') }}
+                          className={`px-1 py-1.5 rounded-md text-[9px] font-medium text-center transition-all duration-150 truncate ${
+                            filters.globalProvider === p.id ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* GB + Days */}
-            {tab !== 'content' && (
-              <div className="flex flex-wrap gap-6">
+              {/* Content carriers */}
+              {tab === 'content' && (
                 <div>
-                  <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">גלישה</p>
-                  <div className="flex flex-wrap gap-1">
-                    {['all', '0-5', '5-15', '15-100', '100+', 'unlimited'].map(v => (
-                      <FilterTag key={v} label={v === 'all' ? 'הכל' : v === 'unlimited' ? 'ללא הגבלה' : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[11px] font-medium text-gray-500">חברות</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
+                    <button
+                      onClick={() => setFilter('contentCarrier', 'all')}
+                      className={`px-1 py-1.5 rounded-md text-[10px] font-medium text-center transition-all duration-150 ${
+                        filters.contentCarrier === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                      }`}
+                    >
+                      כולם
+                    </button>
+                    {['cellcom', 'partner', 'hotmobile', 'pelephone'].map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setFilter('contentCarrier', c)}
+                        className={`px-1 py-1.5 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
+                          filters.contentCarrier === c ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                        }`}
+                      >
+                        {CARRIERS.find(x => x.id === c)?.label || c}
+                      </button>
                     ))}
                   </div>
                 </div>
-                {(tab === 'abroad' || tab === 'global') && (
-                  <div>
-                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">תקופה</p>
-                    <div className="flex flex-wrap gap-1">
-                      {['all', '1-7', '8-30', '30+'].map(v => (
-                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === '30+' ? '30+ ימים' : `${v} ימים`} active={filters.days === v} onClick={() => setFilter('days', v)} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>
