@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import * as XLSX from 'xlsx'
 import PlanCard from '../components/PlanCard'
@@ -47,7 +48,8 @@ const GLOBAL_PROVIDERS = [
 
 export default function DashboardPage() {
   const { isAdmin } = useAuth()
-  const [tab, setTab] = useState('domestic')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [tab, setTab] = useState(searchParams.get('tab') || 'domestic')
   const [loading, setLoading] = useState(true)
   const [scraping, setScraping] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -88,6 +90,25 @@ export default function DashboardPage() {
   }, [filters, tab])
 
   // Load data
+  // Apply URL params from chat navigation
+  useEffect(() => {
+    const urlTab = searchParams.get('tab')
+    const urlCarrier = searchParams.get('carrier')
+    if (urlTab && ['domestic', 'abroad', 'global', 'content'].includes(urlTab)) {
+      setTab(urlTab)
+      if (urlCarrier) {
+        if (urlTab === 'global') {
+          setFilter('globalProvider', urlCarrier)
+        } else {
+          setFilter('carrier', urlCarrier)
+        }
+        setFiltersOpen(true)
+      }
+      // Clear params after applying
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams])
+
   useEffect(() => { loadTab(tab) }, [tab])
 
   async function loadTab(t) {
