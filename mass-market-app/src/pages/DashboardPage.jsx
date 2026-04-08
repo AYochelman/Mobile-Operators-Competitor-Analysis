@@ -385,9 +385,9 @@ export default function DashboardPage() {
 
         {/* Expandable filter rows — 2-column layout */}
         {filtersOpen && (
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-3 py-3 border-t border-gray-100 animate-slide-down items-start">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-3 py-3 border-t border-gray-100 animate-slide-down items-start relative" style={{overflow: 'visible'}}>
             {/* Right column — Filters */}
-            <div className="space-y-2">
+            <div className="space-y-2" style={{overflow: 'visible'}}>
               {/* GB + Days side by side (non-content tabs) */}
               {tab !== 'content' && (
                 <div className={(tab === 'abroad' || tab === 'global') ? 'grid grid-cols-2 gap-3' : ''}>
