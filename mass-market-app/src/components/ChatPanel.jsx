@@ -31,8 +31,17 @@ const CARRIER_MAP = {
   'Saily': { id: 'saily', tab: 'global' },
   'Holafly': { id: 'holafly', tab: 'global' },
   'eSIM.io': { id: 'esimio', tab: 'global' },
+  'esimio': { id: 'esimio', tab: 'global' },
+  'esim.io': { id: 'esimio', tab: 'global' },
   'Sparks': { id: 'sparks', tab: 'global' },
+  'sparks': { id: 'sparks', tab: 'global' },
   'VOYE': { id: 'voye', tab: 'global' },
+  'voye': { id: 'voye', tab: 'global' },
+  'Voye': { id: 'voye', tab: 'global' },
+  'airalo': { id: 'airalo', tab: 'global' },
+  'saily': { id: 'saily', tab: 'global' },
+  'holafly': { id: 'holafly', tab: 'global' },
+  'tuki': { id: 'tuki', tab: 'global' },
 }
 
 // Build regex from carrier names (longest first to avoid partial matches)
@@ -81,11 +90,24 @@ export default function ChatPanel() {
     const params = new URLSearchParams()
     params.set('tab', carrier.tab)
     params.set('carrier', carrier.id)
-    // Try to extract plan name for highlighting, fallback to carrier ID
+    // Extract plan name near the clicked carrier for highlighting
+    // The AI formats plans like: "carrier | PLAN_NAME" or "**carrier PLAN_NAME**"
     let highlight = carrier.id
     if (contextText) {
-      const planMatch = contextText.match(/([A-Za-z\u0590-\u05FF][\w\s\-\.]+(?:\d+\s*GB|\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4)[^\n]*)/i)
-      if (planMatch) highlight = planMatch[1].trim()
+      // Try to find a line with the carrier name + plan details
+      const lines = contextText.split('\n')
+      for (const line of lines) {
+        if (line.includes(carrier.id) || Object.keys(CARRIER_MAP).some(k => CARRIER_MAP[k].id === carrier.id && line.includes(k))) {
+          // Extract plan name pattern (contains GB or has dashes)
+          const planMatch = line.match(/[\u0590-\u05FF\w][\u0590-\u05FF\w\s\-–]+\d+\s*GB/i)
+            || line.match(/\|[\s]*([^\|]+\d+\s*GB[^\|]*)/i)
+            || line.match(/\*\*([^*]+)\*\*/i)
+          if (planMatch) {
+            highlight = (planMatch[1] || planMatch[0]).replace(/\*\*/g, '').trim()
+            break
+          }
+        }
+      }
     }
     params.set('highlight', highlight)
     navigate(`/?${params.toString()}`)
