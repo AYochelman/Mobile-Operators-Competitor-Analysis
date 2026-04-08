@@ -51,7 +51,7 @@ function renderMessageWithLinks(text, onCarrierClick) {
         <button
           key={i}
           onClick={() => onCarrierClick(carrier)}
-          className="text-blue-600 hover:text-blue-800 underline underline-offset-2 font-medium cursor-pointer"
+          className="text-moca-bolt hover:text-moca-dark underline underline-offset-2 font-medium cursor-pointer"
         >
           {part}
         </button>
@@ -115,7 +115,7 @@ export default function ChatPanel() {
       {/* FAB button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-5 left-5 z-50 px-4 h-10 rounded-full bg-gray-900 text-white shadow-lg hover:bg-gray-800 transition-all flex items-center justify-center text-xs font-semibold tracking-wide"
+        className="fixed bottom-5 left-5 z-50 px-4 h-10 rounded-full bg-moca-bolt text-white shadow-lg hover:bg-moca-dark transition-all flex items-center justify-center text-xs font-semibold tracking-wide"
       >
         {open ? '✕' : 'Ask AI'}
       </button>
@@ -124,7 +124,7 @@ export default function ChatPanel() {
       {open && (
         <div className="fixed bottom-20 left-5 z-50 w-[340px] max-w-[calc(100vw-40px)] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-fade-in-up" style={{ maxHeight: '70vh' }}>
           {/* Header */}
-          <div className="bg-blue-600 text-white px-4 py-3 flex items-center justify-between flex-shrink-0">
+          <div className="bg-moca-bolt text-white px-4 py-3 flex items-center justify-between flex-shrink-0">
             <h3 className="text-sm font-bold">💬 צריך עזרה?</h3>
             <button onClick={() => setOpen(false)} className="text-white/70 hover:text-white text-lg leading-none">&times;</button>
           </div>
@@ -139,7 +139,7 @@ export default function ChatPanel() {
                     <button
                       key={i}
                       onClick={() => sendMessage(ex)}
-                      className="text-[11px] px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 transition-colors"
+                      className="text-[11px] px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-moca-cream hover:border-moca-border hover:text-moca-bolt transition-colors"
                     >
                       {ex}
                     </button>
@@ -151,7 +151,7 @@ export default function ChatPanel() {
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}>
                 <div className={`max-w-[85%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
                   msg.role === 'user'
-                    ? 'bg-blue-50 text-gray-800'
+                    ? 'bg-moca-cream text-moca-text'
                     : 'bg-gray-100 text-gray-700'
                 }`}>
                   {msg.role === 'assistant'
@@ -178,13 +178,13 @@ export default function ChatPanel() {
               onKeyDown={handleKeyDown}
               placeholder="שאל שאלה..."
               rows={1}
-              className="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-h-[80px]"
+              className="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-moca-bolt focus:border-moca-bolt max-h-[80px]"
               style={{ fontSize: '16px' }}
             />
             <button
               onClick={() => sendMessage()}
               disabled={loading || !input.trim()}
-              className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+              className="px-3 py-2 bg-moca-bolt text-white rounded-lg text-sm font-medium hover:bg-moca-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
             >
               שלח
             </button>
