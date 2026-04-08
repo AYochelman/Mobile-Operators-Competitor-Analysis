@@ -43,7 +43,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 top-full mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-lg max-h-[250px] overflow-hidden animate-slide-down">
+        <div className="absolute z-[9998] top-full mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-xl max-h-[250px] overflow-hidden animate-slide-down">
           {/* Search input */}
           <div className="p-1.5 border-b border-gray-100">
             <input
