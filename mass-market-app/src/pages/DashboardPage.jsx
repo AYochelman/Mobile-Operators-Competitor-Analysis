@@ -265,9 +265,9 @@ export default function DashboardPage() {
     }, 1000)
     try {
       await api.scrapeAll()
-      setPlans({ domestic: [], abroad: [], global: [], content: [] })
-      setChanges({ domestic: [], abroad: [], global: [], content: [] })
-      loadTab(tab)
+      // Force full reload to refresh all data + timestamp
+      window.location.reload()
+      return
     } catch (err) { console.error(err) }
     clearInterval(timer)
     setCountdown(0)
