@@ -2655,6 +2655,26 @@ SPARKS_COUNTRY_TO_HEBREW_EXTRA = {
     "guinea-bissau": "\u05d2\u05d9\u05e0\u05d0\u05d4-\u05d1\u05d9\u05e1\u05d0\u05d5",
     "united-arab-emirates": "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea",
     "bosnia-and-herzegovina": "\u05d1\u05d5\u05e1\u05e0\u05d9\u05d4 \u05d5\u05d4\u05e8\u05e6\u05d2\u05d5\u05d1\u05d9\u05e0\u05d4",
+    # VOYE-specific names
+    "russian-federation": "\u05e8\u05d5\u05e1\u05d9\u05d4",
+    "macao-china": "\u05de\u05e7\u05d0\u05d5",
+    "congo-dem.-rep": "\u05e7\u05d5\u05e0\u05d2\u05d5 \u05d4\u05d3\u05de\u05d5\u05e7\u05e8\u05d8\u05d9\u05ea",
+    "congo-democratic-rep": "\u05e7\u05d5\u05e0\u05d2\u05d5 \u05d4\u05d3\u05de\u05d5\u05e7\u05e8\u05d8\u05d9\u05ea",
+    "congo-republic": "\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05ea \u05e7\u05d5\u05e0\u05d2\u05d5",
+    "french-west-indies": "\u05d4\u05d0\u05e0\u05d8\u05d9\u05dc\u05d9\u05dd \u05d4\u05e6\u05e8\u05e4\u05ea\u05d9\u05d9\u05dd",
+    "cruise": "\u05e7\u05e8\u05d5\u05d6 \u05d1\u05e1\u05e4\u05d9\u05e0\u05d4",
+    "uae": "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea",
+    "uk": "\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4",
+    "usa": "\u05d0\u05e8\u05e6\u05d5\u05ea \u05d4\u05d1\u05e8\u05d9\u05ea",
+    "caribbean": "\u05e7\u05e8\u05d9\u05d1\u05d9\u05d9\u05dd",
+    "europe": "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
+    "global": "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9",
+    "saint-vincent-and-the-grenadines": "\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d4\u05d2\u05e8\u05e0\u05d3\u05d9\u05e0\u05d9\u05dd",
+    "st.-vincent-and-the-grenadines": "\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d4\u05d2\u05e8\u05e0\u05d3\u05d9\u05e0\u05d9\u05dd",
+    "belarus": "\u05d1\u05dc\u05d0\u05e8\u05d5\u05e1",
+    "cote-d'ivoire-ivory-coast": "\u05d7\u05d5\u05e3 \u05d4\u05e9\u05e0\u05d4\u05d1",
+    "cote-divoire-ivory-coast": "\u05d7\u05d5\u05e3 \u05d4\u05e9\u05e0\u05d4\u05d1",
+    "st.-martin-and-st.-barth-guadeloupe": "\u05e1\u05df \u05de\u05e8\u05d8\u05df \u05d5\u05d2\u05d5\u05d5\u05d3\u05dc\u05d5\u05e4",
 }
 
 
@@ -2822,14 +2842,23 @@ def scrape_voye_global(_page=None, usd_rate=None):
                         dest_heb = country_heb
                         break
                 if not dest_heb:
-                    # Fallback: parse country from product name before digits
-                    fallback = re.match(r"^([A-Za-z\s\-\.\']+?)(?:\s*\d)", name)
+                    # Fallback: parse country from product name before "N Days" pattern
+                    fallback = re.match(r"^(.+?)\s+\d+\s*[Dd]ays?", name)
+                    if not fallback:
+                        fallback = re.match(r"^([A-Za-z\s\-\.\'\(\)]+?)(?:\s*\d)", name)
                     if fallback:
-                        raw = fallback.group(1).strip()
-                        slug = raw.lower().replace(" ", "-").rstrip("-")
+                        raw = fallback.group(1).strip().rstrip("-– ")
+                        slug = raw.lower().replace(" ", "-").replace("(", "").replace(")", "").rstrip("-")
                         dest_heb = SAILY_SLUG_TO_HEBREW.get(slug)
                         if not dest_heb:
-                            dest_heb = SPARKS_COUNTRY_TO_HEBREW_EXTRA.get(slug, raw)
+                            dest_heb = SPARKS_COUNTRY_TO_HEBREW_EXTRA.get(slug)
+                        if not dest_heb:
+                            # Try simpler slug variants
+                            for variant in [slug.split("-")[0], slug.replace("'", "")]:
+                                dest_heb = SAILY_SLUG_TO_HEBREW.get(variant) or SPARKS_COUNTRY_TO_HEBREW_EXTRA.get(variant)
+                                if dest_heb: break
+                        if not dest_heb:
+                            dest_heb = raw  # keep English as last resort
 
             if not dest_heb:
                 dest_heb = name  # last resort
