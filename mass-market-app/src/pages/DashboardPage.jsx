@@ -325,9 +325,13 @@ export default function DashboardPage() {
           <button
             onClick={handleScrape}
             disabled={scraping}
-            className="text-[11px] text-moca-sub hover:text-moca-bolt disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1 text-[11px] text-moca-sub hover:text-moca-bolt disabled:opacity-50 transition-colors"
           >
-            {scraping ? '⏳ מעדכן...' : '🔄 עדכן'}
+            {scraping ? (
+              <><svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56" /></svg> מעדכן...</>
+            ) : (
+              <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg> עדכן</>
+            )}
           </button>
         )}
       </div>
