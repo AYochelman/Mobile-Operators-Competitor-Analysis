@@ -33,7 +33,6 @@ const NAV_ICONS = {
 const NAV_ITEMS = [
   { to: '/', label: 'דשבורד', end: true },
   { to: '/compare', label: 'השוואה' },
-  { to: '/trends', label: 'מגמות' },
   { to: '/alerts', label: 'התראות' },
 ]
 

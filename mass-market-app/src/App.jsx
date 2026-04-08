@@ -4,7 +4,7 @@ import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import ComparePage from './pages/ComparePage'
-import TrendsPage from './pages/TrendsPage'
+// import TrendsPage from './pages/TrendsPage'  // removed
 import AlertsPage from './pages/AlertsPage'
 import SettingsPage from './pages/SettingsPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -24,7 +24,7 @@ export default function App() {
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<DashboardPage />} />
         <Route path="compare" element={<ComparePage />} />
-        <Route path="trends" element={<TrendsPage />} />
+        {/* trends page removed */}
         <Route path="alerts" element={<AlertsPage />} />
         <Route path="settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
       </Route>
