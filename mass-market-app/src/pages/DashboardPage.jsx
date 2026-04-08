@@ -535,7 +535,7 @@ export default function DashboardPage() {
               {(tab === 'domestic' || tab === 'abroad') && (
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[11px] font-medium text-gray-500">חברות</p>
+                    <p className="text-[11px] font-medium text-gray-500">ספקים</p>
                     <button
                       onClick={() => setFilter('carrier', filters.carrier === 'all' ? '' : 'all')}
                       className="text-[10px] text-moca-sub hover:text-moca-text"
@@ -615,7 +615,7 @@ export default function DashboardPage() {
               {tab === 'content' && (
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[11px] font-medium text-gray-500">חברות</p>
+                    <p className="text-[11px] font-medium text-gray-500">ספקים</p>
                   </div>
                   <div className="grid grid-cols-2 gap-1">
                     <button

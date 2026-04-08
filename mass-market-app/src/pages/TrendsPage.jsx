@@ -41,7 +41,7 @@ export default function TrendsPage() {
           onChange={e => setCarrier(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
         >
-          <option value="all">כל החברות</option>
+          <option value="all">כל הספקים</option>
           {Object.entries(LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
       </div>
