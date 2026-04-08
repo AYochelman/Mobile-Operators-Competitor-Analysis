@@ -216,6 +216,7 @@ export default function ComparePage() {
 
     if (sortBy === 'price_asc') result = [...result].sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999))
     else if (sortBy === 'price_desc') result = [...result].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
+    else if (sortBy === 'gb_asc') result = [...result].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
     else if (sortBy === 'gb_desc') result = [...result].sort((a, b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999))
 
     return result
@@ -271,7 +272,7 @@ export default function ComparePage() {
       </div>
 
       {/* Two-column filters: right = filters, left = carriers */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-3 mb-4 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-3 mb-4 items-start">
         {/* Right column — Filters */}
         <div className="bg-white rounded-xl border border-gray-200 p-3 space-y-2">
           <div className={showDays ? 'grid grid-cols-2 gap-3' : ''}>
@@ -348,6 +349,7 @@ export default function ComparePage() {
             <div className="flex flex-wrap gap-1">
               <FilterTag label="מחיר ↑" active={sortBy === 'price_asc'} onClick={() => setSortBy('price_asc')} />
               <FilterTag label="מחיר ↓" active={sortBy === 'price_desc'} onClick={() => setSortBy('price_desc')} />
+              <FilterTag label="GB ↑" active={sortBy === 'gb_asc'} onClick={() => setSortBy('gb_asc')} />
               <FilterTag label="GB ↓" active={sortBy === 'gb_desc'} onClick={() => setSortBy('gb_desc')} />
           </div>
         </div>
@@ -364,14 +366,14 @@ export default function ComparePage() {
               {selectedCarriers.length === availableCarriers.length ? 'נקה' : 'הכל'}
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-1">
+          <div className="grid grid-cols-3 gap-1">
             {availableCarriers.map(c => (
               <button
                 key={c.id}
                 onClick={() => setSelectedCarriers(prev =>
                   prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id]
                 )}
-                className={`px-1.5 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
+                className={`px-1 py-1 rounded-md text-[9px] font-medium text-center transition-all duration-150 truncate ${
                   selectedCarriers.includes(c.id) ? 'text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                 }`}
                 style={selectedCarriers.includes(c.id) ? { backgroundColor: c.color } : {}}
