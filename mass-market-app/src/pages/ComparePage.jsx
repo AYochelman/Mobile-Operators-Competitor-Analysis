@@ -267,37 +267,38 @@ export default function ComparePage() {
         ))}
       </div>
 
-      {/* Carrier selection */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-medium text-gray-500">בחר ספקים:</p>
-          <button
-            onClick={() => setSelectedCarriers(prev => prev.length === availableCarriers.length ? [] : availableCarriers.map(c => c.id))}
-            className="text-[11px] text-blue-500 hover:text-blue-700"
-          >
-            {selectedCarriers.length === availableCarriers.length ? 'נקה הכל' : 'בחר הכל'}
-          </button>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {availableCarriers.map(c => (
-            <button
-              key={c.id}
-              onClick={() => setSelectedCarriers(prev =>
-                prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id]
-              )}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                selectedCarriers.includes(c.id) ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-              }`}
-              style={selectedCarriers.includes(c.id) ? { backgroundColor: c.color, borderColor: c.color } : {}}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Filters — all combinable */}
+      {/* All filters in one panel */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 space-y-3">
+        {/* Carriers */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium text-gray-500">ספקים</p>
+            <button
+              onClick={() => setSelectedCarriers(prev => prev.length === availableCarriers.length ? [] : availableCarriers.map(c => c.id))}
+              className="text-[10px] text-[#8a6a4a] hover:text-[#3b1f0d]"
+            >
+              {selectedCarriers.length === availableCarriers.length ? 'נקה הכל' : 'בחר הכל'}
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {availableCarriers.map(c => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedCarriers(prev =>
+                  prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id]
+                )}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150 ${
+                  selectedCarriers.includes(c.id) ? 'text-white' : 'text-[#8a6a4a] hover:text-[#3b1f0d] hover:bg-[#f5ede0]'
+                }`}
+                style={selectedCarriers.includes(c.id) ? { backgroundColor: c.color } : {}}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* GB */}
         <div>
           <p className="text-xs font-medium text-gray-500 mb-2">גלישה</p>
           <div className="flex flex-wrap gap-1.5">
