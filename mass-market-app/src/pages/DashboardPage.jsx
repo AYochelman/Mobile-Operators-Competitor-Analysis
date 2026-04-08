@@ -309,8 +309,8 @@ export default function DashboardPage() {
             onClick={() => { setTab(t.id); setFilter('carrier', 'all'); setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
             className={`relative px-4 py-2.5 text-[13px] font-medium transition-all duration-150
               ${tab === t.id
-                ? 'text-[#3b1f0d] after:absolute after:bottom-0 after:inset-x-2 after:h-[2px] after:bg-[#5c3317] after:rounded-full'
-                : 'text-[#a08468] hover:text-[#5c3317]'
+                ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-2 after:h-[2px] after:bg-moca-bolt after:rounded-full'
+                : 'text-moca-muted hover:text-moca-bolt'
               }`}
           >
             <span className="hidden sm:inline">{t.icon} </span>
@@ -339,7 +339,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <span className="text-[11px] text-gray-400">{filteredPlans.length} חבילות</span>
             {filteredPlans.length > 0 && (
-              <button onClick={exportToExcel} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-[#8a6a4a] hover:text-[#3b1f0d] hover:bg-[#f5ede0] transition-all duration-150" title="ייצוא ל-Excel">
+              <button onClick={exportToExcel} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-moca-sub hover:text-moca-text hover:bg-moca-cream transition-all duration-150" title="ייצוא ל-Excel">
                 📥 Excel
               </button>
             )}
