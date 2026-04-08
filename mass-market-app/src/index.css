@@ -8,7 +8,7 @@
     -moz-osx-font-smoothing: grayscale;
   }
   body {
-    @apply bg-[#f9f4ee] text-gray-900 min-h-screen;
+    @apply bg-[#f2e8d8] text-gray-900 min-h-screen;
   }
 
   /* Scrollbar */
