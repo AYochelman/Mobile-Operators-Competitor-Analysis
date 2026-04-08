@@ -81,12 +81,13 @@ export default function ChatPanel() {
     const params = new URLSearchParams()
     params.set('tab', carrier.tab)
     params.set('carrier', carrier.id)
-    // Try to extract plan name from surrounding context for highlighting
+    // Try to extract plan name for highlighting, fallback to carrier ID
+    let highlight = carrier.id
     if (contextText) {
-      // Look for plan-like patterns near the carrier name
       const planMatch = contextText.match(/([A-Za-z\u0590-\u05FF][\w\s\-\.]+(?:\d+\s*GB|\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4)[^\n]*)/i)
-      if (planMatch) params.set('highlight', planMatch[1].trim())
+      if (planMatch) highlight = planMatch[1].trim()
     }
+    params.set('highlight', highlight)
     navigate(`/?${params.toString()}`)
     setOpen(false)
   }
