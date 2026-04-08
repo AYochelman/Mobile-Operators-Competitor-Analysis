@@ -98,7 +98,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 
 **Domestic (7)**: partner, pelephone, hotmobile, cellcom, mobile019, xphone, wecom
 **Abroad (7)**: same carriers, per-country roaming plans
-**Global eSIM (11)**: tuki, globalesim, airalo, pelephone_global, esimo, simtlv, world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (183 countries + 10 regions)
+**Global eSIM (13)**: tuki, globalesim, airalo, pelephone_global, esimo, simtlv, world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (183 countries + 10 regions), sparks, voye (157 countries + 5 regions + global)
 **Content (5 services × 4 carriers)**: eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי
 
 ## Database Schema (SQLite — data/plans.db)
