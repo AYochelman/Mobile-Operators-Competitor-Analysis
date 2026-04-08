@@ -273,14 +273,15 @@ export default function ComparePage() {
       <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-3 mb-4 items-start">
         {/* Right column — Filters */}
         <div className="bg-white rounded-xl border border-gray-200 p-3 space-y-2">
-          <div>
-            <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
-            <div className="flex flex-wrap gap-1">
-              {GB_OPTIONS.map(([val, label]) => (
-                <FilterTag key={val} label={label} active={gbFilter === val} onClick={() => setGbFilter(val)} />
-              ))}
+          <div className={showDays ? 'grid grid-cols-2 gap-3' : ''}>
+            <div>
+              <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
+              <div className="flex flex-wrap gap-1">
+                {GB_OPTIONS.map(([val, label]) => (
+                  <FilterTag key={val} label={label} active={gbFilter === val} onClick={() => setGbFilter(val)} />
+                ))}
+              </div>
             </div>
-          </div>
 
           {showDays && (
             <div>
@@ -292,6 +293,7 @@ export default function ComparePage() {
               </div>
             </div>
           )}
+          </div>
 
           {tab === 'global' && (
             <>
