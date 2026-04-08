@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 
 const EXAMPLES = [
@@ -8,6 +9,58 @@ const EXAMPLES = [
   'מה השתנה היום?',
 ]
 
+// Map carrier names (Hebrew + English) to their IDs and tabs
+const CARRIER_MAP = {
+  'פרטנר': { id: 'partner', tab: 'domestic' },
+  'פלאפון': { id: 'pelephone', tab: 'domestic' },
+  'הוט מובייל': { id: 'hotmobile', tab: 'domestic' },
+  'סלקום': { id: 'cellcom', tab: 'domestic' },
+  '019': { id: 'mobile019', tab: 'domestic' },
+  'xphone': { id: 'xphone', tab: 'domestic' },
+  'XPhone': { id: 'xphone', tab: 'domestic' },
+  'we-com': { id: 'wecom', tab: 'domestic' },
+  'We-Com': { id: 'wecom', tab: 'domestic' },
+  'Tuki': { id: 'tuki', tab: 'global' },
+  'GlobaleSIM': { id: 'globalesim', tab: 'global' },
+  'Airalo': { id: 'airalo', tab: 'global' },
+  'GlobalSIM': { id: 'pelephone_global', tab: 'global' },
+  'eSIMo': { id: 'esimo', tab: 'global' },
+  'SimTLV': { id: 'simtlv', tab: 'global' },
+  '8 World': { id: 'world8', tab: 'global' },
+  'XPhone Global': { id: 'xphone_global', tab: 'global' },
+  'Saily': { id: 'saily', tab: 'global' },
+  'Holafly': { id: 'holafly', tab: 'global' },
+  'eSIM.io': { id: 'esimio', tab: 'global' },
+  'Sparks': { id: 'sparks', tab: 'global' },
+  'VOYE': { id: 'voye', tab: 'global' },
+}
+
+// Build regex from carrier names (longest first to avoid partial matches)
+const CARRIER_REGEX = new RegExp(
+  '(' + Object.keys(CARRIER_MAP).sort((a, b) => b.length - a.length).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')',
+  'g'
+)
+
+function renderMessageWithLinks(text, onCarrierClick) {
+  // Split text by carrier names and make them clickable
+  const parts = text.split(CARRIER_REGEX)
+  return parts.map((part, i) => {
+    const carrier = CARRIER_MAP[part]
+    if (carrier) {
+      return (
+        <button
+          key={i}
+          onClick={() => onCarrierClick(carrier)}
+          className="text-blue-600 hover:text-blue-800 underline underline-offset-2 font-medium cursor-pointer"
+        >
+          {part}
+        </button>
+      )
+    }
+    return <span key={i}>{part}</span>
+  })
+}
+
 export default function ChatPanel() {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([])
@@ -15,6 +68,7 @@ export default function ChatPanel() {
   const [loading, setLoading] = useState(false)
   const messagesEnd = useRef(null)
   const inputRef = useRef(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     messagesEnd.current?.scrollIntoView({ behavior: 'smooth' })
@@ -23,6 +77,16 @@ export default function ChatPanel() {
   useEffect(() => {
     if (open && inputRef.current) inputRef.current.focus()
   }, [open])
+
+  const handleCarrierClick = (carrier) => {
+    // Navigate to dashboard with the carrier pre-selected
+    // Use URL params to pass filter state
+    const params = new URLSearchParams()
+    params.set('tab', carrier.tab)
+    params.set('carrier', carrier.id)
+    navigate(`/?${params.toString()}`)
+    setOpen(false)
+  }
 
   const sendMessage = async (text) => {
     const q = (text || input).trim()
@@ -90,7 +154,10 @@ export default function ChatPanel() {
                     ? 'bg-blue-50 text-gray-800'
                     : 'bg-gray-100 text-gray-700'
                 }`}>
-                  {msg.text}
+                  {msg.role === 'assistant'
+                    ? renderMessageWithLinks(msg.text, handleCarrierClick)
+                    : msg.text
+                  }
                 </div>
               </div>
             ))}
