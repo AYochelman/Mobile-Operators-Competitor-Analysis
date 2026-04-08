@@ -2725,7 +2725,7 @@ VOYE_REGION_MAP = {
 
 def scrape_voye_global(_page=None, usd_rate=None):
     """Scrape VOYE global eSIM plans via WooCommerce Store API."""
-    import urllib.request, json as _json
+    import urllib.request, json as _json, html as _html
 
     if usd_rate is None:
         usd_rate = _get_usd_to_ils()
@@ -2746,7 +2746,7 @@ def scrape_voye_global(_page=None, usd_rate=None):
             break
 
         for prod in products:
-            name = prod.get("name", "")
+            name = _html.unescape(prod.get("name", ""))
             # Price in cents
             price_raw = prod.get("prices", {}).get("price")
             if not price_raw:
@@ -2758,12 +2758,18 @@ def scrape_voye_global(_page=None, usd_rate=None):
             except (ValueError, TypeError):
                 continue
 
-            # Parse GB
+            # Skip cruise plans
+            cats_list = [c.get("slug", "") for c in prod.get("categories", [])]
+            if "cruise" in cats_list:
+                continue
+
+            # Parse GB — "Unlimited" means 3GB/day high-speed + unlimited throttled
             gb_match = re.search(r"(\d+)\s*GB", name, re.IGNORECASE)
+            is_unlimited = "unlimited" in name.lower()
             if gb_match:
                 data_gb = int(gb_match.group(1))
-            elif "unlimited" in name.lower():
-                data_gb = None
+            elif is_unlimited:
+                data_gb = None  # will be stored as unlimited
             else:
                 continue  # skip plans without GB info
 
@@ -2794,10 +2800,17 @@ def scrape_voye_global(_page=None, usd_rate=None):
                     dest_heb = VOYE_REGION_MAP[cat_slug]
                     break
 
+            # Check if it's a Global Light plan (name starts with "Global Light")
+            if name.startswith("Global Light") or name.startswith("Global Voice"):
+                plan_type = "global"
+                dest_heb = "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9"
+
             if plan_type == "country":
                 # Find country slug from categories (not region/global)
+                skip_cats = {"global", "global-voice", "uncategorized", "esim", "e-sim",
+                             "data-plans", "unlimited", "data-with-calls", "cruise"}
                 for cat_slug in categories:
-                    if cat_slug in ("global", "uncategorized", "esim", "e-sim", "data-plans"):
+                    if cat_slug in skip_cats:
                         continue
                     if cat_slug in VOYE_REGION_MAP:
                         continue
@@ -2809,14 +2822,14 @@ def scrape_voye_global(_page=None, usd_rate=None):
                         dest_heb = country_heb
                         break
                 if not dest_heb:
-                    # Fallback: try parsing country name from product name
-                    # e.g. "Japan 7 Days 5GB" -> first word(s) before digits
-                    fallback = re.match(r"^([A-Za-z\s\-]+?)(?:\s*\d)", name)
+                    # Fallback: parse country from product name before digits
+                    fallback = re.match(r"^([A-Za-z\s\-\.\']+?)(?:\s*\d)", name)
                     if fallback:
-                        slug = fallback.group(1).strip().lower().replace(" ", "-")
+                        raw = fallback.group(1).strip()
+                        slug = raw.lower().replace(" ", "-").rstrip("-")
                         dest_heb = SAILY_SLUG_TO_HEBREW.get(slug)
                         if not dest_heb:
-                            dest_heb = SPARKS_COUNTRY_TO_HEBREW_EXTRA.get(slug, fallback.group(1).strip())
+                            dest_heb = SPARKS_COUNTRY_TO_HEBREW_EXTRA.get(slug, raw)
 
             if not dest_heb:
                 dest_heb = name  # last resort
