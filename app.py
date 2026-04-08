@@ -475,8 +475,8 @@ def api_chat():
                     + (f" | extras: {';'.join(p['extras'])}" if p.get('extras') else "")
                 )
 
-        # Global plans
-        global_plans = get_global_plans(db_path=_db_path())
+        # Global plans (limit to avoid token overflow)
+        global_plans = get_global_plans(db_path=_db_path())[:500]
         if global_plans:
             lines.append("")
             lines.append("## חבילות גלובליות (eSIM)")
@@ -531,7 +531,7 @@ def api_chat():
                 "content-type": "application/json",
             },
             json={
-                "model": "claude-haiku-4-5",
+                "model": "claude-haiku-4-5-20251001",
                 "max_tokens": 1024,
                 "system": context,
                 "messages": [{"role": "user", "content": question}],
