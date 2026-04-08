@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { api } from '../lib/api'
 import Spinner from '../components/ui/Spinner'
 import FilterTag from '../components/ui/FilterTag'
+import SearchableSelect from '../components/ui/SearchableSelect'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import {
   AIRALO_DISCOVER, GLOBALESIM_COUNTRIES, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
@@ -297,63 +298,45 @@ export default function ComparePage() {
 
           {tab === 'global' && (
             <>
-              {/* Search input */}
-              <div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="חפש אזור או מדינה..."
-                  className="w-full border border-gray-200 rounded-lg px-2 py-1 text-xs focus:border-[#5c3317] focus:ring-1 focus:ring-[#5c3317] outline-none"
-                />
-              </div>
-              {/* Region + Country side by side */}
+              {/* Region + Country side by side with searchable dropdowns */}
               <div className="grid grid-cols-2 gap-2">
                 {availableRegions.length > 0 && (
                   <div>
                     <p className="text-[11px] font-medium text-gray-500 mb-1">אזור</p>
-                    <select
+                    <SearchableSelect
                       value={regionFilter}
-                      onChange={e => {
-                        const val = e.target.value
+                      onChange={val => {
                         setRegionFilter(val)
-                        setSearchQuery('')
                         if (val !== 'all') {
                           setDestinationFilter('all')
                           const regionCarriers = [...new Set(plans.filter(p => p.extras && p.extras[0] === val).map(p => p.carrier))]
                           setSelectedCarriers(regionCarriers)
                         }
                       }}
-                      className={`w-full border rounded-lg px-2 py-1 text-xs ${regionFilter !== 'all' ? 'border-[#5c3317] bg-[#faf5ee]' : 'border-gray-200'}`}
-                    >
-                      <option value="all">כל האזורים ({availableRegions.length})</option>
-                      {availableRegions.filter(r => !searchQuery || r.includes(searchQuery)).map(r => <option key={r} value={r}>{r}</option>)}
-                    </select>
+                      options={availableRegions.map(r => ({ value: r, label: r }))}
+                      placeholder={`כל האזורים (${availableRegions.length})`}
+                    />
                   </div>
                 )}
                 {availableDestinations.length > 0 && (
                   <div>
                     <p className="text-[11px] font-medium text-gray-500 mb-1">מדינה</p>
-                    <select
+                    <SearchableSelect
                       value={destinationFilter}
-                      onChange={e => {
-                        const val = e.target.value
+                      onChange={val => {
                         setDestinationFilter(val)
-                        setSearchQuery('')
                         if (val !== 'all') {
                           setRegionFilter('all')
                           const carriers = countryCarrierMap[val]
                           if (carriers) setSelectedCarriers([...carriers])
                         }
                       }}
-                      className={`w-full border rounded-lg px-2 py-1 text-xs ${destinationFilter !== 'all' ? 'border-[#5c3317] bg-[#faf5ee]' : 'border-gray-200'}`}
-                    >
-                      <option value="all">כל המדינות ({availableDestinations.length})</option>
-                      {availableDestinations.filter(c => !searchQuery || c.includes(searchQuery)).map(c => {
+                      options={availableDestinations.map(c => {
                         const n = countryCarrierMap[c] ? countryCarrierMap[c].size : 0
-                        return <option key={c} value={c}>{c} ({n})</option>
+                        return { value: c, label: `${c} (${n})` }
                       })}
-                    </select>
+                      placeholder={`כל המדינות (${availableDestinations.length})`}
+                    />
                   </div>
                 )}
               </div>
