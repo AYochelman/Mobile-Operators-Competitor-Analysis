@@ -12,7 +12,7 @@ export default function Logo({ size = 'md' }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <svg width={boltW} height={boltH} viewBox="0 0 48 46" fill="none" aria-hidden="true">
-        <path fill="#5c3317" d={BOLT_PATH} />
+        <path fill="var(--color-moca-bolt)" d={BOLT_PATH} />
       </svg>
 
       {wordmarkSize && (
@@ -20,7 +20,7 @@ export default function Logo({ size = 'md' }) {
           <span style={{
             fontSize: wordmarkSize,
             fontWeight: 900,
-            color: '#3b1f0d',
+            color: 'var(--color-moca-text)',
             letterSpacing: '-0.02em',
             fontFamily: 'system-ui, -apple-system, sans-serif',
           }}>
@@ -30,7 +30,7 @@ export default function Logo({ size = 'md' }) {
             <span style={{
               fontSize: subtextSize,
               fontWeight: 400,
-              color: '#8a6a4a',
+              color: 'var(--color-moca-sub)',
               fontFamily: 'system-ui, -apple-system, sans-serif',
               letterSpacing: '0.01em',
             }}>
