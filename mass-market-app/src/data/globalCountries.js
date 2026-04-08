@@ -263,6 +263,11 @@ export function getCountriesForPlan(plan) {
     return null;
   }
 
+  // ── VOYE ──
+  if (carrier === 'voye') {
+    return null; // per-country and regional plans — no country lists yet
+  }
+
   // ── XPhone Global ──
   if (carrier === 'xphone_global') {
     if (name.startsWith('אירופה')) {

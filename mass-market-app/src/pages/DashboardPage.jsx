@@ -42,6 +42,7 @@ const GLOBAL_PROVIDERS = [
   { id: 'saily', label: 'Saily' }, { id: 'holafly', label: 'Holafly' },
   { id: 'esimio', label: 'eSIM.io' },
   { id: 'sparks', label: 'Sparks' },
+  { id: 'voye', label: 'VOYE' },
 ]
 
 export default function DashboardPage() {

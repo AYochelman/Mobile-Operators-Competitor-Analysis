@@ -2714,6 +2714,132 @@ def scrape_sparks_global(_page=None, usd_rate=None):
     return all_plans
 
 
+VOYE_REGION_MAP = {
+    "asia": "\u05d0\u05e1\u05d9\u05d4",
+    "europe": "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
+    "latin-america": "\u05d0\u05de\u05e8\u05d9\u05e7\u05d4 \u05d4\u05dc\u05d8\u05d9\u05e0\u05d9\u05ea",
+    "middle-east": "\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df",
+    "north-america": "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
+}
+
+
+def scrape_voye_global(_page=None, usd_rate=None):
+    """Scrape VOYE global eSIM plans via WooCommerce Store API."""
+    import urllib.request, json as _json
+
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+
+    all_plans = []
+    page_num = 1
+    while True:
+        url = f"https://voyeglobal.com/wp-json/wc/store/v1/products?per_page=100&page={page_num}"
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                products = _json.loads(resp.read().decode("utf-8"))
+        except Exception as e:
+            logger.warning(f"VOYE page {page_num}: {e}")
+            break
+
+        if not products:
+            break
+
+        for prod in products:
+            name = prod.get("name", "")
+            # Price in cents
+            price_raw = prod.get("prices", {}).get("price")
+            if not price_raw:
+                continue
+            try:
+                price_usd = int(price_raw) / 100
+            except (ValueError, TypeError):
+                continue
+
+            # Parse GB
+            gb_match = re.search(r"(\d+)\s*GB", name, re.IGNORECASE)
+            if gb_match:
+                data_gb = int(gb_match.group(1))
+            elif "unlimited" in name.lower():
+                data_gb = None
+            else:
+                continue  # skip plans without GB info
+
+            # Parse days
+            days_match = re.search(r"(\d+)\s*Days?", name, re.IGNORECASE)
+            days = int(days_match.group(1)) if days_match else None
+
+            # Parse minutes
+            min_match = re.search(r"(\d+)\s*[Mm]in", name)
+            minutes = int(min_match.group(1)) if min_match else None
+
+            # Parse SMS
+            sms_match = re.search(r"(\d+)\s*SMS", name, re.IGNORECASE)
+            sms = int(sms_match.group(1)) if sms_match else None
+
+            # Determine type from categories
+            categories = [c.get("slug", "") for c in prod.get("categories", [])]
+            plan_type = "country"  # default
+            dest_heb = None
+
+            for cat_slug in categories:
+                if cat_slug == "global":
+                    plan_type = "global"
+                    dest_heb = "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9"
+                    break
+                if cat_slug in VOYE_REGION_MAP:
+                    plan_type = "regional"
+                    dest_heb = VOYE_REGION_MAP[cat_slug]
+                    break
+
+            if plan_type == "country":
+                # Find country slug from categories (not region/global)
+                for cat_slug in categories:
+                    if cat_slug in ("global", "uncategorized", "esim", "e-sim", "data-plans"):
+                        continue
+                    if cat_slug in VOYE_REGION_MAP:
+                        continue
+                    # Try to convert slug to Hebrew
+                    country_heb = SAILY_SLUG_TO_HEBREW.get(cat_slug)
+                    if not country_heb:
+                        country_heb = SPARKS_COUNTRY_TO_HEBREW_EXTRA.get(cat_slug)
+                    if country_heb:
+                        dest_heb = country_heb
+                        break
+                if not dest_heb:
+                    # Fallback: try parsing country name from product name
+                    # e.g. "Japan 7 Days 5GB" -> first word(s) before digits
+                    fallback = re.match(r"^([A-Za-z\s\-]+?)(?:\s*\d)", name)
+                    if fallback:
+                        slug = fallback.group(1).strip().lower().replace(" ", "-")
+                        dest_heb = SAILY_SLUG_TO_HEBREW.get(slug)
+                        if not dest_heb:
+                            dest_heb = SPARKS_COUNTRY_TO_HEBREW_EXTRA.get(slug, fallback.group(1).strip())
+
+            if not dest_heb:
+                dest_heb = name  # last resort
+
+            price_ils = round(price_usd * usd_rate, 2)
+            gb_str = f"{data_gb}GB" if data_gb else "\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4"
+            days_str = f"{days} \u05d9\u05de\u05d9\u05dd" if days else ""
+            plan_name = f"{dest_heb} \u2013 {gb_str}"
+            if days_str:
+                plan_name += f" \u2013 {days_str}"
+
+            all_plans.append(_make_global_plan(
+                "voye", plan_name, price_ils, "USD", price_usd,
+                data_gb=data_gb, days=days, minutes=minutes, sms=sms,
+                esim=True, extras=[dest_heb]
+            ))
+
+        page_num += 1
+        if len(products) < 100:
+            break
+
+    logger.info(f"VOYE global: {len(all_plans)} plans")
+    return all_plans
+
+
 def scrape_all_global():
     """Scrape global eSIM packages from all 7 providers. Returns flat list of plan dicts."""
     usd_rate = _get_usd_to_ils()
@@ -2742,6 +2868,7 @@ def scrape_all_global():
             ("scrape_holafly_global",       lambda pg: scrape_holafly_global(pg, usd_rate)),
             ("scrape_holafly_regions",      lambda pg: scrape_holafly_regions(pg, usd_rate)),
             ("scrape_sparks_global",        lambda pg: scrape_sparks_global(pg, usd_rate)),
+            ("scrape_voye_global",          lambda pg: scrape_voye_global(pg, usd_rate)),
         ]
         for name, fn in jobs:
             try:
