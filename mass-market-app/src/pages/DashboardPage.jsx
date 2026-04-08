@@ -61,6 +61,7 @@ export default function DashboardPage() {
     contentCarrier: 'all', contentService: 'all',
   })
   const [countryModal, setCountryModal] = useState(null)
+  const [highlightPlan, setHighlightPlan] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(null)
 
   // Count active filters
@@ -94,6 +95,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const urlTab = searchParams.get('tab')
     const urlCarrier = searchParams.get('carrier')
+    const urlHighlight = searchParams.get('highlight')
     if (urlTab && ['domestic', 'abroad', 'global', 'content'].includes(urlTab)) {
       setTab(urlTab)
       if (urlCarrier) {
@@ -104,7 +106,11 @@ export default function DashboardPage() {
         }
         setFiltersOpen(true)
       }
-      // Clear params after applying
+      if (urlHighlight) {
+        setHighlightPlan(urlHighlight)
+        // Clear highlight after 5 seconds
+        setTimeout(() => setHighlightPlan(null), 5000)
+      }
       setSearchParams({}, { replace: true })
     }
   }, [searchParams])
@@ -501,6 +507,7 @@ export default function DashboardPage() {
                 plan={plan}
                 type={tab}
                 changeType={changeLookup[key]}
+                highlighted={highlightPlan && (plan.plan_name || '').includes(highlightPlan)}
               />
             )
           })}
