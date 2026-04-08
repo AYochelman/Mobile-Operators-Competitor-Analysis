@@ -76,6 +76,7 @@ export default function DashboardPage() {
   const [tab, setTab] = useState(searchParams.get('tab') || 'domestic')
   const [loading, setLoading] = useState(true)
   const [scraping, setScraping] = useState(false)
+  const [countdown, setCountdown] = useState(0)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [plans, setPlans] = useState({ domestic: [], abroad: [], global: [], content: [] })
   const [changes, setChanges] = useState({ domestic: [], abroad: [], global: [], content: [] })
@@ -255,12 +256,21 @@ export default function DashboardPage() {
 
   const handleScrape = async () => {
     setScraping(true)
+    setCountdown(300) // 5 minutes
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) { clearInterval(timer); return 0 }
+        return prev - 1
+      })
+    }, 1000)
     try {
       await api.scrapeAll()
       setPlans({ domestic: [], abroad: [], global: [], content: [] })
       setChanges({ domestic: [], abroad: [], global: [], content: [] })
       loadTab(tab)
     } catch (err) { console.error(err) }
+    clearInterval(timer)
+    setCountdown(0)
     setScraping(false)
   }
 
@@ -323,17 +333,22 @@ export default function DashboardPage() {
           )}
         </div>
         {isAdmin && (
-          <button
-            onClick={handleScrape}
-            disabled={scraping}
-            className="inline-flex items-center gap-1 text-[11px] text-moca-sub hover:text-moca-bolt disabled:opacity-50 transition-colors"
-          >
-            {scraping ? (
-              <><svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56" /></svg> מעדכן...</>
-            ) : (
-              <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg> עדכן</>
+          <div className="flex flex-col items-center gap-0.5">
+            <button
+              onClick={handleScrape}
+              disabled={scraping}
+              className="inline-flex items-center gap-1 text-[11px] text-moca-sub hover:text-moca-bolt disabled:opacity-50 transition-colors"
+            >
+              {scraping ? (
+                <><svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56" /></svg> מעדכן...</>
+              ) : (
+                <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg> עדכן</>
+              )}
+            </button>
+            {scraping && countdown > 0 && (
+              <span className="text-[11px] font-mono font-bold text-moca-bolt">{Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}</span>
             )}
-          </button>
+          </div>
         )}
       </div>
 
