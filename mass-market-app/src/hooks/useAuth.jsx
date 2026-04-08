@@ -58,8 +58,11 @@ export function AuthProvider({ children }) {
   }
 
   const signOut = async () => {
-    if (DEV_MODE) return
-    await supabase?.auth.signOut()
+    if (!DEV_MODE && supabase) {
+      await supabase.auth.signOut()
+    }
+    setUser(null)
+    setRole(null)
   }
 
   return (
