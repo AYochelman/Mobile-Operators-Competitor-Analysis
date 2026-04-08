@@ -331,14 +331,14 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-2">
           <button
             onClick={() => setFiltersOpen(!filtersOpen)}
-            className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1.5 transition-colors"
+            className="text-xs text-moca-sub hover:text-moca-bolt flex items-center gap-1.5 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
             </svg>
             <span>סינון</span>
             {activeFilterCount > 0 && (
-              <span className="bg-gray-900 text-white text-[9px] px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{activeFilterCount}</span>
+              <span className="bg-moca-bolt text-white text-[9px] px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{activeFilterCount}</span>
             )}
           </button>
 
@@ -349,12 +349,26 @@ export default function DashboardPage() {
                 📥 Excel
               </button>
             )}
-            {/* Sort pills */}
+            {/* Sort — segmented control */}
             {tab !== 'content' && (
-              <div className="flex items-center gap-0.5">
-                <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
-                <FilterTag label="מחיר ↓" active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
-                <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
+              <div className="flex items-center border border-moca-border rounded-lg overflow-hidden bg-moca-cream">
+                {[
+                  { val: 'price_asc', label: 'מחיר ↑' },
+                  { val: 'price_desc', label: 'מחיר ↓' },
+                  { val: 'gb_desc', label: 'GB ↓' },
+                ].map(({ val, label }) => (
+                  <button
+                    key={val}
+                    onClick={() => setFilter('sort', val)}
+                    className={`px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
+                      filters.sort === val
+                        ? 'bg-moca-bolt text-white'
+                        : 'text-moca-sub hover:bg-moca-sand hover:text-moca-text'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             )}
           </div>
