@@ -2753,6 +2753,8 @@ def scrape_voye_global(_page=None, usd_rate=None):
                 continue
             try:
                 price_usd = int(price_raw) / 100
+                if price_usd <= 0:
+                    continue
             except (ValueError, TypeError):
                 continue
 
