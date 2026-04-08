@@ -262,7 +262,7 @@ export default function ComparePage() {
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === t.id ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              tab === t.id ? 'bg-moca-bolt text-white' : 'bg-white text-moca-sub border border-moca-border hover:bg-moca-cream hover:text-moca-text'
             }`}
           >
             {t.label}
