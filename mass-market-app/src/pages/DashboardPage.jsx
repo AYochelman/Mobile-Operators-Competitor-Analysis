@@ -411,7 +411,7 @@ export default function DashboardPage() {
               {/* Domestic: Row 1 = גלישה | גלישה בחו"ל */}
               {tab === 'domestic' && (
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
                     <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
                     <div className="flex flex-wrap gap-1">
                       {['all', '0-5', '5-15', '15-100', '100+', 'unlimited'].map(v => (
@@ -419,7 +419,7 @@ export default function DashboardPage() {
                       ))}
                     </div>
                   </div>
-                  <div>
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
                     <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה בחו"ל</p>
                     <div className="flex flex-wrap gap-1">
                       <FilterTag label="כולם" active={filters.roaming === 'all'} onClick={() => setFilter('roaming', 'all')} />
@@ -432,7 +432,7 @@ export default function DashboardPage() {
               {/* Domestic: Row 2 = דור רשת | מיון */}
               {tab === 'domestic' && (
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
                     <p className="text-[11px] font-medium text-gray-500 mb-1.5">דור רשת</p>
                     <div className="flex flex-wrap gap-1">
                       <FilterTag label="כולם" active={filters.gen === 'all'} onClick={() => setFilter('gen', 'all')} />
@@ -440,7 +440,7 @@ export default function DashboardPage() {
                       <FilterTag label="5G" active={filters.gen === '5g'} onClick={() => setFilter('gen', '5g')} />
                     </div>
                   </div>
-                  <div>
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
                     <p className="text-[11px] font-medium text-gray-500 mb-1.5">מיון</p>
                     <div className="flex flex-wrap gap-1">
                       <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
@@ -456,7 +456,7 @@ export default function DashboardPage() {
               {tab === 'global' && (globalRegions.length > 0 || globalDestinations.length > 0) && (
                 <div className="grid grid-cols-2 gap-3">
                   {globalRegions.length > 0 && (
-                    <div>
+                    <div className="border border-moca-border/60 rounded-xl p-2.5">
                       <p className="text-[11px] font-medium text-gray-500 mb-1">אזור</p>
                       <SearchableSelect
                         value={filters.region}
@@ -467,7 +467,7 @@ export default function DashboardPage() {
                     </div>
                   )}
                   {globalDestinations.length > 0 && (
-                    <div>
+                    <div className="border border-moca-border/60 rounded-xl p-2.5">
                       <p className="text-[11px] font-medium text-gray-500 mb-1">מדינה</p>
                       <SearchableSelect
                         value={filters.destination}
@@ -483,7 +483,7 @@ export default function DashboardPage() {
               {/* Abroad/Global: Row 2 = גלישה | תוקף */}
               {(tab === 'abroad' || tab === 'global') && (
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
                     <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
                     <div className="flex flex-wrap gap-1">
                       {['all', '0-5', '5-15', '15-100', '100+', 'unlimited'].map(v => (
@@ -491,7 +491,7 @@ export default function DashboardPage() {
                       ))}
                     </div>
                   </div>
-                  <div>
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
                     <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
                     <div className="flex flex-wrap gap-1">
                       {['all', '1-7', '8-30', '30+'].map(v => (
@@ -504,7 +504,7 @@ export default function DashboardPage() {
 
               {/* Abroad/Global: Sort row — same FilterTag style */}
               {(tab === 'abroad' || tab === 'global') && (
-                <div>
+                <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <p className="text-[11px] font-medium text-gray-500 mb-1.5">מיון</p>
                   <div className="flex flex-wrap gap-1">
                     <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
@@ -517,7 +517,7 @@ export default function DashboardPage() {
 
               {/* Content service filter (content tab) */}
               {tab === 'content' && (
-                <div>
+                <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <p className="text-[11px] font-medium text-gray-500 mb-1.5">שירות</p>
                   <div className="flex flex-wrap gap-1">
                     <FilterTag label="כולם" active={filters.contentService === 'all'} onClick={() => setFilter('contentService', 'all')} />
@@ -533,7 +533,7 @@ export default function DashboardPage() {
             <div>
               {/* Domestic / Abroad carriers */}
               {(tab === 'domestic' || tab === 'abroad') && (
-                <div>
+                <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[11px] font-medium text-gray-500">ספקים</p>
                     <button
@@ -573,7 +573,7 @@ export default function DashboardPage() {
 
               {/* Global providers */}
               {tab === 'global' && (
-                <div>
+                <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[11px] font-medium text-gray-500">ספקים</p>
                     <button
@@ -613,7 +613,7 @@ export default function DashboardPage() {
 
               {/* Content carriers */}
               {tab === 'content' && (
-                <div>
+                <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[11px] font-medium text-gray-500">ספקים</p>
                   </div>

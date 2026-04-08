@@ -25,6 +25,7 @@ export default function LoginPage() {
       await signIn(email, password)
     } catch (err) {
       setError(err.message || 'שגיאה בהתחברות')
+    } finally {
       setSubmitting(false)
     }
   }
@@ -43,9 +44,14 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-moca-bg px-4">
       <div className="w-full max-w-sm">
         {/* Logo + Brand */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 flex flex-col items-center">
           <Logo size="md" />
-          <p className="text-moca-sub text-xs mt-2 tracking-wide">Competitive Intelligence Platform</p>
+          <p className="text-moca-sub text-sm mt-3 tracking-wide">
+            <span className="font-bold text-moca-espresso">M</span>obile{' '}
+            <span className="font-bold text-moca-espresso">O</span>perators{' '}
+            <span className="font-bold text-moca-espresso">C</span>ompetitor{' '}
+            <span className="font-bold text-moca-espresso">A</span>nalysis
+          </p>
         </div>
 
         {/* Login card */}
@@ -80,7 +86,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-[10px] text-moca-muted mt-6">
+        <p className="text-center text-[10px] text-moca-muted mt-6 mx-auto">
           Made by Alon Yochelman
         </p>
       </div>
