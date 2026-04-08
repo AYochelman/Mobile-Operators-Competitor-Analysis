@@ -158,7 +158,7 @@ export default function AlertsPage() {
           {/* Carrier select */}
           <div>
             <label className="block text-xs text-gray-500 mb-1">
-              {formTab === 'global' ? 'ספק' : 'חברה'} (אופציונלי)
+              ספק (אופציונלי)
             </label>
             <select
               value={formCarrier}
