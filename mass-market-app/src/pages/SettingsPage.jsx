@@ -256,9 +256,9 @@ export default function SettingsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-gray-500 text-xs">
-                  <th className="text-right py-2 pr-1 font-medium">אימייל</th>
+                  <th className="text-right py-2 pr-1 font-medium w-1/2">אימייל</th>
                   <th className="text-right py-2 font-medium">תפקיד</th>
-                  <th className="text-left py-2 pl-1 font-medium">פעולות</th>
+                  <th className="py-2 pl-1 w-16"></th>
                 </tr>
               </thead>
               <tbody>
