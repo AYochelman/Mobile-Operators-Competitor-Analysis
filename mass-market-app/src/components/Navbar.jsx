@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import Logo from './Logo'
 
 const NAV_ITEMS = [
   { to: '/', label: 'דשבורד', icon: '📊', end: true },
@@ -17,9 +18,8 @@ export default function Navbar() {
       <header className="bg-white/80 backdrop-blur-md border-b border-gray-200/60 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 h-12 flex items-center justify-between">
           {/* Logo */}
-          <NavLink to="/" className="flex flex-col">
-            <span className="text-sm font-semibold text-gray-900 tracking-tight">Mobile Operators Competitor Analysis</span>
-            <span className="text-[10px] text-gray-400">Made By Alon Yochelman</span>
+          <NavLink to="/" className="flex items-center">
+            <Logo size="md" />
           </NavLink>
 
           {/* Nav links - desktop */}
