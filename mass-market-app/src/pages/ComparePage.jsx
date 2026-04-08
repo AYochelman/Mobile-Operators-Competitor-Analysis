@@ -249,7 +249,7 @@ export default function ComparePage() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold">⚖️ השוואת מחירים</h1>
         {(selectedCarriers.length > 0 || gbFilter !== 'all' || daysFilter !== 'all' || regionFilter !== 'all' || destinationFilter !== 'all') && (
-          <button onClick={resetFilters} className="text-xs text-[#8a6a4a] hover:text-[#5c3317] hover:bg-[#f5ede0] px-2 py-1 rounded-md transition-colors">
+          <button onClick={resetFilters} className="text-xs text-moca-sub hover:text-moca-bolt hover:bg-moca-cream px-2 py-1 rounded-md transition-colors">
             איפוס
           </button>
         )}
@@ -359,7 +359,7 @@ export default function ComparePage() {
             <p className="text-[11px] font-medium text-gray-500">ספקים</p>
             <button
               onClick={() => setSelectedCarriers(prev => prev.length === availableCarriers.length ? [] : availableCarriers.map(c => c.id))}
-              className="text-[10px] text-[#8a6a4a] hover:text-[#3b1f0d]"
+              className="text-[10px] text-moca-sub hover:text-moca-text"
             >
               {selectedCarriers.length === availableCarriers.length ? 'נקה' : 'הכל'}
             </button>
@@ -372,7 +372,7 @@ export default function ComparePage() {
                   prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id]
                 )}
                 className={`px-1.5 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
-                  selectedCarriers.includes(c.id) ? 'text-white' : 'text-[#8a6a4a] hover:text-[#3b1f0d] hover:bg-[#f5ede0]'
+                  selectedCarriers.includes(c.id) ? 'text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                 }`}
                 style={selectedCarriers.includes(c.id) ? { backgroundColor: c.color } : {}}
               >
