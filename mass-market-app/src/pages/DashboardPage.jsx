@@ -431,29 +431,7 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Abroad/Global: Row 1 = גלישה | תוקף */}
-              {(tab === 'abroad' || tab === 'global') && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
-                    <div className="flex flex-wrap gap-1">
-                      {['all', '0-5', '5-15', '15-100', '100+', 'unlimited'].map(v => (
-                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === 'unlimited' ? 'ללא הגבלה' : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
-                    <div className="flex flex-wrap gap-1">
-                      {['all', '1-7', '8-30', '30+'].map(v => (
-                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === '30+' ? '30+ ימים' : `${v} ימים`} active={filters.days === v} onClick={() => setFilter('days', v)} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Global: Row 2 = אזור | מדינה */}
+              {/* Global: Row 1 = אזור | מדינה */}
               {tab === 'global' && (globalRegions.length > 0 || globalDestinations.length > 0) && (
                 <div className="grid grid-cols-2 gap-3">
                   {globalRegions.length > 0 && (
@@ -478,6 +456,28 @@ export default function DashboardPage() {
                       />
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Abroad/Global: Row 2 = גלישה | תוקף */}
+              {(tab === 'abroad' || tab === 'global') && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
+                    <div className="flex flex-wrap gap-1">
+                      {['all', '0-5', '5-15', '15-100', '100+', 'unlimited'].map(v => (
+                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === 'unlimited' ? 'ללא הגבלה' : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
+                    <div className="flex flex-wrap gap-1">
+                      {['all', '1-7', '8-30', '30+'].map(v => (
+                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === '30+' ? '30+ ימים' : `${v} ימים`} active={filters.days === v} onClick={() => setFilter('days', v)} />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 
