@@ -12,10 +12,15 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (DEV_MODE || !supabase) {
-      // Local dev — auto-login as admin
+    if (DEV_MODE) {
+      // Local dev only — explicit opt-in via VITE_DEV_AUTH=true
       setUser({ email: 'alon.yoch@gmail.com', id: 'dev' })
       setRole('admin')
+      setLoading(false)
+      return
+    }
+    if (!supabase) {
+      // Supabase not configured — stay logged out (no admin fallback)
       setLoading(false)
       return
     }

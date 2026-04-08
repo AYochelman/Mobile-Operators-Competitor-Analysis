@@ -5,6 +5,8 @@ import secrets
 from functools import wraps
 from flask import Flask, jsonify, render_template, request, make_response, send_from_directory
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_changes, get_global_plans, get_global_changes, \
                get_content_plans, get_content_changes, \
                save_price_alert, get_price_alerts, delete_price_alert, update_alert_triggered
@@ -17,12 +19,15 @@ CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.j
 app = Flask(__name__)
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
+# Rate limiting
+limiter = Limiter(get_remote_address, app=app, default_limits=["200 per minute"], storage_uri="memory://")
+
 # CORS: restrict to known origins
 ALLOWED_ORIGINS = [
     "http://localhost:5000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175",
     "http://127.0.0.1:5000", "http://127.0.0.1:5173",
     "https://lucent-kulfi-f037ad.netlify.app",
-    "https://terra-nonrestrained-overpiteously.ngrok-free.dev",
+    # ngrok URLs added dynamically via ALLOWED_ORIGINS env var
 ]
 # Add ngrok/netlify URLs from environment if set
 _extra_origins = os.environ.get("ALLOWED_ORIGINS", "")
@@ -38,8 +43,8 @@ def _get_api_key():
         key = cfg.get("api_key")
         if key:
             return key
-    except:
-        pass
+    except Exception as e:
+        logger.warning(f"Could not read API key from config: {e}")
     # Generate and save a new key
     key = secrets.token_urlsafe(32)
     try:
@@ -47,9 +52,9 @@ def _get_api_key():
         cfg["api_key"] = key
         with open(CONFIG_PATH, "w", encoding="utf-8") as f:
             json.dump(cfg, f, ensure_ascii=False, indent=2)
-        logger.info(f"Generated new API key: {key}")
-    except:
-        pass
+        logger.info("New API key generated and saved")
+    except Exception as e:
+        logger.warning(f"Could not save API key: {e}")
     return key
 
 def require_api_key(f):
@@ -85,6 +90,18 @@ def load_config():
             "vapid_public_key": os.environ.get("VAPID_PUBLIC_KEY", ""),
             "vapid_email": os.environ.get("VAPID_EMAIL", ""),
         }
+
+
+def _supabase_conn():
+    """Get a psycopg2 connection to Supabase DB using credentials from config."""
+    import psycopg2
+    cfg = load_config()
+    return psycopg2.connect(
+        host=cfg.get("supabase_db_host", os.environ.get("SUPABASE_DB_HOST", "")),
+        port=5432, dbname='postgres', user='postgres',
+        password=cfg.get("supabase_db_password", os.environ.get("SUPABASE_DB_PASSWORD", "")),
+        sslmode='require'
+    )
 
 
 def _db_path():
@@ -388,6 +405,7 @@ def api_scrape_now():
 # ── Price Alerts Routes ────────────────────────────────────────────────────
 
 @app.route("/api/alerts", methods=["GET"])
+@require_api_key
 def api_get_alerts():
     user_email = request.args.get("user_email", "")
     alerts = get_price_alerts(user_email=user_email or None, db_path=_db_path())
@@ -395,6 +413,7 @@ def api_get_alerts():
 
 
 @app.route("/api/alerts", methods=["POST"])
+@require_api_key
 def api_create_alert():
     data = request.get_json(force=True)
     try:
@@ -413,6 +432,7 @@ def api_create_alert():
 
 
 @app.route("/api/alerts/<int:alert_id>", methods=["DELETE"])
+@require_api_key
 def api_delete_alert(alert_id):
     delete_price_alert(alert_id, db_path=_db_path())
     return jsonify({"status": "deleted"})
@@ -421,6 +441,8 @@ def api_delete_alert(alert_id):
 # ── Push Notification Routes ───────────────────────────────────────────────
 
 @app.route("/api/chat", methods=["POST"])
+@require_api_key
+@limiter.limit("10 per minute")
 def api_chat():
     """AI chat over the plans data using Claude API."""
     data = request.get_json(force=True)
@@ -594,13 +616,8 @@ def api_push_test():
 @require_api_key
 def api_get_users():
     """List all users from Supabase via direct DB connection."""
-    import psycopg2
     try:
-        conn = psycopg2.connect(
-            host='db.gmfefvjdmgzluwffzrzj.supabase.co',
-            port=5432, dbname='postgres', user='postgres',
-            password='P2VwLA9KfosTlUHu', sslmode='require'
-        )
+        conn = _supabase_conn()
         cur = conn.cursor()
         cur.execute("""
             SELECT u.id, u.email, u.created_at, COALESCE(r.role, 'viewer') as role
@@ -619,7 +636,6 @@ def api_get_users():
 @require_api_key
 def api_create_user():
     """Create a new user in Supabase."""
-    import psycopg2
     import urllib.request
     data = request.get_json(force=True)
     email = data.get('email', '')
@@ -639,11 +655,7 @@ def api_create_user():
         user_id = result.get('id') or result.get('user', {}).get('id')
 
         # Confirm email + set role
-        conn = psycopg2.connect(
-            host='db.gmfefvjdmgzluwffzrzj.supabase.co',
-            port=5432, dbname='postgres', user='postgres',
-            password='P2VwLA9KfosTlUHu', sslmode='require'
-        )
+        conn = _supabase_conn()
         conn.autocommit = True
         cur = conn.cursor()
         cur.execute('UPDATE auth.users SET email_confirmed_at = now() WHERE id = %s', (user_id,))
@@ -663,13 +675,8 @@ def api_create_user():
 @require_api_key
 def api_delete_user(user_id):
     """Delete a user from Supabase."""
-    import psycopg2
     try:
-        conn = psycopg2.connect(
-            host='db.gmfefvjdmgzluwffzrzj.supabase.co',
-            port=5432, dbname='postgres', user='postgres',
-            password='P2VwLA9KfosTlUHu', sslmode='require'
-        )
+        conn = _supabase_conn()
         conn.autocommit = True
         cur = conn.cursor()
         cur.execute('DELETE FROM public.user_roles WHERE user_id = %s', (user_id,))
@@ -684,17 +691,12 @@ def api_delete_user(user_id):
 @require_api_key
 def api_update_user_role(user_id):
     """Update a user's role."""
-    import psycopg2
     data = request.get_json(force=True)
     role = data.get('role', 'viewer')
     if role not in ('admin', 'viewer'):
         return jsonify({"error": "role must be admin or viewer"}), 400
     try:
-        conn = psycopg2.connect(
-            host='db.gmfefvjdmgzluwffzrzj.supabase.co',
-            port=5432, dbname='postgres', user='postgres',
-            password='P2VwLA9KfosTlUHu', sslmode='require'
-        )
+        conn = _supabase_conn()
         conn.autocommit = True
         cur = conn.cursor()
         cur.execute("INSERT INTO public.user_roles (user_id, role) VALUES (%s, %s) ON CONFLICT (user_id) DO UPDATE SET role = %s", (user_id, role, role))
