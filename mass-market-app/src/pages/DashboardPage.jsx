@@ -228,6 +228,7 @@ export default function DashboardPage() {
 
     if (f.sort === 'price_asc') result = [...result].sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999))
     else if (f.sort === 'price_desc') result = [...result].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
+    else if (f.sort === 'gb_asc') result = [...result].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
     else if (f.sort === 'gb_desc') result = [...result].sort((a, b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999))
 
     return result
@@ -440,6 +441,7 @@ export default function DashboardPage() {
                     <div className="flex flex-wrap gap-1">
                       <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
                       <FilterTag label="מחיר ↓" active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
+                      <FilterTag label="GB ↑" active={filters.sort === 'gb_asc'} onClick={() => setFilter('sort', 'gb_asc')} />
                       <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
                     </div>
                   </div>
@@ -503,6 +505,7 @@ export default function DashboardPage() {
                   <div className="flex flex-wrap gap-1">
                     <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
                     <FilterTag label="מחיר ↓" active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
+                    <FilterTag label="GB ↑" active={filters.sort === 'gb_asc'} onClick={() => setFilter('sort', 'gb_asc')} />
                     <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
                   </div>
                 </div>
