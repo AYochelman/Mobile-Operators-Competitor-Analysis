@@ -4,8 +4,8 @@ export default function FilterTag({ label, active, onClick, count }) {
       onClick={onClick}
       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150
         ${active
-          ? 'bg-gray-900 text-white'
-          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+          ? 'bg-[#5c3317] text-[#f5ede0]'
+          : 'text-[#8a6a4a] hover:text-[#3b1f0d] hover:bg-[#f5ede0]'
         }`}
     >
       {label}
