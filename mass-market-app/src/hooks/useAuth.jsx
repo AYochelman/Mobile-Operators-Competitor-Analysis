@@ -26,8 +26,10 @@ export function AuthProvider({ children }) {
     }
 
     // Production: use Supabase Auth
+    let initialized = false
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        if (!initialized) return // wait for getSession first
         if (session?.user) {
           setUser(session.user)
           try {
@@ -47,6 +49,25 @@ export function AuthProvider({ children }) {
         setLoading(false)
       }
     )
+
+    // Initial session check
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      initialized = true
+      if (session?.user) {
+        setUser(session.user)
+        try {
+          const { data } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .single()
+          setRole(data?.role || 'viewer')
+        } catch {
+          setRole('viewer')
+        }
+      }
+      setLoading(false)
+    })
 
     return () => subscription.unsubscribe()
   }, [])

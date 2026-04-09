@@ -133,14 +133,14 @@ change_detector.py compares old vs new plan lists by (carrier, plan_name) key:
 
 ## Brand & UI
 
-The React app uses a **mocha-latte** color palette (Approach 2 — neutral components only):
-- Body background: `#f2e8d8`
+The React app uses a **mocha-latte** color palette defined in `index.css` `@theme` block:
+- Body background: `#f9f4ee` (light cream)
 - Primary actions / active states: `#5c3317` (espresso)
 - Hover backgrounds: `#f5ede0` (cream)
+- Filter/card borders: `border-moca-border/60` (subtle, rounded-xl)
 - Carrier/provider badge colors (blue, green, orange, etc.) are intentionally preserved
 
-PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` prop (xs/sm/md).
-To migrate to full Tailwind theme (Approach 3), add `tailwind.config.js` with a `moca` color scale — all current arbitrary values are already consistent.
+PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` prop (xs/sm/md) and `showSubtext` prop (default true, set false on login page).
 
 ## Conventions
 
@@ -169,17 +169,20 @@ To migrate to full Tailwind theme (Approach 3), add `tailwind.config.js` with a 
 - `VITE_SUPABASE_ANON_KEY` — Supabase anon key
 - `VITE_API_URL` — Flask API base URL (empty = proxy via Vite, fallback hardcoded to ngrok URL)
 - `VITE_API_KEY` — Flask API key for protected endpoints (fallback hardcoded)
-- `VITE_DEV_AUTH` — set to "true" for auto-login as admin in dev
+- `VITE_DEV_AUTH` — set to "true" for auto-login as admin in dev (`.env` only, never in production)
+
+### Production Build
+`.env.production` overrides `.env` during `npm run build` — sets `VITE_DEV_AUTH=false` to ensure login is required. Never set `VITE_DEV_AUTH=true` in Netlify env vars or `.env.production`.
 
 ## Deployment
 
-- **Frontend**: Netlify (https://lucent-kulfi-f037ad.netlify.app) — auto-deploys from GitHub, or drag `mass-market-app/dist` manually
+- **Frontend**: Netlify (https://lucent-kulfi-f037ad.netlify.app) — drag `mass-market-app/dist` manually
 - **Backend**: Local Flask + ngrok tunnel (https://terra-nonrestrained-overpiteously.ngrok-free.dev)
 - **Auth**: Supabase (https://gmfefvjdmgzluwffzrzj.supabase.co)
 - **Code**: GitHub (https://github.com/AYochelman/Mobile-Operators-Competitor-Analysis)
 - **Build command**: `cd mass-market-app && npm install && npm run build`
 - **Publish directory**: `mass-market-app/dist`
-- Netlify env vars must include: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL, VITE_API_KEY
+- Netlify env vars must include: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL, VITE_API_KEY (NOT VITE_DEV_AUTH)
 - All API requests include `ngrok-skip-browser-warning: true` header
 
 ## Key UI Components
