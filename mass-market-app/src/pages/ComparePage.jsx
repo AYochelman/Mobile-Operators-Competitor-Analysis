@@ -61,7 +61,7 @@ const KNOWN_REGIONS = new Set([
   'אסיה פסיפיק','מרכז אסיה','צפון אפריקה',
   'אמריקה הדרומית','דרום אמריקה',
   'שוויץ+','גוודלופ','קפריסין+',
-  'אמריקה','גלובלי פלוס',
+  'צפון ודרום אמריקה','גלובלי פלוס','מדינות האיים הקריביים',
 ])
 
 export default function ComparePage() {
@@ -375,14 +375,14 @@ export default function ComparePage() {
               {selectedCarriers.length === availableCarriers.length ? 'נקה' : 'הכל'}
             </button>
           </div>
-          <div className="flex flex-wrap gap-1">
+          <div className="grid grid-cols-3 gap-1">
             {availableCarriers.map(c => (
               <button
                 key={c.id}
                 onClick={() => setSelectedCarriers(prev =>
                   prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id]
                 )}
-                className={`px-1.5 py-1 rounded-md text-[9px] font-medium text-center transition-all duration-150 ${
+                className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 truncate ${
                   selectedCarriers.includes(c.id) ? 'text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                 }`}
                 style={selectedCarriers.includes(c.id) ? { backgroundColor: c.color } : {}}
@@ -403,21 +403,19 @@ export default function ComparePage() {
       {chartData.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
           <h2 className="text-sm font-bold mb-4">טווח מחירים לפי ספק (מינימום / ממוצע / מקסימום)</h2>
-          <div style={{ direction: 'ltr', overflowX: 'auto' }}>
-            <div style={{ minWidth: Math.max(chartData.length * 90, 600) }}>
+          <div style={{ direction: 'ltr' }}>
             <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }} barGap={1} barCategoryGap="15%">
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} />
-                <YAxis label={{ value: '₪', position: 'insideTopLeft' }} tick={{ fontSize: 12 }} />
+                <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={0} angle={-25} textAnchor="end" height={50} />
+                <YAxis label={{ value: '₪', position: 'insideTopLeft' }} tick={{ fontSize: 11 }} width={40} />
                 <Tooltip formatter={(val) => `₪${val}`} />
-                <Legend />
-                <Bar dataKey="מחיר מינימום" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="מחיר ממוצע" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="מחיר מקסימום" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="מחיר מינימום" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="מחיר ממוצע" fill="#3b82f6" radius={[3, 3, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="מחיר מקסימום" fill="#ef4444" radius={[3, 3, 0, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
-            </div>
           </div>
         </div>
       )}

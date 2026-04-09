@@ -7,7 +7,7 @@ Israeli cellular plan comparison system branded **MOCA** (Mobile Operators Compe
 - **Legacy dashboard**: Flask-served HTML at localhost:5000 (templates/index.html)
 - **New React app**: Vite + Tailwind + Supabase Auth at localhost:5173 (mass-market-app/)
 
-Both frontends consume the same Flask REST API. The system scrapes 7 domestic carriers + 13 global eSIM providers twice daily, detects price changes, and sends notifications via Telegram/Email/Web Push.
+Both frontends consume the same Flask REST API. The system scrapes 7 domestic carriers + 14 global eSIM providers twice daily, detects price changes, and sends notifications via Telegram/Email/WhatsApp/Web Push.
 
 ## Commands
 
@@ -71,7 +71,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 | scraper.py | 40+ scrapers (domestic + abroad + global per-country/regional + content) |
 | db.py | SQLite CRUD — 9 tables with UPSERT logic |
 | change_detector.py | Diff old vs new plans, detect price/extras/details changes |
-| notifier.py | Format + send notifications (Telegram, Email, Web Push) |
+| notifier.py | Format + send notifications (Telegram, Email, WhatsApp, Web Push) |
 | excel_report.py | Daily Excel report (openpyxl, RTL, yellow=changed) |
 | config.json | All credentials — NOT in git, auto-generates VAPID keys |
 | templates/index.html | Legacy RTL Hebrew dashboard (2,300+ lines, escHtml XSS protection) |
@@ -87,7 +87,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 | components/Logo.jsx | MOCA brand logo (bolt + wordmark), sizes: xs/sm/md |
 | components/PlanCard.jsx | Universal plan card with country/apps modals |
 | components/ChatPanel.jsx | AI chat (🤖 floating button → /api/chat) |
-| data/globalCountries.js | Country lists for 13 global providers + getCountriesForPlan() |
+| data/globalCountries.js | Country lists for 14 global providers + getCountriesForPlan() |
 | data/abroadCountries.js | Country lists for 7 domestic carriers + getCountriesForAbroadPlan() |
 | data/abroadApps.js | Free app lists (Cellcom 6 apps, Pelephone 12 apps) |
 | hooks/useAuth.jsx | Supabase Auth + dev mode (VITE_DEV_AUTH=true) |
@@ -98,7 +98,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 
 **Domestic (7)**: partner, pelephone, hotmobile, cellcom, mobile019, xphone, wecom
 **Abroad (7)**: same carriers, per-country roaming plans
-**Global eSIM (13)**: tuki, globalesim, airalo, pelephone_global, esimo, simtlv, world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (183 countries + 10 regions), sparks (143 countries), voye (157 countries + 5 regions + global)
+**Global eSIM (14)**: tuki, globalesim, airalo, pelephone_global, esimo, simtlv, world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (183 countries + 10 regions), sparks (143 countries), voye (157 countries + 5 regions + global), orbit (195 countries + 9 zones, REST API at be.orbitmobile.com)
 **Content (5 services × 4 carriers)**: eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי
 
 ## Database Schema (SQLite — data/plans.db)
@@ -145,17 +145,20 @@ PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` pro
 ## Conventions
 
 - All Hebrew text uses unicode escapes in Python (`"\u05d9\u05e9\u05e8\u05d0\u05dc"` for ישראל)
-- Plan names use ` – ` (en-dash with spaces) as separator
+- Plan names use ` – ` (en-dash with spaces) as separator; Orbit uses ` - ` (hyphen) to avoid BiDi rendering issues
 - data_gb: None = unlimited, ≥1 = GB, <1 = MB (stored as fraction: 100MB = 100/1024)
 - extras[0] = country/region name for destination filtering (global/abroad plans)
 - Scraper functions take a Playwright Page object, return list of plan dicts
 - `_make_global_plan()` helper standardizes global plan dict creation
-- Slug-to-Hebrew dictionaries (SAILY_SLUG_TO_HEBREW, ESIMIO_SLUG_TO_HEBREW, HOLAFLY_SLUG_TO_HEBREW) for per-country scrapers
+- Slug-to-Hebrew dictionaries (SAILY_SLUG_TO_HEBREW, ESIMIO_SLUG_TO_HEBREW, HOLAFLY_SLUG_TO_HEBREW, ORBIT_NAME_TO_HEBREW) for per-country scrapers
+- Orbit uses REST API (no Playwright): ORBIT_NAME_TO_HEBREW maps English→Hebrew, ORBIT_ZONE_TO_HEBREW maps zone IDs→Hebrew
+- Tuki scraper has `_tuki_name_fix` dict to normalize country names from their API (e.g. "שוודיה"→"שבדיה")
 
 ## Schedule
 
-- **10:00 + 16:00** — scrape all (domestic + abroad + global + content), detect changes, notify
+- **10:00 + 16:00** — scrape all (domestic + abroad + global + content), detect changes, notify (Telegram + WhatsApp + Web Push)
 - **09:00** — send daily Excel email report via SendGrid
+- WhatsApp via Green API (config.json: greenapi_url, greenapi_instance, greenapi_token, whatsapp_phone or whatsapp_group_id)
 - Windows Task Scheduler: task "CellularComparison" at logon runs `python app.py`
 
 ## Environment Variables
