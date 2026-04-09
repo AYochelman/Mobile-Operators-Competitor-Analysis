@@ -270,11 +270,12 @@ def send_whatsapp(message, config):
     base_url = config.get("greenapi_url", "")
     instance = config.get("greenapi_instance", "")
     token = config.get("greenapi_token", "")
+    group_id = config.get("whatsapp_group_id", "")
     phone = config.get("whatsapp_phone", "")
-    if not all([base_url, instance, token, phone]):
+    if not all([base_url, instance, token]) or not (group_id or phone):
         return False
     url = f"{base_url}/waInstance{instance}/sendMessage/{token}"
-    chat_id = f"{phone}@c.us"
+    chat_id = group_id if group_id else f"{phone}@c.us"
     try:
         resp = requests.post(
             url,

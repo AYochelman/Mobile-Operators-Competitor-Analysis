@@ -760,7 +760,8 @@ if __name__ == "__main__":
                 save_abroad_changes(abroad_changes)
                 abroad_msg = format_abroad_message(abroad_changes)
                 ok_tg_abroad = send_notification(abroad_msg, config)
-                logger.info(f"Telegram (abroad) sent: {ok_tg_abroad}, changes: {len(abroad_changes)}")
+                ok_wa_abroad = send_whatsapp(abroad_msg, config)
+                logger.info(f"Telegram (abroad) sent: {ok_tg_abroad}, WhatsApp: {ok_wa_abroad}, changes: {len(abroad_changes)}")
             else:
                 logger.info("No abroad changes.")
 
@@ -783,7 +784,8 @@ if __name__ == "__main__":
             if global_changes:
                 global_msg = format_global_message(global_changes)
                 ok_tg_global = send_notification(global_msg, config)
-                logger.info(f"Telegram (global) sent: {ok_tg_global}, changes: {len(global_changes)}")
+                ok_wa_global = send_whatsapp(global_msg, config)
+                logger.info(f"Telegram (global) sent: {ok_tg_global}, WhatsApp: {ok_wa_global}, changes: {len(global_changes)}")
             else:
                 logger.info("No global changes.")
 
@@ -798,7 +800,8 @@ if __name__ == "__main__":
                 save_content_changes(content_changes)
                 content_msg = format_content_message(content_changes)
                 ok_tg_content = send_notification(content_msg, config)
-                logger.info(f"Telegram (content) sent: {ok_tg_content}, changes: {len(content_changes)}")
+                ok_wa_content = send_whatsapp(content_msg, config)
+                logger.info(f"Telegram (content) sent: {ok_tg_content}, WhatsApp: {ok_wa_content}, changes: {len(content_changes)}")
             else:
                 logger.info("No content changes.")
 
