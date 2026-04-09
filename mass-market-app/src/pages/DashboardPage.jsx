@@ -68,6 +68,7 @@ const GLOBAL_PROVIDERS = [
   { id: 'esimio', label: 'eSIM.io' },
   { id: 'sparks', label: 'Sparks' },
   { id: 'voye', label: 'VOYE' },
+  { id: 'orbit', label: 'Orbit' },
 ]
 
 export default function DashboardPage() {

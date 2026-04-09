@@ -7,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import {
   AIRALO_DISCOVER, GLOBALESIM_COUNTRIES, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
   PELEPHONE_GLOBAL_COUNTRIES, ESIMO_COUNTRIES, WORLD8_WORLDWIDE, WORLD8_EUROPE_USA,
-  XPHONE_EUROPE, XPHONE_WORLD, getCountriesForPlan
+  XPHONE_EUROPE, XPHONE_WORLD, ORBIT_COUNTRIES, getCountriesForPlan
 } from '../data/globalCountries'
 
 const TABS = [
@@ -49,6 +49,7 @@ const CARRIERS_BY_TAB = {
     { id: 'esimio', label: 'eSIM.io', color: '#2563eb' },
     { id: 'sparks', label: 'Sparks', color: '#f59e0b' },
     { id: 'voye', label: 'VOYE', color: '#ec4899' },
+    { id: 'orbit', label: 'Orbit', color: '#6366f1' },
   ],
 }
 
@@ -60,6 +61,7 @@ const KNOWN_REGIONS = new Set([
   'אסיה פסיפיק','מרכז אסיה','צפון אפריקה',
   'אמריקה הדרומית','דרום אמריקה',
   'שוויץ+','גוודלופ','קפריסין+',
+  'אמריקה','גלובלי פלוס',
 ])
 
 export default function ComparePage() {
@@ -128,6 +130,7 @@ export default function ComparePage() {
     simtlv: SIMTLV_COUNTRIES,
     world8: [...new Set([...WORLD8_WORLDWIDE, ...WORLD8_EUROPE_USA])],
     xphone_global: [...new Set([...XPHONE_EUROPE, ...XPHONE_WORLD])],
+    orbit: ORBIT_COUNTRIES,
   }), [])
 
   // Build complete country → carriers mapping
@@ -278,7 +281,7 @@ export default function ComparePage() {
       </div>
 
       {/* Two-column filters: right = filters, left = carriers */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-3 mb-4 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-3 mb-4 items-start">
         {/* Right column — Filters */}
         <div className="bg-white rounded-xl border border-gray-200 p-3 space-y-2">
           {tab === 'global' && (
@@ -372,14 +375,14 @@ export default function ComparePage() {
               {selectedCarriers.length === availableCarriers.length ? 'נקה' : 'הכל'}
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-1">
+          <div className="flex flex-wrap gap-1">
             {availableCarriers.map(c => (
               <button
                 key={c.id}
                 onClick={() => setSelectedCarriers(prev =>
                   prev.includes(c.id) ? prev.filter(x => x !== c.id) : [...prev, c.id]
                 )}
-                className={`px-1 py-1 rounded-md text-[9px] font-medium text-center transition-all duration-150 truncate ${
+                className={`px-1.5 py-1 rounded-md text-[9px] font-medium text-center transition-all duration-150 ${
                   selectedCarriers.includes(c.id) ? 'text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                 }`}
                 style={selectedCarriers.includes(c.id) ? { backgroundColor: c.color } : {}}
@@ -400,11 +403,12 @@ export default function ComparePage() {
       {chartData.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
           <h2 className="text-sm font-bold mb-4">טווח מחירים לפי ספק (מינימום / ממוצע / מקסימום)</h2>
-          <div style={{ direction: 'ltr' }}>
+          <div style={{ direction: 'ltr', overflowX: 'auto' }}>
+            <div style={{ minWidth: Math.max(chartData.length * 90, 600) }}>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} />
                 <YAxis label={{ value: '₪', position: 'insideTopLeft' }} tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(val) => `₪${val}`} />
                 <Legend />
@@ -413,6 +417,7 @@ export default function ComparePage() {
                 <Bar dataKey="מחיר מקסימום" fill="#ef4444" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}
@@ -440,7 +445,7 @@ export default function ComparePage() {
                         {getLabel(p.carrier)}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-xs text-gray-700"><bdi>{p.plan_name}</bdi></td>
+                    <td className="px-4 py-2 text-xs text-gray-700" dir="rtl" style={{unicodeBidi: 'plaintext'}}>{p.plan_name}</td>
                     <td className="px-4 py-2 text-xs font-bold text-gray-900">₪{p.price}</td>
                     <td className="px-4 py-2 text-xs text-gray-600">{p.data_gb === null ? 'ללא הגבלה' : `${p.data_gb}GB`}</td>
                     {showDays && <td className="px-4 py-2 text-xs text-gray-600">{p.days || '—'}</td>}
@@ -464,9 +469,11 @@ export default function ComparePage() {
       )}
 
       {selectedCarriers.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-4xl mb-3">⚖️</p>
-          <p>בחר לפחות ספק אחד להשוואה</p>
+        <div className="text-center py-16 text-moca-muted">
+          <svg className="mx-auto mb-3 w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3v18" /><path d="M4 7h16" /><path d="M4 7l3 8h0a4 4 0 0 0 3.5 2h0A4 4 0 0 0 14 15h0l3-8" /><circle cx="7" cy="15" r="3" /><circle cx="17" cy="15" r="3" />
+          </svg>
+          <p className="text-sm">בחר לפחות ספק אחד להשוואה</p>
         </div>
       )}
     </div>
