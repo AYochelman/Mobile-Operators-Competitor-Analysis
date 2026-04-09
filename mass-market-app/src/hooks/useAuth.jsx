@@ -26,22 +26,46 @@ export function AuthProvider({ children }) {
     }
 
     // Production: use Supabase Auth
-    let initialized = false
+    const fetchRole = async (userId) => {
+      try {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .single()
+        return data?.role || 'viewer'
+      } catch {
+        return 'viewer'
+      }
+    }
+
+    // Check localStorage first (sync, no network needed)
+    const stored = JSON.parse(localStorage.getItem('sb-gmfefvjdmgzluwffzrzj-auth-token') || 'null')
+    if (!stored?.access_token) {
+      // No stored session — show login immediately, skip Supabase entirely
+      setLoading(false)
+      // Still listen for future sign-ins
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (_event, session) => {
+          if (session?.user) {
+            setUser(session.user)
+            setRole(await fetchRole(session.user.id))
+          } else {
+            setUser(null)
+            setRole(null)
+          }
+          setLoading(false)
+        }
+      )
+      return () => subscription.unsubscribe()
+    }
+
+    // Has stored token — let Supabase validate it
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        if (!initialized) return // wait for getSession first
         if (session?.user) {
           setUser(session.user)
-          try {
-            const { data } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .single()
-            setRole(data?.role || 'viewer')
-          } catch {
-            setRole('viewer')
-          }
+          setRole(await fetchRole(session.user.id))
         } else {
           setUser(null)
           setRole(null)
@@ -49,27 +73,9 @@ export function AuthProvider({ children }) {
         setLoading(false)
       }
     )
-
-    // Initial session check
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      initialized = true
-      if (session?.user) {
-        setUser(session.user)
-        try {
-          const { data } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .single()
-          setRole(data?.role || 'viewer')
-        } catch {
-          setRole('viewer')
-        }
-      }
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
+    // Fallback: if Supabase doesn't fire within 3s, show login
+    const timeout = setTimeout(() => setLoading(false), 3000)
+    return () => { clearTimeout(timeout); subscription.unsubscribe() }
   }, [])
 
   const signIn = async (email, password) => {

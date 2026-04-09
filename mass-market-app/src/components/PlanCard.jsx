@@ -19,11 +19,13 @@ const GLOBAL_LABELS = {
   pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV',
   world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
+  orbit: 'Orbit',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
   esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
   saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber', voye: 'pink',
+  orbit: 'indigo',
 }
 
 const CHANGE_DOT = {
@@ -66,7 +68,12 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
   if (plan.sms) infoParts.push(`${plan.sms} SMS`)
 
   // Extras — filter out app-related text if we have an apps link
-  const extras = plan.extras ? plan.extras.filter(e => !(appsData && /אפליקציות/.test(e))) : []
+  // For Orbit zone plans, extras[1+] are covered countries — hide them (shown in modal)
+  const rawExtras = plan.extras ? plan.extras.filter(e => !(appsData && /אפליקציות/.test(e))) : []
+  // For zone plans with country list in extras, show only the region name (countries shown via modal)
+  const extras = (plan.carrier === 'orbit' && rawExtras.length > 1)
+    ? [rawExtras[0]]
+    : rawExtras
   const visibleExtras = extras
   const hiddenCount = 0
 
