@@ -37,15 +37,19 @@ export function AuthProvider({ children }) {
       return session.access_token
     }
 
-    // Fetch role from Flask backend (bypasses Supabase RLS)
+    // Fetch role from Flask backend (bypasses Supabase RLS) — 5s timeout
     const fetchRole = async (accessToken) => {
       try {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 5000)
         const res = await fetch(`${API_BASE}/api/my-role`, {
+          signal: controller.signal,
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'ngrok-skip-browser-warning': 'true',
           }
         })
+        clearTimeout(timeout)
         const data = await res.json()
         return data?.role || 'viewer'
       } catch {
