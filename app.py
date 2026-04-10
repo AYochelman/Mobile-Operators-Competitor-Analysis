@@ -121,40 +121,95 @@ def load_config():
         }
 
 
-def _verify_supabase_jwt(token: str):
-    """Verify a Supabase-issued HS256 JWT and return the payload dict, or None on failure.
+_jwks_cache = {"keys": [], "fetched_at": 0}
 
-    If 'supabase_jwt_secret' is configured: verifies HMAC-SHA256 signature and exp claim.
-    If not configured: logs a warning and falls back to unverified decode (graceful degradation).
+def _get_jwks():
+    """Fetch and cache Supabase JWKS (TTL: 1 hour)."""
+    import urllib.request as _ur
+    now = _time.time()
+    if now - _jwks_cache["fetched_at"] < 3600 and _jwks_cache["keys"]:
+        return _jwks_cache["keys"]
+    try:
+        cfg = load_config()
+        supabase_url = cfg.get('supabase_url') or os.environ.get('SUPABASE_URL', 'https://gmfefvjdmgzluwffzrzj.supabase.co')
+        req = _ur.Request(f"{supabase_url}/auth/v1/.well-known/jwks.json")
+        resp = _ur.urlopen(req, timeout=5)
+        jwks = json.loads(resp.read())
+        _jwks_cache["keys"] = jwks.get("keys", [])
+        _jwks_cache["fetched_at"] = now
+        return _jwks_cache["keys"]
+    except Exception as e:
+        logger.warning(f"Failed to fetch JWKS: {e}")
+        return _jwks_cache["keys"]
+
+
+def _verify_supabase_jwt(token: str):
+    """Verify a Supabase JWT (HS256 or ES256) and return the payload dict, or None on failure.
+
+    - ES256 (current): verifies with EC public key from Supabase JWKS endpoint (cached 1h)
+    - HS256 (legacy):  verifies with supabase_jwt_secret from config.json
+    - Unknown alg:     rejects the token
     """
     try:
         parts = token.split('.')
         if len(parts) != 3:
             return None
         header_b64, payload_b64, sig_b64 = parts
-        payload_json = base64.urlsafe_b64decode(payload_b64 + '==')
-        payload = json.loads(payload_json.decode('utf-8'))
 
-        cfg = load_config()
-        secret = cfg.get('supabase_jwt_secret') or os.environ.get('SUPABASE_JWT_SECRET', '')
+        header  = json.loads(base64.urlsafe_b64decode(header_b64  + '=='))
+        payload = json.loads(base64.urlsafe_b64decode(payload_b64 + '=='))
+        alg = header.get('alg', 'HS256')
+        kid = header.get('kid')
+        signing_input = f"{header_b64}.{payload_b64}".encode('ascii')
+        sig_bytes     = base64.urlsafe_b64decode(sig_b64 + '==')
 
-        if secret:
-            signing_input = f"{header_b64}.{payload_b64}".encode('ascii')
-            expected_sig = base64.urlsafe_b64decode(sig_b64 + '==')
-            computed_sig = hmac.new(secret.encode('utf-8'), signing_input, hashlib.sha256).digest()
-            if not hmac.compare_digest(computed_sig, expected_sig):
-                logger.warning("JWT signature verification failed — possible token forgery")
+        if alg == 'ES256':
+            from cryptography.hazmat.primitives.asymmetric import ec
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
+
+            keys = _get_jwks()
+            jwk = next((k for k in keys if kid is None or k.get('kid') == kid), None)
+            if not jwk:
+                logger.warning(f"No JWKS key found for kid={kid}")
                 return None
-            exp = payload.get('exp')
-            if exp is not None and _time.time() > exp:
-                logger.warning("JWT has expired")
+
+            x = int.from_bytes(base64.urlsafe_b64decode(jwk['x'] + '=='), 'big')
+            y = int.from_bytes(base64.urlsafe_b64decode(jwk['y'] + '=='), 'big')
+            pub_key = ec.EllipticCurvePublicNumbers(x, y, ec.SECP256R1()).public_key()
+
+            # JWT ES256 signature is raw r||s (32 bytes each) — convert to DER for cryptography
+            r = int.from_bytes(sig_bytes[:32], 'big')
+            s = int.from_bytes(sig_bytes[32:], 'big')
+            try:
+                pub_key.verify(encode_dss_signature(r, s), signing_input, ec.ECDSA(hashes.SHA256()))
+            except Exception:
+                logger.warning("ES256 JWT signature verification failed — possible token forgery")
                 return None
+
+        elif alg == 'HS256':
+            cfg = load_config()
+            secret = cfg.get('supabase_jwt_secret') or os.environ.get('SUPABASE_JWT_SECRET', '')
+            if secret:
+                computed = hmac.new(secret.encode('utf-8'), signing_input, hashlib.sha256).digest()
+                if not hmac.compare_digest(computed, sig_bytes):
+                    logger.warning("HS256 JWT signature verification failed — possible token forgery")
+                    return None
+            else:
+                logger.warning("supabase_jwt_secret not configured — HS256 token accepted without verification")
+
         else:
-            logger.warning(
-                "supabase_jwt_secret not configured — JWT decoded WITHOUT signature verification. "
-                "Add 'supabase_jwt_secret' to config.json (Supabase dashboard → Settings → API → JWT Secret)."
-            )
+            logger.warning(f"Unsupported JWT algorithm: {alg}")
+            return None
+
+        # Check expiry
+        exp = payload.get('exp')
+        if exp is not None and _time.time() > exp:
+            logger.warning("JWT has expired")
+            return None
+
         return payload
+
     except Exception as e:
         logger.error(f"_verify_supabase_jwt error: {e}")
         return None
