@@ -26,7 +26,18 @@ export function AuthProvider({ children }) {
       return
     }
 
-    // Production: fetch role from Flask backend (bypasses Supabase RLS)
+    // Get a fresh (non-expired) access token — refresh if needed
+    const getFreshToken = async (session) => {
+      if (!session) return null
+      const isExpired = session.expires_at && (Date.now() / 1000) > (session.expires_at - 30)
+      if (isExpired) {
+        const { data } = await supabase.auth.refreshSession()
+        return data?.session?.access_token || session.access_token
+      }
+      return session.access_token
+    }
+
+    // Fetch role from Flask backend (bypasses Supabase RLS)
     const fetchRole = async (accessToken) => {
       try {
         const res = await fetch(`${API_BASE}/api/my-role`, {
@@ -42,43 +53,34 @@ export function AuthProvider({ children }) {
       }
     }
 
+    const handleSession = async (session) => {
+      if (session?.user) {
+        const token = await getFreshToken(session)
+        localStorage.setItem('auth_token', token)
+        setUser(session.user)
+        setRole(await fetchRole(token))
+      } else {
+        localStorage.removeItem('auth_token')
+        setUser(null)
+        setRole(null)
+      }
+      setLoading(false)
+    }
+
     // Check localStorage first (sync, no network needed)
     const stored = JSON.parse(localStorage.getItem('sb-gmfefvjdmgzluwffzrzj-auth-token') || 'null')
     if (!stored?.access_token) {
-      // No stored session — show login immediately, skip Supabase entirely
+      // No stored session — show login immediately
       setLoading(false)
-      // Still listen for future sign-ins
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (_event, session) => {
-          if (session?.user) {
-            localStorage.setItem('auth_token', session.access_token)
-            setUser(session.user)
-            setRole(await fetchRole(session.access_token))
-          } else {
-            localStorage.removeItem('auth_token')
-            setUser(null)
-            setRole(null)
-          }
-          setLoading(false)
-        }
+        async (_event, session) => handleSession(session)
       )
       return () => subscription.unsubscribe()
     }
 
-    // Has stored token — let Supabase validate it
+    // Has stored token — let Supabase validate + auto-refresh
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          localStorage.setItem('auth_token', session.access_token)
-          setUser(session.user)
-          setRole(await fetchRole(session.access_token))
-        } else {
-          localStorage.removeItem('auth_token')
-          setUser(null)
-          setRole(null)
-        }
-        setLoading(false)
-      }
+      async (_event, session) => handleSession(session)
     )
     // Fallback: if Supabase doesn't fire within 3s, show login
     const timeout = setTimeout(() => setLoading(false), 3000)
