@@ -70,7 +70,7 @@ export default function AlertsPage() {
   useEffect(() => {
     if (!email) return
     setLoading(true)
-    api.getAlerts(email)
+    api.getAlerts()
       .then(setAlerts)
       .catch(err => console.error('Failed to load alerts:', err))
       .finally(() => setLoading(false))
@@ -89,7 +89,7 @@ export default function AlertsPage() {
         threshold: Number(formThreshold),
       })
       // Reload alerts
-      const updated = await api.getAlerts(email)
+      const updated = await api.getAlerts()
       setAlerts(updated)
       // Reset form
       setFormCarrier('')

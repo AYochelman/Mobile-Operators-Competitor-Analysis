@@ -2,6 +2,10 @@ import json
 import os
 import logging
 import secrets
+import hmac
+import hashlib
+import base64
+import time as _time
 from functools import wraps
 from flask import Flask, jsonify, render_template, request, make_response, send_from_directory
 from flask_cors import CORS
@@ -35,6 +39,15 @@ if _extra_origins:
     ALLOWED_ORIGINS.extend(_extra_origins.split(","))
 CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS}})
 
+@app.after_request
+def add_security_headers(response):
+    """Attach security headers to every response."""
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
+
 # ── API Key auth for sensitive endpoints ───────────────────────────────
 def _get_api_key():
     """Get or generate API key from config."""
@@ -58,7 +71,20 @@ def _get_api_key():
     return key
 
 def require_api_key(f):
-    """Decorator to require X-API-Key header for sensitive endpoints."""
+    """Decorator to require X-API-Key header only (no URL query param)."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        provided = request.headers.get("X-API-Key")
+        expected = _get_api_key()
+        if not provided or provided != expected:
+            return jsonify({"error": "Unauthorized — API key required"}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+def require_api_key_or_query(f):
+    """Accepts API key via header OR ?api_key= query param.
+    Use ONLY on /api/scrape-*-now for manual browser convenience."""
     @wraps(f)
     def decorated(*args, **kwargs):
         provided = request.headers.get("X-API-Key") or request.args.get("api_key")
@@ -89,7 +115,49 @@ def load_config():
             "vapid_private_key": os.environ.get("VAPID_PRIVATE_KEY", ""),
             "vapid_public_key": os.environ.get("VAPID_PUBLIC_KEY", ""),
             "vapid_email": os.environ.get("VAPID_EMAIL", ""),
+            "supabase_jwt_secret": os.environ.get("SUPABASE_JWT_SECRET", ""),
+            "supabase_anon_key": os.environ.get("SUPABASE_ANON_KEY", ""),
+            "supabase_url": os.environ.get("SUPABASE_URL", ""),
         }
+
+
+def _verify_supabase_jwt(token: str):
+    """Verify a Supabase-issued HS256 JWT and return the payload dict, or None on failure.
+
+    If 'supabase_jwt_secret' is configured: verifies HMAC-SHA256 signature and exp claim.
+    If not configured: logs a warning and falls back to unverified decode (graceful degradation).
+    """
+    try:
+        parts = token.split('.')
+        if len(parts) != 3:
+            return None
+        header_b64, payload_b64, sig_b64 = parts
+        payload_json = base64.urlsafe_b64decode(payload_b64 + '==')
+        payload = json.loads(payload_json.decode('utf-8'))
+
+        cfg = load_config()
+        secret = cfg.get('supabase_jwt_secret') or os.environ.get('SUPABASE_JWT_SECRET', '')
+
+        if secret:
+            signing_input = f"{header_b64}.{payload_b64}".encode('ascii')
+            expected_sig = base64.urlsafe_b64decode(sig_b64 + '==')
+            computed_sig = hmac.new(secret.encode('utf-8'), signing_input, hashlib.sha256).digest()
+            if not hmac.compare_digest(computed_sig, expected_sig):
+                logger.warning("JWT signature verification failed — possible token forgery")
+                return None
+            exp = payload.get('exp')
+            if exp is not None and _time.time() > exp:
+                logger.warning("JWT has expired")
+                return None
+        else:
+            logger.warning(
+                "supabase_jwt_secret not configured — JWT decoded WITHOUT signature verification. "
+                "Add 'supabase_jwt_secret' to config.json (Supabase dashboard → Settings → API → JWT Secret)."
+            )
+        return payload
+    except Exception as e:
+        logger.error(f"_verify_supabase_jwt error: {e}")
+        return None
 
 
 def _supabase_conn():
@@ -207,7 +275,7 @@ def api_global_changes():
 
 
 @app.route("/api/scrape-global-now")
-@require_api_key
+@require_api_key_or_query
 def api_scrape_global_now():
     """Manual trigger: scrape global eSIM packages, detect changes, save to DB."""
     try:
@@ -245,7 +313,7 @@ def api_abroad_changes():
 
 
 @app.route("/api/scrape-abroad-now")
-@require_api_key
+@require_api_key_or_query
 def api_scrape_abroad_now():
     """Manual trigger: scrape abroad packages, detect changes, save to DB."""
     try:
@@ -274,7 +342,7 @@ def api_scrape_abroad_now():
 
 
 @app.route("/api/scrape-all-now")
-@require_api_key
+@require_api_key_or_query
 def api_scrape_all_now():
     """Scrape ALL tabs: domestic + abroad + global in one call."""
     try:
@@ -367,7 +435,7 @@ def api_content_changes():
 
 
 @app.route("/api/scrape-content-now")
-@require_api_key
+@require_api_key_or_query
 def api_scrape_content_now():
     """Manual trigger: scrape content services, detect changes, save to DB."""
     try:
@@ -387,7 +455,7 @@ def api_scrape_content_now():
 
 
 @app.route("/api/scrape-now")
-@require_api_key
+@require_api_key_or_query
 def api_scrape_now():
     """Manual trigger for testing. Debug endpoint."""
     try:
@@ -412,14 +480,26 @@ def api_scrape_now():
 
 @app.route("/api/alerts", methods=["GET"])
 @require_api_key
+@limiter.limit("60 per minute")
 def api_get_alerts():
-    user_email = request.args.get("user_email", "")
+    """Get alerts for the authenticated user.
+    Email is derived from the verified JWT (Authorization: Bearer <token>).
+    Falls back to ?user_email= query param for backwards compatibility."""
+    user_email = None
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        payload = _verify_supabase_jwt(auth_header[7:])
+        if payload:
+            user_email = payload.get('email')
+    if not user_email:
+        user_email = request.args.get("user_email", "")
     alerts = get_price_alerts(user_email=user_email or None, db_path=_db_path())
     return jsonify(alerts)
 
 
 @app.route("/api/alerts", methods=["POST"])
 @require_api_key
+@limiter.limit("20 per minute")
 def api_create_alert():
     data = request.get_json(force=True)
     try:
@@ -619,24 +699,21 @@ def api_push_test():
 # ── User management (Supabase) ────────────────────────────────────────────
 
 @app.route("/api/my-role")
+@limiter.limit("30 per minute")
 def api_my_role():
     """Return the role of the currently authenticated Supabase user.
-    Reads the JWT from Authorization header, extracts user_id, queries DB directly (bypasses RLS)."""
-    import base64
+    Verifies JWT signature (HS256) + expiry, then queries DB directly (bypasses RLS)."""
     auth = request.headers.get('Authorization', '')
     if not auth.startswith('Bearer '):
         return jsonify({"role": "viewer"})
     token = auth[7:]
+    payload = _verify_supabase_jwt(token)
+    if not payload:
+        return jsonify({"role": "viewer"}), 401
+    user_id = payload.get('sub')
+    if not user_id:
+        return jsonify({"role": "viewer"}), 401
     try:
-        # Decode payload without verification — user_id is used only for a read-only role lookup
-        parts = token.split('.')
-        if len(parts) != 3:
-            return jsonify({"role": "viewer"})
-        payload_b64 = parts[1] + '=='  # pad for base64
-        payload = json.loads(base64.urlsafe_b64decode(payload_b64).decode('utf-8'))
-        user_id = payload.get('sub')
-        if not user_id:
-            return jsonify({"role": "viewer"})
         conn = _supabase_conn()
         cur = conn.cursor()
         cur.execute("SELECT role FROM public.user_roles WHERE user_id = %s", (user_id,))
@@ -650,6 +727,7 @@ def api_my_role():
 
 @app.route("/api/users")
 @require_api_key
+@limiter.limit("20 per minute")
 def api_get_users():
     """List all users from Supabase via direct DB connection."""
     try:
@@ -670,6 +748,7 @@ def api_get_users():
 
 @app.route("/api/users", methods=["POST"])
 @require_api_key
+@limiter.limit("10 per minute")
 def api_create_user():
     """Create a new user in Supabase."""
     import urllib.request
@@ -680,11 +759,18 @@ def api_create_user():
     if not email or not password:
         return jsonify({"error": "email and password required"}), 400
     try:
+        cfg = load_config()
+        anon_key = cfg.get('supabase_anon_key') or os.environ.get('SUPABASE_ANON_KEY', '')
+        supabase_url = cfg.get('supabase_url') or os.environ.get('SUPABASE_URL', 'https://gmfefvjdmgzluwffzrzj.supabase.co')
+        if not anon_key:
+            logger.error("api_create_user: supabase_anon_key not configured")
+            return jsonify({"error": "Server misconfiguration"}), 500
+
         # Create user via Supabase Auth API
-        url = 'https://gmfefvjdmgzluwffzrzj.supabase.co/auth/v1/signup'
+        url = f'{supabase_url}/auth/v1/signup'
         payload = json.dumps({'email': email, 'password': password}).encode()
         req = urllib.request.Request(url, payload, method='POST')
-        req.add_header('apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtZmVmdmpkbWd6bHV3ZmZ6cnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTcwNzIsImV4cCI6MjA5MTA5MzA3Mn0.8RAX8o8yPHXSTYk_Fc3bmlk5fz4X5sl53k0SWNbHlvM')
+        req.add_header('apikey', anon_key)
         req.add_header('Content-Type', 'application/json')
         resp = urllib.request.urlopen(req, timeout=10)
         result = json.loads(resp.read())
@@ -698,6 +784,7 @@ def api_create_user():
         cur.execute("INSERT INTO public.user_roles (user_id, role) VALUES (%s, %s) ON CONFLICT (user_id) DO UPDATE SET role = %s", (user_id, role, role))
         conn.close()
 
+        logger.info(f"AUDIT create_user: email={email!r} role={role!r} new_user_id={user_id!r} by_ip={request.remote_addr}")
         return jsonify({"status": "created", "user_id": user_id}), 201
     except urllib.error.HTTPError as e:
         body = e.read().decode()
@@ -709,6 +796,7 @@ def api_create_user():
 
 @app.route("/api/users/<user_id>", methods=["DELETE"])
 @require_api_key
+@limiter.limit("10 per minute")
 def api_delete_user(user_id):
     """Delete a user from Supabase."""
     try:
@@ -718,6 +806,7 @@ def api_delete_user(user_id):
         cur.execute('DELETE FROM public.user_roles WHERE user_id = %s', (user_id,))
         cur.execute('DELETE FROM auth.users WHERE id = %s', (user_id,))
         conn.close()
+        logger.info(f"AUDIT delete_user: user_id={user_id!r} by_ip={request.remote_addr}")
         return jsonify({"status": "deleted"})
     except Exception as e:
         logger.error(f"delete user failed: {e}", exc_info=True)
@@ -725,6 +814,7 @@ def api_delete_user(user_id):
 
 @app.route("/api/users/<user_id>/role", methods=["POST"])
 @require_api_key
+@limiter.limit("20 per minute")
 def api_update_user_role(user_id):
     """Update a user's role."""
     data = request.get_json(force=True)
@@ -737,6 +827,7 @@ def api_update_user_role(user_id):
         cur = conn.cursor()
         cur.execute("INSERT INTO public.user_roles (user_id, role) VALUES (%s, %s) ON CONFLICT (user_id) DO UPDATE SET role = %s", (user_id, role, role))
         conn.close()
+        logger.info(f"AUDIT update_role: user_id={user_id!r} new_role={role!r} by_ip={request.remote_addr}")
         return jsonify({"status": "updated", "role": role})
     except Exception as e:
         logger.error(f"update role failed: {e}", exc_info=True)
