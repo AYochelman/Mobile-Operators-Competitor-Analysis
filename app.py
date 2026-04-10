@@ -754,24 +754,23 @@ def api_push_test():
 # ── User management (Supabase) ────────────────────────────────────────────
 
 @app.route("/api/my-role")
-@limiter.limit("30 per minute")
+@require_api_key
+@limiter.limit("60 per minute")
 def api_my_role():
-    """Return the role of the currently authenticated Supabase user.
-    Verifies JWT signature (HS256) + expiry, then queries DB directly (bypasses RLS)."""
-    auth = request.headers.get('Authorization', '')
-    if not auth.startswith('Bearer '):
+    """Return the role of the given user email.
+    Secured by API key. Email is sent by frontend (decoded client-side from Supabase JWT)."""
+    email = request.headers.get('X-User-Email', '').strip().lower()
+    if not email:
         return jsonify({"role": "viewer"})
-    token = auth[7:]
-    payload = _verify_supabase_jwt(token)
-    if not payload:
-        return jsonify({"role": "viewer"}), 401
-    user_id = payload.get('sub')
-    if not user_id:
-        return jsonify({"role": "viewer"}), 401
     try:
         conn = _supabase_conn()
         cur = conn.cursor()
-        cur.execute("SELECT role FROM public.user_roles WHERE user_id = %s", (user_id,))
+        cur.execute("""
+            SELECT COALESCE(r.role, 'viewer')
+            FROM auth.users u
+            LEFT JOIN public.user_roles r ON u.id = r.user_id
+            WHERE LOWER(u.email) = %s
+        """, (email,))
         row = cur.fetchone()
         conn.close()
         return jsonify({"role": row[0] if row else "viewer"})
