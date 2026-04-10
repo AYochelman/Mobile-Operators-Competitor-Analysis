@@ -190,6 +190,12 @@ def api_global_plans():
     return jsonify(plans)
 
 
+@app.route("/api/exchange-rates")
+def api_exchange_rates():
+    from scraper import _get_usd_to_ils, _get_eur_to_ils
+    return jsonify({"usd": _get_usd_to_ils(), "eur": _get_eur_to_ils()})
+
+
 @app.route("/api/global-changes")
 def api_global_changes():
     try:

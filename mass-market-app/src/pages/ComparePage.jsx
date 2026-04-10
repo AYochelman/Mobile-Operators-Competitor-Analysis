@@ -62,6 +62,8 @@ const KNOWN_REGIONS = new Set([
   'אמריקה הדרומית','דרום אמריקה',
   'שוויץ+','גוודלופ','קפריסין+',
   'צפון ודרום אמריקה','גלובלי פלוס','מדינות האיים הקריביים',
+  'אירופה — גלישה בלבד','אירופה — גולשים ומדברים',
+  'גלובלי — גלישה בלבד','גלובלי — גולשים ומדברים',
 ])
 
 export default function ComparePage() {
@@ -73,6 +75,7 @@ export default function ComparePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [destinationFilter, setDestinationFilter] = useState('all')
   const [sortBy, setSortBy] = useState('price_asc')
+  const [roamingFilter, setRoamingFilter] = useState('all')
   const [allData, setAllData] = useState({ domestic: [], abroad: [], global: [] })
   const [loading, setLoading] = useState(true)
   const [tableVisibleCount, setTableVisibleCount] = useState(50)
@@ -105,6 +108,7 @@ export default function ComparePage() {
     setDestinationFilter('all')
     setSearchQuery('')
     setSortBy('price_asc')
+    setRoamingFilter('all')
     setTableVisibleCount(50)
   }
 
@@ -224,13 +228,17 @@ export default function ComparePage() {
       else if (daysFilter === '30+') result = result.filter(p => p.days && p.days > 30)
     }
 
+    if (tab === 'domestic' && roamingFilter === 'yes') {
+      result = result.filter(p => p.extras && p.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+/.test(e) && /GB|גלישה/i.test(e)))
+    }
+
     if (sortBy === 'price_asc') result = [...result].sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999))
     else if (sortBy === 'price_desc') result = [...result].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
     else if (sortBy === 'gb_asc') result = [...result].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
     else if (sortBy === 'gb_desc') result = [...result].sort((a, b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999))
 
     return result
-  }, [plans, selectedCarriers, gbFilter, daysFilter, sortBy, showDays])
+  }, [plans, selectedCarriers, gbFilter, daysFilter, sortBy, showDays, roamingFilter, tab])
 
   // Chart: average price per carrier
   const chartData = useMemo(() => {
@@ -249,6 +257,13 @@ export default function ComparePage() {
     }).filter(Boolean)
   }, [filteredPlans, selectedCarriers])
 
+  const activeFilterCount = (selectedCarriers.length > 0 ? 1 : 0)
+    + (gbFilter !== 'all' ? 1 : 0)
+    + (daysFilter !== 'all' ? 1 : 0)
+    + (regionFilter !== 'all' ? 1 : 0)
+    + (destinationFilter !== 'all' ? 1 : 0)
+    + (roamingFilter !== 'all' ? 1 : 0)
+
   const GB_OPTIONS = tab === 'domestic'
     ? [['all', 'הכל'], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['100+', '100+GB'], ['unlimited', 'ללא הגבלה']]
     : [['all', 'הכל'], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['unlimited', 'ללא הגבלה']]
@@ -257,14 +272,6 @@ export default function ComparePage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
-      {(selectedCarriers.length > 0 || gbFilter !== 'all' || daysFilter !== 'all' || regionFilter !== 'all' || destinationFilter !== 'all') && (
-        <div className="flex justify-end mb-2">
-          <button onClick={resetFilters} className="text-xs text-moca-sub hover:text-moca-bolt hover:bg-moca-cream px-2 py-1 rounded-md transition-colors">
-            איפוס
-          </button>
-        </div>
-      )}
-
       {/* Tab selector */}
       <div className="flex gap-1 mb-4">
         {TABS.map(t => (
@@ -278,6 +285,22 @@ export default function ComparePage() {
             {t.label}
           </button>
         ))}
+      </div>
+
+      {/* Filter count + reset row */}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-xs text-moca-sub flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
+          סינון
+          {activeFilterCount > 0 && (
+            <span className="bg-moca-bolt text-white text-[9px] px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{activeFilterCount}</span>
+          )}
+        </span>
+        {activeFilterCount > 0 && (
+          <button onClick={resetFilters} className="text-xs font-medium bg-moca-bolt text-white px-2.5 py-1 rounded-lg hover:bg-moca-text transition-colors">
+            איפוס
+          </button>
+        )}
       </div>
 
       {/* Two-column filters: right = filters, left = carriers */}
@@ -331,7 +354,7 @@ export default function ComparePage() {
             </>
           )}
 
-          <div className={showDays ? 'grid grid-cols-2 gap-3' : ''}>
+          <div className={showDays ? 'grid grid-cols-2 gap-3' : tab === 'domestic' ? 'grid grid-cols-2 gap-3' : ''}>
             <div>
               <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
               <div className="flex flex-wrap gap-1">
@@ -340,6 +363,15 @@ export default function ComparePage() {
                 ))}
               </div>
             </div>
+          {tab === 'domestic' && (
+            <div>
+              <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה בחו"ל</p>
+              <div className="flex flex-wrap gap-1">
+                <FilterTag label="כולם" active={roamingFilter === 'all'} onClick={() => setRoamingFilter('all')} />
+                <FilterTag label='כולל חו"ל' active={roamingFilter === 'yes'} onClick={() => setRoamingFilter('yes')} />
+              </div>
+            </div>
+          )}
 
           {showDays && (
             <div>
