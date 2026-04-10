@@ -5,15 +5,28 @@ const AuthContext = createContext(null)
 
 const DEV_MODE = import.meta.env.VITE_DEV_AUTH === 'true'
 const API_BASE = import.meta.env.VITE_API_URL || ''
+const API_KEY = import.meta.env.VITE_API_KEY || ''
+
+function decodeJwtEmail(token) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+    return payload?.email || ''
+  } catch {
+    return ''
+  }
+}
 
 async function fetchRoleFromBackend(accessToken) {
   try {
+    const email = decodeJwtEmail(accessToken)
+    if (!email) return 'viewer'
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 5000)
     const res = await fetch(`${API_BASE}/api/my-role`, {
       signal: controller.signal,
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'X-API-Key': API_KEY,
+        'X-User-Email': email,
         'ngrok-skip-browser-warning': 'true',
       }
     })
