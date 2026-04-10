@@ -256,27 +256,14 @@ export default function SettingsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-gray-500 text-xs">
-                  <th className="text-right py-2 pr-1 font-medium w-1/2">אימייל</th>
-                  <th className="text-right py-2 font-medium">תפקיד</th>
                   <th className="py-2 pl-1 w-16"></th>
+                  <th className="text-right py-2 font-medium">אימייל</th>
+                  <th className="text-right py-2 pr-1 font-medium w-20">תפקיד</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(u => (
                   <tr key={u.id} className="border-b border-gray-100 last:border-0">
-                    <td className="py-2.5 pr-1 text-gray-800" dir="ltr">
-                      {u.email}
-                      {isSelf(u) && <span className="text-xs text-gray-400 mr-1">(אתה)</span>}
-                    </td>
-                    <td className="py-2.5">
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                        u.role === 'admin'
-                          ? 'bg-purple-100 text-purple-700'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {u.role === 'admin' ? 'מנהל' : 'צופה'}
-                      </span>
-                    </td>
                     <td className="py-2.5 pl-1">
                       <div className="flex items-center gap-1.5">
                         {!isSelf(u) && (
@@ -317,6 +304,19 @@ export default function SettingsPage() {
                           </>
                         )}
                       </div>
+                    </td>
+                    <td className="py-2.5 text-gray-800" dir="ltr">
+                      {u.email}
+                      {isSelf(u) && <span className="text-xs text-gray-400 mr-1">(אתה)</span>}
+                    </td>
+                    <td className="py-2.5 pr-1 text-right">
+                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                        u.role === 'admin'
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {u.role === 'admin' ? 'מנהל' : 'צופה'}
+                      </span>
                     </td>
                   </tr>
                 ))}
