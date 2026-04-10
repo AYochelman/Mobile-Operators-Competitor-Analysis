@@ -5,6 +5,7 @@ const AuthContext = createContext(null)
 
 // Dev mode: only when explicitly enabled via env var
 const DEV_MODE = import.meta.env.VITE_DEV_AUTH === 'true'
+const API_BASE = import.meta.env.VITE_API_URL || ''
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -25,14 +26,16 @@ export function AuthProvider({ children }) {
       return
     }
 
-    // Production: use Supabase Auth
-    const fetchRole = async (userId) => {
+    // Production: fetch role from Flask backend (bypasses Supabase RLS)
+    const fetchRole = async (accessToken) => {
       try {
-        const { data } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .single()
+        const res = await fetch(`${API_BASE}/api/my-role`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'ngrok-skip-browser-warning': 'true',
+          }
+        })
+        const data = await res.json()
         return data?.role || 'viewer'
       } catch {
         return 'viewer'
@@ -48,9 +51,11 @@ export function AuthProvider({ children }) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (_event, session) => {
           if (session?.user) {
+            localStorage.setItem('auth_token', session.access_token)
             setUser(session.user)
-            setRole(await fetchRole(session.user.id))
+            setRole(await fetchRole(session.access_token))
           } else {
+            localStorage.removeItem('auth_token')
             setUser(null)
             setRole(null)
           }
@@ -64,9 +69,11 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
+          localStorage.setItem('auth_token', session.access_token)
           setUser(session.user)
-          setRole(await fetchRole(session.user.id))
+          setRole(await fetchRole(session.access_token))
         } else {
+          localStorage.removeItem('auth_token')
           setUser(null)
           setRole(null)
         }
