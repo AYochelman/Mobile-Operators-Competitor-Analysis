@@ -618,6 +618,36 @@ def api_push_test():
 
 # ── User management (Supabase) ────────────────────────────────────────────
 
+@app.route("/api/my-role")
+def api_my_role():
+    """Return the role of the currently authenticated Supabase user.
+    Reads the JWT from Authorization header, extracts user_id, queries DB directly (bypasses RLS)."""
+    import base64
+    auth = request.headers.get('Authorization', '')
+    if not auth.startswith('Bearer '):
+        return jsonify({"role": "viewer"})
+    token = auth[7:]
+    try:
+        # Decode payload without verification — user_id is used only for a read-only role lookup
+        parts = token.split('.')
+        if len(parts) != 3:
+            return jsonify({"role": "viewer"})
+        payload_b64 = parts[1] + '=='  # pad for base64
+        payload = json.loads(base64.urlsafe_b64decode(payload_b64).decode('utf-8'))
+        user_id = payload.get('sub')
+        if not user_id:
+            return jsonify({"role": "viewer"})
+        conn = _supabase_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT role FROM public.user_roles WHERE user_id = %s", (user_id,))
+        row = cur.fetchone()
+        conn.close()
+        return jsonify({"role": row[0] if row else "viewer"})
+    except Exception as e:
+        logger.error(f"my-role failed: {e}")
+        return jsonify({"role": "viewer"})
+
+
 @app.route("/api/users")
 @require_api_key
 def api_get_users():
