@@ -42,12 +42,18 @@ export function AuthProvider({ children }) {
       return
     }
 
-    // Get the current session (auto-refreshes if expired)
+    // Get the current session, refreshing if expired
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        setUser(session.user)
-        localStorage.setItem('auth_token', session.access_token)
-        const r = await fetchRoleFromBackend(session.access_token)
+        // Force refresh if token is expired or expiring within 60s
+        let activeSession = session
+        if (!session.expires_at || Date.now() / 1000 > session.expires_at - 60) {
+          const { data: refreshed } = await supabase.auth.refreshSession()
+          if (refreshed?.session) activeSession = refreshed.session
+        }
+        setUser(activeSession.user)
+        localStorage.setItem('auth_token', activeSession.access_token)
+        const r = await fetchRoleFromBackend(activeSession.access_token)
         setRole(r)
       }
       setLoading(false)

@@ -202,10 +202,10 @@ def _verify_supabase_jwt(token: str):
             logger.warning(f"Unsupported JWT algorithm: {alg}")
             return None
 
-        # Check expiry
+        # Check expiry — allow 15-minute grace period (clock skew + refresh lag)
         exp = payload.get('exp')
-        if exp is not None and _time.time() > exp:
-            logger.warning("JWT has expired")
+        if exp is not None and _time.time() > exp + 900:
+            logger.warning("JWT has expired (beyond grace period)")
             return None
 
         return payload
