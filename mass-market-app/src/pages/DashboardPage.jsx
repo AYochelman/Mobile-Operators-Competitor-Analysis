@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import * as XLSX from 'xlsx'
 import PlanCard from '../components/PlanCard'
+import GroupedPlanCard from '../components/GroupedPlanCard'
 import CountryModal from '../components/CountryModal'
 import FilterTag from '../components/ui/FilterTag'
 import SearchableSelect from '../components/ui/SearchableSelect'
@@ -50,6 +51,8 @@ const KNOWN_REGIONS = new Set([
   'שוויץ+','גוודלופ','קפריסין+',
   'אמריקה הדרומית','דרום אמריקה',
   'צפון ודרום אמריקה','גלובלי פלוס','מדינות האיים הקריביים',
+  'אירופה — גלישה בלבד','אירופה — גולשים ומדברים',
+  'גלובלי — גלישה בלבד','גלובלי — גולשים ומדברים',
 ])
 
 const CARRIERS = [
@@ -89,6 +92,8 @@ export default function DashboardPage() {
   const [countryModal, setCountryModal] = useState(null)
   const [highlightPlan, setHighlightPlan] = useState(null)
   const [lastUpdate, setLastUpdate] = useState(null)
+  const [usdRate, setUsdRate] = useState(null)
+  const [eurRate, setEurRate] = useState(null)
   const [visibleCount, setVisibleCount] = useState(50)
 
   // Count active filters
@@ -145,6 +150,11 @@ export default function DashboardPage() {
   }, [searchParams])
 
   useEffect(() => { loadTab(tab) }, [tab])
+  useEffect(() => {
+    const base = import.meta.env.VITE_API_URL || ''
+    fetch(`${base}/api/exchange-rates`, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+      .then(r => r.json()).then(d => { setUsdRate(d.usd); setEurRate(d.eur) }).catch(() => {})
+  }, [])
 
   async function loadTab(t) {
     setLoading(true)
@@ -282,6 +292,13 @@ export default function DashboardPage() {
     setVisibleCount(50)
   }
 
+  const resetFilters = () => {
+    setFilters({ carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', roaming: 'all',
+      globalProvider: 'all', destination: 'all', region: 'all', days: 'all',
+      contentCarrier: 'all', contentService: 'all' })
+    setVisibleCount(50)
+  }
+
   const exportToExcel = useCallback(() => {
     if (!filteredPlans.length) return
     const TAB_NAMES = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי', content: 'תוכן' }
@@ -337,6 +354,12 @@ export default function DashboardPage() {
               עדכון: {new Date(lastUpdate).toLocaleDateString('he-IL')} {lastUpdate.slice(11, 16)}
             </p>
           )}
+          {usdRate && (
+            <p className="text-[11px] text-gray-400">שער דולר: ₪{usdRate.toFixed(2)}</p>
+          )}
+          {eurRate && (
+            <p className="text-[11px] text-gray-400">שער אירו: ₪{eurRate.toFixed(2)}</p>
+          )}
         </div>
         {isAdmin && (
           <div className="flex flex-col items-center gap-0.5">
@@ -380,18 +403,28 @@ export default function DashboardPage() {
       <div className="mb-4">
         {/* Toggle + results count row */}
         <div className="flex items-center justify-between mb-2">
-          <button
-            onClick={() => setFiltersOpen(!filtersOpen)}
-            className="text-xs text-moca-sub hover:text-moca-bolt flex items-center gap-1.5 transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-            </svg>
-            <span>{filtersOpen ? 'סגור סינון' : 'סינון'}</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              className="text-xs text-moca-sub hover:text-moca-bolt flex items-center gap-1.5 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+              <span>{filtersOpen ? 'סגור סינון' : 'סינון'}</span>
+              {activeFilterCount > 0 && (
+                <span className="bg-moca-bolt text-white text-[9px] px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{activeFilterCount}</span>
+              )}
+            </button>
             {activeFilterCount > 0 && (
-              <span className="bg-moca-bolt text-white text-[9px] px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{activeFilterCount}</span>
+              <button
+                onClick={resetFilters}
+                className="text-xs font-medium bg-moca-bolt text-white px-2.5 py-1 rounded-lg hover:bg-moca-text transition-colors"
+              >
+                איפוס
+              </button>
             )}
-          </button>
+          </div>
 
           <div className="flex items-center gap-3">
             <span className="text-[11px] text-gray-400">{filteredPlans.length} חבילות</span>
@@ -424,7 +457,7 @@ export default function DashboardPage() {
                     <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה בחו"ל</p>
                     <div className="flex flex-wrap gap-1">
                       <FilterTag label="כולם" active={filters.roaming === 'all'} onClick={() => setFilter('roaming', 'all')} />
-                      <FilterTag label="כולל חו״ל" active={filters.roaming === 'yes'} onClick={() => setFilter('roaming', 'yes')} />
+                      <FilterTag label='כולל חו"ל' active={filters.roaming === 'yes'} onClick={() => setFilter('roaming', 'yes')} />
                     </div>
                   </div>
                 </div>
@@ -652,10 +685,55 @@ export default function DashboardPage() {
       )}
 
       {/* Plan cards grid */}
-      {!loading && tab !== 'content' && (
+      {!loading && tab !== 'content' && (() => {
+        // Group plans by carrier + destination for consolidated display
+        const displayItems = (() => {
+          if (tab !== 'global') return filteredPlans.map(p => ({ isGroup: false, plan: p }))
+          const grouped = new Map()
+          const singles = []
+          for (const plan of filteredPlans) {
+            const dest = plan.extras?.[0]
+            if (dest) {
+              const key = `${plan.carrier}|${dest}`
+              if (!grouped.has(key)) grouped.set(key, [])
+              grouped.get(key).push(plan)
+            } else {
+              singles.push({ isGroup: false, plan })
+            }
+          }
+          const result = []
+          for (const [, plans] of grouped) {
+            if (plans.length <= 1) {
+              result.push({ isGroup: false, plan: plans[0] })
+            } else {
+              // Deduplicate by data_gb (keep cheapest per GB tier)
+              const byGb = new Map()
+              for (const p of plans) {
+                const gb = p.data_gb ?? 0
+                if (!byGb.has(gb) || p.price < byGb.get(gb).price) byGb.set(gb, p)
+              }
+              const unique = [...byGb.values()].sort((a, b) => (a.data_gb ?? 0) - (b.data_gb ?? 0))
+              result.push({ isGroup: true, carrier: unique[0].carrier, destination: unique[0].extras[0], plans: unique })
+            }
+          }
+          return [...result, ...singles]
+        })()
+
+        return (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredPlans.slice(0, visibleCount).map((plan, i) => {
+            {displayItems.slice(0, visibleCount).map((item, i) => {
+              if (item.isGroup) {
+                return (
+                  <GroupedPlanCard
+                    key={`group-${item.carrier}-${item.destination}`}
+                    carrier={item.carrier}
+                    destination={item.destination}
+                    plans={item.plans}
+                  />
+                )
+              }
+              const plan = item.plan
               const key = `${plan.carrier}|${plan.plan_name}`
               return (
                 <PlanCard
@@ -688,7 +766,8 @@ export default function DashboardPage() {
             </div>
           )}
         </>
-      )}
+        )
+      })()}
 
       {/* Content: grouped by service */}
       {!loading && tab === 'content' && (() => {

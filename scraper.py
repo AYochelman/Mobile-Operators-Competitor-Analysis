@@ -1517,7 +1517,8 @@ def scrape_xphone_global(page=None):
                     plan_name = (f"{region} {gb}GB \u2014 {tab['label']}"
                                  if gb else f"{region} \u2014 {tab['label']}")
 
-                    extras = []
+                    group_key = f"{region} \u2014 {tab['label']}"  # e.g. אירופה — גלישה בלבד
+                    extras = [group_key]
                     if minutes:
                         extras.append(f"{minutes} \u05d3\u05e7\u05d5\u05ea \u05d5-{sms} SMS")  # N דקות ו-N SMS
 
@@ -2546,12 +2547,12 @@ def scrape_tuki_local(page, usd_rate):
         # Normalize country names to match other providers
         _tuki_name_fix = {
             "\u05d0\u05d9\u05d9 \u05d1\u05d4\u05d0\u05de\u05d4": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05d4\u05d0\u05de\u05d4",  # איי בהאמה -> איי הבהאמה
-            "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 \u05d4\u05d1\u05e8\u05d9\u05d8\u05d9\u05d9\u05dd": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 (\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4)",  # איי הבתולה הבריטיים -> איי הבתולה (בריטניה)
-            "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 \u05d4\u05d0\u05de\u05e8\u05d9\u05e7\u05e0\u05d9\u05dd": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 (\u05d0\u05de\u05e8\u05d9\u05e7\u05d4)",  # איי הבתולה האמריקנים -> איי הבתולה (אמריקה)
+            "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 \u05d4\u05d1\u05e8\u05d9\u05d8\u05d9\u05d9\u05dd": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 (\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4)",  # איי הבתולה (בריטניה) -> איי הבתולה (בריטניה)
+            "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 \u05d4\u05d0\u05de\u05e8\u05d9\u05e7\u05e0\u05d9\u05dd": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 (\u05d0\u05e8\u05d4\"\u05d1)",  # איי הבתולה האמריקנים -> איי הבתולה (ארה"ב)
             "\u05e0\u05d5\u05e8\u05d5\u05d5\u05d2\u05d9\u05d4": "\u05e0\u05d5\u05e8\u05d1\u05d2\u05d9\u05d4",  # נורווגיה -> נורבגיה
             "\u05e9\u05d5\u05d5\u05d3\u05d9\u05d4": "\u05e9\u05d1\u05d3\u05d9\u05d4",  # שוודיה -> שבדיה
             "\u05e9\u05d5\u05d5\u05d9\u05d9\u05e5": "\u05e9\u05d5\u05d5\u05d9\u05e5",  # שווייץ -> שוויץ
-            "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea \u05d4\u05e2\u05e8\u05d1\u05d9\u05d5\u05ea": "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea",  # איחוד האמירויות הערביות -> איחוד האמירויות
+            "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea \u05d4\u05e2\u05e8\u05d1\u05d9\u05d5\u05ea": "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea",  # איחוד האמירויות -> איחוד האמירויות
         }
         for country in countries:
             raw_name = country.get("nameHeb", "").strip()
@@ -3116,13 +3117,13 @@ ORBIT_NAME_TO_HEBREW = {
     "Trinidad And Tobago": "\u05d8\u05e8\u05d9\u05e0\u05d9\u05d3\u05d3 \u05d5\u05d8\u05d5\u05d1\u05d2\u05d5",
     "Tunisia": "\u05ea\u05d5\u05e0\u05d9\u05e1\u05d9\u05d4",
     "Turkey": "\u05d8\u05d5\u05e8\u05e7\u05d9\u05d4",
-    "Turks And Caicos Islands": "\u05d0\u05d9\u05d9 \u05d8\u05d5\u05e8\u05e7\u05e1 \u05d5\u05e7\u05d0\u05d9\u05e7\u05d5\u05e1",
+    "Turks And Caicos Islands": "\u05d0\u05d9\u05d9 \u05d8\u05d5\u05e7\u05e1 \u05d5\u05e7\u05d9\u05d9\u05e7\u05d5\u05e1",  # איי טורק וקייקוס
     "Uganda": "\u05d0\u05d5\u05d2\u05e0\u05d3\u05d4",
     "Ukraine": "\u05d0\u05d5\u05e7\u05e8\u05d0\u05d9\u05e0\u05d4",
     "United Arab Emirates": "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea",
     "United Kingdom": "\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4",
     "United States": "\u05d0\u05e8\u05e6\u05d5\u05ea \u05d4\u05d1\u05e8\u05d9\u05ea",
-    "United States Virgin Islands": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 (\u05d0\u05de\u05e8\u05d9\u05e7\u05d4)",
+    "United States Virgin Islands": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 (\u05d0\u05e8\u05d4\"\u05d1)",  # איי הבתולה (ארה"ב)
     "Uruguay": "\u05d0\u05d5\u05e8\u05d5\u05d2\u05d5\u05d5\u05d0\u05d9",
     "Uzbekistan": "\u05d0\u05d5\u05d6\u05d1\u05e7\u05d9\u05e1\u05d8\u05df",
     "Vanuatu": "\u05d5\u05e0\u05d5\u05d0\u05d8\u05d5",
