@@ -257,7 +257,7 @@ export default function SettingsPage() {
               <thead>
                 <tr className="border-b border-gray-200 text-gray-500 text-xs">
                   <th className="text-right py-2 pr-1 font-medium w-20">תפקיד</th>
-                  <th className="text-right py-2 font-medium">אימייל</th>
+                  <th className="text-center py-2 font-medium">אימייל</th>
                   <th className="py-2 pl-1 w-16"></th>
                 </tr>
               </thead>
@@ -273,9 +273,9 @@ export default function SettingsPage() {
                         {u.role === 'admin' ? 'מנהל' : 'צופה'}
                       </span>
                     </td>
-                    <td className="py-2.5 text-gray-800" dir="ltr">
+                    <td className="py-2.5 text-gray-800 text-center" dir="ltr">
                       {u.email}
-                      {isSelf(u) && <span className="text-xs text-gray-400 mr-1">(אתה)</span>}
+                      {isSelf(u) && <span className="text-xs text-gray-400 ml-1">(אתה)</span>}
                     </td>
                     <td className="py-2.5 pl-1">
                       <div className="flex items-center gap-1.5">
