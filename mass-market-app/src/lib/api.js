@@ -53,8 +53,8 @@ export const api = {
   // Chat
   chat: (question) => fetchApi('/api/chat', { method: 'POST', body: JSON.stringify({ question }), headers: { 'X-API-Key': API_KEY } }),
 
-  // Alerts
-  getAlerts: (email) => fetchApi(`/api/alerts?user_email=${encodeURIComponent(email)}`, { headers: { 'X-API-Key': API_KEY } }),
+  // Alerts — email derived server-side from JWT (Authorization header added automatically by fetchApi)
+  getAlerts: () => fetchApi('/api/alerts', { headers: { 'X-API-Key': API_KEY } }),
   createAlert: (alert) => fetchApi('/api/alerts', { method: 'POST', body: JSON.stringify(alert), headers: { 'X-API-Key': API_KEY } }),
   deleteAlert: (id) => fetchApi(`/api/alerts/${id}`, { method: 'DELETE', headers: { 'X-API-Key': API_KEY } }),
 
