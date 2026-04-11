@@ -69,6 +69,7 @@ const LOGO_SIZES = {
   voye:             '48px',
   orbit:            '48px',
   neptucom:         '64px',
+  travelsim:        '64px',
 }
 
 const CHANGE_DOT = {
