@@ -72,6 +72,7 @@ const GLOBAL_PROVIDERS = [
   { id: 'sparks', label: 'Sparks' },
   { id: 'voye', label: 'VOYE' },
   { id: 'orbit', label: 'Orbit' },
+  { id: 'travelsim', label: 'Travel Sim' },
 ]
 
 export default function DashboardPage() {
@@ -302,7 +303,7 @@ export default function DashboardPage() {
   const exportToExcel = useCallback(() => {
     if (!filteredPlans.length) return
     const TAB_NAMES = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי', content: 'תוכן' }
-    const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks' }
+    const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', travelsim: 'Travel Sim' }
     const GB_HEB = { 'all': 'הכל', '0-5': '0-5GB', '5-15': '5-15GB', '15-100': '15-100GB', '100+': '100+GB', 'unlimited': 'ללא הגבלה' }
     const DAYS_HEB = { 'all': 'הכל', '1-7': '1-7 ימים', '8-30': '8-30 ימים', '30+': '30+ ימים' }
 
