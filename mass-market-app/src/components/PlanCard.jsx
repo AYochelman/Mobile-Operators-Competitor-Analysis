@@ -29,10 +29,11 @@ const GLOBAL_COLORS = {
 }
 
 const CARRIER_LOGOS = {
-  partner:   '/logos/partner.png.png',
-  pelephone: '/logos/pelephone.png.png',
-  hotmobile: '/logos/hotmobile.png.png',
-  cellcom:   '/logos/cellcom.png.png',
+  partner:   '/logos/partner.png',
+  pelephone: '/logos/pelephone.png',
+  hotmobile: '/logos/hotmobile.png',
+  cellcom:   '/logos/cellcom.png',
+  wecom:     '/logos/wecom.png',
 }
 
 const CHANGE_DOT = {
