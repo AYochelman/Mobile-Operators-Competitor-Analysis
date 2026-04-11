@@ -20,6 +20,19 @@ const CARRIER_LOGOS = {
   orbit:           '/logos/orbit.png',
 }
 
+// Custom logo sizes (base: 32px / w-8) — +50% = 48px
+const LOGO_SIZES = {
+  globalesim:       '72px',
+  pelephone_global: '72px',
+  esimo:            '72px',
+  simtlv:           '48px',
+  esimio:           '48px',
+  holafly:          '48px',
+  sparks:           '48px',
+  voye:             '48px',
+  orbit:            '48px',
+}
+
 const GLOBAL_LABELS = {
   tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
   pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV',
@@ -58,20 +71,24 @@ export default function GroupedPlanCard({ carrier, destination, plans }) {
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm relative text-right hover-lift animate-fade-in-up">
-      {/* Carrier logo — top-left, no background */}
+      {/* Carrier logo — absolute top-left */}
       {CARRIER_LOGOS[carrier] && (
         <img
           src={CARRIER_LOGOS[carrier]}
           alt={label}
-          className="absolute top-3 left-3 w-8 h-8 object-contain"
+          className="absolute top-3 left-3 object-contain"
+          style={{ width: LOGO_SIZES[carrier] || '32px', height: LOGO_SIZES[carrier] || '32px' }}
         />
       )}
 
-      {/* Carrier badges */}
-      <div className="flex items-center gap-1.5 justify-end mb-2">
-        {selectedPlan.esim && <Badge color="green">eSIM</Badge>}
+      {/* Carrier badges — absolute top-right */}
+      <div className="absolute top-3 right-3 flex items-center gap-1.5">
         <Badge color={badgeColor}>{label}</Badge>
+        {selectedPlan.esim && <Badge color="green">eSIM</Badge>}
       </div>
+
+      {/* Spacer so content doesn't overlap logo/badges */}
+      <div className="mt-9" />
 
       {/* Destination title */}
       <h3 className="text-[15px] font-bold text-gray-800 mb-3">
