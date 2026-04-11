@@ -3410,12 +3410,12 @@ def scrape_travelsim(page=None):
         ),
         # \u2500\u2500 Zone 1: \u05d0\u05e8\u05d4"\u05d1 / \u05e7\u05e0\u05d3\u05d4 / \u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea (3 countries) \u2500\u2500\u2500\u2500\u2500
         _make_global_plan(
-            "travelsim", "Travel USA", 89, "ILS", 89,
+            "travelsim", "Travel USA 30GB", 89, "ILS", 89,
             data_gb=30, days=14, minutes=30, sms=None, esim=True,
             extras=["\u05d0\u05e8\u05d4\"\u05d1"]
         ),
         _make_global_plan(
-            "travelsim", "Travel USA", 99, "ILS", 99,
+            "travelsim", "Travel USA 70GB", 99, "ILS", 99,
             data_gb=70, days=30, minutes=100, sms=None, esim=True,
             extras=["\u05d0\u05e8\u05d4\"\u05d1"]
         ),
