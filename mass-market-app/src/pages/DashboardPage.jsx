@@ -59,7 +59,7 @@ const CARRIERS = [
   { id: 'partner', label: 'פרטנר' }, { id: 'pelephone', label: 'פלאפון' },
   { id: 'hotmobile', label: 'הוט מובייל' }, { id: 'cellcom', label: 'סלקום' },
   { id: 'mobile019', label: '019' }, { id: 'xphone', label: 'XPhone' },
-  { id: 'wecom', label: 'We-Com' },
+  { id: 'wecom', label: 'We-Com' }, { id: 'neptucom', label: 'Neptucom' },
 ]
 
 const GLOBAL_PROVIDERS = [

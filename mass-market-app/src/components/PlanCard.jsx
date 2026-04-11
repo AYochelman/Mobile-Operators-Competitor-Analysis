@@ -68,6 +68,7 @@ const LOGO_SIZES = {
   sparks:           '48px',
   voye:             '48px',
   orbit:            '48px',
+  neptucom:         '64px',
 }
 
 const CHANGE_DOT = {

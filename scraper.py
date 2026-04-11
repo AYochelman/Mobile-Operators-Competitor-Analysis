@@ -3756,7 +3756,7 @@ def scrape_all_abroad():
         plans = []
         for fn in [scrape_partner_abroad, scrape_pelephone_abroad,
                    scrape_hotmobile_abroad, scrape_cellcom_abroad, scrape_wecom_abroad,
-                   scrape_xphone_abroad, scrape_019_abroad]:
+                   scrape_019_abroad]:
             try:
                 result = fn(page)
                 if not result:
