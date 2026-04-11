@@ -1,15 +1,18 @@
 const API_BASE = import.meta.env.VITE_API_URL || ''
-const API_KEY = import.meta.env.VITE_API_KEY || ''
 
 async function fetchApi(path, options = {}) {
   const url = `${API_BASE}${path}`
   const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', ...options.headers }
 
-  // Add auth token if available
+  // JWT sent automatically — no API key in frontend
   const token = localStorage.getItem('auth_token')
   if (token) headers['Authorization'] = `Bearer ${token}`
 
-  const res = await fetch(url, { ...options, headers })
+  const res = await fetch(url, {
+    ...options,
+    headers,
+    credentials: 'include',  // sends httpOnly auth_token cookie on every request
+  })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'שגיאת שרת' }))
     throw new Error(err.error || `HTTP ${res.status}`)
@@ -18,48 +21,39 @@ async function fetchApi(path, options = {}) {
 }
 
 export const api = {
-  // Plans
-  getPlans: (params) => fetchApi(`/api/plans${params ? '?' + new URLSearchParams(params) : ''}`),
-  getChanges: (limit = 100) => fetchApi(`/api/changes?limit=${limit}`),
-  getAbroadPlans: () => fetchApi('/api/abroad-plans'),
-  getAbroadChanges: () => fetchApi('/api/abroad-changes'),
-  getGlobalPlans: () => fetchApi('/api/global-plans'),
-  getGlobalChanges: () => fetchApi('/api/global-changes'),
+  // Plans (public — rate limited server-side)
+  getPlans:        (params) => fetchApi(`/api/plans${params ? '?' + new URLSearchParams(params) : ''}`),
+  getChanges:      (limit = 100) => fetchApi(`/api/changes?limit=${limit}`),
+  getAbroadPlans:  () => fetchApi('/api/abroad-plans'),
+  getAbroadChanges:() => fetchApi('/api/abroad-changes'),
+  getGlobalPlans:  () => fetchApi('/api/global-plans'),
+  getGlobalChanges:() => fetchApi('/api/global-changes'),
   getContentPlans: () => fetchApi('/api/content-plans'),
-  getContentChanges: () => fetchApi('/api/content-changes'),
+  getContentChanges:() => fetchApi('/api/content-changes'),
 
-  // Scrape (requires API key)
-  scrapeAll: () => fetchApi('/api/scrape-all-now', {
-    headers: { 'X-API-Key': API_KEY }
-  }),
+  // Scrape — admin only, triggers via JWT auth
+  scrapeAll: () => fetchApi('/api/scrape-all-now'),
 
-  // Users (admin)
-  getUsers: () => fetchApi('/api/users', {
-    headers: { 'X-API-Key': API_KEY }
-  }),
-  createUser: (data) => fetchApi('/api/users', {
-    method: 'POST', body: JSON.stringify(data),
-    headers: { 'X-API-Key': API_KEY }
-  }),
-  deleteUser: (id) => fetchApi(`/api/users/${id}`, {
-    method: 'DELETE',
-    headers: { 'X-API-Key': API_KEY }
-  }),
-  updateUserRole: (id, role) => fetchApi(`/api/users/${id}/role`, {
-    method: 'POST', body: JSON.stringify({ role }),
-    headers: { 'X-API-Key': API_KEY }
-  }),
+  // Users — admin only, JWT auth
+  getUsers:       () => fetchApi('/api/users'),
+  createUser:     (data) => fetchApi('/api/users', { method: 'POST', body: JSON.stringify(data) }),
+  deleteUser:     (id) => fetchApi(`/api/users/${id}`, { method: 'DELETE' }),
+  updateUserRole: (id, role) => fetchApi(`/api/users/${id}/role`, { method: 'POST', body: JSON.stringify({ role }) }),
 
-  // Chat
-  chat: (question) => fetchApi('/api/chat', { method: 'POST', body: JSON.stringify({ question }), headers: { 'X-API-Key': API_KEY } }),
+  // Chat — JWT auth
+  chat: (question) => fetchApi('/api/chat', { method: 'POST', body: JSON.stringify({ question }) }),
 
-  // Alerts — email derived server-side from JWT (Authorization header added automatically by fetchApi)
-  getAlerts: () => fetchApi('/api/alerts', { headers: { 'X-API-Key': API_KEY } }),
-  createAlert: (alert) => fetchApi('/api/alerts', { method: 'POST', body: JSON.stringify(alert), headers: { 'X-API-Key': API_KEY } }),
-  deleteAlert: (id) => fetchApi(`/api/alerts/${id}`, { method: 'DELETE', headers: { 'X-API-Key': API_KEY } }),
+  // Alerts — JWT auth
+  getAlerts:   () => fetchApi('/api/alerts'),
+  createAlert: (alert) => fetchApi('/api/alerts', { method: 'POST', body: JSON.stringify(alert) }),
+  deleteAlert: (id) => fetchApi(`/api/alerts/${id}`, { method: 'DELETE' }),
 
-  // Push
+  // Push — JWT auth
   getVapidKey: () => fetchApi('/api/push/vapid-public-key'),
-  subscribe: (sub) => fetchApi('/api/push/subscribe', { method: 'POST', body: JSON.stringify(sub) }),
+  subscribe:   (sub) => fetchApi('/api/push/subscribe', { method: 'POST', body: JSON.stringify(sub) }),
   unsubscribe: (sub) => fetchApi('/api/push/unsubscribe', { method: 'DELETE', body: JSON.stringify(sub) }),
+
+  // Auth session cookie
+  setSessionCookie:  (access_token) => fetchApi('/api/auth/session', { method: 'POST', body: JSON.stringify({ access_token }) }),
+  clearSessionCookie:() => fetchApi('/api/auth/logout', { method: 'POST' }),
 }

@@ -1,34 +1,23 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import { supabase } from '../lib/supabase'
+import { api } from '../lib/api'
 
 const AuthContext = createContext(null)
 
 const DEV_MODE = import.meta.env.VITE_DEV_AUTH === 'true'
-const API_BASE = import.meta.env.VITE_API_URL || ''
-const API_KEY = import.meta.env.VITE_API_KEY || ''
-
-function decodeJwtEmail(token) {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
-    return payload?.email || ''
-  } catch {
-    return ''
-  }
-}
+const API_BASE  = import.meta.env.VITE_API_URL || ''
 
 async function fetchRoleFromBackend(accessToken) {
   try {
-    const email = decodeJwtEmail(accessToken)
-    if (!email) return 'viewer'
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 5000)
     const res = await fetch(`${API_BASE}/api/my-role`, {
       signal: controller.signal,
+      credentials: 'include',
       headers: {
-        'X-API-Key': API_KEY,
-        'X-User-Email': email,
+        'Authorization': `Bearer ${accessToken}`,
         'ngrok-skip-browser-warning': 'true',
-      }
+      },
     })
     clearTimeout(timeout)
     const data = await res.json()
@@ -50,15 +39,10 @@ export function AuthProvider({ children }) {
       setLoading(false)
       return
     }
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
+    if (!supabase) { setLoading(false); return }
 
-    // Get the current session, refreshing if expired
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        // Force refresh if token is expired or expiring within 60s
         let activeSession = session
         if (!session.expires_at || Date.now() / 1000 > session.expires_at - 60) {
           const { data: refreshed } = await supabase.auth.refreshSession()
@@ -66,24 +50,26 @@ export function AuthProvider({ children }) {
         }
         setUser(activeSession.user)
         localStorage.setItem('auth_token', activeSession.access_token)
+        api.setSessionCookie(activeSession.access_token).catch(() => {})
         const r = await fetchRoleFromBackend(activeSession.access_token)
         setRole(r)
       }
       setLoading(false)
     })
 
-    // Listen for auth changes (sign-in, sign-out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
           setUser(session.user)
           localStorage.setItem('auth_token', session.access_token)
+          api.setSessionCookie(session.access_token).catch(() => {})
           const r = await fetchRoleFromBackend(session.access_token)
           setRole(r)
         } else {
           setUser(null)
           setRole(null)
           localStorage.removeItem('auth_token')
+          api.clearSessionCookie().catch(() => {})
         }
         setLoading(false)
       }
@@ -103,6 +89,7 @@ export function AuthProvider({ children }) {
     setUser(null)
     setRole(null)
     localStorage.removeItem('auth_token')
+    api.clearSessionCookie().catch(() => {})
   }
 
   return (

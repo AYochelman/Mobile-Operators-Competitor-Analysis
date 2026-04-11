@@ -7,7 +7,7 @@ import hashlib
 import base64
 import time as _time
 from functools import wraps
-from flask import Flask, jsonify, render_template, request, make_response, send_from_directory
+from flask import Flask, jsonify, render_template, request, make_response, send_from_directory, g
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -37,7 +37,7 @@ ALLOWED_ORIGINS = [
 _extra_origins = os.environ.get("ALLOWED_ORIGINS", "")
 if _extra_origins:
     ALLOWED_ORIGINS.extend(_extra_origins.split(","))
-CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS}})
+CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS, "supports_credentials": True}})
 
 @app.after_request
 def add_security_headers(response):
@@ -46,6 +46,17 @@ def add_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https: wss:; "
+        "font-src 'self' data:; "
+        "frame-ancestors 'none'"
+    )
     return response
 
 # ── API Key auth for sensitive endpoints ───────────────────────────────
@@ -79,6 +90,34 @@ def require_api_key(f):
         if not provided or provided != expected:
             return jsonify({"error": "Unauthorized — API key required"}), 401
         return f(*args, **kwargs)
+    return decorated
+
+
+def require_auth(f):
+    """Accept a valid Supabase JWT (Authorization header or auth_token cookie) OR API key.
+    Sets g.jwt_payload to the decoded payload (or None for API-key auth).
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # 1. API key (server-to-server)
+        api_key_header = request.headers.get("X-API-Key")
+        if api_key_header and hmac.compare_digest(api_key_header, _get_api_key()):
+            g.jwt_payload = None
+            return f(*args, **kwargs)
+        # 2. JWT from Authorization header
+        token = None
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+        # 3. JWT from httpOnly cookie (fallback)
+        if not token:
+            token = request.cookies.get("auth_token")
+        if token:
+            payload = _verify_supabase_jwt(token)
+            if payload:
+                g.jwt_payload = payload
+                return f(*args, **kwargs)
+        return jsonify({"error": "Unauthorized"}), 401
     return decorated
 
 
@@ -283,6 +322,7 @@ def service_worker():
 
 
 @app.route("/api/plans")
+@limiter.limit("60 per minute")
 def api_plans():
     carrier = request.args.get("carrier")
     plans = get_plans(carrier=carrier, db_path=_db_path())
@@ -290,9 +330,10 @@ def api_plans():
 
 
 @app.route("/api/changes")
+@limiter.limit("60 per minute")
 def api_changes():
     try:
-        limit = min(int(request.args.get("limit", 20)), 500)
+        limit = max(1, min(int(request.args.get("limit", 20)), 500))
     except (ValueError, TypeError):
         limit = 20
     changes = get_changes(limit=limit, db_path=_db_path())
@@ -300,6 +341,7 @@ def api_changes():
 
 
 @app.route("/api/abroad-plans")
+@limiter.limit("60 per minute")
 def api_abroad_plans():
     carrier = request.args.get("carrier")
     plans = get_abroad_plans(carrier=carrier, db_path=_db_path())
@@ -307,6 +349,7 @@ def api_abroad_plans():
 
 
 @app.route("/api/global-plans")
+@limiter.limit("60 per minute")
 def api_global_plans():
     carrier = request.args.get("carrier")
     plans = get_global_plans(carrier=carrier, db_path=_db_path())
@@ -314,15 +357,17 @@ def api_global_plans():
 
 
 @app.route("/api/exchange-rates")
+@limiter.limit("30 per minute")
 def api_exchange_rates():
     from scraper import _get_usd_to_ils, _get_eur_to_ils
     return jsonify({"usd": _get_usd_to_ils(), "eur": _get_eur_to_ils()})
 
 
 @app.route("/api/global-changes")
+@limiter.limit("60 per minute")
 def api_global_changes():
     try:
-        limit = min(int(request.args.get("limit", 50)), 500)
+        limit = max(1, min(int(request.args.get("limit", 50)), 500))
     except (ValueError, TypeError):
         limit = 50
     changes = get_global_changes(limit=limit, db_path=_db_path())
@@ -358,6 +403,7 @@ def api_scrape_global_now():
 
 
 @app.route("/api/abroad-changes")
+@limiter.limit("60 per minute")
 def api_abroad_changes():
     try:
         limit = min(int(request.args.get("limit", 50)), 500)
@@ -472,6 +518,7 @@ def api_scrape_all_now():
 
 
 @app.route("/api/content-plans")
+@limiter.limit("60 per minute")
 def api_content_plans():
     carrier = request.args.get("carrier")
     service = request.args.get("service")
@@ -480,6 +527,7 @@ def api_content_plans():
 
 
 @app.route("/api/content-changes")
+@limiter.limit("60 per minute")
 def api_content_changes():
     try:
         limit = min(int(request.args.get("limit", 50)), 500)
@@ -534,7 +582,7 @@ def api_scrape_now():
 # ── Price Alerts Routes ────────────────────────────────────────────────────
 
 @app.route("/api/alerts", methods=["GET"])
-@require_api_key
+@require_auth
 @limiter.limit("60 per minute")
 def api_get_alerts():
     """Get alerts for the authenticated user.
@@ -553,7 +601,7 @@ def api_get_alerts():
 
 
 @app.route("/api/alerts", methods=["POST"])
-@require_api_key
+@require_auth
 @limiter.limit("20 per minute")
 def api_create_alert():
     data = request.get_json(force=True)
@@ -573,7 +621,7 @@ def api_create_alert():
 
 
 @app.route("/api/alerts/<int:alert_id>", methods=["DELETE"])
-@require_api_key
+@require_auth
 def api_delete_alert(alert_id):
     delete_price_alert(alert_id, db_path=_db_path())
     return jsonify({"status": "deleted"})
@@ -582,7 +630,7 @@ def api_delete_alert(alert_id):
 # ── Push Notification Routes ───────────────────────────────────────────────
 
 @app.route("/api/chat", methods=["POST"])
-@require_api_key
+@require_auth
 @limiter.limit("10 per minute")
 def api_chat():
     """AI chat over the plans data using Claude API."""
@@ -715,7 +763,47 @@ def api_vapid_public_key():
     return jsonify({"publicKey": load_config().get("vapid_public_key", "")})
 
 
+# ── Auth session (httpOnly cookie) ─────────────────────────────────────────
+
+@app.route("/api/auth/session", methods=["POST"])
+@limiter.limit("20 per minute")
+def api_auth_session():
+    """Receive a valid Supabase JWT from the frontend and persist it as an httpOnly cookie.
+    The cookie is used by Flask to authenticate API requests without exposing
+    the token to JavaScript (mitigates XSS-based token theft)."""
+    data = request.get_json(force=True) or {}
+    token = data.get("access_token", "").strip()
+    if not token:
+        return jsonify({"error": "access_token required"}), 400
+    payload = _verify_supabase_jwt(token)
+    if not payload:
+        return jsonify({"error": "Invalid or expired token"}), 401
+    exp = payload.get("exp")
+    max_age = max(0, int(exp - _time.time())) if exp else 3600
+    resp = make_response(jsonify({"status": "ok"}))
+    resp.set_cookie(
+        "auth_token", token,
+        httponly=True,
+        secure=True,
+        samesite="None",   # Required for cross-origin (Netlify → ngrok)
+        max_age=max_age,
+        path="/api/",
+    )
+    return resp
+
+
+@app.route("/api/auth/logout", methods=["POST"])
+def api_auth_logout():
+    """Clear the httpOnly auth cookie on logout."""
+    resp = make_response(jsonify({"status": "ok"}))
+    resp.set_cookie("auth_token", "", httponly=True, secure=True,
+                    samesite="None", max_age=0, path="/api/")
+    return resp
+
+
 @app.route("/api/push/subscribe", methods=["POST"])
+@require_auth
+@limiter.limit("10 per minute")
 def api_push_subscribe():
     from db import save_push_subscription
     data = request.get_json(force=True)
@@ -729,6 +817,8 @@ def api_push_subscribe():
 
 
 @app.route("/api/push/unsubscribe", methods=["DELETE"])
+@require_auth
+@limiter.limit("10 per minute")
 def api_push_unsubscribe():
     from db import delete_push_subscription
     data = request.get_json(force=True)
@@ -754,12 +844,17 @@ def api_push_test():
 # ── User management (Supabase) ────────────────────────────────────────────
 
 @app.route("/api/my-role")
-@require_api_key
+@require_auth
 @limiter.limit("60 per minute")
 def api_my_role():
     """Return the role of the given user email.
-    Secured by API key. Email is sent by frontend (decoded client-side from Supabase JWT)."""
-    email = request.headers.get('X-User-Email', '').strip().lower()
+    Email is extracted from the verified JWT payload (g.jwt_payload),
+    or falls back to X-User-Email header for API-key auth."""
+    payload = getattr(g, 'jwt_payload', None)
+    if payload:
+        email = (payload.get('email') or '').strip().lower()
+    else:
+        email = request.headers.get('X-User-Email', '').strip().lower()
     if not email:
         return jsonify({"role": "viewer"})
     try:
