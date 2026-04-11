@@ -756,13 +756,13 @@ export default function DashboardPage() {
               )
             })}
           </div>
-          {visibleCount < filteredPlans.length && (
+          {visibleCount < displayItems.length && (
             <div className="text-center mt-4">
               <button
                 onClick={() => setVisibleCount(prev => prev + 50)}
                 className="text-sm text-moca-bolt hover:text-moca-dark px-4 py-2 rounded-lg border border-moca-border hover:bg-moca-cream transition-colors"
               >
-                {'\u05D4\u05E6\u05D2 \u05E2\u05D5\u05D3'} ({filteredPlans.length - visibleCount} {'\u05E0\u05D5\u05E1\u05E4\u05D9\u05DD'})
+                {'\u05D4\u05E6\u05D2 \u05E2\u05D5\u05D3'} ({displayItems.length - visibleCount} {'\u05E0\u05D5\u05E1\u05E4\u05D9\u05DD'})
               </button>
             </div>
           )}
