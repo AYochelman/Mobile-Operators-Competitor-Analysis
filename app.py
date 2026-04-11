@@ -121,6 +121,45 @@ def require_auth(f):
     return decorated
 
 
+def require_admin(f):
+    """Accept API key OR a verified Supabase JWT whose owner has admin role in user_roles."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # 1. API key
+        api_key_header = request.headers.get("X-API-Key")
+        if api_key_header and hmac.compare_digest(api_key_header, _get_api_key()):
+            g.jwt_payload = None
+            return f(*args, **kwargs)
+        # 2. JWT
+        token = None
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+        if not token:
+            token = request.cookies.get("auth_token")
+        if token:
+            payload = _verify_supabase_jwt(token)
+            if payload:
+                email = (payload.get('email') or '').strip().lower()
+                try:
+                    conn = _supabase_conn()
+                    cur = conn.cursor()
+                    cur.execute(
+                        "SELECT COALESCE(r.role,'viewer') FROM auth.users u "
+                        "LEFT JOIN public.user_roles r ON u.id=r.user_id "
+                        "WHERE LOWER(u.email)=%s", (email,)
+                    )
+                    row = cur.fetchone()
+                    conn.close()
+                    if row and row[0] == 'admin':
+                        g.jwt_payload = payload
+                        return f(*args, **kwargs)
+                except Exception as e:
+                    logger.error(f"require_admin DB check failed: {e}")
+        return jsonify({"error": "Unauthorized — admin required"}), 401
+    return decorated
+
+
 def require_api_key_or_query(f):
     """Accepts API key via header OR ?api_key= query param.
     Use ONLY on /api/scrape-*-now for manual browser convenience."""
@@ -875,7 +914,7 @@ def api_my_role():
 
 
 @app.route("/api/users")
-@require_api_key
+@require_admin
 @limiter.limit("20 per minute")
 def api_get_users():
     """List all users from Supabase via direct DB connection."""
@@ -896,7 +935,7 @@ def api_get_users():
         return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/api/users", methods=["POST"])
-@require_api_key
+@require_admin
 @limiter.limit("10 per minute")
 def api_create_user():
     """Create a new user in Supabase."""
@@ -944,7 +983,7 @@ def api_create_user():
         return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/api/users/<user_id>", methods=["DELETE"])
-@require_api_key
+@require_admin
 @limiter.limit("10 per minute")
 def api_delete_user(user_id):
     """Delete a user from Supabase."""
@@ -962,7 +1001,7 @@ def api_delete_user(user_id):
         return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/api/users/<user_id>/role", methods=["POST"])
-@require_api_key
+@require_admin
 @limiter.limit("20 per minute")
 def api_update_user_role(user_id):
     """Update a user's role."""

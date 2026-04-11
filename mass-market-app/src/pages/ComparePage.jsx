@@ -80,6 +80,7 @@ export default function ComparePage() {
   const [destinationFilter, setDestinationFilter] = useState('all')
   const [sortBy, setSortBy] = useState('price_asc')
   const [roamingFilter, setRoamingFilter] = useState('all')
+  const [genFilter, setGenFilter] = useState('all')
   const [allData, setAllData] = useState({ domestic: [], abroad: [], global: [] })
   const [loading, setLoading] = useState(true)
   const [tableVisibleCount, setTableVisibleCount] = useState(50)
@@ -102,7 +103,7 @@ export default function ComparePage() {
   // Reset table pagination when filters change
   useEffect(() => {
     setTableVisibleCount(50)
-  }, [selectedCarriers, gbFilter, daysFilter, regionFilter, destinationFilter, sortBy])
+  }, [selectedCarriers, gbFilter, daysFilter, regionFilter, destinationFilter, sortBy, genFilter])
 
   const resetFilters = () => {
     setSelectedCarriers([])
@@ -113,6 +114,7 @@ export default function ComparePage() {
     setSearchQuery('')
     setSortBy('price_asc')
     setRoamingFilter('all')
+    setGenFilter('all')
     setTableVisibleCount(50)
   }
 
@@ -236,6 +238,12 @@ export default function ComparePage() {
     if (tab === 'domestic' && roamingFilter === 'yes') {
       result = result.filter(p => p.extras && p.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+/.test(e) && /GB|גלישה/i.test(e)))
     }
+    if (tab === 'domestic' && genFilter === '5g') {
+      result = result.filter(p => (p.plan_name && p.plan_name.includes('5G')) || (p.extras && p.extras.some(e => e.includes('5G'))))
+    }
+    if (tab === 'domestic' && genFilter === '4g') {
+      result = result.filter(p => !(p.plan_name && p.plan_name.includes('5G')) && !(p.extras && p.extras.some(e => e.includes('5G'))))
+    }
 
     if (sortBy === 'price_asc') result = [...result].sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999))
     else if (sortBy === 'price_desc') result = [...result].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
@@ -243,7 +251,7 @@ export default function ComparePage() {
     else if (sortBy === 'gb_desc') result = [...result].sort((a, b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999))
 
     return result
-  }, [plans, selectedCarriers, gbFilter, daysFilter, sortBy, showDays, roamingFilter, tab])
+  }, [plans, selectedCarriers, gbFilter, daysFilter, sortBy, showDays, roamingFilter, genFilter, tab])
 
   // Chart: average price per carrier
   const chartData = useMemo(() => {
@@ -268,6 +276,7 @@ export default function ComparePage() {
     + (regionFilter !== 'all' ? 1 : 0)
     + (destinationFilter !== 'all' ? 1 : 0)
     + (roamingFilter !== 'all' ? 1 : 0)
+    + (genFilter !== 'all' ? 1 : 0)
 
   const GB_OPTIONS = tab === 'domestic'
     ? [['all', 'הכל'], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['100+', '100+GB'], ['unlimited', 'ללא הגבלה']]
@@ -374,6 +383,16 @@ export default function ComparePage() {
               <div className="flex flex-wrap gap-1">
                 <FilterTag label="כולם" active={roamingFilter === 'all'} onClick={() => setRoamingFilter('all')} />
                 <FilterTag label='כולל חו"ל' active={roamingFilter === 'yes'} onClick={() => setRoamingFilter('yes')} />
+              </div>
+            </div>
+          )}
+          {tab === 'domestic' && (
+            <div>
+              <p className="text-[11px] font-medium text-gray-500 mb-1.5">דור רשת</p>
+              <div className="flex flex-wrap gap-1">
+                <FilterTag label="הכל" active={genFilter === 'all'} onClick={() => setGenFilter('all')} />
+                <FilterTag label="4G" active={genFilter === '4g'} onClick={() => setGenFilter('4g')} />
+                <FilterTag label="5G" active={genFilter === '5g'} onClick={() => setGenFilter('5g')} />
               </div>
             </div>
           )}

@@ -1,12 +1,14 @@
 const API_BASE = import.meta.env.VITE_API_URL || ''
+const DEV_API_KEY = import.meta.env.VITE_DEV_API_KEY || ''
 
 async function fetchApi(path, options = {}) {
   const url = `${API_BASE}${path}`
   const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', ...options.headers }
 
-  // JWT sent automatically — no API key in frontend
   const token = localStorage.getItem('auth_token')
   if (token) headers['Authorization'] = `Bearer ${token}`
+  // Dev-only API key (only present in .env, never in .env.production)
+  if (DEV_API_KEY) headers['X-API-Key'] = DEV_API_KEY
 
   const res = await fetch(url, {
     ...options,

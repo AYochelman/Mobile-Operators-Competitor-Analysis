@@ -7,7 +7,9 @@ const AuthContext = createContext(null)
 const DEV_MODE = import.meta.env.VITE_DEV_AUTH === 'true'
 const API_BASE  = import.meta.env.VITE_API_URL || ''
 
-async function fetchRoleFromBackend(accessToken) {
+const ADMIN_EMAILS = ['alon.yoch@gmail.com']
+
+async function fetchRoleFromBackend(accessToken, userEmail) {
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 5000)
@@ -20,9 +22,12 @@ async function fetchRoleFromBackend(accessToken) {
       },
     })
     clearTimeout(timeout)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
     return data?.role || 'viewer'
   } catch {
+    // Backend unreachable — fall back to local email check
+    if (userEmail && ADMIN_EMAILS.includes(userEmail.toLowerCase())) return 'admin'
     return 'viewer'
   }
 }
@@ -51,7 +56,7 @@ export function AuthProvider({ children }) {
         setUser(activeSession.user)
         localStorage.setItem('auth_token', activeSession.access_token)
         api.setSessionCookie(activeSession.access_token).catch(() => {})
-        const r = await fetchRoleFromBackend(activeSession.access_token)
+        const r = await fetchRoleFromBackend(activeSession.access_token, activeSession.user.email)
         setRole(r)
       }
       setLoading(false)
@@ -63,7 +68,7 @@ export function AuthProvider({ children }) {
           setUser(session.user)
           localStorage.setItem('auth_token', session.access_token)
           api.setSessionCookie(session.access_token).catch(() => {})
-          const r = await fetchRoleFromBackend(session.access_token)
+          const r = await fetchRoleFromBackend(session.access_token, session.user.email)
           setRole(r)
         } else {
           setUser(null)
