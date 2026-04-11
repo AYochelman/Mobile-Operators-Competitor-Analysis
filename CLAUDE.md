@@ -96,9 +96,9 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 
 ## Carriers & Providers
 
-**Domestic (7)**: partner, pelephone, hotmobile, cellcom, mobile019, xphone, wecom
-**Abroad (7)**: same carriers, per-country roaming plans
-**Global eSIM (14)**: tuki, globalesim, airalo, pelephone_global, esimo, simtlv, world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (183 countries + 10 regions), sparks (143 countries), voye (157 countries + 5 regions + global), orbit (195 countries + 9 zones, REST API at be.orbitmobile.com)
+**Domestic (8)**: partner, pelephone, hotmobile, cellcom, mobile019, xphone, wecom, neptucom
+**Abroad (8)**: same carriers, per-country roaming plans
+**Global eSIM (15)**: tuki, globalesim, airalo, pelephone_global, esimo, simtlv, world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (183 countries + 10 regions), sparks (143 countries), voye (157 countries + 5 regions + global), orbit (195 countries + 9 zones, REST API at be.orbitmobile.com), travelsim (global + USA + Middle East zones)
 **Content (5 services × 4 carriers)**: eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי
 
 ## Database Schema (SQLite — data/plans.db)
@@ -154,6 +154,33 @@ PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` pro
 - Orbit uses REST API (no Playwright): ORBIT_NAME_TO_HEBREW maps English→Hebrew, ORBIT_ZONE_TO_HEBREW maps zone IDs→Hebrew
 - Tuki scraper has `_tuki_name_fix` dict to normalize country names from their API (e.g. "שוודיה"→"שבדיה")
 
+### Country Name Normalization
+
+`db.py` contains `_DEST_NORM` — a dict applied on every DB write to canonicalize country names across all scrapers. When a scraper returns a non-canonical name, add a mapping here rather than fixing each scraper individually. Canonical names are defined by what appears in `globalCountries.js` / `abroadCountries.js`.
+
+### Multi-Country Provider Filtering (DashboardPage / ComparePage)
+
+Some global providers sell a single plan that covers many countries (e.g. SimTLV, TravelSim, World8, Airalo, GlobaleSIM, eSIMo, XPhone Global, GlobalSIM). These are tracked in `MULTI_COUNTRY_CARRIERS` Set in `DashboardPage.jsx`. Their country coverage is defined as static arrays in `globalCountries.js` and resolved at runtime by `getPlanCoverage(plan)`:
+
+```js
+// Returns string[] of covered countries, or null for single-country plans
+function getPlanCoverage(plan) { ... }
+```
+
+- `globalDestinations` useMemo: for MULTI_COUNTRY_CARRIERS, expands all covered countries into the dropdown instead of using extras[0]
+- `filteredPlans`: for MULTI_COUNTRY_CARRIERS, matches via `getPlanCoverage(p).includes(destination)` instead of `extras[0] === destination`
+- `CARRIER_COUNTRY_LISTS` in ComparePage mirrors this for the comparison chart's country filter
+
+When adding a new multi-country provider: add arrays to `globalCountries.js`, add the carrier id to `MULTI_COUNTRY_CARRIERS`, add a branch in `getPlanCoverage()`, and add to `CARRIER_COUNTRY_LISTS` in ComparePage.
+
+### RTL Layout Pitfalls
+
+The global `direction: rtl` in `index.css` affects flex containers differently from text elements:
+- `text-right` (`text-align: right`) = always physical right edge ✓
+- `justify-end` in RTL flex = physical **left** edge ✗ — use `justify-start` instead
+- `justify-start` in RTL flex = physical **right** edge ✓
+- Icons inside flex rows: in RTL flex the first child renders on the right, so place the icon before the text in JSX to have it appear to the left of the text visually
+
 ## Schedule
 
 - **10:00 + 16:00** — scrape all (domestic + abroad + global + content), detect changes, notify (Telegram + WhatsApp + Web Push)
@@ -191,6 +218,11 @@ PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` pro
 ## Key UI Components
 
 - **SearchableSelect** (`components/ui/SearchableSelect.jsx`): Custom dropdown with search input, renders via React Portal to avoid clipping
-- **PlanCard**: Universal card for all plan types, supports highlight animation from chat
+- **PlanCard**: Universal card for all plan types (domestic/abroad/global/content via `type` prop), supports highlight animation from chat. Content cards skip plan name and info line; all text must use explicit `text-right` or RTL-aware flex (`justify-start`)
+- **GroupedPlanCard** (`components/GroupedPlanCard.jsx`): Used for XPhone "גולשים ומדברים" plans — renders GB selector pills + price + info line (GB · days · minutes · SMS)
 - **ChatPanel**: AI chat with clickable carrier names that navigate to filtered dashboard
 - **FilterTag**: Compact filter toggle pill used across Dashboard and Compare pages
+
+## After Every Code Change
+
+Always run `npm run build` in `mass-market-app/` after any React/JS change. The `dist/` folder is deployed to Netlify manually by dragging.
