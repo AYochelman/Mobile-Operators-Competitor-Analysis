@@ -34,6 +34,7 @@ const CARRIER_LOGOS = {
   pelephone:       '/logos/pelephone.png',
   hotmobile:       '/logos/hotmobile.png',
   cellcom:         '/logos/cellcom.png',
+  mobile019:       '/logos/019.png',
   wecom:           '/logos/wecom.png',
   // Global eSIM
   tuki:            '/logos/tuki.png',
@@ -50,6 +51,19 @@ const CARRIER_LOGOS = {
   sparks:          '/logos/sparks.png',
   voye:            '/logos/voye.png',
   orbit:           '/logos/orbit.png',
+}
+
+// Custom logo sizes (base: 32px / w-8) — +50% = 48px
+const LOGO_SIZES = {
+  globalesim:       '72px',
+  pelephone_global: '72px',
+  esimo:            '72px',
+  simtlv:           '48px',
+  esimio:           '48px',
+  holafly:          '48px',
+  sparks:           '48px',
+  voye:             '48px',
+  orbit:            '48px',
 }
 
 const CHANGE_DOT = {
@@ -115,26 +129,28 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
         <img
           src={CARRIER_LOGOS[carrier]}
           alt={label}
-          className="absolute top-3 left-3 w-8 h-8 object-contain"
+          className="absolute top-3 left-3 object-contain"
+          style={{ width: LOGO_SIZES[carrier] || '32px', height: LOGO_SIZES[carrier] || '32px' }}
         />
       )}
 
       {/* Change indicator dot */}
       {changeType && CHANGE_DOT[changeType] && (
         <span
-          className={`absolute w-2 h-2 rounded-full ${CHANGE_DOT[changeType]} ${
-            CARRIER_LOGOS[carrier] ? 'top-2 left-2' : 'top-4 left-4'
-          }`}
+          className={`absolute w-2 h-2 rounded-full ${CHANGE_DOT[changeType]} top-2 left-2`}
           title={changeType === 'new_plan' ? 'חדש' : changeType === 'price_change' ? 'שינוי מחיר' : 'הוסרה'}
         />
       )}
 
-      {/* Carrier badge — top right */}
-      <div className="flex items-center gap-1.5 mb-3">
+      {/* Carrier badge — absolute top-right */}
+      <div className={`flex items-center gap-1.5 ${CARRIER_LOGOS[carrier] ? 'absolute top-3 right-3' : 'mb-3'}`}>
         <Badge color={badgeColor}>{label}</Badge>
         {isGlobal && plan.esim && <Badge color="green">eSIM</Badge>}
         {hasRoaming && <Badge color="blue">חו״ל</Badge>}
       </div>
+
+      {/* Spacer so content starts below logo/badge row when logo present */}
+      {CARRIER_LOGOS[carrier] && <div className="mt-9" />}
 
       {/* Plan name */}
       {!isContent && (
