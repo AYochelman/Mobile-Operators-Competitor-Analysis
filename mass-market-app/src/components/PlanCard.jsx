@@ -8,28 +8,29 @@ import AppsModal from './AppsModal'
 
 const CARRIER_COLORS = {
   partner: 'pink', pelephone: 'blue', hotmobile: 'orange', cellcom: 'green',
-  mobile019: 'purple', xphone: 'teal', wecom: 'amber',
+  mobile019: 'purple', xphone: 'teal', wecom: 'amber', neptucom: 'indigo',
 }
 const CARRIER_LABELS = {
   partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום',
-  mobile019: '019', xphone: 'XPhone', wecom: 'We-Com',
+  mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom',
 }
 const GLOBAL_LABELS = {
   tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
   pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV',
   world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
-  orbit: 'Orbit',
+  orbit: 'Orbit', travelsim: 'Travel Sim',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
   esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
   saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber', voye: 'pink',
-  orbit: 'indigo',
+  orbit: 'indigo', travelsim: 'teal',
 }
 
 const CARRIER_LOGOS = {
   // Domestic
+  neptucom:        '/logos/neptucom.png',
   partner:         '/logos/partner.png',
   pelephone:       '/logos/pelephone.png',
   hotmobile:       '/logos/hotmobile.png',
@@ -52,6 +53,7 @@ const CARRIER_LOGOS = {
   sparks:          '/logos/sparks.png',
   voye:            '/logos/voye.png',
   orbit:           '/logos/orbit.png',
+  travelsim:       '/logos/travelsim.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
@@ -94,7 +96,14 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
   const isGlobal = type === 'global'
   const isAbroad = type === 'abroad'
   const isContent = type === 'content'
-  const countryData = isGlobal ? getCountriesForPlan(plan) : isAbroad ? getCountriesForAbroadPlan(plan) : null
+  const hasNeptucomRoaming = plan.carrier === 'neptucom' && plan.extras && plan.extras.some(e => /\u05db\u05dc\u05d5\u05dc/.test(e) && /\u05d7\u05d5"?\u05dc/.test(e))
+  const countryData = isGlobal
+    ? getCountriesForPlan(plan)
+    : isAbroad
+      ? getCountriesForAbroadPlan(plan)
+      : hasNeptucomRoaming
+        ? getCountriesForAbroadPlan(plan)
+        : null
   const appsData = isAbroad ? getAppsForAbroadPlan(plan) : null
   const carrier = plan.carrier
   const label = isGlobal ? (GLOBAL_LABELS[carrier] || carrier) : (CARRIER_LABELS[carrier] || carrier)
@@ -148,7 +157,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
       <div className={`flex items-center gap-1.5 ${CARRIER_LOGOS[carrier] ? 'absolute top-3 right-3' : 'mb-3'}`}>
         <Badge color={badgeColor}>{label}</Badge>
         {isGlobal && plan.esim && <Badge color="green">eSIM</Badge>}
-        {hasRoaming && <Badge color="blue">חו״ל</Badge>}
+        {(hasRoaming || hasNeptucomRoaming) && <Badge color="blue">חו״ל</Badge>}
       </div>
 
       {/* Spacer so content starts below logo/badge row when logo present */}
