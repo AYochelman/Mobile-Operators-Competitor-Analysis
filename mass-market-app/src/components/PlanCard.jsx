@@ -29,11 +29,27 @@ const GLOBAL_COLORS = {
 }
 
 const CARRIER_LOGOS = {
-  partner:   '/logos/partner.png',
-  pelephone: '/logos/pelephone.png',
-  hotmobile: '/logos/hotmobile.png',
-  cellcom:   '/logos/cellcom.png',
-  wecom:     '/logos/wecom.png',
+  // Domestic
+  partner:         '/logos/partner.png',
+  pelephone:       '/logos/pelephone.png',
+  hotmobile:       '/logos/hotmobile.png',
+  cellcom:         '/logos/cellcom.png',
+  wecom:           '/logos/wecom.png',
+  // Global eSIM
+  tuki:            '/logos/tuki.png',
+  globalesim:      '/logos/globalesim.png',
+  airalo:          '/logos/airalo.png',
+  pelephone_global:'/logos/pelephone_global.png',
+  esimo:           '/logos/esimo.png',
+  simtlv:          '/logos/simtlv.png',
+  world8:          '/logos/world8.png',
+  xphone_global:   '/logos/xphone_global.png',
+  saily:           '/logos/saily.png',
+  holafly:         '/logos/holafly.png',
+  esimio:          '/logos/esimio.png',
+  sparks:          '/logos/sparks.png',
+  voye:            '/logos/voye.png',
+  orbit:           '/logos/orbit.png',
 }
 
 const CHANGE_DOT = {
@@ -94,8 +110,8 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
     <div className={`bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up ${highlighted ? 'ring-2 ring-amber-400 shadow-amber-100 shadow-lg animate-pulse-highlight' : ''}`}
       ref={highlighted ? (el) => { if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }) } : undefined}
     >
-      {/* Carrier logo — content cards only, top-left, no background */}
-      {isContent && CARRIER_LOGOS[carrier] && (
+      {/* Carrier logo — top-left, no background */}
+      {CARRIER_LOGOS[carrier] && (
         <img
           src={CARRIER_LOGOS[carrier]}
           alt={label}
@@ -107,7 +123,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
       {changeType && CHANGE_DOT[changeType] && (
         <span
           className={`absolute w-2 h-2 rounded-full ${CHANGE_DOT[changeType]} ${
-            isContent && CARRIER_LOGOS[carrier] ? 'top-2 left-2' : 'top-4 left-4'
+            CARRIER_LOGOS[carrier] ? 'top-2 left-2' : 'top-4 left-4'
           }`}
           title={changeType === 'new_plan' ? 'חדש' : changeType === 'price_change' ? 'שינוי מחיר' : 'הוסרה'}
         />
