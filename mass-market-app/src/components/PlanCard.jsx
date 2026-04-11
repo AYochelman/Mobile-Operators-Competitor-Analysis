@@ -175,7 +175,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
       )}
 
       {/* Price */}
-      <div className="mb-3">
+      <div className="mb-3 text-right">
         <div className="text-3xl font-bold text-gray-900 tracking-tight">{String(plan.price).startsWith('₪') ? plan.price : `₪${plan.price}`}</div>
         {isGlobal && plan.original_price && plan.currency && plan.currency !== 'ILS' && (
           <div className="text-[11px] text-gray-400 mt-0.5" dir="ltr">{plan.currency} ${plan.original_price}</div>
@@ -193,10 +193,15 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
 
       {/* Content-specific fields */}
       {isContent && plan.free_trial && !['ללא תקופת חינם', '—', ''].includes(plan.free_trial) && (
-        <p className="text-xs text-gray-500 mb-2">🎁 {plan.free_trial}</p>
+        <p className="text-xs text-gray-500 mb-2 flex items-center gap-1 justify-start">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 text-moca-bolt shrink-0">
+            <path fillRule="evenodd" d="M4.5 2A2.5 2.5 0 0 0 2 4.5v2.878a2.5 2.5 0 0 0 .732 1.768l5.5 5.5a2.5 2.5 0 0 0 3.536 0l2.878-2.878a2.5 2.5 0 0 0 0-3.536l-5.5-5.5A2.5 2.5 0 0 0 7.378 2H4.5ZM5 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+          </svg>
+          <span>{plan.free_trial}</span>
+        </p>
       )}
       {isContent && plan.note && (
-        <p className="text-[11px] text-gray-400 mb-2">{plan.note}</p>
+        <p className="text-[11px] text-gray-400 mb-2 text-right">{plan.note}</p>
       )}
 
       {/* Extras */}

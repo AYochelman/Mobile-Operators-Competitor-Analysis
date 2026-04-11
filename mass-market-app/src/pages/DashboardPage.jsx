@@ -11,6 +11,54 @@ import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import Button from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
+import {
+  TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
+  SIMTLV_COUNTRIES, PELEPHONE_GLOBAL_COUNTRIES, ESIMO_COUNTRIES,
+  WORLD8_EUROPE_USA, WORLD8_WORLDWIDE,
+  XPHONE_EUROPE, XPHONE_WORLD,
+  AIRALO_DISCOVER,
+  GLOBALESIM_EUROPE, GLOBALESIM_ASIA, GLOBALESIM_NORTH_AMERICA,
+  GLOBALESIM_SOUTH_AMERICA, GLOBALESIM_AFRICA, GLOBALESIM_OCEANIA, GLOBALESIM_GLOBAL_REGION,
+} from '../data/globalCountries'
+
+// Carriers where one plan covers many countries (zone/global plans)
+const MULTI_COUNTRY_CARRIERS = new Set([
+  'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo',
+  'pelephone_global', 'esimo', 'globalesim',
+])
+
+const GLOBALESIM_REGION_MAP = {
+  'אפריקה': GLOBALESIM_AFRICA,
+  'אסיה': GLOBALESIM_ASIA,
+  'צפון אמריקה': GLOBALESIM_NORTH_AMERICA,
+  'דרום אמריקה': GLOBALESIM_SOUTH_AMERICA,
+  'אוקיאניה': GLOBALESIM_OCEANIA,
+  'אירופה': GLOBALESIM_EUROPE,
+  'גלובלי': GLOBALESIM_GLOBAL_REGION,
+}
+
+function getPlanCoverage(plan) {
+  const carrier = plan.carrier
+  const dest = plan.extras?.[0] || ''
+  const name = plan.plan_name || ''
+  if (carrier === 'travelsim') {
+    if (dest === 'ארצות הברית') return TRAVELSIM_USA
+    if (dest === 'המזרח התיכון') return TRAVELSIM_ME
+    return TRAVELSIM_GLOBAL
+  }
+  if (carrier === 'xphone_global') {
+    return dest.startsWith('אירופה') ? XPHONE_EUROPE : XPHONE_WORLD
+  }
+  if (carrier === 'simtlv') return SIMTLV_COUNTRIES
+  if (carrier === 'world8') {
+    return (name.includes('אירופה') || name.includes('Europe')) ? WORLD8_EUROPE_USA : WORLD8_WORLDWIDE
+  }
+  if (carrier === 'airalo') return AIRALO_DISCOVER
+  if (carrier === 'pelephone_global') return PELEPHONE_GLOBAL_COUNTRIES
+  if (carrier === 'esimo') return ESIMO_COUNTRIES
+  if (carrier === 'globalesim') return GLOBALESIM_REGION_MAP[dest] || GLOBALESIM_GLOBAL_REGION
+  return null
+}
 
 const TAB_ICONS = {
   domestic: (
@@ -53,7 +101,6 @@ const KNOWN_REGIONS = new Set([
   'צפון ודרום אמריקה','גלובלי פלוס','מדינות האיים הקריביים',
   'אירופה — גלישה בלבד','אירופה — גולשים ומדברים',
   'גלובלי — גלישה בלבד','גלובלי — גולשים ומדברים',
-  'ארה"ב',
 ])
 
 const CARRIERS = [
@@ -217,7 +264,13 @@ export default function DashboardPage() {
     if (tab === 'global') {
       if (f.globalProvider !== 'all') result = result.filter(p => p.carrier === f.globalProvider)
       if (f.region !== 'all') result = result.filter(p => p.extras && p.extras[0] === f.region)
-      else if (f.destination !== 'all') result = result.filter(p => p.extras && p.extras[0] === f.destination)
+      else if (f.destination !== 'all') result = result.filter(p => {
+        if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
+          const coverage = getPlanCoverage(p)
+          return coverage ? coverage.includes(f.destination) : false
+        }
+        return p.extras && p.extras[0] === f.destination
+      })
     }
     if (tab === 'content') {
       const NA = ['לא נמצא', 'שגיאה', 'לא זמין']
@@ -293,7 +346,16 @@ export default function DashboardPage() {
     if (tab !== 'global') return []
     let src = plans.global
     if (filters.globalProvider !== 'all') src = src.filter(p => p.carrier === filters.globalProvider)
-    return [...new Set(src.filter(p => p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(p.extras[0])).map(p => p.extras[0]))].sort((a, b) => a.localeCompare(b, 'he'))
+    const destSet = new Set()
+    for (const p of src) {
+      if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
+        const coverage = getPlanCoverage(p)
+        if (coverage) for (const c of coverage) destSet.add(c)
+      } else if (p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(p.extras[0])) {
+        destSet.add(p.extras[0])
+      }
+    }
+    return [...destSet].sort((a, b) => a.localeCompare(b, 'he'))
   }, [plans.global, tab, filters.globalProvider])
 
   // Content services list
@@ -605,21 +667,15 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[11px] font-medium text-gray-500">ספקים</p>
                     <button
-                      onClick={() => setFilter('carrier', filters.carrier === 'all' ? '' : 'all')}
-                      className="text-[10px] text-moca-sub hover:text-moca-text"
-                    >
-                      {filters.carrier === 'all' ? '' : 'הכל'}
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1">
-                    <button
                       onClick={() => setFilter('carrier', 'all')}
-                      className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 ${
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
                         filters.carrier === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                       }`}
                     >
                       כולם
                     </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
                     {CARRIERS.map(c => {
                       const cnt = plans[tab]?.filter(p => p.carrier === c.id).length || 0
                       if (!cnt) return null
@@ -627,7 +683,7 @@ export default function DashboardPage() {
                         <button
                           key={c.id}
                           onClick={() => setFilter('carrier', c.id)}
-                          className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 truncate ${
+                          className={`px-1 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
                             filters.carrier === c.id ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                           }`}
                         >
@@ -645,21 +701,15 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[11px] font-medium text-gray-500">ספקים</p>
                     <button
-                      onClick={() => { setFilter('globalProvider', filters.globalProvider === 'all' ? '' : 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
-                      className="text-[10px] text-moca-sub hover:text-moca-text"
-                    >
-                      {filters.globalProvider === 'all' ? '' : 'הכל'}
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-1">
-                    <button
                       onClick={() => { setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
-                      className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 ${
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
                         filters.globalProvider === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                       }`}
                     >
                       כולם
                     </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
                     {GLOBAL_PROVIDERS.map(p => {
                       const cnt = plans.global?.filter(x => x.carrier === p.id).length || 0
                       if (!cnt) return null
@@ -667,7 +717,7 @@ export default function DashboardPage() {
                         <button
                           key={p.id}
                           onClick={() => { setFilter('globalProvider', p.id); setFilter('destination', 'all'); setFilter('region', 'all') }}
-                          className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 truncate ${
+                          className={`px-1 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
                             filters.globalProvider === p.id ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                           }`}
                         >
@@ -684,21 +734,21 @@ export default function DashboardPage() {
                 <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[11px] font-medium text-gray-500">ספקים</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1">
                     <button
                       onClick={() => setFilter('contentCarrier', 'all')}
-                      className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 ${
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
                         filters.contentCarrier === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                       }`}
                     >
                       כולם
                     </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
                     {['cellcom', 'partner', 'hotmobile', 'pelephone'].map(c => (
                       <button
                         key={c}
                         onClick={() => setFilter('contentCarrier', c)}
-                        className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 truncate ${
+                        className={`px-1 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
                           filters.contentCarrier === c ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                         }`}
                       >

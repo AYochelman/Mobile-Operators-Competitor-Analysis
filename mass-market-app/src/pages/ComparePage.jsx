@@ -7,7 +7,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import {
   AIRALO_DISCOVER, GLOBALESIM_COUNTRIES, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
   PELEPHONE_GLOBAL_COUNTRIES, ESIMO_COUNTRIES, WORLD8_WORLDWIDE, WORLD8_EUROPE_USA,
-  XPHONE_EUROPE, XPHONE_WORLD, ORBIT_COUNTRIES, getCountriesForPlan
+  XPHONE_EUROPE, XPHONE_WORLD, ORBIT_COUNTRIES, TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
+  getCountriesForPlan
 } from '../data/globalCountries'
 
 const TABS = [
@@ -25,6 +26,7 @@ const CARRIERS_BY_TAB = {
     { id: 'mobile019', label: '019', color: '#9c27b0' },
     { id: 'xphone', label: 'XPhone', color: '#0d9488' },
     { id: 'wecom', label: 'We-Com', color: '#d97706' },
+    { id: 'neptucom', label: 'Neptucom', color: '#d97706' },
   ],
   abroad: [
     { id: 'partner', label: 'פרטנר', color: '#e91e63' },
@@ -34,6 +36,7 @@ const CARRIERS_BY_TAB = {
     { id: 'mobile019', label: '019', color: '#9c27b0' },
     { id: 'xphone', label: 'XPhone', color: '#0d9488' },
     { id: 'wecom', label: 'We-Com', color: '#d97706' },
+    { id: 'neptucom', label: 'Neptucom', color: '#d97706' },
   ],
   global: [
     { id: 'tuki', label: 'Tuki', color: '#3b82f6' },
@@ -50,6 +53,7 @@ const CARRIERS_BY_TAB = {
     { id: 'sparks', label: 'Sparks', color: '#f59e0b' },
     { id: 'voye', label: 'VOYE', color: '#ec4899' },
     { id: 'orbit', label: 'Orbit', color: '#6366f1' },
+    { id: 'travelsim', label: 'Travel Sim', color: '#0d9488' },
   ],
 }
 
@@ -135,6 +139,7 @@ export default function ComparePage() {
     world8: [...new Set([...WORLD8_WORLDWIDE, ...WORLD8_EUROPE_USA])],
     xphone_global: [...new Set([...XPHONE_EUROPE, ...XPHONE_WORLD])],
     orbit: ORBIT_COUNTRIES,
+    travelsim: [...new Set([...TRAVELSIM_GLOBAL, ...TRAVELSIM_USA, ...TRAVELSIM_ME])],
   }), [])
 
   // Build complete country → carriers mapping

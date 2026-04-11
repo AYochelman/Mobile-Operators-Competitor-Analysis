@@ -1714,7 +1714,7 @@ SAILY_SLUG_TO_HEBREW = {
     "kazakhstan": "\u05e7\u05d6\u05d7\u05e1\u05d8\u05df", "kenya": "\u05e7\u05e0\u05d9\u05d4",
     "kosovo": "\u05e7\u05d5\u05e1\u05d5\u05d1\u05d5", "kuwait": "\u05db\u05d5\u05d5\u05d9\u05d9\u05ea",
     "kyrgyzstan": "\u05e7\u05d9\u05e8\u05d2\u05d9\u05d6\u05e1\u05d8\u05df", "laos": "\u05dc\u05d0\u05d5\u05e1",
-    "latvia": "\u05dc\u05d8\u05d5\u05d5\u05d9\u05d4", "lesotho": "\u05dc\u05e1\u05d5\u05d8\u05d5",
+    "latvia": "\u05dc\u05d8\u05d1\u05d9\u05d4", "lesotho": "\u05dc\u05e1\u05d5\u05d8\u05d5",
     "liberia": "\u05dc\u05d9\u05d1\u05e8\u05d9\u05d4", "liechtenstein": "\u05dc\u05d9\u05db\u05d8\u05e0\u05e9\u05d8\u05d9\u05d9\u05df",
     "lithuania": "\u05dc\u05d9\u05d8\u05d0", "luxembourg": "\u05dc\u05d5\u05e7\u05e1\u05de\u05d1\u05d5\u05e8\u05d2",
     "macau": "\u05de\u05e7\u05d0\u05d5", "macedonia": "\u05de\u05e7\u05d3\u05d5\u05e0\u05d9\u05d4",
@@ -1936,7 +1936,7 @@ ESIMIO_SLUG_TO_HEBREW = {
     "kuwait": "\u05db\u05d5\u05d5\u05d9\u05d9\u05ea",
     "kyrgyzstan": "\u05e7\u05d9\u05e8\u05d2\u05d9\u05d6\u05e1\u05d8\u05df",
     "laos": "\u05dc\u05d0\u05d5\u05e1",
-    "latvia": "\u05dc\u05d8\u05d5\u05d5\u05d9\u05d4",
+    "latvia": "\u05dc\u05d8\u05d1\u05d9\u05d4",
     "lesotho": "\u05dc\u05e1\u05d5\u05d8\u05d5",
     "liechtenstein": "\u05dc\u05d9\u05db\u05d8\u05e0\u05e9\u05d8\u05d9\u05d9\u05df",
     "lithuania": "\u05dc\u05d9\u05d8\u05d0",
@@ -2197,7 +2197,7 @@ HOLAFLY_SLUG_TO_HEBREW = {
     "kuwait": "\u05db\u05d5\u05d5\u05d9\u05d9\u05ea",
     "kyrgyzstan": "\u05e7\u05d9\u05e8\u05d2\u05d9\u05d6\u05e1\u05d8\u05df",
     "laos": "\u05dc\u05d0\u05d5\u05e1",
-    "latvia": "\u05dc\u05d8\u05d5\u05d5\u05d9\u05d4",
+    "latvia": "\u05dc\u05d8\u05d1\u05d9\u05d4",
     "liberia": "\u05dc\u05d9\u05d1\u05e8\u05d9\u05d4",
     "liechtenstein": "\u05dc\u05d9\u05db\u05d8\u05e0\u05e9\u05d8\u05d9\u05d9\u05df",
     "lithuania": "\u05dc\u05d9\u05d8\u05d0",
@@ -3126,7 +3126,7 @@ ORBIT_NAME_TO_HEBREW = {
     "Greece": "\u05d9\u05d5\u05d5\u05df",
     "Greenland": "\u05d2\u05e8\u05d9\u05e0\u05dc\u05e0\u05d3",
     "Grenada": "\u05d2\u05e8\u05e0\u05d3\u05d4",
-    "Guadeloupe": "\u05d2\u05d5\u05d0\u05d3\u05dc\u05d5\u05e4",
+    "Guadeloupe": "\u05d2\u05d5\u05d5\u05d0\u05d3\u05dc\u05d5\u05e4",
     "Guam": "\u05d2\u05d5\u05d0\u05dd",
     "Guatemala": "\u05d2\u05d5\u05d0\u05d8\u05de\u05dc\u05d4",
     "Guernsey": "\u05d2\u05e8\u05e0\u05d6\u05d9",
@@ -3153,7 +3153,7 @@ ORBIT_NAME_TO_HEBREW = {
     "Kazakhstan": "\u05e7\u05d6\u05d7\u05e1\u05d8\u05df",
     "Kenya": "\u05e7\u05e0\u05d9\u05d4",
     "Kosovo": "\u05e7\u05d5\u05e1\u05d5\u05d1\u05d5",
-    "Kuwait": "\u05db\u05d5\u05d5\u05d9\u05ea",
+    "Kuwait": "\u05db\u05d5\u05d5\u05d9\u05d9\u05ea",
     "Kyrgyzstan": "\u05e7\u05d9\u05e8\u05d2\u05d9\u05d6\u05e1\u05d8\u05df",
     "Laos": "\u05dc\u05d0\u05d5\u05e1",
     "Latvia": "\u05dc\u05d8\u05d1\u05d9\u05d4",
@@ -3214,7 +3214,7 @@ ORBIT_NAME_TO_HEBREW = {
     "Saudi Arabia": "\u05e2\u05e8\u05d1 \u05d4\u05e1\u05e2\u05d5\u05d3\u05d9\u05ea",
     "Senegal": "\u05e1\u05e0\u05d2\u05dc",
     "Serbia": "\u05e1\u05e8\u05d1\u05d9\u05d4",
-    "Seychelles": "\u05e1\u05d9\u05d9\u05e9\u05dc",
+    "Seychelles": "\u05d0\u05d9\u05d9 \u05e1\u05d9\u05d9\u05e9\u05dc",
     "Sierra Leone": "\u05e1\u05d9\u05d9\u05e8\u05d4 \u05dc\u05d9\u05d0\u05d5\u05e0\u05d4",
     "Singapore": "\u05e1\u05d9\u05e0\u05d2\u05e4\u05d5\u05e8",
     "Sint Maarten": "\u05e1\u05df \u05de\u05e8\u05d8\u05df",
@@ -3415,12 +3415,12 @@ def scrape_travelsim(page=None):
         _make_global_plan(
             "travelsim", "Travel USA 30GB", 89, "ILS", 89,
             data_gb=30, days=14, minutes=30, sms=None, esim=True,
-            extras=["\u05d0\u05e8\u05d4\"\u05d1"]
+            extras=["\u05d0\u05e8\u05e6\u05d5\u05ea \u05d4\u05d1\u05e8\u05d9\u05ea"]
         ),
         _make_global_plan(
             "travelsim", "Travel USA 70GB", 99, "ILS", 99,
             data_gb=70, days=30, minutes=100, sms=None, esim=True,
-            extras=["\u05d0\u05e8\u05d4\"\u05d1"]
+            extras=["\u05d0\u05e8\u05e6\u05d5\u05ea \u05d4\u05d1\u05e8\u05d9\u05ea"]
         ),
         # \u2500\u2500 Zone 6: \u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df (5 countries) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         _make_global_plan(

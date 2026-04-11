@@ -131,6 +131,12 @@ export default function GroupedPlanCard({ carrier, destination, plans }) {
         <bdi>{formatGB(selectedPlan.data_gb)}</bdi>
         <span className="mx-1.5 text-gray-300">·</span>
         <bdi>{formatDays(selectedPlan.days)}</bdi>
+        {selectedPlan.minutes ? (
+          <><span className="mx-1.5 text-gray-300">·</span><bdi>{selectedPlan.minutes} דקות</bdi></>
+        ) : null}
+        {selectedPlan.sms ? (
+          <><span className="mx-1.5 text-gray-300">·</span><bdi>{selectedPlan.sms} SMS</bdi></>
+        ) : null}
       </p>
 
       {/* Country modal link */}
