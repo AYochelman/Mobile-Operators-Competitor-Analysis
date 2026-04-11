@@ -340,10 +340,9 @@ export function getCountriesForPlan(plan) {
   // ── Travel Sim ──
   if (carrier === 'travelsim') {
     const dest = extras[0]
-    if (!dest) return { title: 'Travel Sim — גלובלי (144 מדינות)', countries: TRAVELSIM_GLOBAL }
     if (dest === 'ארה"ב') return { title: 'Travel Sim — ארה"ב / קנדה / איחוד האמירויות', countries: TRAVELSIM_USA }
     if (dest === 'המזרח התיכון') return { title: 'Travel Sim — מזרח התיכון', countries: TRAVELSIM_ME }
-    return null
+    return { title: 'Travel Sim — גלובלי (144 מדינות)', countries: TRAVELSIM_GLOBAL }
   }
 
   return null;

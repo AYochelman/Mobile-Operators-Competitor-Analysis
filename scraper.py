@@ -3389,7 +3389,7 @@ def scrape_travelsim(page=None):
         _make_global_plan(
             "travelsim", "Travel Lite", 59, "ILS", 59,
             data_gb=6, days=7, minutes=15, sms=None, esim=True,
-            extras=["\u05d4\u05e9\u05d1\u05d5\u05e2\u05d9\u05ea \u05e9\u05dc\u05e0\u05d5!"]
+            extras=[]
         ),
         _make_global_plan(
             "travelsim", "Travel Plus", 69, "ILS", 69,
@@ -3399,7 +3399,7 @@ def scrape_travelsim(page=None):
         _make_global_plan(
             "travelsim", "Travel Max", 99, "ILS", 99,
             data_gb=20, days=30, minutes=100, sms=None, esim=True,
-            extras=["\u05d4\u05e4\u05d5\u05e4\u05d5\u05dc\u05e8\u05d9\u05ea \u05e9\u05dc\u05e0\u05d5!"]
+            extras=[]
         ),
         _make_global_plan(
             "travelsim", "Travel Ultra", 139, "ILS", 139,
@@ -3409,7 +3409,7 @@ def scrape_travelsim(page=None):
         _make_global_plan(
             "travelsim", "Travel Long", 49, "ILS", 49,
             data_gb=1, days=1095, minutes=None, sms=None, esim=True,
-            extras=["\u05d9\u05ea\u05e8\u05d4 \u05e0\u05e9\u05de\u05e8\u05ea \u05dc\u05e0\u05e1\u05d9\u05e2\u05d5\u05ea \u05d4\u05d1\u05d0\u05d5\u05ea"]
+            extras=["", "\u05d9\u05ea\u05e8\u05d4 \u05e0\u05e9\u05de\u05e8\u05ea \u05dc\u05e0\u05e1\u05d9\u05e2\u05d5\u05ea \u05d4\u05d1\u05d0\u05d5\u05ea"]  # extras[0]="" = no destination, extras[1] = feature
         ),
         # \u2500\u2500 Zone 1: \u05d0\u05e8\u05d4"\u05d1 / \u05e7\u05e0\u05d3\u05d4 / \u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea (3 countries) \u2500\u2500\u2500\u2500\u2500
         _make_global_plan(

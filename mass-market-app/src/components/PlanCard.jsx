@@ -120,7 +120,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
 
   // Extras — filter out app-related text if we have an apps link
   // For Orbit zone plans, extras[1+] are covered countries — hide them (shown in modal)
-  const rawExtras = plan.extras ? plan.extras.filter(e => !(appsData && /אפליקציות/.test(e))) : []
+  const rawExtras = plan.extras ? plan.extras.filter(e => e && !(appsData && /אפליקציות/.test(e))) : []
   // For zone plans with country list in extras, show only the region name (countries shown via modal)
   // For single-country plans, hide extras[0] if it's already in the plan name
   const extras = (plan.carrier === 'orbit' && rawExtras.length > 1)

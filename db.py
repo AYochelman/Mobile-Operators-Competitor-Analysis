@@ -3,6 +3,27 @@ import json
 import os
 from datetime import datetime
 
+# Canonical Hebrew country/destination names — applied before every global plan save
+_DEST_NORM = {
+    '\u05e0\u05d5\u05e8\u05d5\u05d5\u05d2\u05d9\u05d4': '\u05e0\u05d5\u05e8\u05d1\u05d2\u05d9\u05d4',                   # נורווגיה → נורבגיה
+    '\u05e9\u05d5\u05d5\u05d3\u05d9\u05d4': '\u05e9\u05d1\u05d3\u05d9\u05d4',                                             # שוודיה → שבדיה
+    '\u05e4\u05e8\u05d2\u05d5\u05d5\u05d0\u05d9': '\u05e4\u05e8\u05d0\u05d2\u05d5\u05d5\u05d0\u05d9',                   # פרגוואי → פראגוואי
+    '\u05e1\u05d9\u05d9\u05e8\u05d4 \u05dc\u05d0\u05d5\u05df': '\u05e1\u05d9\u05d9\u05e8\u05d4 \u05dc\u05d9\u05d0\u05d5\u05e0\u05d4',  # סיירה לאון → סיירה ליאונה
+    '\u05d0\u05d9\u05d9 \u05d8\u05d5\u05e8\u05e7 \u05d5\u05e7\u05d9\u05d9\u05e7\u05d5\u05e1': '\u05d0\u05d9\u05d9 \u05d8\u05d5\u05e8\u05e7\u05e1 \u05d5\u05e7\u05d0\u05d9\u05e7\u05d5\u05e1',    # איי טורק וקייקוס
+    '\u05d0\u05d9\u05d9 \u05d8\u05d5\u05e8\u05e7\u05e1 \u05d5\u05e7\u05d9\u05d9\u05e7\u05d5\u05e1': '\u05d0\u05d9\u05d9 \u05d8\u05d5\u05e8\u05e7\u05e1 \u05d5\u05e7\u05d0\u05d9\u05e7\u05d5\u05e1',  # איי טורקס וקייקוס
+    '\u05d0\u05d9\u05d9 \u05d8\u05d5\u05e7\u05e1 \u05d5\u05e7\u05d9\u05d9\u05e7\u05d5\u05e1': '\u05d0\u05d9\u05d9 \u05d8\u05d5\u05e8\u05e7\u05e1 \u05d5\u05e7\u05d0\u05d9\u05e7\u05d5\u05e1',  # איי טוקס וקייקוס
+    '\u05d0\u05d9\u05d9 \u05d8\u05e8\u05e7\u05e1 \u05d5\u05e7\u05d9\u05d9\u05e7\u05d5\u05e1': '\u05d0\u05d9\u05d9 \u05d8\u05d5\u05e8\u05e7\u05e1 \u05d5\u05e7\u05d0\u05d9\u05e7\u05d5\u05e1',  # איי טרקס וקייקוס
+}
+
+def _norm_extras(extras):
+    """Normalize extras[0] (destination) to canonical name before DB save."""
+    if not extras:
+        return extras
+    dest = extras[0]
+    if dest and dest in _DEST_NORM:
+        return [_DEST_NORM[dest]] + list(extras[1:])
+    return extras
+
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "plans.db")
 
 
@@ -204,7 +225,7 @@ def save_global_plans(plans, db_path=None):
                 plan.get("currency"), plan.get("original_price"),
                 plan.get("days"), plan.get("data_gb"), plan.get("minutes"),
                 plan.get("sms"), 1 if plan.get("esim", True) else 0,
-                json.dumps(plan.get("extras", []), ensure_ascii=False), now
+                json.dumps(_norm_extras(plan.get("extras", [])), ensure_ascii=False), now
             ))
         conn.commit()
     finally:
