@@ -428,6 +428,124 @@ def scrape_wecom_abroad(_page=None):
             browser.close()
 
 
+def scrape_neptucom(_page=None):
+    """Neptucom plans (neptucom.com) — eSIM-only carrier on Partner/Pelephone infrastructure.
+    Static data (site uses PDF-based pricing; last verified April 2026).
+    Group A: domestic + international included.
+    Group B: domestic only.
+    """
+    H = "\u05d7\u05d5\"\u05dc"   # חו"ל
+    plans = [
+        # ── Group A: Domestic + International included ──────────────────
+        {
+            "carrier": "neptucom", "plan_name": "BreezeWave", "price": 39.0,
+            "data_gb": 75, "minutes": "3000",
+            "extras": [
+                "3,000 SMS",
+                f'12GB \u05d2\u05dc\u05d9\u05e9\u05d4 \u05d1{H} \u05dc\u05e9\u05e0\u05d4',
+                f'50 \u05d3\u05e7\u05f3 \u05e9\u05d9\u05d7\u05d4 \u05d1{H} \u05dc\u05d7\u05d5\u05d3\u05e9',
+                f'SMS \u05e0\u05db\u05e0\u05e1 \u05de{H} \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4',
+                "VoLTE \u05d5-WiFi Calling",
+                "eSIM \u05d1\u05dc\u05d1\u05d3",
+                "\u05d3\u05de\u05d9 \u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea: 29.90 \u20aa",
+                f'{H} \u05db\u05dc\u05d5\u05dc',
+            ],
+        },
+        {
+            "carrier": "neptucom", "plan_name": "SwellWave", "price": 49.0,
+            "data_gb": 100, "minutes": "3000",
+            "extras": [
+                "3,000 SMS",
+                f'5GB \u05d2\u05dc\u05d9\u05e9\u05d4 \u05d1{H} \u05dc\u05d7\u05d5\u05d3\u05e9 (60GB \u05dc\u05e9\u05e0\u05d4)',
+                f'100 \u05d3\u05e7\u05f3 \u05e9\u05d9\u05d7\u05d4 \u05d1{H} \u05dc\u05d7\u05d5\u05d3\u05e9',
+                f'50 \u05d3\u05e7\u05f3 \u05dc{H} \u05de\u05d9\u05e9\u05e8\u05d0\u05dc \u05dc\u05e9\u05e0\u05d4',
+                f'SMS \u05e0\u05db\u05e0\u05e1 \u05de{H} \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4',
+                "VoLTE \u05d5-WiFi Calling",
+                "eSIM \u05d1\u05dc\u05d1\u05d3",
+                "\u05d3\u05de\u05d9 \u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea: 29.90 \u20aa",
+                f'{H} \u05db\u05dc\u05d5\u05dc',
+            ],
+        },
+        {
+            "carrier": "neptucom", "plan_name": "HighWave", "price": 69.0,
+            "data_gb": 100, "minutes": "3000",
+            "extras": [
+                "3,000 SMS",
+                f'32GB \u05d2\u05dc\u05d9\u05e9\u05d4 \u05d1{H} \u05dc\u05e9\u05e0\u05d4',
+                f'150 \u05d3\u05e7\u05f3 \u05e9\u05d9\u05d7\u05d4 \u05d1{H} \u05dc\u05d7\u05d5\u05d3\u05e9',
+                f'100 \u05d3\u05e7\u05f3 \u05dc{H} \u05de\u05d9\u05e9\u05e8\u05d0\u05dc \u05dc\u05d7\u05d5\u05d3\u05e9',
+                f'100 SMS \u05d9\u05d5\u05e6\u05d0 \u05d1{H} \u05dc\u05e9\u05e0\u05d4',
+                "\u05de\u05e1\u05e4\u05e8 \u05d6\u05e8 \u05e0\u05d5\u05e1\u05e3 \u05dc\u05d1\u05d7\u05d9\u05e8\u05d4",
+                f'SMS \u05e0\u05db\u05e0\u05e1 \u05de{H} \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4',
+                "VoLTE \u05d5-WiFi Calling",
+                "eSIM \u05d1\u05dc\u05d1\u05d3",
+                "\u05d3\u05de\u05d9 \u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea: 29.90 \u20aa",
+                f'{H} \u05db\u05dc\u05d5\u05dc',
+            ],
+        },
+        {
+            "carrier": "neptucom", "plan_name": "ReefWave", "price": 99.0,
+            "data_gb": 150, "minutes": "5000",
+            "extras": [
+                "5,000 SMS",
+                f'64GB \u05d2\u05dc\u05d9\u05e9\u05d4 \u05d1{H} \u05dc\u05e9\u05e0\u05d4',
+                f'200 \u05d3\u05e7\u05f3 \u05e9\u05d9\u05d7\u05d4 \u05d1{H} \u05dc\u05d7\u05d5\u05d3\u05e9',
+                f'500 \u05d3\u05e7\u05f3 \u05dc{H} \u05de\u05d9\u05e9\u05e8\u05d0\u05dc \u05dc\u05d7\u05d5\u05d3\u05e9',
+                f'150 SMS \u05d9\u05d5\u05e6\u05d0 \u05d1{H} \u05dc\u05d7\u05d5\u05d3\u05e9',
+                "\u05de\u05e1\u05e4\u05e8 \u05d6\u05e8 \u05e0\u05d5\u05e1\u05e3 \u05dc\u05d1\u05d7\u05d9\u05e8\u05d4",
+                f'SMS \u05e0\u05db\u05e0\u05e1 \u05de{H} \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4',
+                "VoLTE \u05d5-WiFi Calling",
+                "eSIM \u05d1\u05dc\u05d1\u05d3",
+                "\u05d3\u05de\u05d9 \u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea: 29.90 \u20aa",
+                f'{H} \u05db\u05dc\u05d5\u05dc',
+            ],
+        },
+        {
+            "carrier": "neptucom", "plan_name": "PeakWave", "price": 129.0,
+            "data_gb": 200, "minutes": "5000",
+            "extras": [
+                "5,000 SMS",
+                f'120GB \u05d2\u05dc\u05d9\u05e9\u05d4 \u05d1{H} \u05dc\u05e9\u05e0\u05d4',
+                f'250 \u05d3\u05e7\u05f3 \u05e9\u05d9\u05d7\u05d4 \u05d1{H} \u05dc\u05d7\u05d5\u05d3\u05e9',
+                f'1,000 \u05d3\u05e7\u05f3 \u05dc{H} \u05de\u05d9\u05e9\u05e8\u05d0\u05dc \u05dc\u05d7\u05d5\u05d3\u05e9',
+                f'250 SMS \u05d9\u05d5\u05e6\u05d0 \u05d1{H} \u05dc\u05d7\u05d5\u05d3\u05e9',
+                "\u05de\u05e1\u05e4\u05e8 \u05d6\u05e8 \u05e0\u05d5\u05e1\u05e3 \u05dc\u05d1\u05d7\u05d9\u05e8\u05d4",
+                f'SMS \u05e0\u05db\u05e0\u05e1 \u05de{H} \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4',
+                "VoLTE \u05d5-WiFi Calling",
+                "eSIM \u05d1\u05dc\u05d1\u05d3",
+                "\u05d3\u05de\u05d9 \u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea: 29.90 \u20aa",
+                f'{H} \u05db\u05dc\u05d5\u05dc',
+            ],
+        },
+        # ── Group B: Domestic only ──────────────────────────────────────
+        {
+            "carrier": "neptucom", "plan_name": "HoodWave", "price": 27.0,
+            "data_gb": 25, "minutes": "1000",
+            "extras": [
+                "1,000 SMS",
+                f'SMS \u05e0\u05db\u05e0\u05e1 \u05de{H} \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4',
+                "eSIM \u05d1\u05dc\u05d1\u05d3",
+                "\u05d3\u05de\u05d9 \u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea: 19.90 \u20aa",
+            ],
+        },
+        {
+            "carrier": "neptucom", "plan_name": "LocalWave", "price": 33.0,
+            "data_gb": 75, "minutes": "3000",
+            "extras": [
+                "3,000 SMS",
+                f'SMS \u05e0\u05db\u05e0\u05e1 \u05de{H} \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4',
+                "eSIM \u05d1\u05dc\u05d1\u05d3",
+                "\u05d3\u05de\u05d9 \u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea: 19.90 \u20aa",
+            ],
+        },
+    ]
+    from datetime import datetime
+    ts = datetime.utcnow().isoformat()
+    for p in plans:
+        p.setdefault("scraped_at", ts)
+    return plans
+
+
 def scrape_all():
     """Scrape all carriers sequentially. Returns flat list of plan dicts."""
     with sync_playwright() as p:
@@ -437,7 +555,7 @@ def scrape_all():
         )
         page = browser.new_page()
         plans = []
-        for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom, scrape_xphone, scrape_wecom, scrape_019]:
+        for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom, scrape_xphone, scrape_wecom, scrape_019, scrape_neptucom]:
             try:
                 result = fn(page)
                 if not result:
@@ -3254,6 +3372,69 @@ def scrape_orbit_global(_page=None, usd_rate=None):
     return all_plans
 
 
+def scrape_travelsim(page=None):
+    """Travel Sim \u2014 static global eSIM plans (travelsimobile.co.il).
+    10 plans across 3 zones (no Playwright needed).
+    """
+    plans = [
+        # \u2500\u2500 Zone 123: Global (144 countries) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        _make_global_plan(
+            "travelsim", "Travel Mini", 19, "ILS", 19,
+            data_gb=1, days=4, minutes=None, sms=None, esim=True,
+            extras=[]
+        ),
+        _make_global_plan(
+            "travelsim", "Travel Lite", 59, "ILS", 59,
+            data_gb=6, days=7, minutes=15, sms=None, esim=True,
+            extras=["\u05d4\u05e9\u05d1\u05d5\u05e2\u05d9\u05ea \u05e9\u05dc\u05e0\u05d5!"]
+        ),
+        _make_global_plan(
+            "travelsim", "Travel Plus", 69, "ILS", 69,
+            data_gb=7, days=14, minutes=30, sms=None, esim=True,
+            extras=[]
+        ),
+        _make_global_plan(
+            "travelsim", "Travel Max", 99, "ILS", 99,
+            data_gb=20, days=30, minutes=100, sms=None, esim=True,
+            extras=["\u05d4\u05e4\u05d5\u05e4\u05d5\u05dc\u05e8\u05d9\u05ea \u05e9\u05dc\u05e0\u05d5!"]
+        ),
+        _make_global_plan(
+            "travelsim", "Travel Ultra", 139, "ILS", 139,
+            data_gb=30, days=45, minutes=30, sms=None, esim=True,
+            extras=[]
+        ),
+        _make_global_plan(
+            "travelsim", "Travel Long", 49, "ILS", 49,
+            data_gb=1, days=1095, minutes=None, sms=None, esim=True,
+            extras=["\u05d9\u05ea\u05e8\u05d4 \u05e0\u05e9\u05de\u05e8\u05ea \u05dc\u05e0\u05e1\u05d9\u05e2\u05d5\u05ea \u05d4\u05d1\u05d0\u05d5\u05ea"]
+        ),
+        # \u2500\u2500 Zone 1: \u05d0\u05e8\u05d4"\u05d1 / \u05e7\u05e0\u05d3\u05d4 / \u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea (3 countries) \u2500\u2500\u2500\u2500\u2500
+        _make_global_plan(
+            "travelsim", "Travel USA", 89, "ILS", 89,
+            data_gb=30, days=14, minutes=30, sms=None, esim=True,
+            extras=["\u05d0\u05e8\u05d4\"\u05d1"]
+        ),
+        _make_global_plan(
+            "travelsim", "Travel USA", 99, "ILS", 99,
+            data_gb=70, days=30, minutes=100, sms=None, esim=True,
+            extras=["\u05d0\u05e8\u05d4\"\u05d1"]
+        ),
+        # \u2500\u2500 Zone 6: \u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df (5 countries) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        _make_global_plan(
+            "travelsim", "Middle East 1GB", 89, "ILS", 89,
+            data_gb=1, days=30, minutes=None, sms=None, esim=True,
+            extras=["\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df"]
+        ),
+        _make_global_plan(
+            "travelsim", "Middle East 5GB", 189, "ILS", 189,
+            data_gb=5, days=30, minutes=None, sms=None, esim=True,
+            extras=["\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df"]
+        ),
+    ]
+    logger.info(f"Travel Sim: {len(plans)} plans")
+    return plans
+
+
 def scrape_all_global():
     """Scrape global eSIM packages from all 7 providers. Returns flat list of plan dicts."""
     usd_rate = _get_usd_to_ils()
@@ -3284,6 +3465,7 @@ def scrape_all_global():
             ("scrape_sparks_global",        lambda pg: scrape_sparks_global(pg, usd_rate)),
             ("scrape_voye_global",          lambda pg: scrape_voye_global(pg, usd_rate)),
             ("scrape_orbit_global",         lambda pg: scrape_orbit_global(pg, usd_rate)),
+            ("scrape_travelsim",            lambda pg: scrape_travelsim()),
         ]
         for name, fn in jobs:
             try:
