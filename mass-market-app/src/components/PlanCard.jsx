@@ -35,6 +35,7 @@ const CARRIER_LOGOS = {
   hotmobile:       '/logos/hotmobile.png',
   cellcom:         '/logos/cellcom.png',
   mobile019:       '/logos/019.png',
+  xphone:          '/logos/xphone_global.png',
   wecom:           '/logos/wecom.png',
   // Global eSIM
   tuki:            '/logos/tuki.png',
@@ -58,6 +59,7 @@ const LOGO_SIZES = {
   globalesim:       '72px',
   pelephone_global: '72px',
   esimo:            '72px',
+  cellcom:          '48px',
   simtlv:           '48px',
   esimio:           '48px',
   holafly:          '48px',
