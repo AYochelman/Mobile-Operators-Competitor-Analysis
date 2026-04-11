@@ -28,6 +28,13 @@ const GLOBAL_COLORS = {
   orbit: 'indigo',
 }
 
+const CARRIER_LOGOS = {
+  partner:   '/logos/partner.png.png',
+  pelephone: '/logos/pelephone.png.png',
+  hotmobile: '/logos/hotmobile.png.png',
+  cellcom:   '/logos/cellcom.png.png',
+}
+
 const CHANGE_DOT = {
   new_plan: 'bg-emerald-400',
   price_change: 'bg-amber-400',
@@ -86,10 +93,21 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
     <div className={`bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up ${highlighted ? 'ring-2 ring-amber-400 shadow-amber-100 shadow-lg animate-pulse-highlight' : ''}`}
       ref={highlighted ? (el) => { if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }) } : undefined}
     >
+      {/* Carrier logo — content cards only, top-left, no background */}
+      {isContent && CARRIER_LOGOS[carrier] && (
+        <img
+          src={CARRIER_LOGOS[carrier]}
+          alt={label}
+          className="absolute top-3 left-3 w-8 h-8 object-contain"
+        />
+      )}
+
       {/* Change indicator dot */}
       {changeType && CHANGE_DOT[changeType] && (
         <span
-          className={`absolute top-4 left-4 w-2 h-2 rounded-full ${CHANGE_DOT[changeType]}`}
+          className={`absolute w-2 h-2 rounded-full ${CHANGE_DOT[changeType]} ${
+            isContent && CARRIER_LOGOS[carrier] ? 'top-2 left-2' : 'top-4 left-4'
+          }`}
           title={changeType === 'new_plan' ? 'חדש' : changeType === 'price_change' ? 'שינוי מחיר' : 'הוסרה'}
         />
       )}

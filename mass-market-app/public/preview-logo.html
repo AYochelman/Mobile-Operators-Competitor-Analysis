@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview — לוגו ספק בכרטיסיית תוכן</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f9f4ee;
+      color: #2c1810;
+      padding: 32px 24px;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #5c3317;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: #9b7b5e;
+      margin-bottom: 32px;
+    }
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #9b7b5e;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e8ddd0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    /* ── Card base ── */
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(92,51,23,0.06);
+      position: relative;
+      text-align: right;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .badge-pink   { background: #fce7f3; color: #be185d; }
+    .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+    .badge-orange { background: #ffedd5; color: #c2410c; }
+    .badge-green  { background: #dcfce7; color: #15803d; }
+
+    .price {
+      font-size: 28px;
+      font-weight: 800;
+      color: #111;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    .trial {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+    .note {
+      font-size: 10px;
+      color: #9ca3af;
+    }
+
+    /* ── LOGO overlay (the new element) ── */
+    .carrier-logo {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f9f4ee;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(92,51,23,0.08);
+    }
+    .carrier-logo img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+    }
+    /* Fallback letter logo */
+    .carrier-logo.fallback {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .logo-partner  { background: #e91e8c; }
+    .logo-pelephone { background: #0057b8; }
+    .logo-hotmobile { background: #e65c00; }
+    .logo-cellcom  { background: #00963f; }
+
+    /* change dot */
+    .dot {
+      position: absolute;
+      top: 10px;
+      left: 50px; /* moved to sit next to logo when logo present */
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #f59e0b;
+    }
+    .dot-no-logo {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+    }
+
+    .compare-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    @media (max-width: 600px) { .compare-wrap { grid-template-columns: 1fr; } }
+    .compare-col h2 {
+      font-size: 12px;
+      font-weight: 700;
+      color: #5c3317;
+      margin-bottom: 16px;
+      text-align: center;
+      padding: 6px 16px;
+      border-radius: 8px;
+    }
+    .label-before { background: #f3f4f6; color: #374151; }
+    .label-after  { background: #f5ede0; color: #5c3317; }
+
+    .arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: #c8a882;
+      padding-top: 40px;
+    }
+    @media (max-width: 600px) { .arrow { padding-top: 0; transform: rotate(90deg); } }
+  </style>
+</head>
+<body>
+
+  <h1>Preview — לוגו ספק בפינה השמאלית העליונה</h1>
+  <p class="subtitle">חוצץ תוכן · השוואה לפני ואחרי</p>
+
+  <div class="compare-wrap">
+
+    <!-- BEFORE -->
+    <div class="compare-col">
+      <h2 class="label-before">לפני</h2>
+      <div class="grid">
+
+        <!-- Partner -->
+        <div class="card">
+          <span class="dot dot-no-logo"></span>
+          <div><span class="badge badge-pink">פרטנר</span></div>
+          <div class="price">₪5.90</div>
+          <div class="trial">🎁 חודש חינם</div>
+          <div class="note">שיר בהמתנה</div>
+        </div>
+
+        <!-- Pelephone -->
+        <div class="card">
+          <div><span class="badge badge-blue">פלאפון</span></div>
+          <div class="price">₪6.90</div>
+          <div class="note">שיר בהמתנה</div>
+        </div>
+
+        <!-- Hotmobile -->
+        <div class="card">
+          <div><span class="badge badge-orange">הוט מובייל</span></div>
+          <div class="price">₪5.90</div>
+          <div class="trial">🎁 חודש חינם</div>
+          <div class="note">שיר בהמתנה</div>
+        </div>
+
+        <!-- Cellcom -->
+        <div class="card">
+          <div><span class="badge badge-green">סלקום</span></div>
+          <div class="price">₪4.90</div>
+          <div class="note">שיר בהמתנה</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- AFTER -->
+    <div class="compare-col">
+      <h2 class="label-after">✦ אחרי — עם לוגו</h2>
+      <div class="grid">
+
+        <!-- Partner + logo -->
+        <div class="card">
+          <span class="dot"></span>
+          <div class="carrier-logo">
+            <img
+              src="https://www.google.com/s2/favicons?domain=partner.co.il&sz=64"
+              alt="פרטנר"
+              onerror="this.parentElement.classList.add('fallback','logo-partner');this.remove();this.parentElement.textContent='P'"
+            />
+          </div>
+          <div><span class="badge badge-pink">פרטנר</span></div>
+          <div class="price">₪5.90</div>
+          <div class="trial">🎁 חודש חינם</div>
+          <div class="note">שיר בהמתנה</div>
+        </div>
+
+        <!-- Pelephone + logo -->
+        <div class="card">
+          <div class="carrier-logo">
+            <img
+              src="https://www.google.com/s2/favicons?domain=pelephone.co.il&sz=64"
+              alt="פלאפון"
+              onerror="this.parentElement.classList.add('fallback','logo-pelephone');this.remove();this.parentElement.textContent='פ'"
+            />
+          </div>
+          <div><span class="badge badge-blue">פלאפון</span></div>
+          <div class="price">₪6.90</div>
+          <div class="note">שיר בהמתנה</div>
+        </div>
+
+        <!-- Hotmobile + logo -->
+        <div class="card">
+          <div class="carrier-logo">
+            <img
+              src="https://www.google.com/s2/favicons?domain=hotmobile.co.il&sz=64"
+              alt="הוט מובייל"
+              onerror="this.parentElement.classList.add('fallback','logo-hotmobile');this.remove();this.parentElement.textContent='H'"
+            />
+          </div>
+          <div><span class="badge badge-orange">הוט מובייל</span></div>
+          <div class="price">₪5.90</div>
+          <div class="trial">🎁 חודש חינם</div>
+          <div class="note">שיר בהמתנה</div>
+        </div>
+
+        <!-- Cellcom + logo -->
+        <div class="card">
+          <div class="carrier-logo">
+            <img
+              src="https://www.google.com/s2/favicons?domain=cellcom.co.il&sz=64"
+              alt="סלקום"
+              onerror="this.parentElement.classList.add('fallback','logo-cellcom');this.remove();this.parentElement.textContent='C'"
+            />
+          </div>
+          <div><span class="badge badge-green">סלקום</span></div>
+          <div class="price">₪4.90</div>
+          <div class="note">שיר בהמתנה</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
