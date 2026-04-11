@@ -3,6 +3,23 @@ import Badge from './ui/Badge'
 import CountryModal from './CountryModal'
 import { getCountriesForPlan } from '../data/globalCountries'
 
+const CARRIER_LOGOS = {
+  tuki:            '/logos/tuki.png',
+  globalesim:      '/logos/globalesim.png',
+  airalo:          '/logos/airalo.png',
+  pelephone_global:'/logos/pelephone_global.png',
+  esimo:           '/logos/esimo.png',
+  simtlv:          '/logos/simtlv.png',
+  world8:          '/logos/world8.png',
+  xphone_global:   '/logos/xphone_global.png',
+  saily:           '/logos/saily.png',
+  holafly:         '/logos/holafly.png',
+  esimio:          '/logos/esimio.png',
+  sparks:          '/logos/sparks.png',
+  voye:            '/logos/voye.png',
+  orbit:           '/logos/orbit.png',
+}
+
 const GLOBAL_LABELS = {
   tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
   pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV',
@@ -41,6 +58,15 @@ export default function GroupedPlanCard({ carrier, destination, plans }) {
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm relative text-right hover-lift animate-fade-in-up">
+      {/* Carrier logo — top-left, no background */}
+      {CARRIER_LOGOS[carrier] && (
+        <img
+          src={CARRIER_LOGOS[carrier]}
+          alt={label}
+          className="absolute top-3 left-3 w-8 h-8 object-contain"
+        />
+      )}
+
       {/* Carrier badges */}
       <div className="flex items-center gap-1.5 justify-end mb-2">
         {selectedPlan.esim && <Badge color="green">eSIM</Badge>}
