@@ -788,12 +788,12 @@ def api_get_users():
         conn = _supabase_conn()
         cur = conn.cursor()
         cur.execute("""
-            SELECT u.id, u.email, u.created_at, COALESCE(r.role, 'viewer') as role
+            SELECT u.id, u.email, u.created_at, COALESCE(r.role, 'viewer') as role, u.last_sign_in_at
             FROM auth.users u
             LEFT JOIN public.user_roles r ON u.id = r.user_id
             ORDER BY u.created_at DESC
         """)
-        users = [{'id': str(row[0]), 'email': row[1], 'created_at': str(row[2]), 'role': row[3]} for row in cur.fetchall()]
+        users = [{'id': str(row[0]), 'email': row[1], 'created_at': str(row[2]), 'role': row[3], 'last_sign_in_at': str(row[4]) if row[4] else None} for row in cur.fetchall()]
         conn.close()
         return jsonify(users)
     except Exception as e:

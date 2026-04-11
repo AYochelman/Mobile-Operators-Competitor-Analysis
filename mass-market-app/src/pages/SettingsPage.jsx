@@ -255,61 +255,70 @@ export default function SettingsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-gray-500 text-xs">
+                <tr className="border-b border-moca-border text-moca-sub text-xs">
                   <th className="text-right py-2 pr-1 font-medium w-20">תפקיד</th>
                   <th className="text-center py-2 font-medium">אימייל</th>
-                  <th className="py-2 pl-1 w-16"></th>
+                  <th className="text-center py-2 font-medium whitespace-nowrap">התחבר לאחרונה</th>
+                  <th className="py-2 pl-1"></th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(u => (
-                  <tr key={u.id} className="border-b border-gray-100 last:border-0">
+                  <tr key={u.id} className="border-b border-moca-border/50 last:border-0 hover:bg-moca-hover/30 transition-colors">
                     <td className="py-2.5 pr-1 text-right">
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                      <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
                         u.role === 'admin'
-                          ? 'bg-purple-100 text-purple-700'
-                          : 'bg-gray-100 text-gray-600'
+                          ? 'bg-[#f5ede0] text-[#5c3317]'
+                          : 'bg-gray-100 text-gray-500'
                       }`}>
                         {u.role === 'admin' ? 'מנהל' : 'צופה'}
                       </span>
                     </td>
-                    <td className="py-2.5 text-gray-800 text-center" dir="ltr">
+                    <td className="py-2.5 text-moca-text text-center" dir="ltr">
                       {u.email}
-                      {isSelf(u) && <span className="text-xs text-gray-400 ml-1">(אתה)</span>}
+                      {isSelf(u) && <span className="text-xs text-moca-sub mr-1">(אתה)</span>}
+                    </td>
+                    <td className="py-2.5 text-center text-xs text-moca-sub whitespace-nowrap" dir="ltr">
+                      {u.last_sign_in_at
+                        ? new Date(u.last_sign_in_at).toLocaleString('he-IL', {
+                            day: '2-digit', month: '2-digit', year: '2-digit',
+                            hour: '2-digit', minute: '2-digit'
+                          })
+                        : '—'}
                     </td>
                     <td className="py-2.5 pl-1">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 justify-end">
                         {!isSelf(u) && (
                           <>
                             <button
                               onClick={() => handleToggleRole(u)}
                               disabled={togglingId === u.id}
-                              className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                              title={u.role === 'admin' ? 'הורד למצפה' : 'הפוך למנהל'}
+                              className="text-xs px-2.5 py-1.5 rounded-lg border border-[#5c3317]/30 text-[#5c3317] hover:bg-[#f5ede0] disabled:opacity-40 transition-colors whitespace-nowrap"
+                              title={u.role === 'admin' ? 'הורד לצופה' : 'הפוך למנהל'}
                             >
                               {togglingId === u.id ? '...' : u.role === 'admin' ? 'הורד לצופה' : 'הפוך למנהל'}
                             </button>
 
                             {confirmDeleteId === u.id ? (
-                              <div className="flex items-center gap-1">
+                              <>
                                 <button
                                   onClick={() => handleDelete(u.id)}
                                   disabled={deletingId === u.id}
-                                  className="text-xs px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                                  className="text-xs px-2.5 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 transition-colors whitespace-nowrap"
                                 >
                                   {deletingId === u.id ? '...' : 'אשר מחיקה'}
                                 </button>
                                 <button
                                   onClick={() => setConfirmDeleteId(null)}
-                                  className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+                                  className="text-xs px-2.5 py-1.5 rounded-lg border border-[#5c3317]/30 text-[#5c3317] hover:bg-[#f5ede0] transition-colors"
                                 >
                                   בטל
                                 </button>
-                              </div>
+                              </>
                             ) : (
                               <button
                                 onClick={() => setConfirmDeleteId(u.id)}
-                                className="text-xs px-2 py-1 rounded border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
+                                className="text-xs px-2.5 py-1.5 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap"
                               >
                                 מחק
                               </button>
