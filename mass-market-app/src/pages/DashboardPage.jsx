@@ -536,7 +536,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-[11px] text-gray-400">{tab === 'global' ? displayItems.length : filteredPlans.length} {tab === 'global' ? 'כרטיסים' : 'חבילות'}</span>
+            <span className="text-[11px] text-gray-400">{tab === 'banners' ? `${banners.length} ספקים` : tab === 'global' ? `${displayItems.length} כרטיסים` : `${filteredPlans.length} חבילות`}</span>
             {filteredPlans.length > 0 && (
               <button onClick={exportToExcel} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-moca-sub hover:text-moca-text hover:bg-moca-cream transition-all duration-150" title="ייצוא ל-Excel">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
@@ -782,7 +782,7 @@ export default function DashboardPage() {
       )}
 
       {/* Plan cards grid */}
-      {!loading && tab !== 'content' && (
+      {!loading && tab !== 'content' && tab !== 'banners' && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {displayItems.slice(0, visibleCount).map((item, i) => {
