@@ -6,8 +6,9 @@ import hmac
 import hashlib
 import base64
 import time as _time
+from datetime import datetime, timezone
 from functools import wraps
-from flask import Flask, jsonify, render_template, request, make_response, send_from_directory, g
+from flask import Flask, jsonify, render_template, request, make_response, send_from_directory, g, abort
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -360,9 +361,11 @@ def service_worker():
     return resp
 
 
-@app.route("/banners/<path:filename>")
+@app.route("/banners/<string:filename>")
 def serve_banner(filename):
     """Serve carrier homepage screenshot PNGs."""
+    if not filename.endswith(".png"):
+        abort(404)
     banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
     return send_from_directory(banners_dir, filename)
 
@@ -588,14 +591,13 @@ CARRIER_DISPLAY = {
 @limiter.limit("60 per minute")
 def api_banners():
     """Return metadata for all carrier homepage banner screenshots."""
-    from datetime import datetime, timezone
-
     banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
     result = []
     for carrier, meta in CARRIER_DISPLAY.items():
         png_path = os.path.join(banners_dir, f"{carrier}.png")
         scraped_at = None
-        if os.path.exists(png_path):
+        exists = os.path.exists(png_path)
+        if exists:
             mtime = os.path.getmtime(png_path)
             scraped_at = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
         result.append({
@@ -603,7 +605,7 @@ def api_banners():
             "name":       meta["name"],
             "url":        meta["url"],
             "color":      meta["color"],
-            "image_url":  f"/banners/{carrier}.png" if os.path.exists(png_path) else None,
+            "image_url":  f"/banners/{carrier}.png" if exists else None,
             "scraped_at": scraped_at,
         })
     return jsonify(result)
@@ -1174,9 +1176,12 @@ if __name__ == "__main__":
         from scraper import scrape_carrier_banners
         banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
         logger.info("Starting daily banner screenshot job")
-        results = scrape_carrier_banners(banners_dir)
-        ok = sum(1 for r in results if r["success"])
-        logger.info("Banner screenshots: %d/%d succeeded", ok, len(results))
+        try:
+            results = scrape_carrier_banners(banners_dir)
+            ok = sum(1 for r in results if r["success"])
+            logger.info("Banner screenshots: %d/%d succeeded", ok, len(results))
+        except Exception as e:
+            logger.error("Banner screenshot job failed: %s", e, exc_info=True)
 
     _ensure_vapid_keys(CONFIG_PATH)
     init_db()
