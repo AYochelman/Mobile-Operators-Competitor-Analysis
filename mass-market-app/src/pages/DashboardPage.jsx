@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import * as XLSX from 'xlsx'
 import PlanCard from '../components/PlanCard'
+import BannerCard from '../components/BannerCard'
 import GroupedPlanCard from '../components/GroupedPlanCard'
 import CountryModal from '../components/CountryModal'
 import FilterTag from '../components/ui/FilterTag'
@@ -81,6 +82,11 @@ const TAB_ICONS = {
       <rect x="2" y="7" width="20" height="15" rx="2" ry="2" /><polyline points="17 2 12 7 7 2" />
     </svg>
   ),
+  banners: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" />
+    </svg>
+  ),
 }
 
 const TABS = [
@@ -88,6 +94,7 @@ const TABS = [
   { id: 'abroad', label: 'חו"ל' },
   { id: 'global', label: 'גלובלי' },
   { id: 'content', label: 'תוכן' },
+  { id: 'banners', label: 'באנרים ראשיים' },
 ]
 
 const KNOWN_REGIONS = new Set([
@@ -144,6 +151,8 @@ export default function DashboardPage() {
   const [usdRate, setUsdRate] = useState(null)
   const [eurRate, setEurRate] = useState(null)
   const [visibleCount, setVisibleCount] = useState(5000)
+  const [banners, setBanners] = useState([])
+  const [bannersLoaded, setBannersLoaded] = useState(false)
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -227,6 +236,10 @@ export default function DashboardPage() {
       } else if (t === 'content' && plans.content.length === 0) {
         const p = await api.getContentPlans()
         setPlans(prev => ({ ...prev, content: p }))
+      } else if (t === 'banners' && !bannersLoaded) {
+        const data = await api.getBanners()
+        setBanners(data)
+        setBannersLoaded(true)
       }
     } catch (err) { console.error(err) }
     setLoading(false)
@@ -847,7 +860,31 @@ export default function DashboardPage() {
         })
       })()}
 
-      {!loading && filteredPlans.length === 0 && (
+      {!loading && tab === 'banners' && (
+        <div>
+          {/* info strip */}
+          <div className="mb-4 px-1 flex items-center gap-2 text-xs text-moca-muted">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" />
+            </svg>
+            <span>צילומי מסך אוטומטיים של עמוד הבית של כל ספק — מתעדכנים כל יום בשעה 08:00</span>
+          </div>
+
+          {bannersLoaded && banners.length === 0 && (
+            <div className="text-center text-moca-muted py-16 text-sm">
+              אין באנרים זמינים עדיין — הם יצולמו בשעה 08:00
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {banners.map(banner => (
+              <BannerCard key={banner.carrier} banner={banner} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!loading && filteredPlans.length === 0 && tab !== 'banners' && (
         <div className="text-center py-20 text-gray-400">
           <p className="text-3xl mb-3 opacity-40">&#128269;</p>
           <p className="text-sm">לא נמצאו חבילות בסינון הנוכחי</p>
