@@ -3777,6 +3777,47 @@ def scrape_all_abroad():
 
 # ── CARRIER HOMEPAGE BANNER SCREENSHOTS ──────────────────────────────────────
 
+# CSS selectors for common popup close buttons (cookie banners, promos, etc.)
+_POPUP_CLOSE_SELECTORS = [
+    # Generic close/dismiss buttons by aria-label
+    "[aria-label='Close']", "[aria-label='close']",
+    "[aria-label='סגור']", "[aria-label='Close dialog']",
+    # Common class/id patterns
+    ".modal-close", ".popup-close", ".close-btn", ".btn-close",
+    "#close-button", "#popup-close", "#modal-close",
+    # Cookie consent accept/close buttons
+    ".cookie-accept", ".cookie-close", ".cc-dismiss", ".cc-btn",
+    "#cookie-accept", "#cookieAccept", "#acceptCookies",
+    "[data-dismiss='modal']", "[data-action='close']",
+    # Israeli carrier-specific patterns
+    ".dialog-close", ".lightbox-close", ".overlay-close",
+]
+
+def _dismiss_popups(page) -> None:
+    """Try to close any popups or overlays before taking a screenshot."""
+    # 1. Press Escape — closes most modal overlays
+    try:
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(400)
+    except Exception:
+        pass
+
+    # 2. Click known close-button selectors (stop after first success)
+    for selector in _POPUP_CLOSE_SELECTORS:
+        try:
+            btn = page.locator(selector).first
+            if btn.is_visible(timeout=300):
+                btn.click(timeout=500)
+                page.wait_for_timeout(400)
+                logger.info("Dismissed popup via selector: %s", selector)
+                break
+        except Exception:
+            continue
+
+    # 3. Final short wait to let any closing animation finish
+    page.wait_for_timeout(500)
+
+
 CARRIER_HOMEPAGE_URLS = {
     "partner":   "https://www.partner.net.il",
     "pelephone": "https://www.pelephone.co.il",
@@ -3820,6 +3861,7 @@ def scrape_carrier_banners(output_dir: str) -> list[dict]:
                 try:
                     page.goto(url, timeout=30000, wait_until="domcontentloaded")
                     page.wait_for_timeout(2000)  # let hero images render
+                    _dismiss_popups(page)
                     page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
                     results.append({"carrier": carrier, "scraped_at": scraped_at, "success": True})
                     logger.info("Banner screenshot saved: %s", out_path)
