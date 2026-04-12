@@ -360,6 +360,13 @@ def service_worker():
     return resp
 
 
+@app.route("/banners/<path:filename>")
+def serve_banner(filename):
+    """Serve carrier homepage screenshot PNGs."""
+    banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
+    return send_from_directory(banners_dir, filename)
+
+
 @app.route("/api/plans")
 @limiter.limit("60 per minute")
 def api_plans():
@@ -563,6 +570,43 @@ def api_content_plans():
     service = request.args.get("service")
     plans = get_content_plans(service=service, carrier=carrier, db_path=_db_path())
     return jsonify(plans)
+
+
+CARRIER_DISPLAY = {
+    "partner":   {"name": "פרטנר",      "url": "https://www.partner.net.il",   "color": "#e8003d"},
+    "pelephone": {"name": "פלאפון",     "url": "https://www.pelephone.co.il",  "color": "#ff6600"},
+    "hotmobile": {"name": "הוט מובייל", "url": "https://www.hotmobile.co.il",  "color": "#e3001e"},
+    "cellcom":   {"name": "סלקום",      "url": "https://www.cellcom.co.il",    "color": "#003b7a"},
+    "mobile019": {"name": "019 מובייל", "url": "https://www.019mobile.co.il",  "color": "#555555"},
+    "xphone":    {"name": "XPhone",     "url": "https://www.xphone.co.il",     "color": "#6a0dad"},
+    "wecom":     {"name": "וי-קום",     "url": "https://www.we.co.il",         "color": "#006633"},
+    "neptucom":  {"name": "נפטוקום",    "url": "https://www.neptucom.co.il",   "color": "#004488"},
+}
+
+
+@app.route("/api/banners")
+@limiter.limit("60 per minute")
+def api_banners():
+    """Return metadata for all carrier homepage banner screenshots."""
+    from datetime import datetime, timezone
+
+    banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
+    result = []
+    for carrier, meta in CARRIER_DISPLAY.items():
+        png_path = os.path.join(banners_dir, f"{carrier}.png")
+        scraped_at = None
+        if os.path.exists(png_path):
+            mtime = os.path.getmtime(png_path)
+            scraped_at = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
+        result.append({
+            "carrier":    carrier,
+            "name":       meta["name"],
+            "url":        meta["url"],
+            "color":      meta["color"],
+            "image_url":  f"/banners/{carrier}.png" if os.path.exists(png_path) else None,
+            "scraped_at": scraped_at,
+        })
+    return jsonify(result)
 
 
 @app.route("/api/content-changes")
@@ -1125,6 +1169,15 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error(f"Scrape job failed: {e}", exc_info=True)
 
+    def scrape_banners_job():
+        """Daily 08:00 job — screenshot each carrier homepage."""
+        from scraper import scrape_carrier_banners
+        banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
+        logger.info("Starting daily banner screenshot job")
+        results = scrape_carrier_banners(banners_dir)
+        ok = sum(1 for r in results if r["success"])
+        logger.info("Banner screenshots: %d/%d succeeded", ok, len(results))
+
     _ensure_vapid_keys(CONFIG_PATH)
     init_db()
     config = load_config()
@@ -1135,6 +1188,7 @@ if __name__ == "__main__":
     report_time = config.get("email_report_time", "09:00")
     rh, rm = map(int, report_time.split(":"))
     scheduler.add_job(run_email_report_job, "cron", hour=rh, minute=rm)
+    scheduler.add_job(scrape_banners_job, "cron", hour=8, minute=0)
     scheduler.start()
     logger.info("Flask starting → http://0.0.0.0:5000")
     try:
