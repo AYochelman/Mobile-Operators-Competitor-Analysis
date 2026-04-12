@@ -8,6 +8,8 @@ Returns list of plan dicts:
 from playwright.sync_api import sync_playwright
 import re
 import logging
+import os
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -3792,37 +3794,38 @@ def scrape_carrier_banners(output_dir: str) -> list[dict]:
     Returns a list of dicts: { carrier, scraped_at, success }.
     output_dir — absolute path to the folder where PNGs will be saved.
     """
-    import os
-    from datetime import datetime, timezone
-
     results = []
     os.makedirs(output_dir, exist_ok=True)
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            viewport={"width": 1280, "height": 720},
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"],
         )
-        page = context.new_page()
+        try:
+            context = browser.new_context(
+                viewport={"width": 1280, "height": 720},
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+            )
+            page = context.new_page()
 
-        for carrier, url in CARRIER_HOMEPAGE_URLS.items():
-            out_path = os.path.join(output_dir, f"{carrier}.png")
-            scraped_at = datetime.now(timezone.utc).isoformat()
-            try:
-                page.goto(url, timeout=30000, wait_until="domcontentloaded")
-                page.wait_for_timeout(2000)  # let hero images render
-                page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
-                results.append({"carrier": carrier, "scraped_at": scraped_at, "success": True})
-                logger.info("Banner screenshot saved: %s", out_path)
-            except Exception as exc:
-                logger.warning("Banner screenshot failed for %s: %s", carrier, exc)
-                results.append({"carrier": carrier, "scraped_at": scraped_at, "success": False})
-
-        browser.close()
+            for carrier, url in CARRIER_HOMEPAGE_URLS.items():
+                out_path = os.path.join(output_dir, f"{carrier}.png")
+                scraped_at = datetime.now(timezone.utc).isoformat()
+                try:
+                    page.goto(url, timeout=30000, wait_until="domcontentloaded")
+                    page.wait_for_timeout(2000)  # let hero images render
+                    page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
+                    results.append({"carrier": carrier, "scraped_at": scraped_at, "success": True})
+                    logger.info("Banner screenshot saved: %s", out_path)
+                except Exception as exc:
+                    logger.warning("Banner screenshot failed for %s: %s", carrier, exc)
+                    results.append({"carrier": carrier, "scraped_at": scraped_at, "success": False})
+        finally:
+            browser.close()
 
     return results
