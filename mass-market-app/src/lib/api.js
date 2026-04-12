@@ -32,6 +32,7 @@ export const api = {
   getGlobalChanges:() => fetchApi('/api/global-changes'),
   getContentPlans: () => fetchApi('/api/content-plans'),
   getContentChanges:() => fetchApi('/api/content-changes'),
+  getBanners:      () => fetchApi('/api/banners'),
 
   // Scrape — admin only, triggers via JWT auth
   scrapeAll: () => fetchApi('/api/scrape-all-now'),
