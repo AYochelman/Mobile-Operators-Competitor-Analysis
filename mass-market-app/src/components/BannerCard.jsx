@@ -1,5 +1,6 @@
 // mass-market-app/src/components/BannerCard.jsx
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { ExternalLink, X } from 'lucide-react'
 
 // Fallback gradient per carrier when screenshot isn't available yet
@@ -25,18 +26,22 @@ export default function BannerCard({ banner }) {
   const [modalOpen, setModalOpen] = useState(false)
   const [imgError, setImgError] = useState(false)
 
-  // Close modal on Escape
+  // Close modal on Escape + lock body scroll
   useEffect(() => {
     if (!modalOpen) return
+    document.body.style.overflow = 'hidden'
     const handler = (e) => { if (e.key === 'Escape') setModalOpen(false) }
     window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', handler)
+    }
   }, [modalOpen])
 
   const hasImage = image_url && !imgError
 
-  const BannerMedia = ({ className = '', style = {} }) =>
-    hasImage ? (
+  function renderMedia(className, style) {
+    return hasImage ? (
       <img
         src={image_url}
         alt={`באנר ${name}`}
@@ -52,6 +57,7 @@ export default function BannerCard({ banner }) {
         <span className="text-white/80 text-lg font-bold">{name}</span>
       </div>
     )
+  }
 
   return (
     <>
@@ -61,7 +67,7 @@ export default function BannerCard({ banner }) {
                    transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:scale-[1.01]"
         onClick={() => setModalOpen(true)}
       >
-        <BannerMedia className="w-full" style={{ aspectRatio: '16/7' }} />
+        {renderMedia('w-full', { aspectRatio: '16/7' })}
         <div className="px-3 py-2 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
           <span className="text-sm font-bold text-[#3b1f0d] truncate">{name}</span>
@@ -70,13 +76,16 @@ export default function BannerCard({ banner }) {
       </div>
 
       {/* Modal */}
-      {modalOpen && (
+      {modalOpen && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false) }}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`באנר ${name}`}
         >
           <div className="bg-white rounded-2xl overflow-hidden w-[90vw] max-w-4xl shadow-2xl relative">
-            <BannerMedia className="w-full" style={{ aspectRatio: '16/7' }} />
+            {renderMedia('w-full', { aspectRatio: '16/7' })}
 
             <button
               className="absolute top-3 left-3 w-8 h-8 rounded-full bg-black/50 text-white
@@ -104,7 +113,8 @@ export default function BannerCard({ banner }) {
               </a>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )
