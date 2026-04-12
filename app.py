@@ -582,8 +582,8 @@ CARRIER_DISPLAY = {
     "cellcom":   {"name": "סלקום",      "url": "https://www.cellcom.co.il",    "color": "#003b7a"},
     "mobile019": {"name": "019 מובייל", "url": "https://www.019mobile.co.il",  "color": "#555555"},
     "xphone":    {"name": "XPhone",     "url": "https://www.xphone.co.il",     "color": "#6a0dad"},
-    "wecom":     {"name": "וי-קום",     "url": "https://www.we.co.il",         "color": "#006633"},
-    "neptucom":  {"name": "נפטוקום",    "url": "https://www.neptucom.co.il",   "color": "#004488"},
+    "wecom":     {"name": "וי-קום",     "url": "https://we-com.co.il",         "color": "#006633"},
+    "neptucom":  {"name": "נפטוקום",    "url": "https://www.neptucom.com",     "color": "#004488"},
 }
 
 

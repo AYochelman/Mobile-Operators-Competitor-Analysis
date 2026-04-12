@@ -3784,8 +3784,8 @@ CARRIER_HOMEPAGE_URLS = {
     "cellcom":   "https://www.cellcom.co.il",
     "mobile019": "https://www.019mobile.co.il",
     "xphone":    "https://www.xphone.co.il",
-    "wecom":     "https://www.we.co.il",
-    "neptucom":  "https://www.neptucom.co.il",
+    "wecom":     "https://we-com.co.il",
+    "neptucom":  "https://www.neptucom.com",
 }
 
 def scrape_carrier_banners(output_dir: str) -> list[dict]:
@@ -3810,12 +3810,13 @@ def scrape_carrier_banners(output_dir: str) -> list[dict]:
                     "AppleWebKit/537.36 (KHTML, like Gecko) "
                     "Chrome/120.0.0.0 Safari/537.36"
                 ),
+                ignore_https_errors=True,  # some carriers have cert mismatches
             )
-            page = context.new_page()
 
             for carrier, url in CARRIER_HOMEPAGE_URLS.items():
                 out_path = os.path.join(output_dir, f"{carrier}.png")
                 scraped_at = datetime.now(timezone.utc).isoformat()
+                page = context.new_page()  # fresh page per carrier — avoids cross-navigation pollution
                 try:
                     page.goto(url, timeout=30000, wait_until="domcontentloaded")
                     page.wait_for_timeout(2000)  # let hero images render
@@ -3825,6 +3826,8 @@ def scrape_carrier_banners(output_dir: str) -> list[dict]:
                 except Exception as exc:
                     logger.warning("Banner screenshot failed for %s: %s", carrier, exc)
                     results.append({"carrier": carrier, "scraped_at": scraped_at, "success": False})
+                finally:
+                    page.close()
         finally:
             browser.close()
 
