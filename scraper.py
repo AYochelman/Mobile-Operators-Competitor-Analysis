@@ -773,9 +773,20 @@ def scrape_019(_page=None):
                         gb = _parse_gb(text)
                     extras.append(text)
 
+                # Extract signup URL from the CTA button
+                link_el = card.query_selector('a[href*="\u05d4\u05e8\u05e9\u05de\u05ea"]')
+                if not link_el:
+                    link_el = card.query_selector('a.btn, a[class*="subscribe"], a[class*="btn"]')
+                plan_url = None
+                if link_el:
+                    href = link_el.get_attribute('href') or ''
+                    plan_url = ('https://019mobile.co.il' + href) if href.startswith('/') else href or None
+                if not plan_url:
+                    plan_url = 'https://019mobile.co.il/\u05d7\u05d1\u05d9\u05dc\u05d5\u05ea-\u05e1\u05dc\u05d5\u05dc\u05e8/'
+
                 if name and name != "לא ידוע":
                     plans.append({"carrier": "mobile019", "plan_name": name, "price": price,
-                                  "data_gb": gb, "minutes": None, "extras": extras})
+                                  "data_gb": gb, "minutes": None, "extras": extras, "url": plan_url})
             return plans
         finally:
             browser.close()
