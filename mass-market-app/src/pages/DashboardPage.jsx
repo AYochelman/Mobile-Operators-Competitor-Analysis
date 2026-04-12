@@ -508,8 +508,8 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Filter strip */}
-      <div className="mb-4">
+      {/* Filter strip — hidden on banners tab which has no plan filters */}
+      <div className="mb-4" style={tab === 'banners' ? {display:'none'} : undefined}>
         {/* Toggle + results count row */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 // mass-market-app/src/components/BannerCard.jsx
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { API_BASE } from '../lib/api'
 // Inline SVG icons (lucide-react not installed)
 const ExternalLink = ({ size = 14 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -48,12 +49,13 @@ export default function BannerCard({ banner }) {
     }
   }, [modalOpen])
 
-  const hasImage = image_url && !imgError
+  const resolvedImageUrl = image_url ? `${API_BASE}${image_url}` : null
+  const hasImage = resolvedImageUrl && !imgError
 
   function renderMedia(className, style) {
     return hasImage ? (
       <img
-        src={image_url}
+        src={resolvedImageUrl}
         alt={`באנר ${name}`}
         className={className}
         style={{ objectFit: 'cover', ...style }}
