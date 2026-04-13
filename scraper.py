@@ -4102,3 +4102,58 @@ def scrape_carrier_banners(output_dir: str) -> list[dict]:
             browser.close()
 
     return results
+
+
+CARRIER_STORE_URLS = {
+    "pelephone": "https://www.pelephone.co.il/ds/heb/eshop/lobby/",
+    "cellcom":   "https://shop.cellcom.co.il/",
+    "partner":   "https://store.partner.co.il/home",
+    "hotmobile": "https://hotstore.hotmobile.co.il/smartphones.html",
+}
+
+
+def scrape_carrier_store_banners(output_dir: str) -> list[dict]:
+    """
+    Navigate to each carrier e-store page and save a 1280x720 PNG screenshot.
+    Files are saved as {carrier}_store.png in output_dir.
+    Returns a list of dicts: { carrier, scraped_at, success }.
+    """
+    results = []
+    os.makedirs(output_dir, exist_ok=True)
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"],
+        )
+        try:
+            context = browser.new_context(
+                viewport={"width": 1280, "height": 720},
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+                ignore_https_errors=True,
+            )
+
+            for carrier, url in CARRIER_STORE_URLS.items():
+                out_path = os.path.join(output_dir, f"{carrier}_store.png")
+                scraped_at = datetime.now(timezone.utc).isoformat()
+                page = context.new_page()
+                try:
+                    page.goto(url, timeout=30000, wait_until="domcontentloaded")
+                    page.wait_for_timeout(2000)
+                    _dismiss_popups(page)
+                    page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
+                    results.append({"carrier": carrier, "scraped_at": scraped_at, "success": True})
+                    logger.info("Store banner screenshot saved: %s", out_path)
+                except Exception as exc:
+                    logger.warning("Store banner screenshot failed for %s: %s", carrier, exc)
+                    results.append({"carrier": carrier, "scraped_at": scraped_at, "success": False})
+                finally:
+                    page.close()
+        finally:
+            browser.close()
+
+    return results
