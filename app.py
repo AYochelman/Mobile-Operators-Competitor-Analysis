@@ -586,6 +586,13 @@ CARRIER_DISPLAY = {
     "neptucom":  {"name": "נפטוקום",    "url": "https://www.neptucom.com",     "color": "#004488"},
 }
 
+CARRIER_STORE_DISPLAY = {
+    "pelephone": {"name": "פלאפון",     "url": "https://www.pelephone.co.il/ds/heb/eshop/lobby/", "color": "#ff6600"},
+    "cellcom":   {"name": "סלקום",      "url": "https://shop.cellcom.co.il/",                      "color": "#003b7a"},
+    "partner":   {"name": "פרטנר",      "url": "https://store.partner.co.il/home",                 "color": "#e8003d"},
+    "hotmobile": {"name": "הוט מובייל", "url": "https://hotstore.hotmobile.co.il/smartphones.html","color": "#e3001e"},
+}
+
 
 @app.route("/api/banners")
 @limiter.limit("60 per minute")
@@ -606,6 +613,30 @@ def api_banners():
             "url":        meta["url"],
             "color":      meta["color"],
             "image_url":  f"/banners/{carrier}.png" if exists else None,
+            "scraped_at": scraped_at,
+        })
+    return jsonify(result)
+
+
+@app.route("/api/store-banners")
+@limiter.limit("60 per minute")
+def api_store_banners():
+    """Return metadata for carrier e-store banner screenshots."""
+    banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
+    result = []
+    for carrier, meta in CARRIER_STORE_DISPLAY.items():
+        png_path = os.path.join(banners_dir, f"{carrier}_store.png")
+        scraped_at = None
+        exists = os.path.exists(png_path)
+        if exists:
+            mtime = os.path.getmtime(png_path)
+            scraped_at = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
+        result.append({
+            "carrier":    carrier,
+            "name":       meta["name"],
+            "url":        meta["url"],
+            "color":      meta["color"],
+            "image_url":  f"/banners/{carrier}_store.png" if exists else None,
             "scraped_at": scraped_at,
         })
     return jsonify(result)
@@ -1183,6 +1214,18 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error("Banner screenshot job failed: %s", e, exc_info=True)
 
+    def scrape_store_banners_job():
+        """Daily 08:00 job — screenshot each carrier e-store page."""
+        from scraper import scrape_carrier_store_banners
+        banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
+        logger.info("Starting daily store banner screenshot job")
+        try:
+            results = scrape_carrier_store_banners(banners_dir)
+            ok = sum(1 for r in results if r["success"])
+            logger.info("Store banner screenshots: %d/%d succeeded", ok, len(results))
+        except Exception as e:
+            logger.error("Store banner screenshot job failed: %s", e, exc_info=True)
+
     _ensure_vapid_keys(CONFIG_PATH)
     init_db()
     config = load_config()
@@ -1194,6 +1237,7 @@ if __name__ == "__main__":
     rh, rm = map(int, report_time.split(":"))
     scheduler.add_job(run_email_report_job, "cron", hour=rh, minute=rm)
     scheduler.add_job(scrape_banners_job, "cron", hour=8, minute=0)
+    scheduler.add_job(scrape_store_banners_job, "cron", hour=8, minute=0)
     scheduler.start()
     logger.info("Flask starting → http://0.0.0.0:5000")
     try:
