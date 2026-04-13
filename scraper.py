@@ -113,6 +113,58 @@ def scrape_xphone(_page=None):
                 "GLOBAL 3",
             ]
 
+            # Dynamically scrape per-plan PDF URLs from the DOM (immune to WAF — uses JS evaluate)
+            # Plan PDFs have no link text; filter out known site-wide PDFs by filename
+            PLAN_URLS = {}
+            try:
+                raw_urls = page.evaluate("""() => {
+                    const SKIP = ['reshimat', 'betuhut', 'negishut', 'tnaim_clalim',
+                                  'old_tech', 'taarifim', 'loch', 'taarifon'];
+                    const seen = new Set();
+                    return Array.from(document.querySelectorAll(
+                        'a[href*="wp-content/uploads"][href$=".pdf"]'
+                    ))
+                    .filter(a => !a.innerText.trim())
+                    .filter(a => !SKIP.some(s => a.href.toLowerCase().includes(s)))
+                    .filter(a => { const h = a.href; if (seen.has(h)) return false; seen.add(h); return true; })
+                    .map(a => a.href);
+                }""") or []
+                for url in raw_urls:
+                    ul = url.lower()
+                    if 'forever-plus-5g' in ul:
+                        PLAN_URLS['FOREVER PLUS 5G'] = url
+                    elif 'forever-plus' in ul:
+                        PLAN_URLS['FOREVER PLUS'] = url
+                    elif 'young' in ul:
+                        PLAN_URLS['Young 50GB'] = url
+                    elif '%d7%a6' in ul:  # URL-encoded צ (start of צוברים)
+                        if '5g-1' in ul:
+                            PLAN_URLS['\u05e6\u05d5\u05d1\u05e8\u05d9\u05dd \u05d5\u05d2\u05d5\u05dc\u05e9\u05d9\u05dd 1GB \u05d1\u05d7\u05d5\"\u05dc \u2013 5G'] = url
+                        else:
+                            PLAN_URLS['\u05e6\u05d5\u05d1\u05e8\u05d9\u05dd \u05d5\u05d2\u05d5\u05dc\u05e9\u05d9\u05dd 1GB \u05d1\u05d7\u05d5\"\u05dc'] = url
+                    elif 'global-3' in ul:
+                        PLAN_URLS['GLOBAL 3'] = url
+                    elif 'global-5gb-5g' in ul:
+                        PLAN_URLS['GLOBAL 5G'] = url
+                    elif 'global-5gb' in ul:
+                        PLAN_URLS['GLOBAL 5'] = url
+            except Exception as _exc:
+                logger.warning(f"scrape_xphone: DOM PDF extraction failed: {_exc}")
+            # Fallback static URLs for any plan not resolved dynamically
+            _XPHONE_BASE = "https://xphone.co.il/wp-content/uploads/"
+            _STATIC_URLS = {
+                "FOREVER PLUS":     _XPHONE_BASE + "FOREVER-PLUS-\u05ea\u05e7\u05e0\u05d5\u05df-\u05ea\u05e0\u05d0\u05d9-\u05ea\u05db\u05e0\u05d9\u05ea-.pdf",
+                "FOREVER PLUS 5G":  _XPHONE_BASE + "FOREVER-PLUS-5G-\u05ea\u05e7\u05e0\u05d5\u05df-\u05ea\u05e0\u05d0\u05d9-\u05ea\u05db\u05e0\u05d9\u05ea-.pdf",
+                "Young 50GB":       _XPHONE_BASE + "Young-50GB-\u05ea\u05e7\u05e0\u05d5\u05df-\u05ea\u05e0\u05d0\u05d9-\u05ea\u05db\u05e0\u05d9\u05ea-.pdf",
+                "\u05e6\u05d5\u05d1\u05e8\u05d9\u05dd \u05d5\u05d2\u05d5\u05dc\u05e9\u05d9\u05dd 1GB \u05d1\u05d7\u05d5\"\u05dc":      _XPHONE_BASE + "\u05ea\u05e7\u05e0\u05d5\u05df-\u05ea\u05e0\u05d0\u05d9-\u05ea\u05db\u05e0\u05d9\u05ea-\u05e6\u05d5\u05d1\u05e8\u05d9\u05dd-\u05d5\u05d2\u05d5\u05dc\u05e9\u05d9\u05dd-1-\u05d2\u05d9\u05d2\u05d4.pdf",
+                "\u05e6\u05d5\u05d1\u05e8\u05d9\u05dd \u05d5\u05d2\u05d5\u05dc\u05e9\u05d9\u05dd 1GB \u05d1\u05d7\u05d5\"\u05dc \u2013 5G": _XPHONE_BASE + "\u05ea\u05e7\u05e0\u05d5\u05df-\u05ea\u05e0\u05d0\u05d9-\u05ea\u05db\u05e0\u05d9\u05ea-\u05e6\u05d5\u05d1\u05e8\u05d9\u05dd-\u05d5\u05d2\u05d5\u05dc\u05e9\u05d9\u05dd-1-\u05d2\u05d9\u05d2\u05d4-5G-1.pdf",
+                "GLOBAL 3":         _XPHONE_BASE + "\u05ea\u05e7\u05e0\u05d5\u05df-GLOBAL-3GB.pdf",
+                "GLOBAL 5":         _XPHONE_BASE + "\u05ea\u05e7\u05e0\u05d5\u05df-GLOBAL-5GB.pdf",
+                "GLOBAL 5G":        _XPHONE_BASE + "\u05ea\u05e7\u05e0\u05d5\u05df-GLOBAL-5GB-5G.pdf",
+            }
+            for name, url in _STATIC_URLS.items():
+                PLAN_URLS.setdefault(name, url)
+
             # Extract block of text for each plan
             plans = []
             for plan_name in PLAN_NAMES:
@@ -174,7 +226,8 @@ def scrape_xphone(_page=None):
                     if len(clean_extras) >= 5: break
 
                 plans.append({"carrier": "xphone", "plan_name": plan_name, "price": price,
-                              "data_gb": gb, "minutes": minutes, "extras": clean_extras})
+                              "data_gb": gb, "minutes": minutes, "extras": clean_extras,
+                              "url": PLAN_URLS.get(plan_name)})
             return plans
         finally:
             browser.close()
@@ -312,6 +365,18 @@ def _scrape_wecom_page(page, url, name_prefix, already_navigated=False):
         if not block_text:
             continue
 
+        # Extract PDF terms link from the heading's ancestor block
+        plan_url = h_el.evaluate(r"""el => {
+            let p = el;
+            for (let i = 0; i < 15; i++) {
+                p = p.parentElement;
+                if (!p) break;
+                const a = p.querySelector('a[href*=".pdf"]');
+                if (a) return a.href;
+            }
+            return null;
+        }""")
+
         # Parse price: on We-Com the price appears BEFORE ₪ (e.g. "29.90\n₪\nלחודש")
         price_m = re.search(r'(\d+(?:\.\d+)?)\s*\n\s*\u20aa', block_text)
         if not price_m:
@@ -348,7 +413,7 @@ def _scrape_wecom_page(page, url, name_prefix, already_navigated=False):
 
             plans.append({"carrier": "wecom", "plan_name": name, "price": price,
                           "days": days, "data_gb": gb, "minutes": None, "sms": None,
-                          "extras": clean_extras})
+                          "extras": clean_extras, "url": plan_url})
         else:
             # Domestic plans: all have unlimited domestic data → gb = None always
             gb = None
@@ -386,7 +451,7 @@ def _scrape_wecom_page(page, url, name_prefix, already_navigated=False):
                 if len(clean_extras) >= 8: break
 
             plans.append({"carrier": "wecom", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": minutes, "extras": clean_extras})
+                          "data_gb": gb, "minutes": minutes, "extras": clean_extras, "url": plan_url})
 
     seen_names, deduped = set(), []
     for p in plans:
@@ -439,6 +504,7 @@ def scrape_neptucom(_page=None):
     Group B: domestic only.
     """
     H = "\u05d7\u05d5\"\u05dc"   # חו"ל
+    _NEPTUCOM_PDF = "https://neptucom.com/wp-content/uploads/pdfn327/{}.pdf"
     plans = [
         # ── Group A: Domestic + International included ──────────────────
         {
@@ -547,6 +613,7 @@ def scrape_neptucom(_page=None):
     ts = datetime.utcnow().isoformat()
     for p in plans:
         p.setdefault("scraped_at", ts)
+        p.setdefault("url", _NEPTUCOM_PDF.format(p["plan_name"]))
     return plans
 
 
@@ -576,6 +643,32 @@ def scrape_all():
 def scrape_partner(page):
     page.goto("https://www.partner.co.il/n/cellularsale/lobby", timeout=30000, wait_until="networkidle")
     page.wait_for_selector(".plan-wrapper", timeout=15000)
+
+    # Fetch terms PDF URLs from Partner CMS API (in-page fetch to bypass CORS)
+    partner_urls = {}
+    try:
+        raw = page.evaluate("""async () => {
+            const r = await fetch(
+                'https://u.partner.co.il/umbraco/api/CmsApi/GetPageContent/?pageid=91228&lang=he'
+            );
+            return r.text();
+        }""")
+        # Build prefix → PDF map: search for each plan prefix near its PDF URL
+        prefixes = ['Partner Prince', 'Partner Queen', 'Partner King', 'Partner Ace', 'Partner Boost']
+        for prefix in prefixes:
+            pos = 0
+            while True:
+                idx = raw.find(prefix, pos)
+                if idx == -1:
+                    break
+                window = raw[max(0, idx - 500):idx + 2000]
+                m = re.search(r'https?://u\.partner\.co\.il/media/[a-z0-9]+/[^\s"\\]+\.pdf', window)
+                if m and prefix not in partner_urls:
+                    partner_urls[prefix] = m.group(0)
+                pos = idx + 1
+    except Exception as exc:
+        logger.warning(f"scrape_partner: failed to fetch terms URLs: {exc}")
+
     plans = []
     for card in page.query_selector_all(".plan-wrapper"):
         name_el  = card.query_selector("h3.title")
@@ -585,9 +678,15 @@ def scrape_partner(page):
         name  = name_el.inner_text().strip()  if name_el  else "לא ידוע"
         price = _parse_price(price_el.inner_text()) if price_el else None
         gb    = _parse_gb(gb_el.inner_text())       if gb_el    else None
+        # Match plan name to URL via prefix lookup
+        plan_url = None
+        for prefix, url in partner_urls.items():
+            if name.startswith(prefix):
+                plan_url = url
+                break
         if name and name != "לא ידוע":
             plans.append({"carrier": "partner", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": None, "extras": extras})
+                          "data_gb": gb, "minutes": None, "extras": extras, "url": plan_url})
     return plans
 
 
@@ -597,6 +696,43 @@ def scrape_pelephone(page):
         timeout=30000, wait_until="networkidle"
     )
     page.wait_for_selector(".border_5 .item", timeout=15000)
+
+    # Extract pid→PDF map: each card has a popup link with a pid, and its more-info page has a PDF
+    pelephone_urls = {}
+    try:
+        pid_map = page.evaluate("""() => {
+            const result = {};
+            document.querySelectorAll('.border_5 .item').forEach(card => {
+                const nameEl = card.querySelector('.superlative');
+                if (!nameEl) return;
+                const name = nameEl.innerText.trim();
+                // Find the popup link — href contains showPopupIframe with pid=NNN
+                for (const a of card.querySelectorAll('a[href*="pid="]')) {
+                    const m = a.href.match(/pid=([\d]+)/);
+                    if (m) { result[name] = m[1]; break; }
+                }
+            });
+            return result;
+        }""")
+        # Fetch all more-info pages in parallel to get PDF URLs
+        if pid_map:
+            pdf_map = page.evaluate("""async (pidMap) => {
+                const entries = Object.entries(pidMap);
+                const fetches = entries.map(([name, pid]) =>
+                    fetch('/ds/heb/packages/mobile-packages/join-pelephone-online/more-info/?pid=' + pid)
+                        .then(r => r.text())
+                        .then(html => {
+                            const m = html.match(/https?:\\/\\/[^\\s"'<>]+\\.pdf/);
+                            return [name, m ? m[0] : null];
+                        })
+                        .catch(() => [name, null])
+                );
+                return Object.fromEntries(await Promise.all(fetches));
+            }""", pid_map)
+            pelephone_urls = {k: v for k, v in pdf_map.items() if v}
+    except Exception as exc:
+        logger.warning(f"scrape_pelephone: failed to fetch terms URLs: {exc}")
+
     plans = []
     for card in page.query_selector_all(".border_5 .item"):
         name_el  = card.query_selector(".superlative")
@@ -618,7 +754,8 @@ def scrape_pelephone(page):
         gb    = _parse_gb(gb_el.inner_text())       if gb_el    else None
         if name and name != "לא ידוע":
             plans.append({"carrier": "pelephone", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": None, "extras": extras})
+                          "data_gb": gb, "minutes": None, "extras": extras,
+                          "url": pelephone_urls.get(name)})
     return plans
 
 
@@ -684,9 +821,17 @@ def scrape_hotmobile(page):
             if re.search(r"\d", d) and ("דקות שיחה" in d or "דקות" in d) and "חו" not in d and "לחו" not in d:
                 minutes = _parse_minutes(d)
                 break
+        # Extract PDF terms link from hidden input data-pdf attribute
+        pdf_el = card.query_selector('input[data-pdf]')
+        plan_url = None
+        if pdf_el:
+            pdf_path = pdf_el.get_attribute('data-pdf') or ''
+            if pdf_path:
+                plan_url = ('https://www.hotmobile.co.il' + pdf_path) if pdf_path.startswith('/') else pdf_path
+
         if name and name != "לא ידוע":
             plans.append({"carrier": "hotmobile", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": minutes, "extras": extras})
+                          "data_gb": gb, "minutes": minutes, "extras": extras, "url": plan_url})
     return plans
 
 
