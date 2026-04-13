@@ -9,6 +9,8 @@ from playwright.sync_api import sync_playwright
 import re
 import logging
 import os
+import json as _json
+import urllib.request
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
@@ -688,9 +690,82 @@ def scrape_hotmobile(page):
     return plans
 
 
+def _fetch_cellcom_terms_urls():
+    """Fetch plan terms PDF URLs from Cellcom Episerver API (featureLink = 'לעיקרי התוכנית').
+    Path: mainContentArea → tabs → salePackages → extraFeatures → featureList[last featureLink]
+    """
+    api_url = (
+        "https://contentepi.cellcom.co.il/production/Private/Cellular/Packages/"
+        "?expand=*&currentPageUrl=%2Fproduction%2FPrivate%2FCellular%2FPackages%2F"
+    )
+    try:
+        req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            data = _json.loads(r.read().decode())
+        plan_urls = {}
+        content_areas = (data.get("mainContentArea") or {}).get("expandedValue") or []
+        for area in content_areas:
+            tabs = (area.get("tabs") or {}).get("expandedValue") or []
+            for tab in tabs:
+                packages = (tab.get("salePackages") or {}).get("expandedValue") or []
+                for pkg in packages:
+                    # Plan name: text before <br> in packageTitle HTML
+                    title_html = (pkg.get("packageTitle") or {}).get("value") or ""
+                    name = re.sub(r"<[^>]+>", " ", title_html.split("<br")[0]).strip()
+                    if not name:
+                        continue
+                    # Find featureLink in extraFeatures → featureList
+                    extra_feats = (pkg.get("extraFeatures") or {}).get("expandedValue") or []
+                    feat_url = None
+                    for ef in extra_feats:
+                        feat_list = (ef.get("featureList") or {}).get("expandedValue") or []
+                        for feat in feat_list:
+                            link = (feat.get("featureLink") or {}).get("value")
+                            if link:
+                                feat_url = "https://contentepi.cellcom.co.il" + link
+                    if name and feat_url:
+                        plan_urls[name] = feat_url
+        return plan_urls
+    except Exception as exc:
+        logger.warning(f"_fetch_cellcom_terms_urls failed: {exc}")
+        return {}
+
+
 def scrape_cellcom(page):
     page.goto("https://cellcom.co.il/production/Private/Cellular/Packages/", timeout=30000, wait_until="networkidle")
     page.wait_for_timeout(4000)
+    # Fetch terms URLs via in-page fetch() (CORS allowed — same parent domain)
+    cellcom_urls = {}
+    try:
+        raw = page.evaluate("""async () => {
+            const r = await fetch(
+                'https://contentepi.cellcom.co.il/production/Private/Cellular/Packages/' +
+                '?expand=*&currentPageUrl=%2Fproduction%2FPrivate%2FCellular%2FPackages%2F',
+                { headers: { 'Accept': 'application/json' } }
+            );
+            return r.text();
+        }""")
+        data = _json.loads(raw)
+        content_areas = (data.get("mainContentArea") or {}).get("expandedValue") or []
+        for area in content_areas:
+            tabs = (area.get("tabs") or {}).get("expandedValue") or []
+            for tab in tabs:
+                packages = (tab.get("salePackages") or {}).get("expandedValue") or []
+                for pkg in packages:
+                    title_html = (pkg.get("title") or {}).get("value") or ""
+                    name = re.sub(r"<[^>]+>", " ", title_html.split("<br")[0]).strip()
+                    if not name:
+                        continue
+                    feat_url = None
+                    for ef in ((pkg.get("extraFeatures") or {}).get("expandedValue") or []):
+                        for feat in ((ef.get("featureList") or {}).get("expandedValue") or []):
+                            link = (feat.get("featureLink") or {}).get("value")
+                            if link:
+                                feat_url = "https://contentepi.cellcom.co.il" + link
+                    if feat_url:
+                        cellcom_urls[name] = feat_url
+    except Exception as exc:
+        logger.warning(f"scrape_cellcom: failed to fetch terms URLs: {exc}")
     plans = []
     for card in page.query_selector_all(".package"):
         # Only cellular plan cards
@@ -718,7 +793,8 @@ def scrape_cellcom(page):
                 break
         if name and name != "לא ידוע":
             plans.append({"carrier": "cellcom", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": minutes, "extras": extras})
+                          "data_gb": gb, "minutes": minutes, "extras": extras,
+                          "url": cellcom_urls.get(name)})
     return plans
 
 
@@ -773,16 +849,12 @@ def scrape_019(_page=None):
                         gb = _parse_gb(text)
                     extras.append(text)
 
-                # Extract signup URL from the CTA button
-                link_el = card.query_selector('a[href*="\u05d4\u05e8\u05e9\u05de\u05ea"]')
-                if not link_el:
-                    link_el = card.query_selector('a.btn, a[class*="subscribe"], a[class*="btn"]')
+                # Extract "טיוטת הסכם התקשרות" PDF link
+                link_el = card.query_selector('a[href*=".pdf"]')
                 plan_url = None
                 if link_el:
                     href = link_el.get_attribute('href') or ''
                     plan_url = ('https://019mobile.co.il' + href) if href.startswith('/') else href or None
-                if not plan_url:
-                    plan_url = 'https://019mobile.co.il/\u05d7\u05d1\u05d9\u05dc\u05d5\u05ea-\u05e1\u05dc\u05d5\u05dc\u05e8/'
 
                 if name and name != "לא ידוע":
                     plans.append({"carrier": "mobile019", "plan_name": name, "price": price,
