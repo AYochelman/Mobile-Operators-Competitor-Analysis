@@ -4019,6 +4019,8 @@ _POPUP_CLOSE_SELECTORS = [
     "[data-dismiss='modal']", "[data-action='close']",
     # Israeli carrier-specific patterns
     ".dialog-close", ".lightbox-close", ".overlay-close",
+    # Adoric marketing popups (Partner store)
+    ".closeLightboxButton", ".adoric_element.closeLightboxButton",
 ]
 
 def _dismiss_popups(page) -> None:
@@ -4143,7 +4145,8 @@ def scrape_carrier_store_banners(output_dir: str) -> list[dict]:
                 page = context.new_page()
                 try:
                     page.goto(url, timeout=30000, wait_until="domcontentloaded")
-                    page.wait_for_timeout(2000)
+                    # Store pages load marketing popups with a delay — wait longer than homepage scraper
+                    page.wait_for_timeout(4000)
                     _dismiss_popups(page)
                     page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
                     results.append({"carrier": carrier, "scraped_at": scraped_at, "success": True})
