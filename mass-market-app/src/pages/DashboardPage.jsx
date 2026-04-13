@@ -153,6 +153,8 @@ export default function DashboardPage() {
   const [visibleCount, setVisibleCount] = useState(5000)
   const [banners, setBanners] = useState([])
   const [bannersLoaded, setBannersLoaded] = useState(false)
+  const [storeBanners, setStoreBanners] = useState([])
+  const [storeBannersLoaded, setStoreBannersLoaded] = useState(false)
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -240,6 +242,11 @@ export default function DashboardPage() {
         const data = await api.getBanners()
         setBanners(data)
         setBannersLoaded(true)
+      }
+      if (t === 'banners' && !storeBannersLoaded) {
+        const data = await api.getStoreBanners()
+        setStoreBanners(data)
+        setStoreBannersLoaded(true)
       }
     } catch (err) { console.error(err) }
     setLoading(false)
@@ -876,9 +883,17 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <h2 className="text-right font-semibold text-lg text-[#5c3317] mb-3">באנרים - עמוד ראשי</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {banners.map(banner => (
               <BannerCard key={banner.carrier} banner={banner} />
+            ))}
+          </div>
+
+          <h2 className="text-right font-semibold text-lg text-[#5c3317] mb-3">באנרים - חנות ציוד קצה</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {storeBanners.map(banner => (
+              <BannerCard key={banner.carrier + '_store'} banner={banner} />
             ))}
           </div>
         </div>

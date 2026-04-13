@@ -33,6 +33,7 @@ export const api = {
   getContentPlans: () => fetchApi('/api/content-plans'),
   getContentChanges:() => fetchApi('/api/content-changes'),
   getBanners:      () => fetchApi('/api/banners'),
+  getStoreBanners: () => fetchApi('/api/store-banners'),
 
   // Scrape — admin only, triggers via JWT auth
   scrapeAll: () => fetchApi('/api/scrape-all-now'),
