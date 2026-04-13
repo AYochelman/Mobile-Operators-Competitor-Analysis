@@ -7,7 +7,7 @@ Israeli cellular plan comparison system branded **MOCA** (Mobile Operators Compe
 - **Legacy dashboard**: Flask-served HTML at localhost:5000 (templates/index.html)
 - **New React app**: Vite + Tailwind + Supabase Auth at localhost:5173 (mass-market-app/)
 
-Both frontends consume the same Flask REST API. The system scrapes 7 domestic carriers + 14 global eSIM providers twice daily, detects price changes, and sends notifications via Telegram/Email/WhatsApp/Web Push.
+Both frontends consume the same Flask REST API. The system scrapes 8 domestic carriers + 14 global eSIM providers twice daily, detects price changes, and sends notifications via Telegram/Email/WhatsApp/Web Push.
 
 ## Commands
 
@@ -29,7 +29,9 @@ npm run lint                     # ESLint
 
 ### After Code Changes
 ```bash
-taskkill /F /IM python.exe       # Kill Flask (Windows)
+# Kill Flask (Windows — taskkill /F fails with Hebrew paths, use wmic):
+wmic process where "name='python.exe'" get processid,commandline
+wmic process where processid=<PID> delete
 python app.py                    # Restart
 # Then hard refresh: Ctrl+Shift+R
 ```
@@ -52,11 +54,13 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 │  Flask (app.py) — port 5000                          │
 │  ├─ /api/plans, /api/abroad-plans, /api/global-plans │
 │  ├─ /api/changes, /api/abroad-changes, etc.          │
+│  ├─ /api/banners, /api/store-banners (screenshots)   │
+│  ├─ /banners/<file> (serves PNG files)               │
 │  ├─ /api/scrape-*-now (@require_api_key)             │
 │  ├─ /api/chat (Claude AI, @require_api_key)          │
 │  └─ /api/push/* (Web Push VAPID)                     │
 ├──────────────────────────────────────────────────────┤
-│  APScheduler: 10:00+16:00 scrape, 09:00 email report │
+│  APScheduler: 08:00 banners, 10:00+16:00 scrape, 09:00 email │
 ├──────────────────────────────────────────────────────┤
 │  scraper.py (Playwright sync) → change_detector.py   │
 │  → db.py (SQLite) → notifier.py (Telegram/Email/Push)│
@@ -67,8 +71,8 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 
 | File | Purpose |
 |------|---------|
-| app.py | Flask server, API routes, APScheduler, CORS, API key auth |
-| scraper.py | 40+ scrapers (domestic + abroad + global per-country/regional + content) |
+| app.py | Flask server, API routes, APScheduler, CORS, API key auth. `CARRIER_DISPLAY` (8 carriers, homepage URLs) and `CARRIER_STORE_DISPLAY` (4 carriers with e-stores) drive the banners API. |
+| scraper.py | 40+ scrapers (domestic + abroad + global per-country/regional + content) + `scrape_carrier_banners()` / `scrape_carrier_store_banners()` for homepage and e-store screenshots |
 | db.py | SQLite CRUD — 9 tables with UPSERT logic |
 | change_detector.py | Diff old vs new plans, detect price/extras/details changes |
 | notifier.py | Format + send notifications (Telegram, Email, WhatsApp, Web Push) |
@@ -98,6 +102,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 
 **Domestic (8)**: partner, pelephone, hotmobile, cellcom, mobile019, xphone, wecom, neptucom
 **Abroad (8)**: same carriers, per-country roaming plans
+**E-store carriers (4)**: pelephone, cellcom, partner, hotmobile — screenshots saved as `{carrier}_store.png` in `data/banners/`
 **Global eSIM (15)**: tuki, globalesim, airalo, pelephone_global, esimo, simtlv, world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (183 countries + 10 regions), sparks (143 countries), voye (157 countries + 5 regions + global), orbit (195 countries + 9 zones, REST API at be.orbitmobile.com), travelsim (global + USA + Middle East zones)
 **Content (5 services × 4 carriers)**: eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי
 
@@ -149,6 +154,7 @@ PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` pro
 - data_gb: None = unlimited, ≥1 = GB, <1 = MB (stored as fraction: 100MB = 100/1024)
 - extras[0] = country/region name for destination filtering (global/abroad plans)
 - Scraper functions take a Playwright Page object, return list of plan dicts
+- `_dismiss_popups(page)` is called before every banner screenshot — tries Escape key then iterates `_POPUP_CLOSE_SELECTORS`. Partner's e-store uses an Adoric popup (`.closeLightboxButton`); store scraper waits 4s (vs 2s for homepages) to let delayed popups appear before dismissal
 - `_make_global_plan()` helper standardizes global plan dict creation
 - Slug-to-Hebrew dictionaries (SAILY_SLUG_TO_HEBREW, ESIMIO_SLUG_TO_HEBREW, HOLAFLY_SLUG_TO_HEBREW, ORBIT_NAME_TO_HEBREW) for per-country scrapers
 - Orbit uses REST API (no Playwright): ORBIT_NAME_TO_HEBREW maps English→Hebrew, ORBIT_ZONE_TO_HEBREW maps zone IDs→Hebrew
@@ -183,6 +189,7 @@ The global `direction: rtl` in `index.css` affects flex containers differently f
 
 ## Schedule
 
+- **08:00** — screenshot all carrier homepages (`scrape_carrier_banners`) + 4 e-store pages (`scrape_carrier_store_banners`), saved as PNG in `data/banners/`
 - **10:00 + 16:00** — scrape all (domestic + abroad + global + content), detect changes, notify (Telegram + WhatsApp + Web Push)
 - **09:00** — send daily Excel email report via SendGrid
 - WhatsApp via Green API (config.json: greenapi_url, greenapi_instance, greenapi_token, whatsapp_phone or whatsapp_group_id)
@@ -219,6 +226,7 @@ The global `direction: rtl` in `index.css` affects flex containers differently f
 
 - **SearchableSelect** (`components/ui/SearchableSelect.jsx`): Custom dropdown with search input, renders via React Portal to avoid clipping
 - **PlanCard**: Universal card for all plan types (domestic/abroad/global/content via `type` prop), supports highlight animation from chat. Content cards skip plan name and info line; all text must use explicit `text-right` or RTL-aware flex (`justify-start`)
+- **BannerCard** (`components/BannerCard.jsx`): Carrier screenshot card (16:7 ratio), modal on click, fallback gradient. Used for both homepage banners and e-store banners in the Banners tab
 - **GroupedPlanCard** (`components/GroupedPlanCard.jsx`): Used for XPhone "גולשים ומדברים" plans — renders GB selector pills + price + info line (GB · days · minutes · SMS)
 - **ChatPanel**: AI chat with clickable carrier names that navigate to filtered dashboard
 - **FilterTag**: Compact filter toggle pill used across Dashboard and Compare pages
