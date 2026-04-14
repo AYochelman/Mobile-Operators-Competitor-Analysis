@@ -93,19 +93,21 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
           <div className="text-[11px] text-moca-sub font-semibold mb-3 text-right">
             {metrics.cheapest?.unit} לפי ספק
           </div>
-          <ResponsiveContainer width="100%" height={metrics.chart_data.length * 30 + 20}>
+          <ResponsiveContainer width="100%" height={metrics.chart_data.length * 34 + 20}>
             <BarChart
               data={[...metrics.chart_data].reverse()}
               layout="vertical"
-              margin={{ top: 0, right: 50, bottom: 0, left: 10 }}
+              margin={{ top: 0, right: 55, bottom: 0, left: 0 }}
             >
               <XAxis type="number" hide />
               <YAxis
                 type="category"
                 dataKey="carrier"
                 tickFormatter={carrierName}
-                width={80}
-                tick={{ fontSize: 11, fill: '#6b5a4e' }}
+                width={120}
+                tick={{ fontSize: 12, fill: '#5c3317', fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
               />
               <Tooltip
                 formatter={(value) => [`${value} ${metrics.cheapest?.unit}`, 'ערך']}
