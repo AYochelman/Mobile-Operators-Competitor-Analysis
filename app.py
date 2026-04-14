@@ -595,6 +595,121 @@ CARRIER_STORE_DISPLAY = {
 }
 
 
+# ── Executive Summary generation ───────────────────────────────────────────
+
+_CATEGORY_LABELS = {
+    'domestic': '\u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05e1\u05dc\u05d5\u05dc\u05e8',
+    'abroad':   '\u05d7\u05d5"\u05dc',
+    'global':   '\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9 (eSIM)',
+    'content':  '\u05ea\u05d5\u05db\u05df',
+}
+
+
+def generate_executive_summary():
+    """Generate AI-powered executive summary for all 4 categories and store in DB.
+
+    Runs at 08:05 via APScheduler and on-demand via POST /api/executive-summary/refresh.
+    """
+    logger.info("Generating executive summary...")
+    config = load_config()
+    api_key = config.get("anthropic_api_key", "")
+    if not api_key:
+        logger.warning("executive summary: anthropic_api_key missing, skipping")
+        return
+
+    try:
+        import requests as _req
+        from scraper import _get_usd_to_ils, _get_eur_to_ils
+        usd_rate = _get_usd_to_ils()
+        eur_rate = _get_eur_to_ils()
+    except Exception as e:
+        logger.warning(f"executive summary: could not get exchange rates: {e}, using defaults")
+        usd_rate, eur_rate = 3.7, 4.0
+        import requests as _req
+
+    for category in ['domestic', 'abroad', 'global', 'content']:
+        try:
+            metrics = compute_executive_metrics(
+                category, usd_rate=usd_rate, eur_rate=eur_rate, db_path=_db_path()
+            )
+            if not metrics['chart_data']:
+                logger.info(f"executive summary: no data for {category}, skipping")
+                continue
+
+            cat_label = _CATEGORY_LABELS.get(category, category)
+            cheapest = metrics['cheapest']
+            aggressive = metrics['most_aggressive']
+            wc = metrics['weekly_changes']
+            top_plans_str = '\n'.join(f"  - {p}" for p in metrics['top_plans'])
+
+            cheapest_name = CARRIER_DISPLAY.get(cheapest['carrier'], {}).get('name', cheapest['carrier'])
+            aggressive_name = CARRIER_DISPLAY.get(aggressive['carrier'], {}).get('name', aggressive['carrier'])
+
+            prompt = (
+                f"\u05d0\u05ea\u05d4 \u05d0\u05e0\u05dc\u05d9\u05e1\u05d8 \u05e9\u05d5\u05e7 \u05e1\u05dc\u05d5\u05dc\u05e8 \u05d9\u05e9\u05e8\u05d0\u05dc\u05d9. "
+                f"\u05dc\u05d4\u05dc\u05df \u05e0\u05ea\u05d5\u05e0\u05d9 \u05e9\u05d5\u05e7 \u05e2\u05d3\u05db\u05e0\u05d9\u05d9\u05dd \u05dc\u05e7\u05d8\u05d2\u05d5\u05e8\u05d9\u05d9\u05ea {cat_label}:\n\n"
+                f"\u05de\u05d3\u05d3\u05d9\u05dd:\n"
+                f"- \u05d4\u05d6\u05d5\u05dc \u05d1\u05d9\u05d5\u05ea\u05e8: {cheapest_name} ({cheapest['value']} {cheapest['unit']})\n"
+                f"- \u05d4\u05d0\u05d2\u05e8\u05e1\u05d9\u05d1\u05d9 \u05d1\u05d9\u05d5\u05ea\u05e8: {aggressive_name} ({aggressive['changes']} \u05d4\u05d5\u05e8\u05d3\u05d5\u05ea \u05de\u05d7\u05d9\u05e8 \u05d1-7 \u05d9\u05de\u05d9\u05dd)\n"
+                f"- \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd \u05d4\u05e9\u05d1\u05d5\u05e2: {wc['total']} \u05e1\u05d4'\u05db \u05e2\u05dd {wc['drops']} \u05d9\u05e8\u05d9\u05d3\u05d5\u05ea \u05d5-{wc['rises']} \u05e2\u05dc\u05d9\u05d5\u05ea \u05de\u05d7\u05d9\u05e8\n\n"
+                f"10 \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05de\u05d5\u05d1\u05d9\u05dc\u05d5\u05ea:\n{top_plans_str}\n\n"
+                f"\u05db\u05ea\u05d5\u05d1 \u05e4\u05e1\u05e7\u05d4 \u05d0\u05d7\u05ea \u05d1\u05e2\u05d1\u05e8\u05d9\u05ea (\u05e2\u05d3 150 \u05de\u05d9\u05dc\u05d4) \u05d4\u05de\u05e0\u05ea\u05d7\u05ea:\n"
+                "1. \u05de\u05d9 \u05d4\u05de\u05d5\u05d1\u05d9\u05dc \u05d5\u05dc\u05de\u05d4\n"
+                "2. \u05d4\u05d2\u05d9\u05e9\u05d4 \u05d4\u05d0\u05d2\u05e8\u05e1\u05d9\u05d1\u05d9\u05ea \u05d1\u05e9\u05d5\u05e7\n"
+                "3. \u05d4\u05de\u05e1\u05e8 \u05d4\u05e9\u05d9\u05d5\u05d5\u05e7\u05d9 \u05d4\u05d3\u05d5\u05de\u05d9\u05e0\u05e0\u05d8\n"
+                "4. \u05ea\u05d5\u05d1\u05e0\u05d4 \u05ea\u05d7\u05e8\u05d5\u05ea\u05d9\u05ea \u05d0\u05d7\u05ea \u05d7\u05e9\u05d5\u05d1\u05d4"
+            )
+
+            resp = _req.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-haiku-4-5-20251001",
+                    "max_tokens": 512,
+                    "messages": [{"role": "user", "content": prompt}],
+                },
+                timeout=30,
+            )
+            resp.raise_for_status()
+            narrative = resp.json()["content"][0]["text"].strip()
+
+            save_executive_summary(category, metrics, narrative, db_path=_db_path())
+            logger.info(f"executive summary: saved {category}")
+
+        except Exception as e:
+            logger.error(f"executive summary: failed for {category}: {e}", exc_info=True)
+
+    logger.info("Executive summary generation complete.")
+
+
+@app.route("/api/executive-summary")
+@limiter.limit("60 per minute")
+def api_executive_summary():
+    """Return cached executive summary for all 4 categories."""
+    rows = get_executive_summary(db_path=_db_path())
+    if not rows:
+        return jsonify({"error": "not_generated_yet"}), 404
+    return jsonify(rows)
+
+
+@app.route("/api/executive-summary/refresh", methods=["POST"])
+@require_api_key
+def api_executive_summary_refresh():
+    """Trigger manual regeneration of all 4 executive summaries."""
+    try:
+        generate_executive_summary()
+        rows = get_executive_summary(db_path=_db_path())
+        generated_at = rows[0]["generated_at"] if rows else None
+        return jsonify({"status": "ok", "generated_at": generated_at})
+    except Exception as e:
+        logger.error(f"executive summary refresh failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
 @app.route("/api/banners")
 @limiter.limit("60 per minute")
 def api_banners():
@@ -1239,6 +1354,7 @@ if __name__ == "__main__":
     scheduler.add_job(run_email_report_job, "cron", hour=rh, minute=rm)
     scheduler.add_job(scrape_banners_job, "cron", hour=8, minute=0)
     scheduler.add_job(scrape_store_banners_job, "cron", hour=8, minute=0)
+    scheduler.add_job(generate_executive_summary, "cron", hour=8, minute=5, id="executive_summary")
     scheduler.start()
     logger.info("Flask starting → http://0.0.0.0:5000")
     try:
