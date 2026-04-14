@@ -203,7 +203,12 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
       {/* Metric cards */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="rounded-xl p-3 text-center text-white" style={{ background: '#5c3317' }}>
-          <div className="text-lg mb-1">🏆</div>
+          <div className="flex justify-center mb-1.5">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="6"/>
+              <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+            </svg>
+          </div>
           <div className="text-[10px] opacity-80 mb-1">המשתלם ביותר</div>
           <div className="text-sm font-bold">{carrierName(metrics.cheapest?.carrier)}</div>
           <div className="text-[10px] opacity-70 mt-1">
@@ -211,7 +216,11 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
           </div>
         </div>
         <div className="rounded-xl p-3 text-center text-white" style={{ background: '#b85c1a' }}>
-          <div className="text-lg mb-1">🔥</div>
+          <div className="flex justify-center mb-1.5">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
           <div className="text-[10px] opacity-80 mb-1">האגרסיבי ביותר</div>
           <div className="text-sm font-bold">{carrierName(metrics.most_aggressive?.carrier)}</div>
           <div className="text-[10px] opacity-70 mt-1">
@@ -219,7 +228,13 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
           </div>
         </div>
         <div className="rounded-xl p-3 text-center text-white" style={{ background: '#c47a3a' }}>
-          <div className="text-lg mb-1">📊</div>
+          <div className="flex justify-center mb-1.5">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </div>
           <div className="text-[10px] opacity-80 mb-1">שינויים השבוע</div>
           <div className="text-sm font-bold">{metrics.weekly_changes?.total} שינויים</div>
           <div className="text-[10px] opacity-70 mt-1">
