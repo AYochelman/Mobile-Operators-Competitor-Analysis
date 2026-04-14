@@ -93,33 +93,36 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
           <div className="text-[11px] text-moca-sub font-semibold mb-3 text-right">
             {metrics.cheapest?.unit} לפי ספק
           </div>
-          <ResponsiveContainer width="100%" height={metrics.chart_data.length * 34 + 20}>
-            <BarChart
-              data={[...metrics.chart_data].reverse()}
-              layout="vertical"
-              margin={{ top: 0, right: 55, bottom: 0, left: 0 }}
-            >
-              <XAxis type="number" hide />
-              <YAxis
-                type="category"
-                dataKey="carrier"
-                tickFormatter={carrierName}
-                width={120}
-                tick={{ fontSize: 12, fill: '#5c3317', fontWeight: 500 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <Tooltip
-                formatter={(value) => [`${value} ${metrics.cheapest?.unit}`, 'ערך']}
-                labelFormatter={carrierName}
-              />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                {[...metrics.chart_data].reverse().map((_, i) => (
-                  <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div dir="ltr">
+            <ResponsiveContainer width="100%" height={metrics.chart_data.length * 36 + 20}>
+              <BarChart
+                data={[...metrics.chart_data].reverse()}
+                layout="vertical"
+                margin={{ top: 0, right: 12, bottom: 0, left: 8 }}
+              >
+                <XAxis type="number" hide />
+                <YAxis
+                  type="category"
+                  dataKey="carrier"
+                  tickFormatter={carrierName}
+                  width={110}
+                  orientation="left"
+                  tick={{ fontSize: 12, fill: '#5c3317', fontWeight: 500 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip
+                  formatter={(value) => [`${value} ${metrics.cheapest?.unit}`, 'ערך']}
+                  labelFormatter={carrierName}
+                />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  {[...metrics.chart_data].reverse().map((_, i) => (
+                    <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 
