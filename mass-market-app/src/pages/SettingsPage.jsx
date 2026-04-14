@@ -166,6 +166,7 @@ export default function SettingsPage() {
         <div className="text-sm text-gray-600 space-y-1">
           <p>סקרייפ אוטומטי: <strong>07:30</strong> ו-<strong>17:00</strong></p>
           <p>דוח Excel יומי: <strong>09:00</strong></p>
+          <p>תקציר מנהלים: <strong>08:05</strong></p>
           <p>התראות: Telegram + Web Push בלבד על שינויים</p>
         </div>
       </div>
