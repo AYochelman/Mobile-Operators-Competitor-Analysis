@@ -617,15 +617,14 @@ def generate_executive_summary():
         logger.warning("executive summary: anthropic_api_key missing, skipping")
         return
 
+    import requests as _req
     try:
-        import requests as _req
         from scraper import _get_usd_to_ils, _get_eur_to_ils
         usd_rate = _get_usd_to_ils()
         eur_rate = _get_eur_to_ils()
     except Exception as e:
         logger.warning(f"executive summary: could not get exchange rates: {e}, using defaults")
         usd_rate, eur_rate = 3.7, 4.0
-        import requests as _req
 
     for category in ['domestic', 'abroad', 'global', 'content']:
         try:
@@ -670,6 +669,7 @@ def generate_executive_summary():
                 json={
                     "model": "claude-haiku-4-5-20251001",
                     "max_tokens": 512,
+                    "system": "\u05d0\u05ea\u05d4 \u05d0\u05e0\u05dc\u05d9\u05e1\u05d8 \u05e9\u05d5\u05e7 \u05e1\u05dc\u05d5\u05dc\u05e8 \u05d9\u05e9\u05e8\u05d0\u05dc\u05d9. \u05e2\u05e0\u05d4 \u05d1\u05e2\u05d1\u05e8\u05d9\u05ea \u05d1\u05dc\u05d1\u05d3.",
                     "messages": [{"role": "user", "content": prompt}],
                 },
                 timeout=30,
