@@ -6,7 +6,7 @@ import hmac
 import hashlib
 import base64
 import time as _time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 from flask import Flask, jsonify, render_template, request, make_response, send_from_directory, g, abort
 from flask_cors import CORS
@@ -15,7 +15,8 @@ from flask_limiter.util import get_remote_address
 from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_changes, get_global_plans, get_global_changes, \
                get_content_plans, get_content_changes, \
                save_price_alert, get_price_alerts, delete_price_alert, update_alert_triggered, \
-               save_executive_summary, get_executive_summary, compute_executive_metrics
+               save_executive_summary, get_executive_summary, compute_executive_metrics, \
+               save_social_sentiment, get_social_sentiment
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -595,6 +596,234 @@ CARRIER_STORE_DISPLAY = {
 }
 
 
+# ── Social media handles per carrier ──────────────────────────────────────
+# facebook: full page URL | instagram/twitter/tiktok: handle (no @) | youtube: search keyword
+
+CARRIER_SOCIAL_HANDLES = {
+    'partner': {
+        'facebook':  'https://www.facebook.com/PartnerCommunications',
+        'instagram': 'partner_il',
+        'twitter':   'PartnerComm',
+        'youtube':   '\u05e4\u05e8\u05d8\u05e0\u05e8 \u05e1\u05dc\u05d5\u05dc\u05e8',
+        'tiktok':    'partner_il',
+    },
+    'pelephone': {
+        'facebook':  'https://www.facebook.com/pelephone',
+        'instagram': 'pelephone',
+        'twitter':   'Pelephone',
+        'youtube':   '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df',
+        'tiktok':    'pelephone',
+    },
+    'cellcom': {
+        'facebook':  'https://www.facebook.com/cellcom',
+        'instagram': 'cellcom_israel',
+        'twitter':   'Cellcom_Israel',
+        'youtube':   '\u05e1\u05dc\u05e7\u05d5\u05dd',
+    },
+    'hotmobile': {
+        'facebook':  'https://www.facebook.com/HotMobile',
+        'instagram': 'hot_mobile_il',
+        'youtube':   '\u05d4\u05d5\u05d8 \u05de\u05d5\u05d1\u05d9\u05d9\u05dc',
+    },
+    'mobile019': {
+        'facebook':  'https://www.facebook.com/019Mobile',
+        'instagram': '019mobile',
+        'youtube':   '019 \u05de\u05d5\u05d1\u05d9\u05d9\u05dc',
+    },
+    'xphone': {
+        'facebook':  'https://www.facebook.com/xphone.co.il',
+        'instagram': 'xphone_israel',
+    },
+    'wecom': {
+        'facebook':  'https://www.facebook.com/wecom.co.il',
+    },
+}
+
+
+def _normalize_post(platform, raw):
+    """Normalize a raw Apify post dict to a consistent schema."""
+    text = (
+        raw.get('text') or raw.get('message') or raw.get('caption') or
+        raw.get('full_text') or raw.get('description') or raw.get('title') or ''
+    )
+    return {
+        'platform': platform,
+        'text':     str(text)[:400],
+        'likes':    int(raw.get('likesCount') or raw.get('likes') or raw.get('likeCount') or 0),
+        'date':     str(raw.get('time') or raw.get('timestamp') or raw.get('date') or raw.get('createdAt') or ''),
+        'url':      str(raw.get('url') or raw.get('postUrl') or ''),
+    }
+
+
+def generate_social_sentiment():
+    """Scrape social media for each carrier and generate Hebrew sentiment analysis.
+
+    Runs at 08:10 via APScheduler and on-demand via POST /api/social-sentiment/refresh.
+    Requires 'apify_api_key' and 'anthropic_api_key' in config.json.
+    """
+    logger.info("Generating social sentiment...")
+    config = load_config()
+    anthropic_key = config.get("anthropic_api_key", "")
+    apify_key     = config.get("apify_api_key", "")
+    if not anthropic_key:
+        logger.warning("social sentiment: anthropic_api_key missing, skipping")
+        return
+    if not apify_key:
+        logger.warning("social sentiment: apify_api_key missing — add 'apify_api_key' to config.json")
+        return
+
+    import requests as _req
+    import re as _re
+
+    def _scrape_apify(platform, actor, actor_input):
+        """Call Apify run-sync and return normalized post list (max 10)."""
+        try:
+            url = (
+                f"https://api.apify.com/v2/acts/{actor}/run-sync-get-dataset-items"
+                f"?token={apify_key}&timeout=60&memory=256"
+            )
+            resp = _req.post(url, json=actor_input, timeout=75)
+            if resp.status_code != 200:
+                logger.warning(f"social sentiment: Apify {platform} HTTP {resp.status_code}")
+                return []
+            items = resp.json() if isinstance(resp.json(), list) else []
+            return [_normalize_post(platform, item) for item in items[:10] if item]
+        except Exception as exc:
+            logger.warning(f"social sentiment: {platform} failed: {exc}")
+            return []
+
+    system_prompt = (
+        "\u05d0\u05ea\u05d4 \u05d0\u05e0\u05dc\u05d9\u05e1\u05d8 \u05de\u05d3\u05d9\u05d4 \u05d7\u05d1\u05e8\u05ea\u05d9\u05ea \u05d4\u05de\u05ea\u05de\u05d7\u05d4 \u05d1\u05e9\u05d5\u05e7 \u05d4\u05e1\u05dc\u05d5\u05dc\u05e8 \u05d4\u05d9\u05e9\u05e8\u05d0\u05dc\u05d9. "
+        "\u05db\u05ea\u05d5\u05d1 \u05d0\u05da \u05d5\u05e8\u05e7 \u05d1\u05e2\u05d1\u05e8\u05d9\u05ea \u05ea\u05e7\u05e0\u05d9\u05ea, \u05e0\u05db\u05d5\u05e0\u05d4 \u05d5\u05e8\u05d4\u05d5\u05d8\u05d4. "
+        "\u05d4\u05e9\u05ea\u05de\u05e9 \u05d1\u05de\u05d9\u05dc\u05d9\u05dd \u05e2\u05d1\u05e8\u05d9\u05d5\u05ea \u05e7\u05d9\u05d9\u05de\u05d5\u05ea \u05d5\u05e0\u05e4\u05d5\u05e6\u05d5\u05ea \u05d1\u05dc\u05d1\u05d3 \u2014 \u05d0\u05dc \u05ea\u05de\u05e6\u05d9\u05d0 \u05de\u05d9\u05dc\u05d9\u05dd. "
+        "\u05e9\u05de\u05d5\u05ea \u05e1\u05e4\u05e7\u05d9\u05dd \u05d5\u05d7\u05d1\u05e8\u05d5\u05ea \u05ea\u05de\u05d9\u05d3 \u05d1\u05d0\u05e0\u05d2\u05dc\u05d9\u05ea (Partner, Pelephone, Cellcom, Hot Mobile, 019, XPhone, WeCom). "
+        "\u05d0\u05e1\u05d5\u05e8 \u05dc\u05ea\u05e8\u05d2\u05dd \u05e9\u05de\u05d5\u05ea \u05e1\u05e4\u05e7\u05d9\u05dd \u05dc\u05e2\u05d1\u05e8\u05d9\u05ea. "
+        "\u05d0\u05e1\u05d5\u05e8 \u05dc\u05d4\u05e9\u05ea\u05de\u05e9 \u05d1-Markdown, \u05db\u05d5\u05ea\u05e8\u05d5\u05ea, \u05db\u05d5\u05db\u05d1\u05d9\u05d5\u05ea, \u05d0\u05d5 \u05ea\u05d1\u05dc\u05d9\u05d8\u05d9\u05dd. "
+        "\u05db\u05ea\u05d5\u05d1 \u05e4\u05e8\u05d5\u05d6\u05d4 \u05e8\u05d2\u05d9\u05dc\u05d4 \u05d1\u05dc\u05d1\u05d3. "
+        "\u05d1\u05e1\u05d5\u05e3 \u05d4\u05ea\u05d2\u05d5\u05d1\u05d4, \u05d4\u05d5\u05e1\u05e3 \u05e9\u05d5\u05e8\u05d4 \u05d7\u05d3\u05e9\u05d4: SENTIMENT: \u05d5\u05dc\u05d0\u05d7\u05e8\u05d9\u05d4 \u05d0\u05d7\u05ea \u05de: positive / negative / neutral / mixed"
+    )
+
+    platform_labels = {
+        'facebook':  '\u05e4\u05d9\u05d9\u05e1\u05d1\u05d5\u05e7',
+        'instagram': '\u05d0\u05d9\u05e0\u05e1\u05d8\u05d2\u05e8\u05dd',
+        'twitter':   'Twitter / X',
+        'youtube':   'YouTube',
+        'tiktok':    'TikTok',
+    }
+    since_date = (datetime.utcnow() - timedelta(days=7)).strftime('%Y-%m-%d')
+
+    for carrier, handles in CARRIER_SOCIAL_HANDLES.items():
+        try:
+            platform_data = {}
+
+            if 'facebook' in handles:
+                posts = _scrape_apify('facebook', 'apify/facebook-posts-scraper', {
+                    'startUrls': [{'url': handles['facebook']}],
+                    'maxPosts': 10,
+                    'onlyPostsNewerThan': '7 days',
+                })
+                if posts:
+                    platform_data['facebook'] = posts
+
+            if 'instagram' in handles:
+                posts = _scrape_apify('instagram', 'apify/instagram-scraper', {
+                    'directUrls': [f"https://www.instagram.com/{handles['instagram']}/"],
+                    'resultsType': 'posts',
+                    'resultsLimit': 10,
+                })
+                if posts:
+                    platform_data['instagram'] = posts
+
+            if 'twitter' in handles:
+                posts = _scrape_apify('twitter', 'apify/twitter-scraper', {
+                    'searchTerms': [f"from:{handles['twitter']}"],
+                    'maxItems': 10,
+                    'sinceDate': since_date,
+                })
+                if posts:
+                    platform_data['twitter'] = posts
+
+            if 'youtube' in handles:
+                posts = _scrape_apify('youtube', 'apify/youtube-scraper', {
+                    'searchKeywords': handles['youtube'],
+                    'maxResults': 10,
+                    'type': 'video',
+                })
+                if posts:
+                    platform_data['youtube'] = posts
+
+            if 'tiktok' in handles:
+                posts = _scrape_apify('tiktok', 'apify/tiktok-scraper', {
+                    'profiles': [handles['tiktok']],
+                    'resultsPerPage': 10,
+                })
+                if posts:
+                    platform_data['tiktok'] = posts
+
+            if not platform_data:
+                logger.info(f"social sentiment: no posts for {carrier}, skipping")
+                continue
+
+            carrier_english = CARRIER_DISPLAY.get(carrier, {}).get('name', carrier)
+            total_posts = sum(len(v) for v in platform_data.values())
+            posts_text = ''
+            for platform, posts in platform_data.items():
+                label = platform_labels.get(platform, platform)
+                posts_text += f"\n{label} ({len(posts)} \u05e4\u05d5\u05e1\u05d8\u05d9\u05dd):\n"
+                for p in posts:
+                    if p['text']:
+                        posts_text += f"  - {p['text'][:250]}\n"
+
+            prompt = (
+                f"\u05dc\u05d4\u05dc\u05df {total_posts} \u05e4\u05d5\u05e1\u05d8\u05d9\u05dd \u05de\u05e8\u05e9\u05ea\u05d5\u05ea \u05d4\u05d7\u05d1\u05e8\u05ea\u05d9\u05d5\u05ea \u05e9\u05dc {carrier_english} \u05de-7 \u05d4\u05d9\u05de\u05d9\u05dd \u05d4\u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd:\n"
+                f"{posts_text}\n"
+                f"\u05db\u05ea\u05d5\u05d1 \u05e4\u05e1\u05e7\u05d4 \u05d0\u05d7\u05ea \u05e7\u05e6\u05e8\u05d4 \u05d5\u05e8\u05d4\u05d5\u05d8\u05d4 \u05d1\u05e2\u05d1\u05e8\u05d9\u05ea \u05ea\u05e7\u05d9\u05e0\u05d4 (3-4 \u05de\u05e9\u05e4\u05d8\u05d9\u05dd, \u05e2\u05d3 80 \u05de\u05d9\u05dc\u05d4) \u05d4\u05de\u05e1\u05db\u05de\u05ea:\n"
+                f"\u05d4\u05dc\u05da \u05d4\u05e8\u05d5\u05d7 \u05d4\u05db\u05dc\u05dc\u05d9 \u05d1\u05e4\u05d5\u05e1\u05d8\u05d9\u05dd, \u05d4\u05e0\u05d5\u05e9\u05d0\u05d9\u05dd \u05d4\u05e2\u05d9\u05e7\u05e8\u05d9\u05d9\u05dd (\u05de\u05d1\u05e6\u05e2\u05d9\u05dd, \u05ea\u05dc\u05d5\u05e0\u05d5\u05ea \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea, \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05d7\u05d3\u05e9\u05d5\u05ea, \u05e9\u05d9\u05d5\u05d5\u05e7), \u05d5\u05de\u05d2\u05de\u05d5\u05ea \u05d1\u05d5\u05dc\u05d8\u05d5\u05ea.\n"
+                f"\u05dc\u05d0\u05d7\u05e8 \u05d4\u05e4\u05e1\u05e7\u05d4, \u05d4\u05d5\u05e1\u05e3 \u05e9\u05d5\u05e8\u05ea SENTIMENT."
+            )
+
+            resp = _req.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": anthropic_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-sonnet-4-5",
+                    "max_tokens": 350,
+                    "system": system_prompt,
+                    "messages": [{"role": "user", "content": prompt}],
+                },
+                timeout=30,
+            )
+            resp.raise_for_status()
+            raw = resp.json()["content"][0]["text"].strip()
+
+            sentiment = 'neutral'
+            if 'SENTIMENT:' in raw:
+                parts = raw.split('SENTIMENT:', 1)
+                raw_narrative = parts[0].strip()
+                for s in ['positive', 'negative', 'mixed', 'neutral']:
+                    if s in parts[1].lower():
+                        sentiment = s
+                        break
+            else:
+                raw_narrative = raw
+
+            narrative = _re.sub(r'^#+\s*', '', raw_narrative, flags=_re.MULTILINE)
+            narrative = _re.sub(r'\*+', '', narrative)
+            narrative = _re.sub(r'\n{2,}', ' ', narrative).strip()
+
+            save_social_sentiment(carrier, platform_data, narrative, sentiment, db_path=_db_path())
+            logger.info(f"social sentiment: saved {carrier} ({sentiment})")
+
+        except Exception as exc:
+            logger.error(f"social sentiment: failed for {carrier}: {exc}", exc_info=True)
+
+    logger.info("Social sentiment generation complete.")
+
+
 # ── Executive Summary generation ───────────────────────────────────────────
 
 _CATEGORY_LABELS = {
@@ -717,6 +946,30 @@ def api_executive_summary_refresh():
         return jsonify({"status": "ok", "generated_at": generated_at})
     except Exception as e:
         logger.error(f"executive summary refresh failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/social-sentiment")
+@limiter.limit("60 per minute")
+def api_social_sentiment():
+    """Return cached social-media sentiment for all carriers."""
+    rows = get_social_sentiment(db_path=_db_path())
+    if not rows:
+        return jsonify({"error": "not_generated_yet"}), 404
+    return jsonify(rows)
+
+
+@app.route("/api/social-sentiment/refresh", methods=["POST"])
+@require_api_key_or_query
+def api_social_sentiment_refresh():
+    """Trigger manual regeneration of social sentiment for all carriers."""
+    try:
+        generate_social_sentiment()
+        rows = get_social_sentiment(db_path=_db_path())
+        generated_at = rows[0]["generated_at"] if rows else None
+        return jsonify({"status": "ok", "generated_at": generated_at})
+    except Exception as exc:
+        logger.error(f"social sentiment refresh failed: {exc}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
 
 
@@ -1365,6 +1618,7 @@ if __name__ == "__main__":
     scheduler.add_job(scrape_banners_job, "cron", hour=8, minute=0)
     scheduler.add_job(scrape_store_banners_job, "cron", hour=8, minute=0)
     scheduler.add_job(generate_executive_summary, "cron", hour=8, minute=5, id="executive_summary")
+    scheduler.add_job(generate_social_sentiment,  "cron", hour=8, minute=10, id="social_sentiment")
     scheduler.start()
     logger.info("Flask starting → http://0.0.0.0:5000")
     try:

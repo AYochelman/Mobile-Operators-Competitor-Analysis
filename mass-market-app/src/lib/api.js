@@ -56,6 +56,10 @@ export const api = {
   getExecutiveSummary:     () => fetchApi('/api/executive-summary'),
   refreshExecutiveSummary: () => fetchApi('/api/executive-summary/refresh', { method: 'POST' }),
 
+  // Social sentiment
+  getSocialSentiment:     () => fetchApi('/api/social-sentiment'),
+  refreshSocialSentiment: () => fetchApi('/api/social-sentiment/refresh', { method: 'POST' }),
+
   // Push — JWT auth
   getVapidKey: () => fetchApi('/api/push/vapid-public-key'),
   subscribe:   (sub) => fetchApi('/api/push/subscribe', { method: 'POST', body: JSON.stringify(sub) }),

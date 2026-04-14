@@ -156,12 +156,100 @@ function SkeletonSection() {
   )
 }
 
+function SkeletonSentiment() {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-moca-border/40 p-5 mb-5 animate-pulse">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-7 h-7 bg-gray-200 rounded" />
+        <div className="h-4 bg-gray-200 rounded w-40" />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {[0, 1, 2, 3, 4, 5].map(i => (
+          <div key={i} className="h-24 bg-gray-100 rounded-xl" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const SENTIMENT_CONFIG = {
+  positive: { color: 'green',  label: 'חיובי'   },
+  negative: { color: 'red',    label: 'שלילי'   },
+  mixed:    { color: 'orange', label: 'מעורב'   },
+  neutral:  { color: 'gray',   label: 'ניטרלי'  },
+}
+
+function CarrierSentimentCard({ row }) {
+  const cfg = SENTIMENT_CONFIG[row.sentiment] || SENTIMENT_CONFIG.neutral
+  const badgeColors = {
+    green:  'bg-emerald-50 text-emerald-700',
+    red:    'bg-red-50 text-red-700',
+    orange: 'bg-amber-50 text-amber-700',
+    gray:   'bg-gray-100 text-gray-500',
+  }
+  const platforms = Object.keys(row.platform_data || {})
+
+  return (
+    <div className="bg-[#f9f4ee] rounded-xl p-4 border-r-4 border-[#5c3317]">
+      <div className="flex items-center justify-between mb-2">
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold ${badgeColors[cfg.color]}`}>
+          {cfg.label}
+        </span>
+        <span className="text-sm font-semibold text-moca-text">{CARRIER_NAMES[row.carrier] || row.carrier}</span>
+      </div>
+      <p className="text-sm text-moca-text leading-relaxed text-right mb-2">{row.narrative}</p>
+      <div className="flex items-center gap-1.5 justify-end flex-wrap">
+        {platforms.map(p => (
+          <span key={p} className="text-[10px] text-moca-sub bg-white px-1.5 py-0.5 rounded border border-moca-border/40">
+            {p === 'facebook' ? 'FB' : p === 'instagram' ? 'IG' : p === 'twitter' ? 'X' : p === 'youtube' ? 'YT' : p === 'tiktok' ? 'TT' : p}
+            {' '}{row.platform_data[p]?.length || 0}
+          </span>
+        ))}
+        <span className="text-[10px] text-moca-sub">{formatDate(row.generated_at)}</span>
+      </div>
+    </div>
+  )
+}
+
+function SentimentSection({ sentiments, isAdmin, onRefresh, refreshing }) {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-moca-border/40 p-5 mb-5">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🌐</span>
+          <h2 className="text-lg font-semibold text-moca-text">הלך רוח ברשתות החברתיות</h2>
+        </div>
+        {isAdmin && (
+          <button
+            onClick={onRefresh}
+            disabled={refreshing}
+            className="text-[11px] px-2 py-1 rounded-lg border border-moca-border text-moca-muted hover:text-moca-bolt hover:border-moca-bolt transition-colors disabled:opacity-50"
+          >
+            {refreshing ? 'מרענן...' : 'רענן עכשיו'}
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {sentiments.map(row => (
+          <CarrierSentimentCard key={row.carrier} row={row} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function ExecutiveSummaryPage() {
   const { isAdmin } = useAuth()
   const [summaries, setSummaries] = useState([])
   const [loading, setLoading] = useState(true)
   const [notGenerated, setNotGenerated] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+
+  // Social sentiment state
+  const [sentiments, setSentiments] = useState([])
+  const [sentimentLoading, setSentimentLoading] = useState(true)
+  const [sentimentNotGenerated, setSentimentNotGenerated] = useState(false)
+  const [sentimentRefreshing, setSentimentRefreshing] = useState(false)
 
   async function load() {
     try {
@@ -178,7 +266,21 @@ export default function ExecutiveSummaryPage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  async function loadSentiment() {
+    try {
+      const data = await api.getSocialSentiment()
+      setSentiments(data)
+      setSentimentNotGenerated(false)
+    } catch (err) {
+      if (err.message === 'not_generated_yet' || err.message === 'HTTP 404') {
+        setSentimentNotGenerated(true)
+      }
+    } finally {
+      setSentimentLoading(false)
+    }
+  }
+
+  useEffect(() => { load(); loadSentiment() }, [])
 
   async function handleRefresh() {
     setRefreshing(true)
@@ -189,6 +291,18 @@ export default function ExecutiveSummaryPage() {
       console.error('refresh failed', err)
     } finally {
       setRefreshing(false)
+    }
+  }
+
+  async function handleSentimentRefresh() {
+    setSentimentRefreshing(true)
+    try {
+      await api.refreshSocialSentiment()
+      await loadSentiment()
+    } catch (err) {
+      console.error('sentiment refresh failed', err)
+    } finally {
+      setSentimentRefreshing(false)
     }
   }
 
@@ -234,6 +348,38 @@ export default function ExecutiveSummaryPage() {
           isAdmin={isAdmin}
         />
       ))}
+
+      {/* Social sentiment section */}
+      {sentimentLoading ? (
+        <SkeletonSentiment />
+      ) : sentimentNotGenerated ? (
+        <div className="bg-white rounded-xl shadow-sm border border-moca-border/40 p-5 mb-5">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-2xl">🌐</span>
+            <h2 className="text-lg font-semibold text-moca-text">הלך רוח ברשתות החברתיות</h2>
+          </div>
+          <div className="text-center py-8">
+            <div className="text-3xl mb-2">🕗</div>
+            <p className="text-moca-muted text-sm">הניתוח ייווצר ב-08:10 הקרוב</p>
+            {isAdmin && (
+              <button
+                onClick={handleSentimentRefresh}
+                disabled={sentimentRefreshing}
+                className="mt-3 px-4 py-2 rounded-lg bg-[#5c3317] text-white text-sm hover:bg-[#7a4a28] transition-colors disabled:opacity-50"
+              >
+                {sentimentRefreshing ? 'מייצר...' : 'צור עכשיו'}
+              </button>
+            )}
+          </div>
+        </div>
+      ) : sentiments.length > 0 ? (
+        <SentimentSection
+          sentiments={sentiments}
+          isAdmin={isAdmin}
+          onRefresh={handleSentimentRefresh}
+          refreshing={sentimentRefreshing}
+        />
+      ) : null}
     </div>
   )
 }

@@ -163,6 +163,14 @@ def init_db(db_path=None):
                 narrative    TEXT NOT NULL,
                 generated_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS social_sentiment (
+                id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                carrier             TEXT NOT NULL UNIQUE,
+                platform_data_json  TEXT NOT NULL,
+                narrative           TEXT NOT NULL,
+                sentiment           TEXT NOT NULL DEFAULT 'neutral',
+                generated_at        TEXT NOT NULL
+            );
         """)
         conn.commit()
         # Migration: add url column if DB was created before this column existed
@@ -208,6 +216,54 @@ def get_executive_summary(db_path=None):
                 "metrics":      json.loads(r[1]),
                 "narrative":    r[2],
                 "generated_at": r[3],
+            }
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def save_social_sentiment(carrier, platform_data, narrative, sentiment, db_path=None):
+    """Upsert social sentiment row for one carrier."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            """INSERT INTO social_sentiment (carrier, platform_data_json, narrative, sentiment, generated_at)
+               VALUES (?, ?, ?, ?, ?)
+               ON CONFLICT(carrier) DO UPDATE SET
+                 platform_data_json = excluded.platform_data_json,
+                 narrative          = excluded.narrative,
+                 sentiment          = excluded.sentiment,
+                 generated_at       = excluded.generated_at""",
+            (carrier, json.dumps(platform_data, ensure_ascii=False), narrative, sentiment,
+             datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_social_sentiment(carrier=None, db_path=None):
+    """Return list of carrier sentiment rows, or single row if carrier specified."""
+    conn = _connect(db_path)
+    try:
+        if carrier:
+            rows = conn.execute(
+                "SELECT carrier, platform_data_json, narrative, sentiment, generated_at "
+                "FROM social_sentiment WHERE carrier = ?", (carrier,)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT carrier, platform_data_json, narrative, sentiment, generated_at "
+                "FROM social_sentiment ORDER BY carrier"
+            ).fetchall()
+        return [
+            {
+                'carrier':      r[0],
+                'platform_data': json.loads(r[1]),
+                'narrative':    r[2],
+                'sentiment':    r[3],
+                'generated_at': r[4],
             }
             for r in rows
         ]
