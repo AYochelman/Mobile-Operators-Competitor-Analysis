@@ -164,7 +164,7 @@ export default function SettingsPage() {
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <h2 className="font-bold text-sm mb-3">תזמון</h2>
         <div className="text-sm text-gray-600 space-y-1">
-          <p>סקרייפ אוטומטי: <strong>10:00</strong> ו-<strong>16:00</strong></p>
+          <p>סקרייפ אוטומטי: <strong>07:30</strong> ו-<strong>17:00</strong></p>
           <p>דוח Excel יומי: <strong>09:00</strong></p>
           <p>התראות: Telegram + Web Push בלבד על שינויים</p>
         </div>
