@@ -697,7 +697,7 @@ def api_executive_summary():
 
 
 @app.route("/api/executive-summary/refresh", methods=["POST"])
-@require_api_key
+@require_api_key_or_query
 def api_executive_summary_refresh():
     """Trigger manual regeneration of all 4 executive summaries."""
     try:
