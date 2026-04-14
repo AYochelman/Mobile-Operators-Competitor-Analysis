@@ -596,64 +596,88 @@ CARRIER_STORE_DISPLAY = {
 }
 
 
-# ── Social media handles per carrier ──────────────────────────────────────
-# facebook: full page URL | instagram: username | twitter: handle | tiktok: username
+# ── Social listening search terms per carrier ──────────────────────────────
+# Social listening: search for public MENTIONS of carriers (not their own pages).
+# he = Hebrew name to search, en = English name, tags = hashtags for TikTok/Instagram.
 
-CARRIER_SOCIAL_HANDLES = {
+CARRIER_SEARCH_TERMS = {
     'partner': {
-        'facebook':  'https://www.facebook.com/PartnerCommunications',
-        'instagram': 'partner_il',
-        'twitter':   'PartnerComm',
-        'tiktok':    'partner_il',
+        'he':   '\u05e4\u05e8\u05d8\u05e0\u05e8',
+        'en':   'Partner Communications',
+        'tags': ['\u05e4\u05e8\u05d8\u05e0\u05e8', 'partner_il', 'partnertv'],
     },
     'pelephone': {
-        'facebook':  'https://www.facebook.com/pelephone',
-        'instagram': 'pelephone',
-        'twitter':   'Pelephone',
-        'tiktok':    'pelephone',
+        'he':   '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df',
+        'en':   'Pelephone',
+        'tags': ['\u05e4\u05dc\u05d0\u05e4\u05d5\u05df', 'pelephone'],
     },
     'cellcom': {
-        'facebook':  'https://www.facebook.com/cellcom',
-        'instagram': 'cellcom_israel',
-        'twitter':   'Cellcom_Israel',
+        'he':   '\u05e1\u05dc\u05e7\u05d5\u05dd',
+        'en':   'Cellcom Israel',
+        'tags': ['\u05e1\u05dc\u05e7\u05d5\u05dd', 'cellcom'],
     },
     'hotmobile': {
-        'facebook':  'https://www.facebook.com/HotMobile',
-        'instagram': 'hot_mobile_il',
+        'he':   '\u05d4\u05d5\u05d8 \u05de\u05d5\u05d1\u05d9\u05d9\u05dc',
+        'en':   'Hot Mobile Israel',
+        'tags': ['\u05d4\u05d5\u05d8\u05de\u05d5\u05d1\u05d9\u05d9\u05dc', 'hotmobile'],
     },
     'mobile019': {
-        'facebook':  'https://www.facebook.com/019Mobile',
-        'instagram': '019mobile',
+        'he':   '019 \u05de\u05d5\u05d1\u05d9\u05d9\u05dc',
+        'en':   '019 Mobile',
+        'tags': ['019mobile', '019\u05de\u05d5\u05d1\u05d9\u05d9\u05dc'],
     },
     'xphone': {
-        'facebook':  'https://www.facebook.com/xphone.co.il',
+        'he':   '\u05d0\u05e7\u05e1 \u05e4\u05d5\u05df',
+        'en':   'XPhone Israel',
+        'tags': ['xphone'],
     },
     'wecom': {
-        'facebook':  'https://www.facebook.com/wecom.co.il',
+        'he':   '\u05d5\u05d9 \u05e7\u05d5\u05dd',
+        'en':   'WeCom Israel',
+        'tags': ['wecom', '\u05d5\u05d9\u05e7\u05d5\u05dd'],
     },
 }
 
 
 def _normalize_post(platform, raw):
-    """Normalize a raw Apify post dict to a consistent schema."""
-    # Each actor returns slightly different field names — try in order
+    """Normalize a raw Apify post dict to a consistent schema.
+
+    Handles field-name differences across actors:
+      Facebook  (scrapeforge~facebook-search-posts):   message, post_text, content
+      Instagram (apify~instagram-hashtag-scraper):     caption, alt
+      Twitter   (api-ninja~x-twitter-advanced-search): text, full_text, tweet_text
+      TikTok    (clockworks~tiktok-scraper):           text, description
+    """
     text = (
-        raw.get('message') or raw.get('caption') or raw.get('text') or
-        raw.get('full_text') or raw.get('description') or raw.get('title') or ''
+        raw.get('message') or raw.get('post_text') or raw.get('content') or
+        raw.get('caption') or raw.get('alt') or
+        raw.get('text') or raw.get('full_text') or raw.get('tweet_text') or
+        raw.get('description') or raw.get('title') or ''
     )
     likes = (
         raw.get('likesCount') or raw.get('diggCount') or raw.get('likes') or
-        raw.get('likeCount') or raw.get('favoriteCount') or 0
+        raw.get('likeCount') or raw.get('favoriteCount') or
+        raw.get('like_count') or raw.get('retweet_count') or 0
     )
     date = (
         raw.get('time') or raw.get('timestamp') or raw.get('date') or
-        raw.get('createdAt') or raw.get('created_at') or ''
+        raw.get('createdAt') or raw.get('created_at') or raw.get('publishedAt') or
+        raw.get('post_date') or ''
     )
-    url = raw.get('url') or raw.get('postUrl') or raw.get('webVideoUrl') or raw.get('link') or ''
+    url = (
+        raw.get('url') or raw.get('postUrl') or raw.get('post_url') or
+        raw.get('webVideoUrl') or raw.get('link') or raw.get('tweet_url') or ''
+    )
+    likes_val = likes
+    if not isinstance(likes_val, int):
+        try:
+            likes_val = int(likes_val)
+        except (TypeError, ValueError):
+            likes_val = 0
     return {
         'platform': platform,
         'text':     str(text)[:400],
-        'likes':    int(likes) if str(likes).isdigit() else 0,
+        'likes':    likes_val,
         'date':     str(date),
         'url':      str(url),
     }
@@ -711,8 +735,10 @@ def generate_social_sentiment():
             logger.warning(f"social sentiment: {platform} failed: {exc}")
             return []
 
+    # Social LISTENING: search public mentions of carriers, not their own pages.
     system_prompt = (
         "\u05d0\u05ea\u05d4 \u05d0\u05e0\u05dc\u05d9\u05e1\u05d8 \u05de\u05d3\u05d9\u05d4 \u05d7\u05d1\u05e8\u05ea\u05d9\u05ea \u05d4\u05de\u05ea\u05de\u05d7\u05d4 \u05d1\u05e9\u05d5\u05e7 \u05d4\u05e1\u05dc\u05d5\u05dc\u05e8 \u05d4\u05d9\u05e9\u05e8\u05d0\u05dc\u05d9. "
+        "\u05d0\u05ea\u05d4 \u05de\u05e7\u05d1\u05dc \u05e4\u05d5\u05e1\u05d8\u05d9\u05dd \u05e9\u05dc \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea \u05d5\u05de\u05e9\u05ea\u05de\u05e9\u05d9\u05dd \u05e8\u05d2\u05d9\u05dc\u05d9\u05dd \u05d1\u05e8\u05e9\u05ea\u05d5\u05ea \u05d4\u05d7\u05d1\u05e8\u05ea\u05d9\u05d5\u05ea \u05e9\u05de\u05d0\u05d6\u05db\u05d9\u05e8\u05d9\u05dd \u05d0\u05ea \u05d4\u05e1\u05e4\u05e7 \u05d4\u05e1\u05dc\u05d5\u05dc\u05e8. "
         "\u05db\u05ea\u05d5\u05d1 \u05d0\u05da \u05d5\u05e8\u05e7 \u05d1\u05e2\u05d1\u05e8\u05d9\u05ea \u05ea\u05e7\u05e0\u05d9\u05ea, \u05e0\u05db\u05d5\u05e0\u05d4 \u05d5\u05e8\u05d4\u05d5\u05d8\u05d4. "
         "\u05d4\u05e9\u05ea\u05de\u05e9 \u05d1\u05de\u05d9\u05dc\u05d9\u05dd \u05e2\u05d1\u05e8\u05d9\u05d5\u05ea \u05e7\u05d9\u05d9\u05de\u05d5\u05ea \u05d5\u05e0\u05e4\u05d5\u05e6\u05d5\u05ea \u05d1\u05dc\u05d1\u05d3 \u2014 \u05d0\u05dc \u05ea\u05de\u05e6\u05d9\u05d0 \u05de\u05d9\u05dc\u05d9\u05dd. "
         "\u05e9\u05de\u05d5\u05ea \u05e1\u05e4\u05e7\u05d9\u05dd \u05d5\u05d7\u05d1\u05e8\u05d5\u05ea \u05ea\u05de\u05d9\u05d3 \u05d1\u05d0\u05e0\u05d2\u05dc\u05d9\u05ea (Partner, Pelephone, Cellcom, Hot Mobile, 019, XPhone, WeCom). "
@@ -726,59 +752,69 @@ def generate_social_sentiment():
         'facebook':  '\u05e4\u05d9\u05d9\u05e1\u05d1\u05d5\u05e7',
         'instagram': '\u05d0\u05d9\u05e0\u05e1\u05d8\u05d2\u05e8\u05dd',
         'twitter':   'Twitter / X',
-        'youtube':   'YouTube',
         'tiktok':    'TikTok',
     }
     since_date = (datetime.utcnow() - timedelta(days=7)).strftime('%Y-%m-%d')
 
-    for carrier, handles in CARRIER_SOCIAL_HANDLES.items():
+    from urllib.parse import quote as _url_quote
+
+    for carrier, terms in CARRIER_SEARCH_TERMS.items():
         try:
             platform_data = {}
+            he_term = terms['he']
+            en_term = terms['en']
+            tags     = terms.get('tags', [he_term])
 
-            if 'facebook' in handles:
-                posts = _scrape_apify('facebook', 'apify~facebook-posts-scraper', {
-                    'startUrls': [{'url': handles['facebook']}],
-                    'resultsLimit': 10,
-                    'onlyPostsNewerThan': '7 days',
-                })
-                if posts:
-                    platform_data['facebook'] = posts
+            # ── Facebook: search public posts mentioning the carrier ──────────
+            # scrapeforge~facebook-search-posts: keyword search across public posts
+            fb_query = f"{he_term} OR {en_term}"
+            posts = _scrape_apify('facebook', 'scrapeforge~facebook-search-posts', {
+                'query':        fb_query,
+                'search_type':  'posts',
+                'max_results':  15,
+                'recent_posts': True,
+            })
+            if posts:
+                platform_data['facebook'] = posts
 
-            if 'instagram' in handles:
-                posts = _scrape_apify('instagram', 'apify~instagram-post-scraper', {
-                    'username': [handles['instagram']],
-                    'resultsLimit': 10,
-                    'onlyPostsNewerThan': '7 days',
-                    'dataDetailLevel': 'basicData',
-                })
-                if posts:
-                    platform_data['instagram'] = posts
+            # ── Instagram: search by Hebrew hashtag ───────────────────────────
+            # apify~instagram-hashtag-scraper: official hashtag search actor
+            posts = _scrape_apify('instagram', 'apify~instagram-hashtag-scraper', {
+                'hashtags':     [t.lstrip('#') for t in tags[:2]],
+                'resultsType':  'posts',
+                'resultsLimit': 10,
+            })
+            if posts:
+                platform_data['instagram'] = posts
 
-            if 'twitter' in handles:
-                posts = _scrape_apify('twitter', 'apidojo~tweet-scraper', {
-                    'twitterHandles': [handles['twitter']],
-                    'maxItems': 10,
-                    'start': since_date,
-                    'sort': 'Latest',
-                })
-                if posts:
-                    platform_data['twitter'] = posts
+            # ── Twitter/X: search for public mentions in Hebrew ───────────────
+            # api-ninja~x-twitter-advanced-search: keyword + language filter
+            twitter_query = f'{he_term} OR {en_term}'
+            posts = _scrape_apify('twitter', 'api-ninja~x-twitter-advanced-search', {
+                'query':           twitter_query,
+                'search_type':     'Latest',
+                'numberOfTweets':  15,
+                'contentLanguage': 'he',
+                'timeWithinTime':  '7d',
+                'tweetTypes':      ['original', 'quotes', 'replies'],
+            })
+            if posts:
+                platform_data['twitter'] = posts
 
-            if 'tiktok' in handles:
-                posts = _scrape_apify('tiktok', 'clockworks~tiktok-scraper', {
-                    'profiles': [handles['tiktok']],
-                    'resultsPerPage': 10,
-                    'profileSorting': 'latest',
-                    'oldestPostDateUnified': since_date,
-                })
-                if posts:
-                    platform_data['tiktok'] = posts
+            # ── TikTok: search by hashtags ────────────────────────────────────
+            posts = _scrape_apify('tiktok', 'clockworks~tiktok-scraper', {
+                'hashtags':              [t.lstrip('#') for t in tags[:2]],
+                'resultsPerPage':        10,
+                'oldestPostDateUnified': since_date,
+            })
+            if posts:
+                platform_data['tiktok'] = posts
 
             if not platform_data:
-                logger.info(f"social sentiment: no posts for {carrier}, skipping")
+                logger.info(f"social sentiment: no mentions found for {carrier}, skipping")
                 continue
 
-            carrier_english = CARRIER_DISPLAY.get(carrier, {}).get('name', carrier)
+            carrier_english = en_term
             total_posts = sum(len(v) for v in platform_data.values())
             posts_text = ''
             for platform, posts in platform_data.items():
@@ -789,10 +825,10 @@ def generate_social_sentiment():
                         posts_text += f"  - {p['text'][:250]}\n"
 
             prompt = (
-                f"\u05dc\u05d4\u05dc\u05df {total_posts} \u05e4\u05d5\u05e1\u05d8\u05d9\u05dd \u05de\u05e8\u05e9\u05ea\u05d5\u05ea \u05d4\u05d7\u05d1\u05e8\u05ea\u05d9\u05d5\u05ea \u05e9\u05dc {carrier_english} \u05de-7 \u05d4\u05d9\u05de\u05d9\u05dd \u05d4\u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd:\n"
+                f"\u05dc\u05d4\u05dc\u05df {total_posts} \u05e4\u05d5\u05e1\u05d8\u05d9\u05dd \u05e9\u05dc \u05de\u05e9\u05ea\u05de\u05e9\u05d9\u05dd \u05d1\u05e8\u05e9\u05ea\u05d5\u05ea \u05d4\u05d7\u05d1\u05e8\u05ea\u05d9\u05d5\u05ea \u05e9\u05de\u05d0\u05d6\u05db\u05d9\u05e8\u05d9\u05dd \u05d0\u05ea {carrier_english} \u05d1-7 \u05d4\u05d9\u05de\u05d9\u05dd \u05d4\u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd:\n"
                 f"{posts_text}\n"
                 f"\u05db\u05ea\u05d5\u05d1 \u05e4\u05e1\u05e7\u05d4 \u05d0\u05d7\u05ea \u05e7\u05e6\u05e8\u05d4 \u05d5\u05e8\u05d4\u05d5\u05d8\u05d4 \u05d1\u05e2\u05d1\u05e8\u05d9\u05ea \u05ea\u05e7\u05d9\u05e0\u05d4 (3-4 \u05de\u05e9\u05e4\u05d8\u05d9\u05dd, \u05e2\u05d3 80 \u05de\u05d9\u05dc\u05d4) \u05d4\u05de\u05e1\u05db\u05de\u05ea:\n"
-                f"\u05d4\u05dc\u05da \u05d4\u05e8\u05d5\u05d7 \u05d4\u05db\u05dc\u05dc\u05d9 \u05d1\u05e4\u05d5\u05e1\u05d8\u05d9\u05dd, \u05d4\u05e0\u05d5\u05e9\u05d0\u05d9\u05dd \u05d4\u05e2\u05d9\u05e7\u05e8\u05d9\u05d9\u05dd (\u05de\u05d1\u05e6\u05e2\u05d9\u05dd, \u05ea\u05dc\u05d5\u05e0\u05d5\u05ea \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea, \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05d7\u05d3\u05e9\u05d5\u05ea, \u05e9\u05d9\u05d5\u05d5\u05e7), \u05d5\u05de\u05d2\u05de\u05d5\u05ea \u05d1\u05d5\u05dc\u05d8\u05d5\u05ea.\n"
+                f"\u05de\u05d4 \u05d4\u05dc\u05e7\u05d5\u05d7\u05d5\u05ea \u05d5\u05d4\u05de\u05e9\u05ea\u05de\u05e9\u05d9\u05dd \u05db\u05d5\u05ea\u05d1\u05d9\u05dd \u05e2\u05dc {carrier_english}: \u05d4\u05e0\u05d5\u05e9\u05d0\u05d9\u05dd \u05d4\u05e2\u05d9\u05e7\u05e8\u05d9\u05d9\u05dd, \u05d4\u05e8\u05d2\u05e9 \u05d4\u05db\u05dc\u05dc\u05d9, \u05ea\u05dc\u05d5\u05e0\u05d5\u05ea \u05d0\u05d5 \u05e9\u05d1\u05d7\u05d9\u05dd, \u05d5\u05de\u05d2\u05de\u05d5\u05ea \u05d1\u05d5\u05dc\u05d8\u05d5\u05ea.\n"
                 f"\u05dc\u05d0\u05d7\u05e8 \u05d4\u05e4\u05e1\u05e7\u05d4, \u05d4\u05d5\u05e1\u05e3 \u05e9\u05d5\u05e8\u05ea SENTIMENT."
             )
 
