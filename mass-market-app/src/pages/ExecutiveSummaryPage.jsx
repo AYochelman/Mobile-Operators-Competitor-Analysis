@@ -10,14 +10,6 @@ const CATEGORIES = [
   { id: 'content',  label: 'תוכן',           icon: '📺' },
 ]
 
-// Which carrier slugs to show sentiment for in each category
-const CATEGORY_SENTIMENT_CARRIERS = {
-  domestic: ['partner', 'pelephone', 'cellcom', 'hotmobile', 'mobile019', 'xphone', 'wecom'],
-  abroad:   ['partner', 'pelephone', 'cellcom', 'hotmobile', 'mobile019'],
-  global:   [],
-  content:  ['partner', 'pelephone', 'cellcom', 'hotmobile'],
-}
-
 const CARRIER_NAMES = {
   partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל',
   cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'וי-קום',
@@ -54,17 +46,41 @@ function formatDate(iso) {
     + ' ' + d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
 }
 
-// Social analysis sub-section rendered inside each SummarySection
-function SocialAnalysis({ rows, loading, isAdmin, onRefresh, refreshing }) {
+// ── Inline SVG icons matching the app's SVG style ─────────────────────────
+
+function SparkleIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+    </svg>
+  )
+}
+
+function UsersIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  )
+}
+
+// ── Standalone social sentiment section (bottom of page) ──────────────────
+
+function SocialSection({ rows, loading, isAdmin, onRefresh, refreshing }) {
   if (loading) {
     return (
-      <div className="mt-4 pt-4 border-t border-moca-border/40 animate-pulse">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-4 h-4 bg-gray-200 rounded" />
-          <div className="h-3 bg-gray-200 rounded w-36" />
+      <div className="bg-white rounded-xl shadow-sm border border-moca-border/40 p-5 mb-5 animate-pulse">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-5 h-5 bg-gray-200 rounded" />
+          <div className="h-4 bg-gray-200 rounded w-44" />
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {[0, 1, 2].map(i => <div key={i} className="h-20 bg-gray-100 rounded-xl" />)}
+          {[0, 1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-100 rounded-xl" />)}
         </div>
       </div>
     )
@@ -73,23 +89,31 @@ function SocialAnalysis({ rows, loading, isAdmin, onRefresh, refreshing }) {
   if (!rows || rows.length === 0) return null
 
   return (
-    <div className="mt-4 pt-4 border-t border-moca-border/40">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-white rounded-xl shadow-sm border border-moca-border/40 p-5 mb-5">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm">🌐</span>
-          <span className="text-[11px] text-moca-sub font-semibold">ניתוח רשתות חברתיות</span>
+          <span className="text-moca-sub"><UsersIcon /></span>
+          <h2 className="text-base font-semibold text-moca-text">ניתוח רשתות חברתיות</h2>
         </div>
-        {isAdmin && (
-          <button
-            onClick={onRefresh}
-            disabled={refreshing}
-            className="text-[10px] px-2 py-1 rounded border border-moca-border text-moca-muted hover:text-moca-bolt hover:border-moca-bolt transition-colors disabled:opacity-50"
-          >
-            {refreshing ? 'מרענן...' : 'רענן'}
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] text-moca-sub">
+            עודכן: {formatDate(rows[0]?.generated_at)}
+          </span>
+          {isAdmin && (
+            <button
+              onClick={onRefresh}
+              disabled={refreshing}
+              className="text-[11px] px-2 py-1 rounded-lg border border-moca-border text-moca-muted hover:text-moca-bolt hover:border-moca-bolt transition-colors disabled:opacity-50"
+            >
+              {refreshing ? 'מרענן...' : 'רענן עכשיו'}
+            </button>
+          )}
+        </div>
       </div>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+
+      {/* Carrier cards grid */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {rows.map(row => {
           const badgeCls = SENTIMENT_BADGE[row.sentiment] || SENTIMENT_BADGE.neutral
           const label    = SENTIMENT_LABEL[row.sentiment] || 'ניטרלי'
@@ -122,7 +146,9 @@ function SocialAnalysis({ rows, loading, isAdmin, onRefresh, refreshing }) {
   )
 }
 
-function SummarySection({ data, onRefresh, refreshing, isAdmin, sentimentRows, sentimentLoading, onSentimentRefresh, sentimentRefreshing }) {
+// ── Individual category summary section ───────────────────────────────────
+
+function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
   const { category, metrics, narrative, generated_at } = data
   const meta = CATEGORIES.find(c => c.id === category) || { label: category, icon: '📋' }
 
@@ -218,20 +244,11 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin, sentimentRows, s
       {/* AI narrative */}
       <div className="bg-white rounded-xl p-4 border-r-4 border-[#5c3317] shadow-sm">
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-sm">🤖</span>
+          <span className="text-moca-sub"><SparkleIcon /></span>
           <span className="text-[11px] text-moca-sub font-semibold">ניתוח AI</span>
         </div>
         <p className="text-sm text-moca-text leading-relaxed text-right">{narrative}</p>
       </div>
-
-      {/* Social media analysis — shown only for categories with social handles */}
-      <SocialAnalysis
-        rows={sentimentRows}
-        loading={sentimentLoading}
-        isAdmin={isAdmin}
-        onRefresh={onSentimentRefresh}
-        refreshing={sentimentRefreshing}
-      />
     </div>
   )
 }
@@ -307,13 +324,6 @@ export default function ExecutiveSummaryPage() {
     finally { setSentimentRefreshing(false) }
   }
 
-  // Return sentiment rows relevant to a given category
-  function sentimentForCategory(categoryId) {
-    const allowed = CATEGORY_SENTIMENT_CARRIERS[categoryId] || []
-    if (allowed.length === 0) return []
-    return sentiments.filter(s => allowed.includes(s.carrier))
-  }
-
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-6">
@@ -347,6 +357,8 @@ export default function ExecutiveSummaryPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
       <h1 className="text-xl font-bold text-moca-text mb-6 text-right">תקציר מנהלים</h1>
+
+      {/* Category summaries */}
       {summaries.map(s => (
         <SummarySection
           key={s.category}
@@ -354,12 +366,17 @@ export default function ExecutiveSummaryPage() {
           onRefresh={handleRefresh}
           refreshing={refreshing}
           isAdmin={isAdmin}
-          sentimentRows={sentimentForCategory(s.category)}
-          sentimentLoading={sentimentLoading}
-          onSentimentRefresh={handleSentimentRefresh}
-          sentimentRefreshing={sentimentRefreshing}
         />
       ))}
+
+      {/* Social sentiment — single section at the bottom, below all categories */}
+      <SocialSection
+        rows={sentiments}
+        loading={sentimentLoading}
+        isAdmin={isAdmin}
+        onRefresh={handleSentimentRefresh}
+        refreshing={sentimentRefreshing}
+      />
     </div>
   )
 }
