@@ -1,0 +1,4336 @@
+<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:cx1="http://schemas.microsoft.com/office/drawing/2015/9/8/chartex" xmlns:cx2="http://schemas.microsoft.com/office/drawing/2015/10/21/chartex" xmlns:cx3="http://schemas.microsoft.com/office/drawing/2016/5/9/chartex" xmlns:cx4="http://schemas.microsoft.com/office/drawing/2016/5/10/chartex" xmlns:cx5="http://schemas.microsoft.com/office/drawing/2016/5/11/chartex" xmlns:cx6="http://schemas.microsoft.com/office/drawing/2016/5/12/chartex" xmlns:cx7="http://schemas.microsoft.com/office/drawing/2016/5/13/chartex" xmlns:cx8="http://schemas.microsoft.com/office/drawing/2016/5/14/chartex" xmlns:aink="http://schemas.microsoft.com/office/drawing/2016/ink" xmlns:am3d="http://schemas.microsoft.com/office/drawing/2017/model3d" xmlns:w16cex="http://schemas.microsoft.com/office/word/2018/wordml/cex" xmlns:w16cid="http://schemas.microsoft.com/office/word/2016/wordml/cid" xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml" xmlns:w16sdtdh="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash" xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex" mc:Ignorable="w14 w15 wp14">
+  <w:body>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="8"/>
+        </w:pBdr>
+        <w:shd w:fill="5C3317" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="0"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="FFFFFF"/>
+          <w:sz w:val="56"/>
+          <w:szCs w:val="56"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">MOCA — איפיון שיווקי</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:shd w:fill="7A4B2A" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="0" w:before="0"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="FBF7F2"/>
+          <w:sz w:val="26"/>
+          <w:szCs w:val="26"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">Mobile Operators Competitor Analysis</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:shd w:fill="FBF7F2" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="240" w:before="0"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">גרסה: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">2.0  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  |  תאריך: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">אפריל 2026  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  |  סטטוס: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מוצר פעיל</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="4" w:space="2"/>
+        </w:pBdr>
+        <w:shd w:fill="5C3317" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="140" w:before="280"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="FFFFFF"/>
+          <w:sz w:val="32"/>
+          <w:szCs w:val="32"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">א. סקירה עסקית</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">שם המוצר: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">MOCA — Mobile Operators Competitor Analysis</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">סלוגן: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">"תפסיק לגלוש. תתחיל לדעת."</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">תת-סלוגן: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מערכת אינטליגנציה תחרותית אוטומטית למנהל השיווק שצריך לדעת מה המתחרים עושים — לפני כולם.</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="60" w:before="60"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מהות המוצר: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">MOCA מחליפה שעות של עבודה סיזיפית. בכל יום מנהלי שיווק גולשים ידנית לאתרי המתחרים, צולמים מסכים, מדביקים לאקסל — ובכל זאת מפספסים שינויים. MOCA עושה את כל זה אוטומטית: סורקת, מזהה, מתריאה — ומחזירה למנהל השיווק את הזמן והיכולת לפעול.</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="160" w:before="160"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="4" w:space="2"/>
+        </w:pBdr>
+        <w:shd w:fill="5C3317" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="140" w:before="280"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="FFFFFF"/>
+          <w:sz w:val="32"/>
+          <w:szCs w:val="32"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ב. הבעיה: עבודת סיזיף יומית</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="2" w:space="2"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="180"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="26"/>
+          <w:szCs w:val="26"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">המציאות של מנהל שיווק בסלולר</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">בכל בוקר, מנהלי שיווק ברחבי התעשייה מבצעים אותה שגרה מייגעת:</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">פותחים 8+ לשוניות דפדפן — אתר של כל מתחרה</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">סורקים עמודי מחירים, מבצעים, לוחות נחיתה</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מנסים לזכור: "האם זה השתנה מאתמול?"</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מצלמים מסך, מדביקים לסלאק, שולחים למנהל</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">חוזרים שוב בצהריים — כי מחירים משתנים גם אז</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="60" w:before="60"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">תוצאה: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">2–3 שעות ביום על איסוף מידע שאפשר לבצע אוטומטית. ובכל זאת — </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מתחרים משיקים מבצע ולא שמים לב עד שהלקוחות כבר עברו אליהם.</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="60" w:before="60"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="2" w:space="2"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="180"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="26"/>
+          <w:szCs w:val="26"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">היקף הבעיה</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">8 מתחרים מקומיים עם שינויים תכופים ולא צפויים</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">עשרות מסלולים לכל ספק — בלתי אפשרי לעקוב ידנית</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">שינויים בשעות לא שגרתיות — ערב, שישי, חגים</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">14 </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ספקי</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve"> eSIM </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">גלובליים שצריך לנטר</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">200+ מדינות עם תמחור נדידה משתנה לפי עונה</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="160" w:before="160"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="4" w:space="2"/>
+        </w:pBdr>
+        <w:shd w:fill="5C3317" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="140" w:before="280"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="FFFFFF"/>
+          <w:sz w:val="32"/>
+          <w:szCs w:val="32"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ג. הפתרון: MOCA כמרכז אינטליגנציה תחרותי</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="2" w:space="2"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="180"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="26"/>
+          <w:szCs w:val="26"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מה MOCA עושה במקומך</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">במקום לגלוש ידנית — </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">MOCA </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">סורקת: 40+ עמודים של 8 ספקים מקומיים + 14 </w:t>
+      </w:r>
+      
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">eSIM </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">גלובליים, פעמיים ביום.</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">במקום לחפש שינויים — </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">MOCA </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מזהה: אלגוריתם </w:t>
+      </w:r>
+      
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">diff </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מדויק מזהה כל שינוי: מחיר, נפח גלישה, תנאים, תוספות.</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">במקום לשלוח עדכונים — </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">MOCA </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מתריאה: רגע שמתגלה שינוי — ההתראה יוצאת: </w:t>
+      </w:r>
+      
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">Telegram, WhatsApp, Email, Web Push.</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">במקום אקסל — </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">MOCA </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t>מציגה: דשבורד ויזואלי עם גרפי מחיר, פילטרים, השוואות צד-לצד.</w:t>
+      </w:r>
+      
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="60" w:before="60"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:type="dxa" w:w="8300"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:color="auto" w:sz="4"/>
+          <w:left w:val="single" w:color="auto" w:sz="4"/>
+          <w:bottom w:val="single" w:color="auto" w:sz="4"/>
+          <w:right w:val="single" w:color="auto" w:sz="4"/>
+          <w:insideH w:val="single" w:color="auto" w:sz="4"/>
+          <w:insideV w:val="single" w:color="auto" w:sz="4"/>
+        </w:tblBorders>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="4600"/>
+        <w:gridCol w:w="3700"/>
+      </w:tblGrid>
+      <w:tr>
+        <w:trPr>
+          <w:tblHeader/>
+        </w:trPr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4600"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="5C3317" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">מה הוא מחליף</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="5C3317" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">רכיב</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4600"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">גלישה ידנית ב-8+ אתרים</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">מנוע סריקה אוטומטי (Playwright)</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4600"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">השוואה ידנית לצילום מסך מאתמול</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">זיהוי שינויים חכם (diff algorithm)</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4600"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">גיליונות אקסל מפוזרים</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">מסד נתונים מרכזי (SQLite, 9 טבלאות)</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4600"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">עיבוד ידני ועריכת דוחות</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">דשבורד השוואה (React + Recharts)</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4600"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">סריקה ידנית חוזרת בשעות שונות</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">מערכת התראות רב-ערוצית</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4600"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">שאלות ידניות לאנליסט</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">צ'אט AI (Claude)</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="160" w:before="160"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="4" w:space="2"/>
+        </w:pBdr>
+        <w:shd w:fill="5C3317" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="140" w:before="280"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="FFFFFF"/>
+          <w:sz w:val="32"/>
+          <w:szCs w:val="32"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ד. ניתוח שוק ותחרות</w:t>
+      </w:r>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:type="dxa" w:w="8300"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:color="auto" w:sz="4"/>
+          <w:left w:val="single" w:color="auto" w:sz="4"/>
+          <w:bottom w:val="single" w:color="auto" w:sz="4"/>
+          <w:right w:val="single" w:color="auto" w:sz="4"/>
+          <w:insideH w:val="single" w:color="auto" w:sz="4"/>
+          <w:insideV w:val="single" w:color="auto" w:sz="4"/>
+        </w:tblBorders>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="3000"/>
+        <w:gridCol w:w="2700"/>
+        <w:gridCol w:w="2600"/>
+      </w:tblGrid>
+      <w:tr>
+        <w:trPr>
+          <w:tblHeader/>
+        </w:trPr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3000"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="5C3317" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">מה חסר לו</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="5C3317" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">מה הוא עושה</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2600"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="5C3317" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">כלי</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3000"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">זמן, אמינות, ממשק</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">פתרון שכולם משתמשים בו</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2600"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">גלישה ידנית</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3000"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">לא B2B, עדכון נדיר, אין התראות</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">השוואה פומבית לצרכן</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2600"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">זאפ / מחיר טוב</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3000"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">דורש פיתוח, אין ממשק, אין שינויים</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">אפשר להגדיר לבד</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2600"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">כלי Scraping גנריים</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3000"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">זה הפתרון</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">כל הנ"ל + eSIM + AI + התראות</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2600"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="en-US"/>
+              </w:rPr>
+              <w:t xml:space="preserve">MOCA</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="60" w:before="60"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">עומק כיסוי: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">8 ספקים מקומיים + 8 ספקי נדידה + 14 </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">eSIM </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">גלובליים = 1,800+ קומבינציות תחת קורת גג אחת.</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מהירות גילוי: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">שינוי שמבצע ספק מתגלה תוך שעות — יתרון קריטי בקבלת החלטות שיווקיות.</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">עברית-ראשית: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ממשק</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve"> RTL </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">נייטיב, שמות ספקים בעברית, הקשר ישראלי מלא.</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="160" w:before="160"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="4" w:space="2"/>
+        </w:pBdr>
+        <w:shd w:fill="5C3317" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="140" w:before="280"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="FFFFFF"/>
+          <w:sz w:val="32"/>
+          <w:szCs w:val="32"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ה. פרופיל המשתמש: מנהל/ת השיווק</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מי הוא/היא: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מנהל שיווק / </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">Competitive Intelligence Manager </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">בחברת סלולר, עוסק בניטור תחרות, הכנת</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve"> Briefs</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">, תמחור שיווקי, השקת מבצעים.</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="60" w:before="60"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="2" w:space="2"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="180"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="26"/>
+          <w:szCs w:val="26"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">הכאב הספציפי</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:top w:val="single" w:color="C8A882" w:sz="4"/>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="4"/>
+          <w:right w:val="single" w:color="5C3317" w:sz="12"/>
+        </w:pBdr>
+        <w:shd w:fill="FBF7F2" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:ind w:left="200" w:right="200"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:i/>
+          <w:iCs/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">"כל בוקר אני פותחת 8 לשוניות. אחרי 40 דקות, יש לי תמונה חלקית. בצהריים זה כבר לא רלוונטי. וביום שישי? מישהו משיק מבצע ואנחנו לא יודעים עד יום ראשון."</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="60" w:before="60"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="2" w:space="2"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="180"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="26"/>
+          <w:szCs w:val="26"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מה MOCA נותנת לה</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">בוקר: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">פתח את ה-</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">Telegram</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve"> — כל מה ששינה אתמול, מסודר</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ישיבת תמחור: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">פתח דשבורד — גרף השוואת מחירים עדכני</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">לפני השקה: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">בדוק מה כל המתחרים מציעים כרגע, ב-30 שניות</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">דוח שבועי: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">MOCA </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">שולחת</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve"> Excel </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">אוטומטי עם כל השינויים</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="160" w:before="160"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="4" w:space="2"/>
+        </w:pBdr>
+        <w:shd w:fill="5C3317" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="140" w:before="280"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="FFFFFF"/>
+          <w:sz w:val="32"/>
+          <w:szCs w:val="32"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ו. מיצוב ומסרים שיווקיים</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="2" w:space="2"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="180"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="26"/>
+          <w:szCs w:val="26"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">המסר הראשי</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:shd w:fill="5C3317" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="120" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="FFFFFF"/>
+          <w:sz w:val="30"/>
+          <w:szCs w:val="30"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">"תפסיק לגלוש. MOCA עושה את זה בשבילך."</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="60" w:before="60"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="2" w:space="2"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="180"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="26"/>
+          <w:szCs w:val="26"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">מסרים לפי הקשר</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">להחלפת עבודה ידנית: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">"כמה שעות בשבוע מבזבז הצוות שלך על גלישה לאתרי מתחרים? MOCA מחזירה אותן."</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">לפחד מהחמצה: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">"פעם הם הורידו מחיר ביום שישי. גיליתם ביום שני. MOCA מתריאה תוך שעות — תמיד."</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="40" w:before="40"/>
+        <w:ind w:right="440"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+        </w:rPr>
+        <w:t xml:space="preserve">  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Symbol" w:cs="Symbol" w:eastAsia="Symbol" w:hAnsi="Symbol"/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="20"/>
+          <w:szCs w:val="20"/>
+        </w:rPr>
+        <w:t xml:space="preserve">▪  </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">לעוצמת הכיסוי: </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">"8 ספקים. 14 </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">eSIM</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">. 200+ מדינות. כל שינוי — ב-</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve">Telegram</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve"> שלך."</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="60" w:before="60"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="2" w:space="2"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="180"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="7A4B2A"/>
+          <w:sz w:val="26"/>
+          <w:szCs w:val="26"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ערוצי הגעה מוצעים</w:t>
+      </w:r>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:type="dxa" w:w="8300"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:color="auto" w:sz="4"/>
+          <w:left w:val="single" w:color="auto" w:sz="4"/>
+          <w:bottom w:val="single" w:color="auto" w:sz="4"/>
+          <w:right w:val="single" w:color="auto" w:sz="4"/>
+          <w:insideH w:val="single" w:color="auto" w:sz="4"/>
+          <w:insideV w:val="single" w:color="auto" w:sz="4"/>
+        </w:tblBorders>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="4500"/>
+        <w:gridCol w:w="3800"/>
+      </w:tblGrid>
+      <w:tr>
+        <w:trPr>
+          <w:tblHeader/>
+        </w:trPr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4500"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="5C3317" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">סיבה</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3800"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="5C3317" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">ערוץ</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4500"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">הקהל הישיר, Content Marketing</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3800"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">LinkedIn — מנהלי שיווק ו-Marketing Intelligence</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4500"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">Demo חי — אפקט 'וואו' מיידי</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3800"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">כנסי תעשייה סלולרית בישראל</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4500"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">B2B מכירה ישירה</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3800"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">Outreach ישיר ל-CMO / VP Marketing</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4500"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">הפצה ויראלית פנים-מקצועית</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="3800"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">קהילות מנהלי שיווק בפייסבוק/LinkedIn</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="160" w:before="160"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="4" w:space="2"/>
+        </w:pBdr>
+        <w:shd w:fill="5C3317" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="140" w:before="280"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="FFFFFF"/>
+          <w:sz w:val="32"/>
+          <w:szCs w:val="32"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ז. מודל עסקי מוצע — SaaS B2B</w:t>
+      </w:r>
+    </w:p>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:type="dxa" w:w="8300"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:color="auto" w:sz="4"/>
+          <w:left w:val="single" w:color="auto" w:sz="4"/>
+          <w:bottom w:val="single" w:color="auto" w:sz="4"/>
+          <w:right w:val="single" w:color="auto" w:sz="4"/>
+          <w:insideH w:val="single" w:color="auto" w:sz="4"/>
+          <w:insideV w:val="single" w:color="auto" w:sz="4"/>
+        </w:tblBorders>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="4400"/>
+        <w:gridCol w:w="1700"/>
+        <w:gridCol w:w="2200"/>
+      </w:tblGrid>
+      <w:tr>
+        <w:trPr>
+          <w:tblHeader/>
+        </w:trPr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4400"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="5C3317" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">מה כלול</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="1700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="5C3317" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">מחיר/חודש</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2200"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="5C3317" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">תוכנית</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4400"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">3 ספקים, התראות Email, דשבורד</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="1700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">490 ₪</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2200"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="en-US"/>
+              </w:rPr>
+              <w:t xml:space="preserve">Starter</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4400"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">כל 8 ספקים מקומיים, WhatsApp + Telegram, Excel שבועי</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="1700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">990 ₪</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2200"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="F5EDE0" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="en-US"/>
+              </w:rPr>
+              <w:t xml:space="preserve">Professional</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="4400"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">eSIM גלובלי מלא, API, משתמשים ללא הגבלה, SLA</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="1700"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+              </w:rPr>
+              <w:t xml:space="preserve">2,490 ₪</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:type="dxa" w:w="2200"/>
+            <w:tcBorders>
+              <w:top w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:left w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+              <w:right w:val="single" w:color="D5C5B0" w:sz="1"/>
+            </w:tcBorders>
+            <w:shd w:fill="FFFFFF" w:val="clear"/>
+            <w:tcMar>
+              <w:top w:type="dxa" w:w="100"/>
+              <w:left w:type="dxa" w:w="160"/>
+              <w:bottom w:type="dxa" w:w="100"/>
+              <w:right w:type="dxa" w:w="160"/>
+            </w:tcMar>
+            <w:vAlign w:val="center"/>
+          </w:tcPr>
+          <w:p>
+            <w:pPr>
+              <w:bidi/>
+              <w:spacing w:after="0" w:before="0"/>
+              <w:jc w:val="right"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+                <w:b w:val="false"/>
+                <w:bCs w:val="false"/>
+                <w:color w:val="1A1A1A"/>
+                <w:sz w:val="22"/>
+                <w:szCs w:val="22"/>
+                <w:lang w:val="en-US"/>
+              </w:rPr>
+              <w:t xml:space="preserve">Enterprise</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="60" w:before="60"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:right w:val="single" w:color="5C3317" w:sz="16"/>
+        </w:pBdr>
+        <w:shd w:fill="FBF7F2" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:ind w:left="200" w:right="200"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ROI מוכח: </w:t>
+      </w:r>
+      
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">2 שעות/יום × 22 ימי עבודה = 8,800–22,000 ₪/חודש בעלות עבודה שנחסכת. מנוי</w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="Arial" w:cs="Arial" w:eastAsia="Arial" w:hAnsi="Arial"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="en-US"/>
+        </w:rPr>
+        <w:t xml:space="preserve"> Professional </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">עולה 990 ₪. </w:t>
+      </w:r>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">החזר השקעה: יום עבודה אחד.</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="D5C5B0" w:sz="1"/>
+        </w:pBdr>
+        <w:bidi/>
+        <w:spacing w:after="160" w:before="160"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:bottom w:val="single" w:color="C8A882" w:sz="4" w:space="2"/>
+        </w:pBdr>
+        <w:shd w:fill="5C3317" w:val="clear"/>
+        <w:bidi/>
+        <w:spacing w:after="140" w:before="280"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b/>
+          <w:bCs/>
+          <w:color w:val="FFFFFF"/>
+          <w:sz w:val="32"/>
+          <w:szCs w:val="32"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">ח. סיכום שיווקי</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:pPr>
+        <w:bidi/>
+        <w:spacing w:after="80" w:before="80"/>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          <w:rFonts w:ascii="David" w:cs="David" w:eastAsia="David" w:hAnsi="David"/>
+          <w:b w:val="false"/>
+          <w:bCs w:val="false"/>
+          <w:color w:val="1A1A1A"/>
+          <w:sz w:val="24"/>
+          <w:szCs w:val="24"/>
+          <w:lang w:val="he-IL" w:eastAsia="he-IL"/>
+        </w:rPr>
+        <w:t xml:space="preserve">MOCA נולדה מהכאב האמיתי של אנשי שיווק בתעשיית הסלולר. היא אינה עוד 'כלי נוח' — היא מחליפה תהליך עבודה שלם שגוזל שעות ועדיין מפספס. הערך מיידי, ה-ROI מוכח, והשוק הישראלי — עם 8 ספקים תחרותיים ודינמיים — הוא המקרה הבוחן המושלם.</w:t>
+      </w:r>
+    </w:p>
+    <w:sectPr>
+      <w:headerReference w:type="default" r:id="rId7"/>
+      <w:footerReference w:type="default" r:id="rId8"/>
+      <w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/>
+      <w:pgMar w:top="1440" w:right="1800" w:bottom="1440" w:left="1800" w:header="708" w:footer="708" w:gutter="0"/>
+      <w:pgNumType/>
+      <w:docGrid w:linePitch="360"/>
+    </w:sectPr>
+  </w:body>
+</w:document>
