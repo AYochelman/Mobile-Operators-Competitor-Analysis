@@ -10,6 +10,14 @@ const CATEGORIES = [
   { id: 'content',  label: 'תוכן',           icon: '📺' },
 ]
 
+// Which carrier slugs to show sentiment for in each category
+const CATEGORY_SENTIMENT_CARRIERS = {
+  domestic: ['partner', 'pelephone', 'cellcom', 'hotmobile', 'mobile019', 'xphone', 'wecom'],
+  abroad:   ['partner', 'pelephone', 'cellcom', 'hotmobile', 'mobile019'],
+  global:   [],
+  content:  ['partner', 'pelephone', 'cellcom', 'hotmobile'],
+}
+
 const CARRIER_NAMES = {
   partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל',
   cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'וי-קום',
@@ -22,6 +30,19 @@ const CARRIER_NAMES = {
 
 const BAR_COLORS = ['#5c3317', '#7a4a28', '#9a6040', '#b87c58', '#d4a07a', '#e8c9a8']
 
+const SENTIMENT_BADGE = {
+  positive: 'bg-emerald-50 text-emerald-700',
+  negative: 'bg-red-50 text-red-700',
+  mixed:    'bg-amber-50 text-amber-700',
+  neutral:  'bg-gray-100 text-gray-500',
+}
+const SENTIMENT_LABEL = {
+  positive: 'חיובי', negative: 'שלילי', mixed: 'מעורב', neutral: 'ניטרלי',
+}
+const PLATFORM_SHORT = {
+  facebook: 'FB', instagram: 'IG', twitter: 'X', youtube: 'YT', tiktok: 'TT',
+}
+
 function carrierName(id) {
   return CARRIER_NAMES[id] || id
 }
@@ -33,7 +54,75 @@ function formatDate(iso) {
     + ' ' + d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
 }
 
-function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
+// Social analysis sub-section rendered inside each SummarySection
+function SocialAnalysis({ rows, loading, isAdmin, onRefresh, refreshing }) {
+  if (loading) {
+    return (
+      <div className="mt-4 pt-4 border-t border-moca-border/40 animate-pulse">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-4 h-4 bg-gray-200 rounded" />
+          <div className="h-3 bg-gray-200 rounded w-36" />
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {[0, 1, 2].map(i => <div key={i} className="h-20 bg-gray-100 rounded-xl" />)}
+        </div>
+      </div>
+    )
+  }
+
+  if (!rows || rows.length === 0) return null
+
+  return (
+    <div className="mt-4 pt-4 border-t border-moca-border/40">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm">🌐</span>
+          <span className="text-[11px] text-moca-sub font-semibold">ניתוח רשתות חברתיות</span>
+        </div>
+        {isAdmin && (
+          <button
+            onClick={onRefresh}
+            disabled={refreshing}
+            className="text-[10px] px-2 py-1 rounded border border-moca-border text-moca-muted hover:text-moca-bolt hover:border-moca-bolt transition-colors disabled:opacity-50"
+          >
+            {refreshing ? 'מרענן...' : 'רענן'}
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {rows.map(row => {
+          const badgeCls = SENTIMENT_BADGE[row.sentiment] || SENTIMENT_BADGE.neutral
+          const label    = SENTIMENT_LABEL[row.sentiment] || 'ניטרלי'
+          const platforms = Object.keys(row.platform_data || {})
+          return (
+            <div key={row.carrier} className="bg-[#f9f4ee] rounded-xl p-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${badgeCls}`}>
+                  {label}
+                </span>
+                <span className="text-xs font-semibold text-moca-text">
+                  {CARRIER_NAMES[row.carrier] || row.carrier}
+                </span>
+              </div>
+              <p className="text-xs text-moca-text leading-relaxed text-right">{row.narrative}</p>
+              {platforms.length > 0 && (
+                <div className="flex items-center gap-1 justify-end mt-1.5 flex-wrap">
+                  {platforms.map(p => (
+                    <span key={p} className="text-[9px] text-moca-sub bg-white px-1 py-0.5 rounded border border-moca-border/40">
+                      {PLATFORM_SHORT[p] || p} {row.platform_data[p]?.length || 0}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function SummarySection({ data, onRefresh, refreshing, isAdmin, sentimentRows, sentimentLoading, onSentimentRefresh, sentimentRefreshing }) {
   const { category, metrics, narrative, generated_at } = data
   const meta = CATEGORIES.find(c => c.id === category) || { label: category, icon: '📋' }
 
@@ -126,7 +215,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
         </div>
       )}
 
-      {/* Claude narrative */}
+      {/* AI narrative */}
       <div className="bg-white rounded-xl p-4 border-r-4 border-[#5c3317] shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-sm">🤖</span>
@@ -134,6 +223,15 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
         </div>
         <p className="text-sm text-moca-text leading-relaxed text-right">{narrative}</p>
       </div>
+
+      {/* Social media analysis — shown only for categories with social handles */}
+      <SocialAnalysis
+        rows={sentimentRows}
+        loading={sentimentLoading}
+        isAdmin={isAdmin}
+        onRefresh={onSentimentRefresh}
+        refreshing={sentimentRefreshing}
+      />
     </div>
   )
 }
@@ -156,88 +254,6 @@ function SkeletonSection() {
   )
 }
 
-function SkeletonSentiment() {
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-moca-border/40 p-5 mb-5 animate-pulse">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-7 h-7 bg-gray-200 rounded" />
-        <div className="h-4 bg-gray-200 rounded w-40" />
-      </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {[0, 1, 2, 3, 4, 5].map(i => (
-          <div key={i} className="h-24 bg-gray-100 rounded-xl" />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-const SENTIMENT_CONFIG = {
-  positive: { color: 'green',  label: 'חיובי'   },
-  negative: { color: 'red',    label: 'שלילי'   },
-  mixed:    { color: 'orange', label: 'מעורב'   },
-  neutral:  { color: 'gray',   label: 'ניטרלי'  },
-}
-
-function CarrierSentimentCard({ row }) {
-  const cfg = SENTIMENT_CONFIG[row.sentiment] || SENTIMENT_CONFIG.neutral
-  const badgeColors = {
-    green:  'bg-emerald-50 text-emerald-700',
-    red:    'bg-red-50 text-red-700',
-    orange: 'bg-amber-50 text-amber-700',
-    gray:   'bg-gray-100 text-gray-500',
-  }
-  const platforms = Object.keys(row.platform_data || {})
-
-  return (
-    <div className="bg-[#f9f4ee] rounded-xl p-4 border-r-4 border-[#5c3317]">
-      <div className="flex items-center justify-between mb-2">
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold ${badgeColors[cfg.color]}`}>
-          {cfg.label}
-        </span>
-        <span className="text-sm font-semibold text-moca-text">{CARRIER_NAMES[row.carrier] || row.carrier}</span>
-      </div>
-      <p className="text-sm text-moca-text leading-relaxed text-right mb-2">{row.narrative}</p>
-      <div className="flex items-center gap-1.5 justify-end flex-wrap">
-        {platforms.map(p => (
-          <span key={p} className="text-[10px] text-moca-sub bg-white px-1.5 py-0.5 rounded border border-moca-border/40">
-            {p === 'facebook' ? 'FB' : p === 'instagram' ? 'IG' : p === 'twitter' ? 'X' : p === 'youtube' ? 'YT' : p === 'tiktok' ? 'TT' : p}
-            {' '}{row.platform_data[p]?.length || 0}
-          </span>
-        ))}
-        <span className="text-[10px] text-moca-sub">{formatDate(row.generated_at)}</span>
-      </div>
-    </div>
-  )
-}
-
-function SentimentSection({ sentiments, isAdmin, onRefresh, refreshing }) {
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-moca-border/40 p-5 mb-5">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🌐</span>
-          <h2 className="text-lg font-semibold text-moca-text">הלך רוח ברשתות החברתיות</h2>
-        </div>
-        {isAdmin && (
-          <button
-            onClick={onRefresh}
-            disabled={refreshing}
-            className="text-[11px] px-2 py-1 rounded-lg border border-moca-border text-moca-muted hover:text-moca-bolt hover:border-moca-bolt transition-colors disabled:opacity-50"
-          >
-            {refreshing ? 'מרענן...' : 'רענן עכשיו'}
-          </button>
-        )}
-      </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {sentiments.map(row => (
-          <CarrierSentimentCard key={row.carrier} row={row} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
 export default function ExecutiveSummaryPage() {
   const { isAdmin } = useAuth()
   const [summaries, setSummaries] = useState([])
@@ -245,10 +261,8 @@ export default function ExecutiveSummaryPage() {
   const [notGenerated, setNotGenerated] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
-  // Social sentiment state
   const [sentiments, setSentiments] = useState([])
   const [sentimentLoading, setSentimentLoading] = useState(true)
-  const [sentimentNotGenerated, setSentimentNotGenerated] = useState(false)
   const [sentimentRefreshing, setSentimentRefreshing] = useState(false)
 
   async function load() {
@@ -270,11 +284,8 @@ export default function ExecutiveSummaryPage() {
     try {
       const data = await api.getSocialSentiment()
       setSentiments(data)
-      setSentimentNotGenerated(false)
-    } catch (err) {
-      if (err.message === 'not_generated_yet' || err.message === 'HTTP 404') {
-        setSentimentNotGenerated(true)
-      }
+    } catch {
+      // 404 = not yet generated — sentiments stays []
     } finally {
       setSentimentLoading(false)
     }
@@ -284,26 +295,23 @@ export default function ExecutiveSummaryPage() {
 
   async function handleRefresh() {
     setRefreshing(true)
-    try {
-      await api.refreshExecutiveSummary()
-      await load()
-    } catch (err) {
-      console.error('refresh failed', err)
-    } finally {
-      setRefreshing(false)
-    }
+    try { await api.refreshExecutiveSummary(); await load() }
+    catch (err) { console.error('refresh failed', err) }
+    finally { setRefreshing(false) }
   }
 
   async function handleSentimentRefresh() {
     setSentimentRefreshing(true)
-    try {
-      await api.refreshSocialSentiment()
-      await loadSentiment()
-    } catch (err) {
-      console.error('sentiment refresh failed', err)
-    } finally {
-      setSentimentRefreshing(false)
-    }
+    try { await api.refreshSocialSentiment(); await loadSentiment() }
+    catch (err) { console.error('sentiment refresh failed', err) }
+    finally { setSentimentRefreshing(false) }
+  }
+
+  // Return sentiment rows relevant to a given category
+  function sentimentForCategory(categoryId) {
+    const allowed = CATEGORY_SENTIMENT_CARRIERS[categoryId] || []
+    if (allowed.length === 0) return []
+    return sentiments.filter(s => allowed.includes(s.carrier))
   }
 
   if (loading) {
@@ -346,40 +354,12 @@ export default function ExecutiveSummaryPage() {
           onRefresh={handleRefresh}
           refreshing={refreshing}
           isAdmin={isAdmin}
+          sentimentRows={sentimentForCategory(s.category)}
+          sentimentLoading={sentimentLoading}
+          onSentimentRefresh={handleSentimentRefresh}
+          sentimentRefreshing={sentimentRefreshing}
         />
       ))}
-
-      {/* Social sentiment section */}
-      {sentimentLoading ? (
-        <SkeletonSentiment />
-      ) : sentimentNotGenerated ? (
-        <div className="bg-white rounded-xl shadow-sm border border-moca-border/40 p-5 mb-5">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-2xl">🌐</span>
-            <h2 className="text-lg font-semibold text-moca-text">הלך רוח ברשתות החברתיות</h2>
-          </div>
-          <div className="text-center py-8">
-            <div className="text-3xl mb-2">🕗</div>
-            <p className="text-moca-muted text-sm">הניתוח ייווצר ב-08:10 הקרוב</p>
-            {isAdmin && (
-              <button
-                onClick={handleSentimentRefresh}
-                disabled={sentimentRefreshing}
-                className="mt-3 px-4 py-2 rounded-lg bg-[#5c3317] text-white text-sm hover:bg-[#7a4a28] transition-colors disabled:opacity-50"
-              >
-                {sentimentRefreshing ? 'מייצר...' : 'צור עכשיו'}
-              </button>
-            )}
-          </div>
-        </div>
-      ) : sentiments.length > 0 ? (
-        <SentimentSection
-          sentiments={sentiments}
-          isAdmin={isAdmin}
-          onRefresh={handleSentimentRefresh}
-          refreshing={sentimentRefreshing}
-        />
-      ) : null}
     </div>
   )
 }

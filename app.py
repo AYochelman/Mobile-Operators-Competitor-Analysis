@@ -597,42 +597,36 @@ CARRIER_STORE_DISPLAY = {
 
 
 # ── Social media handles per carrier ──────────────────────────────────────
-# facebook: full page URL | instagram/twitter/tiktok: handle (no @) | youtube: search keyword
+# facebook: full page URL | instagram: username | twitter: handle | tiktok: username
 
 CARRIER_SOCIAL_HANDLES = {
     'partner': {
         'facebook':  'https://www.facebook.com/PartnerCommunications',
         'instagram': 'partner_il',
         'twitter':   'PartnerComm',
-        'youtube':   '\u05e4\u05e8\u05d8\u05e0\u05e8 \u05e1\u05dc\u05d5\u05dc\u05e8',
         'tiktok':    'partner_il',
     },
     'pelephone': {
         'facebook':  'https://www.facebook.com/pelephone',
         'instagram': 'pelephone',
         'twitter':   'Pelephone',
-        'youtube':   '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df',
         'tiktok':    'pelephone',
     },
     'cellcom': {
         'facebook':  'https://www.facebook.com/cellcom',
         'instagram': 'cellcom_israel',
         'twitter':   'Cellcom_Israel',
-        'youtube':   '\u05e1\u05dc\u05e7\u05d5\u05dd',
     },
     'hotmobile': {
         'facebook':  'https://www.facebook.com/HotMobile',
         'instagram': 'hot_mobile_il',
-        'youtube':   '\u05d4\u05d5\u05d8 \u05de\u05d5\u05d1\u05d9\u05d9\u05dc',
     },
     'mobile019': {
         'facebook':  'https://www.facebook.com/019Mobile',
         'instagram': '019mobile',
-        'youtube':   '019 \u05de\u05d5\u05d1\u05d9\u05d9\u05dc',
     },
     'xphone': {
         'facebook':  'https://www.facebook.com/xphone.co.il',
-        'instagram': 'xphone_israel',
     },
     'wecom': {
         'facebook':  'https://www.facebook.com/wecom.co.il',
@@ -642,16 +636,26 @@ CARRIER_SOCIAL_HANDLES = {
 
 def _normalize_post(platform, raw):
     """Normalize a raw Apify post dict to a consistent schema."""
+    # Each actor returns slightly different field names — try in order
     text = (
-        raw.get('text') or raw.get('message') or raw.get('caption') or
+        raw.get('message') or raw.get('caption') or raw.get('text') or
         raw.get('full_text') or raw.get('description') or raw.get('title') or ''
     )
+    likes = (
+        raw.get('likesCount') or raw.get('diggCount') or raw.get('likes') or
+        raw.get('likeCount') or raw.get('favoriteCount') or 0
+    )
+    date = (
+        raw.get('time') or raw.get('timestamp') or raw.get('date') or
+        raw.get('createdAt') or raw.get('created_at') or ''
+    )
+    url = raw.get('url') or raw.get('postUrl') or raw.get('webVideoUrl') or raw.get('link') or ''
     return {
         'platform': platform,
         'text':     str(text)[:400],
-        'likes':    int(raw.get('likesCount') or raw.get('likes') or raw.get('likeCount') or 0),
-        'date':     str(raw.get('time') or raw.get('timestamp') or raw.get('date') or raw.get('createdAt') or ''),
-        'url':      str(raw.get('url') or raw.get('postUrl') or ''),
+        'likes':    int(likes) if str(likes).isdigit() else 0,
+        'date':     str(date),
+        'url':      str(url),
     }
 
 
@@ -675,19 +679,34 @@ def generate_social_sentiment():
     import requests as _req
     import re as _re
 
-    def _scrape_apify(platform, actor, actor_input):
-        """Call Apify run-sync and return normalized post list (max 10)."""
+    def _scrape_apify(platform, actor_slug, actor_input):
+        """Call Apify run-sync and return normalized post list (max 10).
+
+        actor_slug must use ~ separator (e.g. 'apify~facebook-posts-scraper').
+        Apify run-sync returns 200 or 201; both indicate dataset items.
+        """
         try:
             url = (
-                f"https://api.apify.com/v2/acts/{actor}/run-sync-get-dataset-items"
+                f"https://api.apify.com/v2/acts/{actor_slug}/run-sync-get-dataset-items"
                 f"?token={apify_key}&timeout=60&memory=256"
             )
             resp = _req.post(url, json=actor_input, timeout=75)
-            if resp.status_code != 200:
-                logger.warning(f"social sentiment: Apify {platform} HTTP {resp.status_code}")
+            if resp.status_code not in (200, 201):
+                logger.warning(f"social sentiment: Apify {platform} HTTP {resp.status_code} — {resp.text[:150]}")
                 return []
-            items = resp.json() if isinstance(resp.json(), list) else []
-            return [_normalize_post(platform, item) for item in items[:10] if item]
+            data = resp.json()
+            if not isinstance(data, list):
+                return []
+            # Filter out error/empty sentinel items
+            valid = [
+                item for item in data
+                if isinstance(item, dict)
+                and not item.get('error')
+                and not item.get('noResults')
+                and (item.get('message') or item.get('caption') or item.get('text')
+                     or item.get('full_text') or item.get('description') or item.get('title'))
+            ]
+            return [_normalize_post(platform, item) for item in valid[:10]]
         except Exception as exc:
             logger.warning(f"social sentiment: {platform} failed: {exc}")
             return []
@@ -717,45 +736,40 @@ def generate_social_sentiment():
             platform_data = {}
 
             if 'facebook' in handles:
-                posts = _scrape_apify('facebook', 'apify/facebook-posts-scraper', {
+                posts = _scrape_apify('facebook', 'apify~facebook-posts-scraper', {
                     'startUrls': [{'url': handles['facebook']}],
-                    'maxPosts': 10,
+                    'resultsLimit': 10,
                     'onlyPostsNewerThan': '7 days',
                 })
                 if posts:
                     platform_data['facebook'] = posts
 
             if 'instagram' in handles:
-                posts = _scrape_apify('instagram', 'apify/instagram-scraper', {
-                    'directUrls': [f"https://www.instagram.com/{handles['instagram']}/"],
-                    'resultsType': 'posts',
+                posts = _scrape_apify('instagram', 'apify~instagram-post-scraper', {
+                    'username': [handles['instagram']],
                     'resultsLimit': 10,
+                    'onlyPostsNewerThan': '7 days',
+                    'dataDetailLevel': 'basicData',
                 })
                 if posts:
                     platform_data['instagram'] = posts
 
             if 'twitter' in handles:
-                posts = _scrape_apify('twitter', 'apify/twitter-scraper', {
-                    'searchTerms': [f"from:{handles['twitter']}"],
+                posts = _scrape_apify('twitter', 'apidojo~tweet-scraper', {
+                    'twitterHandles': [handles['twitter']],
                     'maxItems': 10,
-                    'sinceDate': since_date,
+                    'start': since_date,
+                    'sort': 'Latest',
                 })
                 if posts:
                     platform_data['twitter'] = posts
 
-            if 'youtube' in handles:
-                posts = _scrape_apify('youtube', 'apify/youtube-scraper', {
-                    'searchKeywords': handles['youtube'],
-                    'maxResults': 10,
-                    'type': 'video',
-                })
-                if posts:
-                    platform_data['youtube'] = posts
-
             if 'tiktok' in handles:
-                posts = _scrape_apify('tiktok', 'apify/tiktok-scraper', {
+                posts = _scrape_apify('tiktok', 'clockworks~tiktok-scraper', {
                     'profiles': [handles['tiktok']],
                     'resultsPerPage': 10,
+                    'profileSorting': 'latest',
+                    'oldestPostDateUnified': since_date,
                 })
                 if posts:
                     platform_data['tiktok'] = posts
