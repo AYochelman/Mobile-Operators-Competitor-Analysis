@@ -112,7 +112,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
                 labelFormatter={carrierName}
               />
               <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                {metrics.chart_data.map((_, i) => (
+                {[...metrics.chart_data].reverse().map((_, i) => (
                   <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
                 ))}
               </Bar>
@@ -165,7 +165,7 @@ export default function ExecutiveSummaryPage() {
       setSummaries(ordered)
       setNotGenerated(false)
     } catch (err) {
-      if (err.message?.includes('not_generated_yet') || err.message?.includes('404')) {
+      if (err.message === 'not_generated_yet' || err.message === 'HTTP 404') {
         setNotGenerated(true)
       }
     } finally {
