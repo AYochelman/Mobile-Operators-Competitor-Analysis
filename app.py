@@ -645,18 +645,14 @@ def generate_executive_summary():
             aggressive_name = CARRIER_DISPLAY.get(aggressive['carrier'], {}).get('name', aggressive['carrier'])
 
             prompt = (
-                f"\u05d0\u05ea\u05d4 \u05d0\u05e0\u05dc\u05d9\u05e1\u05d8 \u05e9\u05d5\u05e7 \u05e1\u05dc\u05d5\u05dc\u05e8 \u05d9\u05e9\u05e8\u05d0\u05dc\u05d9. "
-                f"\u05dc\u05d4\u05dc\u05df \u05e0\u05ea\u05d5\u05e0\u05d9 \u05e9\u05d5\u05e7 \u05e2\u05d3\u05db\u05e0\u05d9\u05d9\u05dd \u05dc\u05e7\u05d8\u05d2\u05d5\u05e8\u05d9\u05d9\u05ea {cat_label}:\n\n"
-                f"\u05de\u05d3\u05d3\u05d9\u05dd:\n"
-                f"- \u05d4\u05d6\u05d5\u05dc \u05d1\u05d9\u05d5\u05ea\u05e8: {cheapest_name} ({cheapest['value']} {cheapest['unit']})\n"
-                f"- \u05d4\u05d0\u05d2\u05e8\u05e1\u05d9\u05d1\u05d9 \u05d1\u05d9\u05d5\u05ea\u05e8: {aggressive_name} ({aggressive['changes']} \u05d4\u05d5\u05e8\u05d3\u05d5\u05ea \u05de\u05d7\u05d9\u05e8 \u05d1-7 \u05d9\u05de\u05d9\u05dd)\n"
-                f"- \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd \u05d4\u05e9\u05d1\u05d5\u05e2: {wc['total']} \u05e1\u05d4'\u05db \u05e2\u05dd {wc['drops']} \u05d9\u05e8\u05d9\u05d3\u05d5\u05ea \u05d5-{wc['rises']} \u05e2\u05dc\u05d9\u05d5\u05ea \u05de\u05d7\u05d9\u05e8\n\n"
-                f"10 \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05de\u05d5\u05d1\u05d9\u05dc\u05d5\u05ea:\n{top_plans_str}\n\n"
-                f"\u05db\u05ea\u05d5\u05d1 \u05e4\u05e1\u05e7\u05d4 \u05d0\u05d7\u05ea \u05d1\u05e2\u05d1\u05e8\u05d9\u05ea (\u05e2\u05d3 150 \u05de\u05d9\u05dc\u05d4) \u05d4\u05de\u05e0\u05ea\u05d7\u05ea:\n"
-                "1. \u05de\u05d9 \u05d4\u05de\u05d5\u05d1\u05d9\u05dc \u05d5\u05dc\u05de\u05d4\n"
-                "2. \u05d4\u05d2\u05d9\u05e9\u05d4 \u05d4\u05d0\u05d2\u05e8\u05e1\u05d9\u05d1\u05d9\u05ea \u05d1\u05e9\u05d5\u05e7\n"
-                "3. \u05d4\u05de\u05e1\u05e8 \u05d4\u05e9\u05d9\u05d5\u05d5\u05e7\u05d9 \u05d4\u05d3\u05d5\u05de\u05d9\u05e0\u05e0\u05d8\n"
-                "4. \u05ea\u05d5\u05d1\u05e0\u05d4 \u05ea\u05d7\u05e8\u05d5\u05ea\u05d9\u05ea \u05d0\u05d7\u05ea \u05d7\u05e9\u05d5\u05d1\u05d4"
+                f"נתוני שוק עדכניים לקטגוריית {cat_label}:\n\n"
+                f"הספק הזול ביותר: {cheapest_name} — {cheapest['value']} {cheapest['unit']}\n"
+                f"הספק האגרסיבי ביותר (הכי הרבה הורדות מחיר ב-7 ימים): {aggressive_name} — {aggressive['changes']} שינויים\n"
+                f"שינויים השבוע: סך הכל {wc['total']} ({wc['drops']} ירידות מחיר, {wc['rises']} עליות מחיר)\n\n"
+                f"חבילות מובילות בשוק:\n{top_plans_str}\n\n"
+                f"כתוב פסקה אחת קצרה ורהוטה בעברית תקינה ונכונה (3 עד 4 משפטים, עד 80 מילה).\n"
+                f"הפסקה תסכם: מי הספק המוביל ומדוע, מה הגישה התחרותית הבולטת בשוק, ומה כדאי לצרכן לדעת.\n"
+                f"כתוב פרוזה רגילה בלבד — ללא כותרות, ללא מספרים, ללא תבליטים, ללא סימני Markdown."
             )
 
             resp = _req.post(
@@ -668,14 +664,25 @@ def generate_executive_summary():
                 },
                 json={
                     "model": "claude-haiku-4-5-20251001",
-                    "max_tokens": 512,
-                    "system": "\u05d0\u05ea\u05d4 \u05d0\u05e0\u05dc\u05d9\u05e1\u05d8 \u05e9\u05d5\u05e7 \u05e1\u05dc\u05d5\u05dc\u05e8 \u05d9\u05e9\u05e8\u05d0\u05dc\u05d9. \u05e2\u05e0\u05d4 \u05d1\u05e2\u05d1\u05e8\u05d9\u05ea \u05d1\u05dc\u05d1\u05d3.",
+                    "max_tokens": 400,
+                    "system": (
+                        "אתה אנליסט שוק סלולר ישראלי בכיר. "
+                        "כתוב אך ורק בעברית תקנית, נכונה ורהוטה. "
+                        "השתמש במונחים מדויקים ובמשפטים קצרים וברורים. "
+                        "אסור להשתמש ב-Markdown, כותרות, כוכביות, מספרים ממוספרים, או תבליטים. "
+                        "כתוב פרוזה רגילה בלבד."
+                    ),
                     "messages": [{"role": "user", "content": prompt}],
                 },
                 timeout=30,
             )
             resp.raise_for_status()
-            narrative = resp.json()["content"][0]["text"].strip()
+            raw_narrative = resp.json()["content"][0]["text"].strip()
+            # Strip any markdown artifacts Claude might still produce
+            import re as _re
+            narrative = _re.sub(r'^#+\s*', '', raw_narrative, flags=_re.MULTILINE)
+            narrative = _re.sub(r'\*+', '', narrative)
+            narrative = _re.sub(r'\n{2,}', ' ', narrative).strip()
 
             save_executive_summary(category, metrics, narrative, db_path=_db_path())
             logger.info(f"executive summary: saved {category}")
