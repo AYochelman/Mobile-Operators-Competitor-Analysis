@@ -156,6 +156,13 @@ def init_db(db_path=None):
                 last_triggered TEXT,
                 created_at     TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS executive_summary (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                category     TEXT NOT NULL UNIQUE,
+                metrics_json TEXT NOT NULL,
+                narrative    TEXT NOT NULL,
+                generated_at TEXT NOT NULL
+            );
         """)
         conn.commit()
         # Migration: add url column if DB was created before this column existed
@@ -164,6 +171,194 @@ def init_db(db_path=None):
             conn.commit()
         except Exception:
             pass  # column already exists
+    finally:
+        conn.close()
+
+
+def save_executive_summary(category, metrics, narrative, db_path=None):
+    """Upsert one category's executive summary row."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            """INSERT INTO executive_summary (category, metrics_json, narrative, generated_at)
+               VALUES (?, ?, ?, ?)
+               ON CONFLICT(category) DO UPDATE SET
+                   metrics_json = excluded.metrics_json,
+                   narrative    = excluded.narrative,
+                   generated_at = excluded.generated_at""",
+            (category, json.dumps(metrics, ensure_ascii=False),
+             narrative, datetime.now().isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_executive_summary(db_path=None):
+    """Return list of all category summaries, or [] if table is empty."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT category, metrics_json, narrative, generated_at "
+            "FROM executive_summary ORDER BY category"
+        ).fetchall()
+        return [
+            {
+                "category":     r[0],
+                "metrics":      json.loads(r[1]),
+                "narrative":    r[2],
+                "generated_at": r[3],
+            }
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def compute_executive_metrics(category, usd_rate=3.7, eur_rate=4.0, db_path=None):
+    """Compute algorithmic market metrics for one category.
+
+    Returns dict: { cheapest, most_aggressive, weekly_changes, chart_data, top_plans }
+    """
+    conn = _connect(db_path)
+    try:
+        if category == 'domestic':
+            rows = conn.execute("""
+                SELECT carrier, AVG(price * 1.0 / data_gb) AS v
+                FROM plans
+                WHERE data_gb > 0 AND price IS NOT NULL
+                GROUP BY carrier ORDER BY v ASC
+            """).fetchall()
+            unit = '\u20aa/GB'
+            top_rows = conn.execute("""
+                SELECT carrier, plan_name, price, data_gb FROM plans
+                WHERE price IS NOT NULL ORDER BY price ASC LIMIT 10
+            """).fetchall()
+            top_plans = [
+                f"{r[0]} | {r[1]} | \u20aa{r[2]} | {r[3]}GB"
+                for r in top_rows
+            ]
+            changes_table = 'changes'
+            changes_carrier_col = 'carrier'
+
+        elif category == 'abroad':
+            rows = conn.execute("""
+                SELECT carrier, AVG(price * 1.0 / NULLIF(days, 0)) AS v
+                FROM abroad_plans
+                WHERE days > 0 AND price IS NOT NULL
+                GROUP BY carrier ORDER BY v ASC
+            """).fetchall()
+            unit = '\u20aa/\u05d9\u05d5\u05dd'
+            top_rows = conn.execute("""
+                SELECT carrier, plan_name, price, days, data_gb FROM abroad_plans
+                WHERE price IS NOT NULL ORDER BY price ASC LIMIT 10
+            """).fetchall()
+            top_plans = [
+                f"{r[0]} | {r[1]} | \u20aa{r[2]} | {r[3]} \u05d9\u05de\u05d9\u05dd | {r[4]}GB"
+                for r in top_rows
+            ]
+            changes_table = 'abroad_changes'
+            changes_carrier_col = 'carrier'
+
+        elif category == 'global':
+            all_global = conn.execute(
+                "SELECT carrier, plan_name, price, currency, data_gb FROM global_plans "
+                "WHERE price IS NOT NULL ORDER BY carrier"
+            ).fetchall()
+            by_carrier = {}
+            for r in all_global:
+                carrier, name, price, currency, data_gb = r
+                if currency == 'USD':
+                    ils = price * usd_rate
+                elif currency == 'EUR':
+                    ils = price * eur_rate
+                else:
+                    ils = price if price else 0
+                if data_gb and data_gb > 0:
+                    ppgb = ils / data_gb
+                    by_carrier.setdefault(carrier, []).append(ppgb)
+            rows_raw = [(c, sum(v) / len(v)) for c, v in by_carrier.items()]
+            rows_raw.sort(key=lambda x: x[1])
+            rows = rows_raw
+            unit = '\u20aa/GB (\u05d1\u05e9\u05e7\u05dc\u05d9\u05dd)'
+            top_rows = conn.execute("""
+                SELECT carrier, plan_name, price, currency, data_gb FROM global_plans
+                WHERE price IS NOT NULL ORDER BY price ASC LIMIT 10
+            """).fetchall()
+            top_plans = [
+                f"{r[0]} | {r[1]} | {r[2]}{r[3]} | {r[4]}GB"
+                for r in top_rows
+            ]
+            changes_table = 'global_changes'
+            changes_carrier_col = 'carrier'
+
+        else:  # content
+            rows = conn.execute("""
+                SELECT carrier, AVG(CAST(price AS REAL)) AS v
+                FROM content_plans
+                WHERE price GLOB '[0-9]*'
+                GROUP BY carrier ORDER BY v ASC
+            """).fetchall()
+            unit = '\u20aa (\u05de\u05d7\u05d9\u05e8 \u05e2\u05e8\u05d5\u05e5 \u05de\u05d5\u05e6\u05dc\u05d1)'
+            top_rows = conn.execute("""
+                SELECT carrier, service, price, free_trial FROM content_plans
+                WHERE price GLOB '[0-9]*' ORDER BY CAST(price AS REAL) ASC LIMIT 10
+            """).fetchall()
+            top_plans = [
+                f"{r[0]} | {r[1]} | \u20aa{r[2]}"
+                + (f" | \u05e0\u05d9\u05e1\u05d9\u05d5\u05df: {r[3]}" if r[3] else "")
+                for r in top_rows
+            ]
+            changes_table = 'content_changes'
+            changes_carrier_col = 'carrier'
+
+        chart_data = [
+            {'carrier': r[0], 'value': round(float(r[1]), 2)}
+            for r in rows if r[1] is not None
+        ]
+        cheapest = chart_data[0] if chart_data else {'carrier': '-', 'value': 0}
+
+        if category == 'content':
+            drop_rows = conn.execute(f"""
+                SELECT {changes_carrier_col}, COUNT(*) AS cnt
+                FROM {changes_table}
+                WHERE change_type = 'price_change'
+                  AND changed_at >= datetime('now', '-7 days')
+                GROUP BY {changes_carrier_col} ORDER BY cnt DESC
+            """).fetchall()
+        else:
+            drop_rows = conn.execute(f"""
+                SELECT {changes_carrier_col}, COUNT(*) AS cnt
+                FROM {changes_table}
+                WHERE change_type = 'price_change'
+                  AND changed_at >= datetime('now', '-7 days')
+                  AND CAST(new_val AS REAL) < CAST(old_val AS REAL)
+                GROUP BY {changes_carrier_col} ORDER BY cnt DESC
+            """).fetchall()
+
+        rise_rows = conn.execute(f"""
+            SELECT {changes_carrier_col}, COUNT(*) AS cnt
+            FROM {changes_table}
+            WHERE change_type = 'price_change'
+              AND changed_at >= datetime('now', '-7 days')
+              AND CAST(new_val AS REAL) > CAST(old_val AS REAL)
+            GROUP BY {changes_carrier_col} ORDER BY cnt DESC
+        """).fetchall()
+
+        total_drops = sum(r[1] for r in drop_rows)
+        total_rises = sum(r[1] for r in rise_rows)
+        most_aggressive_carrier = drop_rows[0][0] if drop_rows else (
+            chart_data[-1]['carrier'] if chart_data else '-'
+        )
+        most_aggressive_count = drop_rows[0][1] if drop_rows else 0
+
+        return {
+            'cheapest':        {'carrier': cheapest['carrier'], 'value': cheapest['value'], 'unit': unit},
+            'most_aggressive': {'carrier': most_aggressive_carrier, 'changes': most_aggressive_count},
+            'weekly_changes':  {'total': total_drops + total_rises, 'drops': total_drops, 'rises': total_rises},
+            'chart_data':      chart_data,
+            'top_plans':       top_plans,
+        }
     finally:
         conn.close()
 

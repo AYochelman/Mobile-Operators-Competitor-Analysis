@@ -14,7 +14,8 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_changes, get_global_plans, get_global_changes, \
                get_content_plans, get_content_changes, \
-               save_price_alert, get_price_alerts, delete_price_alert, update_alert_triggered
+               save_price_alert, get_price_alerts, delete_price_alert, update_alert_triggered, \
+               save_executive_summary, get_executive_summary, compute_executive_metrics
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
