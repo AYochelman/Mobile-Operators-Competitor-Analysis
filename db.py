@@ -220,6 +220,10 @@ def compute_executive_metrics(category, usd_rate=3.7, eur_rate=4.0, db_path=None
 
     Returns dict: { cheapest, most_aggressive, weekly_changes, chart_data, top_plans }
     """
+    _VALID_CATEGORIES = {'domestic', 'abroad', 'global', 'content'}
+    if category not in _VALID_CATEGORIES:
+        raise ValueError(f"Unknown category: {category!r}")
+
     conn = _connect(db_path)
     try:
         if category == 'domestic':
@@ -235,7 +239,7 @@ def compute_executive_metrics(category, usd_rate=3.7, eur_rate=4.0, db_path=None
                 WHERE price IS NOT NULL ORDER BY price ASC LIMIT 10
             """).fetchall()
             top_plans = [
-                f"{r[0]} | {r[1]} | \u20aa{r[2]} | {r[3]}GB"
+                f"{r[0]} | {r[1]} | \u20aa{r[2]} | " + (f"{r[3]}GB" if r[3] else "\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4")
                 for r in top_rows
             ]
             changes_table = 'changes'
@@ -254,7 +258,7 @@ def compute_executive_metrics(category, usd_rate=3.7, eur_rate=4.0, db_path=None
                 WHERE price IS NOT NULL ORDER BY price ASC LIMIT 10
             """).fetchall()
             top_plans = [
-                f"{r[0]} | {r[1]} | \u20aa{r[2]} | {r[3]} \u05d9\u05de\u05d9\u05dd | {r[4]}GB"
+                f"{r[0]} | {r[1]} | \u20aa{r[2]} | {r[3]} \u05d9\u05de\u05d9\u05dd | " + (f"{r[4]}GB" if r[4] else "\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4")
                 for r in top_rows
             ]
             changes_table = 'abroad_changes'
@@ -286,13 +290,13 @@ def compute_executive_metrics(category, usd_rate=3.7, eur_rate=4.0, db_path=None
                 WHERE price IS NOT NULL ORDER BY price ASC LIMIT 10
             """).fetchall()
             top_plans = [
-                f"{r[0]} | {r[1]} | {r[2]}{r[3]} | {r[4]}GB"
+                f"{r[0]} | {r[1]} | {r[2]}{r[3]} | " + (f"{r[4]}GB" if r[4] else "\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4")
                 for r in top_rows
             ]
             changes_table = 'global_changes'
             changes_carrier_col = 'carrier'
 
-        else:  # content
+        elif category == 'content':
             rows = conn.execute("""
                 SELECT carrier, AVG(CAST(price AS REAL)) AS v
                 FROM content_plans
