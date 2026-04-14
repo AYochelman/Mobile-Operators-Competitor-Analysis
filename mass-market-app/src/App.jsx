@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage'
 import ComparePage from './pages/ComparePage'
 // import TrendsPage from './pages/TrendsPage'  // removed
 import AlertsPage from './pages/AlertsPage'
+import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage'
 import SettingsPage from './pages/SettingsPage'
 import NotFoundPage from './pages/NotFoundPage'
 
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="compare" element={<ComparePage />} />
         {/* trends page removed */}
         <Route path="alerts" element={<AlertsPage />} />
+        <Route path="executive-summary" element={<ExecutiveSummaryPage />} />
         <Route path="settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

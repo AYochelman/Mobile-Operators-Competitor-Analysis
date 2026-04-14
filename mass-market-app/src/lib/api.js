@@ -52,6 +52,10 @@ export const api = {
   createAlert: (alert) => fetchApi('/api/alerts', { method: 'POST', body: JSON.stringify(alert) }),
   deleteAlert: (id) => fetchApi(`/api/alerts/${id}`, { method: 'DELETE' }),
 
+  // Executive summary
+  getExecutiveSummary:     () => fetchApi('/api/executive-summary'),
+  refreshExecutiveSummary: () => fetchApi('/api/executive-summary/refresh', { method: 'POST' }),
+
   // Push — JWT auth
   getVapidKey: () => fetchApi('/api/push/vapid-public-key'),
   subscribe:   (sub) => fetchApi('/api/push/subscribe', { method: 'POST', body: JSON.stringify(sub) }),
