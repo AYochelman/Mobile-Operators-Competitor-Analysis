@@ -599,6 +599,50 @@ def api_content_plans():
     return jsonify(plans)
 
 
+def _price_direction(change):
+    """Return 'up', 'down', or None for a price_change record."""
+    try:
+        old, new = float(change['old_val']), float(change['new_val'])
+        if new > old: return 'up'
+        if new < old: return 'down'
+        return None
+    except (ValueError, TypeError):
+        return None
+
+
+_HISTORY_CARRIER_NAMES = {
+    'partner': '\u05e4\u05e8\u05d8\u05e0\u05e8',
+    'pelephone': '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df',
+    'hotmobile': '\u05d4\u05d5\u05d8 \u05de\u05d5\u05d1\u05d9\u05d9\u05dc',
+    'cellcom': '\u05e1\u05dc\u05e7\u05d5\u05dd',
+    'mobile019': '019',
+    'xphone': 'XPhone',
+    'wecom': 'We-Com',
+    'neptucom': 'Neptucom',
+    'tuki': 'Tuki',
+    'globalesim': 'GlobaleSIM',
+    'airalo': 'Airalo',
+    'pelephone_global': 'GlobalSIM',
+    'esimo': 'eSIMo',
+    'simtlv': 'SimTLV',
+    'world8': '8 World',
+    'xphone_global': 'XPhone Global',
+    'saily': 'Saily',
+    'holafly': 'Holafly',
+    'esimio': 'eSIM.io',
+    'sparks': 'Sparks',
+    'voye': 'VOYE',
+    'orbit': 'Orbit',
+    'travelsim': 'Travel Sim',
+}
+_HISTORY_TYPE_NAMES = {
+    'domestic': '\u05de\u05e7\u05d5\u05de\u05d9',
+    'abroad': '\u05d7\u05d5"\u05dc',
+    'global': '\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9',
+    'content': '\u05ea\u05d5\u05db\u05df',
+}
+
+
 CARRIER_DISPLAY = {
     "partner":   {"name": "פרטנר",      "url": "https://www.partner.net.il",   "color": "#e8003d"},
     "pelephone": {"name": "פלאפון",     "url": "https://www.pelephone.co.il",  "color": "#ff6600"},
@@ -1621,24 +1665,11 @@ def api_history_changes():
     if plan_type not in ('domestic', 'abroad', 'global', 'content'):
         return jsonify({'error': 'plan_type must be domestic/abroad/global/content'}), 400
 
-    def _price_dir(c):
-        """Return 'up', 'down', or None for non-numeric prices."""
-        try:
-            old = float(c['old_val'])
-            new = float(c['new_val'])
-            if new > old:
-                return 'up'
-            elif new < old:
-                return 'down'
-            return None  # same price (shouldn't happen but guard it)
-        except (ValueError, TypeError):
-            return None
-
     changes = get_history_changes(carrier, plan_type, from_date, to_date, db_path=_db_path())
     summary = {
         'total':         len(changes),
-        'price_up':      sum(1 for c in changes if c['change_type'] == 'price_change' and _price_dir(c) == 'up'),
-        'price_down':    sum(1 for c in changes if c['change_type'] == 'price_change' and _price_dir(c) == 'down'),
+        'price_up':      sum(1 for c in changes if c['change_type'] == 'price_change' and _price_direction(c) == 'up'),
+        'price_down':    sum(1 for c in changes if c['change_type'] == 'price_change' and _price_direction(c) == 'down'),
         'new_plans':     sum(1 for c in changes if c['change_type'] == 'new_plan'),
         'removed_plans': sum(1 for c in changes if c['change_type'] == 'removed_plan'),
     }
@@ -1683,40 +1714,8 @@ def api_history_analyze():
     if not api_key:
         return jsonify({'error': 'anthropic_api_key missing in config.json'}), 500
 
-    _CARRIER_NAMES = {
-        'partner': '\u05e4\u05e8\u05d8\u05e0\u05e8',
-        'pelephone': '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df',
-        'hotmobile': '\u05d4\u05d5\u05d8 \u05de\u05d5\u05d1\u05d9\u05d9\u05dc',
-        'cellcom': '\u05e1\u05dc\u05e7\u05d5\u05dd',
-        'mobile019': '019',
-        'xphone': 'XPhone',
-        'wecom': 'We-Com',
-        'neptucom': 'Neptucom',
-        'tuki': 'Tuki',
-        'globalesim': 'GlobaleSIM',
-        'airalo': 'Airalo',
-        'pelephone_global': 'GlobalSIM',
-        'esimo': 'eSIMo',
-        'simtlv': 'SimTLV',
-        'world8': '8 World',
-        'xphone_global': 'XPhone Global',
-        'saily': 'Saily',
-        'holafly': 'Holafly',
-        'esimio': 'eSIM.io',
-        'sparks': 'Sparks',
-        'voye': 'VOYE',
-        'orbit': 'Orbit',
-        'travelsim': 'Travel Sim',
-    }
-    _TYPE_NAMES = {
-        'domestic': '\u05de\u05e7\u05d5\u05de\u05d9',
-        'abroad': '\u05d7\u05d5"\u05dc',
-        'global': '\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9',
-        'content': '\u05ea\u05d5\u05db\u05df',
-    }
-
-    carrier_display = _CARRIER_NAMES.get(carrier, carrier)
-    type_display    = _TYPE_NAMES.get(plan_type, plan_type)
+    carrier_display = _HISTORY_CARRIER_NAMES.get(carrier, carrier)
+    type_display    = _HISTORY_TYPE_NAMES.get(plan_type, plan_type)
 
     if from_date and to_date:
         period_display = f'{from_date} \u05e2\u05d3 {to_date}'
@@ -1725,17 +1724,8 @@ def api_history_analyze():
     else:
         period_display = '\u05db\u05dc \u05d4\u05d6\u05de\u05e0\u05d9\u05dd'
 
-    def _price_dir(c):
-        try:
-            old, new = float(c['old_val']), float(c['new_val'])
-            if new > old: return 'up'
-            if new < old: return 'down'
-            return None
-        except (ValueError, TypeError):
-            return None
-
-    price_up      = sum(1 for c in changes if c['change_type'] == 'price_change' and _price_dir(c) == 'up')
-    price_down    = sum(1 for c in changes if c['change_type'] == 'price_change' and _price_dir(c) == 'down')
+    price_up      = sum(1 for c in changes if c['change_type'] == 'price_change' and _price_direction(c) == 'up')
+    price_down    = sum(1 for c in changes if c['change_type'] == 'price_change' and _price_direction(c) == 'down')
     new_plans     = sum(1 for c in changes if c['change_type'] == 'new_plan')
     removed_plans = sum(1 for c in changes if c['change_type'] == 'removed_plan')
 

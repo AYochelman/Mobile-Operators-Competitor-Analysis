@@ -138,3 +138,21 @@ def test_history_analyze_returns_analysis(client_with_history):
     data = json.loads(resp.data)
     assert resp.status_code == 200
     assert data['analysis'] == 'ניתוח בדיקה'
+
+
+def test_history_analyze_prompt_contains_carrier_and_type(client_with_history):
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {'content': [{'text': 'x'}]}
+    mock_resp.raise_for_status.return_value = None
+    captured = {}
+    def capture_post(url, **kwargs):
+        captured['payload'] = kwargs.get('json', {})
+        return mock_resp
+    with patch('requests.post', side_effect=capture_post), \
+         patch('app.load_config', return_value={'anthropic_api_key': 'test-key'}):
+        client_with_history.get(
+            '/api/history/analyze?carrier=partner&plan_type=domestic'
+        )
+    user_content = captured['payload']['messages'][0]['content']
+    assert '\u05e4\u05e8\u05d8\u05e0\u05e8' in user_content   # פרטנר — partner display name
+    assert '\u05de\u05e7\u05d5\u05de\u05d9' in user_content   # מקומי — domestic display name
