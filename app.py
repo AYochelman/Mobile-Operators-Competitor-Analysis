@@ -17,7 +17,8 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                save_price_alert, get_price_alerts, delete_price_alert, update_alert_triggered, \
                save_executive_summary, get_executive_summary, compute_executive_metrics, \
                save_social_sentiment, get_social_sentiment, \
-               get_archive_plans, get_archive_banners, get_archive_date_range
+               get_archive_plans, get_archive_banners, get_archive_date_range, \
+               get_history_changes, get_history_price_series
 import archive as arc
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -1608,6 +1609,48 @@ def api_update_user_role(user_id):
     except Exception as e:
         logger.error(f"update role failed: {e}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route('/api/history/changes')
+@limiter.limit('60 per minute')
+def api_history_changes():
+    carrier   = request.args.get('carrier', '')
+    plan_type = request.args.get('plan_type', 'domestic')
+    from_date = request.args.get('from', '')
+    to_date   = request.args.get('to', '')
+    if plan_type not in ('domestic', 'abroad', 'global', 'content'):
+        return jsonify({'error': 'plan_type must be domestic/abroad/global/content'}), 400
+
+    def _is_up(c):
+        try:
+            return float(c['new_val']) > float(c['old_val'])
+        except (ValueError, TypeError):
+            return False
+
+    changes = get_history_changes(carrier, plan_type, from_date, to_date, db_path=_db_path())
+    summary = {
+        'total':         len(changes),
+        'price_up':      sum(1 for c in changes if c['change_type'] == 'price_change' and _is_up(c)),
+        'price_down':    sum(1 for c in changes if c['change_type'] == 'price_change' and not _is_up(c)),
+        'new_plans':     sum(1 for c in changes if c['change_type'] == 'new_plan'),
+        'removed_plans': sum(1 for c in changes if c['change_type'] == 'removed_plan'),
+    }
+    return jsonify({'changes': changes, 'summary': summary})
+
+
+@app.route('/api/history/price-series')
+@limiter.limit('60 per minute')
+def api_history_price_series():
+    carrier   = request.args.get('carrier', '')
+    plan_type = request.args.get('plan_type', 'domestic')
+    plan_name = request.args.get('plan_name', '')
+    from_date = request.args.get('from', '')
+    if plan_type not in ('domestic', 'abroad', 'global', 'content'):
+        return jsonify({'error': 'plan_type must be domestic/abroad/global/content'}), 400
+    series = get_history_price_series(
+        carrier, plan_type, plan_name, from_date, db_path=_db_path()
+    )
+    return jsonify({'series': series})
 
 
 # ── Main ───────────────────────────────────────────────────────────────────
