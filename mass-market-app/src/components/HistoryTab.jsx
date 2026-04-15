@@ -290,6 +290,14 @@ export default function HistoryTab() {
           {analysis !== null && (
             <div className="bg-moca-cream border border-moca-border/60 rounded-xl p-4 mb-4 text-right">
               <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-moca-text font-semibold text-sm">
+                  <span>ניתוח AI</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" strokeWidth="2"
+                       strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 3l1.88 5.76a1 1 0 0 0 .95.69h6.06l-4.9 3.56a1 1 0 0 0-.36 1.12L17.5 20l-4.9-3.56a1 1 0 0 0-1.18 0L6.5 20l1.88-5.87a1 1 0 0 0-.36-1.12L3.11 9.45h6.06a1 1 0 0 0 .95-.69L12 3z"/>
+                  </svg>
+                </div>
                 <button
                   onClick={() => setAnalysis(null)}
                   className="text-moca-muted hover:text-moca-text transition-colors"
@@ -302,14 +310,6 @@ export default function HistoryTab() {
                     <line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
                 </button>
-                <div className="flex items-center gap-2 text-moca-text font-semibold text-sm">
-                  <span>ניתוח AI</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                       stroke="currentColor" strokeWidth="2"
-                       strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3l1.88 5.76a1 1 0 0 0 .95.69h6.06l-4.9 3.56a1 1 0 0 0-.36 1.12L17.5 20l-4.9-3.56a1 1 0 0 0-1.18 0L6.5 20l1.88-5.87a1 1 0 0 0-.36-1.12L3.11 9.45h6.06a1 1 0 0 0 .95-.69L12 3z"/>
-                  </svg>
-                </div>
               </div>
               <p className="text-moca-text text-sm leading-relaxed">{analysis}</p>
             </div>
