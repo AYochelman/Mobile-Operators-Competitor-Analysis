@@ -1050,7 +1050,8 @@ def get_history_changes(carrier, plan_type='domestic', from_date='', to_date='',
         return []
     table, name_col = _HISTORY_TABLE_MAP[plan_type]
     db_path = db_path or DB_PATH
-    with sqlite3.connect(db_path) as conn:
+    conn = _connect(db_path)
+    try:
         sql = (f'SELECT {name_col} AS plan_name, change_type, old_val, new_val, changed_at '
                f'FROM {table} WHERE carrier = ?')
         params = [carrier]
@@ -1062,6 +1063,8 @@ def get_history_changes(carrier, plan_type='domestic', from_date='', to_date='',
             params.append(to_date + 'T23:59:59')
         sql += ' ORDER BY changed_at DESC'
         rows = conn.execute(sql, params).fetchall()
+    finally:
+        conn.close()
     return [
         {'plan_name': r[0], 'change_type': r[1], 'old_val': r[2],
          'new_val': r[3], 'changed_at': r[4]}
