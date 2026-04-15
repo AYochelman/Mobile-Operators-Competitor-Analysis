@@ -112,3 +112,29 @@ def test_history_price_series_builds_correct_timeline(client_with_history):
     assert pts[0]['price'] == 40.0
     assert pts[1]['price'] == 45.0
     assert pts[2]['price'] == 50.0
+
+# --- /api/history/analyze ---------------------------------------------------
+from unittest.mock import patch, MagicMock
+
+def test_history_analyze_invalid_plan_type_returns_400(client):
+    resp = client.get('/api/history/analyze?carrier=partner&plan_type=bad')
+    assert resp.status_code == 400
+
+def test_history_analyze_no_data_returns_null(client):
+    resp = client.get('/api/history/analyze?carrier=nobody&plan_type=domestic')
+    data = json.loads(resp.data)
+    assert resp.status_code == 200
+    assert data['analysis'] is None
+
+def test_history_analyze_returns_analysis(client_with_history):
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {'content': [{'text': 'ניתוח בדיקה'}]}
+    mock_resp.raise_for_status.return_value = None
+    with patch('requests.post', return_value=mock_resp), \
+         patch('app.load_config', return_value={'anthropic_api_key': 'test-key'}):
+        resp = client_with_history.get(
+            '/api/history/analyze?carrier=partner&plan_type=domestic'
+        )
+    data = json.loads(resp.data)
+    assert resp.status_code == 200
+    assert data['analysis'] == 'ניתוח בדיקה'

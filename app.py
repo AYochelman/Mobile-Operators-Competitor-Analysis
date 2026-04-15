@@ -1660,6 +1660,141 @@ def api_history_price_series():
     return jsonify({'series': series})
 
 
+@app.route('/api/history/analyze')
+@limiter.limit('10 per minute')
+def api_history_analyze():
+    """AI analysis of historical price changes for a carrier using Claude Haiku."""
+    carrier   = request.args.get('carrier', '')
+    plan_type = request.args.get('plan_type', 'domestic')
+    from_date = request.args.get('from', '')
+    to_date   = request.args.get('to', '')
+
+    if plan_type not in ('domestic', 'abroad', 'global', 'content'):
+        return jsonify({'error': 'plan_type must be domestic/abroad/global/content'}), 400
+
+    changes = get_history_changes(carrier, plan_type, from_date, to_date, db_path=_db_path())
+    if not changes:
+        return jsonify({'analysis': None})
+
+    series = get_history_price_series(carrier, plan_type, from_date=from_date, db_path=_db_path())
+
+    config = load_config()
+    api_key = config.get('anthropic_api_key', '')
+    if not api_key:
+        return jsonify({'error': 'anthropic_api_key missing in config.json'}), 500
+
+    _CARRIER_NAMES = {
+        'partner': '\u05e4\u05e8\u05d8\u05e0\u05e8',
+        'pelephone': '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df',
+        'hotmobile': '\u05d4\u05d5\u05d8 \u05de\u05d5\u05d1\u05d9\u05d9\u05dc',
+        'cellcom': '\u05e1\u05dc\u05e7\u05d5\u05dd',
+        'mobile019': '019',
+        'xphone': 'XPhone',
+        'wecom': 'We-Com',
+        'neptucom': 'Neptucom',
+        'tuki': 'Tuki',
+        'globalesim': 'GlobaleSIM',
+        'airalo': 'Airalo',
+        'pelephone_global': 'GlobalSIM',
+        'esimo': 'eSIMo',
+        'simtlv': 'SimTLV',
+        'world8': '8 World',
+        'xphone_global': 'XPhone Global',
+        'saily': 'Saily',
+        'holafly': 'Holafly',
+        'esimio': 'eSIM.io',
+        'sparks': 'Sparks',
+        'voye': 'VOYE',
+        'orbit': 'Orbit',
+        'travelsim': 'Travel Sim',
+    }
+    _TYPE_NAMES = {
+        'domestic': '\u05de\u05e7\u05d5\u05de\u05d9',
+        'abroad': '\u05d7\u05d5"\u05dc',
+        'global': '\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9',
+        'content': '\u05ea\u05d5\u05db\u05df',
+    }
+
+    carrier_display = _CARRIER_NAMES.get(carrier, carrier)
+    type_display    = _TYPE_NAMES.get(plan_type, plan_type)
+
+    if from_date and to_date:
+        period_display = f'{from_date} \u05e2\u05d3 {to_date}'
+    elif from_date:
+        period_display = f'\u05de-{from_date} \u05e2\u05d3 \u05d4\u05d9\u05d5\u05dd'
+    else:
+        period_display = '\u05db\u05dc \u05d4\u05d6\u05de\u05e0\u05d9\u05dd'
+
+    def _price_dir(c):
+        try:
+            old, new = float(c['old_val']), float(c['new_val'])
+            if new > old: return 'up'
+            if new < old: return 'down'
+            return None
+        except (ValueError, TypeError):
+            return None
+
+    price_up      = sum(1 for c in changes if c['change_type'] == 'price_change' and _price_dir(c) == 'up')
+    price_down    = sum(1 for c in changes if c['change_type'] == 'price_change' and _price_dir(c) == 'down')
+    new_plans     = sum(1 for c in changes if c['change_type'] == 'new_plan')
+    removed_plans = sum(1 for c in changes if c['change_type'] == 'removed_plan')
+
+    price_changes = [c for c in changes if c['change_type'] == 'price_change'][:20]
+    price_lines = '\n'.join(
+        f"  {c['plan_name']}: \u20aa{c['old_val']} \u2192 \u20aa{c['new_val']} ({c['changed_at'][:10]})"
+        for c in price_changes
+    ) or '  \u05d0\u05d9\u05df \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9 \u05de\u05d7\u05d9\u05e8'
+
+    series_lines = '\n'.join(
+        f"  {s['plan_name']}: \u20aa{s['points'][0]['price']} \u2192 \u20aa{s['points'][-1]['price']} ({len(s['points']) - 1} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd)"
+        for s in series[:10]
+    ) if series else '  \u05d0\u05d9\u05df \u05e0\u05ea\u05d5\u05e0\u05d9 \u05de\u05d2\u05de\u05d4'
+
+    question = (
+        f"\u05e0\u05ea\u05d7 \u05d0\u05ea \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9 \u05d4\u05de\u05d7\u05d9\u05e8 \u05e9\u05dc {carrier_display}"
+        f" \u05d1\u05ea\u05d7\u05d5\u05dd {type_display} \u05d1\u05ea\u05e7\u05d5\u05e4\u05d4 {period_display}.\n\n"
+        f"\u05e1\u05d9\u05db\u05d5\u05dd \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd:\n"
+        f'- \u05e1\u05d4"\u05db \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd: {len(changes)}\n'
+        f"- \u05e2\u05dc\u05d9\u05d9\u05d5\u05ea \u05de\u05d7\u05d9\u05e8: {price_up}\n"
+        f"- \u05d9\u05e8\u05d9\u05d3\u05d5\u05ea \u05de\u05d7\u05d9\u05e8: {price_down}\n"
+        f"- \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05d7\u05d3\u05e9\u05d5\u05ea: {new_plans}\n"
+        f"- \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05e9\u05d4\u05d5\u05e1\u05e8\u05d5: {removed_plans}\n\n"
+        f"\u05e4\u05d9\u05e8\u05d5\u05d8 \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9 \u05de\u05d7\u05d9\u05e8:\n{price_lines}\n\n"
+        f"\u05de\u05d2\u05de\u05d5\u05ea \u05de\u05d7\u05d9\u05e8:\n{series_lines}"
+    )
+
+    system_prompt = (
+        "\u05d0\u05ea\u05d4 \u05de\u05e0\u05ea\u05d7 \u05e0\u05ea\u05d5\u05e0\u05d9 \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd \u05e9\u05dc \u05e1\u05e4\u05e7\u05d9 \u05e1\u05dc\u05d5\u05dc\u05e8 \u05d9\u05e9\u05e8\u05d0\u05dc\u05d9\u05d9\u05dd.\n"
+        "\u05e2\u05e0\u05d4 \u05d1\u05e2\u05d1\u05e8\u05d9\u05ea \u05d1\u05dc\u05d1\u05d3, \u05d1\u05e6\u05d5\u05e8\u05d4 \u05ea\u05de\u05e6\u05d9\u05ea\u05d9\u05ea \u05d5\u05d1\u05e8\u05d5\u05e8\u05d4 \u2014 3 \u05e2\u05d3 5 \u05de\u05e9\u05e4\u05d8\u05d9\u05dd.\n"
+        "\u05d4\u05ea\u05de\u05e7\u05d3 \u05d1\u05de\u05d2\u05de\u05d5\u05ea, \u05d1\u05d4\u05d9\u05e7\u05e3 \u05d4\u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd \u05d5\u05d1\u05db\u05d9\u05d5\u05d5\u05df \u05d4\u05de\u05d7\u05d9\u05e8\u05d9\u05dd \u05d4\u05db\u05dc\u05dc\u05d9.\n"
+        "\u05d0\u05dc \u05ea\u05e6\u05d9\u05d9\u05df \u05ea\u05d0\u05e8\u05d9\u05db\u05d9\u05dd \u05e1\u05e4\u05e6\u05d9\u05e4\u05d9\u05d9\u05dd \u05dc\u05db\u05dc \u05e9\u05d9\u05e0\u05d5\u05d9 \u2014 \u05ea\u05df \u05ea\u05de\u05d5\u05e0\u05d4 \u05db\u05d5\u05dc\u05dc\u05ea."
+    )
+
+    try:
+        import requests as _req
+        resp = _req.post(
+            'https://api.anthropic.com/v1/messages',
+            headers={
+                'x-api-key': api_key,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json',
+            },
+            json={
+                'model': 'claude-haiku-4-5-20251001',
+                'max_tokens': 512,
+                'system': system_prompt,
+                'messages': [{'role': 'user', 'content': question}],
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        answer = resp.json()['content'][0]['text']
+        return jsonify({'analysis': answer})
+    except Exception as e:
+        logger.error(f'history analyze failed: {e}', exc_info=True)
+        return jsonify({'error': 'analysis failed'}), 500
+
+
 # ── Main ───────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
