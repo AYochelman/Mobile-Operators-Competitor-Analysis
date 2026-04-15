@@ -5,6 +5,7 @@ import { useScrape } from '../hooks/useScrape'
 import * as XLSX from 'xlsx'
 import PlanCard from '../components/PlanCard'
 import BannerCard from '../components/BannerCard'
+import HistoryTab from '../components/HistoryTab'
 import GroupedPlanCard from '../components/GroupedPlanCard'
 import CountryModal from '../components/CountryModal'
 import FilterTag from '../components/ui/FilterTag'
@@ -88,6 +89,14 @@ const TAB_ICONS = {
       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" />
     </svg>
   ),
+  history: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" strokeWidth="2"
+         strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+      <polyline points="17 6 23 6 23 12"/>
+    </svg>
+  ),
 }
 
 const TABS = [
@@ -96,6 +105,7 @@ const TABS = [
   { id: 'global', label: 'גלובלי' },
   { id: 'content', label: 'תוכן' },
   { id: 'banners', label: 'באנרים ראשיים' },
+  { id: 'history', label: 'היסטוריה' },
 ]
 
 const KNOWN_REGIONS = new Set([
@@ -498,7 +508,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Filter strip — hidden on banners tab which has no plan filters */}
-      <div className="mb-4" style={tab === 'banners' ? {display:'none'} : undefined}>
+      <div className="mb-4" style={tab === 'banners' || tab === 'history' ? {display:'none'} : undefined}>
         {/* Toggle + results count row */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -880,6 +890,8 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {tab === 'history' && <HistoryTab />}
 
       {!loading && filteredPlans.length === 0 && tab !== 'banners' && (
         <div className="text-center py-20 text-gray-400">
