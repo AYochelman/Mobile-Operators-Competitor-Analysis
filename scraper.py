@@ -3700,49 +3700,79 @@ def scrape_travelsim(page=None):
 
 
 def scrape_all_global():
-    """Scrape global eSIM packages from all 7 providers. Returns flat list of plan dicts."""
+    """Scrape global eSIM packages from all providers. Returns flat list of plan dicts.
+
+    Self-contained scrapers (own browser / HTTP / REST) run in parallel threads
+    (max 4 concurrent) while shared-page scrapers run sequentially in the main thread.
+    Both groups execute concurrently for ~12 min total vs ~35 min sequential.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     _ensure_event_loop()
     usd_rate = _get_usd_to_ils()
     eur_rate = _get_eur_to_ils()
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page(user_agent=ua)
-        plans = []
-        jobs = [
-            ("scrape_tuki_global",          lambda pg: scrape_tuki_global(pg, usd_rate)),
-            ("scrape_tuki_regions",        lambda pg: scrape_tuki_regions(pg, usd_rate)),
-            ("scrape_tuki_local",          lambda pg: scrape_tuki_local(pg, usd_rate)),
-            ("scrape_globalesim_global",    scrape_globalesim_global),
-            ("scrape_globalesim_regions",   scrape_globalesim_regions),
-            ("scrape_airalo_global",        lambda pg: scrape_airalo_global(pg, usd_rate)),
-            ("scrape_pelephone_globalsim",  scrape_pelephone_globalsim),
-            ("scrape_esimo_global",         lambda pg: scrape_esimo_global(pg, usd_rate)),
-            ("scrape_simtlv_global",        scrape_simtlv_global),
-            ("scrape_world8_global",        scrape_world8_global),
-            ("scrape_xphone_global",        scrape_xphone_global),
-            ("scrape_saily_global",         lambda pg: scrape_saily_global(pg, usd_rate)),
-            ("scrape_saily_regions",        lambda pg: scrape_saily_regions(pg, usd_rate)),
-            ("scrape_esimio_destinations",  lambda pg: scrape_esimio_destinations(pg, usd_rate)),
-            ("scrape_esimio_regions",       lambda pg: scrape_esimio_regions(pg, usd_rate)),
-            ("scrape_holafly_global",       lambda pg: scrape_holafly_global(pg, usd_rate)),
-            ("scrape_holafly_regions",      lambda pg: scrape_holafly_regions(pg, usd_rate)),
-            ("scrape_sparks_global",        lambda pg: scrape_sparks_global(pg, usd_rate)),
-            ("scrape_voye_global",          lambda pg: scrape_voye_global(pg, usd_rate)),
-            ("scrape_orbit_global",         lambda pg: scrape_orbit_global(pg, usd_rate)),
-            ("scrape_travelsim",            lambda pg: scrape_travelsim()),
-        ]
-        for name, fn in jobs:
-            try:
-                result = fn(page)
-                if not result:
-                    logger.warning(f"{name}: returned 0 plans — possible bot-block or selector change. Skipping.")
-                else:
-                    logger.info(f"{name}: {len(result)} global plans")
-                    plans.extend(result)
-            except Exception as e:
-                logger.error(f"{name} failed: {e}", exc_info=True)
-        browser.close()
+
+    # ── Sequential jobs: share one Playwright browser page ────────────────
+    sequential_jobs = [
+        ("scrape_tuki_global",         lambda pg: scrape_tuki_global(pg, usd_rate)),
+        ("scrape_tuki_regions",        lambda pg: scrape_tuki_regions(pg, usd_rate)),
+        ("scrape_tuki_local",          lambda pg: scrape_tuki_local(pg, usd_rate)),
+        ("scrape_globalesim_global",   scrape_globalesim_global),
+        ("scrape_globalesim_regions",  scrape_globalesim_regions),
+        ("scrape_airalo_global",       lambda pg: scrape_airalo_global(pg, usd_rate)),
+        ("scrape_pelephone_globalsim", scrape_pelephone_globalsim),
+        ("scrape_esimo_global",        lambda pg: scrape_esimo_global(pg, usd_rate)),
+        ("scrape_simtlv_global",       scrape_simtlv_global),
+        ("scrape_world8_global",       scrape_world8_global),
+    ]
+
+    # ── Parallel jobs: each creates its own browser / HTTP / REST ─────────
+    parallel_jobs = [
+        ("scrape_xphone_global",       lambda: scrape_xphone_global()),
+        ("scrape_saily_global",        lambda: scrape_saily_global(usd_rate=usd_rate)),
+        ("scrape_saily_regions",       lambda: scrape_saily_regions(usd_rate=usd_rate)),
+        ("scrape_esimio_destinations", lambda: scrape_esimio_destinations(usd_rate=usd_rate)),
+        ("scrape_esimio_regions",      lambda: scrape_esimio_regions(usd_rate=usd_rate)),
+        ("scrape_holafly_global",      lambda: scrape_holafly_global(usd_rate=usd_rate)),
+        ("scrape_holafly_regions",     lambda: scrape_holafly_regions(usd_rate=usd_rate)),
+        ("scrape_sparks_global",       lambda: scrape_sparks_global(usd_rate=usd_rate)),
+        ("scrape_voye_global",         lambda: scrape_voye_global(usd_rate=usd_rate)),
+        ("scrape_orbit_global",        lambda: scrape_orbit_global(usd_rate=usd_rate)),
+        ("scrape_travelsim",           scrape_travelsim),
+    ]
+
+    plans = []
+
+    # Submit parallel jobs immediately so they start while sequential jobs run
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(_run_parallel_scraper, name, fn): name
+            for name, fn in parallel_jobs
+        }
+
+        # Run sequential jobs in main thread (shares browser with no thread contention)
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page(user_agent=ua)
+            for name, fn in sequential_jobs:
+                try:
+                    result = fn(page)
+                    if not result:
+                        logger.warning(
+                            f"{name}: returned 0 plans — possible bot-block or selector change. Skipping."
+                        )
+                    else:
+                        logger.info(f"{name}: {len(result)} global plans")
+                        plans.extend(result)
+                except Exception as e:
+                    logger.error(f"{name} failed: {e}", exc_info=True)
+            browser.close()
+
+        # Collect parallel results (blocks until all threads finish)
+        for future in as_completed(futures):
+            _, result = future.result()   # _run_parallel_scraper never raises
+            plans.extend(result)
+
     return plans
 
 
