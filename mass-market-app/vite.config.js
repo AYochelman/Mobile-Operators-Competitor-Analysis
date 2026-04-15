@@ -13,6 +13,10 @@ export default defineConfig({
       '/banners': {
         target: 'http://localhost:5000',
         changeOrigin: true
+      },
+      '/archive-banners': {
+        target: 'http://localhost:5000',
+        changeOrigin: true
       }
     }
   }
