@@ -1621,17 +1621,24 @@ def api_history_changes():
     if plan_type not in ('domestic', 'abroad', 'global', 'content'):
         return jsonify({'error': 'plan_type must be domestic/abroad/global/content'}), 400
 
-    def _is_up(c):
+    def _price_dir(c):
+        """Return 'up', 'down', or None for non-numeric prices."""
         try:
-            return float(c['new_val']) > float(c['old_val'])
+            old = float(c['old_val'])
+            new = float(c['new_val'])
+            if new > old:
+                return 'up'
+            elif new < old:
+                return 'down'
+            return None  # same price (shouldn't happen but guard it)
         except (ValueError, TypeError):
-            return False
+            return None
 
     changes = get_history_changes(carrier, plan_type, from_date, to_date, db_path=_db_path())
     summary = {
         'total':         len(changes),
-        'price_up':      sum(1 for c in changes if c['change_type'] == 'price_change' and _is_up(c)),
-        'price_down':    sum(1 for c in changes if c['change_type'] == 'price_change' and not _is_up(c)),
+        'price_up':      sum(1 for c in changes if c['change_type'] == 'price_change' and _price_dir(c) == 'up'),
+        'price_down':    sum(1 for c in changes if c['change_type'] == 'price_change' and _price_dir(c) == 'down'),
         'new_plans':     sum(1 for c in changes if c['change_type'] == 'new_plan'),
         'removed_plans': sum(1 for c in changes if c['change_type'] == 'removed_plan'),
     }
