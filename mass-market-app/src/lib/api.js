@@ -48,6 +48,12 @@ export const api = {
     if (fromDate)  p.append('from', fromDate)
     return fetchApi(`/api/history/price-series?${p}`)
   },
+  analyzeHistory: (carrier, planType, fromDate = '', toDate = '') => {
+    const p = new URLSearchParams({ carrier, plan_type: planType })
+    if (fromDate) p.append('from', fromDate)
+    if (toDate)   p.append('to', toDate)
+    return fetchApi(`/api/history/analyze?${p}`)
+  },
 
   // Scrape — admin only, triggers via JWT auth
   scrapeAll: () => fetchApi('/api/scrape-all-now'),
