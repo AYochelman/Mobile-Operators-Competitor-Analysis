@@ -560,6 +560,17 @@ def api_scrape_all_now():
             save_content_changes(ch_content, db_path=_db_path())
         results["content"] = {"plans": len(new_content), "changes": len(ch_content)}
 
+        # ── Banners (homepage + e-store screenshots) ───────────────────────
+        banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
+        from scraper import scrape_carrier_banners, scrape_carrier_store_banners
+        banner_results = scrape_carrier_banners(banners_dir)
+        store_results  = scrape_carrier_store_banners(banners_dir)
+        arc.archive_all_banners(banners_dir, list(CARRIER_DISPLAY.keys()), list(CARRIER_STORE_DISPLAY.keys()))
+        results["banners"] = {
+            "homepage": sum(1 for r in banner_results if r["success"]),
+            "store":    sum(1 for r in store_results  if r["success"]),
+        }
+
         results["status"] = "ok"
         results["total_plans"] = len(new_domestic) + len(new_abroad) + len(new_global) + len(new_content)
         results["total_changes"] = len(ch_domestic) + len(ch_abroad) + len(ch_global) + len(ch_content)
