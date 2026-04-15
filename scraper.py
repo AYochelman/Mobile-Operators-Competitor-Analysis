@@ -3768,10 +3768,15 @@ def scrape_all_global():
                     logger.error(f"{name} failed: {e}", exc_info=True)
             browser.close()
 
-        # Collect parallel results (blocks until all threads finish)
-        for future in as_completed(futures):
-            _, result = future.result()   # _run_parallel_scraper never raises
-            plans.extend(result)
+        # Collect parallel results — 15-minute hard cap per scraper run
+        try:
+            for future in as_completed(futures, timeout=900):
+                _, result = future.result()   # _run_parallel_scraper never raises
+                plans.extend(result)
+        except TimeoutError:
+            for future, name in futures.items():
+                if not future.done():
+                    logger.error(f"{name}: timed out after 900s, skipping")
 
     return plans
 
