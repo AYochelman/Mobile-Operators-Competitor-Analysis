@@ -893,7 +893,7 @@ export default function DashboardPage() {
 
       {tab === 'history' && <HistoryTab />}
 
-      {!loading && filteredPlans.length === 0 && tab !== 'banners' && (
+      {!loading && filteredPlans.length === 0 && tab !== 'banners' && tab !== 'history' && (
         <div className="text-center py-20 text-gray-400">
           <p className="text-3xl mb-3 opacity-40">&#128269;</p>
           <p className="text-sm">לא נמצאו חבילות בסינון הנוכחי</p>
