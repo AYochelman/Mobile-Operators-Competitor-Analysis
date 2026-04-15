@@ -1,6 +1,7 @@
 import json
 import pytest
 import os
+from unittest.mock import patch, MagicMock
 
 from app import app as flask_app
 from db import init_db, save_plans, save_changes
@@ -114,7 +115,6 @@ def test_history_price_series_builds_correct_timeline(client_with_history):
     assert pts[2]['price'] == 50.0
 
 # --- /api/history/analyze ---------------------------------------------------
-from unittest.mock import patch, MagicMock
 
 def test_history_analyze_invalid_plan_type_returns_400(client):
     resp = client.get('/api/history/analyze?carrier=partner&plan_type=bad')

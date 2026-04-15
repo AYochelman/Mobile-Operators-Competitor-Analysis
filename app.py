@@ -1694,7 +1694,10 @@ def api_history_price_series():
 @app.route('/api/history/analyze')
 @limiter.limit('10 per minute')
 def api_history_analyze():
-    """AI analysis of historical price changes for a carrier using Claude Haiku."""
+    """AI analysis of historical price changes for a carrier using Claude Haiku.
+    Rate-limited to 10/min (vs 60/min for other history routes) due to Anthropic API cost.
+    Note: to_date is not forwarded to get_history_price_series (unsupported by that function).
+    """
     carrier   = request.args.get('carrier', '')
     plan_type = request.args.get('plan_type', 'domestic')
     from_date = request.args.get('from', '')
@@ -1728,6 +1731,7 @@ def api_history_analyze():
     price_down    = sum(1 for c in changes if c['change_type'] == 'price_change' and _price_direction(c) == 'down')
     new_plans     = sum(1 for c in changes if c['change_type'] == 'new_plan')
     removed_plans = sum(1 for c in changes if c['change_type'] == 'removed_plan')
+    extras_changes = sum(1 for c in changes if c['change_type'] in ('extras_change', 'details_change'))
 
     price_changes = [c for c in changes if c['change_type'] == 'price_change'][:20]
     price_lines = '\n'.join(
@@ -1748,7 +1752,8 @@ def api_history_analyze():
         f"- \u05e2\u05dc\u05d9\u05d9\u05d5\u05ea \u05de\u05d7\u05d9\u05e8: {price_up}\n"
         f"- \u05d9\u05e8\u05d9\u05d3\u05d5\u05ea \u05de\u05d7\u05d9\u05e8: {price_down}\n"
         f"- \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05d7\u05d3\u05e9\u05d5\u05ea: {new_plans}\n"
-        f"- \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05e9\u05d4\u05d5\u05e1\u05e8\u05d5: {removed_plans}\n\n"
+        f"- \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05e9\u05d4\u05d5\u05e1\u05e8\u05d5: {removed_plans}\n"
+        f"- \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9 \u05e4\u05e8\u05d8\u05d9\u05dd: {extras_changes}\n\n"
         f"\u05e4\u05d9\u05e8\u05d5\u05d8 \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9 \u05de\u05d7\u05d9\u05e8:\n{price_lines}\n\n"
         f"\u05de\u05d2\u05de\u05d5\u05ea \u05de\u05d7\u05d9\u05e8:\n{series_lines}"
     )
