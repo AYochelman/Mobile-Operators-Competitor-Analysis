@@ -1018,3 +1018,52 @@ def get_archive_date_range(db_path=None):
         return {"min": min(dates) if dates else None, "max": max(dates) if dates else None}
     finally:
         conn.close()
+
+
+# ---------------------------------------------------------------------------
+# History helpers
+# ---------------------------------------------------------------------------
+
+_HISTORY_TABLE_MAP = {
+    'domestic': ('changes',        'plan_name'),
+    'abroad':   ('abroad_changes', 'plan_name'),
+    'global':   ('global_changes', 'plan_name'),
+    'content':  ('content_changes','service'),
+}
+
+
+def get_history_changes(carrier, plan_type='domestic', from_date='', to_date='', db_path=None):
+    """Return all change events for a carrier+plan_type, newest first.
+
+    Args:
+        carrier:   carrier id string (e.g. 'pelephone')
+        plan_type: one of domestic/abroad/global/content
+        from_date: ISO date string 'YYYY-MM-DD' (inclusive lower bound, optional)
+        to_date:   ISO date string 'YYYY-MM-DD' (inclusive upper bound, optional)
+        db_path:   override DB path (used by tests)
+
+    Returns:
+        list of dicts with keys: plan_name, change_type, old_val, new_val, changed_at
+        Empty list if plan_type is unknown.
+    """
+    if plan_type not in _HISTORY_TABLE_MAP:
+        return []
+    table, name_col = _HISTORY_TABLE_MAP[plan_type]
+    db_path = db_path or DB_PATH
+    with sqlite3.connect(db_path) as conn:
+        sql = (f'SELECT {name_col} AS plan_name, change_type, old_val, new_val, changed_at '
+               f'FROM {table} WHERE carrier = ?')
+        params = [carrier]
+        if from_date:
+            sql += ' AND changed_at >= ?'
+            params.append(from_date)
+        if to_date:
+            sql += ' AND changed_at <= ?'
+            params.append(to_date + 'T23:59:59')
+        sql += ' ORDER BY changed_at DESC'
+        rows = conn.execute(sql, params).fetchall()
+    return [
+        {'plan_name': r[0], 'change_type': r[1], 'old_val': r[2],
+         'new_val': r[3], 'changed_at': r[4]}
+        for r in rows
+    ]
