@@ -385,7 +385,7 @@ export default function DashboardPage() {
 
   const handleScrape = async () => {
     setScraping(true)
-    setCountdown(300) // 5 minutes
+    setCountdown(720) // 12 minutes
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) { clearInterval(timer); return 0 }

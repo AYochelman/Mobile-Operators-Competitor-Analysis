@@ -26,7 +26,7 @@ export default function SettingsPage() {
 
   if (!isAdmin) return <div className="p-8 text-center text-gray-400">אין גישה</div>
 
-  const SCRAPE_DURATION = 5 * 60
+  const SCRAPE_DURATION = 12 * 60
 
   const startCountdown = () => {
     setCountdown(SCRAPE_DURATION)
@@ -134,7 +134,7 @@ export default function SettingsPage() {
       {/* Scrape controls */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <h2 className="font-bold text-sm mb-3">סקרייפרים</h2>
-        <p className="text-xs text-gray-400 mb-4">עדכון כל הנתונים אורך כ-5 דקות</p>
+        <p className="text-xs text-gray-400 mb-4">עדכון כל הנתונים אורך כ-12 דקות</p>
 
         <div className="flex items-center gap-3">
           <Button onClick={handleScrape} disabled={scraping}>
