@@ -39,9 +39,6 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadUsers()
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
   }, [])
 
   // Add user
