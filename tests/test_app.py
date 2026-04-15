@@ -153,6 +153,7 @@ def test_history_analyze_prompt_contains_carrier_and_type(client_with_history):
         client_with_history.get(
             '/api/history/analyze?carrier=partner&plan_type=domestic'
         )
+    assert 'payload' in captured, "requests.post was never called"
     user_content = captured['payload']['messages'][0]['content']
     assert '\u05e4\u05e8\u05d8\u05e0\u05e8' in user_content   # פרטנר — partner display name
     assert '\u05de\u05e7\u05d5\u05de\u05d9' in user_content   # מקומי — domestic display name
