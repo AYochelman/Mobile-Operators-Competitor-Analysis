@@ -449,6 +449,7 @@ def api_scrape_global_now():
             if changes:
                 save_global_changes(changes, db_path=_db_path())
         save_global_plans(new_plans, db_path=_db_path())
+        arc.archive_global_plans(new_plans)
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-global-now failed: {e}", exc_info=True)
@@ -489,6 +490,7 @@ def api_scrape_abroad_now():
             if changes:
                 save_abroad_changes(changes, db_path=_db_path())
         save_abroad_plans(new_plans, db_path=_db_path())
+        arc.archive_abroad_plans(new_plans)
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-abroad-now failed: {e}", exc_info=True)
@@ -1174,6 +1176,7 @@ def api_scrape_content_now():
         save_content_plans(new_plans, db_path=_db_path())
         if changes:
             save_content_changes(changes, db_path=_db_path())
+        arc.archive_content_plans(new_plans)
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-content-now failed: {e}", exc_info=True)
@@ -1196,6 +1199,7 @@ def api_scrape_now():
         save_plans(new_plans, db_path=_db_path())
         if changes:
             save_changes(changes, db_path=_db_path())
+        arc.archive_domestic_plans(new_plans)
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-now failed: {e}", exc_info=True)
