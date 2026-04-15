@@ -34,6 +34,8 @@ export const api = {
   getContentChanges:() => fetchApi('/api/content-changes'),
   getBanners:      () => fetchApi('/api/banners'),
   getStoreBanners: () => fetchApi('/api/store-banners'),
+  getArchive:      (carrier, date) => fetchApi(`/api/archive?carrier=${encodeURIComponent(carrier)}&date=${encodeURIComponent(date)}`),
+  getArchiveDateRange: () => fetchApi('/api/archive/date-range'),
 
   // Scrape — admin only, triggers via JWT auth
   scrapeAll: () => fetchApi('/api/scrape-all-now'),

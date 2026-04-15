@@ -171,6 +171,26 @@ def init_db(db_path=None):
                 sentiment           TEXT NOT NULL DEFAULT 'neutral',
                 generated_at        TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS archive_snapshots (
+                id            INTEGER PRIMARY KEY,
+                carrier       TEXT NOT NULL,
+                plan_type     TEXT NOT NULL,
+                snapshot_date TEXT NOT NULL,
+                plans_json    TEXT NOT NULL,
+                content_hash  TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_archive_snapshots
+                ON archive_snapshots(carrier, plan_type, snapshot_date);
+            CREATE TABLE IF NOT EXISTS archive_banners (
+                id           INTEGER PRIMARY KEY,
+                carrier      TEXT NOT NULL,
+                is_store     INTEGER DEFAULT 0,
+                archive_date TEXT NOT NULL,
+                file_path    TEXT NOT NULL,
+                content_hash TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_archive_banners
+                ON archive_banners(carrier, is_store, archive_date);
         """)
         conn.commit()
         # Migration: add url column if DB was created before this column existed
@@ -886,5 +906,115 @@ def update_alert_triggered(alert_id, db_path=None):
             (datetime.now().isoformat(), alert_id)
         )
         conn.commit()
+    finally:
+        conn.close()
+
+
+# ── Archive helpers ────────────────────────────────────────────────────────────
+
+def get_last_archive_hash(carrier, plan_type, db_path=None):
+    """Return the content_hash of the most recent snapshot for (carrier, plan_type), or None."""
+    conn = _connect(db_path)
+    try:
+        row = conn.execute(
+            """SELECT content_hash FROM archive_snapshots
+               WHERE carrier = ? AND plan_type = ?
+               ORDER BY snapshot_date DESC LIMIT 1""",
+            (carrier, plan_type)
+        ).fetchone()
+        return row[0] if row else None
+    finally:
+        conn.close()
+
+
+def insert_archive_snapshot(carrier, plan_type, snapshot_date, plans_json, content_hash, db_path=None):
+    """Insert a new plan snapshot row."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            """INSERT INTO archive_snapshots (carrier, plan_type, snapshot_date, plans_json, content_hash)
+               VALUES (?, ?, ?, ?, ?)""",
+            (carrier, plan_type, snapshot_date, plans_json, content_hash)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_last_banner_hash(carrier, is_store=0, db_path=None):
+    """Return content_hash of the most recent banner snapshot, or None."""
+    conn = _connect(db_path)
+    try:
+        row = conn.execute(
+            """SELECT content_hash FROM archive_banners
+               WHERE carrier = ? AND is_store = ?
+               ORDER BY archive_date DESC LIMIT 1""",
+            (carrier, int(is_store))
+        ).fetchone()
+        return row[0] if row else None
+    finally:
+        conn.close()
+
+
+def insert_archive_banner(carrier, is_store, archive_date, file_path, content_hash, db_path=None):
+    """Insert a new banner archive row."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            """INSERT INTO archive_banners (carrier, is_store, archive_date, file_path, content_hash)
+               VALUES (?, ?, ?, ?, ?)""",
+            (carrier, int(is_store), archive_date, file_path, content_hash)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_archive_plans(carrier, date_str, db_path=None):
+    """Return latest plan snapshot per plan_type for carrier on or before date_str."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            """SELECT plan_type, plans_json, snapshot_date
+               FROM archive_snapshots
+               WHERE carrier = ? AND snapshot_date <= ?
+               GROUP BY plan_type
+               HAVING snapshot_date = MAX(snapshot_date)""",
+            (carrier, date_str)
+        ).fetchall()
+        return [{"plan_type": r[0], "plans": json.loads(r[1]), "snapshot_date": r[2]} for r in rows]
+    finally:
+        conn.close()
+
+
+def get_archive_banners(carrier, date_str, db_path=None):
+    """Return latest banner per is_store for carrier on or before date_str."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            """SELECT is_store, file_path, archive_date
+               FROM archive_banners
+               WHERE carrier = ? AND archive_date <= ?
+               GROUP BY is_store
+               HAVING archive_date = MAX(archive_date)""",
+            (carrier, date_str)
+        ).fetchall()
+        return [{"is_store": bool(r[0]), "file_path": r[1], "archive_date": r[2]} for r in rows]
+    finally:
+        conn.close()
+
+
+def get_archive_date_range(db_path=None):
+    """Return the earliest and latest snapshot dates across all archive tables."""
+    conn = _connect(db_path)
+    try:
+        snap = conn.execute(
+            "SELECT MIN(snapshot_date), MAX(snapshot_date) FROM archive_snapshots"
+        ).fetchone()
+        ban = conn.execute(
+            "SELECT MIN(archive_date), MAX(archive_date) FROM archive_banners"
+        ).fetchone()
+        dates = [d for d in [snap[0], snap[1], ban[0], ban[1]] if d]
+        return {"min": min(dates) if dates else None, "max": max(dates) if dates else None}
     finally:
         conn.close()

@@ -16,7 +16,9 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                get_content_plans, get_content_changes, \
                save_price_alert, get_price_alerts, delete_price_alert, update_alert_triggered, \
                save_executive_summary, get_executive_summary, compute_executive_metrics, \
-               save_social_sentiment, get_social_sentiment
+               save_social_sentiment, get_social_sentiment, \
+               get_archive_plans, get_archive_banners, get_archive_date_range
+import archive as arc
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -1071,6 +1073,65 @@ def api_store_banners():
     return jsonify(result)
 
 
+@app.route("/api/archive")
+@limiter.limit("60 per minute")
+def api_archive():
+    """
+    GET /api/archive?carrier=<id>&date=<YYYY-MM-DD>
+
+    Returns the latest plan snapshots and banner info for the given
+    carrier on or before the requested date.
+    """
+    carrier = request.args.get("carrier", "").strip()
+    date_str = request.args.get("date", "").strip()
+    if not carrier or not date_str:
+        return jsonify({"error": "carrier and date are required"}), 400
+
+    plan_rows = get_archive_plans(carrier, date_str, db_path=_db_path())
+    banner_rows = get_archive_banners(carrier, date_str, db_path=_db_path())
+
+    plans_by_type = {}
+    for row in plan_rows:
+        plans_by_type[row["plan_type"]] = {
+            "snapshot_date": row["snapshot_date"],
+            "plans": row["plans"],
+        }
+
+    banners = {}
+    for b in banner_rows:
+        key = "store" if b["is_store"] else "homepage"
+        banners[key] = {
+            "archive_date": b["archive_date"],
+            "url": f"/archive-banners/{b['file_path'].replace(os.sep, '/')}",
+        }
+
+    return jsonify({
+        "carrier": carrier,
+        "date": date_str,
+        "plans": plans_by_type,
+        "banners": banners,
+    })
+
+
+@app.route("/api/archive/date-range")
+@limiter.limit("60 per minute")
+def api_archive_date_range():
+    """Returns the earliest and latest dates available in the archive."""
+    return jsonify(get_archive_date_range(db_path=_db_path()))
+
+
+@app.route("/archive-banners/<path:filepath>")
+def serve_archive_banner(filepath):
+    """Serve archived banner PNG files."""
+    base = os.path.dirname(os.path.abspath(__file__))
+    full = os.path.join(base, filepath)
+    if not os.path.isfile(full):
+        abort(404)
+    directory = os.path.dirname(full)
+    filename = os.path.basename(full)
+    return send_from_directory(directory, filename)
+
+
 @app.route("/api/content-changes")
 @limiter.limit("60 per minute")
 def api_content_changes():
@@ -1628,6 +1689,16 @@ if __name__ == "__main__":
 
             logger.info(f"Done. {len(new_plans)} domestic, {len(new_abroad)} abroad, "
                         f"{len(new_global)} global, {len(new_content)} content plans.")
+
+            # ── Archive snapshots (only saved when content changed) ────────────
+            try:
+                arc.archive_domestic_plans(new_plans)
+                arc.archive_abroad_plans(new_abroad)
+                arc.archive_global_plans(new_global)
+                arc.archive_content_plans(new_content)
+                logger.info("Archive snapshots updated.")
+            except Exception as ae:
+                logger.error(f"Archive snapshot failed: {ae}", exc_info=True)
         except Exception as e:
             logger.error(f"Scrape job failed: {e}", exc_info=True)
 
@@ -1640,6 +1711,7 @@ if __name__ == "__main__":
             results = scrape_carrier_banners(banners_dir)
             ok = sum(1 for r in results if r["success"])
             logger.info("Banner screenshots: %d/%d succeeded", ok, len(results))
+            arc.archive_all_banners(banners_dir, list(CARRIER_DISPLAY.keys()), [])
         except Exception as e:
             logger.error("Banner screenshot job failed: %s", e, exc_info=True)
 
@@ -1652,6 +1724,7 @@ if __name__ == "__main__":
             results = scrape_carrier_store_banners(banners_dir)
             ok = sum(1 for r in results if r["success"])
             logger.info("Store banner screenshots: %d/%d succeeded", ok, len(results))
+            arc.archive_all_banners(banners_dir, [], list(CARRIER_STORE_DISPLAY.keys()))
         except Exception as e:
             logger.error("Store banner screenshot job failed: %s", e, exc_info=True)
 

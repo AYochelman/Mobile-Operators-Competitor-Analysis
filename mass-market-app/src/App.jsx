@@ -7,6 +7,7 @@ import ComparePage from './pages/ComparePage'
 // import TrendsPage from './pages/TrendsPage'  // removed
 import AlertsPage from './pages/AlertsPage'
 import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage'
+import ArchivePage from './pages/ArchivePage'
 import SettingsPage from './pages/SettingsPage'
 import NotFoundPage from './pages/NotFoundPage'
 
@@ -28,6 +29,7 @@ export default function App() {
         {/* trends page removed */}
         <Route path="alerts" element={<AlertsPage />} />
         <Route path="executive-summary" element={<ExecutiveSummaryPage />} />
+        <Route path="archive" element={<ArchivePage />} />
         <Route path="settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
