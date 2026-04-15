@@ -91,3 +91,29 @@ def test_scrape_all_covers_all_carriers():
     assert "cellcom"   in carriers
     assert "mobile019" in carriers
     assert len(plans) >= 10
+
+
+def test_run_parallel_scraper_success():
+    """_run_parallel_scraper returns (name, list) on success."""
+    from scraper import _run_parallel_scraper
+    name, result = _run_parallel_scraper("test_fn", lambda: [{"carrier": "x"}])
+    assert name == "test_fn"
+    assert result == [{"carrier": "x"}]
+
+
+def test_run_parallel_scraper_exception():
+    """_run_parallel_scraper returns (name, []) and does not raise on exception."""
+    from scraper import _run_parallel_scraper
+    def _bad():
+        raise RuntimeError("boom")
+    name, result = _run_parallel_scraper("bad_fn", _bad)
+    assert name == "bad_fn"
+    assert result == []
+
+
+def test_run_parallel_scraper_empty():
+    """_run_parallel_scraper returns (name, []) when fn returns empty list."""
+    from scraper import _run_parallel_scraper
+    name, result = _run_parallel_scraper("empty_fn", lambda: [])
+    assert name == "empty_fn"
+    assert result == []

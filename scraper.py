@@ -11,9 +11,39 @@ import logging
 import os
 import json as _json
 import urllib.request
+import asyncio
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
+
+
+def _ensure_event_loop():
+    """Ensure an asyncio event loop exists for the current thread.
+    Required by Playwright when called from Flask request handlers or APScheduler threads."""
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            asyncio.set_event_loop(asyncio.new_event_loop())
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
+
+def _run_parallel_scraper(name, fn):
+    """Thread worker for scrape_all_global: ensure asyncio loop, run fn(), return (name, results).
+    fn must be a zero-argument callable that returns a list of plan dicts."""
+    _ensure_event_loop()
+    try:
+        result = fn()
+        if not result:
+            logger.warning(
+                f"{name}: returned 0 plans — possible bot-block or selector change. Skipping."
+            )
+            return name, []
+        logger.info(f"{name}: {len(result)} global plans")
+        return name, result
+    except Exception as e:
+        logger.error(f"{name} failed: {e}", exc_info=True)
+        return name, []
 
 
 def _parse_price(text):
@@ -619,6 +649,7 @@ def scrape_neptucom(_page=None):
 
 def scrape_all():
     """Scrape all carriers sequentially. Returns flat list of plan dicts."""
+    _ensure_event_loop()
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -3670,6 +3701,7 @@ def scrape_travelsim(page=None):
 
 def scrape_all_global():
     """Scrape global eSIM packages from all 7 providers. Returns flat list of plan dicts."""
+    _ensure_event_loop()
     usd_rate = _get_usd_to_ils()
     eur_rate = _get_eur_to_ils()
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
@@ -3873,6 +3905,7 @@ def scrape_all_content():
     """Scrape all content services (eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי).
     Returns list of dicts: {service, carrier, price, free_trial, note, status}
     """
+    _ensure_event_loop()
     from datetime import datetime as _dt
     UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
     results = []
@@ -3980,6 +4013,7 @@ def scrape_all_content():
 
 def scrape_all_abroad():
     """Scrape abroad packages from all 5 carriers. Returns flat list of plan dicts."""
+    _ensure_event_loop()
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -4065,6 +4099,7 @@ def scrape_carrier_banners(output_dir: str) -> list[dict]:
     Returns a list of dicts: { carrier, scraped_at, success }.
     output_dir — absolute path to the folder where PNGs will be saved.
     """
+    _ensure_event_loop()
     results = []
     os.makedirs(output_dir, exist_ok=True)
 
@@ -4120,6 +4155,7 @@ def scrape_carrier_store_banners(output_dir: str) -> list[dict]:
     Files are saved as {carrier}_store.png in output_dir.
     Returns a list of dicts: { carrier, scraped_at, success }.
     """
+    _ensure_event_loop()
     results = []
     os.makedirs(output_dir, exist_ok=True)
 
