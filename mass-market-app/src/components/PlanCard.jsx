@@ -173,6 +173,10 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
           ))
         }</h3>
       )}
+      {/* Service name for content plans */}
+      {isContent && plan.service && (
+        <h3 className="text-[13px] font-semibold text-gray-800 mb-3 leading-relaxed">{plan.service}</h3>
+      )}
 
       {/* Price */}
       <div className="mb-3 text-right">
