@@ -1070,3 +1070,58 @@ def get_history_changes(carrier, plan_type='domestic', from_date='', to_date='',
          'new_val': r[3], 'changed_at': r[4]}
         for r in rows
     ]
+
+
+def get_history_price_series(carrier, plan_type='domestic', plan_name='', from_date='', db_path=None):
+    """Build price time-series from price_change events.
+
+    Args:
+        carrier:   carrier id string
+        plan_type: one of domestic/abroad/global/content
+        plan_name: specific plan to narrow to (empty = all plans)
+        from_date: ISO date string lower bound (optional)
+        db_path:   override DB path
+
+    Returns:
+        list of dicts: [{plan_name: str, points: [{date: str, price: float}]}]
+        Capped at 10 plans (those with the most change events).
+        First point uses old_val of first event (price before the change).
+    """
+    if plan_type not in _HISTORY_TABLE_MAP:
+        return []
+    table, name_col = _HISTORY_TABLE_MAP[plan_type]
+    db_path = db_path or DB_PATH
+    conn = _connect(db_path)
+    try:
+        sql = (f"SELECT {name_col} AS plan_name, old_val, new_val, changed_at "
+               f"FROM {table} WHERE carrier = ? AND change_type = 'price_change'")
+        params = [carrier]
+        if plan_name:
+            sql += f' AND {name_col} = ?'
+            params.append(plan_name)
+        if from_date:
+            sql += ' AND changed_at >= ?'
+            params.append(from_date)
+        sql += ' ORDER BY changed_at ASC'
+        rows = conn.execute(sql, params).fetchall()
+    finally:
+        conn.close()
+
+    plan_events = {}
+    for pname, old_val, new_val, ts in rows:
+        plan_events.setdefault(pname, []).append(
+            {'old': old_val, 'new': new_val, 'date': ts[:10]}
+        )
+
+    # Keep the 10 plans with the most change events
+    top = sorted(plan_events.items(), key=lambda x: len(x[1]), reverse=True)[:10]
+    series = []
+    for pname, events in top:
+        try:
+            pts = [{'date': events[0]['date'], 'price': float(events[0]['old'])}]
+            for e in events:
+                pts.append({'date': e['date'], 'price': float(e['new'])})
+            series.append({'plan_name': pname, 'points': pts})
+        except (ValueError, TypeError):
+            continue
+    return series
