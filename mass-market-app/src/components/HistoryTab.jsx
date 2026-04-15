@@ -260,6 +260,23 @@ export default function HistoryTab() {
             </button>
           ))}
         </div>
+
+        <button
+          onClick={handleAnalyze}
+          disabled={analyzeLoading || loading || changes.length === 0}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-moca-border text-moca-sub hover:text-moca-text hover:bg-moca-cream transition-all disabled:opacity-40 mr-auto"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" strokeWidth="2"
+               strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="10" rx="2"/>
+            <circle cx="12" cy="5" r="2"/>
+            <path d="M12 7v4"/>
+            <line x1="8" y1="16" x2="8" y2="16"/>
+            <line x1="16" y1="16" x2="16" y2="16"/>
+          </svg>
+          {analyzeLoading ? 'מנתח...' : 'ניתוח AI'}
+        </button>
       </div>
 
       {loading && (
@@ -357,35 +374,17 @@ export default function HistoryTab() {
             <div className="bg-white border border-moca-border/60 rounded-xl p-4">
               <div className="flex justify-between items-center mb-3">
                 <div className="text-sm font-bold text-moca-text">לוג שינויים</div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleAnalyze}
-                    disabled={analyzeLoading || changes.length === 0}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-moca-sub hover:text-moca-text hover:bg-moca-cream transition-all disabled:opacity-40"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" strokeWidth="2"
-                         strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="10" rx="2"/>
-                      <circle cx="12" cy="5" r="2"/>
-                      <path d="M12 7v4"/>
-                      <line x1="8" y1="16" x2="8" y2="16"/>
-                      <line x1="16" y1="16" x2="16" y2="16"/>
-                    </svg>
-                    {analyzeLoading ? 'מנתח...' : 'ניתוח AI'}
-                  </button>
-                  <button
-                    onClick={exportToExcel}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-moca-sub hover:text-moca-text hover:bg-moca-cream transition-all"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="7 10 12 15 17 10"/>
-                      <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    Excel
-                  </button>
-                </div>
+                <button
+                  onClick={exportToExcel}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-moca-sub hover:text-moca-text hover:bg-moca-cream transition-all"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Excel
+                </button>
               </div>
               <table className="w-full text-sm">
                 <thead>
