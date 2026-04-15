@@ -699,7 +699,7 @@ def _normalize_post(platform, raw):
 def generate_social_sentiment():
     """Scrape social media for each carrier and generate Hebrew sentiment analysis.
 
-    Runs at 08:10 via APScheduler and on-demand via POST /api/social-sentiment/refresh.
+    Runs every 3 days at 08:00 via APScheduler and on-demand via POST /api/social-sentiment/refresh.
     Requires 'apify_api_key' and 'anthropic_api_key' in config.json.
     """
     logger.info("Generating social sentiment...")
@@ -1752,7 +1752,14 @@ if __name__ == "__main__":
     scheduler.add_job(scrape_banners_job, "cron", hour=8, minute=0)
     scheduler.add_job(scrape_store_banners_job, "cron", hour=8, minute=0)
     scheduler.add_job(generate_executive_summary, "cron", hour=8, minute=5, id="executive_summary")
-    scheduler.add_job(generate_social_sentiment,  "cron", hour=8, minute=10, id="social_sentiment")
+    # Social sentiment: every 3 days at 08:00 — use interval trigger with next 08:00 as start
+    from datetime import datetime as _dt, timedelta as _td
+    _now = _dt.now()
+    _next_8 = _now.replace(hour=8, minute=0, second=0, microsecond=0)
+    if _next_8 <= _now:
+        _next_8 += _td(days=1)
+    scheduler.add_job(generate_social_sentiment, "interval", days=3,
+                      start_date=_next_8, id="social_sentiment")
     scheduler.start()
     logger.info("Flask starting → http://0.0.0.0:5000")
     try:
