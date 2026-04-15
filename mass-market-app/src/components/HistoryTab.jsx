@@ -145,6 +145,13 @@ export default function HistoryTab() {
     [changes]
   )
 
+  // Reset planName when options change and current selection is no longer valid
+  useEffect(() => {
+    if (planName !== 'all' && !planOptions.includes(planName)) {
+      setPlanName('all')
+    }
+  }, [planOptions, planName])
+
   // Merge all series onto a shared date axis for Recharts
   const chartData = useMemo(() => {
     if (!series.length) return []
@@ -243,7 +250,7 @@ export default function HistoryTab() {
           {summary && (
             <div className="grid grid-cols-4 gap-3 mb-4">
               {[
-                { label: 'שינויי מחיר', value: summary.total,        sub: 'בתקופה הנבחרת', cls: '' },
+                { label: 'כל השינויים', value: summary.total,        sub: 'בתקופה הנבחרת', cls: '' },
                 { label: 'עליות',        value: summary.price_up,     sub: 'מחיר עלה',      cls: 'text-red-600' },
                 { label: 'ירידות',       value: summary.price_down,   sub: 'מחיר ירד',      cls: 'text-green-600' },
                 { label: 'חדש / הוסר',  value: `${summary.new_plans} / ${summary.removed_plans}`, sub: 'חבילות', cls: '' },
