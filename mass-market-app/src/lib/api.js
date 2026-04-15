@@ -36,6 +36,18 @@ export const api = {
   getStoreBanners: () => fetchApi('/api/store-banners'),
   getArchive:      (carrier, date) => fetchApi(`/api/archive?carrier=${encodeURIComponent(carrier)}&date=${encodeURIComponent(date)}`),
   getArchiveDateRange: () => fetchApi('/api/archive/date-range'),
+  getHistoryChanges: (carrier, planType, fromDate = '', toDate = '') => {
+    const p = new URLSearchParams({ carrier, plan_type: planType })
+    if (fromDate) p.append('from', fromDate)
+    if (toDate)   p.append('to', toDate)
+    return fetchApi(`/api/history/changes?${p}`)
+  },
+  getHistoryPriceSeries: (carrier, planType, planName = '', fromDate = '') => {
+    const p = new URLSearchParams({ carrier, plan_type: planType })
+    if (planName)  p.append('plan_name', planName)
+    if (fromDate)  p.append('from', fromDate)
+    return fetchApi(`/api/history/price-series?${p}`)
+  },
 
   // Scrape — admin only, triggers via JWT auth
   scrapeAll: () => fetchApi('/api/scrape-all-now'),
