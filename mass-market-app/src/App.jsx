@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
+import { ScrapeProvider } from './hooks/useScrape'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -21,6 +22,7 @@ function ProtectedRoute({ children, adminOnly = false }) {
 
 export default function App() {
   return (
+    <ScrapeProvider>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
@@ -34,5 +36,6 @@ export default function App() {
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </ScrapeProvider>
   )
 }

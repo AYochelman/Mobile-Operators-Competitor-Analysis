@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
+import { useScrape } from '../hooks/useScrape'
 import * as XLSX from 'xlsx'
 import PlanCard from '../components/PlanCard'
 import BannerCard from '../components/BannerCard'
@@ -132,11 +133,10 @@ const GLOBAL_PROVIDERS = [
 
 export default function DashboardPage() {
   const { isAdmin } = useAuth()
+  const { scraping, countdown, triggerScrape } = useScrape()
   const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTab] = useState(searchParams.get('tab') || 'domestic')
   const [loading, setLoading] = useState(true)
-  const [scraping, setScraping] = useState(false)
-  const [countdown, setCountdown] = useState(0)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [plans, setPlans] = useState({ domestic: [], abroad: [], global: [], content: [] })
   const [changes, setChanges] = useState({ domestic: [], abroad: [], global: [], content: [] })
@@ -383,25 +383,7 @@ export default function DashboardPage() {
     return [...new Set(plans.content.map(p => p.service).filter(Boolean))]
   }, [plans.content])
 
-  const handleScrape = async () => {
-    setScraping(true)
-    setCountdown(720) // 12 minutes
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) { clearInterval(timer); return 0 }
-        return prev - 1
-      })
-    }, 1000)
-    try {
-      await api.scrapeAll()
-      // Force full reload to refresh all data + timestamp
-      window.location.reload()
-      return
-    } catch (err) { console.error(err) }
-    clearInterval(timer)
-    setCountdown(0)
-    setScraping(false)
-  }
+  const handleScrape = () => triggerScrape()
 
   const setFilter = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }))
