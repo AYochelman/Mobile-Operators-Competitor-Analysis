@@ -6,6 +6,19 @@ import { getCountriesForAbroadPlan } from '../data/abroadCountries'
 import { getAppsForAbroadPlan } from '../data/abroadApps'
 import AppsModal from './AppsModal'
 
+const AFFILIATE_PROVIDERS = new Set(['airalo', 'holafly', 'saily', 'globalesim'])
+
+function slugify(str) {
+  if (!str) return 'plan'
+  return str
+    .toLowerCase()
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 const CARRIER_COLORS = {
   partner: 'pink', pelephone: 'blue', hotmobile: 'orange', cellcom: 'green',
   mobile019: 'purple', xphone: 'teal', wecom: 'amber', neptucom: 'indigo',
@@ -295,20 +308,39 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
       {/* Provider link button — pinned to card bottom */}
       {plan.url && (
         <div className="mt-auto pt-3">
-          <a
-            href={plan.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 w-full text-xs text-moca-sub hover:text-moca-bolt border border-moca-border/40 rounded-lg py-1.5 transition-colors hover:bg-moca-cream"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-            תנאי התוכנית
-          </a>
+          {isGlobal && AFFILIATE_PROVIDERS.has(plan.carrier) ? (
+            <div>
+              <a
+                href={`/go/${plan.carrier}/${slugify(plan.plan_name)}?country=${encodeURIComponent(plan.extras?.[0] || '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 w-full text-xs text-white bg-[#5c3317] rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+                רכישה
+              </a>
+              <p className="text-center text-[10px] text-[#a08060] mt-1">דרך MOCA</p>
+            </div>
+          ) : (
+            <a
+              href={plan.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 w-full text-xs text-moca-sub hover:text-moca-bolt border border-moca-border/40 rounded-lg py-1.5 transition-colors hover:bg-moca-cream"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              תנאי התוכנית
+            </a>
+          )}
         </div>
       )}
 
