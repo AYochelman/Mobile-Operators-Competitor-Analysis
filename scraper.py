@@ -4128,6 +4128,42 @@ CARRIER_HOMEPAGE_URLS = {
     "neptucom":  "https://www.neptucom.com",
 }
 
+_STEALTH_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/120.0.0.0 Safari/537.36"
+)
+
+
+def _banner_019_stealth(url: str, out_path: str, scraped_at: str) -> dict:
+    """
+    Take a banner screenshot of 019mobile using playwright-stealth to bypass
+    Imperva/Incapsula WAF.  Returns the same result dict as the main loop.
+    """
+    try:
+        from playwright_stealth import Stealth
+        with Stealth().use_sync(sync_playwright()) as pw:
+            browser = pw.chromium.launch(headless=True)
+            page = browser.new_page()
+            try:
+                page.set_viewport_size({"width": 1280, "height": 720})
+                page.goto(url, timeout=40000, wait_until="domcontentloaded")
+                page.wait_for_timeout(3000)
+                # If page is too small it's still a challenge page — bail out
+                if len(page.content()) < 8000:
+                    logger.warning("_banner_019_stealth: WAF challenge still active, skipping screenshot.")
+                    return {"carrier": "mobile019", "scraped_at": scraped_at, "success": False}
+                _dismiss_popups(page)
+                page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
+                logger.info("Banner screenshot saved (stealth): %s", out_path)
+                return {"carrier": "mobile019", "scraped_at": scraped_at, "success": True}
+            finally:
+                browser.close()
+    except Exception as exc:
+        logger.warning("_banner_019_stealth failed: %s", exc)
+        return {"carrier": "mobile019", "scraped_at": scraped_at, "success": False}
+
+
 def scrape_carrier_banners(output_dir: str) -> list[dict]:
     """
     Navigate to each domestic carrier homepage and save a 1280x720 PNG screenshot.
@@ -4157,6 +4193,12 @@ def scrape_carrier_banners(output_dir: str) -> list[dict]:
             for carrier, url in CARRIER_HOMEPAGE_URLS.items():
                 out_path = os.path.join(output_dir, f"{carrier}.png")
                 scraped_at = datetime.now(timezone.utc).isoformat()
+
+                # 019 is behind Imperva WAF — needs a separate stealth session
+                if carrier == "mobile019":
+                    results.append(_banner_019_stealth(url, out_path, scraped_at))
+                    continue
+
                 page = context.new_page()  # fresh page per carrier — avoids cross-navigation pollution
                 try:
                     page.goto(url, timeout=30000, wait_until="domcontentloaded")
