@@ -8,7 +8,7 @@ import base64
 import time as _time
 from datetime import datetime, timezone, timedelta
 from functools import wraps
-from flask import Flask, jsonify, render_template, request, make_response, send_from_directory, g, abort
+from flask import Flask, jsonify, render_template, request, make_response, send_from_directory, g, abort, redirect
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -19,7 +19,8 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                save_social_sentiment, get_social_sentiment, \
                get_archive_plans, get_archive_banners, get_archive_date_range, \
                get_history_changes, get_history_price_series, \
-               upsert_news_articles, get_news_articles
+               upsert_news_articles, get_news_articles, \
+               log_affiliate_click, get_affiliate_stats
 import archive as arc
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -418,6 +419,33 @@ def api_news():
     carrier = request.args.get('carrier', None)
     articles = get_news_articles(carrier=carrier, db_path=_db_path())
     return jsonify(articles)
+
+
+_AFFILIATE_FALLBACK_URLS = {
+    "airalo":     "https://www.airalo.com",
+    "holafly":    "https://esim.holafly.com",
+    "saily":      "https://saily.com",
+    "globalesim": "https://globalesim.com",
+}
+
+@app.route("/go/<provider>")
+@app.route("/go/<provider>/<plan_id>")
+def affiliate_redirect(provider, plan_id=None):
+    from hashlib import sha256
+    ip      = request.remote_addr or ""
+    ip_hash = sha256(ip.encode()).hexdigest()
+    country = request.args.get("country")
+
+    log_affiliate_click(provider, plan_id=plan_id, country=country,
+                        ip_hash=ip_hash, db_path=_db_path())
+
+    cfg       = load_config()
+    affiliate = cfg.get("affiliate", {}).get(provider)
+    if affiliate:
+        return redirect(affiliate["base_url"], 302)
+
+    fallback = _AFFILIATE_FALLBACK_URLS.get(provider, "https://lucent-kulfi-f037ad.netlify.app")
+    return redirect(fallback, 302)
 
 
 @app.route("/api/exchange-rates")

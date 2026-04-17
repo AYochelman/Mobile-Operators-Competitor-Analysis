@@ -4,7 +4,7 @@ import os
 from unittest.mock import patch, MagicMock
 
 from app import app as flask_app
-from db import init_db, save_plans, save_changes, upsert_news_articles
+from db import init_db, save_plans, save_changes, upsert_news_articles, log_affiliate_click, get_affiliate_stats
 
 PLANS = [
     {"carrier": "partner", "plan_name": "60GB", "price": 49,
@@ -182,3 +182,40 @@ def test_get_news_filter_carrier(client):
     data = res.get_json()
     assert len(data) == 1
     assert data[0]['carrier'] == 'partner'
+
+
+# --- /go/<provider>/<plan_id> affiliate redirect ----------------------------
+
+def test_affiliate_redirect_known_provider(client):
+    """Should redirect to affiliate URL and return 302."""
+    with patch("app.load_config") as mock_cfg:
+        mock_cfg.return_value = {
+            "affiliate": {
+                "airalo": {"tag": "TEST", "base_url": "https://www.airalo.com/?ref=TEST"}
+            },
+            "api_key": "test-key"
+        }
+        resp = client.get("/go/airalo/israel-1gb-7days")
+    assert resp.status_code == 302
+    assert "airalo.com" in resp.headers["Location"]
+
+def test_affiliate_redirect_unknown_provider_uses_fallback(client):
+    """Unknown provider falls back silently — no 404, no crash."""
+    with patch("app.load_config") as mock_cfg:
+        mock_cfg.return_value = {"affiliate": {}, "api_key": "test-key"}
+        resp = client.get("/go/unknownprovider/some-plan")
+    assert resp.status_code == 302
+
+def test_affiliate_redirect_logs_click(client):
+    """Click is persisted to the affiliate_clicks table."""
+    with patch("app.load_config") as mock_cfg:
+        mock_cfg.return_value = {
+            "affiliate": {
+                "holafly": {"tag": "moca", "base_url": "https://esim.holafly.com/?ref=moca"}
+            },
+            "api_key": "test-key"
+        }
+        client.get("/go/holafly/france-5gb")
+    db_path = client.application.config["TEST_DB_PATH"]
+    stats = get_affiliate_stats(days=1, db_path=db_path)
+    assert any(s["provider"] == "holafly" for s in stats)
