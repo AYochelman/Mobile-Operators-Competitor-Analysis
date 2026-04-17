@@ -35,6 +35,19 @@ const LOGO_SIZES = {
   travelsim:        '64px',
 }
 
+const AFFILIATE_PROVIDERS = new Set(['airalo', 'holafly', 'saily', 'globalesim'])
+
+function slugify(str) {
+  if (!str) return 'plan'
+  return str
+    .toLowerCase()
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'plan'
+}
+
 const GLOBAL_LABELS = {
   tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
   pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV',
@@ -138,6 +151,26 @@ export default function GroupedPlanCard({ carrier, destination, plans }) {
           <><span className="mx-1.5 text-gray-300">·</span><bdi>{selectedPlan.sms} SMS</bdi></>
         ) : null}
       </p>
+
+      {/* Affiliate buy button */}
+      {AFFILIATE_PROVIDERS.has(carrier) && (
+        <div className="mt-auto pt-3">
+          <a
+            href={`/go/${carrier}/${slugify(selectedPlan.plan_name)}?country=${encodeURIComponent(destination || '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-1.5 w-full text-xs text-white bg-[#5c3317] rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            רכישה
+          </a>
+          <p className="text-center text-[10px] text-[#a08060] mt-1">דרך MOCA</p>
+        </div>
+      )}
 
       {/* Country modal link */}
       {countryData && (
