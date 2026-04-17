@@ -11,6 +11,7 @@ import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage'
 import ArchivePage from './pages/ArchivePage'
 import SettingsPage from './pages/SettingsPage'
 import NotFoundPage from './pages/NotFoundPage'
+import OfflineBanner from './components/OfflineBanner'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading, isAdmin } = useAuth()
@@ -23,19 +24,20 @@ function ProtectedRoute({ children, adminOnly = false }) {
 export default function App() {
   return (
     <ScrapeProvider>
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        <Route index element={<DashboardPage />} />
-        <Route path="compare" element={<ComparePage />} />
-        {/* trends page removed */}
-        <Route path="alerts" element={<AlertsPage />} />
-        <Route path="executive-summary" element={<ExecutiveSummaryPage />} />
-        <Route path="archive" element={<ArchivePage />} />
-        <Route path="settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
-      </Route>
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+      <OfflineBanner />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route index element={<DashboardPage />} />
+          <Route path="compare" element={<ComparePage />} />
+          {/* trends page removed */}
+          <Route path="alerts" element={<AlertsPage />} />
+          <Route path="executive-summary" element={<ExecutiveSummaryPage />} />
+          <Route path="archive" element={<ArchivePage />} />
+          <Route path="settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
+        </Route>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
     </ScrapeProvider>
   )
 }
