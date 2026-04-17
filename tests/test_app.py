@@ -219,3 +219,22 @@ def test_affiliate_redirect_logs_click(client):
     db_path = client.application.config["TEST_DB_PATH"]
     stats = get_affiliate_stats(days=1, db_path=db_path)
     assert any(s["provider"] == "holafly" for s in stats)
+
+def test_affiliate_stats_requires_api_key(client):
+    resp = client.get("/api/affiliate/stats")
+    assert resp.status_code == 401
+
+def test_affiliate_stats_returns_data(client):
+    db_path = client.application.config["TEST_DB_PATH"]
+    log_affiliate_click("airalo", plan_id="test", db_path=db_path)
+    log_affiliate_click("airalo", plan_id="test", db_path=db_path)
+    log_affiliate_click("holafly", db_path=db_path)
+    with patch("app.load_config") as mock_cfg:
+        mock_cfg.return_value = {"api_key": "test-key"}
+        resp = client.get("/api/affiliate/stats?days=30",
+                          headers={"X-API-Key": "test-key"})
+    assert resp.status_code == 200
+    data = resp.get_json()
+    providers = {r["provider"]: r["clicks"] for r in data}
+    assert providers.get("airalo") == 2
+    assert providers.get("holafly") == 1

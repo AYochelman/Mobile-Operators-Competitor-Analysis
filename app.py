@@ -452,6 +452,15 @@ def affiliate_redirect(provider, plan_id=None):
     return redirect(fallback, 302)
 
 
+@app.route("/api/affiliate/stats")
+@require_api_key
+@limiter.limit("60 per minute")
+def api_affiliate_stats():
+    days  = min(int(request.args.get("days", 30)), 365)
+    stats = get_affiliate_stats(days=days, db_path=_db_path())
+    return jsonify(stats)
+
+
 @app.route("/api/exchange-rates")
 @limiter.limit("30 per minute")
 def api_exchange_rates():
