@@ -430,16 +430,20 @@ _AFFILIATE_FALLBACK_URLS = {
 
 @app.route("/go/<provider>")
 @app.route("/go/<provider>/<plan_id>")
+@limiter.limit("60 per minute")
 def affiliate_redirect(provider, plan_id=None):
-    from hashlib import sha256
     ip      = request.remote_addr or ""
-    ip_hash = sha256(ip.encode()).hexdigest()
+    cfg     = load_config()
+    api_key = cfg.get("api_key", "")
+    ip_hash = hmac.new(api_key.encode(), ip.encode(), hashlib.sha256).hexdigest()
     country = request.args.get("country")
 
-    log_affiliate_click(provider, plan_id=plan_id, country=country,
-                        ip_hash=ip_hash, db_path=_db_path())
+    try:
+        log_affiliate_click(provider, plan_id=plan_id, country=country,
+                            ip_hash=ip_hash, db_path=_db_path())
+    except Exception:
+        app.logger.warning("affiliate click log failed", exc_info=True)
 
-    cfg       = load_config()
     affiliate = cfg.get("affiliate", {}).get(provider)
     if affiliate:
         return redirect(affiliate["base_url"], 302)
