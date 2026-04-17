@@ -60,7 +60,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 │  ├─ /api/chat (Claude AI, @require_api_key)          │
 │  └─ /api/push/* (Web Push VAPID)                     │
 ├──────────────────────────────────────────────────────┤
-│  APScheduler: 08:00 banners, 10:00+16:00 scrape, 09:00 email │
+│  APScheduler: 08:00 banners, 08:10 news, 09:00 email, 10:00+16:00 scrape │
 ├──────────────────────────────────────────────────────┤
 │  scraper.py (Playwright sync) → change_detector.py   │
 │  → db.py (SQLite) → notifier.py (Telegram/Email/Push)│
@@ -72,8 +72,8 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 | File | Purpose |
 |------|---------|
 | app.py | Flask server, API routes, APScheduler, CORS, API key auth. `CARRIER_DISPLAY` (8 carriers, homepage URLs) and `CARRIER_STORE_DISPLAY` (4 carriers with e-stores) drive the banners API. |
-| scraper.py | 40+ scrapers (domestic + abroad + global per-country/regional + content) + `scrape_carrier_banners()` / `scrape_carrier_store_banners()` for homepage and e-store screenshots |
-| db.py | SQLite CRUD — 9 tables with UPSERT logic |
+| scraper.py | 40+ scrapers (domestic + abroad + global per-country/regional + content) + `scrape_carrier_banners()` / `scrape_carrier_store_banners()` for screenshots + `scrape_carrier_news()` for Google News RSS |
+| db.py | SQLite CRUD — 10 tables with UPSERT logic |
 | change_detector.py | Diff old vs new plans, detect price/extras/details changes |
 | notifier.py | Format + send notifications (Telegram, Email, WhatsApp, Web Push) |
 | excel_report.py | Daily Excel report (openpyxl, RTL, yellow=changed) |
@@ -84,7 +84,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 
 | Path | Purpose |
 |------|---------|
-| pages/DashboardPage.jsx | Main 4-tab view (domestic/abroad/global/content) with filters |
+| pages/DashboardPage.jsx | Main 7-tab view (domestic/abroad/global/content/banners/history/news) with filters |
 | pages/ComparePage.jsx | Price comparison charts (Recharts) |
 | pages/AlertsPage.jsx | Personal price alerts with DB persistence |
 | pages/SettingsPage.jsx | Admin panel — scrape triggers, user management |
@@ -96,6 +96,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 | data/abroadApps.js | Free app lists (Cellcom 6 apps, Pelephone 12 apps) |
 | hooks/useAuth.jsx | Supabase Auth + dev mode (VITE_DEV_AUTH=true) |
 | lib/api.js | Flask API wrapper with JWT headers |
+| components/NewsTab.jsx | News tab — Google News RSS headlines per carrier, client-side filter by carrier + rolling date window (24h/7d/30d/365d) |
 | lib/supabase.js | Supabase client (graceful null if unconfigured) |
 
 ## Carriers & Providers
@@ -108,7 +109,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 
 ## Database Schema (SQLite — data/plans.db)
 
-9 tables. Key constraints: UNIQUE(carrier, plan_name) for plans, UNIQUE(service, carrier) for content.
+10 tables. Key constraints: UNIQUE(carrier, plan_name) for plans, UNIQUE(service, carrier) for content, UNIQUE(url) for news.
 
 | Table | Key Fields |
 |-------|-----------|
@@ -118,6 +119,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 | global_plans | + currency, original_price, days, sms, esim |
 | content_plans | service, carrier, price, free_trial, note, status |
 | push_subscriptions | endpoint, p256dh, auth |
+| news_articles | carrier, headline, url (UNIQUE), source, published_at (ISO 8601), fetched_at |
 
 ## Change Detection
 
@@ -150,6 +152,7 @@ PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` pro
 ## Conventions
 
 - All Hebrew text uses unicode escapes in Python (`"\u05d9\u05e9\u05e8\u05d0\u05dc"` for ישראל)
+- **JSX text nodes**: `\uXXXX` escapes are NOT interpreted in JSX text content — they render as literal backslash characters. Use literal Hebrew characters directly in JSX text, or wrap in `{'...'}` / template literals for JS string context. Only Python files should use unicode escapes.
 - Plan names use ` – ` (en-dash with spaces) as separator; Orbit uses ` - ` (hyphen) to avoid BiDi rendering issues
 - data_gb: None = unlimited, ≥1 = GB, <1 = MB (stored as fraction: 100MB = 100/1024)
 - extras[0] = country/region name for destination filtering (global/abroad plans)
@@ -190,8 +193,9 @@ The global `direction: rtl` in `index.css` affects flex containers differently f
 ## Schedule
 
 - **08:00** — screenshot all carrier homepages (`scrape_carrier_banners`) + 4 e-store pages (`scrape_carrier_store_banners`), saved as PNG in `data/banners/`
-- **10:00 + 16:00** — scrape all (domestic + abroad + global + content), detect changes, notify (Telegram + WhatsApp + Web Push)
+- **08:10** — scrape Google News RSS for all 8 carriers (`scrape_carrier_news()` → `upsert_news_articles()`), INSERT OR IGNORE by URL
 - **09:00** — send daily Excel email report via SendGrid
+- **10:00 + 16:00** — scrape all (domestic + abroad + global + content), detect changes, notify (Telegram + WhatsApp + Web Push)
 - WhatsApp via Green API (config.json: greenapi_url, greenapi_instance, greenapi_token, whatsapp_phone or whatsapp_group_id)
 - Windows Task Scheduler: task "CellularComparison" at logon runs `python app.py`
 
