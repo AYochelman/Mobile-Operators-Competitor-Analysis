@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import Button from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
@@ -34,10 +34,8 @@ export default function SettingsPage() {
   const [affiliateDays, setAffiliateDays]       = useState(30)
   const [affiliateLoading, setAffiliateLoading] = useState(false)
 
-  if (!isAdmin) return <div className="p-8 text-center text-gray-400">אין גישה</div>
-
-  // Load users
-  const loadUsers = async () => {
+  // ── Stable callbacks (defined before useEffect) ──────────────────────────
+  const loadUsers = useCallback(async () => {
     setUsersLoading(true)
     setUsersError(null)
     try {
@@ -47,71 +45,25 @@ export default function SettingsPage() {
       setUsersError(err.message)
     }
     setUsersLoading(false)
-  }
+  }, [])
 
-  useEffect(() => { loadUsers() }, [])
-
-  // Load affiliate stats when tab or days changes
-  const loadAffiliateStats = async () => {
+  const loadAffiliateStats = useCallback(async () => {
     setAffiliateLoading(true)
     try {
       const data = await api.getAffiliateStats(affiliateDays)
       setAffiliateStats(data)
     } catch {}
     setAffiliateLoading(false)
-  }
+  }, [affiliateDays])
+
+  // ── Effects (must be before any conditional return) ──────────────────────
+  useEffect(() => { loadUsers() }, [loadUsers])
 
   useEffect(() => {
     if (activeTab === 'affiliate') loadAffiliateStats()
-  }, [activeTab, affiliateDays])
+  }, [activeTab, loadAffiliateStats])
 
-  // Add user
-  const handleAddUser = async (e) => {
-    e.preventDefault()
-    setAddingUser(true)
-    setAddError(null)
-    try {
-      await api.createUser({ email: newEmail, password: newPassword, role: newRole })
-      setNewEmail('')
-      setNewPassword('')
-      setNewRole('viewer')
-      setShowAddForm(false)
-      await loadUsers()
-    } catch (err) {
-      setAddError(err.message)
-    }
-    setAddingUser(false)
-  }
-
-  // Delete user
-  const handleDelete = async (id) => {
-    setDeletingId(id)
-    try {
-      await api.deleteUser(id)
-      setConfirmDeleteId(null)
-      await loadUsers()
-    } catch (err) {
-      alert(err.message)
-    }
-    setDeletingId(null)
-  }
-
-  // Toggle role
-  const handleToggleRole = async (u) => {
-    setTogglingId(u.id)
-    const newRole = u.role === 'admin' ? 'viewer' : 'admin'
-    try {
-      await api.updateUserRole(u.id, newRole)
-      await loadUsers()
-    } catch (err) {
-      alert(err.message)
-    }
-    setTogglingId(null)
-  }
-
-  const isSelf = (u) => u.email === user?.email
-
-  // Affiliate computed values
+  // ── Derived data (must be before any conditional return) ─────────────────
   const affiliateSummary = useMemo(() => {
     const byProvider = {}
     affiliateStats.forEach(({ provider, clicks }) => {
@@ -135,6 +87,53 @@ export default function SettingsPage() {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, clicks]) => ({ date, clicks }))
   }, [affiliateStats])
+
+  // ── Non-hook helpers (OK after hooks, before early return) ────────────────
+  const handleAddUser = async (e) => {
+    e.preventDefault()
+    setAddingUser(true)
+    setAddError(null)
+    try {
+      await api.createUser({ email: newEmail, password: newPassword, role: newRole })
+      setNewEmail('')
+      setNewPassword('')
+      setNewRole('viewer')
+      setShowAddForm(false)
+      await loadUsers()
+    } catch (err) {
+      setAddError(err.message)
+    }
+    setAddingUser(false)
+  }
+
+  const handleDelete = async (id) => {
+    setDeletingId(id)
+    try {
+      await api.deleteUser(id)
+      setConfirmDeleteId(null)
+      await loadUsers()
+    } catch (err) {
+      alert(err.message)
+    }
+    setDeletingId(null)
+  }
+
+  const handleToggleRole = async (u) => {
+    setTogglingId(u.id)
+    const newRole = u.role === 'admin' ? 'viewer' : 'admin'
+    try {
+      await api.updateUserRole(u.id, newRole)
+      await loadUsers()
+    } catch (err) {
+      alert(err.message)
+    }
+    setTogglingId(null)
+  }
+
+  const isSelf = (u) => u.email === user?.email
+
+  // ── Early return — AFTER all hooks ───────────────────────────────────────
+  if (!isAdmin) return <div className="p-8 text-center text-gray-400">אין גישה</div>
 
   const TABS = [
     { id: 'scrape',    label: 'עדכון נתונים' },
@@ -164,7 +163,6 @@ export default function SettingsPage() {
       {/* === Scrape tab === */}
       {activeTab === 'scrape' && (
         <>
-          {/* Scrape controls */}
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <h2 className="font-bold text-sm mb-3">סקרייפרים</h2>
             <p className="text-xs text-gray-400 mb-4">עדכון כל הנתונים אורך כ-12 דקות</p>
@@ -175,7 +173,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Schedule info */}
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <h2 className="font-bold text-sm mb-3">תזמון</h2>
             <div className="text-sm text-gray-600 space-y-1">
@@ -198,7 +195,6 @@ export default function SettingsPage() {
             </Button>
           </div>
 
-          {/* Add user form */}
           {showAddForm && (
             <form onSubmit={handleAddUser} className="mb-4 p-3 bg-gray-50 rounded-lg space-y-3">
               <div>
@@ -229,26 +225,12 @@ export default function SettingsPage() {
               <div>
                 <label className="block text-xs text-gray-500 mb-1">תפקיד</label>
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewRole('viewer')}
-                    className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                      newRole === 'viewer'
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
+                  <button type="button" onClick={() => setNewRole('viewer')}
+                    className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${newRole === 'viewer' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>
                     צופה
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewRole('admin')}
-                    className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                      newRole === 'admin'
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
+                  <button type="button" onClick={() => setNewRole('admin')}
+                    className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${newRole === 'admin' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>
                     מנהל
                   </button>
                 </div>
@@ -260,7 +242,6 @@ export default function SettingsPage() {
             </form>
           )}
 
-          {/* Users table */}
           {usersLoading ? (
             <p className="text-sm text-gray-400">טוען...</p>
           ) : usersError ? (
@@ -285,11 +266,7 @@ export default function SettingsPage() {
                   {users.map(u => (
                     <tr key={u.id} className="border-b border-moca-border/50 last:border-0 hover:bg-moca-hover/30 transition-colors">
                       <td className="py-2.5 pr-1 text-right">
-                        <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
-                          u.role === 'admin'
-                            ? 'bg-[#f5ede0] text-[#5c3317]'
-                            : 'bg-gray-100 text-gray-500'
-                        }`}>
+                        <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${u.role === 'admin' ? 'bg-[#f5ede0] text-[#5c3317]' : 'bg-gray-100 text-gray-500'}`}>
                           {u.role === 'admin' ? 'מנהל' : 'צופה'}
                         </span>
                       </td>
@@ -299,46 +276,32 @@ export default function SettingsPage() {
                       </td>
                       <td className="py-2.5 text-center text-xs text-moca-sub whitespace-nowrap" dir="ltr">
                         {u.last_sign_in_at
-                          ? new Date(u.last_sign_in_at).toLocaleString('he-IL', {
-                              day: '2-digit', month: '2-digit', year: '2-digit',
-                              hour: '2-digit', minute: '2-digit'
-                            })
+                          ? new Date(u.last_sign_in_at).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
                           : '—'}
                       </td>
                       <td className="py-2.5 pl-1">
                         <div className="flex items-center gap-1.5 justify-end">
                           {!isSelf(u) && (
                             <>
-                              <button
-                                onClick={() => handleToggleRole(u)}
-                                disabled={togglingId === u.id}
+                              <button onClick={() => handleToggleRole(u)} disabled={togglingId === u.id}
                                 className="text-xs px-2.5 py-1.5 rounded-lg border border-[#5c3317]/30 text-[#5c3317] hover:bg-[#f5ede0] disabled:opacity-40 transition-colors whitespace-nowrap"
-                                title={u.role === 'admin' ? 'הורד לצופה' : 'הפוך למנהל'}
-                              >
+                                title={u.role === 'admin' ? 'הורד לצופה' : 'הפוך למנהל'}>
                                 {togglingId === u.id ? '...' : u.role === 'admin' ? 'הורד לצופה' : 'הפוך למנהל'}
                               </button>
-
                               {confirmDeleteId === u.id ? (
                                 <>
-                                  <button
-                                    onClick={() => handleDelete(u.id)}
-                                    disabled={deletingId === u.id}
-                                    className="text-xs px-2.5 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 transition-colors whitespace-nowrap"
-                                  >
+                                  <button onClick={() => handleDelete(u.id)} disabled={deletingId === u.id}
+                                    className="text-xs px-2.5 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 transition-colors whitespace-nowrap">
                                     {deletingId === u.id ? '...' : 'אשר מחיקה'}
                                   </button>
-                                  <button
-                                    onClick={() => setConfirmDeleteId(null)}
-                                    className="text-xs px-2.5 py-1.5 rounded-lg border border-[#5c3317]/30 text-[#5c3317] hover:bg-[#f5ede0] transition-colors"
-                                  >
+                                  <button onClick={() => setConfirmDeleteId(null)}
+                                    className="text-xs px-2.5 py-1.5 rounded-lg border border-[#5c3317]/30 text-[#5c3317] hover:bg-[#f5ede0] transition-colors">
                                     בטל
                                   </button>
                                 </>
                               ) : (
-                                <button
-                                  onClick={() => setConfirmDeleteId(u.id)}
-                                  className="text-xs px-2.5 py-1.5 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap"
-                                >
+                                <button onClick={() => setConfirmDeleteId(u.id)}
+                                  className="text-xs px-2.5 py-1.5 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 transition-colors whitespace-nowrap">
                                   מחק
                                 </button>
                               )}
@@ -360,18 +323,12 @@ export default function SettingsPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <h2 className="font-bold text-sm mb-4">Affiliate Analytics</h2>
 
-          {/* Day range selector */}
           <div className="flex gap-2 mb-4 items-center">
             <span className="text-sm text-[#8b6b52] font-medium">תקופה:</span>
             {[7, 30, 90].map(d => (
-              <button
-                key={d}
-                onClick={() => setAffiliateDays(d)}
+              <button key={d} onClick={() => setAffiliateDays(d)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors
-                  ${affiliateDays === d
-                    ? 'bg-[#5c3317] text-white border-[#5c3317]'
-                    : 'bg-white text-[#5c3317] border-[#d4bfa8] hover:bg-[#f5ede0]'}`}
-              >
+                  ${affiliateDays === d ? 'bg-[#5c3317] text-white border-[#5c3317]' : 'bg-white text-[#5c3317] border-[#d4bfa8] hover:bg-[#f5ede0]'}`}>
                 {d} ימים
               </button>
             ))}
@@ -381,7 +338,6 @@ export default function SettingsPage() {
 
           {!affiliateLoading && (
             <>
-              {/* Summary table */}
               <table className="w-full text-sm mb-6 border-separate border-spacing-y-1">
                 <thead>
                   <tr className="text-[#8b6b52] text-right text-xs">
@@ -404,7 +360,6 @@ export default function SettingsPage() {
                 </tbody>
               </table>
 
-              {/* Clicks over time chart */}
               {affiliateChartData.length > 0 && (
                 <div>
                   <p className="text-sm font-medium text-[#5c3317] mb-3">קליקים לפי יום</p>
