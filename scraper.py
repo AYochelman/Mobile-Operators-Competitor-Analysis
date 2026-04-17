@@ -1836,6 +1836,13 @@ def scrape_carrier_news():
                 pub       = item.findtext('pubDate') or ''
                 source_el = item.find('source')
                 source    = source_el.text if source_el is not None else ''
+                # Normalize RFC 2822 pubDate → ISO 8601 for correct text sorting in SQLite
+                if pub:
+                    try:
+                        from email.utils import parsedate_to_datetime as _p2d
+                        pub = _p2d(pub).isoformat()
+                    except Exception:
+                        pass
                 if title and link:
                     articles.append({
                         'carrier':      carrier,
