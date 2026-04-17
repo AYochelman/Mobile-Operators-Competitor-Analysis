@@ -10,18 +10,18 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png', 'logos/*.png'],
-      manifest: false,
+      manifest: false, // public/manifest.json is served manually
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
-            urlPattern: /\/api\/(plans|abroad-plans|global-plans|content-plans|changes|abroad-changes)/,
+            urlPattern: /\/api\/(plans|abroad-plans|global-plans|content-plans|changes|abroad-changes|banners|store-banners|news)/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-data-cache',
               networkTimeoutSeconds: 5,
-              expiration: { maxEntries: 20, maxAgeSeconds: 86400 },
+              expiration: { maxEntries: 50, maxAgeSeconds: 43200 },
               cacheableResponse: { statuses: [0, 200] }
             }
           },
