@@ -12,7 +12,7 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'icons/*.png', 'logos/*.png'],
       manifest: false,
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg}', 'icons/*.png'],
+        globPatterns: ['**/*.{js,css,html,svg,png}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
