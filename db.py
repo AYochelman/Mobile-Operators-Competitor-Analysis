@@ -927,6 +927,20 @@ def get_last_archive_hash(carrier, plan_type, db_path=None):
         conn.close()
 
 
+def has_archive_snapshot_today(carrier, plan_type, today, db_path=None):
+    """Return True if a snapshot already exists for (carrier, plan_type) on today's date."""
+    conn = _connect(db_path)
+    try:
+        row = conn.execute(
+            """SELECT 1 FROM archive_snapshots
+               WHERE carrier = ? AND plan_type = ? AND snapshot_date = ? LIMIT 1""",
+            (carrier, plan_type, today)
+        ).fetchone()
+        return row is not None
+    finally:
+        conn.close()
+
+
 def insert_archive_snapshot(carrier, plan_type, snapshot_date, plans_json, content_hash, db_path=None):
     """Insert a new plan snapshot row."""
     conn = _connect(db_path)

@@ -34,22 +34,21 @@ def _sha256_file(path: str) -> str:
 
 def save_plan_snapshot(carrier: str, plan_type: str, plans: list):
     """
-    Persist a snapshot of *plans* for (carrier, plan_type) only when the
-    content has changed since the last saved snapshot.
+    Persist a daily snapshot of *plans* for (carrier, plan_type).
+    Always saves once per day — skips only if a snapshot for today already exists.
 
     plan_type: 'domestic' | 'abroad' | 'global' | 'content'
     """
     if not plans:
         return
 
+    today = date.today().isoformat()
+
+    if db.has_archive_snapshot_today(carrier, plan_type, today):
+        return  # already saved today
+
     plans_json = json.dumps(plans, ensure_ascii=False, sort_keys=True)
     new_hash = _sha256(plans_json)
-    last_hash = db.get_last_archive_hash(carrier, plan_type)
-
-    if new_hash == last_hash:
-        return  # nothing changed
-
-    today = date.today().isoformat()
     db.insert_archive_snapshot(carrier, plan_type, today, plans_json, new_hash)
 
 
