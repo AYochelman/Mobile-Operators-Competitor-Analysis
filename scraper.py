@@ -3316,6 +3316,8 @@ def scrape_voye_global(_page=None, usd_rate=None):
                                 dest_heb = SAILY_SLUG_TO_HEBREW.get(variant) or SPARKS_COUNTRY_TO_HEBREW_EXTRA.get(variant)
                                 if dest_heb: break
                         if not dest_heb:
+                            dest_heb = VOYE_REGION_MAP.get(slug)  # e.g. north-america → צפון אמריקה
+                        if not dest_heb:
                             dest_heb = raw  # keep English as last resort
 
             if not dest_heb:
