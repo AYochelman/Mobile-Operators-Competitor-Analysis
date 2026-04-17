@@ -72,6 +72,28 @@ const LOGO_SIZES = {
   travelsim:        '64px',
 }
 
+const CONTENT_URLS = {
+  'eSIM שעון_cellcom':    'https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/smart_watch_esim/',
+  'eSIM שעון_partner':    'https://www.partner.co.il/u/esim',
+  'eSIM שעון_hotmobile':  'https://hotmobile-sale.online/deals/esim-watch/',
+  'eSIM שעון_pelephone':  'https://www.pelephone.co.il/ds/heb/eshop/campaigns/esim-watch/',
+  'סייבר_pelephone':      'https://www.pelephone.co.il/ds/heb/content-products/pelephonecyber/',
+  'סייבר_hotmobile':      'https://campaign.hotmobile.co.il/cyber/',
+  'סייבר_partner':        'https://www.partner.co.il/u/cyberguard',
+  'סייבר_cellcom':        'https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/Safe_browsing/',
+  'נורטון_pelephone':     'https://www.pelephone.co.il/ds/heb/content-products/pelephonecyber/',
+  'נורטון_hotmobile':     'https://www.hotmobile.co.il/Pages/Norton.aspx',
+  'נורטון_partner':       'https://www.partner.co.il/u/norton-cell',
+  'נורטון_cellcom':       'https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/',
+  'נורטון_wecom':         'https://we-com.co.il/norton360/',
+  'שיר בהמתנה_pelephone': 'https://www.pelephone.co.il/digitalsite/heb/content-products/songwaiting/lobby/',
+  'שיר בהמתנה_partner':   'https://www.partner.co.il/n/funtone/main/home',
+  'שיר בהמתנה_cellcom':   'https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/',
+  'תא קולי_pelephone':    'https://www.pelephone.co.il/ds/heb/support/support/voice-mail/',
+  'תא קולי_partner':      'https://www.partner.co.il/n/partnerdigital/voice_mail',
+  'תא קולי_cellcom':      'https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/',
+}
+
 const CHANGE_DOT = {
   new_plan: 'bg-emerald-400',
   price_change: 'bg-amber-400',
@@ -132,6 +154,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
   const hiddenCount = 0
 
   const hasRoaming = !isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
+  const contentUrl = isContent ? (CONTENT_URLS[`${plan.service}_${carrier}`] || null) : null
 
   return (
     <div className={`bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up flex flex-col ${highlighted ? 'ring-2 ring-amber-400 shadow-amber-100 shadow-lg animate-pulse-highlight' : ''}`}
@@ -248,6 +271,25 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
             </button>
           )}
         </div>
+      )}
+
+      {/* Content plan — link to provider page (bottom-left corner) */}
+      {contentUrl && (
+        <a
+          href={contentUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute bottom-3 left-3 flex items-center gap-1 text-[11px] text-gray-400 hover:text-moca-bolt transition-colors"
+          onClick={(e) => e.stopPropagation()}
+          title="לאתר הספק"
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          <span>לאתר</span>
+        </a>
       )}
 
       {/* Provider link button — pinned to card bottom */}
