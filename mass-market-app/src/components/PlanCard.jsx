@@ -16,7 +16,7 @@ function slugify(str) {
     .replace(/\s+/g, '-')
     .replace(/[^\w-]/g, '')
     .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
+    .replace(/^-|-$/g, '') || 'plan'
 }
 
 const CARRIER_COLORS = {
