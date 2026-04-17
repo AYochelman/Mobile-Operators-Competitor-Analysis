@@ -80,6 +80,10 @@ export const api = {
   getSocialSentiment:     () => fetchApi('/api/social-sentiment'),
   refreshSocialSentiment: () => fetchApi('/api/social-sentiment/refresh', { method: 'POST' }),
 
+  // News
+  getNews: (carrier = null) =>
+    fetchApi(`/api/news${carrier && carrier !== 'all' ? `?carrier=${encodeURIComponent(carrier)}` : ''}`),
+
   // Push — JWT auth
   getVapidKey: () => fetchApi('/api/push/vapid-public-key'),
   subscribe:   (sub) => fetchApi('/api/push/subscribe', { method: 'POST', body: JSON.stringify(sub) }),

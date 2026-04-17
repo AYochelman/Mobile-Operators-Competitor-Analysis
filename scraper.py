@@ -1797,6 +1797,67 @@ def scrape_world8_global(page):
     return plans
 
 
+def scrape_carrier_news():
+    """Fetch Google News RSS headlines for each domestic carrier.
+
+    Uses the free Google News RSS endpoint (no API key required).
+    Returns list of dicts: {carrier, headline, url, source, published_at}
+    """
+    import requests as _req
+    import urllib.parse
+    import xml.etree.ElementTree as ET
+
+    CARRIER_KEYWORDS = {
+        'partner':   '\u05e4\u05e8\u05d8\u05e0\u05e8 \u05e1\u05dc\u05d5\u05dc\u05e8',
+        'pelephone': '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df',
+        'hotmobile': '\u05d4\u05d5\u05d8 \u05de\u05d5\u05d1\u05d9\u05d9\u05dc',
+        'cellcom':   '\u05e1\u05dc\u05e7\u05d5\u05dd',
+        'mobile019': '019 \u05e1\u05dc\u05d5\u05dc\u05e8',
+        'xphone':    'XPhone \u05e1\u05dc\u05d5\u05dc\u05e8',
+        'wecom':     'We-Com \u05e1\u05dc\u05d5\u05dc\u05e8',
+        'neptucom':  'Neptucom \u05e1\u05dc\u05d5\u05dc\u05e8',
+    }
+
+    articles = []
+    headers = {'User-Agent': 'Mozilla/5.0 (compatible; MOCABot/1.0)'}
+
+    for carrier, keyword in CARRIER_KEYWORDS.items():
+        try:
+            rss_url = (
+                'https://news.google.com/rss/search'
+                f'?q={urllib.parse.quote(keyword)}&hl=iw&gl=IL&ceid=IL:iw'
+            )
+            resp = _req.get(rss_url, headers=headers, timeout=10)
+            resp.raise_for_status()
+            root = ET.fromstring(resp.content)
+            for item in root.findall('.//item'):
+                title     = item.findtext('title') or ''
+                link      = item.findtext('link') or ''
+                pub       = item.findtext('pubDate') or ''
+                source_el = item.find('source')
+                source    = source_el.text if source_el is not None else ''
+                # Normalize RFC 2822 pubDate → ISO 8601 for correct text sorting in SQLite
+                if pub:
+                    try:
+                        from email.utils import parsedate_to_datetime as _p2d
+                        pub = _p2d(pub).isoformat()
+                    except Exception:
+                        pass
+                if title and link:
+                    articles.append({
+                        'carrier':      carrier,
+                        'headline':     title,
+                        'url':          link,
+                        'source':       source,
+                        'published_at': pub,
+                    })
+        except Exception as e:
+            logger.error(f"scrape_carrier_news: {carrier} failed: {e}")
+
+    logger.info(f"scrape_carrier_news: {len(articles)} articles fetched")
+    return articles
+
+
 def scrape_xphone_global(page=None):
     """Scrape XPhone global eSIM plans (אירופה + גלובלי) from xphone.co.il/roaming."""
     from playwright.sync_api import sync_playwright as _sp

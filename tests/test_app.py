@@ -4,7 +4,7 @@ import os
 from unittest.mock import patch, MagicMock
 
 from app import app as flask_app
-from db import init_db, save_plans, save_changes
+from db import init_db, save_plans, save_changes, upsert_news_articles
 
 PLANS = [
     {"carrier": "partner", "plan_name": "60GB", "price": 49,
@@ -157,3 +157,28 @@ def test_history_analyze_prompt_contains_carrier_and_type(client_with_history):
     user_content = captured['payload']['messages'][0]['content']
     assert '\u05e4\u05e8\u05d8\u05e0\u05e8' in user_content   # פרטנר — partner display name
     assert '\u05de\u05e7\u05d5\u05de\u05d9' in user_content   # מקומי — domestic display name
+
+
+# --- /api/news ---------------------------------------------------------------
+
+_NEWS_ARTICLES = [
+    {'carrier': 'partner',   'headline': '\u05e4\u05e8\u05d8\u05e0\u05e8 \u05de\u05d5\u05d6\u05d9\u05dc\u05d4', 'url': 'https://example.com/n1',
+     'source': '\u05d2\u05dc\u05d5\u05d1\u05e1', 'published_at': '2026-04-17T08:00:00Z'},
+    {'carrier': 'pelephone', 'headline': '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df \u05d7\u05d3\u05e9\u05d5\u05ea',  'url': 'https://example.com/n2',
+     'source': 'ynet',   'published_at': '2026-04-17T07:00:00Z'},
+]
+
+def test_get_news_all(client):
+    upsert_news_articles(_NEWS_ARTICLES, db_path=flask_app.config["TEST_DB_PATH"])
+    res = client.get('/api/news')
+    assert res.status_code == 200
+    data = res.get_json()
+    assert len(data) == 2
+
+def test_get_news_filter_carrier(client):
+    upsert_news_articles(_NEWS_ARTICLES, db_path=flask_app.config["TEST_DB_PATH"])
+    res = client.get('/api/news?carrier=partner')
+    assert res.status_code == 200
+    data = res.get_json()
+    assert len(data) == 1
+    assert data[0]['carrier'] == 'partner'

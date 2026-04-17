@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx'
 import PlanCard from '../components/PlanCard'
 import BannerCard from '../components/BannerCard'
 import HistoryTab from '../components/HistoryTab'
+import NewsTab from '../components/NewsTab'
 import GroupedPlanCard from '../components/GroupedPlanCard'
 import CountryModal from '../components/CountryModal'
 import FilterTag from '../components/ui/FilterTag'
@@ -97,6 +98,14 @@ const TAB_ICONS = {
       <polyline points="17 6 23 6 23 12"/>
     </svg>
   ),
+  news: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/>
+      <line x1="7" y1="8" x2="17" y2="8"/>
+      <line x1="7" y1="12" x2="17" y2="12"/>
+      <line x1="7" y1="16" x2="13" y2="16"/>
+    </svg>
+  ),
 }
 
 const TABS = [
@@ -106,6 +115,7 @@ const TABS = [
   { id: 'content', label: 'תוכן' },
   { id: 'banners', label: 'באנרים ראשיים' },
   { id: 'history', label: 'היסטוריה' },
+  { id: 'news', label: '\u05d1\u05d7\u05d3\u05e9\u05d5\u05ea' },
 ]
 
 const KNOWN_REGIONS = new Set([
@@ -508,7 +518,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Filter strip — hidden on banners tab which has no plan filters */}
-      <div className="mb-4" style={tab === 'banners' || tab === 'history' ? {display:'none'} : undefined}>
+      <div className="mb-4" style={tab === 'banners' || tab === 'history' || tab === 'news' ? {display:'none'} : undefined}>
         {/* Toggle + results count row */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -893,7 +903,9 @@ export default function DashboardPage() {
 
       {tab === 'history' && <HistoryTab />}
 
-      {!loading && filteredPlans.length === 0 && tab !== 'banners' && tab !== 'history' && (
+      {tab === 'news' && <NewsTab />}
+
+      {!loading && filteredPlans.length === 0 && tab !== 'banners' && tab !== 'history' && tab !== 'news' && (
         <div className="text-center py-20 text-gray-400">
           <p className="text-3xl mb-3 opacity-40">&#128269;</p>
           <p className="text-sm">לא נמצאו חבילות בסינון הנוכחי</p>

@@ -1,5 +1,5 @@
 import pytest
-from db import init_db, save_plans, get_plans, save_changes, get_changes
+from db import init_db, save_plans, get_plans, save_changes, get_changes, upsert_news_articles, get_news_articles
 
 @pytest.fixture
 def tmp_db(tmp_path):
@@ -59,3 +59,30 @@ def test_get_changes_limit(tmp_db):
     save_changes(changes, db_path=tmp_db)
     result = get_changes(limit=3, db_path=tmp_db)
     assert len(result) == 3
+
+
+SAMPLE_ARTICLES = [
+    {'carrier': 'partner',   'headline': 'פרטנר מוזילה מחירים', 'url': 'https://example.com/1',
+     'source': 'גלובס', 'published_at': '2026-04-17T08:00:00Z'},
+    {'carrier': 'pelephone', 'headline': 'פלאפון מרחיבה 5G',    'url': 'https://example.com/2',
+     'source': 'ynet',   'published_at': '2026-04-17T07:00:00Z'},
+    {'carrier': 'partner',   'headline': 'פרטנר רוכשת חברה',     'url': 'https://example.com/3',
+     'source': 'TheMarker', 'published_at': '2026-04-16T12:00:00Z'},
+]
+
+def test_upsert_and_get_all_news(tmp_db):
+    upsert_news_articles(SAMPLE_ARTICLES, db_path=tmp_db)
+    articles = get_news_articles(db_path=tmp_db)
+    assert len(articles) == 3
+
+def test_get_news_filter_by_carrier(tmp_db):
+    upsert_news_articles(SAMPLE_ARTICLES, db_path=tmp_db)
+    articles = get_news_articles(carrier='partner', db_path=tmp_db)
+    assert len(articles) == 2
+    assert all(a['carrier'] == 'partner' for a in articles)
+
+def test_upsert_news_deduplication(tmp_db):
+    upsert_news_articles(SAMPLE_ARTICLES, db_path=tmp_db)
+    upsert_news_articles(SAMPLE_ARTICLES, db_path=tmp_db)   # insert again
+    articles = get_news_articles(db_path=tmp_db)
+    assert len(articles) == 3   # still 3, not 6
