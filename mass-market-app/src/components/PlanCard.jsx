@@ -306,7 +306,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
       )}
 
       {/* Provider link button — pinned to card bottom */}
-      {plan.url && (
+      {(plan.url || (isGlobal && AFFILIATE_PROVIDERS.has(plan.carrier))) && (
         <div className="mt-auto pt-3">
           {isGlobal && AFFILIATE_PROVIDERS.has(plan.carrier) ? (
             <div>
