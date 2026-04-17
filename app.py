@@ -456,7 +456,10 @@ def affiliate_redirect(provider, plan_id=None):
 @require_api_key
 @limiter.limit("60 per minute")
 def api_affiliate_stats():
-    days  = min(int(request.args.get("days", 30)), 365)
+    try:
+        days = max(1, min(int(request.args.get("days", 30)), 365))
+    except (ValueError, TypeError):
+        days = 30
     stats = get_affiliate_stats(days=days, db_path=_db_path())
     return jsonify(stats)
 

@@ -238,3 +238,12 @@ def test_affiliate_stats_returns_data(client):
     providers = {r["provider"]: r["clicks"] for r in data}
     assert providers.get("airalo") == 2
     assert providers.get("holafly") == 1
+
+def test_affiliate_stats_invalid_days_returns_200(client):
+    """Non-integer days param should not cause a 500."""
+    with patch("app.load_config") as mock_cfg:
+        mock_cfg.return_value = {"api_key": "test-key"}
+        resp = client.get("/api/affiliate/stats?days=notanumber",
+                          headers={"X-API-Key": "test-key"})
+    assert resp.status_code == 200
+    assert isinstance(resp.get_json(), list)
