@@ -26,6 +26,8 @@ const CARRIER_TAG_COLORS = {
   neptucom:  'bg-slate-100 text-slate-600',
 }
 
+const CARRIER_LABEL = Object.fromEntries(CARRIERS.map(c => [c.id, c.label]))
+
 function formatRelativeDate(pubDateStr) {
   if (!pubDateStr) return ''
   try {
@@ -96,7 +98,7 @@ export default function NewsTab() {
       </p>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap gap-2 mb-3 items-center">
+      <div className="flex flex-wrap gap-2 mb-3 items-center" dir="rtl">
         <span className="text-sm text-[#8b6b52] font-medium">
           \u05e1\u05d9\u05e0\u05d5\u05df \u05dc\u05e4\u05d9 \u05d7\u05d1\u05e8\u05d4:
         </span>
@@ -153,14 +155,14 @@ export default function NewsTab() {
             </div>
 
             {/* Headline */}
-            <p className="font-semibold text-sm text-[#2d1f14] leading-snug mb-3 line-clamp-3">
+            <p className="font-semibold text-sm text-[#2d1f14] leading-snug mb-3 line-clamp-3" title={article.headline}>
               {article.headline}
             </p>
 
             {/* Carrier tag + link icon */}
             <div className="flex items-center justify-between">
               <span className={`text-xs px-2 py-0.5 rounded font-medium ${CARRIER_TAG_COLORS[article.carrier] || 'bg-gray-100 text-gray-600'}`}>
-                {CARRIERS.find(c => c.id === article.carrier)?.label || article.carrier}
+                {CARRIER_LABEL[article.carrier] || article.carrier}
               </span>
               <ExternalLink size={13} className="text-[#a08060]" />
             </div>
