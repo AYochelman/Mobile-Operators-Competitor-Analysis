@@ -18,7 +18,8 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                save_executive_summary, get_executive_summary, compute_executive_metrics, \
                save_social_sentiment, get_social_sentiment, \
                get_archive_plans, get_archive_banners, get_archive_date_range, \
-               get_history_changes, get_history_price_series
+               get_history_changes, get_history_price_series, \
+               upsert_news_articles, get_news_articles
 import archive as arc
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -408,6 +409,15 @@ def api_global_plans():
     carrier = request.args.get("carrier")
     plans = get_global_plans(carrier=carrier, db_path=_db_path())
     return jsonify(plans)
+
+
+@app.route("/api/news")
+@limiter.limit("60 per minute")
+def api_news():
+    """Return cached news articles. Optional ?carrier=<id> filter."""
+    carrier = request.args.get('carrier', None)
+    articles = get_news_articles(carrier=carrier, db_path=_db_path())
+    return jsonify(articles)
 
 
 @app.route("/api/exchange-rates")
@@ -1039,6 +1049,21 @@ def generate_executive_summary():
             logger.error(f"executive summary: failed for {category}: {e}", exc_info=True)
 
     logger.info("Executive summary generation complete.")
+
+
+def scrape_news_job():
+    """Fetch Google News RSS for all domestic carriers and store in DB.
+
+    Runs daily at 08:10 via APScheduler.
+    """
+    from scraper import scrape_carrier_news
+    logger.info("Scraping carrier news from Google News RSS...")
+    try:
+        articles = scrape_carrier_news()
+        upsert_news_articles(articles, db_path=_db_path())
+        logger.info(f"News scrape complete: {len(articles)} articles saved")
+    except Exception as e:
+        logger.error(f"News scrape job failed: {e}", exc_info=True)
 
 
 @app.route("/api/executive-summary")
@@ -1942,6 +1967,7 @@ if __name__ == "__main__":
     scheduler.add_job(scrape_banners_job, "cron", hour=8, minute=0)
     scheduler.add_job(scrape_store_banners_job, "cron", hour=8, minute=0)
     scheduler.add_job(generate_executive_summary, "cron", hour=8, minute=5, id="executive_summary")
+    scheduler.add_job(scrape_news_job, "cron", hour=8, minute=10, id="news_scrape")
     # Social sentiment: every 3 days at 08:00 — use interval trigger with next 08:00 as start
     from datetime import datetime as _dt, timedelta as _td
     _now = _dt.now()
