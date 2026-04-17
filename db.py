@@ -1,7 +1,7 @@
 import sqlite3
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Canonical Hebrew country/destination names — applied before every global plan save
 _DEST_NORM = {
@@ -44,46 +44,6 @@ def _connect(db_path=None):
     path = db_path or DB_PATH
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return sqlite3.connect(path)
-
-
-def upsert_news_articles(articles, db_path=None):
-    """Insert news articles, ignoring duplicates by URL."""
-    conn = _connect(db_path)
-    try:
-        now = datetime.utcnow().isoformat()
-        conn.executemany(
-            """INSERT OR IGNORE INTO news_articles
-               (carrier, headline, url, source, published_at, fetched_at)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            [(a['carrier'], a['headline'], a['url'],
-              a.get('source', ''), a.get('published_at', ''), now)
-             for a in articles]
-        )
-        conn.commit()
-    finally:
-        conn.close()
-
-
-def get_news_articles(carrier=None, limit=200, db_path=None):
-    """Return news articles ordered by published_at DESC."""
-    conn = _connect(db_path)
-    try:
-        if carrier and carrier != 'all':
-            rows = conn.execute(
-                "SELECT carrier, headline, url, source, published_at, fetched_at "
-                "FROM news_articles WHERE carrier = ? ORDER BY published_at DESC LIMIT ?",
-                (carrier, limit)
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT carrier, headline, url, source, published_at, fetched_at "
-                "FROM news_articles ORDER BY published_at DESC LIMIT ?",
-                (limit,)
-            ).fetchall()
-        cols = ['carrier', 'headline', 'url', 'source', 'published_at', 'fetched_at']
-        return [dict(zip(cols, r)) for r in rows]
-    finally:
-        conn.close()
 
 
 def init_db(db_path=None):
@@ -248,6 +208,46 @@ def init_db(db_path=None):
             conn.commit()
         except Exception:
             pass  # column already exists
+    finally:
+        conn.close()
+
+
+def upsert_news_articles(articles, db_path=None):
+    """Insert news articles, ignoring duplicates by URL."""
+    conn = _connect(db_path)
+    try:
+        now = datetime.now(timezone.utc).isoformat()
+        conn.executemany(
+            """INSERT OR IGNORE INTO news_articles
+               (carrier, headline, url, source, published_at, fetched_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            [(a['carrier'], a['headline'], a['url'],
+              a.get('source', ''), a.get('published_at', ''), now)
+             for a in articles]
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_news_articles(carrier=None, limit=200, db_path=None):
+    """Return news articles ordered by published_at DESC."""
+    conn = _connect(db_path)
+    try:
+        if carrier and carrier != 'all':
+            rows = conn.execute(
+                "SELECT carrier, headline, url, source, published_at, fetched_at "
+                "FROM news_articles WHERE carrier = ? ORDER BY published_at DESC LIMIT ?",
+                (carrier, limit)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT carrier, headline, url, source, published_at, fetched_at "
+                "FROM news_articles ORDER BY published_at DESC LIMIT ?",
+                (limit,)
+            ).fetchall()
+        cols = ['carrier', 'headline', 'url', 'source', 'published_at', 'fetched_at']
+        return [dict(zip(cols, r)) for r in rows]
     finally:
         conn.close()
 
