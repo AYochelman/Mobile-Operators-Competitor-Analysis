@@ -84,6 +84,10 @@ export const api = {
   getNews: (carrier = null) =>
     fetchApi(`/api/news${carrier && carrier !== 'all' ? `?carrier=${encodeURIComponent(carrier)}` : ''}`),
 
+  // Affiliate analytics — admin only
+  getAffiliateStats: (days = 30) =>
+    fetchApi(`/api/affiliate/stats?days=${days}`),
+
   // Push — JWT auth
   getVapidKey: () => fetchApi('/api/push/vapid-public-key'),
   subscribe:   (sub) => fetchApi('/api/push/subscribe', { method: 'POST', body: JSON.stringify(sub) }),
