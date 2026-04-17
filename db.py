@@ -208,6 +208,8 @@ def init_db(db_path=None):
                 clicked_at TEXT NOT NULL,
                 ip_hash    TEXT
             );
+            CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_at
+                ON affiliate_clicks(clicked_at);
         """)
         conn.commit()
         # Migration: add url column if DB was created before this column existed
