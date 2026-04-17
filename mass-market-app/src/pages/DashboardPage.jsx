@@ -329,7 +329,8 @@ export default function DashboardPage() {
 
     if (f.days !== 'all' && (tab === 'abroad' || tab === 'global')) {
       if (f.days === '1-7') result = result.filter(p => p.days && p.days <= 7)
-      else if (f.days === '8-30') result = result.filter(p => p.days && p.days > 7 && p.days <= 30)
+      else if (f.days === '8-14') result = result.filter(p => p.days && p.days > 7 && p.days <= 14)
+      else if (f.days === '15-30') result = result.filter(p => p.days && p.days > 14 && p.days <= 30)
       else if (f.days === '30+') result = result.filter(p => p.days && p.days > 30)
     }
 
@@ -422,7 +423,7 @@ export default function DashboardPage() {
     const TAB_NAMES = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי', content: 'תוכן' }
     const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', travelsim: 'Travel Sim' }
     const GB_HEB = { 'all': 'הכל', '0-5': '0-5GB', '5-15': '5-15GB', '15-100': '15-100GB', '100+': '100+GB', 'unlimited': 'ללא הגבלה' }
-    const DAYS_HEB = { 'all': 'הכל', '1-7': '1-7 ימים', '8-30': '8-30 ימים', '30+': '30+ ימים' }
+    const DAYS_HEB = { 'all': 'הכל', '1-7': '1-7 ימים', '8-14': '8-14 ימים', '15-30': '15-30 ימים', '30+': '30+ ימים' }
 
     // Build filter summary title
     const parts = [`קטגוריה: ${TAB_NAMES[tab]}`]
@@ -646,8 +647,8 @@ export default function DashboardPage() {
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
                     <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
                     <div className="flex flex-wrap gap-1">
-                      {['all', '1-7', '8-30', '30+'].map(v => (
-                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === '30+' ? '30+ ימים' : `${v} ימים`} active={filters.days === v} onClick={() => setFilter('days', v)} />
+                      {['all', '1-7', '8-14', '15-30', '30+'].map(v => (
+                        <FilterTag key={v} label={v === 'all' ? 'הכל' : `${v} ימים`} active={filters.days === v} onClick={() => setFilter('days', v)} />
                       ))}
                     </div>
                   </div>

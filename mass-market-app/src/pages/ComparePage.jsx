@@ -231,7 +231,8 @@ export default function ComparePage() {
 
     if (showDays && daysFilter !== 'all') {
       if (daysFilter === '1-7') result = result.filter(p => p.days && p.days <= 7)
-      else if (daysFilter === '8-30') result = result.filter(p => p.days && p.days > 7 && p.days <= 30)
+      else if (daysFilter === '8-14') result = result.filter(p => p.days && p.days > 7 && p.days <= 14)
+      else if (daysFilter === '15-30') result = result.filter(p => p.days && p.days > 14 && p.days <= 30)
       else if (daysFilter === '30+') result = result.filter(p => p.days && p.days > 30)
     }
 
@@ -401,7 +402,7 @@ export default function ComparePage() {
             <div>
               <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
               <div className="flex flex-wrap gap-1">
-                {[['all', 'הכל'], ['1-7', '1-7 ימים'], ['8-30', '8-30 ימים'], ['30+', '30+ ימים']].map(([val, label]) => (
+                {[['all', 'הכל'], ['1-7', '1-7 ימים'], ['8-14', '8-14 ימים'], ['15-30', '15-30 ימים'], ['30+', '30+ ימים']].map(([val, label]) => (
                   <FilterTag key={val} label={label} active={daysFilter === val} onClick={() => setDaysFilter(val)} />
                 ))}
               </div>
