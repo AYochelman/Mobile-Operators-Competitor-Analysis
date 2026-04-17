@@ -57,6 +57,23 @@ const CARRIER_TAG_COLORS = {
 
 const CARRIER_LABEL = Object.fromEntries(CARRIERS.map(c => [c.id, c.label]))
 
+const DATE_FILTERS = [
+  { id: 'all',   label: 'הכל',           ms: null },
+  { id: 'today', label: 'היום',          ms: 24 * 60 * 60 * 1000 },
+  { id: 'week',  label: 'בשבוע האחרון',  ms: 7  * 24 * 60 * 60 * 1000 },
+  { id: 'month', label: 'בחודש האחרון',  ms: 30 * 24 * 60 * 60 * 1000 },
+  { id: 'year',  label: 'בשנה האחרונה',  ms: 365 * 24 * 60 * 60 * 1000 },
+]
+
+function isWithinPeriod(pubDateStr, period) {
+  if (period === 'all' || !pubDateStr) return true
+  const f = DATE_FILTERS.find(f => f.id === period)
+  if (!f?.ms) return true
+  try {
+    return new Date(pubDateStr).getTime() >= Date.now() - f.ms
+  } catch { return true }
+}
+
 function formatRelativeDate(pubDateStr) {
   if (!pubDateStr) return ''
   try {
@@ -80,6 +97,7 @@ export default function NewsTab() {
   const [loading, setLoading]             = useState(true)
   const [error, setError]                 = useState(null)
   const [carrierFilter, setCarrierFilter] = useState('all')
+  const [dateFilter, setDateFilter]       = useState('all')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -96,9 +114,9 @@ export default function NewsTab() {
 
   useEffect(() => { load() }, [load])
 
-  const filtered = carrierFilter === 'all'
-    ? articles
-    : articles.filter(a => a.carrier === carrierFilter)
+  const filtered = articles
+    .filter(a => carrierFilter === 'all' || a.carrier === carrierFilter)
+    .filter(a => isWithinPeriod(a.published_at, dateFilter))
 
   const fetchedAt = articles[0]?.fetched_at
     ? new Date(articles[0].fetched_at).toLocaleString('he-IL')
@@ -110,8 +128,8 @@ export default function NewsTab() {
 
   if (error) return (
     <div className="text-center py-20 text-red-500">
-      <p className="mb-3">\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d8\u05e2\u05d9\u05e0\u05ea \u05d4\u05d7\u05d3\u05e9\u05d5\u05ea</p>
-      <button onClick={load} className="text-sm underline">\u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1</button>
+      <p className="mb-3">שגיאה בטעינת החדשות</p>
+      <button onClick={load} className="text-sm underline">נסה שוב</button>
     </div>
   )
 
@@ -120,16 +138,16 @@ export default function NewsTab() {
       {/* Header */}
       <div className="flex items-center gap-2 mb-1">
         <Newspaper size={20} className="text-[#5c3317]" />
-        <h2 className="text-xl font-bold text-[#5c3317]">\u05d1\u05d7\u05d3\u05e9\u05d5\u05ea</h2>
+        <h2 className="text-xl font-bold text-[#5c3317]">בחדשות</h2>
       </div>
       <p className="text-sm text-[#8b6b52] mb-4">
-        \u05d0\u05d6\u05db\u05d5\u05e8\u05d9 \u05d7\u05d1\u05e8\u05d5\u05ea \u05d4\u05e1\u05dc\u05d5\u05dc\u05e8 \u05d1\u05e2\u05d9\u05ea\u05d5\u05e0\u05d5\u05ea \u05d4\u05d9\u05e9\u05e8\u05d0\u05dc\u05d9\u05ea
+        אזכורי חברות הסלולר בעיתונות הישראלית
       </p>
 
       {/* Filter bar */}
       <div className="flex flex-wrap gap-2 mb-3 items-center" dir="rtl">
         <span className="text-sm text-[#8b6b52] font-medium">
-          \u05e1\u05d9\u05e0\u05d5\u05df \u05dc\u05e4\u05d9 \u05d7\u05d1\u05e8\u05d4:
+          סינון לפי חברה:
         </span>
         {CARRIERS.map(c => (
           <button
@@ -146,11 +164,31 @@ export default function NewsTab() {
         ))}
       </div>
 
+      {/* Date filter bar */}
+      <div className="flex flex-wrap gap-2 mb-4 items-center" dir="rtl">
+        <span className="text-sm text-[#8b6b52] font-medium">
+          סינון לפי תאריך:
+        </span>
+        {DATE_FILTERS.map(f => (
+          <button
+            key={f.id}
+            onClick={() => setDateFilter(f.id)}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors
+              ${dateFilter === f.id
+                ? 'bg-[#5c3317] text-white border-[#5c3317]'
+                : 'bg-white text-[#5c3317] border-[#d4bfa8] hover:bg-[#f5ede0]'
+              }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {/* Last updated */}
       {fetchedAt && (
         <p className="text-xs text-[#a08060] mb-4 flex items-center gap-1">
           <Calendar size={12} />
-          \u05e2\u05d5\u05d3\u05db\u05df \u05dc\u05d0\u05d7\u05e8\u05d5\u05e0\u05d4: {fetchedAt} · {filtered.length} \u05db\u05ea\u05d1\u05d5\u05ea
+          {'עודכן לאחרונה:'} {fetchedAt} · {filtered.length} {'כתבות'}
         </p>
       )}
 
@@ -158,7 +196,7 @@ export default function NewsTab() {
       {filtered.length === 0 && (
         <div className="text-center py-20 text-gray-400">
           <Newspaper size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">\u05dc\u05d0 \u05e0\u05de\u05e6\u05d0\u05d5 \u05db\u05ea\u05d1\u05d5\u05ea</p>
+          <p className="text-sm">לא נמצאו כתבות</p>
         </div>
       )}
 
