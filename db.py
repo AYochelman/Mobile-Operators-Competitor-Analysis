@@ -305,7 +305,7 @@ def save_social_sentiment(carrier, platform_data, narrative, sentiment, db_path=
                  sentiment          = excluded.sentiment,
                  generated_at       = excluded.generated_at""",
             (carrier, json.dumps(platform_data, ensure_ascii=False), narrative, sentiment,
-             datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))
+             datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'))
         )
         conn.commit()
     finally:
