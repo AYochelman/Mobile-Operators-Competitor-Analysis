@@ -16,3 +16,4 @@ SECRETS_LOCAL_ONLY.md
 .pytest_cache/
 .playwright-mcp/
 *.log
+.worktrees/
