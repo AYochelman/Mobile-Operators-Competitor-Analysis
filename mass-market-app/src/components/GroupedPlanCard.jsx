@@ -36,6 +36,12 @@ const LOGO_SIZES = {
 }
 
 const AFFILIATE_PROVIDERS = new Set(['airalo', 'holafly', 'saily', 'globalesim'])
+const AFFILIATE_URLS = {
+  airalo:     'https://www.airalo.com',
+  holafly:    'https://esim.holafly.com',
+  saily:      'https://saily.com',
+  globalesim: 'https://globalesim.com',
+}
 
 function slugify(str) {
   if (!str) return 'plan'
@@ -156,7 +162,7 @@ export default function GroupedPlanCard({ carrier, destination, plans }) {
       {AFFILIATE_PROVIDERS.has(carrier) && (
         <div className="mt-auto pt-3">
           <a
-            href={`/go/${carrier}/${slugify(selectedPlan.plan_name)}?country=${encodeURIComponent(destination || '')}`}
+            href={AFFILIATE_URLS[carrier] || `https://www.${carrier}.com`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-1.5 w-full text-xs text-white bg-[#5c3317] rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"

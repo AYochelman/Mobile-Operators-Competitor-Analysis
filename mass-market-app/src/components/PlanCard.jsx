@@ -7,6 +7,12 @@ import { getAppsForAbroadPlan } from '../data/abroadApps'
 import AppsModal from './AppsModal'
 
 const AFFILIATE_PROVIDERS = new Set(['airalo', 'holafly', 'saily', 'globalesim'])
+const AFFILIATE_URLS = {
+  airalo:     'https://www.airalo.com',
+  holafly:    'https://esim.holafly.com',
+  saily:      'https://saily.com',
+  globalesim: 'https://globalesim.com',
+}
 
 function slugify(str) {
   if (!str) return 'plan'
@@ -311,7 +317,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
           {isGlobal && AFFILIATE_PROVIDERS.has(plan.carrier) ? (
             <div>
               <a
-                href={`/go/${plan.carrier}/${slugify(plan.plan_name)}?country=${encodeURIComponent(plan.extras?.[0] || '')}`}
+                href={AFFILIATE_URLS[plan.carrier] || `https://www.${plan.carrier}.com`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-1.5 w-full text-xs text-white bg-[#5c3317] rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
