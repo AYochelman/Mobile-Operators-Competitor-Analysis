@@ -1,7 +1,7 @@
 import sqlite3
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 # Canonical Hebrew country/destination names — applied before every global plan save
 _DEST_NORM = {
@@ -200,6 +200,14 @@ def init_db(db_path=None):
                 published_at TEXT,
                 fetched_at   TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS affiliate_clicks (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                provider   TEXT NOT NULL,
+                plan_id    TEXT,
+                country    TEXT,
+                clicked_at TEXT NOT NULL,
+                ip_hash    TEXT
+            );
         """)
         conn.commit()
         # Migration: add url column if DB was created before this column existed
@@ -248,6 +256,36 @@ def get_news_articles(carrier=None, limit=200, db_path=None):
             ).fetchall()
         cols = ['carrier', 'headline', 'url', 'source', 'published_at', 'fetched_at']
         return [dict(zip(cols, r)) for r in rows]
+    finally:
+        conn.close()
+
+
+def log_affiliate_click(provider, plan_id=None, country=None, ip_hash=None, db_path=None):
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            """INSERT INTO affiliate_clicks (provider, plan_id, country, clicked_at, ip_hash)
+               VALUES (?, ?, ?, ?, ?)""",
+            (provider, plan_id, country, datetime.now(timezone.utc).isoformat(), ip_hash)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_affiliate_stats(days=30, db_path=None):
+    conn = _connect(db_path)
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        rows = conn.execute(
+            """SELECT provider, date(clicked_at) AS date, COUNT(*) AS clicks
+               FROM affiliate_clicks
+               WHERE clicked_at >= ?
+               GROUP BY provider, date(clicked_at)
+               ORDER BY date DESC, clicks DESC""",
+            (cutoff,)
+        ).fetchall()
+        return [{"provider": r[0], "date": r[1], "clicks": r[2]} for r in rows]
     finally:
         conn.close()
 

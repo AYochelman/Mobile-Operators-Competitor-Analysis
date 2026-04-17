@@ -1,5 +1,7 @@
 import pytest
-from db import init_db, save_plans, get_plans, save_changes, get_changes, upsert_news_articles, get_news_articles
+from db import (init_db, save_plans, get_plans, save_changes, get_changes,
+                upsert_news_articles, get_news_articles,
+                log_affiliate_click, get_affiliate_stats)
 
 @pytest.fixture
 def tmp_db(tmp_path):
@@ -86,3 +88,40 @@ def test_upsert_news_deduplication(tmp_db):
     upsert_news_articles(SAMPLE_ARTICLES, db_path=tmp_db)   # insert again
     articles = get_news_articles(db_path=tmp_db)
     assert len(articles) == 3   # still 3, not 6
+
+
+def test_log_affiliate_click_basic(tmp_db):
+    log_affiliate_click("airalo", plan_id="israel-1gb", country="ישראל",
+                        ip_hash="abc123", db_path=tmp_db)
+    stats = get_affiliate_stats(days=30, db_path=tmp_db)
+    assert len(stats) == 1
+    assert stats[0]["provider"] == "airalo"
+    assert stats[0]["clicks"] == 1
+
+def test_log_affiliate_click_optional_fields(tmp_db):
+    log_affiliate_click("holafly", db_path=tmp_db)
+    stats = get_affiliate_stats(days=30, db_path=tmp_db)
+    assert stats[0]["clicks"] == 1
+
+def test_get_affiliate_stats_groups_by_provider(tmp_db):
+    log_affiliate_click("airalo", db_path=tmp_db)
+    log_affiliate_click("airalo", db_path=tmp_db)
+    log_affiliate_click("holafly", db_path=tmp_db)
+    stats = get_affiliate_stats(days=30, db_path=tmp_db)
+    providers = {s["provider"]: s["clicks"] for s in stats}
+    assert providers["airalo"] == 2
+    assert providers["holafly"] == 1
+
+def test_get_affiliate_stats_respects_days_window(tmp_db):
+    import sqlite3, datetime
+    old_ts = (datetime.datetime.now(datetime.timezone.utc)
+              - datetime.timedelta(days=40)).isoformat()
+    conn = sqlite3.connect(tmp_db)
+    conn.execute(
+        "INSERT INTO affiliate_clicks (provider, clicked_at) VALUES (?,?)",
+        ("airalo", old_ts)
+    )
+    conn.commit()
+    conn.close()
+    stats = get_affiliate_stats(days=30, db_path=tmp_db)
+    assert stats == []
