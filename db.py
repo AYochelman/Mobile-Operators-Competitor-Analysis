@@ -46,6 +46,46 @@ def _connect(db_path=None):
     return sqlite3.connect(path)
 
 
+def upsert_news_articles(articles, db_path=None):
+    """Insert news articles, ignoring duplicates by URL."""
+    conn = _connect(db_path)
+    try:
+        now = datetime.utcnow().isoformat()
+        conn.executemany(
+            """INSERT OR IGNORE INTO news_articles
+               (carrier, headline, url, source, published_at, fetched_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            [(a['carrier'], a['headline'], a['url'],
+              a.get('source', ''), a.get('published_at', ''), now)
+             for a in articles]
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_news_articles(carrier=None, limit=200, db_path=None):
+    """Return news articles ordered by published_at DESC."""
+    conn = _connect(db_path)
+    try:
+        if carrier and carrier != 'all':
+            rows = conn.execute(
+                "SELECT carrier, headline, url, source, published_at, fetched_at "
+                "FROM news_articles WHERE carrier = ? ORDER BY published_at DESC LIMIT ?",
+                (carrier, limit)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT carrier, headline, url, source, published_at, fetched_at "
+                "FROM news_articles ORDER BY published_at DESC LIMIT ?",
+                (limit,)
+            ).fetchall()
+        cols = ['carrier', 'headline', 'url', 'source', 'published_at', 'fetched_at']
+        return [dict(zip(cols, r)) for r in rows]
+    finally:
+        conn.close()
+
+
 def init_db(db_path=None):
     conn = _connect(db_path)
     try:
@@ -191,6 +231,15 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_archive_banners
                 ON archive_banners(carrier, is_store, archive_date);
+            CREATE TABLE IF NOT EXISTS news_articles (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                carrier      TEXT NOT NULL,
+                headline     TEXT NOT NULL,
+                url          TEXT NOT NULL UNIQUE,
+                source       TEXT,
+                published_at TEXT,
+                fetched_at   TEXT NOT NULL
+            );
         """)
         conn.commit()
         # Migration: add url column if DB was created before this column existed
