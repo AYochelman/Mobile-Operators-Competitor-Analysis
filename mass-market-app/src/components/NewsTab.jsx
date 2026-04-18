@@ -42,6 +42,7 @@ const CARRIERS = [
   { id: 'xphone',    label: 'XPhone' },
   { id: 'wecom',     label: 'We-Com' },
   { id: 'neptucom',  label: 'Neptucom' },
+  { id: 'golan',    label: 'גולן טלקום' },
 ]
 
 const CARRIER_TAG_COLORS = {
@@ -53,6 +54,7 @@ const CARRIER_TAG_COLORS = {
   xphone:    'bg-sky-100 text-sky-700',
   wecom:     'bg-yellow-100 text-yellow-800',
   neptucom:  'bg-slate-100 text-slate-600',
+  golan:     'bg-teal-100 text-teal-700',
 }
 
 const CARRIER_LABEL = Object.fromEntries(CARRIERS.map(c => [c.id, c.label]))

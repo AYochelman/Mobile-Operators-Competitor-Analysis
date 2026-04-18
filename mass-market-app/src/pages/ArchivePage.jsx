@@ -14,6 +14,7 @@ const ALL_PROVIDERS = [
   { id: 'xphone',           label: 'XPhone',          color: '#6a0dad' },
   { id: 'wecom',            label: 'וי-קום',          color: '#006633' },
   { id: 'neptucom',         label: 'נפטוקום',         color: '#004488' },
+  { id: 'golan',            label: 'גולן טלקום',      color: '#009688' },
   // ── Global eSIM ─────────────────────────────────────────────
   { id: 'tuki',             label: 'טוקי',            color: '#0066cc' },
   { id: 'globalesim',       label: 'GlobaleSIM',      color: '#0099aa' },

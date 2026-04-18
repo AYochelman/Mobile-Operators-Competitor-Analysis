@@ -5,7 +5,7 @@ import FilterTag from '../components/ui/FilterTag'
 import SearchableSelect from '../components/ui/SearchableSelect'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import {
-  AIRALO_DISCOVER, GLOBALESIM_COUNTRIES, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
+  AIRALO_DISCOVER, AIRALO_REGION_MAP, GLOBALESIM_COUNTRIES, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
   PELEPHONE_GLOBAL_COUNTRIES, ESIMO_COUNTRIES, WORLD8_WORLDWIDE, WORLD8_EUROPE_USA,
   XPHONE_EUROPE, XPHONE_WORLD, ORBIT_COUNTRIES, TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
   getCountriesForPlan
@@ -27,6 +27,7 @@ const CARRIERS_BY_TAB = {
     { id: 'xphone', label: 'XPhone', color: '#0d9488' },
     { id: 'wecom', label: 'We-Com', color: '#d97706' },
     { id: 'neptucom', label: 'Neptucom', color: '#d97706' },
+    { id: 'golan', label: 'גולן טלקום', color: '#009688' },
   ],
   abroad: [
     { id: 'partner', label: 'פרטנר', color: '#e91e63' },
@@ -37,6 +38,7 @@ const CARRIERS_BY_TAB = {
     { id: 'xphone', label: 'XPhone', color: '#0d9488' },
     { id: 'wecom', label: 'We-Com', color: '#d97706' },
     { id: 'neptucom', label: 'Neptucom', color: '#d97706' },
+    { id: 'golan', label: 'גולן טלקום', color: '#009688' },
   ],
   global: [
     { id: 'tuki', label: 'Tuki', color: '#3b82f6' },
@@ -68,6 +70,8 @@ const KNOWN_REGIONS = new Set([
   'צפון ודרום אמריקה','גלובלי פלוס','מדינות האיים הקריביים',
   'אירופה — גלישה בלבד','אירופה — גולשים ומדברים',
   'גלובלי — גלישה בלבד','גלובלי — גולשים ומדברים',
+  '167+ מדינות','156+ מדינות',
+  'ספארי אפריקה','האיחוד האירופי ובריטניה',
 ])
 
 export default function ComparePage() {
@@ -190,7 +194,8 @@ export default function ComparePage() {
 
   // Filter + sort plans
   const filteredPlans = useMemo(() => {
-    let result = plans.filter(p => selectedCarriers.includes(p.carrier))
+    const expandedCarriers = selectedCarriers.flatMap(c => c === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [c])
+    let result = plans.filter(p => expandedCarriers.includes(p.carrier))
 
     if (gbFilter !== 'all') {
       if (gbFilter === 'unlimited') result = result.filter(p => p.data_gb === null)
@@ -259,7 +264,8 @@ export default function ComparePage() {
     if (selectedCarriers.length === 0) return []
 
     return selectedCarriers.map(c => {
-      const cp = filteredPlans.filter(p => p.carrier === c && p.price)
+      const cids = c === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [c]
+      const cp = filteredPlans.filter(p => cids.includes(p.carrier) && p.price)
       if (!cp.length) return null
       return {
         name: getLabel(c),

@@ -36,7 +36,7 @@ const CATEGORIES = [
 const CARRIER_NAMES = {
   partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל',
   cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'וי-קום',
-  neptucom: 'נפטוקום', tuki: 'Tuki', globalesim: 'GlobaleSIM',
+  neptucom: 'נפטוקום', golan: 'גולן טלקום', tuki: 'Tuki', globalesim: 'GlobaleSIM',
   airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo',
   simtlv: 'SimTLV', world8: 'World8', saily: 'Saily', holafly: 'Holafly',
   esimio: 'eSIMio', sparks: 'Sparks', voye: 'Voye', orbit: 'Orbit',

@@ -698,14 +698,15 @@ _HISTORY_TYPE_NAMES = {
 
 
 CARRIER_DISPLAY = {
-    "partner":   {"name": "פרטנר",      "url": "https://www.partner.net.il",   "color": "#e8003d"},
-    "pelephone": {"name": "פלאפון",     "url": "https://www.pelephone.co.il",  "color": "#ff6600"},
-    "hotmobile": {"name": "הוט מובייל", "url": "https://www.hotmobile.co.il",  "color": "#e3001e"},
-    "cellcom":   {"name": "סלקום",      "url": "https://www.cellcom.co.il",    "color": "#003b7a"},
-    "mobile019": {"name": "019 מובייל", "url": "https://www.019mobile.co.il",  "color": "#555555"},
-    "xphone":    {"name": "XPhone",     "url": "https://www.xphone.co.il",     "color": "#6a0dad"},
-    "wecom":     {"name": "וי-קום",     "url": "https://we-com.co.il",         "color": "#006633"},
-    "neptucom":  {"name": "נפטוקום",    "url": "https://www.neptucom.com",     "color": "#004488"},
+    "partner":   {"name": "פרטנר",      "url": "https://www.partner.net.il",       "color": "#e8003d"},
+    "pelephone": {"name": "פלאפון",     "url": "https://www.pelephone.co.il",      "color": "#ff6600"},
+    "hotmobile": {"name": "הוט מובייל", "url": "https://www.hotmobile.co.il",      "color": "#e3001e"},
+    "cellcom":   {"name": "סלקום",      "url": "https://www.cellcom.co.il",        "color": "#003b7a"},
+    "mobile019": {"name": "019 מובייל", "url": "https://www.019mobile.co.il",      "color": "#555555"},
+    "xphone":    {"name": "XPhone",     "url": "https://www.xphone.co.il",         "color": "#6a0dad"},
+    "wecom":     {"name": "וי-קום",     "url": "https://we-com.co.il",             "color": "#006633"},
+    "neptucom":  {"name": "נפטוקום",    "url": "https://www.neptucom.com",         "color": "#004488"},
+    "golan":     {"name": "גולן טלקום", "url": "https://www.golantelecom.co.il",   "color": "#009688"},
 }
 
 CARRIER_STORE_DISPLAY = {

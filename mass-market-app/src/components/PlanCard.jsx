@@ -14,6 +14,32 @@ const AFFILIATE_URLS = {
   globalesim: 'https://globalesim.com',
 }
 
+const CARRIER_HOME_URLS = {
+  partner:         'https://www.partner.net.il',
+  pelephone:       'https://www.pelephone.co.il',
+  hotmobile:       'https://www.hotmobile.co.il',
+  cellcom:         'https://www.cellcom.co.il',
+  mobile019:       'https://www.019mobile.co.il',
+  xphone:          'https://www.xphone.co.il',
+  wecom:           'https://we-com.co.il',
+  neptucom:        'https://www.neptucom.com',
+  tuki:            'https://tuki.co.il',
+  globalesim:      'https://globalesim.com',
+  airalo:          'https://www.airalo.com',
+  pelephone_global:'https://www.pelephone.co.il',
+  esimo:           'https://esimo.co.il',
+  simtlv:          'https://www.simtlv.co.il',
+  world8:          'https://world8.com',
+  xphone_global:   'https://www.xphone.co.il',
+  saily:           'https://saily.com',
+  holafly:         'https://esim.holafly.com',
+  esimio:          'https://esim.io',
+  sparks:          'https://sparksesim.com',
+  voye:            'https://voye.com',
+  orbit:           'https://www.orbitmobile.com',
+  travelsim:       'https://www.travelsim.com',
+}
+
 function slugify(str) {
   if (!str) return 'plan'
   return str
@@ -57,6 +83,7 @@ const CARRIER_LOGOS = {
   mobile019:       '/logos/019.png',
   xphone:          '/logos/xphone_global.png',
   wecom:           '/logos/wecom.png',
+  golan:           '/logos/golan.png',
   // Global eSIM
   tuki:            '/logos/tuki.png',
   globalesim:      '/logos/globalesim.png',
@@ -89,6 +116,7 @@ const LOGO_SIZES = {
   orbit:            '48px',
   neptucom:         '64px',
   travelsim:        '64px',
+  golan:            '45px',
 }
 
 const CONTENT_URLS = {
@@ -332,20 +360,37 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
               <p className="text-center text-[10px] text-[#a08060] mt-1">דרך MOCA</p>
             </div>
           ) : (
-            <a
-              href={plan.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 w-full text-xs text-moca-sub hover:text-moca-bolt border border-moca-border/40 rounded-lg py-1.5 transition-colors hover:bg-moca-cream"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                <polyline points="15 3 21 3 21 9"/>
-                <line x1="10" y1="14" x2="21" y2="3"/>
-              </svg>
-              תנאי התוכנית
-            </a>
+            <div className="flex gap-2">
+              <a
+                href={plan.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 flex-1 text-xs text-moca-sub hover:text-moca-bolt border border-moca-border/40 rounded-lg py-1.5 transition-colors hover:bg-moca-cream"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+                תנאי התוכנית
+              </a>
+              {CARRIER_HOME_URLS[carrier] && (
+                <a
+                  href={CARRIER_HOME_URLS[carrier]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 flex-1 text-xs text-white bg-[#5c3317] rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                  </svg>
+                  לאתר הספק
+                </a>
+              )}
+            </div>
           )}
         </div>
       )}

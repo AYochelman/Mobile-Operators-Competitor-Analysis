@@ -21,13 +21,14 @@ import {
   WORLD8_EUROPE_USA, WORLD8_WORLDWIDE,
   XPHONE_EUROPE, XPHONE_WORLD,
   AIRALO_DISCOVER,
+  AIRALO_REGION_MAP,
   GLOBALESIM_EUROPE, GLOBALESIM_ASIA, GLOBALESIM_NORTH_AMERICA,
   GLOBALESIM_SOUTH_AMERICA, GLOBALESIM_AFRICA, GLOBALESIM_OCEANIA, GLOBALESIM_GLOBAL_REGION,
 } from '../data/globalCountries'
 
 // Carriers where one plan covers many countries (zone/global plans)
 const MULTI_COUNTRY_CARRIERS = new Set([
-  'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo',
+  'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
   'pelephone_global', 'esimo', 'globalesim',
 ])
 
@@ -58,6 +59,7 @@ function getPlanCoverage(plan) {
     return (name.includes('אירופה') || name.includes('Europe')) ? WORLD8_EUROPE_USA : WORLD8_WORLDWIDE
   }
   if (carrier === 'airalo') return AIRALO_DISCOVER
+  if (carrier === 'airalo_regional') return AIRALO_REGION_MAP[dest] || null
   if (carrier === 'pelephone_global') return PELEPHONE_GLOBAL_COUNTRIES
   if (carrier === 'esimo') return ESIMO_COUNTRIES
   if (carrier === 'globalesim') return GLOBALESIM_REGION_MAP[dest] || GLOBALESIM_GLOBAL_REGION
@@ -129,18 +131,26 @@ const KNOWN_REGIONS = new Set([
   'צפון ודרום אמריקה','גלובלי פלוס','מדינות האיים הקריביים',
   'אירופה — גלישה בלבד','אירופה — גולשים ומדברים',
   'גלובלי — גלישה בלבד','גלובלי — גולשים ומדברים',
+  '167+ מדינות','156+ מדינות',
+  'ספארי אפריקה','האיחוד האירופי ובריטניה',
 ])
 
 const CARRIERS = [
-  { id: 'partner', label: 'פרטנר' }, { id: 'pelephone', label: 'פלאפון' },
-  { id: 'hotmobile', label: 'הוט מובייל' }, { id: 'cellcom', label: 'סלקום' },
-  { id: 'mobile019', label: '019' }, { id: 'xphone', label: 'XPhone' },
-  { id: 'wecom', label: 'We-Com' }, { id: 'neptucom', label: 'Neptucom' },
+  { id: 'partner', label: 'פרטנר' },
+  { id: 'pelephone', label: 'פלאפון' },
+  { id: 'hotmobile', label: 'הוט מובייל' },
+  { id: 'cellcom', label: 'סלקום' },
+  { id: 'mobile019', label: '019' },
+  { id: 'xphone', label: 'XPhone' },
+  { id: 'wecom', label: 'We-Com' },
+  { id: 'neptucom', label: 'Neptucom' },
+  { id: 'golan', label: 'גולן טלקום' },
 ]
 
 const GLOBAL_PROVIDERS = [
   { id: 'tuki', label: 'Tuki' }, { id: 'globalesim', label: 'GlobaleSIM' },
-  { id: 'airalo', label: 'Airalo' }, { id: 'pelephone_global', label: 'GlobalSIM' },
+  { id: 'airalo', label: 'Airalo' },
+  { id: 'pelephone_global', label: 'GlobalSIM' },
   { id: 'esimo', label: 'eSIMo' }, { id: 'simtlv', label: 'SimTLV' },
   { id: 'world8', label: '8 World' }, { id: 'xphone_global', label: 'XPhone Global' },
   { id: 'saily', label: 'Saily' }, { id: 'holafly', label: 'Holafly' },
@@ -302,7 +312,10 @@ export default function DashboardPage() {
       result = result.filter(p => p.extras && p.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+/.test(e) && /GB|גלישה/i.test(e)))
     }
     if (tab === 'global') {
-      if (f.globalProvider !== 'all') result = result.filter(p => p.carrier === f.globalProvider)
+      if (f.globalProvider !== 'all') {
+        const ids = f.globalProvider === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [f.globalProvider]
+        result = result.filter(p => ids.includes(p.carrier))
+      }
       if (f.region !== 'all') result = result.filter(p => p.extras && p.extras[0] === f.region)
       else if (f.destination !== 'all') result = result.filter(p => {
         if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
@@ -378,7 +391,10 @@ export default function DashboardPage() {
   const globalRegions = useMemo(() => {
     if (tab !== 'global') return []
     let src = plans.global
-    if (filters.globalProvider !== 'all') src = src.filter(p => p.carrier === filters.globalProvider)
+    if (filters.globalProvider !== 'all') {
+      const ids = filters.globalProvider === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [filters.globalProvider]
+      src = src.filter(p => ids.includes(p.carrier))
+    }
     return [...new Set(src.filter(p => p.extras && p.extras[0] && KNOWN_REGIONS.has(p.extras[0])).map(p => p.extras[0]))].sort((a, b) => a.localeCompare(b, 'he'))
   }, [plans.global, tab, filters.globalProvider])
 
@@ -386,7 +402,10 @@ export default function DashboardPage() {
   const globalDestinations = useMemo(() => {
     if (tab !== 'global') return []
     let src = plans.global
-    if (filters.globalProvider !== 'all') src = src.filter(p => p.carrier === filters.globalProvider)
+    if (filters.globalProvider !== 'all') {
+      const ids = filters.globalProvider === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [filters.globalProvider]
+      src = src.filter(p => ids.includes(p.carrier))
+    }
     const destSet = new Set()
     for (const p of src) {
       if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
@@ -698,16 +717,17 @@ export default function DashboardPage() {
                       כולם
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-1">
+                  <div className="grid grid-cols-3 gap-1">
                     {CARRIERS.map(c => {
                       const cnt = plans[tab]?.filter(p => p.carrier === c.id).length || 0
-                      if (!cnt) return null
                       return (
                         <button
                           key={c.id}
-                          onClick={() => setFilter('carrier', c.id)}
+                          onClick={() => cnt > 0 ? setFilter('carrier', c.id) : null}
                           className={`px-1 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
-                            filters.carrier === c.id ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                            filters.carrier === c.id ? 'bg-gray-900 text-white' :
+                            cnt === 0 ? 'text-moca-border cursor-default' :
+                            'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                           }`}
                         >
                           {c.label}
@@ -767,7 +787,7 @@ export default function DashboardPage() {
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-1">
-                    {['cellcom', 'partner', 'hotmobile', 'pelephone'].map(c => (
+                    {['cellcom', 'partner', 'hotmobile', 'pelephone', 'wecom', 'golan'].map(c => (
                       <button
                         key={c}
                         onClick={() => setFilter('contentCarrier', c)}

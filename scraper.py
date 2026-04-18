@@ -647,6 +647,367 @@ def scrape_neptucom(_page=None):
     return plans
 
 
+def _parse_golan_body(body_text, pdf_links):
+    """Parse Golan domestic plan blocks from body text.
+    Blocks are delimited by 'לתנאי התוכנית'. Categories: חו"ל כלול / מתגלגלת / דור 5 / משפחתית.
+    """
+    CATEGORIES_5G   = {'דור 5'}
+    CATEGORIES_INTL = {'חו"ל כלול'}
+    SKIP = {
+        'בישראל', 'בחו"ל', 'שיחות', 'הודעות SMS', 'גלישה',
+        'שיחות בינלאומיות', 'תוקף מבצע', '₪', 'לחודש', 'להצטרפות',
+        'לתנאי התוכנית', 'pdf קישור למסמך', 'פרטי המבצע',
+        'בישראל\tבחו"ל', 'Offers page', 'Breadcrumb',
+        'דף הבית', 'החבילות שלנו', 'בוא למצוא את החבילה שמתאימה לך',
+    }
+    lines = [l.strip() for l in body_text.split('\n')]
+
+    # Trim header navigation — skip past intro text, stop just before first category
+    CATEGORIES_ALL = {'חו"ל כלול', 'מתגלגלת', 'דור 5', 'DATA ONLY', 'משפחתית'}
+    for i, l in enumerate(lines):
+        if l in CATEGORIES_ALL:
+            lines = lines[i:]
+            break
+
+    # Split into blocks by 'לתנאי התוכנית'
+    blocks, cur = [], []
+    for l in lines:
+        if 'לתנאי התוכנית' in l:
+            blocks.append(cur)
+            cur = []
+        elif 'pdf קישור למסמך' not in l and 'פרטי המבצע' not in l:
+            cur.append(l)
+
+    plans = []
+    seen = set()
+    for idx, block in enumerate(blocks):
+        non_empty = [l for l in block if l]
+        if len(non_empty) < 3:
+            continue
+
+        # Category: first meaningful line (חו"ל כלול / מתגלגלת / דור 5 / משפחתית)
+        category = non_empty[0] if non_empty[0] not in SKIP else ''
+
+        # GB / descriptor: first line matching NNNgb or known keywords
+        gb_line = None
+        for l in non_empty[:6]:
+            if re.match(r'^\d+GB$', l, re.I) or l in ('DATA ONLY', 'משפחתית'):
+                gb_line = l
+                break
+        if not gb_line:
+            continue
+
+        # Price: number on the line immediately before '₪'
+        # Handle split decimal: "90.\n34\n₪" → 34.90 (decimal part rendered before integer)
+        price = None
+        for i, l in enumerate(block):
+            if l == '₪' and i > 0:
+                prev = block[i - 1].strip()
+                m_int = re.match(r'^(\d+)$', prev)
+                if m_int and i >= 2:
+                    prev2 = block[i - 2].strip()
+                    m_dec = re.match(r'^(\d+)\.$', prev2)
+                    if m_dec:
+                        price = float(f"{m_int.group(1)}.{m_dec.group(1)}")
+                        break
+                m = re.match(r'^(\d+\.?\d*)\.?$', prev)
+                if m:
+                    try:
+                        price = float(m.group(1))
+                    except ValueError:
+                        pass
+                    break
+        if price is None:
+            # fallback: find standalone number before ₪
+            for l in block:
+                m = re.match(r'^(\d+\.?\d*)\.?$', l)
+                if m:
+                    try:
+                        candidate = float(m.group(1))
+                        if 10 <= candidate <= 500:
+                            price = candidate
+                    except ValueError:
+                        pass
+
+        # GB value
+        gb_val = None
+        if gb_line and gb_line not in ('DATA ONLY', 'משפחתית'):
+            m = re.match(r'^(\d+)GB$', gb_line, re.I)
+            if m:
+                gb_val = int(m.group(1))
+        if gb_val is None:
+            # Use exact match to avoid grabbing GB from taglines like "3 קווים עם 1500GB"
+            for l in block:
+                m = re.match(r'^(\d+)GB$', l, re.I)
+                if m and int(m.group(1)) >= 5:
+                    gb_val = int(m.group(1))
+                    break
+
+        # Plan name
+        is_5g = category in CATEGORIES_5G
+        is_intl = category in CATEGORIES_INTL
+
+        if gb_line == 'משפחתית':
+            plan_name = 'גולן משפחתית'
+        elif gb_line == 'DATA ONLY':
+            plan_name = 'גולן DATA ONLY 5G'
+        else:
+            plan_name = f'גולן {gb_line}'
+            if is_5g:
+                plan_name += ' 5G'
+            elif category == 'מתגלגלת':
+                plan_name += ' מתגלגלת'
+            elif is_intl:
+                plan_name += ' \u2013 חו"ל כלול'
+
+        if plan_name in seen:
+            plan_name += f' ({idx})'
+        seen.add(plan_name)
+
+        # Extras: description, international features
+        extras = []
+        for l in block:
+            if not l or l in SKIP or l == gb_line or l == category:
+                continue
+            if re.match(r'^(\d+\.?\d*)\.?$', l):
+                continue
+            if 'לחודש' in l or 'להצטרפות' in l or 'לתנאי' in l:
+                continue
+            # Keep useful lines: descriptions, promo notes, international minutes
+            if (len(l) > 3
+                    and not re.match(r'^\d+GB$', l, re.I)
+                    and l not in ('₪', 'לחודש')):
+                extras.append(l)
+        extras = list(dict.fromkeys(extras))[:6]
+
+        # Roaming marker for the "חו"ל כלול" filter
+        if is_intl:
+            # Find the GB-abroad line or add generic marker
+            intl_line = next((l for l in block if 'גלישה בחו' in l), None)
+            roaming_tag = intl_line if intl_line else 'גלישה בחו"ל כלולה'
+            if roaming_tag not in extras:
+                extras = [roaming_tag] + extras
+
+        pdf_url = pdf_links[idx] if idx < len(pdf_links) else \
+            'https://www.golantelecom.co.il/index.php/terms'
+
+        plans.append({
+            'carrier': 'golan', 'plan_name': plan_name, 'price': price,
+            'data_gb': gb_val, 'minutes': None, 'extras': extras, 'url': pdf_url,
+        })
+
+    return plans
+
+
+def _parse_golan_abroad_plans(body_text, pdf_links):
+    """Parse Golan plans from /index.php/offers as abroad records (extracts intl. minutes).
+    Golan's overseas page shows these monthly plans; stored as abroad_plans for the abroad tab.
+    """
+    SKIP = {
+        '\u05d1\u05d9\u05e9\u05e8\u05d0\u05dc', '\u05d1\u05d7\u05d5"\u05dc',
+        '\u05e9\u05d9\u05d7\u05d5\u05ea', '\u05d4\u05d5\u05d3\u05e2\u05d5\u05ea SMS',
+        '\u05d2\u05dc\u05d9\u05e9\u05d4', '\u05e9\u05d9\u05d7\u05d5\u05ea \u05d1\u05d9\u05e0\u05dc\u05d0\u05d5\u05de\u05d9\u05d5\u05ea',
+        '\u05ea\u05d5\u05e7\u05e3 \u05de\u05d1\u05e6\u05e2', '\u20aa', '\u05dc\u05d7\u05d5\u05d3\u05e9',
+        '\u05dc\u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea',
+    }
+    CATEGORIES_ALL = {'\u05d7\u05d5"\u05dc \u05db\u05dc\u05d5\u05dc', '\u05de\u05ea\u05d2\u05dc\u05d2\u05dc\u05ea',
+                      '\u05d3\u05d5\u05e8 5', 'DATA ONLY', '\u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea'}
+
+    lines = [l.strip() for l in body_text.split('\n')]
+    for i, l in enumerate(lines):
+        if l in CATEGORIES_ALL:
+            lines = lines[i:]
+            break
+
+    blocks, cur = [], []
+    for l in lines:
+        if '\u05dc\u05ea\u05e0\u05d0\u05d9 \u05d4\u05ea\u05d5\u05db\u05e0\u05d9\u05ea' in l:
+            blocks.append(cur)
+            cur = []
+        elif 'pdf' not in l and '\u05e4\u05e8\u05d8\u05d9 \u05d4\u05de\u05d1\u05e6\u05e2' not in l:
+            cur.append(l)
+
+    plans = []
+    seen = set()
+    for idx, block in enumerate(blocks):
+        non_empty = [l for l in block if l]
+        if len(non_empty) < 3:
+            continue
+        category = non_empty[0]
+        if category not in CATEGORIES_ALL:
+            continue
+
+        gb_line = None
+        for l in non_empty[:6]:
+            if re.match(r'^\d+GB$', l, re.I) or l in ('DATA ONLY', '\u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea'):
+                gb_line = l
+                break
+        if not gb_line:
+            continue
+
+        # Price: handle split decimal "90.\n34\n₪" → 34.90
+        price = None
+        for i, l in enumerate(block):
+            if l == '\u20aa' and i > 0:
+                prev = block[i - 1].strip()
+                m_int = re.match(r'^(\d+)$', prev)
+                if m_int and i >= 2:
+                    prev2 = block[i - 2].strip()
+                    m_dec = re.match(r'^(\d+)\.$', prev2)
+                    if m_dec:
+                        price = float(f"{m_int.group(1)}.{m_dec.group(1)}")
+                        break
+                m = re.match(r'^(\d+\.?\d*)\.?$', prev)
+                if m:
+                    try:
+                        price = float(m.group(1))
+                    except ValueError:
+                        pass
+                    break
+        if price is None:
+            continue
+
+        # GB value
+        gb_val = None
+        if gb_line not in ('DATA ONLY', '\u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea'):
+            m = re.match(r'^(\d+)GB$', gb_line, re.I)
+            if m:
+                gb_val = int(m.group(1))
+        if gb_val is None:
+            for l in block:
+                m = re.match(r'^(\d+)GB$', l, re.I)
+                if m and int(m.group(1)) >= 5:
+                    gb_val = int(m.group(1))
+                    break
+
+        # International minutes: line after "שיחות בינלאומיות"
+        # DATA ONLY: "שיחות" followed directly by "NN דקות"
+        int_minutes = None
+        for i, l in enumerate(block):
+            if l == '\u05e9\u05d9\u05d7\u05d5\u05ea \u05d1\u05d9\u05e0\u05dc\u05d0\u05d5\u05de\u05d9\u05d5\u05ea' and i + 1 < len(block):
+                mm = re.match(r'^(\d+)\s*\u05d3\u05e7\u05d5\u05ea$', block[i + 1].strip())
+                if mm:
+                    int_minutes = int(mm.group(1))
+                break
+        if int_minutes is None:
+            for i, l in enumerate(block):
+                if l == '\u05e9\u05d9\u05d7\u05d5\u05ea' and i + 1 < len(block):
+                    mm = re.match(r'^(\d+)\s*\u05d3\u05e7\u05d5\u05ea$', block[i + 1].strip())
+                    if mm:
+                        int_minutes = int(mm.group(1))
+                    break
+
+        # Plan name (same convention as domestic scraper)
+        is_5g = category == '\u05d3\u05d5\u05e8 5'
+        is_intl = category == '\u05d7\u05d5"\u05dc \u05db\u05dc\u05d5\u05dc'
+        if gb_line == '\u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea':
+            plan_name = '\u05d2\u05d5\u05dc\u05df \u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea'
+        elif gb_line == 'DATA ONLY':
+            plan_name = '\u05d2\u05d5\u05dc\u05df DATA ONLY 5G'
+        else:
+            plan_name = f'\u05d2\u05d5\u05dc\u05df {gb_line}'
+            if is_5g:
+                plan_name += ' 5G'
+            elif category == '\u05de\u05ea\u05d2\u05dc\u05d2\u05dc\u05ea':
+                plan_name += ' \u05de\u05ea\u05d2\u05dc\u05d2\u05dc\u05ea'
+            elif is_intl:
+                plan_name += ' \u2013 \u05d7\u05d5"\u05dc \u05db\u05dc\u05d5\u05dc'
+
+        if plan_name in seen:
+            plan_name += f' ({idx})'
+        seen.add(plan_name)
+
+        # Extras: "כלל העולם" as destination, plus notable features
+        extras = ['\u05db\u05dc\u05dc \u05d4\u05e2\u05d5\u05dc\u05dd']
+        for l in block:
+            if (not l or l in SKIP or l == gb_line or l == category
+                    or re.match(r'^(\d+\.?\d*)\.?$', l)
+                    or '\u05dc\u05d7\u05d5\u05d3\u05e9' in l
+                    or '\u05dc\u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea' in l
+                    or re.match(r'^\d+GB$', l, re.I)
+                    or l in ('\u20aa',)):
+                continue
+            if len(l) > 3:
+                extras.append(l)
+        extras = list(dict.fromkeys(extras))[:6]
+
+        pdf_url = (pdf_links[idx] if idx < len(pdf_links) else
+                   'https://www.golantelecom.co.il/index.php/terms')
+
+        plans.append({
+            'carrier': 'golan', 'plan_name': plan_name, 'price': price,
+            'days': None, 'data_gb': gb_val, 'minutes': int_minutes,
+            'sms': None, 'extras': extras, 'url': pdf_url,
+        })
+
+    return plans
+
+
+def scrape_golan(_page=None):
+    """Scrape Golan Telecom domestic plans from golantelecom.co.il/index.php/offers."""
+    from playwright.sync_api import sync_playwright as _sp
+    _UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+           "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    _OFFERS_URL = "https://www.golantelecom.co.il/index.php/offers"
+
+    with _sp() as pw:
+        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        page = browser.new_page(user_agent=_UA)
+        try:
+            page.goto(_OFFERS_URL, timeout=40000, wait_until="domcontentloaded")
+            page.wait_for_timeout(3000)
+            _dismiss_popups(page)
+
+            body = page.inner_text("body")
+
+            # Collect plan PDF links in DOM order (skip generic footer links)
+            pdf_links = page.evaluate("""() =>
+                Array.from(document.querySelectorAll('a[href*=".pdf"]'))
+                    .filter(a => (a.innerText || '').includes('\u05dc\u05ea\u05e0\u05d0\u05d9'))
+                    .map(a => a.href)
+            """)
+
+            plans = _parse_golan_body(body, pdf_links)
+            if not plans:
+                logger.warning("scrape_golan: 0 plans extracted from golantelecom.co.il/index.php/offers")
+            return plans
+        finally:
+            browser.close()
+
+
+def scrape_golan_abroad(_page=None):
+    """Scrape Golan Telecom abroad plans from golantelecom.co.il/index.php/offers.
+    Golan's overseas page shows their domestic lineup with international minutes;
+    stored as abroad_plans so they appear in the abroad tab with the correct details.
+    """
+    from playwright.sync_api import sync_playwright as _sp
+    _UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+           "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    _OFFERS_URL = "https://www.golantelecom.co.il/index.php/offers"
+
+    with _sp() as pw:
+        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        page = browser.new_page(user_agent=_UA)
+        try:
+            page.goto(_OFFERS_URL, timeout=40000, wait_until="domcontentloaded")
+            page.wait_for_timeout(3000)
+            _dismiss_popups(page)
+
+            body = page.inner_text("body")
+            pdf_links = page.evaluate("""() =>
+                Array.from(document.querySelectorAll('a[href*=".pdf"]'))
+                    .filter(a => (a.innerText || '').includes('\u05dc\u05ea\u05e0\u05d0\u05d9'))
+                    .map(a => a.href)
+            """)
+
+            plans = _parse_golan_abroad_plans(body, pdf_links)
+            if not plans:
+                logger.warning("scrape_golan_abroad: 0 plans from golantelecom.co.il/index.php/offers")
+            return plans
+        finally:
+            browser.close()
+
+
 def scrape_all():
     """Scrape all carriers sequentially. Returns flat list of plan dicts."""
     _ensure_event_loop()
@@ -657,7 +1018,7 @@ def scrape_all():
         )
         page = browser.new_page()
         plans = []
-        for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom, scrape_xphone, scrape_wecom, scrape_019, scrape_neptucom]:
+        for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom, scrape_xphone, scrape_wecom, scrape_019, scrape_neptucom, scrape_golan]:
             try:
                 result = fn(page)
                 if not result:
@@ -1567,6 +1928,401 @@ def scrape_airalo_global(page, usd_rate):
     return plans
 
 
+AIRALO_SLUG_TO_HEBREW = {
+    "afghanistan": "\u05d0\u05e4\u05d2\u05e0\u05d9\u05e1\u05d8\u05df",
+    "albania": "\u05d0\u05dc\u05d1\u05e0\u05d9\u05d4",
+    "algeria": "\u05d0\u05dc\u05d2\u0027\u05d9\u05e8\u05d9\u05d4",
+    "andorra": "\u05d0\u05e0\u05d3\u05d5\u05e8\u05d4",
+    "anguilla": "\u05d0\u05e0\u05d2\u05d5\u05d5\u05d9\u05dc\u05d4",
+    "antigua-and-barbuda": "\u05d0\u05e0\u05d8\u05d9\u05d2\u05d5\u05d0\u05d4\u0020\u05d5\u05d1\u05e8\u05d1\u05d5\u05d3\u05d4",
+    "argentina": "\u05d0\u05e8\u05d2\u05e0\u05d8\u05d9\u05e0\u05d4",
+    "armenia": "\u05d0\u05e8\u05de\u05e0\u05d9\u05d4",
+    "aruba": "\u05d0\u05e8\u05d5\u05d1\u05d4",
+    "australia": "\u05d0\u05d5\u05e1\u05d8\u05e8\u05dc\u05d9\u05d4",
+    "austria": "\u05d0\u05d5\u05e1\u05d8\u05e8\u05d9\u05d4",
+    "azerbaijan": "\u05d0\u05d6\u05e8\u05d1\u05d9\u05d9\u05d2\u0027\u05df",
+    "azores": "\u05d4\u05d0\u05d9\u05d9\u05dd\u0020\u05d4\u05d0\u05d6\u05d5\u05e8\u05d9\u05d9\u05dd",
+    "bahamas": "\u05d0\u05d9\u05d9\u0020\u05d4\u05d1\u05d4\u05d0\u05de\u05d4",
+    "bahrain": "\u05d1\u05d7\u05e8\u05d9\u05d9\u05df",
+    "bangladesh": "\u05d1\u05e0\u05d2\u05dc\u05d3\u05e9",
+    "barbados": "\u05d1\u05e8\u05d1\u05d3\u05d5\u05e1",
+    "belarus": "\u05d1\u05dc\u05d0\u05e8\u05d5\u05e1",
+    "belgium": "\u05d1\u05dc\u05d2\u05d9\u05d4",
+    "belize": "\u05d1\u05dc\u05d9\u05d6",
+    "benin": "\u05d1\u05e0\u05d9\u05df",
+    "bermuda": "\u05d1\u05e8\u05de\u05d5\u05d3\u05d4",
+    "bhutan": "\u05d1\u05d4\u05d5\u05d8\u05df",
+    "bolivia": "\u05d1\u05d5\u05dc\u05d9\u05d1\u05d9\u05d4",
+    "bonaire": "\u05d1\u05d5\u05e0\u05d9\u05d9\u05e8",
+    "bosnia-and-herzegovina": "\u05d1\u05d5\u05e1\u05e0\u05d9\u05d4\u0020\u05d5\u05d4\u05e8\u05e6\u05d2\u05d5\u05d1\u05d9\u05e0\u05d4",
+    "botswana": "\u05d1\u05d5\u05d8\u05e1\u05d5\u05d0\u05e0\u05d4",
+    "brazil": "\u05d1\u05e8\u05d6\u05d9\u05dc",
+    "british-virgin-islands": "\u05d0\u05d9\u05d9\u0020\u05d4\u05d1\u05ea\u05d5\u05dc\u05d4\u0020\u0028\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4\u0029",
+    "brunei": "\u05d1\u05e8\u05d5\u05e0\u05d9\u05d9",
+    "bulgaria": "\u05d1\u05d5\u05dc\u05d2\u05e8\u05d9\u05d4",
+    "burkina-faso": "\u05d1\u05d5\u05e8\u05e7\u05d9\u05e0\u05d4\u0020\u05e4\u05d0\u05e1\u05d5",
+    "cambodia": "\u05e7\u05de\u05d1\u05d5\u05d3\u05d9\u05d4",
+    "cameroon": "\u05e7\u05de\u05e8\u05d5\u05df",
+    "canada": "\u05e7\u05e0\u05d3\u05d4",
+    "canary-islands": "\u05d0\u05d9\u05d9\u0020\u05e7\u05e0\u05e8\u05d9",
+    "cape-verde": "\u05db\u05e3\u0020\u05d5\u05e8\u05d3\u05d4",
+    "cayman-islands": "\u05d0\u05d9\u05d9\u0020\u05e7\u05d9\u05d9\u05de\u05df",
+    "central-african-republic": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4\u0020\u05d4\u05de\u05e8\u05db\u05d6\u002d\u05d0\u05e4\u05e8\u05d9\u05e7\u05d0\u05d9\u05ea",
+    "chad": "\u05e6\u0027\u05d0\u05d3",
+    "chile": "\u05e6\u0027\u05d9\u05dc\u05d4",
+    "china": "\u05e1\u05d9\u05df",
+    "colombia": "\u05e7\u05d5\u05dc\u05d5\u05de\u05d1\u05d9\u05d4",
+    "costa-rica": "\u05e7\u05d5\u05e1\u05d8\u05d4\u0020\u05e8\u05d9\u05e7\u05d4",
+    "cote-divoire": "\u05d7\u05d5\u05e3\u0020\u05d4\u05e9\u05e0\u05d4\u05d1",
+    "croatia": "\u05e7\u05e8\u05d5\u05d0\u05d8\u05d9\u05d4",
+    "curacao": "\u05e7\u05d5\u05e8\u05d0\u05e1\u05d0\u05d5",
+    "cyprus": "\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df",
+    "czech-republic": "\u05e6\u0027\u05db\u05d9\u05d4",
+    "democratic-republic-of-the-congo": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4\u0020\u05d4\u05d3\u05de\u05d5\u05e7\u05e8\u05d8\u05d9\u05ea\u0020\u05e9\u05dc\u0020\u05e7\u05d5\u05e0\u05d2\u05d5",
+    "denmark": "\u05d3\u05e0\u05de\u05e8\u05e7",
+    "dominica": "\u05d3\u05d5\u05de\u05d9\u05e0\u05d9\u05e7\u05d4",
+    "dominican-republic": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4\u0020\u05d4\u05d3\u05d5\u05de\u05d9\u05e0\u05d9\u05e7\u05e0\u05d9\u05ea",
+    "ecuador": "\u05d0\u05e7\u05d5\u05d5\u05d3\u05d5\u05e8",
+    "egypt": "\u05de\u05e6\u05e8\u05d9\u05dd",
+    "el-salvador": "\u05d0\u05dc\u0020\u05e1\u05dc\u05d1\u05d3\u05d5\u05e8",
+    "estonia": "\u05d0\u05e1\u05d8\u05d5\u05e0\u05d9\u05d4",
+    "eswatini": "\u05d0\u05e1\u05d5\u05d5\u05d0\u05d8\u05d9\u05e0\u05d9",
+    "ethiopia": "\u05d0\u05ea\u05d9\u05d5\u05e4\u05d9\u05d4",
+    "faroe-islands": "\u05d0\u05d9\u05d9\u0020\u05e4\u05d0\u05e8\u05d5",
+    "fiji": "\u05e4\u05d9\u05d2\u0027\u05d9",
+    "finland": "\u05e4\u05d9\u05e0\u05dc\u05e0\u05d3",
+    "france": "\u05e6\u05e8\u05e4\u05ea",
+    "french-guiana": "\u05d2\u05d9\u05d0\u05e0\u05d4\u0020\u05d4\u05e6\u05e8\u05e4\u05ea\u05d9\u05ea",
+    "gabon": "\u05d2\u05d1\u05d5\u05df",
+    "gambia": "\u05d2\u05de\u05d1\u05d9\u05d4",
+    "georgia": "\u05d2\u05d0\u05d5\u05e8\u05d2\u05d9\u05d4",
+    "germany": "\u05d2\u05e8\u05de\u05e0\u05d9\u05d4",
+    "ghana": "\u05d2\u05d0\u05e0\u05d4",
+    "gibraltar": "\u05d2\u05d9\u05d1\u05e8\u05dc\u05d8\u05e8",
+    "greece": "\u05d9\u05d5\u05d5\u05df",
+    "greenland": "\u05d2\u05e8\u05d9\u05e0\u05dc\u05e0\u05d3",
+    "grenada": "\u05d2\u05e8\u05e0\u05d3\u05d4",
+    "guadeloupe": "\u05d2\u05d5\u05d5\u05d0\u05d3\u05dc\u05d5\u05e4",
+    "guam": "\u05d2\u05d5\u05d0\u05dd",
+    "guatemala": "\u05d2\u05d5\u05d0\u05d8\u05de\u05dc\u05d4",
+    "guinea": "\u05d2\u05d9\u05e0\u05d0\u05d4",
+    "guinea-bissau": "\u05d2\u05d9\u05e0\u05d0\u05d4\u0020\u05d1\u05d9\u05e1\u05d0\u05d5",
+    "guyana": "\u05d2\u05d9\u05d0\u05e0\u05d4",
+    "haiti": "\u05d4\u05d0\u05d9\u05d8\u05d9",
+    "honduras": "\u05d4\u05d5\u05e0\u05d3\u05d5\u05e8\u05e1",
+    "hong-kong": "\u05d4\u05d5\u05e0\u05d2\u0020\u05e7\u05d5\u05e0\u05d2",
+    "hungary": "\u05d4\u05d5\u05e0\u05d2\u05e8\u05d9\u05d4",
+    "iceland": "\u05d0\u05d9\u05e1\u05dc\u05e0\u05d3",
+    "india": "\u05d4\u05d5\u05d3\u05d5",
+    "indonesia": "\u05d0\u05d9\u05e0\u05d3\u05d5\u05e0\u05d6\u05d9\u05d4",
+    "iraq": "\u05e2\u05d9\u05e8\u05d0\u05e7",
+    "ireland": "\u05d0\u05d9\u05e8\u05dc\u05e0\u05d3",
+    "isle-of-man": "\u05d4\u05d0\u05d9\u0020\u05de\u05d0\u05df",
+    "israel": "\u05d9\u05e9\u05e8\u05d0\u05dc",
+    "italy": "\u05d0\u05d9\u05d8\u05dc\u05d9\u05d4",
+    "jamaica": "\u05d2\u0027\u05de\u05d9\u05d9\u05e7\u05d4",
+    "japan": "\u05d9\u05e4\u05df",
+    "jersey": "\u05d2\u0027\u05e8\u05d6\u05d9",
+    "jordan": "\u05d9\u05e8\u05d3\u05df",
+    "kazakhstan": "\u05e7\u05d6\u05d7\u05e1\u05d8\u05df",
+    "kenya": "\u05e7\u05e0\u05d9\u05d4",
+    "kuwait": "\u05db\u05d5\u05d5\u05d9\u05d9\u05ea",
+    "kyrgyzstan": "\u05e7\u05d9\u05e8\u05d2\u05d9\u05d6\u05e1\u05d8\u05df",
+    "laos": "\u05dc\u05d0\u05d5\u05e1",
+    "latvia": "\u05dc\u05d8\u05d1\u05d9\u05d4",
+    "lebanon": "\u05dc\u05d1\u05e0\u05d5\u05df",
+    "lesotho": "\u05dc\u05e1\u05d5\u05d8\u05d5",
+    "liberia": "\u05dc\u05d9\u05d1\u05e8\u05d9\u05d4",
+    "liechtenstein": "\u05dc\u05d9\u05db\u05d8\u05e0\u05e9\u05d8\u05d9\u05d9\u05df",
+    "lithuania": "\u05dc\u05d9\u05d8\u05d0",
+    "luxembourg": "\u05dc\u05d5\u05e7\u05e1\u05de\u05d1\u05d5\u05e8\u05d2",
+    "macao": "\u05de\u05e7\u05d0\u05d5",
+    "madagascar": "\u05de\u05d3\u05d2\u05e1\u05e7\u05e8",
+    "madeira": "\u05de\u05d3\u05d9\u05d9\u05e8\u05d4",
+    "malawi": "\u05de\u05dc\u05d0\u05d5\u05d5\u05d9",
+    "malaysia": "\u05de\u05dc\u05d6\u05d9\u05d4",
+    "maldives": "\u05de\u05dc\u05d3\u05d9\u05d1\u05d9\u05d9\u05dd",
+    "mali": "\u05de\u05d0\u05dc\u05d9",
+    "malta": "\u05de\u05dc\u05d8\u05d4",
+    "marie-galante": "\u05de\u05d0\u05e8\u05d9\u002d\u05d2\u05d0\u05dc\u05d0\u05e0\u05d8",
+    "martinique": "\u05de\u05e8\u05d8\u05d9\u05e0\u05d9\u05e7",
+    "mauritius": "\u05de\u05d0\u05d5\u05e8\u05d9\u05e6\u05d9\u05d5\u05e1",
+    "mayotte": "\u05de\u05d0\u05d9\u05d5\u05d8",
+    "mexico": "\u05de\u05e7\u05e1\u05d9\u05e7\u05d5",
+    "moldova": "\u05de\u05d5\u05dc\u05d3\u05d5\u05d1\u05d4",
+    "mongolia": "\u05de\u05d5\u05e0\u05d2\u05d5\u05dc\u05d9\u05d4",
+    "montenegro": "\u05de\u05d5\u05e0\u05d8\u05e0\u05d2\u05e8\u05d5",
+    "montserrat": "\u05de\u05d5\u05e0\u05d8\u05e1\u05e8\u05d0\u05d8",
+    "morocco": "\u05de\u05e8\u05d5\u05e7\u05d5",
+    "mozambique": "\u05de\u05d5\u05d6\u05de\u05d1\u05d9\u05e7",
+    "namibia": "\u05e0\u05de\u05d9\u05d1\u05d9\u05d4",
+    "nauru": "\u05e0\u05d0\u05d5\u05e8\u05d5",
+    "nepal": "\u05e0\u05e4\u05d0\u05dc",
+    "netherlands": "\u05d4\u05d5\u05dc\u05e0\u05d3",
+    "new-zealand": "\u05e0\u05d9\u05d5\u0020\u05d6\u05d9\u05dc\u05e0\u05d3",
+    "nicaragua": "\u05e0\u05d9\u05e7\u05e8\u05d0\u05d2\u05d5\u05d0\u05d4",
+    "niger": "\u05e0\u05d9\u05d2\u0027\u05e8",
+    "nigeria": "\u05e0\u05d9\u05d2\u05e8\u05d9\u05d4",
+    "macedonia": "\u05de\u05e7\u05d3\u05d5\u05e0\u05d9\u05d4",
+    "northern-cyprus": "\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df\u0020\u05d4\u05e6\u05e4\u05d5\u05e0\u05d9\u05ea",
+    "norway": "\u05e0\u05d5\u05e8\u05d1\u05d2\u05d9\u05d4",
+    "oman": "\u05e2\u05d5\u05de\u05d0\u05df",
+    "pakistan": "\u05e4\u05e7\u05d9\u05e1\u05d8\u05df",
+    "palestine-state-of": "\u05e4\u05dc\u05e1\u05d8\u05d9\u05df",
+    "panama": "\u05e4\u05e0\u05de\u05d4",
+    "papua-new-guinea": "\u05e4\u05e4\u05d5\u05d0\u05d4\u0020\u05d2\u05d9\u05e0\u05d0\u05d4\u0020\u05d4\u05d7\u05d3\u05e9\u05d4",
+    "paraguay": "\u05e4\u05e8\u05d0\u05d2\u05d5\u05d5\u05d0\u05d9",
+    "peru": "\u05e4\u05e8\u05d5",
+    "philippines": "\u05d4\u05e4\u05d9\u05dc\u05d9\u05e4\u05d9\u05e0\u05d9\u05dd",
+    "poland": "\u05e4\u05d5\u05dc\u05d9\u05df",
+    "portugal": "\u05e4\u05d5\u05e8\u05d8\u05d5\u05d2\u05dc",
+    "puerto-rico-us": "\u05e4\u05d5\u05d0\u05e8\u05d8\u05d5\u0020\u05e8\u05d9\u05e7\u05d5",
+    "qatar": "\u05e7\u05d8\u05e8",
+    "congo": "\u05e7\u05d5\u05e0\u05d2\u05d5",
+    "reunion": "\u05e8\u05d0\u05d5\u05e0\u05d9\u05d5\u05df",
+    "romania": "\u05e8\u05d5\u05de\u05e0\u05d9\u05d4",
+    "rwanda": "\u05e8\u05d5\u05d0\u05e0\u05d3\u05d4",
+    "saba": "\u05e1\u05d0\u05d1\u05d4",
+    "saint-barthelemy": "\u05e1\u05df\u0020\u05d1\u05e8\u05ea\u05dc\u05de\u05d9",
+    "saint-kitts-and-nevis": "\u05e1\u05e0\u05d8\u0020\u05e7\u05d9\u05d8\u05e1\u0020\u05d5\u05e0\u05d5\u05d5\u05d9\u05e1",
+    "saint-lucia": "\u05e1\u05e0\u05d8\u0020\u05dc\u05d5\u05e1\u05d9\u05d4",
+    "saint-martinfrench-part": "\u05e1\u05df\u0020\u05de\u05e8\u05d8\u05df",
+    "saint-vincent-and-the-grenadines": "\u05e1\u05e0\u05d8\u0020\u05d5\u05d9\u05e0\u05e1\u05e0\u05d8\u0020\u05d5\u05d4\u05d2\u05e8\u05d3\u05d9\u05e0\u05d9\u05dd",
+    "samoa": "\u05e1\u05de\u05d5\u05d0\u05d4",
+    "saudi-arabia": "\u05e2\u05e8\u05d1\u0020\u05d4\u05e1\u05e2\u05d5\u05d3\u05d9\u05ea",
+    "scotland": "\u05e1\u05e7\u05d5\u05d8\u05dc\u05e0\u05d3",
+    "senegal": "\u05e1\u05e0\u05d2\u05dc",
+    "serbia": "\u05e1\u05e8\u05d1\u05d9\u05d4",
+    "seychelles": "\u05d0\u05d9\u05d9\u0020\u05e1\u05d9\u05d9\u05e9\u05dc",
+    "sierra-leone": "\u05e1\u05d9\u05d9\u05e8\u05d4\u0020\u05dc\u05d9\u05d0\u05d5\u05e0\u05d4",
+    "singapore": "\u05e1\u05d9\u05e0\u05d2\u05e4\u05d5\u05e8",
+    "sint-eustatius": "\u05e1\u05d9\u05e0\u05d8\u0020\u05d0\u05d5\u05e1\u05d8\u05d8\u05d9\u05d5\u05e1",
+    "sint-maartendutch-part": "\u05e1\u05d9\u05e0\u05d8\u0020\u05de\u05d0\u05e8\u05d8\u05df",
+    "slovakia": "\u05e1\u05dc\u05d5\u05d1\u05e7\u05d9\u05d4",
+    "slovenia": "\u05e1\u05dc\u05d5\u05d1\u05e0\u05d9\u05d4",
+    "south-africa": "\u05d3\u05e8\u05d5\u05dd\u0020\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "south-korea": "\u05d3\u05e8\u05d5\u05dd\u0020\u05e7\u05d5\u05e8\u05d9\u05d0\u05d4",
+    "spain": "\u05e1\u05e4\u05e8\u05d3",
+    "sri-lanka": "\u05e1\u05e8\u05d9\u0020\u05dc\u05e0\u05e7\u05d4",
+    "suriname": "\u05e1\u05d5\u05e8\u05d9\u05e0\u05d0\u05dd",
+    "sweden": "\u05e9\u05d1\u05d3\u05d9\u05d4",
+    "switzerland": "\u05e9\u05d5\u05d5\u05d9\u05e5",
+    "taiwan": "\u05d8\u05d9\u05d9\u05d5\u05d5\u05d0\u05df",
+    "tajikistan": "\u05d8\u05d2\u0027\u05d9\u05e7\u05d9\u05e1\u05d8\u05df",
+    "tanzania": "\u05d8\u05e0\u05d6\u05e0\u05d9\u05d4",
+    "thailand": "\u05ea\u05d0\u05d9\u05dc\u05e0\u05d3",
+    "timor-leste": "\u05d8\u05d9\u05de\u05d5\u05e8\u0020\u05dc\u05e1\u05d8\u05d4",
+    "togo": "\u05d8\u05d5\u05d2\u05d5",
+    "tonga": "\u05d8\u05d5\u05e0\u05d2\u05d4",
+    "trinidad-and-tobago": "\u05d8\u05e8\u05d9\u05e0\u05d9\u05d3\u05d3\u0020\u05d5\u05d8\u05d5\u05d1\u05d2\u05d5",
+    "tunisia": "\u05ea\u05d5\u05e0\u05d9\u05e1\u05d9\u05d4",
+    "turkey": "\u05d8\u05d5\u05e8\u05e7\u05d9\u05d4",
+    "turks-and-caicos-islands": "\u05d0\u05d9\u05d9\u0020\u05d8\u05d5\u05e8\u05e7\u05e1\u0020\u05d5\u05e7\u05d0\u05d9\u05e7\u05d5\u05e1",
+    "uganda": "\u05d0\u05d5\u05d2\u05e0\u05d3\u05d4",
+    "ukraine": "\u05d0\u05d5\u05e7\u05e8\u05d0\u05d9\u05e0\u05d4",
+    "united-arab-emirates": "\u05d0\u05d9\u05d7\u05d5\u05d3\u0020\u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea",
+    "united-kingdom": "\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4",
+    "united-states": "\u05d0\u05e8\u05e6\u05d5\u05ea\u0020\u05d4\u05d1\u05e8\u05d9\u05ea",
+    "uruguay": "\u05d0\u05d5\u05e8\u05d5\u05d2\u05d5\u05d5\u05d0\u05d9",
+    "uzbekistan": "\u05d0\u05d5\u05d6\u05d1\u05e7\u05d9\u05e1\u05d8\u05df",
+    "vanuatu": "\u05d5\u05e0\u05d5\u05d0\u05d8\u05d5",
+    "vatican-city": "\u05d5\u05ea\u05d9\u05e7\u05df",
+    "venezuela": "\u05d5\u05e0\u05e6\u05d5\u05d0\u05dc\u05d4",
+    "vietnam": "\u05d5\u05d9\u05d9\u05d8\u05e0\u05d0\u05dd",
+    "virgin-islands": "\u05d0\u05d9\u05d9\u0020\u05d4\u05d1\u05ea\u05d5\u05dc\u05d4\u0020\u0028\u05d0\u05e8\u05d4\u0022\u05d1\u0029",
+    "zambia": "\u05d6\u05de\u05d1\u05d9\u05d4",
+    "zimbabwe": "\u05d6\u05d9\u05de\u05d1\u05d1\u05d5\u05d0\u05d4",
+    "mauritania": "\u05de\u05d0\u05d5\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4",
+    "sudan": "\u05e1\u05d5\u05d3\u05df",
+    "puerto-rico": "\u05e4\u05d5\u05d0\u05e8\u05d8\u05d5 \u05e8\u05d9\u05e7\u05d5",
+}
+
+AIRALO_REGION_TO_HEBREW = {
+    "africa": "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "africa-safari": "\u05e1\u05e4\u05d0\u05e8\u05d9 \u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "asia": "\u05d0\u05e1\u05d9\u05d4",
+    "caribbean-islands": "\u05d0\u05d9\u05d9 \u05d4\u05e7\u05e8\u05d9\u05d1\u05d9\u05d9\u05dd",
+    "europe": "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
+    "eu-plus-uk": "\u05d4\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05d9\u05e8\u05d5\u05e4\u05d9 \u05d5\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4",
+    "latin-america": "\u05d0\u05de\u05e8\u05d9\u05e7\u05d4 \u05d4\u05dc\u05d8\u05d9\u05e0\u05d9\u05ea",
+    "middle-east-and-north-africa": "\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df \u05d5\u05e6\u05e4\u05d5\u05df \u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "north-america": "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
+    "oceania": "\u05d0\u05d5\u05e7\u05d9\u05d0\u05e0\u05d9\u05d4",
+}
+
+def scrape_airalo_local(_page=None, usd_rate=None):
+    """Scrape Airalo per-country local eSIM packages via REST API."""
+    import urllib.request as _req
+    import json as _json
+    import time as _time
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+        "Accept": "application/json",
+        "x-client-version": "version2",
+        "accept-language": "en",
+    }
+    all_plans = []
+    for slug, country_heb in AIRALO_SLUG_TO_HEBREW.items():
+        try:
+            req = _req.Request(
+                "https://www.airalo.com/api/v4/countries/{}".format(slug),
+                headers=headers,
+            )
+            with _req.urlopen(req, timeout=15) as resp:
+                data = _json.loads(resp.read().decode())
+            packages = data.get("packages", [])
+            for pkg in packages:
+                try:
+                    price_obj = pkg.get("price", {})
+                    usd = float(price_obj.get("amount", 0))
+                    if usd <= 0:
+                        continue
+                    price_ils = round(usd * usd_rate, 2)
+
+                    if pkg.get("is_unlimited"):
+                        gb = None
+                        gb_label = "ללא הגבלה"  # ללא הגבלה
+                    else:
+                        mb = pkg.get("amount", 0)
+                        gb = round(mb / 1024, 2) if mb else None
+                        if gb is None:
+                            continue
+                        if gb >= 1:
+                            gb_label = "{}GB".format(int(gb) if gb == int(gb) else gb)
+                        else:
+                            gb_label = "{}MB".format(round(gb * 1024))
+
+                    days    = pkg.get("day")
+                    minutes = pkg.get("voice")
+                    sms     = pkg.get("text")
+
+                    if not days:
+                        continue
+
+                    name = "{} – {} – {} ימים".format(
+                        country_heb, gb_label, days
+                    )
+                    if minutes:
+                        name += " – {} דקות".format(minutes)
+                    if sms:
+                        name += " – {} SMS".format(sms)
+
+                    all_plans.append(_make_global_plan(
+                        "airalo_local", name, price_ils, "USD", usd,
+                        gb, days, minutes=minutes, sms=sms, esim=True,
+                        extras=[country_heb],
+                    ))
+                except Exception as e:
+                    logger.debug("Airalo local pkg parse error ({}): {}".format(slug, e))
+                    continue
+            _time.sleep(0.15)
+        except Exception as e:
+            logger.warning("Airalo local {} failed: {}".format(slug, e))
+            continue
+
+    logger.info("Airalo local: {} plans from {} countries".format(
+        len(all_plans), len(AIRALO_SLUG_TO_HEBREW)
+    ))
+    return all_plans
+
+
+def scrape_airalo_regional(_page=None, usd_rate=None):
+    """Scrape Airalo regional eSIM packages (Africa, Asia, Europe, etc.) via REST API."""
+    import urllib.request as _req
+    import json as _json
+    import time as _time
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+        "Accept": "application/json",
+        "x-client-version": "version2",
+        "accept-language": "en",
+    }
+    all_plans = []
+    try:
+        req = _req.Request("https://www.airalo.com/api/v4/regions", headers=headers)
+        with _req.urlopen(req, timeout=15) as resp:
+            regions = _json.loads(resp.read().decode())
+    except Exception as e:
+        logger.warning("Airalo regional: failed to fetch regions list: {}".format(e))
+        return all_plans
+
+    for region in regions:
+        slug = region.get("slug", "")
+        region_heb = AIRALO_REGION_TO_HEBREW.get(slug)
+        if not region_heb:
+            continue
+        try:
+            req2 = _req.Request(
+                "https://www.airalo.com/api/v4/regions/{}".format(slug),
+                headers=headers,
+            )
+            with _req.urlopen(req2, timeout=15) as resp:
+                data = _json.loads(resp.read().decode())
+            packages = data.get("packages", [])
+            seen = set()
+            for pkg in packages:
+                try:
+                    price_obj = pkg.get("price", {})
+                    usd = float(price_obj.get("amount", 0))
+                    if usd <= 0:
+                        continue
+                    price_ils = round(usd * usd_rate, 2)
+
+                    if pkg.get("is_unlimited"):
+                        gb = None
+                        gb_label = "\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4"
+                    else:
+                        mb = pkg.get("amount", 0)
+                        gb = round(mb / 1024, 2) if mb else None
+                        if gb is None:
+                            continue
+                        if gb >= 1:
+                            gb_label = "{}GB".format(int(gb) if gb == int(gb) else gb)
+                        else:
+                            gb_label = "{}MB".format(round(gb * 1024))
+
+                    days    = pkg.get("day")
+                    minutes = pkg.get("voice")
+                    sms     = pkg.get("text")
+                    if not days:
+                        continue
+
+                    dedup = (gb, days, minutes, sms)
+                    if dedup in seen:
+                        continue
+                    seen.add(dedup)
+
+                    name = "Airalo {} \u2013 {} \u2013 {} \u05d9\u05de\u05d9\u05dd".format(
+                        region_heb, gb_label, days
+                    )
+                    if minutes:
+                        name += " \u2013 {} \u05d3\u05e7\u05d5\u05ea".format(minutes)
+                    if sms:
+                        name += " \u2013 {} SMS".format(sms)
+
+                    all_plans.append(_make_global_plan(
+                        "airalo_regional", name, price_ils, "USD", usd,
+                        gb, days, minutes=minutes, sms=sms, esim=True,
+                        extras=[region_heb, "eSIM \u05d1\u05dc\u05d1\u05d3"],
+                    ))
+                except Exception as e:
+                    logger.debug("Airalo regional pkg parse error ({}): {}".format(slug, e))
+                    continue
+            _time.sleep(0.2)
+        except Exception as e:
+            logger.warning("Airalo regional {} failed: {}".format(slug, e))
+            continue
+
+    logger.info("Airalo regional: {} plans from {} regions".format(
+        len(all_plans), len(AIRALO_REGION_TO_HEBREW)
+    ))
+    return all_plans
+
+
 def scrape_pelephone_globalsim(page):
     page.goto(
         "https://www.pelephone.co.il/digitalsite/heb/abroad/global-sim/",
@@ -1816,6 +2572,7 @@ def scrape_carrier_news():
         'xphone':    'XPhone \u05e1\u05dc\u05d5\u05dc\u05e8',
         'wecom':     'We-Com \u05e1\u05dc\u05d5\u05dc\u05e8',
         'neptucom':  'Neptucom \u05e1\u05dc\u05d5\u05dc\u05e8',
+        'golan':     '\u05d2\u05d5\u05dc\u05df \u05d8\u05dc\u05e7\u05d5\u05dd',
     }
 
     articles = []
@@ -3783,6 +4540,8 @@ def scrape_all_global():
         ("scrape_globalesim_global",   scrape_globalesim_global),
         ("scrape_globalesim_regions",  scrape_globalesim_regions),
         ("scrape_airalo_global",       lambda pg: scrape_airalo_global(pg, usd_rate)),
+        ("scrape_airalo_local",        lambda pg: scrape_airalo_local(pg, usd_rate)),
+        ("scrape_airalo_regional",     lambda pg: scrape_airalo_regional(pg, usd_rate)),
         ("scrape_pelephone_globalsim", scrape_pelephone_globalsim),
         ("scrape_esimo_global",        lambda pg: scrape_esimo_global(pg, usd_rate)),
         ("scrape_simtlv_global",       scrape_simtlv_global),
@@ -3890,6 +4649,17 @@ CONTENT_SERVICES = [
     {"service": "נורטון", "carrier": "wecom",
      "url": "https://we-com.co.il/norton360/",
      "strategy": "keyword_scan", "price_keyword": "7.90", "free_trial": "חודש ראשון מתנה"},
+    {"service": "eSIM שעון", "carrier": "golan",
+     "url": "https://www.golantelecom.co.il/esimwatchintro",
+     "strategy": "manual_price", "price_value": "₪19.90", "free_trial": "חודש ראשון חינם"},
+    # ── סייבר ──────────────────────────────────────────────────────────────
+    {"service": "סייבר", "carrier": "golan",
+     "url": "https://www.golantelecom.co.il/golancyber",
+     "strategy": "manual_price", "price_value": "₪5.90", "free_trial": "ללא תקופת חינם"},
+    # ── נורטון ─────────────────────────────────────────────────────────────
+    {"service": "נורטון", "carrier": "golan",
+     "url": "https://www.golantelecom.co.il/golancyber",
+     "strategy": "manual_price", "price_value": "₪6.90", "free_trial": "ללא תקופת חינם"},
     # ── שיר בהמתנה ─────────────────────────────────────────────────────────
     {"service": "שיר בהמתנה", "carrier": "pelephone",
      "url": "https://www.pelephone.co.il/digitalsite/heb/content-products/songwaiting/lobby/",
@@ -3915,6 +4685,9 @@ CONTENT_SERVICES = [
     {"service": "תא קולי", "carrier": "cellcom",
      "url": "https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/",
      "strategy": "cellcom_hub", "page_keyword": "תא קולי אישי", "free_trial": "ללא תקופת חינם"},
+    {"service": "תא קולי", "carrier": "golan",
+     "url": "https://www.golantelecom.co.il/info_and_support#faq-item-11",
+     "strategy": "manual_price", "price_value": "₪5.90", "free_trial": "ללא תקופת חינם"},
 ]
 
 
@@ -4025,6 +4798,12 @@ def scrape_all_content():
             if entry["strategy"] == "not_available":
                 results.append(_result("לא זמין", "לא זמין"))
                 logger.info(f"Content {service}/{carrier}: לא זמין")
+
+            elif entry["strategy"] == "manual_price":
+                price = entry.get("price_value", "לא נמצא")
+                results.append(_result(price, "ידני"))
+                logger.info(f"Content {service}/{carrier}: {price} (manual)")
+                continue
                 continue
 
             url = entry["url"]
@@ -4121,7 +4900,7 @@ def scrape_all_abroad():
         plans = []
         for fn in [scrape_partner_abroad, scrape_pelephone_abroad,
                    scrape_hotmobile_abroad, scrape_cellcom_abroad, scrape_wecom_abroad,
-                   scrape_019_abroad]:
+                   scrape_019_abroad, scrape_golan_abroad]:
             try:
                 result = fn(page)
                 if not result:
@@ -4189,6 +4968,7 @@ CARRIER_HOMEPAGE_URLS = {
     "xphone":    "https://www.xphone.co.il",
     "wecom":     "https://we-com.co.il",
     "neptucom":  "https://www.neptucom.com",
+    "golan":     "https://www.golantelecom.co.il",
 }
 
 _STEALTH_UA = (

@@ -16,6 +16,7 @@ const DOMESTIC_CARRIERS = [
   { id: 'xphone',    label: 'XPhone' },
   { id: 'wecom',     label: 'We-Com' },
   { id: 'neptucom',  label: 'Neptucom' },
+  { id: 'golan',     label: 'גולן טלקום' },
 ]
 
 const GLOBAL_CARRIERS = [

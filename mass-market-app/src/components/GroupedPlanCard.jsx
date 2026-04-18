@@ -7,6 +7,8 @@ const CARRIER_LOGOS = {
   tuki:            '/logos/tuki.png',
   globalesim:      '/logos/globalesim.png',
   airalo:          '/logos/airalo.png',
+  airalo_local:    '/logos/airalo.png',
+  airalo_regional: '/logos/airalo.png',
   pelephone_global:'/logos/pelephone_global.png',
   esimo:           '/logos/esimo.png',
   simtlv:          '/logos/simtlv.png',
@@ -35,9 +37,11 @@ const LOGO_SIZES = {
   travelsim:        '64px',
 }
 
-const AFFILIATE_PROVIDERS = new Set(['airalo', 'holafly', 'saily', 'globalesim'])
+const AFFILIATE_PROVIDERS = new Set(['airalo', 'airalo_local', 'airalo_regional', 'holafly', 'saily', 'globalesim'])
 const AFFILIATE_URLS = {
-  airalo:     'https://www.airalo.com',
+  airalo:          'https://www.airalo.com',
+  airalo_local:    'https://www.airalo.com',
+  airalo_regional: 'https://www.airalo.com',
   holafly:    'https://esim.holafly.com',
   saily:      'https://saily.com',
   globalesim: 'https://globalesim.com',
@@ -55,14 +59,14 @@ function slugify(str) {
 }
 
 const GLOBAL_LABELS = {
-  tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
+  tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', airalo_local: 'Airalo', airalo_regional: 'Airalo',
   pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV',
   world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
   orbit: 'Orbit', travelsim: 'Travel Sim',
 }
 const GLOBAL_COLORS = {
-  tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
+  tuki: 'blue', globalesim: 'green', airalo: 'orange', airalo_local: 'orange', airalo_regional: 'orange', pelephone_global: 'blue',
   esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
   saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber', voye: 'pink',
   orbit: 'indigo', travelsim: 'teal',
