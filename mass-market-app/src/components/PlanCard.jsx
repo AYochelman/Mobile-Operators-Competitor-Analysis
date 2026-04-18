@@ -139,6 +139,10 @@ const CONTENT_URLS = {
   'תא קולי_pelephone':    'https://www.pelephone.co.il/ds/heb/support/support/voice-mail/',
   'תא קולי_partner':      'https://www.partner.co.il/n/partnerdigital/voice_mail',
   'תא קולי_cellcom':      'https://cellcom.co.il/production/Private/Cellular/Cellular_upgrades/',
+  'eSIM שעון_golan':      'https://www.golantelecom.co.il/esimwatchintro',
+  'סייבר_golan':          'https://www.golantelecom.co.il/golancyber',
+  'נורטון_golan':         'https://www.golantelecom.co.il/golancyber',
+  'תא קולי_golan':        'https://www.golantelecom.co.il/info_and_support#faq-item-11',
 }
 
 const CHANGE_DOT = {
