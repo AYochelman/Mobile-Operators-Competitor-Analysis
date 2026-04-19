@@ -562,6 +562,22 @@ export default function DashboardPage() {
                 איפוס
               </button>
             )}
+
+            {/* Change dot legend */}
+            <div className="flex items-center gap-2 border-r border-moca-border/40 pr-2 mr-1">
+              <span className="flex items-center gap-1 text-[10px] text-moca-sub">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block flex-shrink-0" />
+                חבילה חדשה
+              </span>
+              <span className="flex items-center gap-1 text-[10px] text-moca-sub">
+                <span className="w-2 h-2 rounded-full bg-red-400 inline-block flex-shrink-0" />
+                חבילה הוסרה
+              </span>
+              <span className="flex items-center gap-1 text-[10px] text-moca-sub">
+                <span className="w-2 h-2 rounded-full bg-amber-400 inline-block flex-shrink-0" />
+                שינוי מחיר
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">

@@ -858,15 +858,18 @@ def generate_social_sentiment():
 
     # Social LISTENING: search public mentions of carriers, not their own pages.
     system_prompt = (
-        "\u05d0\u05ea\u05d4 \u05d0\u05e0\u05dc\u05d9\u05e1\u05d8 \u05de\u05d3\u05d9\u05d4 \u05d7\u05d1\u05e8\u05ea\u05d9\u05ea \u05d4\u05de\u05ea\u05de\u05d7\u05d4 \u05d1\u05e9\u05d5\u05e7 \u05d4\u05e1\u05dc\u05d5\u05dc\u05e8 \u05d4\u05d9\u05e9\u05e8\u05d0\u05dc\u05d9. "
-        "\u05d0\u05ea\u05d4 \u05de\u05e7\u05d1\u05dc \u05e4\u05d5\u05e1\u05d8\u05d9\u05dd \u05e9\u05dc \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea \u05d5\u05de\u05e9\u05ea\u05de\u05e9\u05d9\u05dd \u05e8\u05d2\u05d9\u05dc\u05d9\u05dd \u05d1\u05e8\u05e9\u05ea\u05d5\u05ea \u05d4\u05d7\u05d1\u05e8\u05ea\u05d9\u05d5\u05ea \u05e9\u05de\u05d0\u05d6\u05db\u05d9\u05e8\u05d9\u05dd \u05d0\u05ea \u05d4\u05e1\u05e4\u05e7 \u05d4\u05e1\u05dc\u05d5\u05dc\u05e8. "
-        "\u05db\u05ea\u05d5\u05d1 \u05d0\u05da \u05d5\u05e8\u05e7 \u05d1\u05e2\u05d1\u05e8\u05d9\u05ea \u05ea\u05e7\u05e0\u05d9\u05ea, \u05e0\u05db\u05d5\u05e0\u05d4 \u05d5\u05e8\u05d4\u05d5\u05d8\u05d4. "
-        "\u05d4\u05e9\u05ea\u05de\u05e9 \u05d1\u05de\u05d9\u05dc\u05d9\u05dd \u05e2\u05d1\u05e8\u05d9\u05d5\u05ea \u05e7\u05d9\u05d9\u05de\u05d5\u05ea \u05d5\u05e0\u05e4\u05d5\u05e6\u05d5\u05ea \u05d1\u05dc\u05d1\u05d3 \u2014 \u05d0\u05dc \u05ea\u05de\u05e6\u05d9\u05d0 \u05de\u05d9\u05dc\u05d9\u05dd. "
-        "\u05e9\u05de\u05d5\u05ea \u05e1\u05e4\u05e7\u05d9\u05dd \u05d5\u05d7\u05d1\u05e8\u05d5\u05ea \u05ea\u05de\u05d9\u05d3 \u05d1\u05d0\u05e0\u05d2\u05dc\u05d9\u05ea (Partner, Pelephone, Cellcom, Hot Mobile, 019, XPhone, WeCom). "
-        "\u05d0\u05e1\u05d5\u05e8 \u05dc\u05ea\u05e8\u05d2\u05dd \u05e9\u05de\u05d5\u05ea \u05e1\u05e4\u05e7\u05d9\u05dd \u05dc\u05e2\u05d1\u05e8\u05d9\u05ea. "
-        "\u05d0\u05e1\u05d5\u05e8 \u05dc\u05d4\u05e9\u05ea\u05de\u05e9 \u05d1-Markdown, \u05db\u05d5\u05ea\u05e8\u05d5\u05ea, \u05db\u05d5\u05db\u05d1\u05d9\u05d5\u05ea, \u05d0\u05d5 \u05ea\u05d1\u05dc\u05d9\u05d8\u05d9\u05dd. "
-        "\u05db\u05ea\u05d5\u05d1 \u05e4\u05e8\u05d5\u05d6\u05d4 \u05e8\u05d2\u05d9\u05dc\u05d4 \u05d1\u05dc\u05d1\u05d3. "
-        "\u05d1\u05e1\u05d5\u05e3 \u05d4\u05ea\u05d2\u05d5\u05d1\u05d4, \u05d4\u05d5\u05e1\u05e3 \u05e9\u05d5\u05e8\u05d4 \u05d7\u05d3\u05e9\u05d4: SENTIMENT: \u05d5\u05dc\u05d0\u05d7\u05e8\u05d9\u05d4 \u05d0\u05d7\u05ea \u05de: positive / negative / neutral / mixed"
+        "אתה אנליסט מדיה חברתית במחלקת השיווק של Pelephone. "
+        "תפקידך לנטר את שיח הציבור על ספקי הסלולר ולהסיק משמעויות עבור מנהל השיווק של Pelephone. "
+        "אתה מקבל פוסטים של לקוחות ומשתמשים רגילים ברשתות החברתיות שמאזכרים ספק סלולר מסוים. "
+        "כאשר הספק הוא Pelephone — נתח מה אומר הציבור עלינו ומה משמעות הדבר לפעילות השיווקית. "
+        "כאשר הספק הוא מתחרה — נתח מה חולשותיו וחוזקותיו בעיני הציבור ומה Pelephone יכולה ללמוד מכך. "
+        "כתוב אך ורק בעברית תקנית, נכונה ורהוטה. "
+        "השתמש במילים עבריות קיימות ונפוצות בלבד — אל תמציא מילים. "
+        "שמות ספקים וחברות תמיד באנגלית (Partner, Pelephone, Cellcom, Hot Mobile, 019, XPhone, WeCom). "
+        "אסור לתרגם שמות ספקים לעברית. "
+        "אסור להשתמש ב-Markdown, כותרות, כוכביות, או תבליטים. "
+        "כתוב פרוזה רגילה בלבד. "
+        "בסוף התגובה, הוסף שורה חדשה: SENTIMENT: ולאחריה אחת מ: positive / negative / neutral / mixed"
     )
 
     platform_labels = {
@@ -945,12 +948,20 @@ def generate_social_sentiment():
                     if p['text']:
                         posts_text += f"  - {p['text'][:250]}\n"
 
+            is_pelephone = (carrier == 'pelephone')
+            perspective_line = (
+                "סכם מה הציבור אומר עלינו (Pelephone), מה הנושאים החוזרים, ומה המשמעות לפעילות השיווקית שלנו."
+                if is_pelephone else
+                f"סכם מה הציבור אומר על {carrier_english}, והסק מה Pelephone יכולה ללמוד מכך — חולשות שניתן לנצל, או חוזקות שכדאי לקחת בחשבון."
+            )
             prompt = (
-                f"\u05dc\u05d4\u05dc\u05df {total_posts} \u05e4\u05d5\u05e1\u05d8\u05d9\u05dd \u05e9\u05dc \u05de\u05e9\u05ea\u05de\u05e9\u05d9\u05dd \u05d1\u05e8\u05e9\u05ea\u05d5\u05ea \u05d4\u05d7\u05d1\u05e8\u05ea\u05d9\u05d5\u05ea \u05e9\u05de\u05d0\u05d6\u05db\u05d9\u05e8\u05d9\u05dd \u05d0\u05ea {carrier_english} \u05d1-7 \u05d4\u05d9\u05de\u05d9\u05dd \u05d4\u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd:\n"
+                f"להלן {total_posts} פוסטים של משתמשים ברשתות החברתיות שמאזכרים את {carrier_english} ב-7 הימים האחרונים:\n"
                 f"{posts_text}\n"
-                f"\u05db\u05ea\u05d5\u05d1 \u05e4\u05e1\u05e7\u05d4 \u05d0\u05d7\u05ea \u05e7\u05e6\u05e8\u05d4 \u05d5\u05e8\u05d4\u05d5\u05d8\u05d4 \u05d1\u05e2\u05d1\u05e8\u05d9\u05ea \u05ea\u05e7\u05d9\u05e0\u05d4 (3-4 \u05de\u05e9\u05e4\u05d8\u05d9\u05dd, \u05e2\u05d3 80 \u05de\u05d9\u05dc\u05d4) \u05d4\u05de\u05e1\u05db\u05de\u05ea:\n"
-                f"\u05de\u05d4 \u05d4\u05dc\u05e7\u05d5\u05d7\u05d5\u05ea \u05d5\u05d4\u05de\u05e9\u05ea\u05de\u05e9\u05d9\u05dd \u05db\u05d5\u05ea\u05d1\u05d9\u05dd \u05e2\u05dc {carrier_english}: \u05d4\u05e0\u05d5\u05e9\u05d0\u05d9\u05dd \u05d4\u05e2\u05d9\u05e7\u05e8\u05d9\u05d9\u05dd, \u05d4\u05e8\u05d2\u05e9 \u05d4\u05db\u05dc\u05dc\u05d9, \u05ea\u05dc\u05d5\u05e0\u05d5\u05ea \u05d0\u05d5 \u05e9\u05d1\u05d7\u05d9\u05dd, \u05d5\u05de\u05d2\u05de\u05d5\u05ea \u05d1\u05d5\u05dc\u05d8\u05d5\u05ea.\n"
-                f"\u05dc\u05d0\u05d7\u05e8 \u05d4\u05e4\u05e1\u05e7\u05d4, \u05d4\u05d5\u05e1\u05e3 \u05e9\u05d5\u05e8\u05ea SENTIMENT."
+                f"כתוב פסקה אחת קצרה ורהוטה בעברית תקינה (3-4 משפטים, עד 80 מילה).\n"
+                f"{perspective_line}\n"
+                f"לאחר הפסקה, הוסף שתי שורות:\n"
+                f"SENTIMENT: ואחריה אחת מ: positive / negative / neutral / mixed\n"
+                f"COUNTS: positive:N negative:N neutral:N (כאשר N הוא מספר הפוסטים בכל קטגוריה)"
             )
 
             resp = _req.post(
@@ -962,7 +973,7 @@ def generate_social_sentiment():
                 },
                 json={
                     "model": "claude-sonnet-4-5",
-                    "max_tokens": 350,
+                    "max_tokens": 400,
                     "system": system_prompt,
                     "messages": [{"role": "user", "content": prompt}],
                 },
@@ -972,13 +983,22 @@ def generate_social_sentiment():
             raw = resp.json()["content"][0]["text"].strip()
 
             sentiment = 'neutral'
+            counts = {'positive': 0, 'negative': 0, 'neutral': 0}
+
             if 'SENTIMENT:' in raw:
                 parts = raw.split('SENTIMENT:', 1)
                 raw_narrative = parts[0].strip()
+                after_sentiment = parts[1]
                 for s in ['positive', 'negative', 'mixed', 'neutral']:
-                    if s in parts[1].lower():
+                    if s in after_sentiment.lower():
                         sentiment = s
                         break
+                if 'COUNTS:' in after_sentiment:
+                    counts_str = after_sentiment.split('COUNTS:', 1)[1]
+                    for key in ['positive', 'negative', 'neutral']:
+                        m = _re.search(rf'{key}:(\d+)', counts_str, _re.IGNORECASE)
+                        if m:
+                            counts[key] = int(m.group(1))
             else:
                 raw_narrative = raw
 
@@ -986,6 +1006,7 @@ def generate_social_sentiment():
             narrative = _re.sub(r'\*+', '', narrative)
             narrative = _re.sub(r'\n{2,}', ' ', narrative).strip()
 
+            platform_data['_counts'] = counts
             save_social_sentiment(carrier, platform_data, narrative, sentiment, db_path=_db_path())
             logger.info(f"social sentiment: saved {carrier} ({sentiment})")
 
@@ -1051,7 +1072,7 @@ def generate_executive_summary():
                 f"שינויים השבוע: סך הכל {wc['total']} ({wc['drops']} ירידות מחיר, {wc['rises']} עליות מחיר)\n\n"
                 f"חבילות מובילות בשוק:\n{top_plans_str}\n\n"
                 f"כתוב פסקה אחת קצרה ורהוטה בעברית תקינה ונכונה (3 עד 4 משפטים, עד 80 מילה).\n"
-                f"הפסקה תסכם: מי הספק המוביל ומדוע, מה הגישה התחרותית הבולטת בשוק, ומה כדאי לצרכן לדעת.\n"
+                f"הפסקה תנותח מנקודת מבטו של מנהל השיווק של Pelephone: מה מצב Pelephone ביחס למתחרים, אילו איומים או הזדמנויות עולים מהנתונים, ומה המשמעות השיווקית המיידית עבור Pelephone.\n"
                 f"כתוב פרוזה רגילה בלבד — ללא כותרות, ללא מספרים, ללא תבליטים, ללא סימני Markdown."
             )
 
@@ -1066,7 +1087,8 @@ def generate_executive_summary():
                     "model": "claude-sonnet-4-5",
                     "max_tokens": 400,
                     "system": (
-                        "אתה אנליסט שוק סלולר ישראלי בכיר. "
+                        "אתה אנליסט שוק בכיר במחלקת השיווק של Pelephone. "
+                        "תפקידך לנתח את תמונת השוק ולהסיק משמעויות אסטרטגיות עבור מנהל השיווק של Pelephone. "
                         "כתוב אך ורק בעברית תקנית, נכונה ורהוטה. "
                         "השתמש במילים עבריות קיימות ונפוצות בלבד — אל תמציא מילים. "
                         "שמות ספקים וחברות יש לכתוב תמיד באנגלית בלבד (לדוגמה: Orbit, SimTLV, eSIMio, Airalo, Holafly, Voye, Partner, Pelephone, Cellcom, Hot Mobile, 019). "

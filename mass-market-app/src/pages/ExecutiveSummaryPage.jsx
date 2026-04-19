@@ -135,12 +135,18 @@ function SocialSection({ rows, loading, isAdmin, onRefresh, refreshing }) {
         </div>
       </div>
 
-      {/* Carrier cards grid */}
+      {/* Carrier cards grid — Pelephone pinned first */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {rows.map(row => {
-          const badgeCls = SENTIMENT_BADGE[row.sentiment] || SENTIMENT_BADGE.neutral
-          const label    = SENTIMENT_LABEL[row.sentiment] || 'ניטרלי'
-          const platforms = Object.keys(row.platform_data || {})
+        {[...rows].sort((a, b) => {
+          if (a.carrier === 'pelephone') return -1
+          if (b.carrier === 'pelephone') return 1
+          return 0
+        }).map(row => {
+          const badgeCls  = SENTIMENT_BADGE[row.sentiment] || SENTIMENT_BADGE.neutral
+          const label     = SENTIMENT_LABEL[row.sentiment] || 'ניטרלי'
+          const platforms = Object.keys(row.platform_data || {}).filter(k => k !== '_counts')
+          const counts    = row.platform_data?._counts || null
+          const totalPosts = platforms.reduce((sum, p) => sum + (row.platform_data[p]?.length || 0), 0)
           return (
             <div key={row.carrier} className="bg-[#f9f4ee] rounded-xl p-3">
               <div className="flex items-center justify-between mb-1.5">
@@ -152,15 +158,41 @@ function SocialSection({ rows, loading, isAdmin, onRefresh, refreshing }) {
                 </span>
               </div>
               <p className="text-xs text-moca-text leading-relaxed text-right">{row.narrative}</p>
-              {platforms.length > 0 && (
-                <div className="flex items-center gap-1 justify-end mt-1.5 flex-wrap">
+
+              {/* Bottom row: platform badges (right) + post count breakdown (left) */}
+              <div className="flex items-end justify-between mt-2 flex-wrap gap-1">
+                {/* Platform badges */}
+                <div className="flex items-center gap-1 flex-wrap">
                   {platforms.map(p => (
                     <span key={p} className="text-[9px] text-moca-sub bg-white px-1 py-0.5 rounded border border-moca-border/40">
                       {PLATFORM_SHORT[p] || p} {row.platform_data[p]?.length || 0}
                     </span>
                   ))}
                 </div>
-              )}
+
+                {/* Post count + sentiment breakdown */}
+                <div className="text-right">
+                  <div className="text-[9px] text-moca-sub mb-0.5">
+                    {totalPosts} תגובות נותחו
+                  </div>
+                  {totalPosts > 0 && (
+                    <div className="flex items-center gap-1 justify-end">
+                      <span className="inline-flex items-center gap-0.5 text-[9px] text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded" title="חיוביות">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+                        {counts?.positive ?? 0}
+                      </span>
+                      <span className="inline-flex items-center gap-0.5 text-[9px] text-red-600 bg-red-50 px-1 py-0.5 rounded" title="שליליות">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
+                        {counts?.negative ?? 0}
+                      </span>
+                      <span className="inline-flex items-center gap-0.5 text-[9px] text-gray-500 bg-gray-100 px-1 py-0.5 rounded" title="ניטרליות">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
+                        {counts?.neutral ?? 0}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )
         })}
