@@ -688,6 +688,9 @@ _HISTORY_CARRIER_NAMES = {
     'voye': 'VOYE',
     'orbit': 'Orbit',
     'travelsim': 'Travel Sim',
+    'gomoworld': 'GoMoWorld',
+    'tasim': 'Tasim',
+    'maya': 'Maya Mobile',
 }
 _HISTORY_TYPE_NAMES = {
     'domestic': '\u05de\u05e7\u05d5\u05de\u05d9',

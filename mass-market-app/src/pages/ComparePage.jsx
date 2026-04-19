@@ -56,6 +56,9 @@ const CARRIERS_BY_TAB = {
     { id: 'voye', label: 'VOYE', color: '#ec4899' },
     { id: 'orbit', label: 'Orbit', color: '#6366f1' },
     { id: 'travelsim', label: 'Travel Sim', color: '#0d9488' },
+    { id: 'gomoworld', label: 'GoMoWorld', color: '#0891b2' },
+    { id: 'tasim', label: 'Tasim', color: '#7c3aed' },
+    { id: 'maya', label: 'Maya Mobile', color: '#0f766e' },
   ],
 }
 
@@ -72,6 +75,7 @@ const KNOWN_REGIONS = new Set([
   'גלובלי — גלישה בלבד','גלובלי — גולשים ומדברים',
   '167+ מדינות','156+ מדינות',
   'ספארי אפריקה','האיחוד האירופי ובריטניה',
+  'איי התעלה','האנטילים הצרפתיים','אנטילים הולנדיים',
 ])
 
 export default function ComparePage() {

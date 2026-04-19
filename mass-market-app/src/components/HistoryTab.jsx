@@ -35,6 +35,9 @@ const GLOBAL_CARRIERS = [
   { id: 'voye',             label: 'VOYE' },
   { id: 'orbit',            label: 'Orbit' },
   { id: 'travelsim',        label: 'Travel Sim' },
+  { id: 'gomoworld',        label: 'GoMoWorld' },
+  { id: 'tasim',            label: 'Tasim' },
+  { id: 'maya',             label: 'Maya Mobile' },
 ]
 
 const CARRIERS_BY_TYPE = {

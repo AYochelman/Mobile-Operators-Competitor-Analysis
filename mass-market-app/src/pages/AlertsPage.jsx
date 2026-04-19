@@ -30,6 +30,15 @@ const GLOBAL_PROVIDERS = [
   { id: 'world8', label: '8 World' },
   { id: 'saily', label: 'Saily' },
   { id: 'holafly', label: 'Holafly' },
+  { id: 'esimio', label: 'eSIM.io' },
+  { id: 'xphone_global', label: 'XPhone Global' },
+  { id: 'sparks', label: 'Sparks' },
+  { id: 'voye', label: 'VOYE' },
+  { id: 'orbit', label: 'Orbit' },
+  { id: 'travelsim', label: 'Travel Sim' },
+  { id: 'gomoworld', label: 'GoMoWorld' },
+  { id: 'tasim', label: 'Tasim' },
+  { id: 'maya', label: 'Maya Mobile' },
 ]
 
 const CARRIER_COLORS = {
@@ -37,6 +46,9 @@ const CARRIER_COLORS = {
   mobile019: 'teal', xphone: 'pink', wecom: 'amber',
   tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'orange',
   esimo: 'purple', simtlv: 'teal', world8: 'pink', saily: 'blue', holafly: 'green',
+  esimio: 'blue', xphone_global: 'teal', sparks: 'amber', voye: 'pink',
+  orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'purple',
+  maya: 'teal',
 }
 
 const TAB_LABELS = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי' }

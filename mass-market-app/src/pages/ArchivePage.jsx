@@ -31,6 +31,9 @@ const ALL_PROVIDERS = [
   { id: 'voye',             label: 'Voye',            color: '#009966' },
   { id: 'orbit',            label: 'Orbit',           color: '#003366' },
   { id: 'travelsim',        label: 'TravelSIM',       color: '#336600' },
+  { id: 'gomoworld',        label: 'GoMoWorld',       color: '#0891b2' },
+  { id: 'tasim',            label: 'Tasim',           color: '#7c3aed' },
+  { id: 'maya',             label: 'Maya Mobile',     color: '#0f766e' },
 ]
 
 const PLAN_TYPE_LABELS = {

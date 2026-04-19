@@ -40,7 +40,8 @@ const CARRIER_NAMES = {
   airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo',
   simtlv: 'SimTLV', world8: 'World8', saily: 'Saily', holafly: 'Holafly',
   esimio: 'eSIMio', sparks: 'Sparks', voye: 'Voye', orbit: 'Orbit',
-  travelsim: 'TravelSim',
+  travelsim: 'TravelSim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
+  maya: 'Maya Mobile',
 }
 
 const BAR_COLORS = ['#5c3317', '#7a4a28', '#9a6040', '#b87c58', '#d4a07a', '#e8c9a8']
