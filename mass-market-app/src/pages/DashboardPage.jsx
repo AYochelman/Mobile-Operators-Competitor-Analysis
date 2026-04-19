@@ -24,12 +24,15 @@ import {
   AIRALO_REGION_MAP,
   GLOBALESIM_EUROPE, GLOBALESIM_ASIA, GLOBALESIM_NORTH_AMERICA,
   GLOBALESIM_SOUTH_AMERICA, GLOBALESIM_AFRICA, GLOBALESIM_OCEANIA, GLOBALESIM_GLOBAL_REGION,
+  GOMOWORLD_EUROPE, GOMOWORLD_LATIN_AMERICA, GOMOWORLD_SOUTHEAST_ASIA,
+  GOMOWORLD_FRENCH_ANTILLES, GOMOWORLD_NETHERLANDS_ANTILLES, GOMOWORLD_NORTH_AMERICA,
+  MAYA_GLOBAL, MAYA_OCEANIA,
 } from '../data/globalCountries'
 
 // Carriers where one plan covers many countries (zone/global plans)
 const MULTI_COUNTRY_CARRIERS = new Set([
   'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
-  'pelephone_global', 'esimo', 'globalesim',
+  'pelephone_global', 'esimo', 'globalesim', 'gomoworld', 'maya',
 ])
 
 const GLOBALESIM_REGION_MAP = {
@@ -63,6 +66,19 @@ function getPlanCoverage(plan) {
   if (carrier === 'pelephone_global') return PELEPHONE_GLOBAL_COUNTRIES
   if (carrier === 'esimo') return ESIMO_COUNTRIES
   if (carrier === 'globalesim') return GLOBALESIM_REGION_MAP[dest] || GLOBALESIM_GLOBAL_REGION
+  if (carrier === 'gomoworld') {
+    const GOMOWORLD_ZONE_MAP = {
+      'אירופה': GOMOWORLD_EUROPE, 'אמריקה הלטינית': GOMOWORLD_LATIN_AMERICA,
+      'דרום מזרח אסיה': GOMOWORLD_SOUTHEAST_ASIA, 'האנטילים הצרפתיים': GOMOWORLD_FRENCH_ANTILLES,
+      'אנטילים הולנדיים': GOMOWORLD_NETHERLANDS_ANTILLES, 'צפון אמריקה': GOMOWORLD_NORTH_AMERICA,
+    }
+    return GOMOWORLD_ZONE_MAP[dest] || null
+  }
+  if (carrier === 'maya') {
+    if (dest === 'גלובלי') return MAYA_GLOBAL
+    if (dest === 'אוקיאניה') return MAYA_OCEANIA
+    return null
+  }
   return null
 }
 
@@ -183,6 +199,7 @@ export default function DashboardPage() {
   const [lastUpdate, setLastUpdate] = useState(null)
   const [usdRate, setUsdRate] = useState(null)
   const [eurRate, setEurRate] = useState(null)
+  const [gbpRate, setGbpRate] = useState(null)
   const [visibleCount, setVisibleCount] = useState(5000)
   const [banners, setBanners] = useState([])
   const [bannersLoaded, setBannersLoaded] = useState(false)
@@ -246,7 +263,21 @@ export default function DashboardPage() {
   useEffect(() => {
     const base = import.meta.env.VITE_API_URL || ''
     fetch(`${base}/api/exchange-rates`, { headers: { 'ngrok-skip-browser-warning': 'true' } })
-      .then(r => r.json()).then(d => { setUsdRate(d.usd); setEurRate(d.eur) }).catch(() => {})
+      .then(r => r.json())
+      .then(d => {
+        setUsdRate(d.usd)
+        setEurRate(d.eur)
+        if (d.gbp) {
+          setGbpRate(d.gbp)
+        } else {
+          // Flask not yet updated — fetch GBP→ILS directly
+          fetch('https://open.er-api.com/v6/latest/GBP')
+            .then(r2 => r2.json())
+            .then(d2 => { if (d2.rates?.ILS) setGbpRate(d2.rates.ILS) })
+            .catch(() => {})
+        }
+      })
+      .catch(() => {})
   }, [])
 
   async function loadTab(t) {
@@ -323,7 +354,9 @@ export default function DashboardPage() {
       else if (f.destination !== 'all') result = result.filter(p => {
         if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
           const coverage = getPlanCoverage(p)
-          return coverage ? coverage.includes(f.destination) : false
+          if (coverage) return coverage.includes(f.destination)
+          // single-country plan from a multi-country carrier — match directly
+          return p.extras && p.extras[0] === f.destination
         }
         return p.extras && p.extras[0] === f.destination
       })
@@ -413,7 +446,12 @@ export default function DashboardPage() {
     for (const p of src) {
       if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
         const coverage = getPlanCoverage(p)
-        if (coverage) for (const c of coverage) destSet.add(c)
+        if (coverage) {
+          for (const c of coverage) destSet.add(c)
+        } else if (p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(p.extras[0])) {
+          // single-country plan from a multi-country carrier — add directly
+          destSet.add(p.extras[0])
+        }
       } else if (p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(p.extras[0])) {
         destSet.add(p.extras[0])
       }
@@ -500,6 +538,9 @@ export default function DashboardPage() {
           )}
           {eurRate && (
             <p className="text-[11px] text-gray-400">שער אירו: ₪{eurRate.toFixed(2)}</p>
+          )}
+          {gbpRate && (
+            <p className="text-[11px] text-gray-400">שער פאונד: ₪{gbpRate.toFixed(2)}</p>
           )}
         </div>
         {isAdmin && (
@@ -737,7 +778,7 @@ export default function DashboardPage() {
                     </button>
                   </div>
                   <div className="grid grid-cols-3 gap-1">
-                    {CARRIERS.map(c => {
+                    {(tab === 'abroad' ? CARRIERS.filter(c => c.id !== 'xphone' && c.id !== 'neptucom') : CARRIERS).map(c => {
                       const cnt = plans[tab]?.filter(p => p.carrier === c.id).length || 0
                       return (
                         <button

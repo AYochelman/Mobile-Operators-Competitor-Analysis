@@ -21,6 +21,9 @@ const CARRIER_LOGOS = {
   voye:            '/logos/voye.png',
   orbit:           '/logos/orbit.png',
   travelsim:       '/logos/travelsim.png',
+  gomoworld:       '/logos/gomoworld.png',
+  tasim:           '/logos/tasim.png',
+  maya:            '/logos/maya.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
@@ -35,6 +38,8 @@ const LOGO_SIZES = {
   voye:             '48px',
   orbit:            '48px',
   travelsim:        '64px',
+  gomoworld:        '40px',
+  maya:             '43px',
 }
 
 const AFFILIATE_PROVIDERS = new Set(['airalo', 'airalo_local', 'airalo_regional', 'holafly', 'saily', 'globalesim'])
@@ -63,13 +68,14 @@ const GLOBAL_LABELS = {
   pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV',
   world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
-  orbit: 'Orbit', travelsim: 'Travel Sim',
+  orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld',
+  tasim: 'Tasim', maya: 'Maya Mobile',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', airalo_local: 'orange', airalo_regional: 'orange', pelephone_global: 'blue',
   esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
   saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber', voye: 'pink',
-  orbit: 'indigo', travelsim: 'teal',
+  orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'violet', maya: 'teal',
 }
 
 function formatGB(gb) {
@@ -144,7 +150,7 @@ export default function GroupedPlanCard({ carrier, destination, plans }) {
         </span>
         {selectedPlan.original_price && selectedPlan.currency && selectedPlan.currency !== 'ILS' && (
           <div className="text-[11px] text-gray-400 mt-0.5" dir="ltr">
-            {selectedPlan.currency} ${selectedPlan.original_price}
+            {selectedPlan.currency} {({'USD':'$','GBP':'£','EUR':'€','AUD':'A$','CAD':'C$','JPY':'¥','CHF':'CHF ','NZD':'NZ$'})[selectedPlan.currency] || '$'}{selectedPlan.original_price}
           </div>
         )}
       </div>

@@ -7,6 +7,8 @@ const EXAMPLES = [
   'השוו בין פרטנר לפלאפון',
   'איזה eSIM הכי משתלם לאירופה?',
   'מה השתנה היום?',
+  'מה הכי זול ל-7 ימים בארה"ב?',
+  'השוו Airalo ו-Holafly לאירופה',
 ]
 
 // Map carrier names (Hebrew + English) to their IDs and tabs
@@ -42,6 +44,23 @@ const CARRIER_MAP = {
   'saily': { id: 'saily', tab: 'global' },
   'holafly': { id: 'holafly', tab: 'global' },
   'tuki': { id: 'tuki', tab: 'global' },
+  // Domestic
+  'נפטוקום': { id: 'neptucom', tab: 'domestic' },
+  'Neptucom': { id: 'neptucom', tab: 'domestic' },
+  'neptucom': { id: 'neptucom', tab: 'domestic' },
+  // Global — additional providers
+  'Orbit': { id: 'orbit', tab: 'global' },
+  'orbit': { id: 'orbit', tab: 'global' },
+  'Travel Sim': { id: 'travelsim', tab: 'global' },
+  'TravelSim': { id: 'travelsim', tab: 'global' },
+  'travelsim': { id: 'travelsim', tab: 'global' },
+  'GoMoWorld': { id: 'gomoworld', tab: 'global' },
+  'gomoworld': { id: 'gomoworld', tab: 'global' },
+  'Tasim': { id: 'tasim', tab: 'global' },
+  'tasim': { id: 'tasim', tab: 'global' },
+  'Maya Mobile': { id: 'maya', tab: 'global' },
+  'Maya': { id: 'maya', tab: 'global' },
+  'maya': { id: 'maya', tab: 'global' },
 }
 
 // Build regex from carrier names (longest first to avoid partial matches)

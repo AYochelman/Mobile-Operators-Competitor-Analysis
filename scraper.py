@@ -4866,7 +4866,15 @@ def scrape_tasim_global(_page=None, usd_rate=None):
         plan = _make_global_plan(
             "tasim", plan_name, price_ils, "USD", price_usd,
             data_gb=data_gb, days=days, esim=True,
-            extras=[country_heb]
+            extras=[
+                country_heb,
+                "\u05e9\u05d9\u05d7\u05d5\u05ea \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4 \u05d1\u05d0\u05e8\u05d4\"\u05d1",   # שיחות ללא הגבלה בארה"ב
+                "\u05e9\u05d9\u05d7\u05d5\u05ea \u05dc\u05d9\u05e9\u05e8\u05d0\u05dc \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4",  # שיחות לישראל ללא הגבלה
+                "\u05d4\u05d5\u05d3\u05e2\u05d5\u05ea SMS \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4",                               # הודעות SMS ללא הגבלה
+                f"\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 {data_gb}GB (\u05dc\u05d0\u05d7\u05e8 \u05de\u05db\u05df \u05de\u05d4\u05d9\u05e8\u05d5\u05ea \u05d9\u05d5\u05e8\u05d3\u05ea)",  # אינטרנט XGB (לאחר מכן מהירות יורדת)
+                "\u05e8\u05e9\u05ea T-Mobile (\u05db\u05d9\u05e1\u05d5\u05d9 \u05de\u05e7\u05e1\u05d9\u05de\u05dc\u05d9)",                  # רשת T-Mobile (כיסוי מקסימלי)
+                "\u05d4\u05e4\u05e2\u05dc\u05d4 \u05de\u05d9\u05d3\u05d9\u05ea — \u05d0\u05d9\u05df \u05e6\u05d5\u05e8\u05da \u05d1\u05db\u05e8\u05d8\u05d9\u05e1 \u05e4\u05d9\u05d6\u05d9",  # הפעלה מידית — אין צורך בכרטיס פיזי
+            ]
         )
         logger.info(f"Tasim: 1 plan — {plan_name} ${price_usd}")
         return [plan]

@@ -37,11 +37,34 @@ const CARRIER_NAMES = {
   partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל',
   cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'וי-קום',
   neptucom: 'נפטוקום', golan: 'גולן טלקום', tuki: 'Tuki', globalesim: 'GlobaleSIM',
-  airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo',
+  airalo: 'Airalo', airalo_local: 'Airalo', airalo_regional: 'Airalo',
+  pelephone_global: 'GlobalSIM', esimo: 'eSIMo',
   simtlv: 'SimTLV', world8: 'World8', saily: 'Saily', holafly: 'Holafly',
   esimio: 'eSIMio', sparks: 'Sparks', voye: 'Voye', orbit: 'Orbit',
   travelsim: 'TravelSim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
   maya: 'Maya Mobile',
+}
+
+// Merge Airalo variants (airalo / airalo_local / airalo_regional) → 'airalo'
+const CARRIER_ALIAS = { airalo_local: 'airalo', airalo_regional: 'airalo' }
+function normalizeCarrierId(id) { return CARRIER_ALIAS[id] || id }
+
+function mergeChartData(chartData) {
+  if (!chartData) return chartData
+  const merged = {}
+  for (const item of chartData) {
+    const id = normalizeCarrierId(item.carrier)
+    if (merged[id]) {
+      merged[id].count++
+      merged[id].total += item.value
+      merged[id].value = merged[id].total / merged[id].count
+    } else {
+      merged[id] = { ...item, carrier: id, total: item.value, count: 1 }
+    }
+  }
+  return Object.values(merged)
+    .map(({ total, count, ...rest }) => rest) // eslint-disable-line no-unused-vars
+    .sort((a, b) => a.value - b.value)
 }
 
 const BAR_COLORS = ['#5c3317', '#7a4a28', '#9a6040', '#b87c58', '#d4a07a', '#e8c9a8']
@@ -359,7 +382,15 @@ export default function ExecutiveSummaryPage() {
   async function load() {
     try {
       const data = await api.getExecutiveSummary()
-      const ordered = CATEGORIES.map(c => data.find(d => d.category === c.id)).filter(Boolean)
+      const ordered = CATEGORIES.map(c => {
+        const d = data.find(d => d.category === c.id)
+        if (!d) return null
+        // Merge Airalo variants in chart + normalize metric carrier IDs
+        if (d.metrics?.chart_data) d.metrics.chart_data = mergeChartData(d.metrics.chart_data)
+        if (d.metrics?.cheapest?.carrier) d.metrics.cheapest.carrier = normalizeCarrierId(d.metrics.cheapest.carrier)
+        if (d.metrics?.most_aggressive?.carrier) d.metrics.most_aggressive.carrier = normalizeCarrierId(d.metrics.most_aggressive.carrier)
+        return d
+      }).filter(Boolean)
       setSummaries(ordered)
       setNotGenerated(false)
     } catch (err) {

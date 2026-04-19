@@ -125,6 +125,8 @@ const LOGO_SIZES = {
   neptucom:         '64px',
   travelsim:        '64px',
   golan:            '45px',
+  gomoworld:        '40px',
+  maya:             '43px',
 }
 
 const CONTENT_URLS = {
@@ -202,12 +204,12 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
   // Extras — filter out app-related text if we have an apps link
   // For Orbit zone plans, extras[1+] are covered countries — hide them (shown in modal)
   const rawExtras = plan.extras ? plan.extras.filter(e => e && !(appsData && /אפליקציות/.test(e))) : []
-  // For zone plans with country list in extras, show only the region name (countries shown via modal)
-  // For single-country plans, hide extras[0] if it's already in the plan name
+  // For Orbit zone plans: extras[1+] are country lists — hide (shown in modal)
+  // For single-country global plans: if destination already in plan name, skip extras[0] but show extras[1+] (feature bullets)
   const extras = (plan.carrier === 'orbit' && rawExtras.length > 1)
     ? []
     : (isGlobal && rawExtras.length >= 1 && plan.plan_name && plan.plan_name.includes(rawExtras[0]))
-      ? []
+      ? rawExtras.slice(1)
       : rawExtras
   const visibleExtras = extras
   const hiddenCount = 0
@@ -264,7 +266,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
       <div className="mb-3 text-right">
         <div className="text-3xl font-bold text-gray-900 tracking-tight">{String(plan.price).startsWith('₪') ? plan.price : `₪${plan.price}`}</div>
         {isGlobal && plan.original_price && plan.currency && plan.currency !== 'ILS' && (
-          <div className="text-[11px] text-gray-400 mt-0.5" dir="ltr">{plan.currency} ${plan.original_price}</div>
+          <div className="text-[11px] text-gray-400 mt-0.5" dir="ltr">{plan.currency} {({'USD':'$','GBP':'£','EUR':'€','AUD':'A$','CAD':'C$','JPY':'¥','CHF':'CHF ','NZD':'NZ$'})[plan.currency] || '$'}{plan.original_price}</div>
         )}
       </div>
 

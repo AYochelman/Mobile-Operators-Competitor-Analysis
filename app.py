@@ -467,8 +467,8 @@ def api_affiliate_stats():
 @app.route("/api/exchange-rates")
 @limiter.limit("30 per minute")
 def api_exchange_rates():
-    from scraper import _get_usd_to_ils, _get_eur_to_ils
-    return jsonify({"usd": _get_usd_to_ils(), "eur": _get_eur_to_ils()})
+    from scraper import _get_usd_to_ils, _get_eur_to_ils, _get_gbp_to_ils
+    return jsonify({"usd": _get_usd_to_ils(), "eur": _get_eur_to_ils(), "gbp": _get_gbp_to_ils()})
 
 
 @app.route("/api/global-changes")
@@ -1417,16 +1417,37 @@ def api_chat():
 
         # ── Build context from DB ──────────────────────────────────────────
         def fmt_price(p):
-            return f"₪{p}" if p is not None else "—"
+            if p is None: return "—"
+            try: return f"₪{float(p):.2f}".rstrip('0').rstrip('.')
+            except (TypeError, ValueError): return f"₪{p}"
 
         def fmt_gb(g):
             if g is None: return "ללא הגבלה"
+            try: g = float(g)
+            except (TypeError, ValueError): return str(g)
             return f"{round(g*1024)}MB" if g < 1 else f"{g}GB"
+
+        # Carrier ID → display name (used in context so AI resolves aliases correctly)
+        _CARRIER_NAMES = {
+            'partner': 'פרטנר', 'pelephone': 'פלאפון', 'hotmobile': 'הוט מובייל',
+            'cellcom': 'סלקום', 'mobile019': '019', 'xphone': 'XPhone',
+            'wecom': 'We-Com', 'neptucom': 'Neptucom', 'golan': 'גולן טלקום',
+            'tuki': 'Tuki', 'globalesim': 'GlobaleSIM',
+            'airalo': 'Airalo', 'airalo_local': 'Airalo', 'airalo_regional': 'Airalo',
+            'pelephone_global': 'GlobalSIM', 'esimo': 'eSIMo', 'simtlv': 'SimTLV',
+            'world8': '8 World', 'xphone_global': 'XPhone Global', 'saily': 'Saily',
+            'holafly': 'Holafly', 'esimio': 'eSIM.io', 'sparks': 'Sparks',
+            'voye': 'VOYE', 'orbit': 'Orbit', 'travelsim': 'Travel Sim',
+            'gomoworld': 'GoMoWorld', 'tasim': 'Tasim', 'maya': 'Maya Mobile',
+        }
+        def _cn(carrier):
+            return _CARRIER_NAMES.get(carrier, carrier)
 
         lines = [
             "אתה עוזר נתונים עבור מערכת השוואת חבילות סלולר ישראלית.",
             "להלן הנתונים הנוכחיים מהמסד נתונים. ענה בעברית, בצורה תמציתית וברורה.",
             f"תאריך עדכון: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            "שמות ספקים: gomoworld=GoMoWorld=Gomo, airalo/airalo_local/airalo_regional=Airalo, pelephone_global=GlobalSIM, xphone_global=XPhone Global, mobile019=019.",
             "",
         ]
 
@@ -1436,7 +1457,7 @@ def api_chat():
             lines.append("## חבילות ביתיות (ישראל)")
             for p in domestic:
                 lines.append(
-                    f"  {p['carrier']} | {p['plan_name']} | {fmt_price(p.get('price'))} | "
+                    f"  {_cn(p['carrier'])} | {p['plan_name']} | {fmt_price(p.get('price'))} | "
                     f"{fmt_gb(p.get('data_gb'))} | {p.get('minutes','')} דקות"
                     + (f" | extras: {';'.join(p['extras'])}" if p.get('extras') else "")
                 )
@@ -1448,21 +1469,34 @@ def api_chat():
             lines.append("## חבילות חו\"ל")
             for p in abroad:
                 lines.append(
-                    f"  {p['carrier']} | {p['plan_name']} | {fmt_price(p.get('price'))} | "
+                    f"  {_cn(p['carrier'])} | {p['plan_name']} | {fmt_price(p.get('price'))} | "
                     f"{p.get('days','')} ימים | {fmt_gb(p.get('data_gb'))}"
                     + (f" | extras: {';'.join(p['extras'])}" if p.get('extras') else "")
                 )
 
-        # Global plans (limit to avoid token overflow)
-        global_plans = get_global_plans(db_path=_db_path())[:500]
+        # Global plans — 1 cheapest plan per carrier+destination, up to 40 dest per carrier
+        from collections import defaultdict as _dd
+        _all_global = get_global_plans(db_path=_db_path())
+        _by_carrier_dest = _dd(lambda: _dd(list))
+        for _p in _all_global:
+            _dest = (_p.get('extras') or [''])[0] or 'global'
+            _by_carrier_dest[_p['carrier']][_dest].append(_p)
+        global_plans = []
+        for _carrier in sorted(_by_carrier_dest):
+            _dest_cheapest = []
+            for _dest, _dplans in _by_carrier_dest[_carrier].items():
+                _cheapest = min(_dplans, key=lambda x: float(x.get('price') or 9999))
+                _dest_cheapest.append(_cheapest)
+            _dest_cheapest.sort(key=lambda x: float(x.get('price') or 9999))
+            global_plans.extend(_dest_cheapest[:40])
         if global_plans:
             lines.append("")
             lines.append("## חבילות גלובליות (eSIM)")
             for p in global_plans:
                 lines.append(
-                    f"  {p['carrier']} | {p['plan_name']} | {fmt_price(p.get('price'))} | "
+                    f"  {_cn(p['carrier'])} | {p['plan_name']} | {fmt_price(p.get('price'))} | "
                     f"{p.get('days','')} ימים | {fmt_gb(p.get('data_gb'))}"
-                    + (f" | extras: {';'.join(p['extras'])}" if p.get('extras') else "")
+                    + (f" | יעד: {p['extras'][0]}" if p.get('extras') else "")
                 )
 
         # Content services
@@ -1472,7 +1506,7 @@ def api_chat():
             lines.append("## שירותי תוכן")
             for p in content:
                 lines.append(
-                    f"  {p['service']} | {p['carrier']} | {p.get('price','')} | "
+                    f"  {p['service']} | {_cn(p['carrier'])} | {p.get('price','')} | "
                     f"ניסיון: {p.get('free_trial','')}"
                 )
 
