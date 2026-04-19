@@ -4798,12 +4798,12 @@ def scrape_all_content():
             if entry["strategy"] == "not_available":
                 results.append(_result("לא זמין", "לא זמין"))
                 logger.info(f"Content {service}/{carrier}: לא זמין")
+                continue
 
             elif entry["strategy"] == "manual_price":
                 price = entry.get("price_value", "לא נמצא")
                 results.append(_result(price, "ידני"))
                 logger.info(f"Content {service}/{carrier}: {price} (manual)")
-                continue
                 continue
 
             url = entry["url"]
