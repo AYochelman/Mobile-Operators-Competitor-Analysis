@@ -28,6 +28,7 @@ const CARRIERS_BY_TAB = {
     { id: 'wecom', label: 'We-Com', color: '#d97706' },
     { id: 'neptucom', label: 'Neptucom', color: '#d97706' },
     { id: 'golan', label: 'גולן טלקום', color: '#009688' },
+    { id: 'rami_levy', label: 'רמי לוי', color: '#e32032' },
   ],
   abroad: [
     { id: 'partner', label: 'פרטנר', color: '#e91e63' },
@@ -39,6 +40,7 @@ const CARRIERS_BY_TAB = {
     { id: 'wecom', label: 'We-Com', color: '#d97706' },
     { id: 'neptucom', label: 'Neptucom', color: '#d97706' },
     { id: 'golan', label: 'גולן טלקום', color: '#009688' },
+    { id: 'rami_levy', label: 'רמי לוי', color: '#e32032' },
   ],
   global: [
     { id: 'tuki', label: 'Tuki', color: '#3b82f6' },
@@ -249,11 +251,12 @@ export default function ComparePage() {
     if (tab === 'domestic' && roamingFilter === 'yes') {
       result = result.filter(p => p.extras && p.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+/.test(e) && /GB|גלישה/i.test(e)))
     }
+    const has5G = (p) => (p.plan_name && /5G|\u05d3\u05d5\u05e8\s?5/.test(p.plan_name)) || (p.extras && p.extras.some(e => /5G|\u05d3\u05d5\u05e8\s?5/.test(e)))
     if (tab === 'domestic' && genFilter === '5g') {
-      result = result.filter(p => (p.plan_name && p.plan_name.includes('5G')) || (p.extras && p.extras.some(e => e.includes('5G'))))
+      result = result.filter(has5G)
     }
     if (tab === 'domestic' && genFilter === '4g') {
-      result = result.filter(p => !(p.plan_name && p.plan_name.includes('5G')) && !(p.extras && p.extras.some(e => e.includes('5G'))))
+      result = result.filter(p => !has5G(p))
     }
 
     if (sortBy === 'price_asc') result = [...result].sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999))

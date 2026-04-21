@@ -15,6 +15,7 @@ const ALL_PROVIDERS = [
   { id: 'wecom',            label: 'וי-קום',          color: '#006633' },
   { id: 'neptucom',         label: 'נפטוקום',         color: '#004488' },
   { id: 'golan',            label: 'גולן טלקום',      color: '#009688' },
+  { id: 'rami_levy',        label: 'רמי לוי',          color: '#e32032' },
   // ── Global eSIM ─────────────────────────────────────────────
   { id: 'tuki',             label: 'טוקי',            color: '#0066cc' },
   { id: 'globalesim',       label: 'GlobaleSIM',      color: '#0099aa' },

@@ -1008,6 +1008,283 @@ def scrape_golan_abroad(_page=None):
             browser.close()
 
 
+def _parse_rami_levy_body(body_text):
+    BLOCK_END = "למידע נוסף"
+    SKIP_DETAIL = {'להצטרפות'}
+
+    lines = [l.strip() for l in body_text.split('\n')]
+    blocks, cur = [], []
+    for l in lines:
+        if l == BLOCK_END:
+            blocks.append(cur)
+            cur = []
+        else:
+            cur.append(l)
+    if cur:
+        blocks.append(cur)
+
+    plans = []
+    for block in blocks:
+        non_empty = [l for l in block if l]
+        try:
+            shekel_idx = next(i for i, l in enumerate(non_empty) if l == '₪')
+        except StopIteration:
+            continue
+        if shekel_idx < 2:
+            continue
+
+        price_str = non_empty[shekel_idx - 1]
+        plan_name = non_empty[shekel_idx - 2]
+
+        try:
+            price = float(price_str.replace(',', ''))
+        except ValueError:
+            continue
+
+        # Skip header nav items (block 0 has nav text before the first plan)
+        if plan_name in {'דלג לתוכן', 'רמי לוי באינטרנט', 'תוכניות', 'סניפים', 'הפעלת סים', 'האזור האישי'}:
+            continue
+
+        details_start = shekel_idx + 2  # skip ₪ and לחודש
+        detail_lines = non_empty[details_start:]
+        extras = [l for l in detail_lines if l not in SKIP_DETAIL]
+
+        gb_val = None
+        for l in non_empty:
+            m = re.search(r'(\d+)GB', l)
+            if m and 'גלישה' in l:
+                gb_val = int(m.group(1))
+                break
+
+        minutes = None
+        for l in non_empty:
+            if 'דקות שיחה' in l and 'בתוך רשת' not in l and 'מחוץ לרשת' not in l:
+                m = re.search(r'([\d,]+)', l)
+                if m:
+                    minutes = int(m.group(1).replace(',', ''))
+                    break
+
+        plans.append({
+            'carrier': 'rami_levy',
+            'plan_name': plan_name,
+            'price': price,
+            'data_gb': gb_val,
+            'minutes': minutes,
+            'extras': extras,
+            'url': 'https://mobile.rami-levy.co.il/Home/Packages',
+        })
+    return plans
+
+
+def _parse_rami_levy_abroad_body(body_text):
+    BLOCK_END = "למידע נוסף"
+    SKIP_DETAIL = {'רכישה'}
+    WORLD = "\u05db\u05dc\u05dc \u05d4\u05e2\u05d5\u05dc\u05dd"  # כלל העולם
+
+    lines = [l.strip() for l in body_text.split('\n')]
+    blocks, cur = [], []
+    for l in lines:
+        if l == BLOCK_END:
+            blocks.append(cur)
+            cur = []
+        else:
+            cur.append(l)
+    if cur:
+        blocks.append(cur)
+
+    # First pass: extract parsed blocks, second pass: disambiguate names
+    parsed = []
+    for block in blocks:
+        non_empty = [l for l in block if l]
+        try:
+            shekel_idx = next(i for i, l in enumerate(non_empty) if l == '₪')
+        except StopIteration:
+            continue
+        if shekel_idx < 1:
+            continue
+
+        price_str = non_empty[shekel_idx - 1]
+        try:
+            price = float(price_str.replace(',', ''))
+        except ValueError:
+            continue
+
+        # Line 2 before ₪ is either data highlight (e.g. "5GB") or plan name
+        candidate = non_empty[shekel_idx - 2] if shekel_idx >= 2 else ''
+        if re.fullmatch(r'\d+(?:\.\d+)?\s*(?:GB|MB)', candidate, re.I) and shekel_idx >= 3:
+            plan_name = non_empty[shekel_idx - 3]
+        else:
+            plan_name = candidate
+
+        if plan_name in {'דלג לתוכן', 'רמי לוי באינטרנט', 'תוכניות', 'סניפים',
+                         'הפעלת סים', 'האזור האישי', 'Bon Voyage'}:
+            continue
+
+        details_start = shekel_idx + 1
+        detail_lines = [l for l in non_empty[details_start:] if l not in SKIP_DETAIL]
+
+        data_gb = None
+        for l in detail_lines:
+            m = re.search(r'(\d+(?:\.\d+)?)\s*GB', l, re.I)
+            if m and 'גלישה' in l:
+                data_gb = float(m.group(1))
+                if data_gb == int(data_gb):
+                    data_gb = int(data_gb)
+                break
+            m = re.search(r'(\d+)\s*MB', l, re.I)
+            if m and 'גלישה' in l:
+                data_gb = int(m.group(1)) / 1024
+                break
+
+        minutes = None
+        for l in detail_lines:
+            if 'דקות שיחה' in l:
+                m = re.search(r'([\d,]+)', l)
+                if m:
+                    minutes = int(m.group(1).replace(',', ''))
+                    break
+
+        sms = None
+        for l in detail_lines:
+            if 'הודעות' in l or 'SMS' in l:
+                m = re.search(r'([\d,]+)', l)
+                if m:
+                    sms = int(m.group(1).replace(',', ''))
+                    break
+
+        days = None
+        for l in detail_lines:
+            if 'תקף ליום אחד' in l or 'מתחדשת כל יום' in l:
+                days = 1
+                break
+            m = re.search(r'תקף ל-(\d+)\s*ימים', l)
+            if m:
+                days = int(m.group(1))
+                break
+
+        parsed.append({
+            'plan_name': plan_name,
+            'price': price,
+            'data_gb': data_gb,
+            'minutes': minutes,
+            'sms': sms,
+            'days': days,
+            'detail_lines': detail_lines,
+        })
+
+    # Disambiguate duplicate plan names: all instances get a suffix when duplicated
+    from collections import Counter
+    name_counter = Counter(p['plan_name'] for p in parsed)
+
+    plans = []
+    for p in parsed:
+        name = p['plan_name']
+        if name_counter[name] > 1:
+            if p['minutes']:
+                name = f"{name} \u2013 {p['minutes']} \u05d3\u05e7\u05f3"
+            else:
+                name = f"{name} \u2013 {int(p['price'])}\u20aa"
+        plans.append({
+            'carrier': 'rami_levy',
+            'plan_name': name,
+            'price': p['price'],
+            'data_gb': p['data_gb'],
+            'minutes': p['minutes'],
+            'sms': p['sms'],
+            'days': p['days'],
+            'extras': [WORLD] + p['detail_lines'],
+            'url': 'https://mobile.rami-levy.co.il/Home/aboard',
+        })
+    return plans
+
+
+def scrape_rami_levy_abroad(_page=None):
+    """Scrape Rami Levy abroad plans. Single plan covers 145 countries."""
+    _UA = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    )
+    from playwright.sync_api import sync_playwright as _sp
+    with _sp() as pw:
+        browser = pw.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"]
+        )
+        page = browser.new_page(user_agent=_UA)
+        try:
+            page.goto(
+                "https://mobile.rami-levy.co.il/Home/aboard",
+                timeout=40000,
+                wait_until="domcontentloaded"
+            )
+            page.wait_for_timeout(3000)
+            _dismiss_popups(page)
+            body = page.inner_text("body")
+            return _parse_rami_levy_abroad_body(body)
+        finally:
+            browser.close()
+
+
+def scrape_rami_levy(_page=None):
+    """Scrape Rami Levy domestic plans + per-plan info modal text."""
+    _UA = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    )
+    from playwright.sync_api import sync_playwright as _sp
+    with _sp() as pw:
+        browser = pw.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"]
+        )
+        page = browser.new_page(user_agent=_UA, viewport={"width": 1280, "height": 800})
+        try:
+            page.goto(
+                "https://mobile.rami-levy.co.il/Home/Packages",
+                timeout=40000,
+                wait_until="networkidle"
+            )
+            page.wait_for_timeout(3000)
+            _dismiss_popups(page)
+            body = page.inner_text("body")
+            plans = _parse_rami_levy_body(body)
+
+            # Click each "למידע נוסף" link and capture the modal text
+            more_links = page.locator('a.more')
+            total = more_links.count()
+            for i in range(min(total, len(plans))):
+                try:
+                    link = more_links.nth(i)
+                    link.scroll_into_view_if_needed()
+                    page.wait_for_timeout(200)
+                    link.click()
+                    page.wait_for_timeout(700)
+                    info_text = page.evaluate("""() => {
+                        const modals = document.querySelectorAll('.modal-body, .modal');
+                        for (const m of modals) {
+                            if (m.offsetParent !== null && m.innerText) return m.innerText;
+                        }
+                        return null;
+                    }""")
+                    if info_text:
+                        # Strip trailing "סגור" button text
+                        info_text = re.sub(r'\s*\u05e1\u05d2\u05d5\u05e8\s*$', '', info_text).strip()
+                        plans[i]['plan_info'] = info_text
+                        # Marker line preserved through extras/JSON round-trip
+                        plans[i]['extras'] = list(plans[i].get('extras', [])) + [f"__info__|{info_text}"]
+                    # Close modal
+                    try:
+                        page.keyboard.press('Escape')
+                        page.wait_for_timeout(300)
+                    except Exception:
+                        pass
+                except Exception as exc:
+                    logger.warning(f"scrape_rami_levy: failed to capture info for plan {i}: {exc}")
+            return plans
+        finally:
+            browser.close()
+
+
 def scrape_all():
     """Scrape all carriers sequentially. Returns flat list of plan dicts."""
     _ensure_event_loop()
@@ -1018,7 +1295,7 @@ def scrape_all():
         )
         page = browser.new_page()
         plans = []
-        for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom, scrape_xphone, scrape_wecom, scrape_019, scrape_neptucom, scrape_golan]:
+        for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom, scrape_xphone, scrape_wecom, scrape_019, scrape_neptucom, scrape_golan, scrape_rami_levy]:
             try:
                 result = fn(page)
                 if not result:
@@ -2589,6 +2866,7 @@ def scrape_carrier_news():
         'wecom':     'We-Com \u05e1\u05dc\u05d5\u05dc\u05e8',
         'neptucom':  'Neptucom \u05e1\u05dc\u05d5\u05dc\u05e8',
         'golan':     '\u05d2\u05d5\u05dc\u05df \u05d8\u05dc\u05e7\u05d5\u05dd',
+        'rami_levy': '\u05e8\u05de\u05d9 \u05dc\u05d5\u05d9 \u05e1\u05dc\u05d5\u05dc\u05e8',
     }
 
     articles = []
@@ -5857,7 +6135,7 @@ def scrape_all_abroad():
         plans = []
         for fn in [scrape_partner_abroad, scrape_pelephone_abroad,
                    scrape_hotmobile_abroad, scrape_cellcom_abroad, scrape_wecom_abroad,
-                   scrape_019_abroad, scrape_golan_abroad]:
+                   scrape_019_abroad, scrape_golan_abroad, scrape_rami_levy_abroad]:
             try:
                 result = fn(page)
                 if not result:
@@ -5926,6 +6204,7 @@ CARRIER_HOMEPAGE_URLS = {
     "wecom":     "https://we-com.co.il",
     "neptucom":  "https://www.neptucom.com",
     "golan":     "https://www.golantelecom.co.il",
+    "rami_levy": "https://mobile.rami-levy.co.il",
 }
 
 _STEALTH_UA = (
@@ -5974,20 +6253,41 @@ def _banner_xphone_stealth(url: str, out_path: str, scraped_at: str) -> dict:
         with _sp() as pw:
             browser = pw.chromium.launch(
                 headless=True,
+                channel="chrome",
                 args=["--disable-blink-features=AutomationControlled"],
             )
-            page = browser.new_page(user_agent=_XPHONE_UA)
+            context = browser.new_context(
+                user_agent=_XPHONE_UA,
+                viewport={"width": 1280, "height": 720},
+                locale="he-IL",
+                extra_http_headers={
+                    "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+                    "Upgrade-Insecure-Requests": "1",
+                },
+            )
+            context.add_init_script(
+                "Object.defineProperty(navigator, 'webdriver', { get: () => undefined });"
+            )
+            page = context.new_page()
             try:
-                page.set_viewport_size({"width": 1280, "height": 720})
-                page.goto(url, timeout=40000, wait_until="domcontentloaded")
+                try:
+                    resp = page.goto(url, timeout=40000, wait_until="commit")
+                except Exception:
+                    resp = None
                 page.wait_for_timeout(5000)
                 body = page.evaluate("document.body.innerText") or ""
-                if "confirm you are human" in body.lower() or len(body) < 500:
-                    logger.warning("_banner_xphone_stealth: WAF block still active, skipping screenshot.")
+                if len(body) < 300 or "confirm you are human" in body.lower() or "http error 503" in body.lower():
+                    logger.warning("_banner_xphone_stealth: site unavailable or WAF block (body=%d chars), skipping.", len(body))
                     return {"carrier": "xphone", "scraped_at": scraped_at, "success": False}
                 _dismiss_popups(page)
                 page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
-                logger.info("Banner screenshot saved (xphone stealth): %s", out_path)
+                import os as _os
+                file_size = _os.path.getsize(out_path) if _os.path.exists(out_path) else 0
+                if file_size < 5000:
+                    logger.warning("_banner_xphone_stealth: screenshot too small (%d bytes), likely blank.", file_size)
+                    return {"carrier": "xphone", "scraped_at": scraped_at, "success": False}
+                logger.info("Banner screenshot saved (xphone stealth): %s (%d bytes)", out_path, file_size)
                 return {"carrier": "xphone", "scraped_at": scraped_at, "success": True}
             finally:
                 browser.close()

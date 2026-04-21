@@ -44,6 +44,7 @@ const CARRIER_NAMES = {
   travelsim: 'TravelSim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
   maya: 'Maya Mobile',
   bcengi: 'Bcengi',
+  rami_levy: 'רמי לוי',
 }
 
 // Merge Airalo variants (airalo / airalo_local / airalo_regional) → 'airalo'

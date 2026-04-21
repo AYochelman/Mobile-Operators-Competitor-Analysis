@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Badge from './ui/Badge'
 import CountryModal from './CountryModal'
+import Modal from './ui/Modal'
 import { getCountriesForPlan } from '../data/globalCountries'
 import { getCountriesForAbroadPlan } from '../data/abroadCountries'
 import { getAppsForAbroadPlan } from '../data/abroadApps'
@@ -109,6 +110,7 @@ const CARRIER_LOGOS = {
   tasim:           '/logos/tasim.png',
   maya:            '/logos/maya.png',
   bcengi:         '/logos/bcengi.png',
+  rami_levy:      '/logos/rami_levy.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
@@ -128,6 +130,11 @@ const LOGO_SIZES = {
   golan:            '45px',
   gomoworld:        '40px',
   maya:             '43px',
+}
+
+// Wide logos: separate width override (height stays at LOGO_SIZES default 32px)
+const LOGO_WIDTHS = {
+  rami_levy: '110px',
 }
 
 const CONTENT_URLS = {
@@ -179,6 +186,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
   const [showCountries, setShowCountries] = useState(false)
   const [showApps, setShowApps] = useState(false)
   const [showAllExtras, setShowAllExtras] = useState(false)
+  const [showPlanInfo, setShowPlanInfo] = useState(false)
   const isGlobal = type === 'global'
   const isAbroad = type === 'abroad'
   const isContent = type === 'content'
@@ -202,9 +210,13 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
   if (plan.minutes) infoParts.push(`${plan.minutes} דקות`)
   if (plan.sms) infoParts.push(`${plan.sms} SMS`)
 
-  // Extras — filter out app-related text if we have an apps link
+  // Extract plan_info marker (stored inside extras as "__info__|<text>")
+  const planInfoMarker = plan.extras ? plan.extras.find(e => typeof e === 'string' && e.startsWith('__info__|')) : null
+  const planInfo = planInfoMarker ? planInfoMarker.slice('__info__|'.length) : (plan.plan_info || null)
+
+  // Extras — filter out app-related text if we have an apps link, and the info marker
   // For Orbit zone plans, extras[1+] are covered countries — hide them (shown in modal)
-  const rawExtras = plan.extras ? plan.extras.filter(e => e && !(appsData && /אפליקציות/.test(e))) : []
+  const rawExtras = plan.extras ? plan.extras.filter(e => e && !(appsData && /אפליקציות/.test(e)) && !(typeof e === 'string' && e.startsWith('__info__|'))) : []
   // For Orbit zone plans: extras[1+] are country lists — hide (shown in modal)
   // For single-country global plans: if destination already in plan name, skip extras[0] but show extras[1+] (feature bullets)
   const extras = (plan.carrier === 'orbit' && rawExtras.length > 1)
@@ -214,6 +226,13 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
       : rawExtras
   const visibleExtras = extras
   const hiddenCount = 0
+
+  // 5G marker — true if plan name or extras indicate 5G support
+  const supports5G = (
+    (plan.plan_name && /5G|\u05d3\u05d5\u05e8\s?5/.test(plan.plan_name)) ||
+    (plan.extras && plan.extras.some(e => typeof e === 'string' && /5G|\u05d3\u05d5\u05e8\s?5/.test(e)))
+  )
+  const nameHas5G = plan.plan_name && /5G/i.test(plan.plan_name)
 
   const hasRoaming = !isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
   const contentUrl = isContent ? (CONTENT_URLS[`${plan.service}_${carrier}`] || null) : null
@@ -228,7 +247,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
           src={CARRIER_LOGOS[carrier]}
           alt={label}
           className="absolute top-3 left-3 object-contain"
-          style={{ width: LOGO_SIZES[carrier] || '32px', height: LOGO_SIZES[carrier] || '32px' }}
+          style={{ width: LOGO_WIDTHS[carrier] || LOGO_SIZES[carrier] || '32px', height: LOGO_SIZES[carrier] || '32px' }}
         />
       )}
 
@@ -252,11 +271,16 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
 
       {/* Plan name */}
       {!isContent && (
-        <h3 className="text-[13px] font-semibold text-gray-800 mb-3 leading-relaxed">{
-          (plan.plan_name || '').split(' – ').map((part, i) => (
-            <span key={i}>{i > 0 && <span className="text-gray-300"> - </span>}<bdi>{part}</bdi></span>
-          ))
-        }</h3>
+        <h3 className="text-[13px] font-semibold text-gray-800 mb-3 leading-relaxed flex items-center gap-1.5 flex-wrap">
+          <span>{
+            (plan.plan_name || '').split(' – ').map((part, i) => (
+              <span key={i}>{i > 0 && <span className="text-gray-300"> - </span>}<bdi>{part}</bdi></span>
+            ))
+          }</span>
+          {supports5G && !nameHas5G && (
+            <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold rounded bg-purple-100 text-purple-700 leading-none tracking-wide">5G</span>
+          )}
+        </h3>
       )}
       {/* Service name for content plans */}
       {isContent && plan.service && (
@@ -376,6 +400,20 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
             </div>
           ) : (
             <div className="flex gap-2">
+              {planInfo ? (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setShowPlanInfo(true) }}
+                  className="flex items-center justify-center gap-1.5 flex-1 text-xs text-moca-sub hover:text-moca-bolt border border-moca-border/40 rounded-lg py-1.5 transition-colors hover:bg-moca-cream"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  תנאי התוכנית
+                </button>
+              ) : (
               <a
                 href={plan.url}
                 target="_blank"
@@ -390,6 +428,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
                 </svg>
                 תנאי התוכנית
               </a>
+              )}
               {CARRIER_HOME_URLS[carrier] && (
                 <a
                   href={CARRIER_HOME_URLS[carrier]}
@@ -426,6 +465,18 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
           title={appsData.title}
           apps={appsData.apps}
         />
+      )}
+      {planInfo && (
+        <Modal open={showPlanInfo} onClose={() => setShowPlanInfo(false)} title="מידע נוסף על התוכנית" maxWidth="max-w-md">
+          <div className="space-y-2 text-sm text-gray-700 leading-relaxed text-right">
+            {planInfo.split('\n').map(l => l.trim()).filter(Boolean).map((line, i) => (
+              <p key={i} className="flex items-start gap-2">
+                <span className="text-moca-bolt mt-1 shrink-0">&#10094;</span>
+                <span>{line}</span>
+              </p>
+            ))}
+          </div>
+        </Modal>
       )}
     </div>
   )

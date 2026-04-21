@@ -161,6 +161,7 @@ const CARRIERS = [
   { id: 'wecom', label: 'We-Com' },
   { id: 'neptucom', label: 'Neptucom' },
   { id: 'golan', label: 'גולן טלקום' },
+  { id: 'rami_levy', label: 'רמי לוי' },
 ]
 
 const GLOBAL_PROVIDERS = [
@@ -340,8 +341,9 @@ export default function DashboardPage() {
       if (f.carrier !== 'all') result = result.filter(p => p.carrier === f.carrier)
     }
     if (tab === 'domestic' && f.gen !== 'all') {
-      if (f.gen === '5g') result = result.filter(p => (p.plan_name && p.plan_name.includes('5G')) || (p.extras && p.extras.some(e => e.includes('5G'))))
-      if (f.gen === '4g') result = result.filter(p => !(p.plan_name && p.plan_name.includes('5G')) && !(p.extras && p.extras.some(e => e.includes('5G'))))
+      const has5G = (p) => (p.plan_name && /5G|\u05d3\u05d5\u05e8\s?5/.test(p.plan_name)) || (p.extras && p.extras.some(e => /5G|\u05d3\u05d5\u05e8\s?5/.test(e)))
+      if (f.gen === '5g') result = result.filter(has5G)
+      if (f.gen === '4g') result = result.filter(p => !has5G(p))
     }
     if (tab === 'domestic' && f.roaming === 'yes') {
       result = result.filter(p => p.extras && p.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+/.test(e) && /GB|גלישה/i.test(e)))
@@ -778,7 +780,7 @@ export default function DashboardPage() {
                       כולם
                     </button>
                   </div>
-                  <div className="grid grid-cols-3 gap-1">
+                  <div className={`grid gap-1 ${tab === 'domestic' || tab === 'abroad' ? 'grid-cols-2' : 'grid-cols-3'}`}>
                     {(tab === 'abroad' ? CARRIERS.filter(c => c.id !== 'xphone' && c.id !== 'neptucom') : CARRIERS).map(c => {
                       const cnt = plans[tab]?.filter(p => p.carrier === c.id).length || 0
                       return (

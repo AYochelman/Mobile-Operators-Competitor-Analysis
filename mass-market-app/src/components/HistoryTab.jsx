@@ -17,6 +17,7 @@ const DOMESTIC_CARRIERS = [
   { id: 'wecom',     label: 'We-Com' },
   { id: 'neptucom',  label: 'Neptucom' },
   { id: 'golan',     label: 'גולן טלקום' },
+  { id: 'rami_levy', label: 'רמי לוי' },
 ]
 
 const GLOBAL_CARRIERS = [

@@ -710,6 +710,7 @@ CARRIER_DISPLAY = {
     "wecom":     {"name": "וי-קום",     "url": "https://we-com.co.il",             "color": "#006633"},
     "neptucom":  {"name": "נפטוקום",    "url": "https://www.neptucom.com",         "color": "#004488"},
     "golan":     {"name": "גולן טלקום", "url": "https://www.golantelecom.co.il",   "color": "#009688"},
+    "rami_levy": {"name": "רמי לוי",    "url": "https://mobile.rami-levy.co.il",  "color": "#e32032"},
 }
 
 CARRIER_STORE_DISPLAY = {
@@ -759,6 +760,21 @@ CARRIER_SEARCH_TERMS = {
         'he':   '\u05d5\u05d9 \u05e7\u05d5\u05dd',
         'en':   'WeCom Israel',
         'tags': ['wecom', '\u05d5\u05d9\u05e7\u05d5\u05dd'],
+    },
+    'neptucom': {
+        'he':   'Neptucom',
+        'en':   'Neptucom Israel',
+        'tags': ['neptucom'],
+    },
+    'golan': {
+        'he':   '\u05d2\u05d5\u05dc\u05df \u05d8\u05dc\u05e7\u05d5\u05dd',
+        'en':   'Golan Telecom',
+        'tags': ['golantelecom', '\u05d2\u05d5\u05dc\u05df\u05d8\u05dc\u05e7\u05d5\u05dd'],
+    },
+    'rami_levy': {
+        'he':   '\u05e8\u05de\u05d9 \u05dc\u05d5\u05d9 \u05ea\u05e7\u05e9\u05d5\u05e8\u05ea',
+        'en':   'Rami Levy Communications',
+        'tags': ['ramilevy', '\u05e8\u05de\u05d9\u05dc\u05d5\u05d9\u05ea\u05e7\u05e9\u05d5\u05e8\u05ea'],
     },
 }
 

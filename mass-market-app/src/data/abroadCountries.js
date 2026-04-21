@@ -102,6 +102,32 @@ export const COUNTRIES_GOLAN = [
   'תאילנד',
 ];
 
+// ── Rami Levy ────────────────────────────────────────────────────────
+// Single Bon Voyage country list — covers all abroad plans (~145 countries)
+export const COUNTRIES_RAMI_LEVY = [
+  'אוגנדה','אוזבקיסטן','אוסטריה','אוסטרליה','אוקראינה (לא כולל חצי-האי קרים)','אורוגוואי',
+  'אזרבייג\'ן','איחוד האמירויות הערביות','איטליה','איי הבתולה הבריטיים','איי טרקס וקייקוס',
+  'איי פארו','איי קיימן','אינדונזיה','איסלנד','אירלנד','אל סלבדור','אלבניה','אנגווילה',
+  'אנגליה, הממלכה המאוחדת','אנטיגואה וברבודה','אסטוניה','אקוודור','ארגנטינה','ארובה','ארמניה',
+  'ארצות הברית','בולגריה','בוליביה','בוסניה והרצגובינה','בורקינה פאסו , מערב אפריקה',
+  'בלארוס','בלגיה','ברבדוס','ברזיל','ברמודה','ג\'מייקה, קריביים','ג\'רזי, אי','גאנה, מערב אפריקה',
+  'גבון, אפריקה','גואטמלה','גוואדלופ','גיאורגיה','גיאנה הצרפתית','גיאנה, דרום אמריקה','גיברלטר',
+  'גינאה ביסאו, מערב אפריקה','גרמניה','גרנדה, קריביים','גרנזי','דומיניקה, הקריביים','דנמרק',
+  'דרום אפריקה','דרום קוריאה','האי מאן','האיטי, קריביים','האנטילים ההולנדיים','הודו','הולנד',
+  'הונג-קונג','הונגריה','הונדורס','הפיליפינים','הרפובליקה הדומיניקנית, הקריביים',
+  'הרפובליקה הדמוקרטית של קונגו','הרפובליקה של קונגו, אפריקה','וייטנאם','זמביה','חוף השנהב',
+  'טאיוואן','טג\'יקיסטן, אסיה','טוגו, אפריקה','טורקיה','טנזניה','טרינידד וטובגו','יוון','יפן',
+  'ירדן','לאוס','לוקסמבורג','לטביה','ליטא','ליכטנשטיין','לסוטו, אפריקה','מדגסקר, אפריקה',
+  'מוזמביק','מולדובה','מונגוליה','מונטנגרו','מונטסראט','מונקו','מלטה','מצריים','מקאו','מקדוניה',
+  'מקסיקו','מרוקו','מרטיניק, צרפת','נורבגיה','ניגריה','ניו זילנד','ניקרגואה','נפאל','סווזילנד',
+  'סורינאם','סיישל','סין','סינגפור','סלובניה','סלובקיה','סן ברתלמי','סן מרטן',
+  'סנט וינסנט והגרנדינים','סנט לוסיה, קריביים','סנט קיטס ונוויס','ספרד','סרביה','סרי לנקה',
+  'פוארטו ריקו','פולין','פורטוגל','פינלנד','פנמה','פרגוואי','פרו','צ\'אד, אפריקה','צ\'ילה',
+  'צ\'כיה','צרפת','קולומביה','קוסטה ריקה','קזחסטן','קירגיזסטן','קמבודיה','קמרון, אפריקה',
+  'קנדה','קניה','קפריסין','קרואטיה','רואנדה','רומניה','רוסיה (לא כולל חצי-האי קרים)',
+  'שוודיה','שוויץ','תאילנד',
+];
+
 /**
  * Get country list for an abroad plan.
  * Returns { title, countries } or null.
@@ -116,19 +142,19 @@ export function getCountriesForAbroadPlan(plan) {
   }
 
   if (carrier === 'mobile019') {
-    return { title: '019 — מדינות כלולות', countries: COUNTRIES_019 };
+    return { title: '019', countries: COUNTRIES_019 };
   }
 
   if (carrier === 'partner') {
-    return { title: 'פרטנר — מדינות כלולות', countries: COUNTRIES_PARTNER };
+    return { title: 'פרטנר', countries: COUNTRIES_PARTNER };
   }
 
   if (carrier === 'cellcom') {
-    return { title: 'סלקום — מדינות כלולות', countries: COUNTRIES_CELLCOM };
+    return { title: 'סלקום', countries: COUNTRIES_CELLCOM };
   }
 
   if (carrier === 'hotmobile') {
-    return { title: 'הוט מובייל — מדינות כלולות', countries: COUNTRIES_HOTMOBILE };
+    return { title: 'הוט מובייל', countries: COUNTRIES_HOTMOBILE };
   }
 
   if (carrier === 'pelephone') {
@@ -137,19 +163,23 @@ export function getCountriesForAbroadPlan(plan) {
     if (specific) {
       return { title: `פלאפון — ${specific.title}`, countries: specific.countries };
     }
-    return { title: 'פלאפון — מדינות כלולות', countries: COUNTRIES_PELEPHONE };
+    return { title: 'פלאפון', countries: COUNTRIES_PELEPHONE };
   }
 
   if (carrier === 'wecom') {
-    return { title: 'We-Com — מדינות כלולות', countries: COUNTRIES_WECOM };
+    return { title: 'We-Com', countries: COUNTRIES_WECOM };
   }
 
   if (carrier === 'neptucom') {
-    return { title: 'Neptucom — מדינות כלולות (120+)', countries: COUNTRIES_NEPTUCOM };
+    return { title: 'Neptucom (120+)', countries: COUNTRIES_NEPTUCOM };
   }
 
   if (carrier === 'golan') {
-    return { title: 'גולן טלקום — מדינות כלולות', countries: COUNTRIES_GOLAN };
+    return { title: 'גולן טלקום', countries: COUNTRIES_GOLAN };
+  }
+
+  if (carrier === 'rami_levy') {
+    return { title: 'רמי לוי', countries: COUNTRIES_RAMI_LEVY };
   }
 
   return null;
