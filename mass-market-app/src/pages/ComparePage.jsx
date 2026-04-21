@@ -59,6 +59,7 @@ const CARRIERS_BY_TAB = {
     { id: 'gomoworld', label: 'GoMoWorld', color: '#0891b2' },
     { id: 'tasim', label: 'Tasim', color: '#7c3aed' },
     { id: 'maya', label: 'Maya Mobile', color: '#0f766e' },
+    { id: 'bcengi', label: 'Bcengi', color: '#1d4ed8' },
   ],
 }
 

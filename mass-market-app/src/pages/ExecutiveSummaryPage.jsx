@@ -43,6 +43,7 @@ const CARRIER_NAMES = {
   esimio: 'eSIMio', sparks: 'Sparks', voye: 'Voye', orbit: 'Orbit',
   travelsim: 'TravelSim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
   maya: 'Maya Mobile',
+  bcengi: 'Bcengi',
 }
 
 // Merge Airalo variants (airalo / airalo_local / airalo_regional) → 'airalo'

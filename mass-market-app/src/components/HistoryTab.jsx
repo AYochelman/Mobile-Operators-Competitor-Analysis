@@ -38,6 +38,7 @@ const GLOBAL_CARRIERS = [
   { id: 'gomoworld',        label: 'GoMoWorld' },
   { id: 'tasim',            label: 'Tasim' },
   { id: 'maya',             label: 'Maya Mobile' },
+  { id: 'bcengi',         label: 'Bcengi' },
 ]
 
 const CARRIERS_BY_TYPE = {

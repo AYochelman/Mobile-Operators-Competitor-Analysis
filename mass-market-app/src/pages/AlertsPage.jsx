@@ -39,6 +39,7 @@ const GLOBAL_PROVIDERS = [
   { id: 'gomoworld', label: 'GoMoWorld' },
   { id: 'tasim', label: 'Tasim' },
   { id: 'maya', label: 'Maya Mobile' },
+  { id: 'bcengi', label: 'Bcengi' },
 ]
 
 const CARRIER_COLORS = {

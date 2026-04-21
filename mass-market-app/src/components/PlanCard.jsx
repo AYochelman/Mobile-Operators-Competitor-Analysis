@@ -68,7 +68,7 @@ const GLOBAL_LABELS = {
   world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
   orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
-  maya: 'Maya Mobile',
+  maya: 'Maya Mobile', bcengi: 'Bcengi',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
@@ -108,6 +108,7 @@ const CARRIER_LOGOS = {
   gomoworld:       '/logos/gomoworld.png',
   tasim:           '/logos/tasim.png',
   maya:            '/logos/maya.png',
+  bcengi:         '/logos/bcengi.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px

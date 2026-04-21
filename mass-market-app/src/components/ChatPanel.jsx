@@ -61,6 +61,8 @@ const CARRIER_MAP = {
   'Maya Mobile': { id: 'maya', tab: 'global' },
   'Maya': { id: 'maya', tab: 'global' },
   'maya': { id: 'maya', tab: 'global' },
+  'Bcengi': { id: 'bcengi', tab: 'global' },
+  'bcengi': { id: 'bcengi', tab: 'global' },
 }
 
 // Build regex from carrier names (longest first to avoid partial matches)
