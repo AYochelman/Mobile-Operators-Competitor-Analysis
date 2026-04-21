@@ -446,7 +446,7 @@ export default function ComparePage() {
               {selectedCarriers.length === availableCarriers.length ? 'נקה' : 'הכל'}
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-1">
+          <div className={`grid gap-1 ${tab === 'domestic' || tab === 'abroad' ? 'grid-cols-2' : 'grid-cols-3'}`}>
             {availableCarriers.map(c => (
               <button
                 key={c.id}
