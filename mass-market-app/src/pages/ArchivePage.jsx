@@ -36,6 +36,7 @@ const ALL_PROVIDERS = [
   { id: 'tasim',            label: 'Tasim',           color: '#7c3aed' },
   { id: 'maya',             label: 'Maya Mobile',     color: '#0f766e' },
   { id: 'bcengi',         label: 'Bcengi',         color: '#1d4ed8' },
+  { id: 'esim70',         label: 'eSIM70',         color: '#10b981' },
 ]
 
 const PLAN_TYPE_LABELS = {

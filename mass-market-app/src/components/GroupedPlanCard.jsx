@@ -24,6 +24,8 @@ const CARRIER_LOGOS = {
   gomoworld:       '/logos/gomoworld.png',
   tasim:           '/logos/tasim.png',
   maya:            '/logos/maya.png',
+  bcengi:          '/logos/bcengi.png',
+  esim70:          '/logos/esim70.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
@@ -69,13 +71,13 @@ const GLOBAL_LABELS = {
   world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
   orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld',
-  tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi',
+  tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', airalo_local: 'orange', airalo_regional: 'orange', pelephone_global: 'blue',
   esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
   saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber', voye: 'pink',
-  orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'violet', maya: 'teal',
+  orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'violet', maya: 'teal', esim70: 'emerald',
 }
 
 function formatGB(gb) {

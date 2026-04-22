@@ -691,6 +691,7 @@ _HISTORY_CARRIER_NAMES = {
     'gomoworld': 'GoMoWorld',
     'tasim': 'Tasim',
     'maya': 'Maya Mobile',
+    'esim70': 'eSIM70',
 }
 _HISTORY_TYPE_NAMES = {
     'domestic': '\u05de\u05e7\u05d5\u05de\u05d9',
@@ -1455,6 +1456,7 @@ def api_chat():
             'holafly': 'Holafly', 'esimio': 'eSIM.io', 'sparks': 'Sparks',
             'voye': 'VOYE', 'orbit': 'Orbit', 'travelsim': 'Travel Sim',
             'gomoworld': 'GoMoWorld', 'tasim': 'Tasim', 'maya': 'Maya Mobile',
+            'esim70': 'eSIM70',
         }
         def _cn(carrier):
             return _CARRIER_NAMES.get(carrier, carrier)

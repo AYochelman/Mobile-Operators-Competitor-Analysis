@@ -50,7 +50,7 @@ const CARRIERS_BY_TAB = {
     { id: 'esimo', label: 'eSIMo', color: '#a855f7' },
     { id: 'simtlv', label: 'SimTLV', color: '#ef4444' },
     { id: 'world8', label: '8 World', color: '#0d9488' },
-    { id: 'xphone_global', label: 'XPhone Global', color: '#14b8a6' },
+    { id: 'xphone_global', label: 'XPhone', color: '#14b8a6' },
     { id: 'saily', label: 'Saily', color: '#7c3aed' },
     { id: 'holafly', label: 'Holafly', color: '#ea580c' },
     { id: 'esimio', label: 'eSIM.io', color: '#2563eb' },
@@ -60,8 +60,9 @@ const CARRIERS_BY_TAB = {
     { id: 'travelsim', label: 'Travel Sim', color: '#0d9488' },
     { id: 'gomoworld', label: 'GoMoWorld', color: '#0891b2' },
     { id: 'tasim', label: 'Tasim', color: '#7c3aed' },
-    { id: 'maya', label: 'Maya Mobile', color: '#0f766e' },
+    { id: 'maya', label: 'Maya', color: '#0f766e' },
     { id: 'bcengi', label: 'Bcengi', color: '#1d4ed8' },
+    { id: 'esim70', label: 'eSIM70', color: '#10b981' },
   ],
 }
 
@@ -446,7 +447,7 @@ export default function ComparePage() {
               {selectedCarriers.length === availableCarriers.length ? 'נקה' : 'הכל'}
             </button>
           </div>
-          <div className={`grid gap-1 ${tab === 'domestic' || tab === 'abroad' ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          <div className={`grid gap-1 ${tab === 'domestic' || tab === 'abroad' ? 'grid-cols-2' : 'grid-cols-4'}`}>
             {availableCarriers.map(c => (
               <button
                 key={c.id}

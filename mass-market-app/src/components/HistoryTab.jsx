@@ -40,6 +40,7 @@ const GLOBAL_CARRIERS = [
   { id: 'tasim',            label: 'Tasim' },
   { id: 'maya',             label: 'Maya Mobile' },
   { id: 'bcengi',         label: 'Bcengi' },
+  { id: 'esim70',         label: 'eSIM70' },
 ]
 
 const CARRIERS_BY_TYPE = {

@@ -169,7 +169,7 @@ const GLOBAL_PROVIDERS = [
   { id: 'airalo', label: 'Airalo' },
   { id: 'pelephone_global', label: 'GlobalSIM' },
   { id: 'esimo', label: 'eSIMo' }, { id: 'simtlv', label: 'SimTLV' },
-  { id: 'world8', label: '8 World' }, { id: 'xphone_global', label: 'XPhone Global' },
+  { id: 'world8', label: '8 World' }, { id: 'xphone_global', label: 'XPhone' },
   { id: 'saily', label: 'Saily' }, { id: 'holafly', label: 'Holafly' },
   { id: 'esimio', label: 'eSIM.io' },
   { id: 'sparks', label: 'Sparks' },
@@ -178,8 +178,9 @@ const GLOBAL_PROVIDERS = [
   { id: 'travelsim', label: 'Travel Sim' },
   { id: 'gomoworld', label: 'GoMoWorld' },
   { id: 'tasim', label: 'Tasim' },
-  { id: 'maya', label: 'Maya Mobile' },
+  { id: 'maya', label: 'Maya' },
   { id: 'bcengi', label: 'Bcengi' },
+  { id: 'esim70', label: 'eSIM70' },
 ]
 
 export default function DashboardPage() {
@@ -484,7 +485,7 @@ export default function DashboardPage() {
   const exportToExcel = useCallback(() => {
     if (!filteredPlans.length) return
     const TAB_NAMES = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי', content: 'תוכן' }
-    const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi' }
+    const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70' }
     const GB_HEB = { 'all': 'הכל', '0-5': '0-5GB', '5-15': '5-15GB', '15-100': '15-100GB', '100+': '100+GB', 'unlimited': 'ללא הגבלה' }
     const DAYS_HEB = { 'all': 'הכל', '1-7': '1-7 ימים', '8-14': '8-14 ימים', '15-30': '15-30 ימים', '30+': '30+ ימים' }
 
@@ -780,7 +781,7 @@ export default function DashboardPage() {
                       כולם
                     </button>
                   </div>
-                  <div className={`grid gap-1 ${tab === 'domestic' || tab === 'abroad' ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                  <div className={`grid gap-1 ${tab === 'domestic' || tab === 'abroad' ? 'grid-cols-2' : 'grid-cols-4'}`}>
                     {(tab === 'abroad' ? CARRIERS.filter(c => c.id !== 'xphone' && c.id !== 'neptucom') : CARRIERS).map(c => {
                       const cnt = plans[tab]?.filter(p => p.carrier === c.id).length || 0
                       return (
@@ -815,7 +816,7 @@ export default function DashboardPage() {
                       כולם
                     </button>
                   </div>
-                  <div className="grid grid-cols-3 gap-1">
+                  <div className="grid grid-cols-4 gap-1">
                     {GLOBAL_PROVIDERS.map(p => {
                       const cnt = plans.global?.filter(x => x.carrier === p.id).length || 0
                       if (!cnt) return null
@@ -823,7 +824,7 @@ export default function DashboardPage() {
                         <button
                           key={p.id}
                           onClick={() => { setFilter('globalProvider', p.id); setFilter('destination', 'all'); setFilter('region', 'all') }}
-                          className={`px-1 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
+                          className={`px-1 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 ${
                             filters.globalProvider === p.id ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                           }`}
                         >

@@ -44,6 +44,7 @@ const CARRIER_NAMES = {
   travelsim: 'TravelSim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
   maya: 'Maya Mobile',
   bcengi: 'Bcengi',
+  esim70: 'eSIM70',
   rami_levy: 'רמי לוי',
 }
 
