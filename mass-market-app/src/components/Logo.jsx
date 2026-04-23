@@ -6,7 +6,7 @@ const CONFIG = {
   md: { boltW: 28, boltH: 27, wordmarkSize: 18,   subtextSize: 9   },
 }
 
-export default function Logo({ size = 'md', showSubtext = true }) {
+export default function Logo({ size = 'md', showSubtext = true, appTitle = null }) {
   const { boltW, boltH, wordmarkSize, subtextSize: cfgSubtext } = CONFIG[size]
   const subtextSize = showSubtext ? cfgSubtext : null
 
@@ -25,7 +25,7 @@ export default function Logo({ size = 'md', showSubtext = true }) {
             letterSpacing: '-0.02em',
             fontFamily: 'system-ui, -apple-system, sans-serif',
           }}>
-            MOCA
+            {appTitle || 'MOCA'}
           </span>
           {subtextSize && (
             <span style={{
@@ -35,7 +35,7 @@ export default function Logo({ size = 'md', showSubtext = true }) {
               fontFamily: 'system-ui, -apple-system, sans-serif',
               letterSpacing: '0.01em',
             }}>
-              by Alon Yochelman
+              {appTitle ? 'by MOCA' : 'by Alon Yochelman'}
             </span>
           )}
         </div>

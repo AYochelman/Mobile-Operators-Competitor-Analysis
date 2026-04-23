@@ -1,6 +1,23 @@
 import { useState, useEffect, useCallback } from 'react'
 import Button from '../components/ui/Button'
 import { api } from '../lib/api'
+import { getMvnoColors, isKnownMvnoPrimary } from '../data/mvnoBrandColors'
+
+// Switch MVNO in a form: auto-fill colors if the current primary is empty
+// or matches a known MVNO default (i.e. not a user-chosen custom color).
+function withMvnoColors(form, newMvno) {
+  const nextColors = getMvnoColors(newMvno)
+  const userHasCustomColor = form.primary_color && !isKnownMvnoPrimary(form.primary_color)
+  if (userHasCustomColor) {
+    return { ...form, mvno_carrier: newMvno }
+  }
+  return {
+    ...form,
+    mvno_carrier:    newMvno,
+    primary_color:   nextColors?.primary   || '',
+    secondary_color: nextColors?.secondary || '',
+  }
+}
 
 const MVNO_OPTIONS = [
   { id: '',          label: '— ללא —' },
@@ -128,6 +145,33 @@ function UsersSection({ workspaceId, onChange }) {
   )
 }
 
+function ColorInput({ label, value, onChange, defaultColor = null, defaultLabel = null }) {
+  const usingDefault = !value && defaultColor
+  return (
+    <label className="text-sm">
+      <span className="block mb-1 text-gray-700">{label}</span>
+      <div className="flex items-center gap-2">
+        <input type="color" value={value || defaultColor || '#5c3317'}
+          onChange={e => onChange(e.target.value)}
+          className="w-8 h-8 rounded cursor-pointer border border-moca-border p-0.5 bg-white" />
+        <input type="text" value={value} onChange={e => onChange(e.target.value)}
+          placeholder={defaultColor || '#e8003d'}
+          className="flex-1 px-3 py-1.5 border border-moca-border rounded font-mono text-sm" />
+        {value && (
+          <button type="button" onClick={() => onChange('')}
+            title="אפס לצבע ברירת-המחדל של הספק"
+            className="text-xs text-gray-400 hover:text-red-500">✕</button>
+        )}
+      </div>
+      {usingDefault && (
+        <p className="text-[11px] text-gray-500 mt-1">
+          משתמש בצבע של {defaultLabel || 'הספק'}: <code className="font-mono">{defaultColor}</code>
+        </p>
+      )}
+    </label>
+  )
+}
+
 function WorkspaceRow({ ws, onChange }) {
   const [expanded, setExpanded]   = useState(false)
   const [editing, setEditing]     = useState(false)
@@ -136,6 +180,10 @@ function WorkspaceRow({ ws, onChange }) {
     mvno_carrier:      ws.mvno_carrier || '',
     hide_self_carrier: ws.hide_self_carrier,
     active:            ws.active,
+    primary_color:     ws.brand_config?.primary_color || '',
+    secondary_color:   ws.brand_config?.secondary_color || '',
+    app_title:         ws.brand_config?.app_title || '',
+    logo_url:          ws.brand_config?.logo_url || '',
   })
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState(null)
@@ -148,6 +196,12 @@ function WorkspaceRow({ ws, onChange }) {
         mvno_carrier:      form.mvno_carrier || null,
         hide_self_carrier: form.hide_self_carrier,
         active:            form.active,
+        brand_config: {
+          primary_color:   form.primary_color || null,
+          secondary_color: form.secondary_color || null,
+          app_title:       form.app_title || null,
+          logo_url:        form.logo_url || null,
+        },
       })
       setEditing(false)
       await onChange?.()
@@ -177,7 +231,7 @@ function WorkspaceRow({ ws, onChange }) {
               MVNO:{' '}
               {editing ? (
                 <select value={form.mvno_carrier}
-                  onChange={e => setForm({...form, mvno_carrier: e.target.value})}
+                  onChange={e => setForm(withMvnoColors(form, e.target.value))}
                   className="border border-moca-border rounded px-1 py-0.5 text-sm">
                   {MVNO_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
                 </select>
@@ -209,6 +263,10 @@ function WorkspaceRow({ ws, onChange }) {
               <Button onClick={() => { setEditing(false); setForm({
                 name: ws.name, mvno_carrier: ws.mvno_carrier || '',
                 hide_self_carrier: ws.hide_self_carrier, active: ws.active,
+                primary_color: ws.brand_config?.primary_color || '',
+                secondary_color: ws.brand_config?.secondary_color || '',
+                app_title: ws.brand_config?.app_title || '',
+                logo_url: ws.brand_config?.logo_url || '',
               }) }} variant="ghost" size="sm">ביטול</Button>
             </>
           ) : (
@@ -221,6 +279,34 @@ function WorkspaceRow({ ws, onChange }) {
           )}
         </div>
       </div>
+      {editing && (() => {
+        const mvnoColors = getMvnoColors(form.mvno_carrier)
+        const mvnoLabel  = MVNO_OPTIONS.find(o => o.id === form.mvno_carrier)?.label
+        return (
+        <div className="mt-3 pt-3 border-t border-moca-border/40 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <ColorInput label="צבע ראשי (primary)" value={form.primary_color}
+            defaultColor={mvnoColors?.primary} defaultLabel={mvnoLabel}
+            onChange={v => setForm({...form, primary_color: v})} />
+          <ColorInput label="צבע משני (secondary)" value={form.secondary_color}
+            defaultColor={mvnoColors?.secondary} defaultLabel={mvnoLabel}
+            onChange={v => setForm({...form, secondary_color: v})} />
+          <label className="text-sm">
+            <span className="block mb-1 text-gray-700">כותרת האפליקציה</span>
+            <input type="text" value={form.app_title}
+              onChange={e => setForm({...form, app_title: e.target.value})}
+              placeholder="Partner Intelligence"
+              className="w-full px-3 py-1.5 border border-moca-border rounded" />
+          </label>
+          <label className="text-sm">
+            <span className="block mb-1 text-gray-700">לוגו URL</span>
+            <input type="url" value={form.logo_url}
+              onChange={e => setForm({...form, logo_url: e.target.value})}
+              placeholder="https://..."
+              className="w-full px-3 py-1.5 border border-moca-border rounded" />
+          </label>
+        </div>
+        )
+      })()}
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
       {expanded && <UsersSection workspaceId={ws.id} onChange={onChange} />}
     </div>
@@ -234,6 +320,7 @@ export default function WorkspacesAdminPage() {
   const [creating, setCreating] = useState(false)
   const [form, setForm]         = useState({
     slug: '', name: '', mvno_carrier: '', hide_self_carrier: true,
+    primary_color: '', secondary_color: '', app_title: '', logo_url: '',
   })
   const [createError, setCreateError] = useState(null)
   const [submitting, setSubmitting]   = useState(false)
@@ -260,8 +347,15 @@ export default function WorkspacesAdminPage() {
         name: form.name.trim(),
         mvno_carrier: form.mvno_carrier || null,
         hide_self_carrier: form.hide_self_carrier,
+        brand_config: {
+          primary_color:   form.primary_color || null,
+          secondary_color: form.secondary_color || null,
+          app_title:       form.app_title || null,
+          logo_url:        form.logo_url || null,
+        },
       })
-      setForm({ slug: '', name: '', mvno_carrier: '', hide_self_carrier: true })
+      setForm({ slug: '', name: '', mvno_carrier: '', hide_self_carrier: true,
+        primary_color: '', secondary_color: '', app_title: '', logo_url: '' })
       setCreating(false)
       await load()
     } catch (e) {
@@ -308,7 +402,7 @@ export default function WorkspacesAdminPage() {
             <label className="text-sm">
               <span className="block mb-1 text-gray-700">MVNO של הלקוח</span>
               <select value={form.mvno_carrier}
-                onChange={e => setForm({...form, mvno_carrier: e.target.value})}
+                onChange={e => setForm(withMvnoColors(form, e.target.value))}
                 className="w-full px-3 py-1.5 border border-moca-border rounded">
                 {MVNO_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
               </select>
@@ -317,6 +411,28 @@ export default function WorkspacesAdminPage() {
               <input type="checkbox" checked={form.hide_self_carrier}
                 onChange={e => setForm({...form, hide_self_carrier: e.target.checked})} />
               <span>הסתר ספק עצמי מהתוצאות</span>
+            </label>
+            <ColorInput label="צבע ראשי (primary)" value={form.primary_color}
+              defaultColor={getMvnoColors(form.mvno_carrier)?.primary}
+              defaultLabel={MVNO_OPTIONS.find(o => o.id === form.mvno_carrier)?.label}
+              onChange={v => setForm({...form, primary_color: v})} />
+            <ColorInput label="צבע משני (secondary)" value={form.secondary_color}
+              defaultColor={getMvnoColors(form.mvno_carrier)?.secondary}
+              defaultLabel={MVNO_OPTIONS.find(o => o.id === form.mvno_carrier)?.label}
+              onChange={v => setForm({...form, secondary_color: v})} />
+            <label className="text-sm">
+              <span className="block mb-1 text-gray-700">כותרת האפליקציה</span>
+              <input type="text" value={form.app_title}
+                onChange={e => setForm({...form, app_title: e.target.value})}
+                placeholder="Partner Intelligence"
+                className="w-full px-3 py-1.5 border border-moca-border rounded" />
+            </label>
+            <label className="text-sm">
+              <span className="block mb-1 text-gray-700">לוגו URL</span>
+              <input type="url" value={form.logo_url}
+                onChange={e => setForm({...form, logo_url: e.target.value})}
+                placeholder="https://..."
+                className="w-full px-3 py-1.5 border border-moca-border rounded" />
             </label>
           </div>
           {createError && <p className="text-sm text-red-600">{createError}</p>}

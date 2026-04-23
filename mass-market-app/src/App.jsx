@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { ScrapeProvider } from './hooks/useScrape'
+import { getMvnoColors } from './data/mvnoBrandColors'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -14,6 +16,26 @@ import WorkspacesAdminPage from './pages/WorkspacesAdminPage'
 import NotFoundPage from './pages/NotFoundPage'
 import OfflineBanner from './components/OfflineBanner'
 
+function BrandThemeApplier() {
+  const { workspace } = useAuth()
+  useEffect(() => {
+    const root = document.documentElement
+    const cfg = workspace?.brand_config || {}
+    // Precedence: explicit brand_config override → MVNO default color → unset (moca theme)
+    const mvnoColors = getMvnoColors(workspace?.mvno_carrier)
+    const primary   = cfg.primary_color   || mvnoColors?.primary
+    const secondary = cfg.secondary_color || mvnoColors?.secondary
+    if (primary) {
+      root.style.setProperty('--color-moca-bolt', primary)
+      root.style.setProperty('--color-moca-dark', secondary || primary)
+    } else {
+      root.style.removeProperty('--color-moca-bolt')
+      root.style.removeProperty('--color-moca-dark')
+    }
+  }, [workspace])
+  return null
+}
+
 function ProtectedRoute({ children, adminOnly = false, superAdminOnly = false }) {
   const { user, loading, isAdmin, isSuperAdmin } = useAuth()
   if (loading) return <div className="flex items-center justify-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>
@@ -26,6 +48,7 @@ function ProtectedRoute({ children, adminOnly = false, superAdminOnly = false })
 export default function App() {
   return (
     <ScrapeProvider>
+      <BrandThemeApplier />
       <OfflineBanner />
       <Routes>
         <Route path="/login" element={<LoginPage />} />

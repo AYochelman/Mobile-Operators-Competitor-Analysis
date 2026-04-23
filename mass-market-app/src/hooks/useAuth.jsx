@@ -57,40 +57,36 @@ export function AuthProvider({ children }) {
   const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
-    if (DEV_MODE) {
-      setUser({ email: 'alon.yoch@gmail.com', id: 'dev' })
-      setRole('super_admin')
-      setWorkspace(DEFAULT_WORKSPACE)
+    if (!supabase) {
+      if (DEV_MODE) {
+        setUser({ email: 'alon.yoch@gmail.com', id: 'dev' })
+        setRole('super_admin')
+        setWorkspace(DEFAULT_WORKSPACE)
+      }
       setLoading(false)
       return
     }
-    if (!supabase) { setLoading(false); return }
 
-    const applyContext = async (session) => {
+    // Non-blocking: sets user synchronously, loads role/workspace in the
+    // background. Any long await inside onAuthStateChange can stall
+    // signInWithPassword from resolving (Supabase v2 internal lock).
+    const applyContext = (session) => {
       setUser(session.user)
       localStorage.setItem('auth_token', session.access_token)
       api.setSessionCookie(session.access_token).catch(() => {})
-      const ctx = await fetchContextFromBackend(session.access_token, session.user.email)
-      setRole(ctx.role)
-      setWorkspace(ctx.workspace)
+      fetchContextFromBackend(session.access_token, session.user.email)
+        .then(ctx => { setRole(ctx.role); setWorkspace(ctx.workspace) })
+        .catch(() => { setRole('viewer'); setWorkspace(DEFAULT_WORKSPACE) })
     }
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        let activeSession = session
-        if (!session.expires_at || Date.now() / 1000 > session.expires_at - 60) {
-          const { data: refreshed } = await supabase.auth.refreshSession()
-          if (refreshed?.session) activeSession = refreshed.session
-        }
-        await applyContext(activeSession)
-      }
-      setLoading(false)
-    })
-
+    // Supabase v2 auto-refreshes tokens in the background and fires
+    // onAuthStateChange with fresh sessions — no manual refresh needed.
+    // Always subscribe so real sign-ins work even when DEV_MODE is on.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (session?.user) {
-          await applyContext(session)
+          sessionStorage.removeItem('dev_logged_out')
+          applyContext(session)
         } else {
           setUser(null)
           setRole(null)
@@ -101,6 +97,25 @@ export function AuthProvider({ children }) {
         setLoading(false)
       }
     )
+
+    // Kick off initial session check. A timeout guard guarantees `loading`
+    // flips to false even if getSession() hangs for any reason — without
+    // this, the app gets stuck on the spinner and the user can never log in.
+    const bootTimeout = setTimeout(() => setLoading(false), 3000)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(bootTimeout)
+      if (session?.user) {
+        applyContext(session)
+      } else if (DEV_MODE && !sessionStorage.getItem('dev_logged_out')) {
+        setUser({ email: 'alon.yoch@gmail.com', id: 'dev' })
+        setRole('super_admin')
+        setWorkspace(DEFAULT_WORKSPACE)
+      }
+      setLoading(false)
+    }).catch(() => {
+      clearTimeout(bootTimeout)
+      setLoading(false)
+    })
 
     return () => subscription.unsubscribe()
   }, [])
@@ -121,6 +136,8 @@ export function AuthProvider({ children }) {
     setRole(null)
     setWorkspace(null)
     localStorage.removeItem('auth_token')
+    // Remember explicit logout for the tab session so DEV_MODE doesn't auto-re-login.
+    sessionStorage.setItem('dev_logged_out', '1')
     api.clearSessionCookie().catch(() => {})
   }
 
