@@ -188,6 +188,66 @@ def _current_user_email():
     return email or None
 
 
+def _hidden_carrier_for_request():
+    """Resolve the self-carrier that should be omitted from responses for the
+    current request, based on the authenticated user's workspace.
+
+    Returns the carrier id string (e.g. 'partner') to hide, or None when no
+    filtering applies. Endpoints can use this to scope data away from a
+    workspace's own MVNO (so a Partner tester never sees Partner plans).
+
+    Filtering is SKIPPED when:
+      - No JWT / unauthenticated public caller
+      - Token invalid / not verifiable
+      - User's role is super_admin (cross-workspace view)
+      - Workspace has hide_self_carrier=False
+      - Workspace has no mvno_carrier configured
+
+    Result is cached on `flask.g` so multiple calls within a single request
+    do not re-hit Supabase.
+    """
+    cached = getattr(g, '_hidden_carrier', '__UNSET__')
+    if cached != '__UNSET__':
+        return cached
+
+    result = None
+    try:
+        # Prefer JWT payload already set by @require_auth, fall back to header/cookie
+        payload = getattr(g, 'jwt_payload', None)
+        if payload is None:
+            token = None
+            auth_header = request.headers.get("Authorization", "")
+            if auth_header.startswith("Bearer "):
+                token = auth_header[7:]
+            if not token:
+                token = request.cookies.get("auth_token")
+            if token:
+                payload = _verify_supabase_jwt(token)
+
+        if payload:
+            email = (payload.get('email') or '').strip().lower()
+            if email:
+                ctx = _get_user_context(email)
+                if ctx.get('role') != 'super_admin':
+                    ws = ctx.get('workspace') or {}
+                    if ws.get('hide_self_carrier') and ws.get('mvno_carrier'):
+                        result = ws['mvno_carrier']
+    except Exception as e:
+        logger.warning(f"_hidden_carrier_for_request: {e}")
+
+    g._hidden_carrier = result
+    return result
+
+
+def _filter_hidden_carrier(items, key='carrier'):
+    """Strip items whose `carrier` field matches the request's hidden carrier.
+    No-op when no filter applies. Accepts a list of dicts and returns a new list."""
+    hide = _hidden_carrier_for_request()
+    if not hide:
+        return items
+    return [it for it in items if (it or {}).get(key) != hide]
+
+
 def _get_user_context(email):
     """Resolve a user's role + workspace config from Supabase in one query.
 
@@ -453,7 +513,7 @@ def serve_banner(filename):
 def api_plans():
     carrier = request.args.get("carrier")
     plans = get_plans(carrier=carrier, db_path=_db_path())
-    return jsonify(plans)
+    return jsonify(_filter_hidden_carrier(plans))
 
 
 @app.route("/api/changes")
@@ -464,7 +524,7 @@ def api_changes():
     except (ValueError, TypeError):
         limit = 20
     changes = get_changes(limit=limit, db_path=_db_path())
-    return jsonify(changes)
+    return jsonify(_filter_hidden_carrier(changes))
 
 
 @app.route("/api/abroad-plans")
@@ -472,7 +532,7 @@ def api_changes():
 def api_abroad_plans():
     carrier = request.args.get("carrier")
     plans = get_abroad_plans(carrier=carrier, db_path=_db_path())
-    return jsonify(plans)
+    return jsonify(_filter_hidden_carrier(plans))
 
 
 @app.route("/api/global-plans")
@@ -480,7 +540,7 @@ def api_abroad_plans():
 def api_global_plans():
     carrier = request.args.get("carrier")
     plans = get_global_plans(carrier=carrier, db_path=_db_path())
-    return jsonify(plans)
+    return jsonify(_filter_hidden_carrier(plans))
 
 
 @app.route("/api/news")
@@ -489,7 +549,7 @@ def api_news():
     """Return cached news articles. Optional ?carrier=<id> filter."""
     carrier = request.args.get('carrier', None)
     articles = get_news_articles(carrier=carrier, db_path=_db_path())
-    return jsonify(articles)
+    return jsonify(_filter_hidden_carrier(articles))
 
 
 _AFFILIATE_FALLBACK_URLS = {
@@ -550,7 +610,7 @@ def api_global_changes():
     except (ValueError, TypeError):
         limit = 50
     changes = get_global_changes(limit=limit, db_path=_db_path())
-    return jsonify(changes)
+    return jsonify(_filter_hidden_carrier(changes))
 
 
 @app.route("/api/scrape-global-now")
@@ -590,7 +650,7 @@ def api_abroad_changes():
     except (ValueError, TypeError):
         limit = 50
     changes = get_abroad_changes(limit=limit, db_path=_db_path())
-    return jsonify(changes)
+    return jsonify(_filter_hidden_carrier(changes))
 
 
 @app.route("/api/scrape-abroad-now")
@@ -721,7 +781,7 @@ def api_content_plans():
     carrier = request.args.get("carrier")
     service = request.args.get("service")
     plans = get_content_plans(service=service, carrier=carrier, db_path=_db_path())
-    return jsonify(plans)
+    return jsonify(_filter_hidden_carrier(plans))
 
 
 def _price_direction(change):
@@ -1295,7 +1355,7 @@ def api_banners():
             "image_url":  f"/banners/{carrier}.png" if exists else None,
             "scraped_at": scraped_at,
         })
-    return jsonify(result)
+    return jsonify(_filter_hidden_carrier(result))
 
 
 @app.route("/api/store-banners")
@@ -1319,7 +1379,7 @@ def api_store_banners():
             "image_url":  f"/banners/{carrier}_store.png" if exists else None,
             "scraped_at": scraped_at,
         })
-    return jsonify(result)
+    return jsonify(_filter_hidden_carrier(result))
 
 
 @app.route("/api/archive")
@@ -1335,6 +1395,13 @@ def api_archive():
     date_str = request.args.get("date", "").strip()
     if not carrier or not date_str:
         return jsonify({"error": "carrier and date are required"}), 400
+
+    # Block direct URL access to the workspace's own carrier. Matches the
+    # filtering applied to list endpoints — a Partner user shouldn't be able
+    # to `?carrier=partner` their way around the hide_self_carrier flag.
+    hidden = _hidden_carrier_for_request()
+    if hidden and carrier == hidden:
+        return jsonify({"error": "carrier not available for this workspace"}), 403
 
     plan_rows = get_archive_plans(carrier, date_str, db_path=_db_path())
     banner_rows = get_archive_banners(carrier, date_str, db_path=_db_path())
@@ -1389,7 +1456,7 @@ def api_content_changes():
     except (ValueError, TypeError):
         limit = 50
     changes = get_content_changes(limit=limit, db_path=_db_path())
-    return jsonify(changes)
+    return jsonify(_filter_hidden_carrier(changes))
 
 
 @app.route("/api/scrape-content-now")
@@ -1503,6 +1570,11 @@ def api_chat():
     if not question:
         return jsonify({"error": "no question"}), 400
 
+    # Workspace self-carrier scoping: strip the user's own MVNO from the
+    # grounding data AND instruct the model to not mention it. The user is
+    # here to learn about competitors, not about themselves.
+    hidden_carrier = _hidden_carrier_for_request()
+
     config = load_config()
     api_key = config.get("anthropic_api_key", "")
     if not api_key:
@@ -1548,11 +1620,17 @@ def api_chat():
             "להלן הנתונים הנוכחיים מהמסד נתונים. ענה בעברית, בצורה תמציתית וברורה.",
             f"תאריך עדכון: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
             "שמות ספקים: gomoworld=GoMoWorld=Gomo, airalo/airalo_local/airalo_regional=Airalo, pelephone_global=GlobalSIM, xphone_global=XPhone Global, mobile019=019.",
-            "",
         ]
+        if hidden_carrier:
+            lines.append(
+                f"חשוב: המשתמש הוא נציג של {_CARRIER_NAMES.get(hidden_carrier, hidden_carrier)}. "
+                f"אל תתייחס לחבילות או לנתונים של {_CARRIER_NAMES.get(hidden_carrier, hidden_carrier)} "
+                f"בתשובותיך — התמקד רק במתחרים שלהם."
+            )
+        lines.append("")
 
         # Domestic plans
-        domestic = get_plans(db_path=_db_path())
+        domestic = _filter_hidden_carrier(get_plans(db_path=_db_path()))
         if domestic:
             lines.append("## חבילות ביתיות (ישראל)")
             for p in domestic:
@@ -1563,7 +1641,7 @@ def api_chat():
                 )
 
         # Abroad plans
-        abroad = get_abroad_plans(db_path=_db_path())
+        abroad = _filter_hidden_carrier(get_abroad_plans(db_path=_db_path()))
         if abroad:
             lines.append("")
             lines.append("## חבילות חו\"ל")
@@ -1576,7 +1654,7 @@ def api_chat():
 
         # Global plans — 1 cheapest plan per carrier+destination, up to 40 dest per carrier
         from collections import defaultdict as _dd
-        _all_global = get_global_plans(db_path=_db_path())
+        _all_global = _filter_hidden_carrier(get_global_plans(db_path=_db_path()))
         _by_carrier_dest = _dd(lambda: _dd(list))
         for _p in _all_global:
             _dest = (_p.get('extras') or [''])[0] or 'global'
@@ -1600,7 +1678,7 @@ def api_chat():
                 )
 
         # Content services
-        content = get_content_plans(db_path=_db_path())
+        content = _filter_hidden_carrier(get_content_plans(db_path=_db_path()))
         if content:
             lines.append("")
             lines.append("## שירותי תוכן")
@@ -1612,13 +1690,13 @@ def api_chat():
 
         # Recent changes (last 90 days)
         all_changes = []
-        for ch in get_changes(limit=200, db_path=_db_path()):
+        for ch in _filter_hidden_carrier(get_changes(limit=200, db_path=_db_path())):
             all_changes.append(("ביתי", ch))
-        for ch in get_abroad_changes(limit=200, db_path=_db_path()):
+        for ch in _filter_hidden_carrier(get_abroad_changes(limit=200, db_path=_db_path())):
             all_changes.append(("חו\"ל", ch))
-        for ch in get_global_changes(limit=200, db_path=_db_path()):
+        for ch in _filter_hidden_carrier(get_global_changes(limit=200, db_path=_db_path())):
             all_changes.append(("גלובלי", ch))
-        for ch in get_content_changes(limit=200, db_path=_db_path()):
+        for ch in _filter_hidden_carrier(get_content_changes(limit=200, db_path=_db_path())):
             all_changes.append(("תוכן", ch))
 
         if all_changes:
@@ -2134,6 +2212,10 @@ def api_history_changes():
     if plan_type not in ('domestic', 'abroad', 'global', 'content'):
         return jsonify({'error': 'plan_type must be domestic/abroad/global/content'}), 400
 
+    hidden = _hidden_carrier_for_request()
+    if hidden and carrier == hidden:
+        return jsonify({'error': 'carrier not available for this workspace'}), 403
+
     changes = get_history_changes(carrier, plan_type, from_date, to_date, db_path=_db_path())
     summary = {
         'total':         len(changes),
@@ -2154,6 +2236,9 @@ def api_history_price_series():
     from_date = request.args.get('from', '')
     if plan_type not in ('domestic', 'abroad', 'global', 'content'):
         return jsonify({'error': 'plan_type must be domestic/abroad/global/content'}), 400
+    hidden = _hidden_carrier_for_request()
+    if hidden and carrier == hidden:
+        return jsonify({'error': 'carrier not available for this workspace'}), 403
     series = get_history_price_series(
         carrier, plan_type, plan_name, from_date, db_path=_db_path()
     )
@@ -2174,6 +2259,10 @@ def api_history_analyze():
 
     if plan_type not in ('domestic', 'abroad', 'global', 'content'):
         return jsonify({'error': 'plan_type must be domestic/abroad/global/content'}), 400
+
+    hidden = _hidden_carrier_for_request()
+    if hidden and carrier == hidden:
+        return jsonify({'error': 'carrier not available for this workspace'}), 403
 
     changes = get_history_changes(carrier, plan_type, from_date, to_date, db_path=_db_path())
     if not changes:
@@ -2280,6 +2369,63 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error(f"Email report job failed: {e}", exc_info=True)
 
+    def check_price_alerts(new_plans, new_abroad, new_global, config, db_path=None):
+        """After each scrape, evaluate all active price alerts and email users whose threshold is met.
+
+        Cooldown: 24 hours — an alert that fired in the last 24 h is skipped to avoid spam.
+        """
+        from notifier import send_price_alert_email
+        from datetime import datetime, timedelta
+
+        all_alerts = get_price_alerts(active_only=True, db_path=db_path)
+        if not all_alerts:
+            return 0
+
+        plan_buckets = {"domestic": new_plans, "abroad": new_abroad, "global": new_global}
+        sent = 0
+        now = datetime.now()
+
+        for alert in all_alerts:
+            # Cooldown: skip if triggered within last 24 h
+            if alert.get("last_triggered"):
+                try:
+                    last = datetime.fromisoformat(alert["last_triggered"])
+                    if now - last < timedelta(hours=24):
+                        continue
+                except ValueError:
+                    pass
+
+            tab = alert.get("tab", "domestic")
+            plans_pool = plan_buckets.get(tab, [])
+
+            # Filter by carrier
+            carrier = alert.get("carrier")
+            if carrier:
+                plans_pool = [p for p in plans_pool if p.get("carrier") == carrier]
+
+            # Filter by plan name (exact match first, then substring fallback for legacy alerts)
+            pattern = (alert.get("plan_pattern") or "").strip()
+            if pattern:
+                exact = [p for p in plans_pool if p.get("plan_name") == pattern]
+                plans_pool = exact if exact else [p for p in plans_pool if pattern in (p.get("plan_name") or "")]
+
+            # Find plans below threshold
+            threshold = float(alert.get("threshold", 0))
+            matching = [p for p in plans_pool if p.get("price") is not None and float(p["price"]) < threshold]
+
+            if not matching:
+                continue
+
+            ok = send_price_alert_email(alert["user_email"], alert, matching, config)
+            if ok:
+                update_alert_triggered(alert["id"], db_path=db_path)
+                sent += 1
+                logger.info(f"Price alert {alert['id']} fired → {alert['user_email']} ({len(matching)} plans)")
+            else:
+                logger.warning(f"Price alert email failed for alert {alert['id']}")
+
+        return sent
+
     def run_scrape_job():
         logger.info("Starting scheduled scrape...")
         config = load_config()
@@ -2369,6 +2515,14 @@ if __name__ == "__main__":
                 logger.info("Archive snapshots updated.")
             except Exception as ae:
                 logger.error(f"Archive snapshot failed: {ae}", exc_info=True)
+
+            # ── Price alerts ───────────────────────────────────────────────────
+            try:
+                n_sent = check_price_alerts(new_plans, new_abroad, new_global, config, _db_path())
+                logger.info(f"Price alert emails sent: {n_sent}")
+            except Exception as ae:
+                logger.error(f"Price alert check failed: {ae}", exc_info=True)
+
         except Exception as e:
             logger.error(f"Scrape job failed: {e}", exc_info=True)
 

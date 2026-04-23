@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
+import { useHiddenCarrier } from '../hooks/useHiddenCarrier'
 import * as XLSX from 'xlsx'
 import PlanCard from '../components/PlanCard'
 import BannerCard from '../components/BannerCard'
@@ -189,6 +190,7 @@ const GLOBAL_PROVIDERS = [
 export default function DashboardPage() {
   const { isAdmin } = useAuth()
   const { scraping, countdown, triggerScrape } = useScrape()
+  const hiddenCarrier = useHiddenCarrier()
   const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTab] = useState(searchParams.get('tab') || 'domestic')
   const [loading, setLoading] = useState(true)
@@ -785,7 +787,9 @@ export default function DashboardPage() {
                     </button>
                   </div>
                   <div className={`grid gap-1 ${tab === 'domestic' || tab === 'abroad' ? 'grid-cols-2' : 'grid-cols-4'}`}>
-                    {(tab === 'abroad' ? CARRIERS.filter(c => c.id !== 'xphone' && c.id !== 'neptucom') : CARRIERS).map(c => {
+                    {(tab === 'abroad' ? CARRIERS.filter(c => c.id !== 'xphone' && c.id !== 'neptucom') : CARRIERS)
+                      .filter(c => c.id !== hiddenCarrier)
+                      .map(c => {
                       const cnt = plans[tab]?.filter(p => p.carrier === c.id).length || 0
                       return (
                         <button
