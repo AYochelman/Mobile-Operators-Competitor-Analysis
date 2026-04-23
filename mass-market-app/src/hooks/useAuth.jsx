@@ -106,13 +106,17 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signIn = async (email, password) => {
-    if (DEV_MODE) return
+    // DEV_MODE previously short-circuited here — but then the login form would
+    // appear to do nothing with no error. Always hit Supabase so real users
+    // (e.g. a Partner pilot tester) can authenticate even when the local env
+    // has VITE_DEV_AUTH=true for the developer's own convenience.
+    if (!supabase) throw new Error('Supabase not configured')
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
   }
 
   const signOut = async () => {
-    if (!DEV_MODE && supabase) await supabase.auth.signOut()
+    if (supabase) await supabase.auth.signOut().catch(() => {})
     setUser(null)
     setRole(null)
     setWorkspace(null)
