@@ -42,6 +42,7 @@ const GLOBAL_CARRIERS = [
   { id: 'bcengi',         label: 'Bcengi' },
   { id: 'esim70',         label: 'eSIM70' },
   { id: 'jetpack',        label: 'Jetpack' },
+  { id: 'breez',          label: 'Breez' },
 ]
 
 const CARRIERS_BY_TYPE = {

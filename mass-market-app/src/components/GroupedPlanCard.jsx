@@ -27,6 +27,7 @@ const CARRIER_LOGOS = {
   bcengi:          '/logos/bcengi.png',
   esim70:          '/logos/esim70.png',
   jetpack:         '/logos/jetpack.png',
+  breez:           '/logos/breez.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
@@ -48,6 +49,7 @@ const LOGO_SIZES = {
 // Wide logos: width-only override (height stays at LOGO_SIZES default 32px)
 const LOGO_WIDTHS = {
   jetpack: '52px',
+  breez: '63px',
 }
 
 const AFFILIATE_PROVIDERS = new Set(['airalo', 'airalo_local', 'airalo_regional', 'holafly', 'saily', 'globalesim'])

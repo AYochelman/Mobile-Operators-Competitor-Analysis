@@ -72,13 +72,14 @@ const GLOBAL_LABELS = {
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
   orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
   maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack',
+  breez: 'Breez',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
   esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
   saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber', voye: 'pink',
   orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'violet',
-  maya: 'teal', esim70: 'emerald', jetpack: 'sky',
+  maya: 'teal', esim70: 'emerald', jetpack: 'sky', breez: 'cyan',
 }
 
 const CARRIER_LOGOS = {
@@ -115,6 +116,7 @@ const CARRIER_LOGOS = {
   rami_levy:      '/logos/rami_levy.png',
   esim70:         '/logos/esim70.png',
   jetpack:        '/logos/jetpack.png',
+  breez:          '/logos/breez.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
@@ -140,6 +142,7 @@ const LOGO_SIZES = {
 const LOGO_WIDTHS = {
   rami_levy: '110px',
   jetpack: '52px',
+  breez: '63px',
 }
 
 const CONTENT_URLS = {

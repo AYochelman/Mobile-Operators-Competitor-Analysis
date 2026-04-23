@@ -64,6 +64,7 @@ const CARRIERS_BY_TAB = {
     { id: 'bcengi', label: 'Bcengi', color: '#1d4ed8' },
     { id: 'esim70', label: 'eSIM70', color: '#10b981' },
     { id: 'jetpack', label: 'Jetpack', color: '#0ea5e9' },
+    { id: 'breez', label: 'Breez', color: '#06b6d4' },
   ],
 }
 
@@ -82,6 +83,8 @@ const KNOWN_REGIONS = new Set([
   'ספארי אפריקה','האיחוד האירופי ובריטניה',
   'איי התעלה','האנטילים הצרפתיים','אנטילים הולנדיים',
   'הקריביים','כלל העולם',
+  'אירופה+','חבר המדינות','הבלקן','אמריקה המרכזית','אירופה וארה"ב','פורטוגל וספרד',
+  'המזרח התיכון לייט','אירופה לייט','גלובלי',
 ])
 
 export default function ComparePage() {
@@ -449,7 +452,7 @@ export default function ComparePage() {
               {selectedCarriers.length === availableCarriers.length ? 'נקה' : 'הכל'}
             </button>
           </div>
-          <div className={`grid gap-1 ${tab === 'domestic' || tab === 'abroad' ? 'grid-cols-2' : 'grid-cols-4'}`}>
+          <div className={`grid gap-1 ${tab === 'domestic' || tab === 'abroad' ? 'grid-cols-2' : 'grid-cols-3'}`}>
             {availableCarriers.map(c => (
               <button
                 key={c.id}

@@ -46,6 +46,7 @@ const CARRIER_NAMES = {
   bcengi: 'Bcengi',
   esim70: 'eSIM70',
   jetpack: 'Jetpack',
+  breez: 'Breez',
   rami_levy: 'רמי לוי',
 }
 
