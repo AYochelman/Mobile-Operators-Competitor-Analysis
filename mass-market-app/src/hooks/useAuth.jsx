@@ -9,11 +9,23 @@ const API_BASE  = import.meta.env.VITE_API_URL || ''
 
 const ADMIN_EMAILS = ['alon.yoch@gmail.com']
 
-async function fetchRoleFromBackend(accessToken, userEmail) {
+// Default workspace returned when backend is unreachable or for dev mode.
+// Matches the 'moca-internal' workspace seeded by migration 001.
+const DEFAULT_WORKSPACE = {
+  slug: 'moca-internal',
+  name: 'MOCA Internal',
+  mvno_carrier: null,
+  brand_config: {},
+  feature_flags: {},
+  hide_self_carrier: false,
+  active: true,
+}
+
+async function fetchContextFromBackend(accessToken, userEmail) {
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 5000)
-    const res = await fetch(`${API_BASE}/api/my-role`, {
+    const res = await fetch(`${API_BASE}/api/my-context`, {
       signal: controller.signal,
       credentials: 'include',
       headers: {
@@ -24,27 +36,44 @@ async function fetchRoleFromBackend(accessToken, userEmail) {
     clearTimeout(timeout)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
-    return data?.role || 'viewer'
+    return {
+      role: data?.role || 'viewer',
+      workspaceId: data?.workspace_id || null,
+      workspace: data?.workspace || null,
+    }
   } catch {
-    // Backend unreachable — fall back to local email check
-    if (userEmail && ADMIN_EMAILS.includes(userEmail.toLowerCase())) return 'admin'
-    return 'viewer'
+    // Backend unreachable — degrade gracefully.
+    // Local email shortcut gives you admin access if network is down.
+    const fallbackRole = (userEmail && ADMIN_EMAILS.includes(userEmail.toLowerCase()))
+      ? 'admin' : 'viewer'
+    return { role: fallbackRole, workspaceId: null, workspace: DEFAULT_WORKSPACE }
   }
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser]     = useState(null)
-  const [role, setRole]     = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser]         = useState(null)
+  const [role, setRole]         = useState(null)
+  const [workspace, setWorkspace] = useState(null)
+  const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
     if (DEV_MODE) {
       setUser({ email: 'alon.yoch@gmail.com', id: 'dev' })
-      setRole('admin')
+      setRole('super_admin')
+      setWorkspace(DEFAULT_WORKSPACE)
       setLoading(false)
       return
     }
     if (!supabase) { setLoading(false); return }
+
+    const applyContext = async (session) => {
+      setUser(session.user)
+      localStorage.setItem('auth_token', session.access_token)
+      api.setSessionCookie(session.access_token).catch(() => {})
+      const ctx = await fetchContextFromBackend(session.access_token, session.user.email)
+      setRole(ctx.role)
+      setWorkspace(ctx.workspace)
+    }
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
@@ -53,11 +82,7 @@ export function AuthProvider({ children }) {
           const { data: refreshed } = await supabase.auth.refreshSession()
           if (refreshed?.session) activeSession = refreshed.session
         }
-        setUser(activeSession.user)
-        localStorage.setItem('auth_token', activeSession.access_token)
-        api.setSessionCookie(activeSession.access_token).catch(() => {})
-        const r = await fetchRoleFromBackend(activeSession.access_token, activeSession.user.email)
-        setRole(r)
+        await applyContext(activeSession)
       }
       setLoading(false)
     })
@@ -65,14 +90,11 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
-          setUser(session.user)
-          localStorage.setItem('auth_token', session.access_token)
-          api.setSessionCookie(session.access_token).catch(() => {})
-          const r = await fetchRoleFromBackend(session.access_token, session.user.email)
-          setRole(r)
+          await applyContext(session)
         } else {
           setUser(null)
           setRole(null)
+          setWorkspace(null)
           localStorage.removeItem('auth_token')
           api.clearSessionCookie().catch(() => {})
         }
@@ -93,12 +115,18 @@ export function AuthProvider({ children }) {
     if (!DEV_MODE && supabase) await supabase.auth.signOut()
     setUser(null)
     setRole(null)
+    setWorkspace(null)
     localStorage.removeItem('auth_token')
     api.clearSessionCookie().catch(() => {})
   }
 
+  const value = {
+    user, role, workspace, loading, signIn, signOut,
+    isAdmin:      role === 'admin' || role === 'super_admin',
+    isSuperAdmin: role === 'super_admin',
+  }
   return (
-    <AuthContext.Provider value={{ user, role, loading, signIn, signOut, isAdmin: role === 'admin' }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )

@@ -179,6 +179,57 @@ def _current_user_email():
     return email or None
 
 
+def _get_user_context(email):
+    """Resolve a user's role + workspace config from Supabase in one query.
+
+    Returns a dict with keys:
+      role          — 'super_admin' | 'admin' | 'viewer'  (default 'viewer')
+      workspace_id  — UUID string or None (None only for super_admin)
+      workspace     — dict {slug, name, mvno_carrier, brand_config, feature_flags,
+                            hide_self_carrier, active} or None
+
+    On DB failure, returns a safe default: viewer role, no workspace. Callers
+    MUST handle workspace=None gracefully (e.g. return 503 or fall back to
+    default behavior).
+    """
+    if not email:
+        return {"role": "viewer", "workspace_id": None, "workspace": None}
+    try:
+        conn = _supabase_conn()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT COALESCE(r.role, 'viewer'),
+                   r.workspace_id,
+                   w.slug, w.name, w.mvno_carrier,
+                   w.brand_config, w.feature_flags,
+                   w.hide_self_carrier, w.active
+            FROM auth.users u
+            LEFT JOIN public.user_roles r ON r.user_id = u.id
+            LEFT JOIN public.workspaces w ON w.id = r.workspace_id
+            WHERE LOWER(u.email) = %s
+        """, (email,))
+        row = cur.fetchone()
+        conn.close()
+        if not row:
+            return {"role": "viewer", "workspace_id": None, "workspace": None}
+        role, ws_id = row[0], row[1]
+        workspace = None
+        if row[2]:  # slug present = workspace joined successfully
+            workspace = {
+                "slug":              row[2],
+                "name":              row[3],
+                "mvno_carrier":      row[4],
+                "brand_config":      row[5] or {},
+                "feature_flags":     row[6] or {},
+                "hide_self_carrier": bool(row[7]),
+                "active":            bool(row[8]),
+            }
+        return {"role": role, "workspace_id": str(ws_id) if ws_id else None, "workspace": workspace}
+    except Exception as e:
+        logger.error(f"_get_user_context({email!r}) failed: {e}")
+        return {"role": "viewer", "workspace_id": None, "workspace": None}
+
+
 def require_api_key_or_query(f):
     """Accepts API key via header OR ?api_key= query param.
     Use ONLY on /api/scrape-*-now for manual browser convenience."""
@@ -1696,31 +1747,34 @@ def api_push_test():
 @require_auth
 @limiter.limit("60 per minute")
 def api_my_role():
-    """Return the role of the given user email.
-    Email is extracted from the verified JWT payload (g.jwt_payload),
-    or falls back to X-User-Email header for API-key auth."""
+    """Legacy endpoint — prefer /api/my-context. Returns only the role."""
     payload = getattr(g, 'jwt_payload', None)
     if payload:
         email = (payload.get('email') or '').strip().lower()
     else:
         email = request.headers.get('X-User-Email', '').strip().lower()
-    if not email:
-        return jsonify({"role": "viewer"})
-    try:
-        conn = _supabase_conn()
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT COALESCE(r.role, 'viewer')
-            FROM auth.users u
-            LEFT JOIN public.user_roles r ON u.id = r.user_id
-            WHERE LOWER(u.email) = %s
-        """, (email,))
-        row = cur.fetchone()
-        conn.close()
-        return jsonify({"role": row[0] if row else "viewer"})
-    except Exception as e:
-        logger.error(f"my-role failed: {e}")
-        return jsonify({"role": "viewer"})
+    return jsonify({"role": _get_user_context(email)["role"]})
+
+
+@app.route("/api/my-context")
+@require_auth
+@limiter.limit("60 per minute")
+def api_my_context():
+    """Return the authenticated user's role and workspace configuration.
+
+    Response shape:
+      { role, workspace_id, workspace: {slug, name, mvno_carrier, brand_config,
+                                        feature_flags, hide_self_carrier, active} | null }
+
+    super_admin users may have workspace=null (cross-workspace view).
+    A non-null workspace with active=false means the customer has been
+    suspended — the frontend should show a friendly 'contact us' screen."""
+    payload = getattr(g, 'jwt_payload', None)
+    if payload:
+        email = (payload.get('email') or '').strip().lower()
+    else:
+        email = request.headers.get('X-User-Email', '').strip().lower()
+    return jsonify(_get_user_context(email))
 
 
 @app.route("/api/users")

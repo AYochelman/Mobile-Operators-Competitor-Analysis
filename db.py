@@ -285,6 +285,15 @@ def init_db(db_path=None):
             conn.commit()
         except Exception:
             pass  # column already exists
+        # Migration: multi-tenant workspace scoping (PR #1)
+        # workspace_id is a Supabase UUID stored as TEXT. NULL = legacy rows that
+        # belong to the default 'moca-internal' workspace until reassigned.
+        for table in ("price_alerts", "push_subscriptions"):
+            try:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN workspace_id TEXT")
+                conn.commit()
+            except Exception:
+                pass  # column already exists
     finally:
         conn.close()
 
