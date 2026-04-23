@@ -168,6 +168,17 @@ def require_admin(f):
     return decorated
 
 
+def _current_user_email():
+    """Return the authenticated user's email (lowercased) from the JWT payload
+    set by @require_auth, or None if the caller authenticated via API key
+    (treated as a trusted server-to-server caller)."""
+    payload = getattr(g, 'jwt_payload', None)
+    if payload is None:
+        return None
+    email = (payload.get('email') or '').strip().lower()
+    return email or None
+
+
 def require_api_key_or_query(f):
     """Accepts API key via header OR ?api_key= query param.
     Use ONLY on /api/scrape-*-now for manual browser convenience."""
@@ -1371,18 +1382,14 @@ def api_scrape_now():
 @require_auth
 @limiter.limit("60 per minute")
 def api_get_alerts():
-    """Get alerts for the authenticated user.
-    Email is derived from the verified JWT (Authorization: Bearer <token>).
-    Falls back to ?user_email= query param for backwards compatibility."""
-    user_email = None
-    auth_header = request.headers.get('Authorization', '')
-    if auth_header.startswith('Bearer '):
-        payload = _verify_supabase_jwt(auth_header[7:])
-        if payload:
-            user_email = payload.get('email')
-    if not user_email:
-        user_email = request.args.get("user_email", "")
-    alerts = get_price_alerts(user_email=user_email or None, db_path=_db_path())
+    """Return alerts owned by the authenticated user.
+    Identity is taken from the verified JWT; API-key callers may optionally
+    pass ?user_email= to filter on behalf of a specific user."""
+    user_email = _current_user_email()
+    if user_email is None:
+        # Server-to-server (API key) — allow explicit filter
+        user_email = (request.args.get("user_email") or "").strip().lower() or None
+    alerts = get_price_alerts(user_email=user_email, db_path=_db_path())
     return jsonify(alerts)
 
 
@@ -1390,10 +1397,16 @@ def api_get_alerts():
 @require_auth
 @limiter.limit("20 per minute")
 def api_create_alert():
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
+    user_email = _current_user_email()
+    if user_email is None:
+        # Server-to-server must provide the target user explicitly
+        user_email = (data.get("user_email") or "").strip().lower()
+        if not user_email:
+            return jsonify({"error": "user_email required for API-key callers"}), 400
     try:
         save_price_alert(
-            user_email=data.get("user_email", ""),
+            user_email=user_email,
             tab=data.get("tab", "domestic"),
             carrier=data.get("carrier", ""),
             plan_pattern=data.get("plan_pattern", ""),
@@ -1409,7 +1422,12 @@ def api_create_alert():
 @app.route("/api/alerts/<int:alert_id>", methods=["DELETE"])
 @require_auth
 def api_delete_alert(alert_id):
-    delete_price_alert(alert_id, db_path=_db_path())
+    """Delete an alert. JWT callers can only delete their own alerts;
+    API-key callers can delete any alert."""
+    user_email = _current_user_email()
+    deleted = delete_price_alert(alert_id, user_email=user_email, db_path=_db_path())
+    if deleted == 0:
+        return jsonify({"error": "not found"}), 404
     return jsonify({"status": "deleted"})
 
 
@@ -1629,13 +1647,17 @@ def api_auth_logout():
 @limiter.limit("10 per minute")
 def api_push_subscribe():
     from db import save_push_subscription
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     endpoint = data.get("endpoint")
     p256dh   = data.get("keys", {}).get("p256dh")
     auth     = data.get("keys", {}).get("auth")
     if not all([endpoint, p256dh, auth]):
         return jsonify({"error": "missing fields"}), 400
-    save_push_subscription(endpoint, p256dh, auth, db_path=_db_path())
+    user_email = _current_user_email()
+    if user_email is None:
+        # Server-to-server subscriptions must name their owner
+        user_email = (data.get("user_email") or "").strip().lower() or None
+    save_push_subscription(endpoint, p256dh, auth, user_email=user_email, db_path=_db_path())
     return jsonify({"status": "subscribed"}), 201
 
 
@@ -1644,11 +1666,15 @@ def api_push_subscribe():
 @limiter.limit("10 per minute")
 def api_push_unsubscribe():
     from db import delete_push_subscription
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     endpoint = data.get("endpoint")
     if not endpoint:
         return jsonify({"error": "missing endpoint"}), 400
-    delete_push_subscription(endpoint, db_path=_db_path())
+    # JWT callers can only unsubscribe endpoints they own; API-key can unsubscribe any
+    user_email = _current_user_email()
+    deleted = delete_push_subscription(endpoint, user_email=user_email, db_path=_db_path())
+    if deleted == 0:
+        return jsonify({"error": "not found"}), 404
     return jsonify({"status": "unsubscribed"}), 200
 
 

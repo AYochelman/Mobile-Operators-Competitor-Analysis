@@ -136,6 +136,7 @@ def init_db(db_path=None):
                 endpoint   TEXT NOT NULL UNIQUE,
                 p256dh     TEXT NOT NULL,
                 auth       TEXT NOT NULL,
+                user_email TEXT,
                 created_at TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS abroad_changes (
@@ -275,6 +276,12 @@ def init_db(db_path=None):
         # Migration: add url column if DB was created before this column existed
         try:
             conn.execute("ALTER TABLE plans ADD COLUMN url TEXT")
+            conn.commit()
+        except Exception:
+            pass  # column already exists
+        # Migration: add user_email to push_subscriptions (added for multi-user scoping)
+        try:
+            conn.execute("ALTER TABLE push_subscriptions ADD COLUMN user_email TEXT")
             conn.commit()
         except Exception:
             pass  # column already exists
@@ -845,34 +852,52 @@ def save_changes(changes, db_path=None):
         conn.close()
 
 
-def save_push_subscription(endpoint, p256dh, auth, db_path=None):
+def save_push_subscription(endpoint, p256dh, auth, user_email=None, db_path=None):
     conn = _connect(db_path)
     try:
         conn.execute(
-            "INSERT OR REPLACE INTO push_subscriptions (endpoint, p256dh, auth, created_at) "
-            "VALUES (?, ?, ?, ?)",
-            (endpoint, p256dh, auth, datetime.now().isoformat())
+            "INSERT OR REPLACE INTO push_subscriptions "
+            "(endpoint, p256dh, auth, user_email, created_at) VALUES (?, ?, ?, ?, ?)",
+            (endpoint, p256dh, auth, user_email, datetime.now().isoformat())
         )
         conn.commit()
     finally:
         conn.close()
 
 
-def delete_push_subscription(endpoint, db_path=None):
+def delete_push_subscription(endpoint, user_email=None, db_path=None):
+    """Delete a subscription by endpoint. If user_email is given, restrict to
+    rows owned by that user (returns number of rows deleted)."""
     conn = _connect(db_path)
     try:
-        conn.execute("DELETE FROM push_subscriptions WHERE endpoint=?", (endpoint,))
+        if user_email:
+            cur = conn.execute(
+                "DELETE FROM push_subscriptions WHERE endpoint=? AND user_email=?",
+                (endpoint, user_email)
+            )
+        else:
+            cur = conn.execute(
+                "DELETE FROM push_subscriptions WHERE endpoint=?", (endpoint,)
+            )
         conn.commit()
+        return cur.rowcount
     finally:
         conn.close()
 
 
-def get_push_subscriptions(db_path=None):
+def get_push_subscriptions(user_email=None, db_path=None):
+    """Return subscriptions; optionally filter to a single user."""
     conn = _connect(db_path)
     try:
-        rows = conn.execute(
-            "SELECT endpoint, p256dh, auth FROM push_subscriptions"
-        ).fetchall()
+        if user_email:
+            rows = conn.execute(
+                "SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_email=?",
+                (user_email,)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT endpoint, p256dh, auth FROM push_subscriptions"
+            ).fetchall()
         return [
             {"endpoint": r[0], "keys": {"p256dh": r[1], "auth": r[2]}}
             for r in rows
@@ -1036,12 +1061,21 @@ def get_price_alerts(user_email=None, active_only=True, db_path=None):
         conn.close()
 
 
-def delete_price_alert(alert_id, db_path=None):
-    """Delete an alert by ID."""
+def delete_price_alert(alert_id, user_email=None, db_path=None):
+    """Delete an alert by ID. If user_email is given, the delete only happens
+    when the alert belongs to that user (used to prevent IDOR from the API).
+    Returns the number of rows deleted (0 means not found / not owned)."""
     conn = _connect(db_path)
     try:
-        conn.execute("DELETE FROM price_alerts WHERE id = ?", (alert_id,))
+        if user_email:
+            cur = conn.execute(
+                "DELETE FROM price_alerts WHERE id = ? AND user_email = ?",
+                (alert_id, user_email)
+            )
+        else:
+            cur = conn.execute("DELETE FROM price_alerts WHERE id = ?", (alert_id,))
         conn.commit()
+        return cur.rowcount
     finally:
         conn.close()
 

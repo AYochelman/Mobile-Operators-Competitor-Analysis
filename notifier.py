@@ -238,7 +238,7 @@ def send_push_notifications(changes, config, db_path=None):
     vapid_private_key = config.get("vapid_private_key")
     if not vapid_private_key:
         return 0
-    subscriptions = get_push_subscriptions(db_path)
+    subscriptions = get_push_subscriptions(db_path=db_path)
     if not subscriptions:
         return 0
     n_carriers = len({c["carrier"] for c in changes})
@@ -262,7 +262,7 @@ def send_push_notifications(changes, config, db_path=None):
         except Exception:
             pass
     for ep in stale:
-        delete_push_subscription(ep, db_path)
+        delete_push_subscription(ep, db_path=db_path)
     return sent
 
 
