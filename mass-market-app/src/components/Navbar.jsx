@@ -51,6 +51,7 @@ const NAV_ITEMS = [
 export default function Navbar() {
   const { user, isAdmin, isSuperAdmin, signOut, workspace } = useAuth()
   const appTitle = workspace?.brand_config?.app_title || null
+  const logoUrl  = workspace?.brand_config?.logo_url  || null
 
   return (
     <>
@@ -59,7 +60,7 @@ export default function Navbar() {
         <div className="max-w-6xl mx-auto px-4 h-12 flex items-center justify-between">
           {/* Logo */}
           <NavLink to="/" className="flex items-center">
-            <Logo size="md" appTitle={appTitle} />
+            <Logo size="md" appTitle={appTitle} logoUrl={logoUrl} />
           </NavLink>
 
           {/* Nav links - desktop */}

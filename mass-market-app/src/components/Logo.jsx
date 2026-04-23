@@ -6,15 +6,20 @@ const CONFIG = {
   md: { boltW: 28, boltH: 27, wordmarkSize: 18,   subtextSize: 9   },
 }
 
-export default function Logo({ size = 'md', showSubtext = true, appTitle = null }) {
+export default function Logo({ size = 'md', showSubtext = true, appTitle = null, logoUrl = null }) {
   const { boltW, boltH, wordmarkSize, subtextSize: cfgSubtext } = CONFIG[size]
   const subtextSize = showSubtext ? cfgSubtext : null
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <svg width={boltW} height={boltH} viewBox="0 0 48 46" fill="none" aria-hidden="true">
-        <path fill="var(--color-moca-bolt)" d={BOLT_PATH} />
-      </svg>
+      {logoUrl ? (
+        <img src={logoUrl} alt={appTitle || 'Logo'}
+          style={{ height: boltH, width: 'auto', maxWidth: boltH * 2.5, objectFit: 'contain' }} />
+      ) : (
+        <svg width={boltW} height={boltH} viewBox="0 0 48 46" fill="none" aria-hidden="true">
+          <path fill="var(--color-moca-bolt)" d={BOLT_PATH} />
+        </svg>
+      )}
 
       {wordmarkSize && (
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>

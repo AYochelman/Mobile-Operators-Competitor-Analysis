@@ -328,6 +328,46 @@ def send_price_alert_email(user_email: str, alert: dict, matching_plans: list, c
         return False
 
 
+def send_contact_email(from_email: str, workspace_name: str, message: str, config: dict) -> bool:
+    """Send an in-app contact request from a suspended/active user to the MOCA operator.
+
+    Delivers to config['email_recipient'] (the MOCA admin mailbox). The
+    requester's email is placed in Reply-To so a simple 'Reply' in the admin's
+    client goes back to them directly.
+    """
+    api_key   = config.get("sendgrid_api_key", "")
+    sender    = config.get("email_sender", "")
+    recipient = config.get("email_recipient", "")
+    if not all([api_key, sender, recipient, from_email, message]):
+        return False
+
+    ws_label = workspace_name or "(\u05dc\u05dc\u05d0 workspace)"
+    body = (
+        f"\u05e4\u05e0\u05d9\u05d9\u05d4 \u05d7\u05d3\u05e9\u05d4 \u05de\u05ea\u05d5\u05da MOCA\n\n"
+        f"\u05de: {from_email}\n"
+        f"Workspace: {ws_label}\n"
+        f"\u05ea\u05d0\u05e8\u05d9\u05da: {datetime.now().strftime('%d/%m/%Y %H:%M')}\n\n"
+        f"---\n\n{message}\n"
+    )
+    payload = {
+        "personalizations": [{"to": [{"email": recipient}]}],
+        "from": {"email": sender},
+        "reply_to": {"email": from_email},
+        "subject": f"MOCA — \u05e4\u05e0\u05d9\u05d9\u05ea \u05e7\u05e9\u05e8 \u05de {ws_label}",
+        "content": [{"type": "text/plain; charset=utf-8", "value": body}],
+    }
+    try:
+        resp = requests.post(
+            "https://api.sendgrid.com/v3/mail/send",
+            json=payload,
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=20,
+        )
+        return resp.status_code == 202
+    except requests.RequestException:
+        return False
+
+
 def send_whatsapp(message, config):
     base_url = config.get("greenapi_url", "")
     instance = config.get("greenapi_instance", "")

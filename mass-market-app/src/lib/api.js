@@ -97,6 +97,9 @@ export const api = {
   setSessionCookie:  (access_token) => fetchApi('/api/auth/session', { method: 'POST', body: JSON.stringify({ access_token }) }),
   clearSessionCookie:() => fetchApi('/api/auth/logout', { method: 'POST' }),
 
+  // Contact form (suspended users or any authenticated user)
+  sendContact: (message) => fetchApi('/api/contact', { method: 'POST', body: JSON.stringify({ message }) }),
+
   // Workspaces — super_admin only
   getWorkspaces:        () => fetchApi('/api/workspaces'),
   createWorkspace:      (data) => fetchApi('/api/workspaces', { method: 'POST', body: JSON.stringify(data) }),

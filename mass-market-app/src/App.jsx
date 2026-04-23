@@ -13,6 +13,7 @@ import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage'
 import ArchivePage from './pages/ArchivePage'
 import SettingsPage from './pages/SettingsPage'
 import WorkspacesAdminPage from './pages/WorkspacesAdminPage'
+import SuspendedPage from './pages/SuspendedPage'
 import NotFoundPage from './pages/NotFoundPage'
 import OfflineBanner from './components/OfflineBanner'
 
@@ -37,9 +38,15 @@ function BrandThemeApplier() {
 }
 
 function ProtectedRoute({ children, adminOnly = false, superAdminOnly = false }) {
-  const { user, loading, isAdmin, isSuperAdmin } = useAuth()
+  const { user, loading, isAdmin, isSuperAdmin, workspace } = useAuth()
   if (loading) return <div className="flex items-center justify-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>
   if (!user) return <Navigate to="/login" replace />
+  // Suspended workspace: show friendly screen instead of the app.
+  // Super-admin bypasses the suspension gate so they can still operate the
+  // platform and re-activate the account from /admin/workspaces.
+  if (!isSuperAdmin && workspace && workspace.active === false) {
+    return <SuspendedPage />
+  }
   if (superAdminOnly && !isSuperAdmin) return <Navigate to="/" replace />
   if (adminOnly && !isAdmin) return <Navigate to="/" replace />
   return children

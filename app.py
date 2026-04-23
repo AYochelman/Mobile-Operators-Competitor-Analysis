@@ -1864,6 +1864,41 @@ def api_my_context():
     return jsonify(_get_user_context(email))
 
 
+@app.route("/api/contact", methods=["POST"])
+@require_auth
+@limiter.limit("3 per minute")
+def api_contact():
+    """In-app contact form — forwards the requester's message to the MOCA
+    operator via SendGrid. Intentionally bypasses the workspace `active`
+    gate (ProtectedRoute level), so a suspended user CAN ask to be reinstated.
+    Rate-limited strictly to prevent abuse."""
+    data = request.get_json(force=True) or {}
+    message = (data.get('message') or '').strip()
+    if not message:
+        return jsonify({"error": "message is required"}), 400
+    if len(message) > 4000:
+        return jsonify({"error": "message too long (max 4000 chars)"}), 400
+
+    from_email = _current_user_email() or ''
+    if not from_email:
+        return jsonify({"error": "authenticated email required"}), 401
+
+    # Best-effort workspace label for the admin's inbox preview
+    ctx = _get_user_context(from_email)
+    ws_name = (ctx.get('workspace') or {}).get('name') or ''
+
+    try:
+        from notifier import send_contact_email
+        ok = send_contact_email(from_email, ws_name, message, load_config())
+        if not ok:
+            return jsonify({"error": "failed to send — check SendGrid config"}), 500
+        logger.info(f"AUDIT contact_sent: from={from_email} ws={ws_name!r}")
+        return jsonify({"status": "sent"})
+    except Exception as e:
+        logger.error(f"api_contact failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
 @app.route("/api/users")
 @require_admin
 @limiter.limit("20 per minute")
