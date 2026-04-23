@@ -96,4 +96,12 @@ export const api = {
   // Auth session cookie
   setSessionCookie:  (access_token) => fetchApi('/api/auth/session', { method: 'POST', body: JSON.stringify({ access_token }) }),
   clearSessionCookie:() => fetchApi('/api/auth/logout', { method: 'POST' }),
+
+  // Workspaces — super_admin only
+  getWorkspaces:        () => fetchApi('/api/workspaces'),
+  createWorkspace:      (data) => fetchApi('/api/workspaces', { method: 'POST', body: JSON.stringify(data) }),
+  updateWorkspace:      (id, data) => fetchApi(`/api/workspaces/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  getWorkspaceUsers:    (id) => fetchApi(`/api/workspaces/${id}/users`),
+  assignWorkspaceUser:  (id, email, role) => fetchApi(`/api/workspaces/${id}/users`, { method: 'POST', body: JSON.stringify({ email, role }) }),
+  unassignWorkspaceUser:(id, userId) => fetchApi(`/api/workspaces/${id}/users/${userId}`, { method: 'DELETE' }),
 }

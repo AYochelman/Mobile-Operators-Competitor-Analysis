@@ -1,0 +1,343 @@
+import { useState, useEffect, useCallback } from 'react'
+import Button from '../components/ui/Button'
+import { api } from '../lib/api'
+
+const MVNO_OPTIONS = [
+  { id: '',          label: '— ללא —' },
+  { id: 'partner',   label: 'פרטנר' },
+  { id: 'pelephone', label: 'פלאפון' },
+  { id: 'hotmobile', label: 'הוט מובייל' },
+  { id: 'cellcom',   label: 'סלקום' },
+  { id: 'mobile019', label: '019' },
+  { id: 'xphone',    label: 'XPhone' },
+  { id: 'wecom',     label: 'We-Com' },
+  { id: 'neptucom',  label: 'Neptucom' },
+  { id: 'golan',     label: 'גולן טלקום' },
+  { id: 'rami_levy', label: 'רמי לוי' },
+]
+
+function StatusPill({ active }) {
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+      active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'
+    }`}>
+      {active ? 'פעיל' : 'מושעה'}
+    </span>
+  )
+}
+
+function UsersSection({ workspaceId, onChange }) {
+  const [users, setUsers]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError]   = useState(null)
+  const [newEmail, setNewEmail] = useState('')
+  const [newRole, setNewRole]   = useState('viewer')
+  const [assigning, setAssigning] = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true); setError(null)
+    try {
+      setUsers(await api.getWorkspaceUsers(workspaceId))
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [workspaceId])
+
+  useEffect(() => { load() }, [load])
+
+  const assign = async (e) => {
+    e.preventDefault()
+    if (!newEmail.trim()) return
+    setAssigning(true); setError(null)
+    try {
+      await api.assignWorkspaceUser(workspaceId, newEmail.trim(), newRole)
+      setNewEmail('')
+      await load()
+      onChange?.()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setAssigning(false)
+    }
+  }
+
+  const unassign = async (userId) => {
+    if (!confirm('להעביר את המשתמש ל-moca-internal?')) return
+    setError(null)
+    try {
+      await api.unassignWorkspaceUser(workspaceId, userId)
+      await load()
+      onChange?.()
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  return (
+    <div className="bg-moca-cream/50 rounded-lg p-4 mt-3">
+      <h4 className="text-sm font-semibold mb-2">משתמשים משויכים</h4>
+      {loading ? (
+        <p className="text-xs text-gray-500">טוען…</p>
+      ) : users.length === 0 ? (
+        <p className="text-xs text-gray-500">אין משתמשים ב-workspace זה.</p>
+      ) : (
+        <table className="w-full text-sm mb-3">
+          <thead>
+            <tr className="text-xs text-gray-500 border-b">
+              <th className="text-right py-1">אימייל</th>
+              <th className="text-right py-1">תפקיד</th>
+              <th className="text-right py-1">כניסה אחרונה</th>
+              <th className="text-right py-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u.id} className="border-b border-moca-border/30">
+                <td className="py-1.5">{u.email}</td>
+                <td className="py-1.5">{u.role}</td>
+                <td className="py-1.5 text-xs text-gray-500">
+                  {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString('he-IL') : '—'}
+                </td>
+                <td className="py-1.5 text-left">
+                  <button onClick={() => unassign(u.id)}
+                    className="text-xs text-red-600 hover:underline">הסרה</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <form onSubmit={assign} className="flex gap-2 items-center flex-wrap">
+        <input type="email" required placeholder="email@example.com" value={newEmail}
+          onChange={e => setNewEmail(e.target.value)}
+          className="px-2 py-1 text-sm border border-moca-border rounded flex-1 min-w-[200px]" />
+        <select value={newRole} onChange={e => setNewRole(e.target.value)}
+          className="px-2 py-1 text-sm border border-moca-border rounded">
+          <option value="viewer">viewer</option>
+          <option value="admin">admin</option>
+        </select>
+        <Button type="submit" disabled={assigning} variant="primary" size="sm">
+          {assigning ? '…' : 'שייך'}
+        </Button>
+      </form>
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+    </div>
+  )
+}
+
+function WorkspaceRow({ ws, onChange }) {
+  const [expanded, setExpanded]   = useState(false)
+  const [editing, setEditing]     = useState(false)
+  const [form, setForm]           = useState({
+    name:              ws.name,
+    mvno_carrier:      ws.mvno_carrier || '',
+    hide_self_carrier: ws.hide_self_carrier,
+    active:            ws.active,
+  })
+  const [saving, setSaving]       = useState(false)
+  const [error, setError]         = useState(null)
+
+  const save = async () => {
+    setSaving(true); setError(null)
+    try {
+      await api.updateWorkspace(ws.id, {
+        name:              form.name,
+        mvno_carrier:      form.mvno_carrier || null,
+        hide_self_carrier: form.hide_self_carrier,
+        active:            form.active,
+      })
+      setEditing(false)
+      await onChange?.()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="border border-moca-border/60 rounded-xl p-4 bg-white">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <code className="text-xs bg-moca-cream px-2 py-0.5 rounded font-mono">{ws.slug}</code>
+            {editing ? (
+              <input value={form.name} onChange={e => setForm({...form, name: e.target.value})}
+                className="font-semibold text-lg border border-moca-border rounded px-2 py-0.5" />
+            ) : (
+              <span className="font-semibold text-lg">{ws.name}</span>
+            )}
+            <StatusPill active={ws.active} />
+          </div>
+          <div className="flex gap-4 items-center text-sm text-gray-600 mt-2 flex-wrap">
+            <span>
+              MVNO:{' '}
+              {editing ? (
+                <select value={form.mvno_carrier}
+                  onChange={e => setForm({...form, mvno_carrier: e.target.value})}
+                  className="border border-moca-border rounded px-1 py-0.5 text-sm">
+                  {MVNO_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+                </select>
+              ) : (
+                <strong>{MVNO_OPTIONS.find(o => o.id === (ws.mvno_carrier || ''))?.label || ws.mvno_carrier || '—'}</strong>
+              )}
+            </span>
+            <span>משתמשים: <strong>{ws.user_count}</strong></span>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input type="checkbox" checked={editing ? form.hide_self_carrier : ws.hide_self_carrier}
+                disabled={!editing}
+                onChange={e => setForm({...form, hide_self_carrier: e.target.checked})} />
+              <span className="text-xs">הסתר ספק עצמי</span>
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input type="checkbox" checked={editing ? form.active : ws.active}
+                disabled={!editing}
+                onChange={e => setForm({...form, active: e.target.checked})} />
+              <span className="text-xs">פעיל</span>
+            </label>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {editing ? (
+            <>
+              <Button onClick={save} disabled={saving} variant="primary" size="sm">
+                {saving ? 'שומר…' : 'שמור'}
+              </Button>
+              <Button onClick={() => { setEditing(false); setForm({
+                name: ws.name, mvno_carrier: ws.mvno_carrier || '',
+                hide_self_carrier: ws.hide_self_carrier, active: ws.active,
+              }) }} variant="ghost" size="sm">ביטול</Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={() => setEditing(true)} variant="ghost" size="sm">עריכה</Button>
+              <Button onClick={() => setExpanded(e => !e)} variant="ghost" size="sm">
+                {expanded ? 'סגור משתמשים' : 'ניהול משתמשים'}
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+      {expanded && <UsersSection workspaceId={ws.id} onChange={onChange} />}
+    </div>
+  )
+}
+
+export default function WorkspacesAdminPage() {
+  const [list, setList]         = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState(null)
+  const [creating, setCreating] = useState(false)
+  const [form, setForm]         = useState({
+    slug: '', name: '', mvno_carrier: '', hide_self_carrier: true,
+  })
+  const [createError, setCreateError] = useState(null)
+  const [submitting, setSubmitting]   = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true); setError(null)
+    try {
+      setList(await api.getWorkspaces())
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const create = async (e) => {
+    e.preventDefault()
+    setSubmitting(true); setCreateError(null)
+    try {
+      await api.createWorkspace({
+        slug: form.slug.trim().toLowerCase(),
+        name: form.name.trim(),
+        mvno_carrier: form.mvno_carrier || null,
+        hide_self_carrier: form.hide_self_carrier,
+      })
+      setForm({ slug: '', name: '', mvno_carrier: '', hide_self_carrier: true })
+      setCreating(false)
+      await load()
+    } catch (e) {
+      setCreateError(e.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">ניהול Workspaces</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            כל workspace הוא לקוח MVNO נפרד עם צבעי מותג, feature flags וסינון ספקים משלו.
+          </p>
+        </div>
+        <Button onClick={() => setCreating(c => !c)} variant="primary">
+          {creating ? 'סגור' : '+ workspace חדש'}
+        </Button>
+      </div>
+
+      {creating && (
+        <form onSubmit={create}
+          className="bg-moca-cream border border-moca-border rounded-xl p-5 mb-6 space-y-3">
+          <h3 className="font-semibold">יצירת workspace</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="text-sm">
+              <span className="block mb-1 text-gray-700">Slug (מזהה URL) *</span>
+              <input required pattern="[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?"
+                value={form.slug}
+                onChange={e => setForm({...form, slug: e.target.value.toLowerCase()})}
+                placeholder="partner-pilot"
+                className="w-full px-3 py-1.5 border border-moca-border rounded" />
+            </label>
+            <label className="text-sm">
+              <span className="block mb-1 text-gray-700">שם תצוגה *</span>
+              <input required value={form.name}
+                onChange={e => setForm({...form, name: e.target.value})}
+                placeholder="Partner Intelligence"
+                className="w-full px-3 py-1.5 border border-moca-border rounded" />
+            </label>
+            <label className="text-sm">
+              <span className="block mb-1 text-gray-700">MVNO של הלקוח</span>
+              <select value={form.mvno_carrier}
+                onChange={e => setForm({...form, mvno_carrier: e.target.value})}
+                className="w-full px-3 py-1.5 border border-moca-border rounded">
+                {MVNO_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+              </select>
+            </label>
+            <label className="text-sm flex items-end gap-2 cursor-pointer">
+              <input type="checkbox" checked={form.hide_self_carrier}
+                onChange={e => setForm({...form, hide_self_carrier: e.target.checked})} />
+              <span>הסתר ספק עצמי מהתוצאות</span>
+            </label>
+          </div>
+          {createError && <p className="text-sm text-red-600">{createError}</p>}
+          <div className="flex gap-2">
+            <Button type="submit" disabled={submitting} variant="primary">
+              {submitting ? 'יוצר…' : 'צור'}
+            </Button>
+            <Button type="button" onClick={() => setCreating(false)} variant="ghost">ביטול</Button>
+          </div>
+        </form>
+      )}
+
+      {loading ? (
+        <p className="text-gray-500">טוען…</p>
+      ) : error ? (
+        <p className="text-red-600">שגיאה: {error}</p>
+      ) : (
+        <div className="space-y-3">
+          {list.map(ws => <WorkspaceRow key={ws.id} ws={ws} onChange={load} />)}
+        </div>
+      )}
+    </div>
+  )
+}

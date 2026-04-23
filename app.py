@@ -129,43 +129,52 @@ def require_auth(f):
     return decorated
 
 
-def require_admin(f):
-    """Accept API key OR a verified Supabase JWT whose owner has admin role in user_roles."""
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        # 1. API key
-        api_key_header = request.headers.get("X-API-Key")
-        if api_key_header and hmac.compare_digest(api_key_header, _get_api_key()):
-            g.jwt_payload = None
-            return f(*args, **kwargs)
-        # 2. JWT
-        token = None
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer "):
-            token = auth_header[7:]
-        if not token:
-            token = request.cookies.get("auth_token")
-        if token:
-            payload = _verify_supabase_jwt(token)
-            if payload:
-                email = (payload.get('email') or '').strip().lower()
-                try:
-                    conn = _supabase_conn()
-                    cur = conn.cursor()
-                    cur.execute(
-                        "SELECT COALESCE(r.role,'viewer') FROM auth.users u "
-                        "LEFT JOIN public.user_roles r ON u.id=r.user_id "
-                        "WHERE LOWER(u.email)=%s", (email,)
-                    )
-                    row = cur.fetchone()
-                    conn.close()
-                    if row and row[0] == 'admin':
-                        g.jwt_payload = payload
-                        return f(*args, **kwargs)
-                except Exception as e:
-                    logger.error(f"require_admin DB check failed: {e}")
-        return jsonify({"error": "Unauthorized — admin required"}), 401
-    return decorated
+def _require_role(allowed_roles, error_msg):
+    """Factory for role-based decorators. API-key auth bypasses role check
+    (trusted server-to-server). JWT auth must resolve to a role in allowed_roles."""
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            # API key — trusted server, always allowed
+            api_key_header = request.headers.get("X-API-Key")
+            if api_key_header and hmac.compare_digest(api_key_header, _get_api_key()):
+                g.jwt_payload = None
+                return f(*args, **kwargs)
+            # JWT — extract email, verify role via Supabase
+            token = None
+            auth_header = request.headers.get("Authorization", "")
+            if auth_header.startswith("Bearer "):
+                token = auth_header[7:]
+            if not token:
+                token = request.cookies.get("auth_token")
+            if token:
+                payload = _verify_supabase_jwt(token)
+                if payload:
+                    email = (payload.get('email') or '').strip().lower()
+                    try:
+                        conn = _supabase_conn()
+                        cur = conn.cursor()
+                        cur.execute(
+                            "SELECT COALESCE(r.role,'viewer') FROM auth.users u "
+                            "LEFT JOIN public.user_roles r ON u.id=r.user_id "
+                            "WHERE LOWER(u.email)=%s", (email,)
+                        )
+                        row = cur.fetchone()
+                        conn.close()
+                        if row and row[0] in allowed_roles:
+                            g.jwt_payload = payload
+                            return f(*args, **kwargs)
+                    except Exception as e:
+                        logger.error(f"role check failed: {e}")
+            return jsonify({"error": error_msg}), 401
+        return decorated
+    return decorator
+
+
+# Admin includes super_admin (super_admin has all admin privileges)
+require_admin = _require_role({'admin', 'super_admin'}, 'Unauthorized — admin required')
+# Super-admin is cross-workspace (MOCA operator only)
+require_super_admin = _require_role({'super_admin'}, 'Unauthorized — super_admin required')
 
 
 def _current_user_email():
@@ -1883,6 +1892,235 @@ def api_update_user_role(user_id):
         return jsonify({"status": "updated", "role": role})
     except Exception as e:
         logger.error(f"update role failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+# ── Workspace management (super_admin only) ──────────────────────────────
+
+@app.route("/api/workspaces", methods=["GET"])
+@require_super_admin
+@limiter.limit("30 per minute")
+def api_list_workspaces():
+    """List all workspaces with a user count per workspace."""
+    try:
+        conn = _supabase_conn()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT w.id, w.slug, w.name, w.mvno_carrier,
+                   w.brand_config, w.feature_flags,
+                   w.hide_self_carrier, w.active, w.created_at,
+                   COUNT(r.user_id) AS user_count
+            FROM public.workspaces w
+            LEFT JOIN public.user_roles r ON r.workspace_id = w.id
+            GROUP BY w.id
+            ORDER BY w.created_at ASC
+        """)
+        workspaces = [{
+            'id':                str(row[0]),
+            'slug':              row[1],
+            'name':              row[2],
+            'mvno_carrier':      row[3],
+            'brand_config':      row[4] or {},
+            'feature_flags':     row[5] or {},
+            'hide_self_carrier': bool(row[6]),
+            'active':            bool(row[7]),
+            'created_at':        str(row[8]),
+            'user_count':        row[9],
+        } for row in cur.fetchall()]
+        conn.close()
+        return jsonify(workspaces)
+    except Exception as e:
+        logger.error(f"list workspaces failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/workspaces", methods=["POST"])
+@require_super_admin
+@limiter.limit("10 per minute")
+def api_create_workspace():
+    """Create a new workspace. Body: {slug, name, mvno_carrier?, brand_config?,
+    feature_flags?, hide_self_carrier?}."""
+    data = request.get_json(force=True) or {}
+    slug = (data.get('slug') or '').strip().lower()
+    name = (data.get('name') or '').strip()
+    if not slug or not name:
+        return jsonify({"error": "slug and name are required"}), 400
+    # slug: lowercase alphanumeric + hyphens, 2–40 chars
+    import re as _re
+    if not _re.fullmatch(r'[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?', slug):
+        return jsonify({"error": "slug must be lowercase alphanumeric/hyphens (2-40 chars)"}), 400
+    try:
+        conn = _supabase_conn()
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO public.workspaces (slug, name, mvno_carrier, brand_config,
+                                           feature_flags, hide_self_carrier)
+            VALUES (%s, %s, %s, %s::jsonb, %s::jsonb, %s)
+            RETURNING id
+        """, (
+            slug, name, data.get('mvno_carrier') or None,
+            json.dumps(data.get('brand_config') or {}),
+            json.dumps(data.get('feature_flags') or {}),
+            bool(data.get('hide_self_carrier', True)),
+        ))
+        new_id = str(cur.fetchone()[0])
+        conn.close()
+        logger.info(f"AUDIT create_workspace: slug={slug!r} id={new_id} by_ip={request.remote_addr}")
+        return jsonify({"status": "created", "id": new_id}), 201
+    except Exception as e:
+        msg = str(e)
+        if 'unique' in msg.lower() or 'duplicate' in msg.lower():
+            return jsonify({"error": f"slug '{slug}' already exists"}), 409
+        logger.error(f"create workspace failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/workspaces/<workspace_id>", methods=["PATCH"])
+@require_super_admin
+@limiter.limit("20 per minute")
+def api_update_workspace(workspace_id):
+    """Update a workspace. Body may include any subset of: name, mvno_carrier,
+    brand_config, feature_flags, hide_self_carrier, active."""
+    data = request.get_json(force=True) or {}
+    allowed = {'name', 'mvno_carrier', 'brand_config', 'feature_flags',
+               'hide_self_carrier', 'active'}
+    updates = {k: v for k, v in data.items() if k in allowed}
+    if not updates:
+        return jsonify({"error": "no updatable fields provided"}), 400
+    sets, params = [], []
+    for k, v in updates.items():
+        if k in ('brand_config', 'feature_flags'):
+            sets.append(f"{k} = %s::jsonb")
+            params.append(json.dumps(v or {}))
+        elif k in ('hide_self_carrier', 'active'):
+            sets.append(f"{k} = %s")
+            params.append(bool(v))
+        else:
+            sets.append(f"{k} = %s")
+            params.append(v or None)
+    params.append(workspace_id)
+    try:
+        conn = _supabase_conn()
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute(
+            f"UPDATE public.workspaces SET {', '.join(sets)} WHERE id = %s",
+            params
+        )
+        updated = cur.rowcount
+        conn.close()
+        if updated == 0:
+            return jsonify({"error": "workspace not found"}), 404
+        logger.info(f"AUDIT update_workspace: id={workspace_id} fields={list(updates.keys())}")
+        return jsonify({"status": "updated"})
+    except Exception as e:
+        logger.error(f"update workspace failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/workspaces/<workspace_id>/users", methods=["GET"])
+@require_super_admin
+@limiter.limit("30 per minute")
+def api_workspace_users(workspace_id):
+    """List users assigned to a workspace."""
+    try:
+        conn = _supabase_conn()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT u.id, u.email, u.created_at, r.role, u.last_sign_in_at
+            FROM public.user_roles r
+            JOIN auth.users u ON u.id = r.user_id
+            WHERE r.workspace_id = %s
+            ORDER BY u.email
+        """, (workspace_id,))
+        users = [{
+            'id':              str(row[0]),
+            'email':           row[1],
+            'created_at':      str(row[2]),
+            'role':            row[3],
+            'last_sign_in_at': str(row[4]) if row[4] else None,
+        } for row in cur.fetchall()]
+        conn.close()
+        return jsonify(users)
+    except Exception as e:
+        logger.error(f"list workspace users failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/workspaces/<workspace_id>/users", methods=["POST"])
+@require_super_admin
+@limiter.limit("20 per minute")
+def api_assign_workspace_user(workspace_id):
+    """Assign an existing Supabase user (by email) to this workspace.
+    Body: {email, role: 'admin'|'viewer'} (defaults to 'viewer')."""
+    data = request.get_json(force=True) or {}
+    email = (data.get('email') or '').strip().lower()
+    role = data.get('role', 'viewer')
+    if not email:
+        return jsonify({"error": "email required"}), 400
+    if role not in ('admin', 'viewer'):
+        return jsonify({"error": "role must be 'admin' or 'viewer'"}), 400
+    try:
+        conn = _supabase_conn()
+        conn.autocommit = True
+        cur = conn.cursor()
+        # Look up user id
+        cur.execute("SELECT id FROM auth.users WHERE LOWER(email) = %s", (email,))
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({"error": f"no user with email {email!r}"}), 404
+        user_id = row[0]
+        # Verify workspace exists
+        cur.execute("SELECT 1 FROM public.workspaces WHERE id = %s", (workspace_id,))
+        if not cur.fetchone():
+            conn.close()
+            return jsonify({"error": "workspace not found"}), 404
+        # Upsert role + workspace
+        cur.execute("""
+            INSERT INTO public.user_roles (user_id, role, workspace_id)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (user_id) DO UPDATE
+              SET role = EXCLUDED.role, workspace_id = EXCLUDED.workspace_id
+        """, (user_id, role, workspace_id))
+        conn.close()
+        logger.info(f"AUDIT assign_workspace_user: email={email!r} workspace={workspace_id} role={role}")
+        return jsonify({"status": "assigned", "user_id": str(user_id)}), 201
+    except Exception as e:
+        logger.error(f"assign workspace user failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/workspaces/<workspace_id>/users/<user_id>", methods=["DELETE"])
+@require_super_admin
+@limiter.limit("20 per minute")
+def api_unassign_workspace_user(workspace_id, user_id):
+    """Unassign a user from a workspace by moving them to 'moca-internal' as viewer.
+    We never orphan users (NULL workspace_id is reserved for super_admin)."""
+    try:
+        conn = _supabase_conn()
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM public.workspaces WHERE slug = 'moca-internal'")
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({"error": "moca-internal workspace missing"}), 500
+        internal_id = row[0]
+        cur.execute("""
+            UPDATE public.user_roles
+            SET workspace_id = %s, role = 'viewer'
+            WHERE user_id = %s AND workspace_id = %s
+        """, (internal_id, user_id, workspace_id))
+        affected = cur.rowcount
+        conn.close()
+        if affected == 0:
+            return jsonify({"error": "user not in this workspace"}), 404
+        logger.info(f"AUDIT unassign_workspace_user: user={user_id} from={workspace_id}")
+        return jsonify({"status": "moved to moca-internal"})
+    except Exception as e:
+        logger.error(f"unassign workspace user failed: {e}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
 
 
