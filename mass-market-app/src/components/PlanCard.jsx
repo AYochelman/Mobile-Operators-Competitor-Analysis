@@ -43,6 +43,7 @@ const CARRIER_HOME_URLS = {
   tasim:           'https://www.tasim.us',
   maya:            'https://maya.net/esim',
   esim70:          'https://www.esim70.com',
+  jetpack:         'https://www.jetpacglobal.com',
 }
 
 function slugify(str) {
@@ -70,14 +71,14 @@ const GLOBAL_LABELS = {
   world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
   orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
-  maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70',
+  maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
   esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
   saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber', voye: 'pink',
   orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'violet',
-  maya: 'teal', esim70: 'emerald',
+  maya: 'teal', esim70: 'emerald', jetpack: 'sky',
 }
 
 const CARRIER_LOGOS = {
@@ -113,6 +114,7 @@ const CARRIER_LOGOS = {
   bcengi:         '/logos/bcengi.png',
   rami_levy:      '/logos/rami_levy.png',
   esim70:         '/logos/esim70.png',
+  jetpack:        '/logos/jetpack.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
@@ -137,6 +139,7 @@ const LOGO_SIZES = {
 // Wide logos: separate width override (height stays at LOGO_SIZES default 32px)
 const LOGO_WIDTHS = {
   rami_levy: '110px',
+  jetpack: '52px',
 }
 
 const CONTENT_URLS = {

@@ -45,6 +45,7 @@ const CARRIER_NAMES = {
   maya: 'Maya Mobile',
   bcengi: 'Bcengi',
   esim70: 'eSIM70',
+  jetpack: 'Jetpack',
   rami_levy: 'רמי לוי',
 }
 

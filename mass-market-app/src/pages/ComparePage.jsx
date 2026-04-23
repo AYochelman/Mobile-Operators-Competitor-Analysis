@@ -63,6 +63,7 @@ const CARRIERS_BY_TAB = {
     { id: 'maya', label: 'Maya', color: '#0f766e' },
     { id: 'bcengi', label: 'Bcengi', color: '#1d4ed8' },
     { id: 'esim70', label: 'eSIM70', color: '#10b981' },
+    { id: 'jetpack', label: 'Jetpack', color: '#0ea5e9' },
   ],
 }
 
@@ -80,6 +81,7 @@ const KNOWN_REGIONS = new Set([
   '167+ מדינות','156+ מדינות',
   'ספארי אפריקה','האיחוד האירופי ובריטניה',
   'איי התעלה','האנטילים הצרפתיים','אנטילים הולנדיים',
+  'הקריביים','כלל העולם',
 ])
 
 export default function ComparePage() {

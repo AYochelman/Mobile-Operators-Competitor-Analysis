@@ -37,6 +37,7 @@ const ALL_PROVIDERS = [
   { id: 'maya',             label: 'Maya Mobile',     color: '#0f766e' },
   { id: 'bcengi',         label: 'Bcengi',         color: '#1d4ed8' },
   { id: 'esim70',         label: 'eSIM70',         color: '#10b981' },
+  { id: 'jetpack',        label: 'Jetpack',        color: '#0ea5e9' },
 ]
 
 const PLAN_TYPE_LABELS = {
