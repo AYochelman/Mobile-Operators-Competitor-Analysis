@@ -49,12 +49,15 @@ SET workspace_id = (SELECT id FROM public.workspaces WHERE slug = 'moca-internal
 WHERE workspace_id IS NULL;
 
 -- ── 4. Role values ─────────────────────────────────────────────────────────
--- user_roles.role is TEXT today. Valid values we use:
---   super_admin — cross-workspace (you). workspace_id MAY be NULL.
+-- Valid roles:
+--   super_admin — cross-workspace (the MOCA operator). workspace_id MAY be NULL.
 --   admin       — admin inside one workspace (can manage users of that workspace)
 --   viewer      — read-only inside one workspace
--- We don't enforce this with a CHECK constraint so existing rows aren't broken,
--- but the app-side _get_user_context() only accepts these three values.
+-- If an older CHECK constraint existed (admin/viewer only), replace it:
+ALTER TABLE public.user_roles DROP CONSTRAINT IF EXISTS user_roles_role_check;
+ALTER TABLE public.user_roles
+  ADD CONSTRAINT user_roles_role_check
+  CHECK (role IN ('super_admin', 'admin', 'viewer'));
 
 -- ── 5. Auto-provision new sign-ups into moca-internal ──────────────────────
 -- Safe default: everyone who signs up lands in moca-internal as 'viewer'.
