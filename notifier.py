@@ -208,7 +208,7 @@ def send_email_report(excel_bytes: bytes, config: dict) -> bool:
         "personalizations": [{"to": [{"email": recipient}]}],
         "from": {"email": sender},
         "subject": f'דו"ח סריקת מתחרים - {today}',
-        "content": [{"type": "text/plain; charset=utf-8", "value": body}],
+        "content": [{"type": "text/plain", "value": body}],
         "attachments": [{
             "content":     base64.b64encode(excel_bytes).decode(),
             "filename":    filename,
@@ -314,7 +314,7 @@ def send_price_alert_email(user_email: str, alert: dict, matching_plans: list, c
         "personalizations": [{"to": [{"email": user_email}]}],
         "from": {"email": sender},
         "subject": subject,
-        "content": [{"type": "text/plain; charset=utf-8", "value": body}],
+        "content": [{"type": "text/plain", "value": body}],
     }
     try:
         resp = requests.post(
@@ -354,7 +354,7 @@ def send_contact_email(from_email: str, workspace_name: str, message: str, confi
         "from": {"email": sender},
         "reply_to": {"email": from_email},
         "subject": f"MOCA — \u05e4\u05e0\u05d9\u05d9\u05ea \u05e7\u05e9\u05e8 \u05de {ws_label}",
-        "content": [{"type": "text/plain; charset=utf-8", "value": body}],
+        "content": [{"type": "text/plain", "value": body}],
     }
     try:
         resp = requests.post(
@@ -363,8 +363,15 @@ def send_contact_email(from_email: str, workspace_name: str, message: str, confi
             headers={"Authorization": f"Bearer {api_key}"},
             timeout=20,
         )
+        if resp.status_code != 202:
+            import logging as _log
+            _log.getLogger(__name__).error(
+                f"send_contact_email SendGrid {resp.status_code}: {resp.text[:400]}"
+            )
         return resp.status_code == 202
-    except requests.RequestException:
+    except requests.RequestException as e:
+        import logging as _log
+        _log.getLogger(__name__).error(f"send_contact_email network error: {e}")
         return False
 
 

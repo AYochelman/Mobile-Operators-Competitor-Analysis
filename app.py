@@ -1881,6 +1881,13 @@ def api_contact():
 
     from_email = _current_user_email() or ''
     if not from_email:
+        # API-key auth short-circuited require_auth; still try the Bearer JWT for the email.
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            _p = _verify_supabase_jwt(auth_header[7:])
+            if _p:
+                from_email = (_p.get('email') or '').strip().lower()
+    if not from_email:
         return jsonify({"error": "authenticated email required"}), 401
 
     # Best-effort workspace label for the admin's inbox preview

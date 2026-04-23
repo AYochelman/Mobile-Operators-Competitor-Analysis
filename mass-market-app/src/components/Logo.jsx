@@ -14,7 +14,7 @@ export default function Logo({ size = 'md', showSubtext = true, appTitle = null,
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       {logoUrl ? (
         <img src={logoUrl} alt={appTitle || 'Logo'}
-          style={{ height: boltH, width: 'auto', maxWidth: boltH * 2.5, objectFit: 'contain' }} />
+          style={{ height: Math.round(boltH * 1.7), width: 'auto', maxWidth: Math.round(boltH * 7), objectFit: 'contain' }} />
       ) : (
         <svg width={boltW} height={boltH} viewBox="0 0 48 46" fill="none" aria-hidden="true">
           <path fill="var(--color-moca-bolt)" d={BOLT_PATH} />
