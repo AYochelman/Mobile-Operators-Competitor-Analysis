@@ -1,13 +1,33 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { api } from '../lib/api'
 import { useAuth } from '../hooks/useAuth'
+import { useHiddenCarrier } from '../hooks/useHiddenCarrier'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
+import SearchableSelect from '../components/ui/SearchableSelect'
+
+const TAB_ICONS = {
+  domestic: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
+    </svg>
+  ),
+  abroad: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
+    </svg>
+  ),
+  global: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+    </svg>
+  ),
+}
 
 const TABS = [
-  { id: 'domestic', label: 'חבילות סלולר', icon: '📱' },
-  { id: 'abroad', label: 'חו"ל', icon: '✈️' },
-  { id: 'global', label: 'גלובלי', icon: '🌍' },
+  { id: 'domestic', label: 'חבילות סלולר' },
+  { id: 'abroad', label: 'חו"ל' },
+  { id: 'global', label: 'גלובלי' },
 ]
 
 const CARRIERS = [
@@ -68,6 +88,7 @@ function carriersForTab(tab) {
 
 export default function AlertsPage() {
   const { user } = useAuth()
+  const hiddenCarrier = useHiddenCarrier()
   const [alerts, setAlerts] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -76,8 +97,12 @@ export default function AlertsPage() {
   // Form state
   const [formTab, setFormTab] = useState('domestic')
   const [formCarrier, setFormCarrier] = useState('')
-  const [formPattern, setFormPattern] = useState('')
+  const [formPlanName, setFormPlanName] = useState('')  // exact plan name selected
   const [formThreshold, setFormThreshold] = useState('')
+
+  // Plans data for the dropdown
+  const [plans, setPlans] = useState([])
+  const [plansLoading, setPlansLoading] = useState(false)
 
   const email = user?.email || ''
 
@@ -91,6 +116,67 @@ export default function AlertsPage() {
       .finally(() => setLoading(false))
   }, [email])
 
+  // Fetch plans whenever tab or carrier changes (while form is open)
+  useEffect(() => {
+    if (!showForm) return
+    setPlansLoading(true)
+    setFormPlanName('')
+    setFormThreshold('')
+
+    const load = async () => {
+      try {
+        let data
+        if (formTab === 'domestic') data = await api.getPlans()
+        else if (formTab === 'abroad') data = await api.getAbroadPlans()
+        else data = await api.getGlobalPlans()
+
+        if (formCarrier) data = data.filter(p => p.carrier === formCarrier)
+        setPlans(data || [])
+      } catch (e) {
+        console.error('Failed to load plans for alert form:', e)
+        setPlans([])
+      } finally {
+        setPlansLoading(false)
+      }
+    }
+    load()
+  }, [formTab, formCarrier, showForm])
+
+  // Build options for SearchableSelect — deduplicate by plan_name+carrier
+  const planOptions = useMemo(() => {
+    const seen = new Set()
+    return plans
+      .filter(p => {
+        const key = `${p.carrier}__${p.plan_name}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      .map(p => ({ value: p.plan_name, label: p.plan_name, price: p.price }))
+  }, [plans])
+
+  // When user selects a plan, auto-fill threshold with its current price
+  const handlePlanSelect = useCallback((val) => {
+    const planName = val === 'all' ? '' : val
+    setFormPlanName(planName)
+    if (!planName) { setFormThreshold(''); return }
+    const opt = planOptions.find(o => o.value === planName)
+    if (opt?.price != null) setFormThreshold(String(Math.round(opt.price)))
+  }, [planOptions])
+
+  const handleTabChange = (tabId) => {
+    setFormTab(tabId)
+    setFormCarrier('')
+    setFormPlanName('')
+    setFormThreshold('')
+  }
+
+  const handleCarrierChange = (e) => {
+    setFormCarrier(e.target.value)
+    setFormPlanName('')
+    setFormThreshold('')
+  }
+
   const handleCreate = async (e) => {
     e.preventDefault()
     if (!formThreshold || isNaN(Number(formThreshold))) return
@@ -100,15 +186,13 @@ export default function AlertsPage() {
         user_email: email,
         tab: formTab,
         carrier: formCarrier,
-        plan_pattern: formPattern,
+        plan_pattern: formPlanName,
         threshold: Number(formThreshold),
       })
-      // Reload alerts
       const updated = await api.getAlerts()
       setAlerts(updated)
-      // Reset form
       setFormCarrier('')
-      setFormPattern('')
+      setFormPlanName('')
       setFormThreshold('')
       setShowForm(false)
     } catch (err) {
@@ -127,7 +211,16 @@ export default function AlertsPage() {
     }
   }
 
-  const availableCarriers = useMemo(() => carriersForTab(formTab), [formTab])
+  const availableCarriers = useMemo(
+    () => carriersForTab(formTab).filter(c => c.id !== hiddenCarrier),
+    [formTab, hiddenCarrier]
+  )
+
+  // The selected plan's current price (for the hint label)
+  const selectedPlanPrice = useMemo(() => {
+    if (!formPlanName) return null
+    return planOptions.find(o => o.value === formPlanName)?.price ?? null
+  }, [formPlanName, planOptions])
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6" dir="rtl">
@@ -157,14 +250,14 @@ export default function AlertsPage() {
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => { setFormTab(t.id); setFormCarrier('') }}
+                  onClick={() => handleTabChange(t.id)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                     formTab === t.id
                       ? 'bg-blue-50 border-blue-300 text-blue-700'
                       : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
                   }`}
                 >
-                  {t.icon} {t.label}
+                  <span className="inline-flex items-center gap-1.5">{TAB_ICONS[t.id]}{t.label}</span>
                 </button>
               ))}
             </div>
@@ -172,36 +265,45 @@ export default function AlertsPage() {
 
           {/* Carrier select */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">
-              ספק (אופציונלי)
-            </label>
-            <select
-              value={formCarrier}
-              onChange={e => setFormCarrier(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">הכל</option>
-              {availableCarriers.map(c => (
-                <option key={c.id} value={c.id}>{c.label}</option>
-              ))}
-            </select>
+            <label className="block text-xs text-gray-500 mb-1">ספק (אופציונלי)</label>
+            <SearchableSelect
+              value={formCarrier || 'all'}
+              onChange={v => handleCarrierChange({ target: { value: v === 'all' ? '' : v } })}
+              options={availableCarriers.map(c => ({ value: c.id, label: c.label }))}
+              placeholder="הכל"
+              size="md"
+            />
           </div>
 
-          {/* Plan pattern */}
+          {/* Plan name dropdown */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">חיפוש בשם חבילה (אופציונלי)</label>
-            <input
-              type="text"
-              value={formPattern}
-              onChange={e => setFormPattern(e.target.value)}
-              placeholder='למשל: "50GB" או "אירופה"'
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <label className="block text-xs text-gray-500 mb-1">חבילה (אופציונלי)</label>
+            {plansLoading ? (
+              <div className="flex items-center gap-2 py-2 text-xs text-gray-400">
+                <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.22-8.56" /></svg>
+                טוען חבילות...
+              </div>
+            ) : (
+              <SearchableSelect
+                value={formPlanName || 'all'}
+                onChange={handlePlanSelect}
+                options={planOptions}
+                placeholder="כל החבילות"
+                size="md"
+              />
+            )}
           </div>
 
           {/* Threshold */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">סף מחיר (&#8362;)</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-gray-500">סף מחיר (&#8362;)</label>
+              {selectedPlanPrice != null && (
+                <span className="text-[11px] text-gray-400">
+                  מחיר נוכחי: <span className="font-medium text-gray-600">&#8362;{selectedPlanPrice}</span>
+                </span>
+              )}
+            </div>
             <input
               type="number"
               min="0"
