@@ -266,6 +266,68 @@ def send_push_notifications(changes, config, db_path=None):
     return sent
 
 
+CARRIER_DISPLAY_NAMES = {
+    "partner": "פרטנר", "pelephone": "פלאפון", "hotmobile": "הוט מובייל",
+    "cellcom": "סלקום", "mobile019": "019", "xphone": "XPhone",
+    "wecom": "We-Com", "neptucom": "Neptucom",
+    "tuki": "Tuki", "globalesim": "GlobaleSIM", "airalo": "Airalo",
+    "pelephone_global": "GlobalSIM", "esimo": "eSIMo", "simtlv": "SimTLV",
+    "world8": "8 World", "saily": "Saily", "holafly": "Holafly",
+    "esimio": "eSIM.io", "xphone_global": "XPhone Global", "sparks": "Sparks",
+    "voye": "VOYE", "orbit": "Orbit", "travelsim": "Travel Sim",
+}
+
+APP_URL = "https://lucent-kulfi-f037ad.netlify.app"
+
+
+def send_price_alert_email(user_email: str, alert: dict, matching_plans: list, config: dict) -> bool:
+    """Send a price-alert notification email via SendGrid to the subscriber."""
+    api_key = config.get("sendgrid_api_key", "")
+    sender  = config.get("email_sender", "")
+    if not all([api_key, sender, user_email]):
+        return False
+
+    carrier_name = CARRIER_DISPLAY_NAMES.get(alert.get("carrier", ""), alert.get("carrier") or "כל הספקים")
+    tab_label    = {"domestic": "חבילות סלולר", "abroad": "חו\"ל", "global": "גלובלי"}.get(alert.get("tab", ""), alert.get("tab", ""))
+
+    lines = []
+    for p in matching_plans:
+        name = p.get("plan_name", "")
+        price = p.get("price", "")
+        c = CARRIER_DISPLAY_NAMES.get(p.get("carrier", ""), p.get("carrier", ""))
+        lines.append(f"  • {name} ({c}) — \u20aa{price}")
+
+    plans_text = "\n".join(lines)
+    body = (
+        f"\u05e9\u05dc\u05d5\u05dd,\n\n"
+        f"\u05d4\u05ea\u05e8\u05d0\u05d4 \u05e9\u05d4\u05d2\u05d3\u05e8\u05ea \u05d1-MOCA \u05d4\u05d5\u05e4\u05e2\u05dc\u05d4.\n"
+        f"\u05e1\u05d5\u05d2: {tab_label}\n"
+        f"\u05e1\u05e3: \u20aa{alert['threshold']}\n\n"
+        f"\u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05e9\u05e2\u05d5\u05e0\u05d3\u05ea\u05d5 \u05dc\u05e1\u05d3 \u05d4\u05d2\u05d3\u05e8\u05ea \u05d4\u05ea\u05e8\u05d0\u05d4:\n{plans_text}\n\n"
+        f"\u05e6\u05e4\u05d4 \u05d1\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d4: {APP_URL}\n\n"
+        f"MOCA \u2014 \u05de\u05e2\u05e8\u05db\u05ea \u05d4\u05e9\u05d5\u05d5\u05d0\u05ea \u05e1\u05dc\u05d5\u05dc\u05e8"
+    )
+
+    subject = f"MOCA \u05d4\u05ea\u05e8\u05d0\u05ea \u05de\u05d7\u05d9\u05e8: {carrier_name} \u05d9\u05e8\u05d3 \u05de\u05ea\u05d7\u05ea \u05dc-\u20aa{alert['threshold']}"
+
+    payload = {
+        "personalizations": [{"to": [{"email": user_email}]}],
+        "from": {"email": sender},
+        "subject": subject,
+        "content": [{"type": "text/plain; charset=utf-8", "value": body}],
+    }
+    try:
+        resp = requests.post(
+            "https://api.sendgrid.com/v3/mail/send",
+            json=payload,
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=15,
+        )
+        return resp.status_code == 202
+    except requests.RequestException:
+        return False
+
+
 def send_whatsapp(message, config):
     base_url = config.get("greenapi_url", "")
     instance = config.get("greenapi_instance", "")

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 
-export default function SearchableSelect({ value, onChange, options, placeholder = 'בחר...', className = '' }) {
+export default function SearchableSelect({ value, onChange, options, placeholder = 'בחר...', className = '', size = 'sm' }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 })
@@ -72,12 +72,14 @@ export default function SearchableSelect({ value, onChange, options, placeholder
       {/* Trigger button */}
       <button
         onClick={() => { setOpen(!open); setSearch('') }}
-        className={`w-full border rounded-lg px-2 py-1 text-xs text-right flex items-center justify-between ${
+        className={`w-full border rounded-lg text-right flex items-center justify-between ${
+          size === 'md' ? 'px-3 py-2 text-sm' : 'px-2 py-1 text-xs'
+        } ${
           value !== 'all' ? 'border-moca-bolt bg-moca-mist' : 'border-gray-200 bg-white'
         }`}
       >
         <span className="truncate">{selectedLabel}</span>
-        <span className="text-gray-400 text-[10px] mr-1">{open ? '▴' : '▾'}</span>
+        <span className={`text-gray-400 mr-1 ${size === 'md' ? 'text-sm' : 'text-[10px]'}`}>{open ? '▴' : '▾'}</span>
       </button>
 
       {/* Dropdown via Portal */}
