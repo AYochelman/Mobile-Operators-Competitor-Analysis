@@ -36,7 +36,7 @@ export default function SparklineMini({ carrier, planName, planType, w = 68, h =
           const series = res?.series || []
           const match = series.find(s => s.plan_name === planName) || series[0]
           const pts = match?.points || []
-          const result = pts.length >= 3 ? buildPath(pts, w, h) : null
+          const result = pts.length >= 2 ? buildPath(pts, w, h) : null
           _cache.set(key, result)
           setPath(result)
         })
