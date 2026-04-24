@@ -29,10 +29,10 @@ function MoverCard({ mover, onClick, isAllowedCarrier }) {
     <button
       onClick={() => onClick?.(mover)}
       disabled={!isAllowedCarrier}
-      className={`relative flex-shrink-0 w-[215px] bg-white border border-gray-200 rounded-xl p-3.5 pr-5 text-right overflow-hidden transition-all
+      className={`relative flex-shrink-0 w-[215px] bg-white rounded-2xl shadow-sm p-3.5 pr-5 text-right overflow-hidden hover-lift
         ${!isAllowedCarrier
           ? 'opacity-40 cursor-not-allowed'
-          : 'cursor-pointer hover:border-gray-300 hover:shadow-md hover:-translate-y-0.5'}`}
+          : 'cursor-pointer'}`}
       title={mover.plan_name}
     >
       {/* Side accent stripe */}

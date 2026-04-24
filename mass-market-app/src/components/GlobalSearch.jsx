@@ -43,12 +43,18 @@ export default function GlobalSearch() {
   const [loading, setLoading] = useState(false)
   const inputRef = useRef(null)
 
-  // Keyboard shortcut — Ctrl+K / Cmd+K
+  // Keyboard shortcut — Ctrl+K / Cmd+K (use e.code so Hebrew keyboard layout
+  // still triggers on the physical K key, which otherwise produces 'ל').
+  // Also support '/' as a fallback (works regardless of layout).
   useEffect(() => {
     const onKey = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      const isTyping = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName || '')
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyK') {
         e.preventDefault()
         setOpen(o => !o)
+      } else if (e.key === '/' && !e.ctrlKey && !e.metaKey && !isTyping) {
+        e.preventDefault()
+        setOpen(true)
       } else if (e.key === 'Escape' && open) {
         setOpen(false)
       }
