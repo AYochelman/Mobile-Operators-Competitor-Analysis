@@ -240,7 +240,7 @@ function WorkspaceRow({ ws, onChange }) {
     setDigestSending(true); setDigestResult(null)
     try {
       const res = await api.triggerDigest(ws.id)
-      setDigestResult({ ok: true, msg: `נשלח ל-${res.emails?.length || 0} נמענים` })
+      setDigestResult({ ok: true, msg: `נשלח ל-${res.emails ?? 0} נמענים` })
     } catch (e) {
       setDigestResult({ ok: false, msg: e.message })
     } finally {
