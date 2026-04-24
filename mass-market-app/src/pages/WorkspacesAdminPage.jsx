@@ -186,6 +186,17 @@ function ColorInput({ label, value, onChange, defaultColor = null, defaultLabel 
   )
 }
 
+function trialBadge(ws) {
+  if (!ws.trial_ends_at) return null
+  const end  = new Date(ws.trial_ends_at)
+  const days = Math.ceil((end - Date.now()) / 86400000)
+  if (ws.trial_expired || days < 0)
+    return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">פיילוט פג</span>
+  if (days <= 7)
+    return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">{days}י׳ נותרו</span>
+  return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{days}י׳ נותרו</span>
+}
+
 function WorkspaceRow({ ws, onChange }) {
   const [expanded, setExpanded]   = useState(false)
   const [editing, setEditing]     = useState(false)
@@ -199,6 +210,7 @@ function WorkspaceRow({ ws, onChange }) {
     app_title:         ws.brand_config?.app_title || '',
     logo_url:          ws.brand_config?.logo_url || '',
     feature_flags:     ws.feature_flags || {},
+    trial_ends_at:     ws.trial_ends_at ? ws.trial_ends_at.slice(0, 10) : '',
   })
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState(null)
@@ -211,6 +223,7 @@ function WorkspaceRow({ ws, onChange }) {
         mvno_carrier:      form.mvno_carrier || null,
         hide_self_carrier: form.hide_self_carrier,
         active:            form.active,
+        trial_ends_at:     form.trial_ends_at || null,
         brand_config: {
           primary_color:   form.primary_color || null,
           secondary_color: form.secondary_color || null,
@@ -241,6 +254,7 @@ function WorkspaceRow({ ws, onChange }) {
               <span className="font-semibold text-lg">{ws.name}</span>
             )}
             <StatusPill active={ws.active} />
+            {trialBadge(ws)}
           </div>
           <div className="flex gap-4 items-center text-sm text-gray-600 mt-2 flex-wrap">
             <span>
@@ -256,6 +270,22 @@ function WorkspaceRow({ ws, onChange }) {
               )}
             </span>
             <span>משתמשים: <strong>{ws.user_count}</strong></span>
+            {ws.last_login && (
+              <span>כניסה אחרונה: <strong>{new Date(ws.last_login).toLocaleDateString('he-IL')}</strong></span>
+            )}
+            {ws.refresh_limit != null && (
+              <span className="flex items-center gap-1">
+                רענונים:&nbsp;
+                {Array.from({ length: ws.refresh_limit }).map((_, i) => (
+                  <span key={i} className={`inline-block w-2.5 h-2.5 rounded-full ${
+                    i < (ws.refresh_limit - (ws.refresh_count_month || 0)) ? 'bg-emerald-400' : 'bg-gray-200'
+                  }`} />
+                ))}
+                <span className="text-xs text-gray-500 mr-1">
+                  {ws.refresh_limit - (ws.refresh_count_month || 0)}/{ws.refresh_limit}
+                </span>
+              </span>
+            )}
             <label className="flex items-center gap-1 cursor-pointer">
               <input type="checkbox" checked={editing ? form.hide_self_carrier : ws.hide_self_carrier}
                 disabled={!editing}
@@ -284,6 +314,7 @@ function WorkspaceRow({ ws, onChange }) {
                 app_title: ws.brand_config?.app_title || '',
                 logo_url: ws.brand_config?.logo_url || '',
                 feature_flags: ws.feature_flags || {},
+                trial_ends_at: ws.trial_ends_at ? ws.trial_ends_at.slice(0, 10) : '',
               }) }} variant="ghost" size="sm">ביטול</Button>
             </>
           ) : (
@@ -319,6 +350,12 @@ function WorkspaceRow({ ws, onChange }) {
             <input type="url" value={form.logo_url}
               onChange={e => setForm({...form, logo_url: e.target.value})}
               placeholder="https://..."
+              className="w-full px-3 py-1.5 border border-moca-border rounded" />
+          </label>
+          <label className="text-sm">
+            <span className="block mb-1 text-gray-700">תאריך סיום פיילוט (trial_ends_at)</span>
+            <input type="date" value={form.trial_ends_at}
+              onChange={e => setForm({...form, trial_ends_at: e.target.value})}
               className="w-full px-3 py-1.5 border border-moca-border rounded" />
           </label>
           <div className="col-span-2 pt-2 border-t border-moca-border/30">

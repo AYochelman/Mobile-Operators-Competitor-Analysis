@@ -7,6 +7,7 @@ import Button from '../components/ui/Button'
 export default function SuspendedPage() {
   const { workspace, user, signOut } = useAuth()
   const name = workspace?.name || 'החשבון שלך'
+  const isTrialExpired = workspace?.trial_expired === true
 
   const [formOpen, setFormOpen]   = useState(false)
   const [message, setMessage]     = useState('')
@@ -47,11 +48,18 @@ export default function SuspendedPage() {
             </svg>
           </div>
 
-          <h1 className="text-xl font-bold text-moca-text">החשבון הושעה</h1>
+          <h1 className="text-xl font-bold text-moca-text">
+            {isTrialExpired ? 'תקופת הניסיון הסתיימה' : 'החשבון הושעה'}
+          </h1>
 
           <p className="text-sm text-moca-sub leading-relaxed">
-            הגישה של <strong>{name}</strong> ל-MOCA הושהתה זמנית.
-            אם לדעתך זו טעות או שברצונך לחדש את המנוי — פנה אלינו.
+            {isTrialExpired ? (
+              <>תקופת הפיילוט של <strong>{name}</strong> הגיעה לסיומה.
+              צרו קשר כדי לחדש את הגישה או לעבור למנוי מלא.</>
+            ) : (
+              <>הגישה של <strong>{name}</strong> ל-MOCA הושהתה זמנית.
+              אם לדעתך זו טעות או שברצונך לחדש את המנוי — פנה אלינו.</>
+            )}
           </p>
 
           {status === 'sent' ? (

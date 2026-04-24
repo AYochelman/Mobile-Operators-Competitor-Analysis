@@ -292,7 +292,7 @@ def _get_user_context(email):
                    r.workspace_id,
                    w.slug, w.name, w.mvno_carrier,
                    w.brand_config, w.feature_flags,
-                   w.hide_self_carrier, w.active
+                   w.hide_self_carrier, w.active, w.trial_ends_at
             FROM auth.users u
             LEFT JOIN public.user_roles r ON r.user_id = u.id
             LEFT JOIN public.workspaces w ON w.id = r.workspace_id
@@ -305,6 +305,17 @@ def _get_user_context(email):
         role, ws_id = row[0], row[1]
         workspace = None
         if row[2]:  # slug present = workspace joined successfully
+            import time as _time2
+            trial_ends_at = row[9]
+            trial_expired = False
+            if trial_ends_at:
+                import datetime as _dt2
+                now_utc = _dt2.datetime.now(_dt2.timezone.utc)
+                if hasattr(trial_ends_at, 'tzinfo'):
+                    trial_expired = now_utc > trial_ends_at
+                else:
+                    trial_expired = now_utc > trial_ends_at.replace(tzinfo=_dt2.timezone.utc)
+            active = bool(row[8]) and not trial_expired
             workspace = {
                 "id":                str(ws_id) if ws_id else None,
                 "slug":              row[2],
@@ -313,7 +324,9 @@ def _get_user_context(email):
                 "brand_config":      row[5] or {},
                 "feature_flags":     row[6] or {},
                 "hide_self_carrier": bool(row[7]),
-                "active":            bool(row[8]),
+                "active":            active,
+                "trial_ends_at":     trial_ends_at.isoformat() if trial_ends_at else None,
+                "trial_expired":     trial_expired,
             }
         return {"role": role, "workspace_id": str(ws_id) if ws_id else None, "workspace": workspace}
     except Exception as e:
@@ -2170,7 +2183,7 @@ def api_update_user_role(user_id):
 @require_super_admin
 @limiter.limit("30 per minute")
 def api_list_workspaces():
-    """List all workspaces with a user count per workspace."""
+    """List all workspaces with user count, last login, trial info, and monthly refresh count."""
     try:
         conn = _supabase_conn()
         cur = conn.cursor()
@@ -2178,25 +2191,54 @@ def api_list_workspaces():
             SELECT w.id, w.slug, w.name, w.mvno_carrier,
                    w.brand_config, w.feature_flags,
                    w.hide_self_carrier, w.active, w.created_at,
-                   COUNT(r.user_id) AS user_count
+                   COUNT(r.user_id) AS user_count,
+                   MAX(u.last_sign_in_at) AS last_login,
+                   w.trial_ends_at
             FROM public.workspaces w
             LEFT JOIN public.user_roles r ON r.workspace_id = w.id
+            LEFT JOIN auth.users u ON u.id = r.user_id
             GROUP BY w.id
             ORDER BY w.created_at ASC
         """)
-        workspaces = [{
-            'id':                str(row[0]),
-            'slug':              row[1],
-            'name':              row[2],
-            'mvno_carrier':      row[3],
-            'brand_config':      row[4] or {},
-            'feature_flags':     row[5] or {},
-            'hide_self_carrier': bool(row[6]),
-            'active':            bool(row[7]),
-            'created_at':        str(row[8]),
-            'user_count':        row[9],
-        } for row in cur.fetchall()]
+        rows = cur.fetchall()
         conn.close()
+
+        # Fetch monthly refresh counts from SQLite for all workspaces
+        from datetime import datetime as _dt, timezone as _tz
+        month_prefix = _dt.now(_tz.utc).strftime('%Y-%m')
+        all_entries = get_audit_log(limit=2000, db_path=_db_path())
+        refresh_by_ws = {}
+        for e in all_entries:
+            if e['action'] == 'refresh_triggered' and (e['created_at'] or '').startswith(month_prefix):
+                ws = e['workspace_id'] or ''
+                refresh_by_ws[ws] = refresh_by_ws.get(ws, 0) + 1
+
+        workspaces = []
+        for row in rows:
+            ws_id = str(row[0])
+            trial_ends_at = row[11]
+            trial_expired = False
+            if trial_ends_at:
+                now_utc = _dt.now(_tz.utc)
+                te = trial_ends_at if hasattr(trial_ends_at, 'tzinfo') else trial_ends_at.replace(tzinfo=_tz.utc)
+                trial_expired = now_utc > te
+            workspaces.append({
+                'id':                ws_id,
+                'slug':              row[1],
+                'name':              row[2],
+                'mvno_carrier':      row[3],
+                'brand_config':      row[4] or {},
+                'feature_flags':     row[5] or {},
+                'hide_self_carrier': bool(row[6]),
+                'active':            bool(row[7]),
+                'created_at':        str(row[8]),
+                'user_count':        row[9],
+                'last_login':        row[10].isoformat() if row[10] else None,
+                'trial_ends_at':     trial_ends_at.isoformat() if trial_ends_at else None,
+                'trial_expired':     trial_expired,
+                'refresh_count_month': refresh_by_ws.get(ws_id, 0),
+                'refresh_limit':       MONTHLY_REFRESH_LIMIT,
+            })
         return jsonify(workspaces)
     except Exception as e:
         logger.error(f"list workspaces failed: {e}", exc_info=True)
@@ -2256,7 +2298,7 @@ def api_update_workspace(workspace_id):
     brand_config, feature_flags, hide_self_carrier, active."""
     data = request.get_json(force=True) or {}
     allowed = {'name', 'mvno_carrier', 'brand_config', 'feature_flags',
-               'hide_self_carrier', 'active'}
+               'hide_self_carrier', 'active', 'trial_ends_at'}
     updates = {k: v for k, v in data.items() if k in allowed}
     if not updates:
         return jsonify({"error": "no updatable fields provided"}), 400
@@ -2950,6 +2992,29 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error("Store banner screenshot job failed: %s", e, exc_info=True)
 
+    def check_trial_expiry_job():
+        """Daily 00:05 — auto-suspend workspaces past their trial end date."""
+        try:
+            conn = _supabase_conn()
+            conn.autocommit = True
+            cur = conn.cursor()
+            cur.execute("""
+                UPDATE public.workspaces
+                SET active = FALSE
+                WHERE trial_ends_at IS NOT NULL
+                  AND trial_ends_at < NOW()
+                  AND active = TRUE
+                RETURNING name
+            """)
+            expired = [r[0] for r in cur.fetchall()]
+            conn.close()
+            if expired:
+                logger.info(f"Auto-suspended {len(expired)} expired trial workspace(s): {expired}")
+                for ws_name in expired:
+                    log_audit('trial_expired', workspace_id=None, details=ws_name, db_path=_db_path())
+        except Exception as e:
+            logger.error(f"Trial expiry check failed: {e}", exc_info=True)
+
     def weekly_digest_job():
         """Every Sunday 08:30 — send 7-day plan-changes digest to all workspace users."""
         from notifier import send_weekly_digest as _send_digest
@@ -2992,6 +3057,15 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error(f"Weekly digest job failed: {e}", exc_info=True)
 
+    # ── Supabase schema migrations ────────────────────────────────────────────
+    try:
+        _mc = _supabase_conn(); _mc.autocommit = True; _mcu = _mc.cursor()
+        _mcu.execute("ALTER TABLE public.workspaces ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ")
+        _mc.close()
+        logger.info("Supabase migration: trial_ends_at column ensured")
+    except Exception as _me:
+        logger.warning(f"Supabase migration skipped: {_me}")
+
     _ensure_vapid_keys(CONFIG_PATH)
     init_db()
     config = load_config()
@@ -3016,6 +3090,7 @@ if __name__ == "__main__":
                       start_date=_next_8, id="social_sentiment")
     scheduler.add_job(weekly_digest_job, "cron", day_of_week="sun", hour=8, minute=30,
                       id="weekly_digest")
+    scheduler.add_job(check_trial_expiry_job, "cron", hour=0, minute=5, id="trial_expiry")
     scheduler.start()
     logger.info("Flask starting → http://0.0.0.0:5000")
     try:
