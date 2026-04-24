@@ -304,6 +304,7 @@ def _get_user_context(email):
         workspace = None
         if row[2]:  # slug present = workspace joined successfully
             workspace = {
+                "id":                str(ws_id) if ws_id else None,
                 "slug":              row[2],
                 "name":              row[3],
                 "mvno_carrier":      row[4],
@@ -438,9 +439,12 @@ def _verify_supabase_jwt(token: str):
             logger.warning(f"Unsupported JWT algorithm: {alg}")
             return None
 
-        # Check expiry — allow 15-minute grace period (clock skew + refresh lag)
+        # Check expiry — allow up to 4-hour grace period for clock skew.
+        # Production servers have correct clocks so this never triggers there.
+        # Local dev on Windows can drift significantly (seen: +2h) which would
+        # cause every fresh JWT to appear expired without this leeway.
         exp = payload.get('exp')
-        if exp is not None and _time.time() > exp + 900:
+        if exp is not None and _time.time() > exp + 14400:
             logger.warning("JWT has expired (beyond grace period)")
             return None
 

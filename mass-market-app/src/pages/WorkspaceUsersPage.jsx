@@ -4,7 +4,7 @@ import { api } from '../lib/api'
 import Button from '../components/ui/Button'
 
 export default function WorkspaceUsersPage() {
-  const { workspace } = useAuth()
+  const { workspace, workspaceId } = useAuth()
   const [users, setUsers]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState(null)
@@ -13,7 +13,7 @@ export default function WorkspaceUsersPage() {
   const [assigning, setAssigning] = useState(false)
   const [formError, setFormError] = useState(null)
 
-  const wsId = workspace?.id
+  const wsId = workspaceId
 
   const load = useCallback(async () => {
     if (!wsId) return

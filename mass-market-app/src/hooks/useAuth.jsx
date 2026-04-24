@@ -51,10 +51,11 @@ async function fetchContextFromBackend(accessToken, userEmail) {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser]         = useState(null)
-  const [role, setRole]         = useState(null)
+  const [user, setUser]           = useState(null)
+  const [role, setRole]           = useState(null)
   const [workspace, setWorkspace] = useState(null)
-  const [loading, setLoading]   = useState(true)
+  const [workspaceId, setWorkspaceId] = useState(null)
+  const [loading, setLoading]     = useState(true)
 
   useEffect(() => {
     if (!supabase) {
@@ -75,8 +76,8 @@ export function AuthProvider({ children }) {
       localStorage.setItem('auth_token', session.access_token)
       api.setSessionCookie(session.access_token).catch(() => {})
       fetchContextFromBackend(session.access_token, session.user.email)
-        .then(ctx => { setRole(ctx.role); setWorkspace(ctx.workspace) })
-        .catch(() => { setRole('viewer'); setWorkspace(DEFAULT_WORKSPACE) })
+        .then(ctx => { setRole(ctx.role); setWorkspace(ctx.workspace); setWorkspaceId(ctx.workspaceId) })
+        .catch(() => { setRole('viewer'); setWorkspace(DEFAULT_WORKSPACE); setWorkspaceId(null) })
     }
 
     // Supabase v2 auto-refreshes tokens in the background and fires
@@ -91,6 +92,7 @@ export function AuthProvider({ children }) {
           setUser(null)
           setRole(null)
           setWorkspace(null)
+          setWorkspaceId(null)
           localStorage.removeItem('auth_token')
           api.clearSessionCookie().catch(() => {})
         }
@@ -142,7 +144,7 @@ export function AuthProvider({ children }) {
   }
 
   const value = {
-    user, role, workspace, loading, signIn, signOut,
+    user, role, workspace, workspaceId, loading, signIn, signOut,
     isAdmin:      role === 'admin' || role === 'super_admin',
     isSuperAdmin: role === 'super_admin',
   }
