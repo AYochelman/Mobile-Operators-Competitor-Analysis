@@ -418,7 +418,7 @@ function WorkspaceRow({ ws, onChange }) {
             </>
           ) : (
             <>
-              <Button onClick={() => setEditing(true)} variant="ghost" size="sm">עריכה</Button>
+              <Button onClick={() => setEditing(true)} variant="ghost" size="sm" className="border border-moca-border/60">עריכה</Button>
               <Button
                 onClick={() => {
                   enterViewAs({
@@ -434,17 +434,18 @@ function WorkspaceRow({ ws, onChange }) {
                 }}
                 variant="ghost"
                 size="sm"
+                className="border border-moca-border/60"
                 title="צפה באפליקציה כפי שמשתמש של ה-workspace רואה אותה"
               >
                 צפה כ
               </Button>
-              <Button onClick={() => { setInviteOpen(o => !o); setInviteLink(null); setInviteErr(null) }} variant="ghost" size="sm">
+              <Button onClick={() => { setInviteOpen(o => !o); setInviteLink(null); setInviteErr(null) }} variant="ghost" size="sm" className="border border-moca-border/60">
                 {inviteOpen ? 'סגור הזמנה' : 'הזמן משתמש'}
               </Button>
-              <Button onClick={sendDigest} disabled={digestSending} variant="ghost" size="sm">
+              <Button onClick={sendDigest} disabled={digestSending} variant="ghost" size="sm" className="border border-moca-border/60">
                 {digestSending ? 'שולח…' : 'שלח דייג׳סט'}
               </Button>
-              <Button onClick={() => setExpanded(e => !e)} variant="ghost" size="sm">
+              <Button onClick={() => setExpanded(e => !e)} variant="ghost" size="sm" className="border border-moca-border/60">
                 {expanded ? 'סגור משתמשים' : 'ניהול משתמשים'}
               </Button>
             </>
