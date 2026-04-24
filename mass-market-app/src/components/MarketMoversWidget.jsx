@@ -40,7 +40,7 @@ function MoverCard({ mover, onClick, isAllowedCarrier }) {
     <button
       onClick={() => onClick?.(mover)}
       disabled={!isAllowedCarrier}
-      className={`relative flex-shrink-0 w-[215px] bg-white rounded-2xl shadow-sm p-3.5 pr-5 text-right overflow-hidden hover-lift
+      className={`relative flex-shrink-0 w-[215px] bg-white border border-gray-200 rounded-2xl shadow p-3.5 pr-5 text-right overflow-hidden hover-lift
         ${!isAllowedCarrier
           ? 'opacity-40 cursor-not-allowed'
           : 'cursor-pointer'}`}
@@ -62,11 +62,11 @@ function MoverCard({ mover, onClick, isAllowedCarrier }) {
       <div className="mb-1">
         <Badge color={CARRIER_COLORS[mover.carrier] || 'gray'}>{label}</Badge>
       </div>
-      <p className="text-[12px] font-medium text-gray-800 truncate leading-tight mt-1">{mover.plan_name}</p>
+      <p className="text-[13px] font-semibold text-gray-800 truncate leading-tight mt-1">{mover.plan_name}</p>
 
       <div className="mt-2.5 pt-2 border-t border-gray-200 flex items-baseline gap-2 justify-end" dir="ltr">
         <span className="text-[11px] text-gray-400 line-through decoration-2">{formatPrice(mover.old_price)}</span>
-        <span className={`text-base font-extrabold ${priceClr}`}>{formatPrice(mover.new_price)}</span>
+        <span className={`text-xl font-extrabold ${priceClr}`}>{formatPrice(mover.new_price)}</span>
       </div>
     </button>
   )
