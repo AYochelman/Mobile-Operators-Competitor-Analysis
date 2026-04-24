@@ -13,7 +13,13 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/', { replace: true })
+      const pendingInvite = sessionStorage.getItem('pending_invite')
+      if (pendingInvite) {
+        sessionStorage.removeItem('pending_invite')
+        navigate(`/invite/${pendingInvite}`, { replace: true })
+      } else {
+        navigate('/', { replace: true })
+      }
     }
   }, [user, loading, navigate])
 

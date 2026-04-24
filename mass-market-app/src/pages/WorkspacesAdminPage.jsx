@@ -214,6 +214,31 @@ function WorkspaceRow({ ws, onChange }) {
   })
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState(null)
+  const [inviteOpen, setInviteOpen]   = useState(false)
+  const [inviteRole, setInviteRole]   = useState('viewer')
+  const [inviteLink, setInviteLink]   = useState(null)
+  const [inviting, setInviting]       = useState(false)
+  const [inviteErr, setInviteErr]     = useState(null)
+  const [copied, setCopied]           = useState(false)
+
+  const generateInvite = async () => {
+    setInviting(true); setInviteErr(null); setInviteLink(null); setCopied(false)
+    try {
+      const { token } = await api.createInvite(ws.id, inviteRole)
+      setInviteLink(`${window.location.origin}/invite/${token}`)
+    } catch (e) {
+      setInviteErr(e.message)
+    } finally {
+      setInviting(false)
+    }
+  }
+
+  const copyInviteLink = () => {
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    })
+  }
 
   const save = async () => {
     setSaving(true); setError(null)
@@ -320,6 +345,9 @@ function WorkspaceRow({ ws, onChange }) {
           ) : (
             <>
               <Button onClick={() => setEditing(true)} variant="ghost" size="sm">עריכה</Button>
+              <Button onClick={() => { setInviteOpen(o => !o); setInviteLink(null); setInviteErr(null) }} variant="ghost" size="sm">
+                {inviteOpen ? 'סגור הזמנה' : 'הזמן משתמש'}
+              </Button>
               <Button onClick={() => setExpanded(e => !e)} variant="ghost" size="sm">
                 {expanded ? 'סגור משתמשים' : 'ניהול משתמשים'}
               </Button>
@@ -327,6 +355,39 @@ function WorkspaceRow({ ws, onChange }) {
           )}
         </div>
       </div>
+      {inviteOpen && (
+        <div className="bg-moca-cream/50 rounded-lg p-4 mt-3">
+          <h4 className="text-sm font-semibold mb-3">הזמנת משתמש חדש</h4>
+          <div className="flex gap-2 items-center flex-wrap">
+            <select value={inviteRole} onChange={e => { setInviteRole(e.target.value); setInviteLink(null) }}
+              className="px-2 py-1.5 text-sm border border-moca-border rounded">
+              <option value="viewer">viewer — צופה</option>
+              <option value="admin">admin — מנהל</option>
+            </select>
+            <Button onClick={generateInvite} disabled={inviting} variant="primary" size="sm">
+              {inviting ? 'יוצר…' : 'צור קישור הזמנה'}
+            </Button>
+          </div>
+          {inviteErr && <p className="text-xs text-red-600 mt-2">{inviteErr}</p>}
+          {inviteLink && (
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
+              <input readOnly value={inviteLink} dir="ltr"
+                className="flex-1 min-w-0 px-2 py-1.5 text-xs border border-moca-border rounded bg-white font-mono" />
+              <button onClick={copyInviteLink}
+                className={`text-xs px-3 py-1.5 rounded border transition-colors ${
+                  copied
+                    ? 'bg-emerald-100 border-emerald-300 text-emerald-700'
+                    : 'bg-white border-moca-border text-moca-text hover:border-moca-bolt'
+                }`}>
+                {copied ? '✓ הועתק' : 'העתק'}
+              </button>
+            </div>
+          )}
+          {inviteLink && (
+            <p className="text-xs text-gray-400 mt-1.5">תוקף 48 שעות · שימוש חד-פעמי</p>
+          )}
+        </div>
+      )}
       {editing && (() => {
         const mvnoColors = getMvnoColors(form.mvno_carrier)
         const mvnoLabel  = MVNO_OPTIONS.find(o => o.id === form.mvno_carrier)?.label

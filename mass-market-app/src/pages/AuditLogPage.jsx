@@ -8,7 +8,11 @@ const ACTION_LABELS = {
   workspace_updated:  'Workspace עודכן',
   branding_updated:   'מיתוג עודכן',
   scrape_triggered:   'סריקה הופעלה',
+  refresh_triggered:  'רענון ידני',
   contact_sent:       'פנייה נשלחה',
+  invite_created:     'הזמנה נוצרה',
+  invite_accepted:    'הזמנה התקבלה',
+  trial_expired:      'פיילוט פג',
 }
 
 const ACTION_COLORS = {
@@ -18,7 +22,11 @@ const ACTION_COLORS = {
   workspace_updated: 'bg-amber-100 text-amber-700',
   branding_updated:  'bg-purple-100 text-purple-700',
   scrape_triggered:  'bg-gray-100 text-gray-600',
+  refresh_triggered: 'bg-gray-100 text-gray-600',
   contact_sent:      'bg-teal-100 text-teal-700',
+  invite_created:    'bg-indigo-100 text-indigo-700',
+  invite_accepted:   'bg-emerald-100 text-emerald-700',
+  trial_expired:     'bg-red-100 text-red-700',
 }
 
 function ActionBadge({ action }) {
