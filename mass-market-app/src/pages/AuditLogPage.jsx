@@ -13,6 +13,7 @@ const ACTION_LABELS = {
   invite_created:     'הזמנה נוצרה',
   invite_accepted:    'הזמנה התקבלה',
   trial_expired:      'פיילוט פג',
+  digest_sent:        'דייג׳סט נשלח',
 }
 
 const ACTION_COLORS = {
@@ -27,6 +28,7 @@ const ACTION_COLORS = {
   invite_created:    'bg-indigo-100 text-indigo-700',
   invite_accepted:   'bg-emerald-100 text-emerald-700',
   trial_expired:     'bg-red-100 text-red-700',
+  digest_sent:       'bg-sky-100 text-sky-700',
 }
 
 function ActionBadge({ action }) {

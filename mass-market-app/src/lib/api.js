@@ -119,4 +119,7 @@ export const api = {
   createInvite:  (workspaceId, role) => fetchApi(`/api/workspaces/${workspaceId}/invite`, { method: 'POST', body: JSON.stringify({ role }) }),
   getInvite:     (token) => fetchApi(`/api/invite/${token}`),
   acceptInvite:  (token) => fetchApi(`/api/invite/${token}/accept`, { method: 'POST' }),
+
+  // Email digest — super_admin only
+  triggerDigest: (workspaceId) => fetchApi(`/api/workspaces/${workspaceId}/trigger-digest`, { method: 'POST' }),
 }

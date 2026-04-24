@@ -2557,14 +2557,81 @@ def api_accept_invite(token):
             ON CONFLICT (user_id) DO UPDATE
               SET role = EXCLUDED.role, workspace_id = EXCLUDED.workspace_id
         """, (user_id, invite['role'], invite['workspace_id']))
+        cur.execute("SELECT name FROM public.workspaces WHERE id = %s", (invite['workspace_id'],))
+        ws_row = cur.fetchone()
+        ws_name = ws_row[0] if ws_row else 'MOCA'
         conn.close()
         use_workspace_invite(token, used_by=email, db_path=_db_path())
         log_audit('invite_accepted', actor_email=email, workspace_id=invite['workspace_id'],
                   details=f'role={invite["role"]}', db_path=_db_path())
+        # Send welcome email (same as manual assignment)
+        try:
+            from notifier import send_welcome_email as _send_welcome
+            import threading as _threading
+            _threading.Thread(
+                target=_send_welcome,
+                args=(email, ws_name, invite['role'], load_config()),
+                daemon=True,
+            ).start()
+        except Exception as _we:
+            logger.warning(f"invite welcome email skipped: {_we}")
         return jsonify({"status": "accepted", "role": invite['role'],
                         "workspace_id": invite['workspace_id']})
     except Exception as e:
         logger.error(f"accept invite failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/workspaces/<workspace_id>/trigger-digest", methods=["POST"])
+@require_super_admin
+@limiter.limit("5 per minute")
+def api_trigger_digest(workspace_id):
+    """Manually trigger the weekly digest for a specific workspace (super_admin only)."""
+    from notifier import send_weekly_digest as _send_digest
+    from db import get_history_changes as _ghc
+    from datetime import datetime as _dt, timedelta as _td
+    _cfg = load_config()
+    _from = (_dt.now() - _td(days=7)).strftime('%Y-%m-%d')
+    try:
+        conn = _supabase_conn()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT name, mvno_carrier, hide_self_carrier,
+                   COALESCE(visible_carriers, '[]'::jsonb)
+            FROM public.workspaces WHERE id = %s AND active = TRUE
+        """, (workspace_id,))
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({"error": "workspace not found or inactive"}), 404
+        ws_name, mvno_carrier, hide_self, vc_raw = row
+        visible_carriers = json.loads(vc_raw) if isinstance(vc_raw, str) else (list(vc_raw) if vc_raw else [])
+        cur.execute("""
+            SELECT u.email FROM auth.users u
+            JOIN public.user_roles r ON r.user_id = u.id
+            WHERE r.workspace_id = %s
+        """, (workspace_id,))
+        emails = [r[0] for r in cur.fetchall() if r[0]]
+        conn.close()
+        if not emails:
+            return jsonify({"error": "no users in workspace"}), 400
+        all_changes = []
+        for ptype in ('domestic', 'abroad', 'global'):
+            ch = _ghc('', ptype, _from, '', db_path=_db_path())
+            if visible_carriers:
+                ch = [c for c in ch if c.get('carrier') in visible_carriers]
+            elif hide_self and mvno_carrier:
+                ch = [c for c in ch if c.get('carrier') != mvno_carrier]
+            all_changes.extend(ch)
+        if not all_changes:
+            return jsonify({"status": "skipped", "reason": "no changes in last 7 days"})
+        ok = _send_digest(emails, ws_name, all_changes, _cfg)
+        actor = _current_user_email() or ''
+        log_audit('digest_sent', actor_email=actor, workspace_id=workspace_id,
+                  details=f'{len(all_changes)} changes → {len(emails)} users', db_path=_db_path())
+        return jsonify({"status": "sent" if ok else "partial", "emails": len(emails), "changes": len(all_changes)})
+    except Exception as e:
+        logger.error(f"trigger digest failed: {e}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
 
 
@@ -3033,10 +3100,16 @@ if __name__ == "__main__":
             conn = _supabase_conn()
             cur = conn.cursor()
             # Fetch all workspaces
-            cur.execute("SELECT id, name, mvno_carrier FROM public.workspaces WHERE active = TRUE")
+            cur.execute("""
+                SELECT id, name, mvno_carrier,
+                       hide_self_carrier,
+                       COALESCE(visible_carriers, '[]'::jsonb)
+                FROM public.workspaces WHERE active = TRUE
+            """)
             workspaces = cur.fetchall()
-            for ws_id, ws_name, mvno_carrier in workspaces:
+            for ws_id, ws_name, mvno_carrier, hide_self, vc_raw in workspaces:
                 try:
+                    visible_carriers = json.loads(vc_raw) if isinstance(vc_raw, str) else (list(vc_raw) if vc_raw else [])
                     # Get all user emails for this workspace
                     cur.execute("""
                         SELECT u.email FROM auth.users u
@@ -3050,8 +3123,10 @@ if __name__ == "__main__":
                     all_changes = []
                     for ptype in ('domestic', 'abroad', 'global'):
                         ch = _ghc('', ptype, _from, '', db_path=_db_path())
-                        # Filter hidden carrier if workspace hides its own MVNO
-                        if mvno_carrier:
+                        # Apply same carrier scoping as the dashboard
+                        if visible_carriers:
+                            ch = [c for c in ch if c.get('carrier') in visible_carriers]
+                        elif hide_self and mvno_carrier:
                             ch = [c for c in ch if c.get('carrier') != mvno_carrier]
                         all_changes.extend(ch)
                     if not all_changes:
