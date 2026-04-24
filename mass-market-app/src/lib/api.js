@@ -122,4 +122,9 @@ export const api = {
 
   // Email digest — super_admin only
   triggerDigest: (workspaceId) => fetchApi(`/api/workspaces/${workspaceId}/trigger-digest`, { method: 'POST' }),
+
+  // Saved views — per-user filter presets
+  getSavedViews:    () => fetchApi('/api/saved-views'),
+  createSavedView:  (name, filters) => fetchApi('/api/saved-views', { method: 'POST', body: JSON.stringify({ name, filters }) }),
+  deleteSavedView:  (id) => fetchApi(`/api/saved-views/${id}`, { method: 'DELETE' }),
 }

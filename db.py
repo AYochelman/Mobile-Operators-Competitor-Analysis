@@ -217,6 +217,15 @@ def init_db(db_path=None):
                 last_triggered TEXT,
                 created_at     TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS saved_views (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_email   TEXT NOT NULL,
+                name         TEXT NOT NULL,
+                filters_json TEXT NOT NULL,
+                created_at   TEXT NOT NULL,
+                UNIQUE(user_email, name)
+            );
+            CREATE INDEX IF NOT EXISTS idx_saved_views_user ON saved_views(user_email);
             CREATE TABLE IF NOT EXISTS executive_summary (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 category     TEXT NOT NULL UNIQUE,
@@ -1126,6 +1135,59 @@ def update_alert_triggered(alert_id, db_path=None):
             (datetime.now().isoformat(), alert_id)
         )
         conn.commit()
+    finally:
+        conn.close()
+
+
+# ── Saved Views CRUD ──────────────────────────────────────────────────────
+
+def save_view(user_email, name, filters_json, db_path=None):
+    """Upsert a saved view for a user. filters_json is a JSON string."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO saved_views (user_email, name, filters_json, created_at) "
+            "VALUES (?, ?, ?, ?) "
+            "ON CONFLICT(user_email, name) DO UPDATE SET filters_json = excluded.filters_json",
+            (user_email, name, filters_json, datetime.now().isoformat())
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT id FROM saved_views WHERE user_email = ? AND name = ?",
+            (user_email, name)
+        ).fetchone()
+        return row[0] if row else None
+    finally:
+        conn.close()
+
+
+def get_saved_views(user_email, db_path=None):
+    """Return all saved views for a user."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT id, name, filters_json, created_at FROM saved_views "
+            "WHERE user_email = ? ORDER BY created_at DESC",
+            (user_email,)
+        ).fetchall()
+        return [
+            {"id": r[0], "name": r[1], "filters_json": r[2], "created_at": r[3]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def delete_saved_view(view_id, user_email, db_path=None):
+    """Delete a saved view. Scoped by user_email to prevent IDOR. Returns rows deleted."""
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute(
+            "DELETE FROM saved_views WHERE id = ? AND user_email = ?",
+            (view_id, user_email)
+        )
+        conn.commit()
+        return cur.rowcount
     finally:
         conn.close()
 

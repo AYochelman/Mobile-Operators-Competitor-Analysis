@@ -11,6 +11,7 @@ import HistoryTab from '../components/HistoryTab'
 import NewsTab from '../components/NewsTab'
 import GroupedPlanCard from '../components/GroupedPlanCard'
 import CountryModal from '../components/CountryModal'
+import SavedViewsMenu from '../components/SavedViewsMenu'
 import FilterTag from '../components/ui/FilterTag'
 import SearchableSelect from '../components/ui/SearchableSelect'
 import Badge from '../components/ui/Badge'
@@ -632,6 +633,21 @@ export default function DashboardPage() {
                 איפוס
               </button>
             )}
+
+            <SavedViewsMenu
+              tab={tab}
+              filters={filters}
+              onApply={(view) => {
+                if (view.tab && ['domestic','abroad','global','content'].includes(view.tab)) {
+                  setTab(view.tab)
+                }
+                if (view.filters && typeof view.filters === 'object') {
+                  setFilters(f => ({ ...f, ...view.filters }))
+                  setVisibleCount(50)
+                }
+                setFiltersOpen(true)
+              }}
+            />
 
             {/* Change dot legend */}
             <div className="flex items-center gap-2 border-r border-moca-border/40 pr-2 mr-1">

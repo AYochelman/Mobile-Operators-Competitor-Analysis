@@ -1716,6 +1716,55 @@ def api_delete_alert(alert_id):
     return jsonify({"status": "deleted"})
 
 
+# ── Saved Views (per-user filter presets) ─────────────────────────────────
+
+@app.route("/api/saved-views", methods=["GET"])
+@require_auth
+@limiter.limit("60 per minute")
+def api_get_saved_views():
+    from db import get_saved_views as _gsv
+    user_email = _current_user_email()
+    if not user_email:
+        return jsonify([])
+    return jsonify(_gsv(user_email, db_path=_db_path()))
+
+
+@app.route("/api/saved-views", methods=["POST"])
+@require_auth
+@limiter.limit("20 per minute")
+def api_create_saved_view():
+    from db import save_view as _sv
+    user_email = _current_user_email()
+    if not user_email:
+        return jsonify({"error": "auth required"}), 401
+    data = request.get_json(force=True) or {}
+    name = (data.get('name') or '').strip()
+    filters = data.get('filters')
+    if not name or len(name) > 60:
+        return jsonify({"error": "name required (max 60 chars)"}), 400
+    if not isinstance(filters, dict):
+        return jsonify({"error": "filters must be an object"}), 400
+    try:
+        view_id = _sv(user_email, name, json.dumps(filters, ensure_ascii=False), db_path=_db_path())
+        return jsonify({"status": "saved", "id": view_id}), 201
+    except Exception as e:
+        logger.error(f"save view failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/saved-views/<int:view_id>", methods=["DELETE"])
+@require_auth
+def api_delete_saved_view(view_id):
+    from db import delete_saved_view as _dsv
+    user_email = _current_user_email()
+    if not user_email:
+        return jsonify({"error": "auth required"}), 401
+    deleted = _dsv(view_id, user_email, db_path=_db_path())
+    if deleted == 0:
+        return jsonify({"error": "not found"}), 404
+    return jsonify({"status": "deleted"})
+
+
 # ── Push Notification Routes ───────────────────────────────────────────────
 
 @app.route("/api/chat", methods=["POST"])
