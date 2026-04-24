@@ -12,6 +12,7 @@ import AlertsPage from './pages/AlertsPage'
 import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage'
 import ArchivePage from './pages/ArchivePage'
 import SettingsPage from './pages/SettingsPage'
+import PreferencesPage from './pages/PreferencesPage'
 import WorkspacesAdminPage from './pages/WorkspacesAdminPage'
 import WorkspaceUsersPage from './pages/WorkspaceUsersPage'
 import WorkspaceBrandingPage from './pages/WorkspaceBrandingPage'
@@ -72,6 +73,7 @@ export default function App() {
           <Route path="executive-summary" element={<ExecutiveSummaryPage />} />
           <Route path="archive" element={<ArchivePage />} />
           <Route path="settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
+          <Route path="preferences" element={<PreferencesPage />} />
           <Route path="workspace/users" element={<ProtectedRoute adminOnly><WorkspaceUsersPage /></ProtectedRoute>} />
           <Route path="workspace/settings" element={<ProtectedRoute adminOnly><WorkspaceBrandingPage /></ProtectedRoute>} />
           <Route path="admin/workspaces" element={<ProtectedRoute superAdminOnly><WorkspacesAdminPage /></ProtectedRoute>} />

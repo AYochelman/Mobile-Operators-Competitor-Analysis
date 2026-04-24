@@ -383,10 +383,90 @@ def send_contact_email(from_email: str, workspace_name: str, message: str, confi
         return False
 
 
-def send_weekly_digest(to_emails: list, workspace_name: str, changes: list, config: dict) -> bool:
+CARRIER_LABEL_HE = {
+    "partner":   "\u05e4\u05e8\u05d8\u05e0\u05e8",
+    "pelephone": "\u05e4\u05dc\u05d0\u05e4\u05d5\u05df",
+    "hotmobile": "\u05d4\u05d5\u05d8 \u05de\u05d5\u05d1\u05d9\u05d9\u05dc",
+    "cellcom":   "\u05e1\u05dc\u05e7\u05d5\u05dd",
+    "mobile019": "019",
+    "xphone":    "XPhone",
+    "wecom":     "We-Com",
+    "neptucom":  "Neptucom",
+    "golan":     "\u05d2\u05d5\u05dc\u05df \u05d8\u05dc\u05e7\u05d5\u05dd",
+    "rami_levy": "\u05e8\u05de\u05d9 \u05dc\u05d5\u05d9",
+}
+
+
+def _build_digest_html(workspace_name: str, app_title: str, primary: str, secondary: str, logo_url: str,
+                       app_url: str, by_carrier: dict, change_label: dict, total: int) -> str:
+    """Render the weekly digest as inline-styled HTML (email-client-safe)."""
+    sections = []
+    for carrier, chs in sorted(by_carrier.items()):
+        label = CARRIER_LABEL_HE.get(carrier, carrier)
+        rows = []
+        for ch in chs[:8]:
+            kind = change_label.get(ch.get('change_type', ''), ch.get('change_type', ''))
+            old_v = ch.get('old_val', '') or ''
+            new_v = ch.get('new_val', '') or ''
+            arrow = (f'<span style="color:#9a8670;">{old_v}</span> '
+                     f'<span style="color:{primary};font-weight:600;">&#8594; {new_v}</span>') if (old_v or new_v) else ''
+            rows.append(
+                f'<tr><td style="padding:8px 0;border-bottom:1px solid #efe7d9;font-size:13px;color:#4a3a24;">'
+                f'<span style="display:inline-block;padding:2px 8px;background:{secondary};color:#fff;'
+                f'border-radius:10px;font-size:10px;margin-left:8px;">{kind}</span>'
+                f'{ch.get("plan_name","")}'
+                f'</td><td style="padding:8px 0;border-bottom:1px solid #efe7d9;font-size:12px;text-align:left;" dir="ltr">'
+                f'{arrow}</td></tr>'
+            )
+        more = ''
+        if len(chs) > 8:
+            more = (f'<p style="margin:8px 0 0;font-size:11px;color:#9a8670;text-align:center;">'
+                    f'+ \u05e2\u05d5\u05d3 {len(chs)-8} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd</p>')
+        sections.append(
+            f'<div style="margin:16px 0;background:#fff;border:1px solid #e5d8c5;border-radius:12px;padding:16px;">'
+            f'<h3 style="margin:0 0 10px;color:{primary};font-size:15px;font-weight:700;">'
+            f'{label} <span style="color:#9a8670;font-weight:400;font-size:12px;">({len(chs)})</span></h3>'
+            f'<table style="width:100%;border-collapse:collapse;">{"".join(rows)}</table>{more}'
+            f'</div>'
+        )
+    logo_block = ''
+    if logo_url:
+        logo_block = f'<img src="{logo_url}" alt="{app_title}" style="max-height:40px;margin-bottom:12px;" />'
+    return f'''<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f9f4ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f4ee;padding:24px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+<tr><td style="background:{primary};border-radius:12px 12px 0 0;padding:24px;text-align:right;">
+{logo_block}
+<h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">{app_title}</h1>
+<p style="margin:6px 0 0;color:#fce8d0;font-size:13px;">\u05e1\u05d9\u05db\u05d5\u05dd \u05e9\u05d1\u05d5\u05e2\u05d9 \u2014 {workspace_name}</p>
+</td></tr>
+<tr><td style="background:#fff;padding:20px 24px;border-right:1px solid #e5d8c5;border-left:1px solid #e5d8c5;">
+<p style="margin:0;color:#4a3a24;font-size:14px;">
+\u05d1-7 \u05d9\u05de\u05d9\u05dd \u05d4\u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd \u05e0\u05e8\u05e9\u05de\u05d5
+<strong style="color:{primary};">{total} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd</strong> \u05d1\u05ea\u05d5\u05db\u05e0\u05d9\u05d5\u05ea \u05d4\u05de\u05ea\u05d7\u05e8\u05d9\u05dd.</p>
+<p style="margin:6px 0 0;color:#9a8670;font-size:11px;">\u05ea\u05d0\u05e8\u05d9\u05da: {datetime.now().strftime('%d/%m/%Y')}</p>
+</td></tr>
+<tr><td style="background:#f9f4ee;padding:4px 24px;border-right:1px solid #e5d8c5;border-left:1px solid #e5d8c5;">
+{"".join(sections)}
+</td></tr>
+<tr><td style="background:{primary};border-radius:0 0 12px 12px;padding:20px 24px;text-align:center;">
+<a href="{app_url}" style="display:inline-block;padding:10px 24px;background:#fff;color:{primary};border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">
+\u05e4\u05ea\u05d9\u05d7\u05ea \u05d4\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d4 \u2190</a>
+<p style="margin:14px 0 0;color:#fce8d0;font-size:11px;">\u05e0\u05e9\u05dc\u05d7 \u05d0\u05d5\u05d8\u05d5\u05de\u05d8\u05d9\u05ea \u05de-{app_title}</p>
+</td></tr>
+</table></td></tr></table></body></html>'''
+
+
+def send_weekly_digest(to_emails: list, workspace_name: str, changes: list, config: dict,
+                       brand_config: dict = None, app_url: str = None) -> bool:
     """Send a weekly changes digest to all users of a workspace.
-    Changes is a flat list of change dicts (carrier, plan_name, change_type, old_val, new_val, changed_at).
-    Returns True if all emails were dispatched successfully."""
+
+    Renders an HTML email using the workspace's brand_config (primary_color,
+    secondary_color, app_title, logo_url). Falls back to MOCA defaults.
+    Returns True if all emails were dispatched successfully.
+    """
     api_key = config.get("sendgrid_api_key", "")
     sender  = config.get("email_sender", "")
     if not all([api_key, sender]) or not to_emails:
@@ -394,42 +474,57 @@ def send_weekly_digest(to_emails: list, workspace_name: str, changes: list, conf
     if not changes:
         return True  # nothing to report — skip silently
 
-    app_url = "https://lucent-kulfi-f037ad.netlify.app"
+    bc = brand_config or {}
+    primary   = bc.get('primary_color')   or '#5c3317'
+    secondary = bc.get('secondary_color') or '#a08060'
+    app_title = bc.get('app_title')       or 'MOCA'
+    logo_url  = bc.get('logo_url')        or ''
+    app_url   = app_url or 'https://lucent-kulfi-f037ad.netlify.app'
+
     by_carrier = defaultdict(list)
     for ch in changes:
         by_carrier[ch.get('carrier', '')].append(ch)
 
-    lines = [
-        f"\u05e1\u05d9\u05db\u05d5\u05dd \u05e9\u05d1\u05d5\u05e2\u05d9 \u05e9\u05dc MOCA \u2014 {workspace_name}\n",
-        f"\u05ea\u05d0\u05e8\u05d9\u05da: {datetime.now().strftime('%d/%m/%Y')}\n",
-        f"\u05e1\u05d4\"\u05db {len(changes)} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd \u05d1-7 \u05d9\u05de\u05d9\u05dd \u05d4\u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd\n\n",
-    ]
     CHANGE_HE = {
         'price_change':  '\u05e9\u05d9\u05e0\u05d5\u05d9 \u05de\u05d7\u05d9\u05e8',
         'new_plan':      '\u05d7\u05d1\u05d9\u05dc\u05d4 \u05d7\u05d3\u05e9\u05d4',
         'removed_plan':  '\u05d4\u05d5\u05e1\u05e8\u05d4',
         'extras_change': '\u05e9\u05d9\u05e0\u05d5\u05d9 \u05d4\u05d8\u05d1\u05d5\u05ea',
     }
+
+    html_body = _build_digest_html(workspace_name, app_title, primary, secondary,
+                                   logo_url, app_url, by_carrier, CHANGE_HE, len(changes))
+
+    # Plain-text fallback for clients that can't render HTML
+    text_lines = [
+        f"{app_title} \u2014 \u05e1\u05d9\u05db\u05d5\u05dd \u05e9\u05d1\u05d5\u05e2\u05d9 \u2014 {workspace_name}\n",
+        f"\u05ea\u05d0\u05e8\u05d9\u05da: {datetime.now().strftime('%d/%m/%Y')}\n",
+        f"\u05e1\u05d4\"\u05db {len(changes)} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd \u05d1-7 \u05d9\u05de\u05d9\u05dd \u05d4\u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd\n\n",
+    ]
     for carrier, chs in sorted(by_carrier.items()):
-        lines.append(f"\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\n{carrier} ({len(chs)} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd)\n")
+        label = CARRIER_LABEL_HE.get(carrier, carrier)
+        text_lines.append(f"\u2014\u2014\u2014\u2014\n{label} ({len(chs)})\n")
         for ch in chs[:6]:
             kind   = CHANGE_HE.get(ch.get('change_type', ''), ch.get('change_type', ''))
-            old_v  = ch.get('old_val', '')
-            new_v  = ch.get('new_val', '')
-            suffix = f" \u2014 {old_v} \u2192 {new_v}" if old_v or new_v else ''
-            lines.append(f"  \u2022 {ch.get('plan_name','')} [{kind}]{suffix}\n")
-        if len(chs) > 6:
-            lines.append(f"  ... \u05d5\u05e2\u05d5\u05d3 {len(chs)-6} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd\n")
-    lines.append(f"\n\u05dc\u05e6\u05e4\u05d9\u05d9\u05d4 \u05de\u05dc\u05d0\u05d4: {app_url}\n\n\u05e6\u05d5\u05d5\u05ea MOCA")
+            old_v  = ch.get('old_val', '') or ''
+            new_v  = ch.get('new_val', '') or ''
+            suffix = f" \u2014 {old_v} \u2192 {new_v}" if (old_v or new_v) else ''
+            text_lines.append(f"  \u2022 {ch.get('plan_name','')} [{kind}]{suffix}\n")
+    text_lines.append(f"\n\u05dc\u05e6\u05e4\u05d9\u05d9\u05d4: {app_url}")
+    text_body = ''.join(text_lines)
 
-    body = ''.join(lines)
+    subject = f"{app_title} \u2014 \u05e1\u05d9\u05db\u05d5\u05dd \u05e9\u05d1\u05d5\u05e2\u05d9 \u05e2\u05d1\u05d5\u05e8 {workspace_name}"
+
     ok = True
     for email in to_emails:
         payload = {
             "personalizations": [{"to": [{"email": email}]}],
-            "from": {"email": sender},
-            "subject": f"MOCA \u2014 \u05e1\u05d9\u05db\u05d5\u05dd \u05e9\u05d1\u05d5\u05e2\u05d9 \u05e2\u05d1\u05d5\u05e8 {workspace_name}",
-            "content": [{"type": "text/plain", "value": body}],
+            "from": {"email": sender, "name": app_title},
+            "subject": subject,
+            "content": [
+                {"type": "text/plain", "value": text_body},
+                {"type": "text/html",  "value": html_body},
+            ],
         }
         try:
             resp = requests.post(

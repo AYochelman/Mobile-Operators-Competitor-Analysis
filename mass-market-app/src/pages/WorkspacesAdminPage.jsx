@@ -224,6 +224,7 @@ function WorkspaceRow({ ws, onChange }) {
     feature_flags:     ws.feature_flags || {},
     trial_ends_at:     ws.trial_ends_at ? ws.trial_ends_at.slice(0, 10) : '',
     visible_carriers:  ws.visible_carriers || [],
+    digest_frequency:  ws.digest_frequency || 'weekly',
   })
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState(null)
@@ -288,6 +289,7 @@ function WorkspaceRow({ ws, onChange }) {
         },
         feature_flags:     form.feature_flags,
         visible_carriers:  form.visible_carriers,
+        digest_frequency:  form.digest_frequency,
       })
       setEditing(false)
       await onChange?.()
@@ -378,6 +380,7 @@ function WorkspaceRow({ ws, onChange }) {
                 feature_flags:    ws.feature_flags || {},
                 trial_ends_at:    ws.trial_ends_at ? ws.trial_ends_at.slice(0, 10) : '',
                 visible_carriers: ws.visible_carriers || [],
+                digest_frequency: ws.digest_frequency || 'weekly',
               }) }} variant="ghost" size="sm">ביטול</Button>
             </>
           ) : (
@@ -464,6 +467,16 @@ function WorkspaceRow({ ws, onChange }) {
             <input type="date" value={form.trial_ends_at}
               onChange={e => setForm({...form, trial_ends_at: e.target.value})}
               className="w-full px-3 py-1.5 border border-moca-border rounded" />
+          </label>
+          <label className="text-sm">
+            <span className="block mb-1 text-gray-700">תדירות דייג'סט דוא"ל</span>
+            <select value={form.digest_frequency}
+              onChange={e => setForm({...form, digest_frequency: e.target.value})}
+              className="w-full px-3 py-1.5 border border-moca-border rounded bg-white">
+              <option value="weekly">שבועי</option>
+              <option value="monthly">חודשי (ראשון בחודש)</option>
+              <option value="off">כבוי</option>
+            </select>
           </label>
           <div className="col-span-2 pt-2 border-t border-moca-border/30">
             <p className="text-sm font-medium text-gray-700 mb-2">ספקים גלויים (ריק = כולם)</p>

@@ -127,4 +127,7 @@ export const api = {
   getSavedViews:    () => fetchApi('/api/saved-views'),
   createSavedView:  (name, filters) => fetchApi('/api/saved-views', { method: 'POST', body: JSON.stringify({ name, filters }) }),
   deleteSavedView:  (id) => fetchApi(`/api/saved-views/${id}`, { method: 'DELETE' }),
+
+  // User preferences
+  updateMyPreferences: (prefs) => fetchApi('/api/my-preferences', { method: 'PATCH', body: JSON.stringify(prefs) }),
 }

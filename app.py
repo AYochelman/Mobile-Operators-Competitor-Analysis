@@ -307,7 +307,8 @@ def _get_user_context(email):
                    w.slug, w.name, w.mvno_carrier,
                    w.brand_config, w.feature_flags,
                    w.hide_self_carrier, w.active, w.trial_ends_at,
-                   COALESCE(w.visible_carriers, '[]'::jsonb)
+                   COALESCE(w.visible_carriers, '[]'::jsonb),
+                   COALESCE(r.digest_opt_out, FALSE)
             FROM auth.users u
             LEFT JOIN public.user_roles r ON r.user_id = u.id
             LEFT JOIN public.workspaces w ON w.id = r.workspace_id
@@ -316,8 +317,9 @@ def _get_user_context(email):
         row = cur.fetchone()
         conn.close()
         if not row:
-            return {"role": "viewer", "workspace_id": None, "workspace": None}
+            return {"role": "viewer", "workspace_id": None, "workspace": None, "digest_opt_out": False}
         role, ws_id = row[0], row[1]
+        digest_opt_out = bool(row[11])
         workspace = None
         if row[2]:  # slug present = workspace joined successfully
             import time as _time2
@@ -346,10 +348,11 @@ def _get_user_context(email):
                 "trial_expired":     trial_expired,
                 "visible_carriers":  visible_carriers,
             }
-        return {"role": role, "workspace_id": str(ws_id) if ws_id else None, "workspace": workspace}
+        return {"role": role, "workspace_id": str(ws_id) if ws_id else None,
+                "workspace": workspace, "digest_opt_out": digest_opt_out}
     except Exception as e:
         logger.error(f"_get_user_context({email!r}) failed: {e}")
-        return {"role": "viewer", "workspace_id": None, "workspace": None}
+        return {"role": "viewer", "workspace_id": None, "workspace": None, "digest_opt_out": False}
 
 
 def require_api_key_or_query(f):
@@ -2072,6 +2075,36 @@ def api_my_role():
     return jsonify({"role": _get_user_context(email)["role"]})
 
 
+@app.route("/api/my-preferences", methods=["PATCH"])
+@require_auth
+@limiter.limit("20 per minute")
+def api_update_my_preferences():
+    """Update per-user preferences. Currently supports: {digest_opt_out: bool}."""
+    email = _current_user_email()
+    if not email:
+        return jsonify({"error": "auth required"}), 401
+    data = request.get_json(force=True) or {}
+    if 'digest_opt_out' not in data:
+        return jsonify({"error": "no updatable fields provided"}), 400
+    opt_out = bool(data['digest_opt_out'])
+    try:
+        conn = _supabase_conn()
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE public.user_roles r
+            SET digest_opt_out = %s
+            FROM auth.users u
+            WHERE r.user_id = u.id AND LOWER(u.email) = %s
+        """, (opt_out, email))
+        updated = cur.rowcount
+        conn.close()
+        return jsonify({"status": "updated", "digest_opt_out": opt_out, "rows": updated})
+    except Exception as e:
+        logger.error(f"update preferences failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
 @app.route("/api/my-context")
 @require_auth
 @limiter.limit("60 per minute")
@@ -2260,7 +2293,9 @@ def api_list_workspaces():
                    w.hide_self_carrier, w.active, w.created_at,
                    COUNT(r.user_id) AS user_count,
                    MAX(u.last_sign_in_at) AS last_login,
-                   w.trial_ends_at
+                   w.trial_ends_at,
+                   COALESCE(w.visible_carriers, '[]'::jsonb),
+                   COALESCE(w.digest_frequency, 'weekly')
             FROM public.workspaces w
             LEFT JOIN public.user_roles r ON r.workspace_id = w.id
             LEFT JOIN auth.users u ON u.id = r.user_id
@@ -2289,6 +2324,8 @@ def api_list_workspaces():
                 now_utc = _dt.now(_tz.utc)
                 te = trial_ends_at if hasattr(trial_ends_at, 'tzinfo') else trial_ends_at.replace(tzinfo=_tz.utc)
                 trial_expired = now_utc > te
+            vc_raw = row[12]
+            vc_list = json.loads(vc_raw) if isinstance(vc_raw, str) else (list(vc_raw) if vc_raw else [])
             workspaces.append({
                 'id':                ws_id,
                 'slug':              row[1],
@@ -2303,6 +2340,8 @@ def api_list_workspaces():
                 'last_login':        row[10].isoformat() if row[10] else None,
                 'trial_ends_at':     trial_ends_at.isoformat() if trial_ends_at else None,
                 'trial_expired':     trial_expired,
+                'visible_carriers':  vc_list,
+                'digest_frequency':  row[13] or 'weekly',
                 'refresh_count_month': refresh_by_ws.get(ws_id, 0),
                 'refresh_limit':       None if row[1] == 'moca-internal' else MONTHLY_REFRESH_LIMIT,
             })
@@ -2365,10 +2404,13 @@ def api_update_workspace(workspace_id):
     brand_config, feature_flags, hide_self_carrier, active."""
     data = request.get_json(force=True) or {}
     allowed = {'name', 'mvno_carrier', 'brand_config', 'feature_flags',
-               'hide_self_carrier', 'active', 'trial_ends_at', 'visible_carriers'}
+               'hide_self_carrier', 'active', 'trial_ends_at', 'visible_carriers',
+               'digest_frequency'}
     updates = {k: v for k, v in data.items() if k in allowed}
     if not updates:
         return jsonify({"error": "no updatable fields provided"}), 400
+    if 'digest_frequency' in updates and updates['digest_frequency'] not in ('weekly', 'monthly', 'off'):
+        return jsonify({"error": "digest_frequency must be weekly/monthly/off"}), 400
     sets, params = [], []
     for k, v in updates.items():
         if k in ('brand_config', 'feature_flags'):
@@ -2660,24 +2702,26 @@ def api_trigger_digest(workspace_id):
         cur = conn.cursor()
         cur.execute("""
             SELECT name, mvno_carrier, hide_self_carrier,
-                   COALESCE(visible_carriers, '[]'::jsonb)
+                   COALESCE(visible_carriers, '[]'::jsonb),
+                   COALESCE(brand_config, '{}'::jsonb)
             FROM public.workspaces WHERE id = %s AND active = TRUE
         """, (workspace_id,))
         row = cur.fetchone()
         if not row:
             conn.close()
             return jsonify({"error": "workspace not found or inactive"}), 404
-        ws_name, mvno_carrier, hide_self, vc_raw = row
+        ws_name, mvno_carrier, hide_self, vc_raw, bc_raw = row
         visible_carriers = json.loads(vc_raw) if isinstance(vc_raw, str) else (list(vc_raw) if vc_raw else [])
+        brand_config = json.loads(bc_raw) if isinstance(bc_raw, str) else (dict(bc_raw) if bc_raw else {})
         cur.execute("""
             SELECT u.email FROM auth.users u
             JOIN public.user_roles r ON r.user_id = u.id
-            WHERE r.workspace_id = %s
+            WHERE r.workspace_id = %s AND COALESCE(r.digest_opt_out, FALSE) = FALSE
         """, (workspace_id,))
         emails = [r[0] for r in cur.fetchall() if r[0]]
         conn.close()
         if not emails:
-            return jsonify({"error": "no users in workspace"}), 400
+            return jsonify({"error": "no users in workspace (or all opted out)"}), 400
         all_changes = []
         for ptype in ('domestic', 'abroad', 'global'):
             ch = _ghc('', ptype, _from, '', db_path=_db_path())
@@ -2688,7 +2732,7 @@ def api_trigger_digest(workspace_id):
             all_changes.extend(ch)
         if not all_changes:
             return jsonify({"status": "skipped", "reason": "no changes in last 7 days"})
-        ok = _send_digest(emails, ws_name, all_changes, _cfg)
+        ok = _send_digest(emails, ws_name, all_changes, _cfg, brand_config=brand_config)
         actor = _current_user_email() or ''
         log_audit('digest_sent', actor_email=actor, workspace_id=workspace_id,
                   details=f'{len(all_changes)} changes → {len(emails)} users', db_path=_db_path())
@@ -3166,18 +3210,27 @@ if __name__ == "__main__":
             cur.execute("""
                 SELECT id, name, mvno_carrier,
                        hide_self_carrier,
-                       COALESCE(visible_carriers, '[]'::jsonb)
+                       COALESCE(visible_carriers, '[]'::jsonb),
+                       COALESCE(brand_config, '{}'::jsonb),
+                       COALESCE(digest_frequency, 'weekly')
                 FROM public.workspaces WHERE active = TRUE
             """)
             workspaces = cur.fetchall()
-            for ws_id, ws_name, mvno_carrier, hide_self, vc_raw in workspaces:
+            today_day = _dt.now().day
+            is_first_sunday = today_day <= 7  # monthly digests run only on the 1st Sunday
+            for ws_id, ws_name, mvno_carrier, hide_self, vc_raw, bc_raw, digest_freq in workspaces:
                 try:
+                    if digest_freq == 'off':
+                        continue
+                    if digest_freq == 'monthly' and not is_first_sunday:
+                        continue
                     visible_carriers = json.loads(vc_raw) if isinstance(vc_raw, str) else (list(vc_raw) if vc_raw else [])
+                    brand_config = json.loads(bc_raw) if isinstance(bc_raw, str) else (dict(bc_raw) if bc_raw else {})
                     # Get all user emails for this workspace
                     cur.execute("""
                         SELECT u.email FROM auth.users u
                         JOIN public.user_roles r ON r.user_id = u.id
-                        WHERE r.workspace_id = %s
+                        WHERE r.workspace_id = %s AND COALESCE(r.digest_opt_out, FALSE) = FALSE
                     """, (ws_id,))
                     emails = [r[0] for r in cur.fetchall() if r[0]]
                     if not emails:
@@ -3194,7 +3247,7 @@ if __name__ == "__main__":
                         all_changes.extend(ch)
                     if not all_changes:
                         continue
-                    _send_digest(emails, ws_name, all_changes, _cfg)
+                    _send_digest(emails, ws_name, all_changes, _cfg, brand_config=brand_config)
                     logger.info(f"Weekly digest sent to {len(emails)} users in workspace {ws_name!r}")
                 except Exception as _we:
                     logger.error(f"Weekly digest failed for workspace {ws_name!r}: {_we}", exc_info=True)
@@ -3207,8 +3260,10 @@ if __name__ == "__main__":
         _mc = _supabase_conn(); _mc.autocommit = True; _mcu = _mc.cursor()
         _mcu.execute("ALTER TABLE public.workspaces ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ")
         _mcu.execute("ALTER TABLE public.workspaces ADD COLUMN IF NOT EXISTS visible_carriers JSONB DEFAULT '[]'")
+        _mcu.execute("ALTER TABLE public.workspaces ADD COLUMN IF NOT EXISTS digest_frequency TEXT DEFAULT 'weekly'")
+        _mcu.execute("ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS digest_opt_out BOOLEAN DEFAULT FALSE")
         _mc.close()
-        logger.info("Supabase migration: trial_ends_at + visible_carriers columns ensured")
+        logger.info("Supabase migration: trial_ends_at + visible_carriers + digest prefs columns ensured")
     except Exception as _me:
         logger.warning(f"Supabase migration skipped: {_me}")
 
