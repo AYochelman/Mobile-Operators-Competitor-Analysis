@@ -162,18 +162,6 @@ export default function Navbar() {
                 >
                   יומן
                 </NavLink>
-                <NavLink
-                  to="/admin/health"
-                  className={({ isActive }) =>
-                    `px-3 py-1.5 text-[13px] font-medium transition-all duration-150 relative ${
-                      isActive
-                        ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-3 after:h-[1.5px] after:bg-moca-bolt after:rounded-full'
-                        : 'text-moca-muted hover:text-moca-bolt'
-                    }`
-                  }
-                >
-                  Health
-                </NavLink>
               </>
             )}
           </nav>
