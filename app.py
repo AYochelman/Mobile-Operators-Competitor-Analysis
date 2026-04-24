@@ -2602,6 +2602,50 @@ def api_create_invite(workspace_id):
     return jsonify({"token": token, "role": role}), 201
 
 
+@app.route("/api/workspaces/<workspace_id>/invite-bulk", methods=["POST"])
+@require_auth
+@limiter.limit("5 per minute")
+def api_create_invite_bulk(workspace_id):
+    """Bulk-create invite links. Body: {emails: [...], role: 'admin'|'viewer'}.
+    Emails are only used as labels (the token itself is not bound to an email) —
+    useful for onboarding a whole team at once with one copy-ready table."""
+    if not _can_manage_workspace_users(workspace_id):
+        return jsonify({"error": "Unauthorized"}), 403
+    data = request.get_json(force=True) or {}
+    role = data.get('role', 'viewer')
+    if role not in ('admin', 'viewer'):
+        return jsonify({"error": "role must be 'admin' or 'viewer'"}), 400
+    raw_emails = data.get('emails') or []
+    if not isinstance(raw_emails, list) or not raw_emails:
+        return jsonify({"error": "emails array required"}), 400
+    if len(raw_emails) > 50:
+        return jsonify({"error": "max 50 emails per batch"}), 400
+    import re as _re
+    email_rx = _re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+    creator = _current_user_email() or ''
+    results = []
+    seen = set()
+    for raw in raw_emails:
+        email = (raw or '').strip().lower()
+        if not email or email in seen:
+            continue
+        seen.add(email)
+        if not email_rx.match(email):
+            results.append({"email": email, "error": "invalid email"})
+            continue
+        try:
+            token = create_workspace_invite(workspace_id, role=role, created_by=creator, db_path=_db_path())
+            results.append({"email": email, "token": token})
+        except Exception as e:
+            logger.error(f"bulk invite create failed for {email}: {e}")
+            results.append({"email": email, "error": "could not create"})
+    ok_count = sum(1 for r in results if r.get('token'))
+    if ok_count > 0:
+        log_audit('invite_created', actor_email=creator, workspace_id=workspace_id,
+                  details=f'bulk: {ok_count} invites, role={role}', db_path=_db_path())
+    return jsonify({"role": role, "results": results, "created": ok_count}), 201
+
+
 @app.route("/api/invite/<token>", methods=["GET"])
 @limiter.limit("30 per minute")
 def api_get_invite(token):

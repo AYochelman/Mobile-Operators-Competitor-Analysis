@@ -116,9 +116,10 @@ export const api = {
   getAuditLog: (queryString = '') => fetchApi(`/api/audit-log${queryString}`),
 
   // Invite links
-  createInvite:  (workspaceId, role) => fetchApi(`/api/workspaces/${workspaceId}/invite`, { method: 'POST', body: JSON.stringify({ role }) }),
-  getInvite:     (token) => fetchApi(`/api/invite/${token}`),
-  acceptInvite:  (token) => fetchApi(`/api/invite/${token}/accept`, { method: 'POST' }),
+  createInvite:     (workspaceId, role) => fetchApi(`/api/workspaces/${workspaceId}/invite`, { method: 'POST', body: JSON.stringify({ role }) }),
+  createInviteBulk: (workspaceId, emails, role) => fetchApi(`/api/workspaces/${workspaceId}/invite-bulk`, { method: 'POST', body: JSON.stringify({ emails, role }) }),
+  getInvite:        (token) => fetchApi(`/api/invite/${token}`),
+  acceptInvite:     (token) => fetchApi(`/api/invite/${token}/accept`, { method: 'POST' }),
 
   // Email digest — super_admin only
   triggerDigest: (workspaceId) => fetchApi(`/api/workspaces/${workspaceId}/trigger-digest`, { method: 'POST' }),

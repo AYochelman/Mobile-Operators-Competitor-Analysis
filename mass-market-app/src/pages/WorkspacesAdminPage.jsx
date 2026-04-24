@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Button from '../components/ui/Button'
 import { api } from '../lib/api'
+import { useAuth } from '../hooks/useAuth'
 import { getMvnoColors, isKnownMvnoPrimary } from '../data/mvnoBrandColors'
 
 const DOMESTIC_CARRIERS = [
@@ -210,6 +211,8 @@ function trialBadge(ws) {
 }
 
 function WorkspaceRow({ ws, onChange }) {
+  const { enterViewAs } = useAuth()
+  const navigate = useNavigate()
   const [expanded, setExpanded]   = useState(false)
   const [editing, setEditing]     = useState(false)
   const [form, setForm]           = useState({
@@ -236,6 +239,10 @@ function WorkspaceRow({ ws, onChange }) {
   const [copied, setCopied]           = useState(false)
   const [digestSending, setDigestSending] = useState(false)
   const [digestResult, setDigestResult]   = useState(null)
+  const [bulkMode, setBulkMode]           = useState(false)
+  const [bulkEmails, setBulkEmails]       = useState('')
+  const [bulkResults, setBulkResults]     = useState(null)
+  const [bulkCopiedAll, setBulkCopiedAll] = useState(false)
 
   const sendDigest = async () => {
     setDigestSending(true); setDigestResult(null)
@@ -263,6 +270,32 @@ function WorkspaceRow({ ws, onChange }) {
     } finally {
       setInviting(false)
     }
+  }
+
+  const generateBulk = async () => {
+    const emails = bulkEmails.split(/[\s,;\n]+/).map(s => s.trim()).filter(Boolean)
+    if (emails.length === 0) { setInviteErr('הדבק לפחות אימייל אחד'); return }
+    setInviting(true); setInviteErr(null); setBulkResults(null); setBulkCopiedAll(false)
+    try {
+      const res = await api.createInviteBulk(ws.id, emails, inviteRole)
+      setBulkResults(res.results || [])
+    } catch (e) {
+      setInviteErr(e.message)
+    } finally {
+      setInviting(false)
+    }
+  }
+
+  const copyAllBulk = () => {
+    if (!bulkResults) return
+    const rows = bulkResults
+      .filter(r => r.token)
+      .map(r => `${r.email}\t${window.location.origin}/invite/${r.token}`)
+      .join('\n')
+    navigator.clipboard.writeText(rows).then(() => {
+      setBulkCopiedAll(true)
+      setTimeout(() => setBulkCopiedAll(false), 2500)
+    })
   }
 
   const copyInviteLink = () => {
@@ -386,6 +419,25 @@ function WorkspaceRow({ ws, onChange }) {
           ) : (
             <>
               <Button onClick={() => setEditing(true)} variant="ghost" size="sm">עריכה</Button>
+              <Button
+                onClick={() => {
+                  enterViewAs({
+                    id: ws.id, slug: ws.slug, name: ws.name,
+                    mvno_carrier: ws.mvno_carrier,
+                    brand_config: ws.brand_config || {},
+                    feature_flags: ws.feature_flags || {},
+                    hide_self_carrier: ws.hide_self_carrier,
+                    visible_carriers: ws.visible_carriers || [],
+                    active: true,
+                  })
+                  navigate('/')
+                }}
+                variant="ghost"
+                size="sm"
+                title="צפה באפליקציה כפי שמשתמש של ה-workspace רואה אותה"
+              >
+                צפה כ
+              </Button>
               <Button onClick={() => { setInviteOpen(o => !o); setInviteLink(null); setInviteErr(null) }} variant="ghost" size="sm">
                 {inviteOpen ? 'סגור הזמנה' : 'הזמן משתמש'}
               </Button>
@@ -406,34 +458,113 @@ function WorkspaceRow({ ws, onChange }) {
       )}
       {inviteOpen && (
         <div className="bg-moca-cream/50 rounded-lg p-4 mt-3">
-          <h4 className="text-sm font-semibold mb-3">הזמנת משתמש חדש</h4>
-          <div className="flex gap-2 items-center flex-wrap">
-            <select value={inviteRole} onChange={e => { setInviteRole(e.target.value); setInviteLink(null) }}
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold">הזמנת משתמש חדש</h4>
+            <div className="flex bg-white rounded-lg border border-moca-border overflow-hidden text-xs">
+              <button
+                onClick={() => { setBulkMode(false); setBulkResults(null); setInviteErr(null) }}
+                className={`px-3 py-1 transition-colors ${!bulkMode ? 'bg-moca-bolt text-white' : 'text-gray-600 hover:bg-moca-cream'}`}
+              >יחיד</button>
+              <button
+                onClick={() => { setBulkMode(true); setInviteLink(null); setInviteErr(null) }}
+                className={`px-3 py-1 transition-colors ${bulkMode ? 'bg-moca-bolt text-white' : 'text-gray-600 hover:bg-moca-cream'}`}
+              >Bulk</button>
+            </div>
+          </div>
+
+          <div className="flex gap-2 items-center flex-wrap mb-2">
+            <select value={inviteRole} onChange={e => { setInviteRole(e.target.value); setInviteLink(null); setBulkResults(null) }}
               className="px-2 py-1.5 text-sm border border-moca-border rounded">
               <option value="viewer">viewer — צופה</option>
               <option value="admin">admin — מנהל</option>
             </select>
-            <Button onClick={generateInvite} disabled={inviting} variant="primary" size="sm">
-              {inviting ? 'יוצר…' : 'צור קישור הזמנה'}
-            </Button>
+            {!bulkMode ? (
+              <Button onClick={generateInvite} disabled={inviting} variant="primary" size="sm">
+                {inviting ? 'יוצר…' : 'צור קישור הזמנה'}
+              </Button>
+            ) : (
+              <Button onClick={generateBulk} disabled={inviting} variant="primary" size="sm">
+                {inviting ? 'יוצר…' : 'צור הזמנות להמונים'}
+              </Button>
+            )}
           </div>
-          {inviteErr && <p className="text-xs text-red-600 mt-2">{inviteErr}</p>}
-          {inviteLink && (
-            <div className="mt-3 flex items-center gap-2 flex-wrap">
-              <input readOnly value={inviteLink} dir="ltr"
-                className="flex-1 min-w-0 px-2 py-1.5 text-xs border border-moca-border rounded bg-white font-mono" />
-              <button onClick={copyInviteLink}
-                className={`text-xs px-3 py-1.5 rounded border transition-colors ${
-                  copied
-                    ? 'bg-emerald-100 border-emerald-300 text-emerald-700'
-                    : 'bg-white border-moca-border text-moca-text hover:border-moca-bolt'
-                }`}>
-                {copied ? '✓ הועתק' : 'העתק'}
-              </button>
-            </div>
+
+          {bulkMode && !bulkResults && (
+            <>
+              <textarea
+                value={bulkEmails}
+                onChange={e => setBulkEmails(e.target.value)}
+                placeholder={"הדבק מיילים — אחד בכל שורה, מופרדים בפסיק או ברווח\nname1@partner.co.il\nname2@partner.co.il"}
+                rows={5}
+                dir="ltr"
+                className="w-full px-2 py-1.5 text-xs border border-moca-border rounded bg-white font-mono"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">מקסימום 50 מיילים · לינק ייחודי לכל אחד · לא נשלח מייל אוטומטי</p>
+            </>
           )}
-          {inviteLink && (
-            <p className="text-xs text-gray-400 mt-1.5">תוקף 48 שעות · שימוש חד-פעמי</p>
+
+          {inviteErr && <p className="text-xs text-red-600 mt-2">{inviteErr}</p>}
+
+          {inviteLink && !bulkMode && (
+            <>
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
+                <input readOnly value={inviteLink} dir="ltr"
+                  className="flex-1 min-w-0 px-2 py-1.5 text-xs border border-moca-border rounded bg-white font-mono" />
+                <button onClick={copyInviteLink}
+                  className={`text-xs px-3 py-1.5 rounded border transition-colors ${
+                    copied
+                      ? 'bg-emerald-100 border-emerald-300 text-emerald-700'
+                      : 'bg-white border-moca-border text-moca-text hover:border-moca-bolt'
+                  }`}>
+                  {copied ? '✓ הועתק' : 'העתק'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-1.5">תוקף 7 ימים · שימוש חד-פעמי</p>
+            </>
+          )}
+
+          {bulkResults && bulkMode && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-gray-600">
+                  נוצרו <strong>{bulkResults.filter(r => r.token).length}</strong> הזמנות מתוך {bulkResults.length}
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={copyAllBulk}
+                    className={`text-[11px] px-2 py-1 rounded border transition-colors ${
+                      bulkCopiedAll
+                        ? 'bg-emerald-100 border-emerald-300 text-emerald-700'
+                        : 'bg-white border-moca-border text-moca-text hover:border-moca-bolt'
+                    }`}>
+                    {bulkCopiedAll ? '✓ הכל הועתק' : 'העתק הכל (TSV)'}
+                  </button>
+                  <button onClick={() => { setBulkResults(null); setBulkEmails('') }}
+                    className="text-[11px] text-gray-400 hover:text-moca-bolt px-1">
+                    חדש
+                  </button>
+                </div>
+              </div>
+              <div className="max-h-56 overflow-y-auto bg-white rounded border border-moca-border">
+                <table className="w-full text-xs">
+                  <tbody>
+                    {bulkResults.map((r, i) => (
+                      <tr key={i} className="border-b border-moca-border/30 last:border-0">
+                        <td className="py-1.5 px-2 text-gray-700 truncate max-w-[180px]" dir="ltr">{r.email}</td>
+                        <td className="py-1.5 px-2" dir="ltr">
+                          {r.token ? (
+                            <input readOnly value={`${window.location.origin}/invite/${r.token}`}
+                              className="w-full px-1.5 py-0.5 text-[11px] border border-moca-border/40 rounded bg-gray-50 font-mono"
+                              onClick={e => e.target.select()} />
+                          ) : (
+                            <span className="text-red-500 text-[11px]">{r.error || 'שגיאה'}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
         </div>
       )}

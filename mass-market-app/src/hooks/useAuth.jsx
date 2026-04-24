@@ -50,12 +50,31 @@ async function fetchContextFromBackend(accessToken, userEmail) {
   }
 }
 
+const VIEW_AS_STORAGE_KEY = 'moca_view_as_workspace'
+
 export function AuthProvider({ children }) {
   const [user, setUser]           = useState(null)
   const [role, setRole]           = useState(null)
   const [workspace, setWorkspace] = useState(null)
   const [workspaceId, setWorkspaceId] = useState(null)
   const [loading, setLoading]     = useState(true)
+  const [viewAs, setViewAs]       = useState(() => {
+    try {
+      const raw = sessionStorage.getItem(VIEW_AS_STORAGE_KEY)
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  })
+
+  const enterViewAs = (ws) => {
+    try { sessionStorage.setItem(VIEW_AS_STORAGE_KEY, JSON.stringify(ws)) } catch {}
+    setViewAs(ws)
+  }
+  const exitViewAs = () => {
+    try { sessionStorage.removeItem(VIEW_AS_STORAGE_KEY) } catch {}
+    setViewAs(null)
+  }
 
   useEffect(() => {
     if (!supabase) {
@@ -137,16 +156,28 @@ export function AuthProvider({ children }) {
     setUser(null)
     setRole(null)
     setWorkspace(null)
+    setViewAs(null)
+    try { sessionStorage.removeItem(VIEW_AS_STORAGE_KEY) } catch {}
     localStorage.removeItem('auth_token')
     // Remember explicit logout for the tab session so DEV_MODE doesn't auto-re-login.
     sessionStorage.setItem('dev_logged_out', '1')
     api.clearSessionCookie().catch(() => {})
   }
 
+  // View-as: super_admin may impersonate a workspace's visual context
+  // (brand, feature_flags, visible_carriers). Role stays super_admin so they
+  // can still navigate admin pages and exit view-as at any time.
+  const isSuperAdmin = role === 'super_admin'
+  const effectiveWorkspace = (isSuperAdmin && viewAs) ? viewAs : workspace
+
   const value = {
-    user, role, workspace, workspaceId, loading, signIn, signOut,
+    user, role, workspaceId, loading, signIn, signOut,
+    workspace: effectiveWorkspace,
+    realWorkspace: workspace,
+    viewAs: (isSuperAdmin ? viewAs : null),
+    enterViewAs, exitViewAs,
     isAdmin:      role === 'admin' || role === 'super_admin',
-    isSuperAdmin: role === 'super_admin',
+    isSuperAdmin,
   }
   return (
     <AuthContext.Provider value={value}>
