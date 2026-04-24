@@ -233,6 +233,20 @@ function WorkspaceRow({ ws, onChange }) {
   const [inviting, setInviting]       = useState(false)
   const [inviteErr, setInviteErr]     = useState(null)
   const [copied, setCopied]           = useState(false)
+  const [digestSending, setDigestSending] = useState(false)
+  const [digestResult, setDigestResult]   = useState(null)
+
+  const sendDigest = async () => {
+    setDigestSending(true); setDigestResult(null)
+    try {
+      const res = await api.triggerDigest(ws.id)
+      setDigestResult({ ok: true, msg: `נשלח ל-${res.emails?.length || 0} נמענים` })
+    } catch (e) {
+      setDigestResult({ ok: false, msg: e.message })
+    } finally {
+      setDigestSending(false)
+    }
+  }
 
   const generateInvite = async () => {
     setInviting(true); setInviteErr(null); setInviteLink(null); setCopied(false)
@@ -368,6 +382,9 @@ function WorkspaceRow({ ws, onChange }) {
               <Button onClick={() => { setInviteOpen(o => !o); setInviteLink(null); setInviteErr(null) }} variant="ghost" size="sm">
                 {inviteOpen ? 'סגור הזמנה' : 'הזמן משתמש'}
               </Button>
+              <Button onClick={sendDigest} disabled={digestSending} variant="ghost" size="sm">
+                {digestSending ? 'שולח…' : 'שלח דייג׳סט'}
+              </Button>
               <Button onClick={() => setExpanded(e => !e)} variant="ghost" size="sm">
                 {expanded ? 'סגור משתמשים' : 'ניהול משתמשים'}
               </Button>
@@ -375,6 +392,11 @@ function WorkspaceRow({ ws, onChange }) {
           )}
         </div>
       </div>
+      {digestResult && (
+        <p className={`text-xs mt-2 px-3 py-1.5 rounded-lg ${
+          digestResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
+        }`}>{digestResult.msg}</p>
+      )}
       {inviteOpen && (
         <div className="bg-moca-cream/50 rounded-lg p-4 mt-3">
           <h4 className="text-sm font-semibold mb-3">הזמנת משתמש חדש</h4>
