@@ -2241,7 +2241,7 @@ def api_list_workspaces():
                 'trial_ends_at':     trial_ends_at.isoformat() if trial_ends_at else None,
                 'trial_expired':     trial_expired,
                 'refresh_count_month': refresh_by_ws.get(ws_id, 0),
-                'refresh_limit':       MONTHLY_REFRESH_LIMIT,
+                'refresh_limit':       None if row[1] == 'moca-internal' else MONTHLY_REFRESH_LIMIT,
             })
         return jsonify(workspaces)
     except Exception as e:
