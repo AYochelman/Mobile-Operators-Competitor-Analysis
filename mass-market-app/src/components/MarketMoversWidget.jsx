@@ -16,30 +16,44 @@ function formatPrice(p) {
   return `₪${Number(p).toFixed(Number(p) % 1 === 0 ? 0 : 2)}`
 }
 
-function MoverCard({ mover, onClick, visibleCarriers, isAllowedCarrier }) {
+function MoverCard({ mover, onClick, isAllowedCarrier }) {
   const drop = mover.pct_change < 0
   const pctLabel = `${drop ? '' : '+'}${mover.pct_change}%`
   const label = CARRIER_LABELS[mover.carrier] || mover.carrier
+  const accentBg   = drop ? 'bg-emerald-500' : 'bg-red-500'
+  const priceClr   = drop ? 'text-emerald-700' : 'text-red-700'
+  const badgeClr   = drop
+    ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-200'
+    : 'bg-red-600 text-white shadow-sm shadow-red-200'
   return (
     <button
       onClick={() => onClick?.(mover)}
       disabled={!isAllowedCarrier}
-      className={`relative flex-shrink-0 w-[200px] bg-white border border-moca-border/60 rounded-xl p-3 text-right hover:border-moca-bolt/40 hover:shadow-sm transition-all ${!isAllowedCarrier ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+      className={`relative flex-shrink-0 w-[215px] bg-white border border-gray-200 rounded-xl p-3.5 pr-5 text-right overflow-hidden transition-all
+        ${!isAllowedCarrier
+          ? 'opacity-40 cursor-not-allowed'
+          : 'cursor-pointer hover:border-gray-300 hover:shadow-md hover:-translate-y-0.5'}`}
       title={mover.plan_name}
     >
-      <div className="flex items-center justify-between mb-1.5">
-        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-          drop ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-        }`}>
-          {drop ? '↓' : '↑'} {pctLabel}
+      {/* Side accent stripe */}
+      <span className={`absolute inset-y-0 right-0 w-1.5 ${accentBg}`} />
+
+      <div className="flex items-center justify-between mb-2">
+        <span className={`inline-flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-full ${badgeClr}`}>
+          <span className="text-xs">{drop ? '↓' : '↑'}</span>
+          {pctLabel}
         </span>
-        <span className="text-[10px] text-gray-400">{TYPE_LABEL[mover.plan_type] || mover.plan_type}</span>
+        <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide bg-gray-100 rounded px-1.5 py-0.5">
+          {TYPE_LABEL[mover.plan_type] || mover.plan_type}
+        </span>
       </div>
-      <p className="text-xs font-semibold text-gray-800 truncate mb-1">{label}</p>
-      <p className="text-[11px] text-gray-500 truncate leading-tight">{mover.plan_name}</p>
-      <div className="mt-2 flex items-baseline gap-2 justify-end" dir="ltr">
-        <span className="text-[11px] text-gray-400 line-through">{formatPrice(mover.old_price)}</span>
-        <span className={`text-sm font-bold ${drop ? 'text-emerald-600' : 'text-red-600'}`}>{formatPrice(mover.new_price)}</span>
+
+      <p className="text-[13px] font-bold text-gray-900 truncate">{label}</p>
+      <p className="text-[11px] text-gray-600 truncate leading-tight mt-0.5">{mover.plan_name}</p>
+
+      <div className="mt-2.5 pt-2 border-t border-gray-100 flex items-baseline gap-2 justify-end" dir="ltr">
+        <span className="text-[11px] text-gray-400 line-through decoration-2">{formatPrice(mover.old_price)}</span>
+        <span className={`text-base font-extrabold ${priceClr}`}>{formatPrice(mover.new_price)}</span>
       </div>
     </button>
   )
