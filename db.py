@@ -294,6 +294,12 @@ def init_db(db_path=None):
                 conn.commit()
             except Exception:
                 pass  # column already exists
+        # Migration: store the carrier hidden per subscription for workspace-scoped push
+        try:
+            conn.execute("ALTER TABLE push_subscriptions ADD COLUMN hidden_carrier TEXT")
+            conn.commit()
+        except Exception:
+            pass  # column already exists
     finally:
         conn.close()
 
@@ -861,13 +867,13 @@ def save_changes(changes, db_path=None):
         conn.close()
 
 
-def save_push_subscription(endpoint, p256dh, auth, user_email=None, db_path=None):
+def save_push_subscription(endpoint, p256dh, auth, user_email=None, hidden_carrier=None, db_path=None):
     conn = _connect(db_path)
     try:
         conn.execute(
             "INSERT OR REPLACE INTO push_subscriptions "
-            "(endpoint, p256dh, auth, user_email, created_at) VALUES (?, ?, ?, ?, ?)",
-            (endpoint, p256dh, auth, user_email, datetime.now().isoformat())
+            "(endpoint, p256dh, auth, user_email, hidden_carrier, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (endpoint, p256dh, auth, user_email, hidden_carrier, datetime.now().isoformat())
         )
         conn.commit()
     finally:
@@ -900,15 +906,15 @@ def get_push_subscriptions(user_email=None, db_path=None):
     try:
         if user_email:
             rows = conn.execute(
-                "SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_email=?",
+                "SELECT endpoint, p256dh, auth, hidden_carrier FROM push_subscriptions WHERE user_email=?",
                 (user_email,)
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT endpoint, p256dh, auth FROM push_subscriptions"
+                "SELECT endpoint, p256dh, auth, hidden_carrier FROM push_subscriptions"
             ).fetchall()
         return [
-            {"endpoint": r[0], "keys": {"p256dh": r[1], "auth": r[2]}}
+            {"endpoint": r[0], "keys": {"p256dh": r[1], "auth": r[2]}, "hidden_carrier": r[3]}
             for r in rows
         ]
     finally:

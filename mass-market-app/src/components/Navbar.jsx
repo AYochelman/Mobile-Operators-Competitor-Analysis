@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import Logo from './Logo'
 
 const NAV_ICONS = {
@@ -48,10 +49,22 @@ const NAV_ITEMS = [
   { to: '/archive', label: 'ארכיב' },
 ]
 
+const FLAG_FOR_PATH = {
+  '/compare':           'hide_compare',
+  '/alerts':            'hide_alerts',
+  '/executive-summary': 'hide_executive_summary',
+  '/archive':           'hide_archive',
+}
+
 export default function Navbar() {
   const { user, isAdmin, isSuperAdmin, signOut, workspace } = useAuth()
+  const flags = useFeatureFlags()
   const appTitle = workspace?.brand_config?.app_title || null
   const logoUrl  = workspace?.brand_config?.logo_url  || null
+  const visibleNav = NAV_ITEMS.filter(item => {
+    const flag = FLAG_FOR_PATH[item.to]
+    return !flag || !flags[flag]
+  })
 
   return (
     <>
@@ -65,7 +78,7 @@ export default function Navbar() {
 
           {/* Nav links - desktop */}
           <nav className="hidden md:flex items-center gap-0.5">
-            {NAV_ITEMS.map(item => (
+            {visibleNav.map(item => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -81,6 +94,20 @@ export default function Navbar() {
                 {item.label}
               </NavLink>
             ))}
+            {isAdmin && !isSuperAdmin && (
+              <NavLink
+                to="/workspace/users"
+                className={({ isActive }) =>
+                  `px-3 py-1.5 text-[13px] font-medium transition-all duration-150 relative ${
+                    isActive
+                      ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-3 after:h-[1.5px] after:bg-moca-bolt after:rounded-full'
+                      : 'text-moca-muted hover:text-moca-bolt'
+                  }`
+                }
+              >
+                הצוות
+              </NavLink>
+            )}
             {isAdmin && (
               <NavLink
                 to="/settings"
@@ -132,7 +159,7 @@ export default function Navbar() {
       {/* Mobile bottom bar */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 backdrop-blur-md border-t border-moca-border/60">
         <div className="flex items-center justify-around h-14">
-          {NAV_ITEMS.map(item => (
+          {visibleNav.map(item => (
             <NavLink
               key={item.to}
               to={item.to}

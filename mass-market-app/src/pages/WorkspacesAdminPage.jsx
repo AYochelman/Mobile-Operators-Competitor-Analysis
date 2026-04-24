@@ -19,6 +19,20 @@ function withMvnoColors(form, newMvno) {
   }
 }
 
+const FLAG_DEFINITIONS = [
+  { key: 'hide_abroad',            label: 'הסתר טאב חו"ל' },
+  { key: 'hide_global',            label: 'הסתר טאב גלובלי' },
+  { key: 'hide_content',           label: 'הסתר טאב תוכן' },
+  { key: 'hide_banners',           label: 'הסתר טאב באנרים' },
+  { key: 'hide_history',           label: 'הסתר טאב היסטוריה' },
+  { key: 'hide_news',              label: 'הסתר טאב חדשות' },
+  { key: 'hide_compare',           label: 'הסתר עמוד השוואה' },
+  { key: 'hide_alerts',            label: 'הסתר עמוד התראות' },
+  { key: 'hide_executive_summary', label: 'הסתר תקציר מנהלים' },
+  { key: 'hide_archive',           label: 'הסתר ארכיב' },
+  { key: 'hide_chat',              label: "הסתר צ'אט AI" },
+]
+
 const MVNO_OPTIONS = [
   { id: '',          label: '— ללא —' },
   { id: 'partner',   label: 'פרטנר' },
@@ -184,6 +198,7 @@ function WorkspaceRow({ ws, onChange }) {
     secondary_color:   ws.brand_config?.secondary_color || '',
     app_title:         ws.brand_config?.app_title || '',
     logo_url:          ws.brand_config?.logo_url || '',
+    feature_flags:     ws.feature_flags || {},
   })
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState(null)
@@ -202,6 +217,7 @@ function WorkspaceRow({ ws, onChange }) {
           app_title:       form.app_title || null,
           logo_url:        form.logo_url || null,
         },
+        feature_flags: form.feature_flags,
       })
       setEditing(false)
       await onChange?.()
@@ -267,6 +283,7 @@ function WorkspaceRow({ ws, onChange }) {
                 secondary_color: ws.brand_config?.secondary_color || '',
                 app_title: ws.brand_config?.app_title || '',
                 logo_url: ws.brand_config?.logo_url || '',
+                feature_flags: ws.feature_flags || {},
               }) }} variant="ghost" size="sm">ביטול</Button>
             </>
           ) : (
@@ -304,6 +321,20 @@ function WorkspaceRow({ ws, onChange }) {
               placeholder="https://..."
               className="w-full px-3 py-1.5 border border-moca-border rounded" />
           </label>
+          <div className="col-span-2 pt-2 border-t border-moca-border/30">
+            <p className="text-sm font-medium text-gray-700 mb-2">הסתרת תכנים (Feature Flags)</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {FLAG_DEFINITIONS.map(({ key, label }) => (
+                <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={!!form.feature_flags?.[key]}
+                    onChange={e => setForm({ ...form, feature_flags: {
+                      ...form.feature_flags, [key]: e.target.checked || undefined
+                    }})} />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
         )
       })()}
@@ -321,6 +352,7 @@ export default function WorkspacesAdminPage() {
   const [form, setForm]         = useState({
     slug: '', name: '', mvno_carrier: '', hide_self_carrier: true,
     primary_color: '', secondary_color: '', app_title: '', logo_url: '',
+    feature_flags: {},
   })
   const [createError, setCreateError] = useState(null)
   const [submitting, setSubmitting]   = useState(false)
@@ -353,9 +385,10 @@ export default function WorkspacesAdminPage() {
           app_title:       form.app_title || null,
           logo_url:        form.logo_url || null,
         },
+        feature_flags: form.feature_flags,
       })
       setForm({ slug: '', name: '', mvno_carrier: '', hide_self_carrier: true,
-        primary_color: '', secondary_color: '', app_title: '', logo_url: '' })
+        primary_color: '', secondary_color: '', app_title: '', logo_url: '', feature_flags: {} })
       setCreating(false)
       await load()
     } catch (e) {

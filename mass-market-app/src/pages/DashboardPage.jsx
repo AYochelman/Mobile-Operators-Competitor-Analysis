@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
 import { useHiddenCarrier } from '../hooks/useHiddenCarrier'
+import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import * as XLSX from 'xlsx'
 import PlanCard from '../components/PlanCard'
 import BannerCard from '../components/BannerCard'
@@ -191,8 +192,18 @@ export default function DashboardPage() {
   const { isAdmin } = useAuth()
   const { scraping, countdown, triggerScrape } = useScrape()
   const hiddenCarrier = useHiddenCarrier()
+  const flags = useFeatureFlags()
+  const visibleTabs = useMemo(() => TABS.filter(t => !flags['hide_' + t.id]), [flags])
   const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTab] = useState(searchParams.get('tab') || 'domestic')
+
+  // If active tab gets hidden by feature flags, fall back to first visible tab
+  useEffect(() => {
+    if (flags['hide_' + tab]) {
+      const first = TABS.find(t => !flags['hide_' + t.id])
+      if (first) setTab(first.id)
+    }
+  }, [flags]) // eslint-disable-line react-hooks/exhaustive-deps
   const [loading, setLoading] = useState(true)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [plans, setPlans] = useState({ domestic: [], abroad: [], global: [], content: [] })
@@ -574,7 +585,7 @@ export default function DashboardPage() {
 
       {/* Tabs — slim underline style */}
       <div className="flex justify-center gap-0 mb-6 border-b border-gray-200">
-        {TABS.map(t => (
+        {visibleTabs.map(t => (
           <button
             key={t.id}
             onClick={() => { setTab(t.id); setVisibleCount(50); setFilter('carrier', 'all'); setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}

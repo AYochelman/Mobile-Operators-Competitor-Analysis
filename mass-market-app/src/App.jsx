@@ -13,6 +13,7 @@ import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage'
 import ArchivePage from './pages/ArchivePage'
 import SettingsPage from './pages/SettingsPage'
 import WorkspacesAdminPage from './pages/WorkspacesAdminPage'
+import WorkspaceUsersPage from './pages/WorkspaceUsersPage'
 import SuspendedPage from './pages/SuspendedPage'
 import NotFoundPage from './pages/NotFoundPage'
 import OfflineBanner from './components/OfflineBanner'
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="executive-summary" element={<ExecutiveSummaryPage />} />
           <Route path="archive" element={<ArchivePage />} />
           <Route path="settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
+          <Route path="workspace/users" element={<ProtectedRoute adminOnly><WorkspaceUsersPage /></ProtectedRoute>} />
           <Route path="admin/workspaces" element={<ProtectedRoute superAdminOnly><WorkspacesAdminPage /></ProtectedRoute>} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />

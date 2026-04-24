@@ -247,10 +247,18 @@ def send_push_notifications(changes, config, db_path=None):
     vapid_email = config.get("vapid_email", "mailto:alon.yoch@gmail.com")
     sent, stale = 0, []
     for sub in subscriptions:
+        hidden = sub.get("hidden_carrier")
+        visible = [c for c in changes if not hidden or c.get("carrier") != hidden]
+        if not visible:
+            continue
+        n_c = len({c["carrier"] for c in visible})
+        body = f"זוהו {len(visible)} שינויים ב-{n_c} חברות"
+        pld = json.dumps({"title": "השוואת סלולר", "body": body}, ensure_ascii=False)
+        sub_info = {"endpoint": sub["endpoint"], "keys": sub["keys"]}
         try:
             webpush(
-                subscription_info=sub,
-                data=payload,
+                subscription_info=sub_info,
+                data=pld,
                 vapid_private_key=vapid_private_key,
                 vapid_claims={"sub": vapid_email},
             )

@@ -188,6 +188,25 @@ def _current_user_email():
     return email or None
 
 
+def _can_manage_workspace_users(workspace_id):
+    """True if the current request may manage users for the given workspace.
+    API-key (server-to-server): always allowed.
+    super_admin: always allowed.
+    admin: only when their own workspace_id matches the target workspace.
+    """
+    payload = getattr(g, 'jwt_payload', None)
+    if payload is None:
+        return True  # API key — trusted server caller
+    email = (payload.get('email') or '').strip().lower()
+    ctx = _get_user_context(email)
+    role = ctx.get('role', 'viewer')
+    if role == 'super_admin':
+        return True
+    if role == 'admin' and str(ctx.get('workspace_id') or '') == str(workspace_id):
+        return True
+    return False
+
+
 def _hidden_carrier_for_request():
     """Resolve the self-carrier that should be omitted from responses for the
     current request, based on the authenticated user's workspace.
@@ -1795,7 +1814,15 @@ def api_push_subscribe():
     if user_email is None:
         # Server-to-server subscriptions must name their owner
         user_email = (data.get("user_email") or "").strip().lower() or None
-    save_push_subscription(endpoint, p256dh, auth, user_email=user_email, db_path=_db_path())
+    # Resolve the carrier this subscription should not receive push for
+    hidden_carrier = None
+    if user_email:
+        ctx = _get_user_context(user_email)
+        ws = ctx.get('workspace') or {}
+        if ws.get('hide_self_carrier') and ws.get('mvno_carrier'):
+            hidden_carrier = ws['mvno_carrier']
+    save_push_subscription(endpoint, p256dh, auth, user_email=user_email,
+                           hidden_carrier=hidden_carrier, db_path=_db_path())
     return jsonify({"status": "subscribed"}), 201
 
 
@@ -2140,10 +2167,12 @@ def api_update_workspace(workspace_id):
 
 
 @app.route("/api/workspaces/<workspace_id>/users", methods=["GET"])
-@require_super_admin
+@require_auth
 @limiter.limit("30 per minute")
 def api_workspace_users(workspace_id):
     """List users assigned to a workspace."""
+    if not _can_manage_workspace_users(workspace_id):
+        return jsonify({"error": "Unauthorized"}), 403
     try:
         conn = _supabase_conn()
         cur = conn.cursor()
@@ -2169,11 +2198,13 @@ def api_workspace_users(workspace_id):
 
 
 @app.route("/api/workspaces/<workspace_id>/users", methods=["POST"])
-@require_super_admin
+@require_auth
 @limiter.limit("20 per minute")
 def api_assign_workspace_user(workspace_id):
     """Assign an existing Supabase user (by email) to this workspace.
     Body: {email, role: 'admin'|'viewer'} (defaults to 'viewer')."""
+    if not _can_manage_workspace_users(workspace_id):
+        return jsonify({"error": "Unauthorized"}), 403
     data = request.get_json(force=True) or {}
     email = (data.get('email') or '').strip().lower()
     role = data.get('role', 'viewer')
@@ -2213,11 +2244,13 @@ def api_assign_workspace_user(workspace_id):
 
 
 @app.route("/api/workspaces/<workspace_id>/users/<user_id>", methods=["DELETE"])
-@require_super_admin
+@require_auth
 @limiter.limit("20 per minute")
 def api_unassign_workspace_user(workspace_id, user_id):
     """Unassign a user from a workspace by moving them to 'moca-internal' as viewer.
     We never orphan users (NULL workspace_id is reserved for super_admin)."""
+    if not _can_manage_workspace_users(workspace_id):
+        return jsonify({"error": "Unauthorized"}), 403
     try:
         conn = _supabase_conn()
         conn.autocommit = True
