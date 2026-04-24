@@ -1,7 +1,19 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import Button from '../components/ui/Button'
 import { api } from '../lib/api'
 import { getMvnoColors, isKnownMvnoPrimary } from '../data/mvnoBrandColors'
+
+const DOMESTIC_CARRIERS = [
+  { id: 'partner',   label: 'פרטנר' },
+  { id: 'pelephone', label: 'פלאפון' },
+  { id: 'hotmobile', label: 'הוט מובייל' },
+  { id: 'cellcom',   label: 'סלקום' },
+  { id: 'mobile019', label: '019' },
+  { id: 'xphone',    label: 'XPhone' },
+  { id: 'wecom',     label: 'We-Com' },
+  { id: 'neptucom',  label: 'Neptucom' },
+]
 
 // Switch MVNO in a form: auto-fill colors if the current primary is empty
 // or matches a known MVNO default (i.e. not a user-chosen custom color).
@@ -211,6 +223,7 @@ function WorkspaceRow({ ws, onChange }) {
     logo_url:          ws.brand_config?.logo_url || '',
     feature_flags:     ws.feature_flags || {},
     trial_ends_at:     ws.trial_ends_at ? ws.trial_ends_at.slice(0, 10) : '',
+    visible_carriers:  ws.visible_carriers || [],
   })
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState(null)
@@ -255,7 +268,8 @@ function WorkspaceRow({ ws, onChange }) {
           app_title:       form.app_title || null,
           logo_url:        form.logo_url || null,
         },
-        feature_flags: form.feature_flags,
+        feature_flags:     form.feature_flags,
+        visible_carriers:  form.visible_carriers,
       })
       setEditing(false)
       await onChange?.()
@@ -311,6 +325,11 @@ function WorkspaceRow({ ws, onChange }) {
                 </span>
               </span>
             )}
+            {!editing && ws.visible_carriers?.length > 0 && (
+              <span className="text-xs text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full px-2 py-0.5">
+                {ws.visible_carriers.length} ספקים גלויים
+              </span>
+            )}
             <label className="flex items-center gap-1 cursor-pointer">
               <input type="checkbox" checked={editing ? form.hide_self_carrier : ws.hide_self_carrier}
                 disabled={!editing}
@@ -338,8 +357,9 @@ function WorkspaceRow({ ws, onChange }) {
                 secondary_color: ws.brand_config?.secondary_color || '',
                 app_title: ws.brand_config?.app_title || '',
                 logo_url: ws.brand_config?.logo_url || '',
-                feature_flags: ws.feature_flags || {},
-                trial_ends_at: ws.trial_ends_at ? ws.trial_ends_at.slice(0, 10) : '',
+                feature_flags:    ws.feature_flags || {},
+                trial_ends_at:    ws.trial_ends_at ? ws.trial_ends_at.slice(0, 10) : '',
+                visible_carriers: ws.visible_carriers || [],
               }) }} variant="ghost" size="sm">ביטול</Button>
             </>
           ) : (
@@ -420,6 +440,25 @@ function WorkspaceRow({ ws, onChange }) {
               className="w-full px-3 py-1.5 border border-moca-border rounded" />
           </label>
           <div className="col-span-2 pt-2 border-t border-moca-border/30">
+            <p className="text-sm font-medium text-gray-700 mb-2">ספקים גלויים (ריק = כולם)</p>
+            <p className="text-xs text-gray-500 mb-2">אם נבחר לפחות ספק אחד — הworkspace יראה רק אותם.</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {DOMESTIC_CARRIERS.map(({ id, label }) => (
+                <label key={id} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox"
+                    checked={form.visible_carriers.includes(id)}
+                    onChange={e => {
+                      const next = e.target.checked
+                        ? [...form.visible_carriers, id]
+                        : form.visible_carriers.filter(c => c !== id)
+                      setForm({ ...form, visible_carriers: next })
+                    }} />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="col-span-2 pt-2 border-t border-moca-border/30">
             <p className="text-sm font-medium text-gray-700 mb-2">הסתרת תכנים (Feature Flags)</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {FLAG_DEFINITIONS.map(({ key, label }) => (
@@ -442,11 +481,60 @@ function WorkspaceRow({ ws, onChange }) {
   )
 }
 
+function StatsBar({ list, recentEvents }) {
+  const totalUsers   = list.reduce((s, w) => s + (w.user_count || 0), 0)
+  const activeCount  = list.filter(w => w.active).length
+  const expiringSoon = list.filter(w => {
+    if (!w.trial_ends_at || w.trial_expired) return false
+    return Math.ceil((new Date(w.trial_ends_at) - Date.now()) / 86400000) <= 7
+  }).length
+
+  const stats = [
+    { label: 'Workspaces', value: list.length, color: 'text-moca-text' },
+    { label: 'פעילים', value: activeCount, color: 'text-emerald-600' },
+    { label: 'משתמשים', value: totalUsers, color: 'text-blue-600' },
+    { label: 'פיילוט פג בקרוב', value: expiringSoon, color: expiringSoon > 0 ? 'text-amber-600' : 'text-gray-400' },
+  ]
+
+  return (
+    <div className="mb-6 space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {stats.map(s => (
+          <div key={s.label} className="bg-white border border-moca-border/60 rounded-xl p-4 text-center">
+            <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
+            <div className="text-xs text-gray-500 mt-1">{s.label}</div>
+          </div>
+        ))}
+      </div>
+      {recentEvents.length > 0 && (
+        <div className="bg-white border border-moca-border/60 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-gray-700">פעילות אחרונה</p>
+            <Link to="/admin/audit" className="text-xs text-moca-bolt hover:underline">כל הרשומות ←</Link>
+          </div>
+          <div className="space-y-1.5">
+            {recentEvents.map(e => (
+              <div key={e.id} className="flex items-center gap-3 text-xs text-gray-600">
+                <span className="text-gray-400 whitespace-nowrap">
+                  {e.created_at ? new Date(e.created_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
+                </span>
+                <span className="font-medium">{e.action}</span>
+                <span className="truncate text-gray-400">{e.actor_email || ''}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function WorkspacesAdminPage() {
   const [list, setList]         = useState([])
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState(null)
   const [creating, setCreating] = useState(false)
+  const [recentEvents, setRecentEvents] = useState([])
   const [form, setForm]         = useState({
     slug: '', name: '', mvno_carrier: '', hide_self_carrier: true,
     primary_color: '', secondary_color: '', app_title: '', logo_url: '',
@@ -458,7 +546,12 @@ export default function WorkspacesAdminPage() {
   const load = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      setList(await api.getWorkspaces())
+      const [workspaces, audit] = await Promise.all([
+        api.getWorkspaces(),
+        api.getAuditLog('?limit=5'),
+      ])
+      setList(workspaces)
+      setRecentEvents(audit)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -509,6 +602,8 @@ export default function WorkspacesAdminPage() {
           {creating ? 'סגור' : '+ workspace חדש'}
         </Button>
       </div>
+
+      {!loading && !error && <StatsBar list={list} recentEvents={recentEvents} />}
 
       {creating && (
         <form onSubmit={create}

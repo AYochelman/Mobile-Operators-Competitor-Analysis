@@ -292,7 +292,8 @@ def _get_user_context(email):
                    r.workspace_id,
                    w.slug, w.name, w.mvno_carrier,
                    w.brand_config, w.feature_flags,
-                   w.hide_self_carrier, w.active, w.trial_ends_at
+                   w.hide_self_carrier, w.active, w.trial_ends_at,
+                   COALESCE(w.visible_carriers, '[]'::jsonb)
             FROM auth.users u
             LEFT JOIN public.user_roles r ON r.user_id = u.id
             LEFT JOIN public.workspaces w ON w.id = r.workspace_id
@@ -316,6 +317,8 @@ def _get_user_context(email):
                 else:
                     trial_expired = now_utc > trial_ends_at.replace(tzinfo=_dt2.timezone.utc)
             active = bool(row[8]) and not trial_expired
+            vc_raw = row[10]
+            visible_carriers = json.loads(vc_raw) if isinstance(vc_raw, str) else (list(vc_raw) if vc_raw else [])
             workspace = {
                 "id":                str(ws_id) if ws_id else None,
                 "slug":              row[2],
@@ -327,6 +330,7 @@ def _get_user_context(email):
                 "active":            active,
                 "trial_ends_at":     trial_ends_at.isoformat() if trial_ends_at else None,
                 "trial_expired":     trial_expired,
+                "visible_carriers":  visible_carriers,
             }
         return {"role": role, "workspace_id": str(ws_id) if ws_id else None, "workspace": workspace}
     except Exception as e:
@@ -2298,7 +2302,7 @@ def api_update_workspace(workspace_id):
     brand_config, feature_flags, hide_self_carrier, active."""
     data = request.get_json(force=True) or {}
     allowed = {'name', 'mvno_carrier', 'brand_config', 'feature_flags',
-               'hide_self_carrier', 'active', 'trial_ends_at'}
+               'hide_self_carrier', 'active', 'trial_ends_at', 'visible_carriers'}
     updates = {k: v for k, v in data.items() if k in allowed}
     if not updates:
         return jsonify({"error": "no updatable fields provided"}), 400
@@ -2307,6 +2311,9 @@ def api_update_workspace(workspace_id):
         if k in ('brand_config', 'feature_flags'):
             sets.append(f"{k} = %s::jsonb")
             params.append(json.dumps(v or {}))
+        elif k == 'visible_carriers':
+            sets.append(f"{k} = %s::jsonb")
+            params.append(json.dumps(v or []))
         elif k in ('hide_self_carrier', 'active'):
             sets.append(f"{k} = %s")
             params.append(bool(v))
@@ -3061,8 +3068,9 @@ if __name__ == "__main__":
     try:
         _mc = _supabase_conn(); _mc.autocommit = True; _mcu = _mc.cursor()
         _mcu.execute("ALTER TABLE public.workspaces ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ")
+        _mcu.execute("ALTER TABLE public.workspaces ADD COLUMN IF NOT EXISTS visible_carriers JSONB DEFAULT '[]'")
         _mc.close()
-        logger.info("Supabase migration: trial_ends_at column ensured")
+        logger.info("Supabase migration: trial_ends_at + visible_carriers columns ensured")
     except Exception as _me:
         logger.warning(f"Supabase migration skipped: {_me}")
 

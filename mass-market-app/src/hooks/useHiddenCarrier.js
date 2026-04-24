@@ -10,9 +10,23 @@ export function useHiddenCarrier() {
   return workspace.mvno_carrier || null
 }
 
-// Convenience: filter a carrier-id list, stripping the hidden one.
+// Convenience: filter a carrier-id list applying both visible_carriers scoping
+// (allowlist) and hide_self_carrier (denylist). Super-admins bypass both.
 export function useVisibleCarriers(carrierIds) {
-  const hidden = useHiddenCarrier()
-  if (!hidden) return carrierIds
-  return carrierIds.filter(c => c !== hidden)
+  const { workspace, isSuperAdmin } = useAuth()
+  if (isSuperAdmin) return carrierIds
+
+  let result = carrierIds
+
+  // Allowlist: if workspace defines specific visible carriers, restrict to those
+  const allowed = workspace?.visible_carriers
+  if (allowed?.length > 0) {
+    result = result.filter(c => allowed.includes(c))
+  }
+
+  // Denylist: always hide self-carrier
+  const hidden = (workspace?.hide_self_carrier && workspace?.mvno_carrier) || null
+  if (hidden) result = result.filter(c => c !== hidden)
+
+  return result
 }

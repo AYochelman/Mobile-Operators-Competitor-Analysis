@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
-import { useHiddenCarrier } from '../hooks/useHiddenCarrier'
+import { useHiddenCarrier, useVisibleCarriers } from '../hooks/useHiddenCarrier'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import * as XLSX from 'xlsx'
 import PlanCard from '../components/PlanCard'
@@ -192,6 +192,7 @@ export default function DashboardPage() {
   const { isAdmin } = useAuth()
   const { scraping, countdown, triggerScrape } = useScrape()
   const hiddenCarrier = useHiddenCarrier()
+  const visibleCarrierIds = useVisibleCarriers(CARRIERS.map(c => c.id))
   const flags = useFeatureFlags()
   const visibleTabs = useMemo(() => TABS.filter(t => !flags['hide_' + t.id]), [flags])
   const [searchParams, setSearchParams] = useSearchParams()
@@ -353,6 +354,11 @@ export default function DashboardPage() {
   const filteredPlans = useMemo(() => {
     let result = plans[tab] || []
     const f = filters
+
+    // Apply workspace visible_carriers scoping on domestic + abroad tabs
+    if ((tab === 'domestic' || tab === 'abroad') && visibleCarrierIds.length < CARRIERS.length) {
+      result = result.filter(p => visibleCarrierIds.includes(p.carrier))
+    }
 
     if (tab === 'domestic' || tab === 'abroad') {
       if (f.carrier !== 'all') result = result.filter(p => p.carrier === f.carrier)
@@ -799,7 +805,7 @@ export default function DashboardPage() {
                   </div>
                   <div className={`grid gap-1 ${tab === 'domestic' || tab === 'abroad' ? 'grid-cols-2' : 'grid-cols-4'}`}>
                     {(tab === 'abroad' ? CARRIERS.filter(c => c.id !== 'xphone' && c.id !== 'neptucom') : CARRIERS)
-                      .filter(c => c.id !== hiddenCarrier)
+                      .filter(c => visibleCarrierIds.includes(c.id))
                       .map(c => {
                       const cnt = plans[tab]?.filter(p => p.carrier === c.id).length || 0
                       return (
