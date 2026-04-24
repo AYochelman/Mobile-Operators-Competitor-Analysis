@@ -14,6 +14,9 @@ import ArchivePage from './pages/ArchivePage'
 import SettingsPage from './pages/SettingsPage'
 import WorkspacesAdminPage from './pages/WorkspacesAdminPage'
 import WorkspaceUsersPage from './pages/WorkspaceUsersPage'
+import WorkspaceBrandingPage from './pages/WorkspaceBrandingPage'
+import AuditLogPage from './pages/AuditLogPage'
+import InvitePage from './pages/InvitePage'
 import SuspendedPage from './pages/SuspendedPage'
 import NotFoundPage from './pages/NotFoundPage'
 import OfflineBanner from './components/OfflineBanner'
@@ -60,6 +63,7 @@ export default function App() {
       <OfflineBanner />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/invite/:token" element={<InvitePage />} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<DashboardPage />} />
           <Route path="compare" element={<ComparePage />} />
@@ -69,7 +73,9 @@ export default function App() {
           <Route path="archive" element={<ArchivePage />} />
           <Route path="settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
           <Route path="workspace/users" element={<ProtectedRoute adminOnly><WorkspaceUsersPage /></ProtectedRoute>} />
+          <Route path="workspace/settings" element={<ProtectedRoute adminOnly><WorkspaceBrandingPage /></ProtectedRoute>} />
           <Route path="admin/workspaces" element={<ProtectedRoute superAdminOnly><WorkspacesAdminPage /></ProtectedRoute>} />
+          <Route path="admin/audit" element={<ProtectedRoute superAdminOnly><AuditLogPage /></ProtectedRoute>} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

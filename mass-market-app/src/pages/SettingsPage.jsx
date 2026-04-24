@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import Button from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
@@ -9,8 +9,22 @@ const AFFILIATE_COMMISSION = { airalo: 0.10, holafly: 0.12, saily: 0.10, globale
 const AFFILIATE_AVG_ORDER  = { airalo: 18,   holafly: 20,   saily: 16,   globalesim: 15   }
 
 export default function SettingsPage() {
-  const { isAdmin, user } = useAuth()
+  const { isAdmin, isSuperAdmin, user } = useAuth()
   const { scraping, triggerScrape } = useScrape()
+
+  const [quota, setQuota] = useState(null)
+  const prevScrapingRef = useRef(false)
+
+  useEffect(() => {
+    api.getRefreshQuota().then(setQuota).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!scraping && prevScrapingRef.current) {
+      api.getRefreshQuota().then(setQuota).catch(() => {})
+    }
+    prevScrapingRef.current = scraping
+  }, [scraping])
 
   // Tab state
   const [activeTab, setActiveTab] = useState('scrape')
@@ -166,11 +180,31 @@ export default function SettingsPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <h2 className="font-bold text-sm mb-3">סקרייפרים</h2>
             <p className="text-xs text-gray-400 mb-4">עדכון כל הנתונים אורך כ-12 דקות</p>
-            <div className="flex items-center gap-3">
-              <Button onClick={triggerScrape} disabled={scraping}>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Button onClick={triggerScrape} disabled={scraping || quota?.remaining === 0}>
                 {scraping ? 'מעדכן...' : 'עדכן את כל הנתונים'}
               </Button>
+              {quota && !quota.unlimited && (
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    {Array.from({ length: quota.limit }).map((_, i) => (
+                      <span
+                        key={i}
+                        className={`inline-block w-2.5 h-2.5 rounded-full ${
+                          i < quota.remaining ? 'bg-green-400' : 'bg-gray-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {quota.remaining} מתוך {quota.limit} רענונים נותרו החודש
+                  </span>
+                </div>
+              )}
             </div>
+            {quota && !quota.unlimited && quota.remaining === 0 && (
+              <p className="text-xs text-red-500 mt-2">המכסה החודשית מוצתה. הרענון האוטומטי פועל כרגיל.</p>
+            )}
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4">

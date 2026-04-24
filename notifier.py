@@ -383,6 +383,109 @@ def send_contact_email(from_email: str, workspace_name: str, message: str, confi
         return False
 
 
+def send_weekly_digest(to_emails: list, workspace_name: str, changes: list, config: dict) -> bool:
+    """Send a weekly changes digest to all users of a workspace.
+    Changes is a flat list of change dicts (carrier, plan_name, change_type, old_val, new_val, changed_at).
+    Returns True if all emails were dispatched successfully."""
+    api_key = config.get("sendgrid_api_key", "")
+    sender  = config.get("email_sender", "")
+    if not all([api_key, sender]) or not to_emails:
+        return False
+    if not changes:
+        return True  # nothing to report — skip silently
+
+    app_url = "https://lucent-kulfi-f037ad.netlify.app"
+    by_carrier = defaultdict(list)
+    for ch in changes:
+        by_carrier[ch.get('carrier', '')].append(ch)
+
+    lines = [
+        f"\u05e1\u05d9\u05db\u05d5\u05dd \u05e9\u05d1\u05d5\u05e2\u05d9 \u05e9\u05dc MOCA \u2014 {workspace_name}\n",
+        f"\u05ea\u05d0\u05e8\u05d9\u05da: {datetime.now().strftime('%d/%m/%Y')}\n",
+        f"\u05e1\u05d4\"\u05db {len(changes)} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd \u05d1-7 \u05d9\u05de\u05d9\u05dd \u05d4\u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd\n\n",
+    ]
+    CHANGE_HE = {
+        'price_change':  '\u05e9\u05d9\u05e0\u05d5\u05d9 \u05de\u05d7\u05d9\u05e8',
+        'new_plan':      '\u05d7\u05d1\u05d9\u05dc\u05d4 \u05d7\u05d3\u05e9\u05d4',
+        'removed_plan':  '\u05d4\u05d5\u05e1\u05e8\u05d4',
+        'extras_change': '\u05e9\u05d9\u05e0\u05d5\u05d9 \u05d4\u05d8\u05d1\u05d5\u05ea',
+    }
+    for carrier, chs in sorted(by_carrier.items()):
+        lines.append(f"\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\n{carrier} ({len(chs)} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd)\n")
+        for ch in chs[:6]:
+            kind   = CHANGE_HE.get(ch.get('change_type', ''), ch.get('change_type', ''))
+            old_v  = ch.get('old_val', '')
+            new_v  = ch.get('new_val', '')
+            suffix = f" \u2014 {old_v} \u2192 {new_v}" if old_v or new_v else ''
+            lines.append(f"  \u2022 {ch.get('plan_name','')} [{kind}]{suffix}\n")
+        if len(chs) > 6:
+            lines.append(f"  ... \u05d5\u05e2\u05d5\u05d3 {len(chs)-6} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd\n")
+    lines.append(f"\n\u05dc\u05e6\u05e4\u05d9\u05d9\u05d4 \u05de\u05dc\u05d0\u05d4: {app_url}\n\n\u05e6\u05d5\u05d5\u05ea MOCA")
+
+    body = ''.join(lines)
+    ok = True
+    for email in to_emails:
+        payload = {
+            "personalizations": [{"to": [{"email": email}]}],
+            "from": {"email": sender},
+            "subject": f"MOCA \u2014 \u05e1\u05d9\u05db\u05d5\u05dd \u05e9\u05d1\u05d5\u05e2\u05d9 \u05e2\u05d1\u05d5\u05e8 {workspace_name}",
+            "content": [{"type": "text/plain", "value": body}],
+        }
+        try:
+            resp = requests.post(
+                "https://api.sendgrid.com/v3/mail/send",
+                json=payload,
+                headers={"Authorization": f"Bearer {api_key}"},
+                timeout=20,
+            )
+            if resp.status_code != 202:
+                import logging as _log
+                _log.getLogger(__name__).error(f"weekly_digest SendGrid {resp.status_code} for {email}: {resp.text[:200]}")
+                ok = False
+        except requests.RequestException as e:
+            import logging as _log
+            _log.getLogger(__name__).error(f"weekly_digest network error for {email}: {e}")
+            ok = False
+    return ok
+
+
+def send_welcome_email(to_email: str, workspace_name: str, role: str, config: dict) -> bool:
+    """Send a welcome email to a newly assigned workspace user."""
+    api_key = config.get("sendgrid_api_key", "")
+    sender  = config.get("email_sender", "")
+    if not all([api_key, sender, to_email]):
+        return False
+
+    app_url = "https://lucent-kulfi-f037ad.netlify.app"
+    role_he = "\u05de\u05e0\u05d4\u05dc" if role == "admin" else "\u05e6\u05d5\u05e4\u05d4"
+    body = (
+        f"\u05e9\u05dc\u05d5\u05dd,\n\n"
+        f"\u05e0\u05d5\u05e1\u05e4\u05ea \u05dc-workspace \u05e9\u05dc {workspace_name} \u05d1-MOCA "
+        f"\u05d1\u05ea\u05e4\u05e7\u05d9\u05d3 {role_he}.\n\n"
+        f"\u05db\u05e0\u05d9\u05e1\u05d4 \u05dc\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d4:\n{app_url}\n\n"
+        f"\u05d0\u05dd \u05d0\u05d9\u05df \u05dc\u05da \u05d7\u05e9\u05d1\u05d5\u05df \u05e2\u05d3\u05d9\u05d9\u05df, "
+        f"\u05d4\u05d9\u05e8\u05e9\u05dd \u05d1\u05d0\u05d5\u05ea\u05d5 \u05d0\u05d9\u05de\u05d9\u05d9\u05dc "
+        f"\u05d1\u05d3\u05e3 \u05d4\u05db\u05e0\u05d9\u05e1\u05d4.\n\n"
+        f"\u05d1\u05d1\u05e8\u05db\u05d4,\n\u05e6\u05d5\u05d5\u05ea MOCA"
+    )
+    payload = {
+        "personalizations": [{"to": [{"email": to_email}]}],
+        "from": {"email": sender},
+        "subject": f"MOCA \u2014 \u05d4\u05ea\u05d5\u05d5\u05e1\u05e4\u05ea \u05dc-{workspace_name}",
+        "content": [{"type": "text/plain", "value": body}],
+    }
+    try:
+        resp = requests.post(
+            "https://api.sendgrid.com/v3/mail/send",
+            json=payload,
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=20,
+        )
+        return resp.status_code == 202
+    except requests.RequestException:
+        return False
+
+
 def send_whatsapp(message, config):
     base_url = config.get("greenapi_url", "")
     instance = config.get("greenapi_instance", "")

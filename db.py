@@ -271,6 +271,28 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_at
                 ON affiliate_clicks(clicked_at);
+            CREATE TABLE IF NOT EXISTS workspace_invites (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                token        TEXT NOT NULL UNIQUE,
+                workspace_id TEXT NOT NULL,
+                role         TEXT NOT NULL DEFAULT 'viewer',
+                created_by   TEXT,
+                created_at   TEXT NOT NULL,
+                expires_at   TEXT NOT NULL,
+                used_at      TEXT,
+                used_by      TEXT
+            );
+            CREATE TABLE IF NOT EXISTS audit_log (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                action       TEXT NOT NULL,
+                actor_email  TEXT,
+                target_email TEXT,
+                workspace_id TEXT,
+                details      TEXT,
+                created_at   TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_audit_log_at
+                ON audit_log(created_at);
         """)
         conn.commit()
         # Migration: add url column if DB was created before this column existed
@@ -1337,3 +1359,97 @@ def get_history_price_series(carrier, plan_type='domestic', plan_name='', from_d
         except (ValueError, TypeError):
             continue
     return series
+
+
+def create_workspace_invite(workspace_id, role='viewer', created_by=None, db_path=None):
+    """Create a single-use invite token (valid 7 days). Returns the token string."""
+    import uuid as _uuid
+    token = str(_uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    expires = (now + timedelta(days=7)).isoformat()
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO workspace_invites (token, workspace_id, role, created_by, created_at, expires_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (token, str(workspace_id), role, created_by, now.isoformat(), expires)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return token
+
+
+def get_workspace_invite(token, db_path=None):
+    """Return invite row dict or None if not found / expired / already used."""
+    conn = _connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT token, workspace_id, role, created_by, created_at, expires_at, used_at, used_by "
+            "FROM workspace_invites WHERE token = ?",
+            (token,)
+        ).fetchone()
+        if not row:
+            return None
+        invite = {
+            'token': row[0], 'workspace_id': row[1], 'role': row[2],
+            'created_by': row[3], 'created_at': row[4], 'expires_at': row[5],
+            'used_at': row[6], 'used_by': row[7],
+        }
+        return invite
+    finally:
+        conn.close()
+
+
+def use_workspace_invite(token, used_by, db_path=None):
+    """Mark invite as used. Returns True on success, False if already used."""
+    now = datetime.now(timezone.utc).isoformat()
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute(
+            "UPDATE workspace_invites SET used_at = ?, used_by = ? "
+            "WHERE token = ? AND used_at IS NULL",
+            (now, used_by, token)
+        )
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
+def log_audit(action, actor_email=None, target_email=None, workspace_id=None, details=None, db_path=None):
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO audit_log (action, actor_email, target_email, workspace_id, details, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (action, actor_email, target_email, str(workspace_id) if workspace_id else None,
+             details, datetime.now(timezone.utc).isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_audit_log(limit=200, workspace_id=None, db_path=None):
+    conn = _connect(db_path)
+    try:
+        if workspace_id:
+            rows = conn.execute(
+                "SELECT id, action, actor_email, target_email, workspace_id, details, created_at "
+                "FROM audit_log WHERE workspace_id = ? ORDER BY created_at DESC LIMIT ?",
+                (str(workspace_id), limit)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT id, action, actor_email, target_email, workspace_id, details, created_at "
+                "FROM audit_log ORDER BY created_at DESC LIMIT ?",
+                (limit,)
+            ).fetchall()
+        return [
+            {"id": r[0], "action": r[1], "actor_email": r[2], "target_email": r[3],
+             "workspace_id": r[4], "details": r[5], "created_at": r[6]}
+            for r in rows
+        ]
+    finally:
+        conn.close()

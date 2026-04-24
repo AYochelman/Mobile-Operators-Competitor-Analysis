@@ -57,6 +57,7 @@ export const api = {
 
   // Scrape — admin only, triggers via JWT auth
   scrapeAll: () => fetchApi('/api/scrape-all-now'),
+  getRefreshQuota: () => fetchApi('/api/refresh-quota'),
 
   // Users — admin only, JWT auth
   getUsers:       () => fetchApi('/api/users'),
@@ -107,4 +108,15 @@ export const api = {
   getWorkspaceUsers:    (id) => fetchApi(`/api/workspaces/${id}/users`),
   assignWorkspaceUser:  (id, email, role) => fetchApi(`/api/workspaces/${id}/users`, { method: 'POST', body: JSON.stringify({ email, role }) }),
   unassignWorkspaceUser:(id, userId) => fetchApi(`/api/workspaces/${id}/users/${userId}`, { method: 'DELETE' }),
+
+  // Workspace branding — workspace admin of own workspace
+  updateWorkspaceBranding: (data) => fetchApi('/api/workspace/branding', { method: 'PATCH', body: JSON.stringify(data) }),
+
+  // Audit log — super_admin only
+  getAuditLog: (queryString = '') => fetchApi(`/api/audit-log${queryString}`),
+
+  // Invite links
+  createInvite:  (workspaceId, role) => fetchApi(`/api/workspaces/${workspaceId}/invite`, { method: 'POST', body: JSON.stringify({ role }) }),
+  getInvite:     (token) => fetchApi(`/api/invite/${token}`),
+  acceptInvite:  (token) => fetchApi(`/api/invite/${token}/accept`, { method: 'POST' }),
 }

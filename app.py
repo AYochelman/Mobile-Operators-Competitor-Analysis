@@ -20,7 +20,9 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                get_archive_plans, get_archive_banners, get_archive_date_range, \
                get_history_changes, get_history_price_series, \
                upsert_news_articles, get_news_articles, \
-               log_affiliate_click, get_affiliate_stats
+               log_affiliate_click, get_affiliate_stats, \
+               log_audit, get_audit_log, \
+               create_workspace_invite, get_workspace_invite, use_workspace_invite
 import archive as arc
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -330,6 +332,108 @@ def require_api_key_or_query(f):
             return jsonify({"error": "Unauthorized — API key required"}), 401
         return f(*args, **kwargs)
     return decorated
+
+
+MONTHLY_REFRESH_LIMIT = 5
+
+
+def require_scrape_auth(f):
+    """Accepts API key (unlimited) OR admin/super_admin JWT (quota-limited).
+    Sets g.jwt_payload when JWT is used; g.jwt_payload=None for API key callers."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # API key path — trusted caller, no quota
+        provided = request.headers.get("X-API-Key") or request.args.get("api_key")
+        if provided and provided == _get_api_key():
+            g.jwt_payload = None
+            return f(*args, **kwargs)
+        # JWT path — workspace admin or super_admin
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            payload = _verify_supabase_jwt(auth_header[7:])
+            if payload:
+                email = (payload.get("email") or "").strip().lower()
+                ctx = _get_user_context(email)
+                role = ctx.get("role", "viewer")
+                if role in ("admin", "super_admin"):
+                    g.jwt_payload = payload
+                    g._refresh_ctx = ctx
+                    return f(*args, **kwargs)
+        return jsonify({"error": "Unauthorized"}), 401
+    return decorated
+
+
+def _check_refresh_quota():
+    """Call inside a @require_scrape_auth endpoint.
+    Returns (ok, used, limit) — ok=True means quota not exceeded.
+    Super_admin and API-key callers always return (True, 0, limit)."""
+    ctx = getattr(g, '_refresh_ctx', None)
+    if ctx is None:
+        return True, 0, MONTHLY_REFRESH_LIMIT  # API key caller
+    role = ctx.get('role', 'viewer')
+    if role == 'super_admin':
+        return True, 0, MONTHLY_REFRESH_LIMIT
+    ws_id = ctx.get('workspace_id')
+    if not ws_id:
+        return True, 0, MONTHLY_REFRESH_LIMIT
+    from datetime import datetime as _dt, timezone as _tz
+    month_prefix = _dt.now(_tz.utc).strftime('%Y-%m')
+    entries = get_audit_log(limit=500, workspace_id=ws_id, db_path=_db_path())
+    used = sum(
+        1 for e in entries
+        if e['action'] == 'refresh_triggered'
+        and (e['created_at'] or '').startswith(month_prefix)
+    )
+    return used < MONTHLY_REFRESH_LIMIT, used, MONTHLY_REFRESH_LIMIT
+
+
+def _workspace_refresh_quota_for_email(email):
+    """Returns (used, limit, remaining, unlimited) for the given email."""
+    ctx = _get_user_context(email)
+    role = ctx.get('role', 'viewer')
+    if role == 'super_admin':
+        return 0, MONTHLY_REFRESH_LIMIT, MONTHLY_REFRESH_LIMIT, True
+    ws_id = ctx.get('workspace_id')
+    if not ws_id:
+        return 0, MONTHLY_REFRESH_LIMIT, MONTHLY_REFRESH_LIMIT, False
+    from datetime import datetime as _dt, timezone as _tz
+    month_prefix = _dt.now(_tz.utc).strftime('%Y-%m')
+    entries = get_audit_log(limit=500, workspace_id=ws_id, db_path=_db_path())
+    used = sum(1 for e in entries
+               if e['action'] == 'refresh_triggered'
+               and (e['created_at'] or '').startswith(month_prefix))
+    remaining = max(0, MONTHLY_REFRESH_LIMIT - used)
+    return used, MONTHLY_REFRESH_LIMIT, remaining, False
+
+
+def _log_refresh(action_detail=''):
+    """Log a manual refresh to audit_log for quota tracking. No-op for API-key callers."""
+    ctx = getattr(g, '_refresh_ctx', None)
+    if ctx is None:
+        return
+    actor = _current_user_email() or ''
+    ws_id = ctx.get('workspace_id')
+    log_audit('refresh_triggered', actor_email=actor, workspace_id=ws_id,
+              details=action_detail, db_path=_db_path())
+
+
+@app.route('/api/refresh-quota', methods=['GET'])
+@require_auth
+@limiter.limit('60 per minute')
+def api_refresh_quota():
+    """Return current month's manual-refresh usage for the caller's workspace."""
+    email = _current_user_email() or ''
+    if not email:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            _p = _verify_supabase_jwt(auth_header[7:])
+            if _p:
+                email = (_p.get('email') or '').strip().lower()
+    if not email:
+        return jsonify({'used': 0, 'limit': MONTHLY_REFRESH_LIMIT,
+                        'remaining': MONTHLY_REFRESH_LIMIT, 'unlimited': True})
+    used, limit, remaining, unlimited = _workspace_refresh_quota_for_email(email)
+    return jsonify({'used': used, 'limit': limit, 'remaining': remaining, 'unlimited': unlimited})
 
 
 def load_config():
@@ -707,9 +811,12 @@ def api_scrape_abroad_now():
 
 
 @app.route("/api/scrape-all-now")
-@require_api_key_or_query
+@require_scrape_auth
 def api_scrape_all_now():
     """Scrape ALL tabs: domestic + abroad + global in one call."""
+    ok, used, limit = _check_refresh_quota()
+    if not ok:
+        return jsonify({"error": f"מכסת הרענון החודשית הגיעה לסיום ({used}/{limit}). מחכים לחודש הבא.", "quota_used": used, "quota_limit": limit}), 429
     try:
         import scraper as sc
         from db import save_plans, save_changes, save_abroad_plans, save_abroad_changes, \
@@ -791,6 +898,9 @@ def api_scrape_all_now():
         results["status"] = "ok"
         results["total_plans"] = len(new_domestic) + len(new_abroad) + len(new_global) + len(new_content)
         results["total_changes"] = len(ch_domestic) + len(ch_abroad) + len(ch_global) + len(ch_content)
+        results["quota_used"]  = used + 1
+        results["quota_limit"] = limit
+        _log_refresh('scrape_all')
         logger.info(f"scrape-all-now: {results}")
         return jsonify(results)
     except Exception as e:
@@ -1320,14 +1430,18 @@ def api_executive_summary():
 
 
 @app.route("/api/executive-summary/refresh", methods=["POST"])
-@require_api_key_or_query
+@require_scrape_auth
 def api_executive_summary_refresh():
     """Trigger manual regeneration of all 4 executive summaries."""
+    ok, used, limit = _check_refresh_quota()
+    if not ok:
+        return jsonify({"error": f"מכסת הרענון החודשית הגיעה לסיום ({used}/{limit}). מחכים לחודש הבא.", "quota_used": used, "quota_limit": limit}), 429
     try:
         generate_executive_summary()
         rows = get_executive_summary(db_path=_db_path())
         generated_at = rows[0]["generated_at"] if rows else None
-        return jsonify({"status": "ok", "generated_at": generated_at})
+        _log_refresh('executive_summary')
+        return jsonify({"status": "ok", "generated_at": generated_at, "quota_used": used + 1, "quota_limit": limit})
     except Exception as e:
         logger.error(f"executive summary refresh failed: {e}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
@@ -1344,14 +1458,18 @@ def api_social_sentiment():
 
 
 @app.route("/api/social-sentiment/refresh", methods=["POST"])
-@require_api_key_or_query
+@require_scrape_auth
 def api_social_sentiment_refresh():
     """Trigger manual regeneration of social sentiment for all carriers."""
+    ok, used, limit = _check_refresh_quota()
+    if not ok:
+        return jsonify({"error": f"מכסת הרענון החודשית הגיעה לסיום ({used}/{limit}). מחכים לחודש הבא.", "quota_used": used, "quota_limit": limit}), 429
     try:
         generate_social_sentiment()
         rows = get_social_sentiment(db_path=_db_path())
         generated_at = rows[0]["generated_at"] if rows else None
-        return jsonify({"status": "ok", "generated_at": generated_at})
+        _log_refresh('social_sentiment')
+        return jsonify({"status": "ok", "generated_at": generated_at, "quota_used": used + 1, "quota_limit": limit})
     except Exception as exc:
         logger.error(f"social sentiment refresh failed: {exc}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
@@ -2117,6 +2235,9 @@ def api_create_workspace():
         ))
         new_id = str(cur.fetchone()[0])
         conn.close()
+        actor = _current_user_email() or ''
+        log_audit('workspace_created', actor_email=actor, workspace_id=new_id,
+                  details=f'slug={slug!r} name={name!r}', db_path=_db_path())
         logger.info(f"AUDIT create_workspace: slug={slug!r} id={new_id} by_ip={request.remote_addr}")
         return jsonify({"status": "created", "id": new_id}), 201
     except Exception as e:
@@ -2163,6 +2284,9 @@ def api_update_workspace(workspace_id):
         conn.close()
         if updated == 0:
             return jsonify({"error": "workspace not found"}), 404
+        actor = _current_user_email() or ''
+        log_audit('workspace_updated', actor_email=actor, workspace_id=workspace_id,
+                  details=str(list(updates.keys())), db_path=_db_path())
         logger.info(f"AUDIT update_workspace: id={workspace_id} fields={list(updates.keys())}")
         return jsonify({"status": "updated"})
     except Exception as e:
@@ -2239,8 +2363,26 @@ def api_assign_workspace_user(workspace_id):
             ON CONFLICT (user_id) DO UPDATE
               SET role = EXCLUDED.role, workspace_id = EXCLUDED.workspace_id
         """, (user_id, role, workspace_id))
+        # Fetch workspace name for welcome email
+        cur.execute("SELECT name FROM public.workspaces WHERE id = %s", (workspace_id,))
+        ws_row = cur.fetchone()
+        ws_name = ws_row[0] if ws_row else ''
         conn.close()
+        actor = _current_user_email() or ''
+        log_audit('user_assigned', actor_email=actor, target_email=email,
+                  workspace_id=workspace_id, details=f'role={role}', db_path=_db_path())
         logger.info(f"AUDIT assign_workspace_user: email={email!r} workspace={workspace_id} role={role}")
+        # Send welcome email in background (non-blocking)
+        try:
+            from notifier import send_welcome_email as _send_welcome
+            import threading as _threading
+            _threading.Thread(
+                target=_send_welcome,
+                args=(email, ws_name, role, load_config()),
+                daemon=True,
+            ).start()
+        except Exception as _we:
+            logger.warning(f"welcome email skipped: {_we}")
         return jsonify({"status": "assigned", "user_id": str(user_id)}), 201
     except Exception as e:
         logger.error(f"assign workspace user failed: {e}", exc_info=True)
@@ -2274,11 +2416,188 @@ def api_unassign_workspace_user(workspace_id, user_id):
         conn.close()
         if affected == 0:
             return jsonify({"error": "user not in this workspace"}), 404
+        actor = _current_user_email() or ''
+        log_audit('user_removed', actor_email=actor, target_email=user_id,
+                  workspace_id=workspace_id, details=f'moved to moca-internal',
+                  db_path=_db_path())
         logger.info(f"AUDIT unassign_workspace_user: user={user_id} from={workspace_id}")
         return jsonify({"status": "moved to moca-internal"})
     except Exception as e:
         logger.error(f"unassign workspace user failed: {e}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
+
+
+# ── Workspace invite links ────────────────────────────────────────────────────
+
+@app.route("/api/workspaces/<workspace_id>/invite", methods=["POST"])
+@require_auth
+@limiter.limit("10 per minute")
+def api_create_invite(workspace_id):
+    """Create a single-use invite link for this workspace.
+    Body: {role: 'admin'|'viewer'} — defaults to 'viewer'."""
+    if not _can_manage_workspace_users(workspace_id):
+        return jsonify({"error": "Unauthorized"}), 403
+    data = request.get_json(force=True) or {}
+    role = data.get('role', 'viewer')
+    if role not in ('admin', 'viewer'):
+        return jsonify({"error": "role must be 'admin' or 'viewer'"}), 400
+    creator = _current_user_email() or ''
+    token = create_workspace_invite(workspace_id, role=role, created_by=creator, db_path=_db_path())
+    log_audit('invite_created', actor_email=creator, workspace_id=workspace_id,
+              details=f'role={role}', db_path=_db_path())
+    return jsonify({"token": token, "role": role}), 201
+
+
+@app.route("/api/invite/<token>", methods=["GET"])
+@limiter.limit("30 per minute")
+def api_get_invite(token):
+    """Public — validate invite token and return workspace name + role."""
+    from datetime import datetime as _dt, timezone as _tz
+    invite = get_workspace_invite(token, db_path=_db_path())
+    if not invite:
+        return jsonify({"error": "קישור לא תקין"}), 404
+    if invite['used_at']:
+        return jsonify({"error": "קישור זה כבר נוצל"}), 410
+    if _dt.fromisoformat(invite['expires_at']) < _dt.now(_tz.utc):
+        return jsonify({"error": "קישור פג תוקף"}), 410
+    # Fetch workspace name
+    try:
+        conn = _supabase_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM public.workspaces WHERE id = %s", (invite['workspace_id'],))
+        row = cur.fetchone()
+        conn.close()
+        ws_name = row[0] if row else ''
+    except Exception:
+        ws_name = ''
+    return jsonify({"workspace_name": ws_name, "role": invite['role'],
+                    "expires_at": invite['expires_at']})
+
+
+@app.route("/api/invite/<token>/accept", methods=["POST"])
+@require_auth
+@limiter.limit("10 per minute")
+def api_accept_invite(token):
+    """Authenticated user accepts an invite — assigns them to the workspace."""
+    from datetime import datetime as _dt, timezone as _tz
+    invite = get_workspace_invite(token, db_path=_db_path())
+    if not invite:
+        return jsonify({"error": "קישור לא תקין"}), 404
+    if invite['used_at']:
+        return jsonify({"error": "קישור זה כבר נוצל"}), 410
+    if _dt.fromisoformat(invite['expires_at']) < _dt.now(_tz.utc):
+        return jsonify({"error": "קישור פג תוקף"}), 410
+
+    email = _current_user_email()
+    if not email:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        conn = _supabase_conn()
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM auth.users WHERE LOWER(email) = %s", (email.lower(),))
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({"error": "user not found"}), 404
+        user_id = row[0]
+        cur.execute("""
+            INSERT INTO public.user_roles (user_id, role, workspace_id)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (user_id) DO UPDATE
+              SET role = EXCLUDED.role, workspace_id = EXCLUDED.workspace_id
+        """, (user_id, invite['role'], invite['workspace_id']))
+        conn.close()
+        use_workspace_invite(token, used_by=email, db_path=_db_path())
+        log_audit('invite_accepted', actor_email=email, workspace_id=invite['workspace_id'],
+                  details=f'role={invite["role"]}', db_path=_db_path())
+        return jsonify({"status": "accepted", "role": invite['role'],
+                        "workspace_id": invite['workspace_id']})
+    except Exception as e:
+        logger.error(f"accept invite failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+# ── Workspace branding (admin of own workspace) ──────────────────────────────
+
+@app.route("/api/workspace/branding", methods=["PATCH"])
+@require_auth
+@limiter.limit("20 per minute")
+def api_workspace_branding():
+    """Update brand_config for the caller's own workspace.
+    Body: {primary_color?, secondary_color?, app_title?, logo_url?}
+    Workspace admins (non-super) can update their own workspace only."""
+    # g.jwt_payload is None when API key was also present (dev mode sends both).
+    # Fall back to parsing Bearer JWT directly so we know who the caller is.
+    email = _current_user_email() or ''
+    if not email:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            _p = _verify_supabase_jwt(auth_header[7:])
+            if _p:
+                email = (_p.get('email') or '').strip().lower()
+    if not email:
+        return jsonify({"error": "Unauthorized"}), 403
+    ctx = _get_user_context(email)
+    role = ctx.get('role', 'viewer')
+    ws_id = ctx.get('workspace_id')
+    if role not in ('admin', 'super_admin') or not ws_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.get_json(force=True) or {}
+    allowed_keys = {'primary_color', 'secondary_color', 'app_title', 'logo_url'}
+    updates = {k: v for k, v in data.items() if k in allowed_keys}
+    if not updates:
+        return jsonify({"error": "no valid fields provided"}), 400
+
+    # Validate colour values (must be hex colour or empty string)
+    import re as _re
+    for colour_key in ('primary_color', 'secondary_color'):
+        if colour_key in updates and updates[colour_key]:
+            if not _re.match(r'^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$', updates[colour_key]):
+                return jsonify({"error": f"invalid hex colour for {colour_key}"}), 400
+
+    try:
+        conn = _supabase_conn()
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute("SELECT brand_config FROM public.workspaces WHERE id = %s", (ws_id,))
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({"error": "workspace not found"}), 404
+        import json as _json
+        existing = row[0] or {}
+        merged = {**existing, **updates}
+        # Remove keys that were explicitly set to empty string (clear the field)
+        merged = {k: v for k, v in merged.items() if v not in (None, '')}
+        cur.execute(
+            "UPDATE public.workspaces SET brand_config = %s::jsonb WHERE id = %s",
+            (_json.dumps(merged), ws_id)
+        )
+        conn.close()
+        log_audit('branding_updated', actor_email=email, workspace_id=ws_id,
+                  details=str(list(updates.keys())), db_path=_db_path())
+        logger.info(f"AUDIT branding_updated: workspace={ws_id} by={email!r} fields={list(updates.keys())}")
+        return jsonify({"status": "updated", "brand_config": merged})
+    except Exception as e:
+        logger.error(f"workspace branding update failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+# ── Audit log (super_admin only) ─────────────────────────────────────────────
+
+@app.route("/api/audit-log", methods=["GET"])
+@require_super_admin
+@limiter.limit("30 per minute")
+def api_audit_log():
+    """Return the audit log. Optional query params: limit (default 200),
+    workspace_id (filter to a specific workspace)."""
+    limit = min(int(request.args.get('limit', 200)), 1000)
+    ws_filter = request.args.get('workspace_id') or None
+    entries = get_audit_log(limit=limit, workspace_id=ws_filter, db_path=_db_path())
+    return jsonify(entries)
 
 
 @app.route('/api/history/changes')
@@ -2631,6 +2950,48 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error("Store banner screenshot job failed: %s", e, exc_info=True)
 
+    def weekly_digest_job():
+        """Every Sunday 08:30 — send 7-day plan-changes digest to all workspace users."""
+        from notifier import send_weekly_digest as _send_digest
+        from db import get_history_changes as _ghc
+        from datetime import datetime as _dt, timedelta as _td
+        _cfg = load_config()
+        _from = (_dt.now() - _td(days=7)).strftime('%Y-%m-%d')
+        try:
+            conn = _supabase_conn()
+            cur = conn.cursor()
+            # Fetch all workspaces
+            cur.execute("SELECT id, name, mvno_carrier FROM public.workspaces WHERE active = TRUE")
+            workspaces = cur.fetchall()
+            for ws_id, ws_name, mvno_carrier in workspaces:
+                try:
+                    # Get all user emails for this workspace
+                    cur.execute("""
+                        SELECT u.email FROM auth.users u
+                        JOIN public.user_roles r ON r.user_id = u.id
+                        WHERE r.workspace_id = %s
+                    """, (ws_id,))
+                    emails = [r[0] for r in cur.fetchall() if r[0]]
+                    if not emails:
+                        continue
+                    # Collect changes from last 7 days across plan types
+                    all_changes = []
+                    for ptype in ('domestic', 'abroad', 'global'):
+                        ch = _ghc('', ptype, _from, '', db_path=_db_path())
+                        # Filter hidden carrier if workspace hides its own MVNO
+                        if mvno_carrier:
+                            ch = [c for c in ch if c.get('carrier') != mvno_carrier]
+                        all_changes.extend(ch)
+                    if not all_changes:
+                        continue
+                    _send_digest(emails, ws_name, all_changes, _cfg)
+                    logger.info(f"Weekly digest sent to {len(emails)} users in workspace {ws_name!r}")
+                except Exception as _we:
+                    logger.error(f"Weekly digest failed for workspace {ws_name!r}: {_we}", exc_info=True)
+            conn.close()
+        except Exception as e:
+            logger.error(f"Weekly digest job failed: {e}", exc_info=True)
+
     _ensure_vapid_keys(CONFIG_PATH)
     init_db()
     config = load_config()
@@ -2653,6 +3014,8 @@ if __name__ == "__main__":
         _next_8 += _td(days=1)
     scheduler.add_job(generate_social_sentiment, "interval", days=3,
                       start_date=_next_8, id="social_sentiment")
+    scheduler.add_job(weekly_digest_job, "cron", day_of_week="sun", hour=8, minute=30,
+                      id="weekly_digest")
     scheduler.start()
     logger.info("Flask starting → http://0.0.0.0:5000")
     try:

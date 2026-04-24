@@ -12,6 +12,10 @@ export default function WorkspaceUsersPage() {
   const [newRole, setNewRole]    = useState('viewer')
   const [assigning, setAssigning] = useState(false)
   const [formError, setFormError] = useState(null)
+  const [inviteRole, setInviteRole]     = useState('viewer')
+  const [inviteLink, setInviteLink]     = useState(null)
+  const [creatingInvite, setCreatingInvite] = useState(false)
+  const [copied, setCopied]             = useState(false)
 
   const wsId = workspaceId
 
@@ -42,6 +46,26 @@ export default function WorkspaceUsersPage() {
     } finally {
       setAssigning(false)
     }
+  }
+
+  const createInvite = async () => {
+    setCreatingInvite(true); setInviteLink(null)
+    try {
+      const res = await api.createInvite(wsId, inviteRole)
+      const base = window.location.origin
+      setInviteLink(`${base}/invite/${res.token}`)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setCreatingInvite(false)
+    }
+  }
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
   }
 
   const unassign = async (userId) => {
@@ -104,7 +128,7 @@ export default function WorkspaceUsersPage() {
         )}
 
         <div className="pt-3 border-t border-moca-border/30">
-          <h3 className="text-sm font-semibold mb-3">הוספת משתמש</h3>
+          <h3 className="text-sm font-semibold mb-3">הוספת משתמש קיים</h3>
           <form onSubmit={assign} className="flex gap-2 flex-wrap items-center">
             <input type="email" required placeholder="email@example.com"
               value={newEmail} onChange={e => setNewEmail(e.target.value)}
@@ -119,6 +143,31 @@ export default function WorkspaceUsersPage() {
             </Button>
           </form>
           {formError && <p className="text-xs text-red-600 mt-2">{formError}</p>}
+        </div>
+
+        <div className="pt-3 border-t border-moca-border/30">
+          <h3 className="text-sm font-semibold mb-3">קישור הזמנה</h3>
+          <div className="flex gap-2 items-center flex-wrap">
+            <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}
+              className="px-2 py-1.5 text-sm border border-moca-border rounded">
+              <option value="viewer">viewer</option>
+              <option value="admin">admin</option>
+            </select>
+            <Button onClick={createInvite} disabled={creatingInvite} variant="secondary" size="sm">
+              {creatingInvite ? '…' : 'צור לינק'}
+            </Button>
+          </div>
+          {inviteLink && (
+            <div className="mt-2 flex items-center gap-2">
+              <input readOnly value={inviteLink}
+                className="flex-1 px-2 py-1 text-xs border border-moca-border rounded font-mono bg-gray-50 min-w-0" />
+              <button onClick={copyLink}
+                className="text-xs px-2 py-1 rounded border border-moca-border hover:bg-moca-cream transition-colors whitespace-nowrap">
+                {copied ? 'הועתק ✓' : 'העתק'}
+              </button>
+            </div>
+          )}
+          <p className="text-xs text-gray-400 mt-1.5">תוקף: 7 ימים · שימוש חד-פעמי</p>
         </div>
       </div>
     </div>

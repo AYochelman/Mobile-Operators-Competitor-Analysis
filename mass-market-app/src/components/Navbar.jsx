@@ -95,18 +95,32 @@ export default function Navbar() {
               </NavLink>
             ))}
             {isAdmin && !isSuperAdmin && (
-              <NavLink
-                to="/workspace/users"
-                className={({ isActive }) =>
-                  `px-3 py-1.5 text-[13px] font-medium transition-all duration-150 relative ${
-                    isActive
-                      ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-3 after:h-[1.5px] after:bg-moca-bolt after:rounded-full'
-                      : 'text-moca-muted hover:text-moca-bolt'
-                  }`
-                }
-              >
-                הצוות
-              </NavLink>
+              <>
+                <NavLink
+                  to="/workspace/users"
+                  className={({ isActive }) =>
+                    `px-3 py-1.5 text-[13px] font-medium transition-all duration-150 relative ${
+                      isActive
+                        ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-3 after:h-[1.5px] after:bg-moca-bolt after:rounded-full'
+                        : 'text-moca-muted hover:text-moca-bolt'
+                    }`
+                  }
+                >
+                  הצוות
+                </NavLink>
+                <NavLink
+                  to="/workspace/settings"
+                  className={({ isActive }) =>
+                    `px-3 py-1.5 text-[13px] font-medium transition-all duration-150 relative ${
+                      isActive
+                        ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-3 after:h-[1.5px] after:bg-moca-bolt after:rounded-full'
+                        : 'text-moca-muted hover:text-moca-bolt'
+                    }`
+                  }
+                >
+                  מיתוג
+                </NavLink>
+              </>
             )}
             {isAdmin && (
               <NavLink
@@ -123,18 +137,32 @@ export default function Navbar() {
               </NavLink>
             )}
             {isSuperAdmin && (
-              <NavLink
-                to="/admin/workspaces"
-                className={({ isActive }) =>
-                  `px-3 py-1.5 text-[13px] font-medium transition-all duration-150 relative ${
-                    isActive
-                      ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-3 after:h-[1.5px] after:bg-moca-bolt after:rounded-full'
-                      : 'text-moca-muted hover:text-moca-bolt'
-                  }`
-                }
-              >
-                Workspaces
-              </NavLink>
+              <>
+                <NavLink
+                  to="/admin/workspaces"
+                  className={({ isActive }) =>
+                    `px-3 py-1.5 text-[13px] font-medium transition-all duration-150 relative ${
+                      isActive
+                        ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-3 after:h-[1.5px] after:bg-moca-bolt after:rounded-full'
+                        : 'text-moca-muted hover:text-moca-bolt'
+                    }`
+                  }
+                >
+                  Workspaces
+                </NavLink>
+                <NavLink
+                  to="/admin/audit"
+                  className={({ isActive }) =>
+                    `px-3 py-1.5 text-[13px] font-medium transition-all duration-150 relative ${
+                      isActive
+                        ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-3 after:h-[1.5px] after:bg-moca-bolt after:rounded-full'
+                        : 'text-moca-muted hover:text-moca-bolt'
+                    }`
+                  }
+                >
+                  יומן
+                </NavLink>
+              </>
             )}
           </nav>
 

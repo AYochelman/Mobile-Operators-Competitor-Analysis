@@ -36,18 +36,26 @@ export function ScrapeProvider({ children }) {
       setCountdown(0)
       const total   = res.total_plans   ?? '—'
       const changes = res.total_changes ?? 0
+      const quotaNote = res.quota_limit
+        ? ` · רענונים החודש: ${res.quota_used}/${res.quota_limit}`
+        : ''
       setToast({
         type: 'success',
         message: 'הנתונים עודכנו בהצלחה',
-        detail: `${total} תכניות · ${changes} שינויים`,
+        detail: `${total} תכניות · ${changes} שינויים${quotaNote}`,
       })
       dismissRef.current = setTimeout(() => setToast(null), 8000)
     } catch (err) {
       _clearTimers()
       setScraping(false)
       setCountdown(0)
-      setToast({ type: 'error', message: 'שגיאה בעדכון הנתונים', detail: err.message })
-      dismissRef.current = setTimeout(() => setToast(null), 8000)
+      const isQuota = err.message?.includes('מכסת')
+      setToast({
+        type: 'error',
+        message: isQuota ? 'מכסת הרענון החודשית מוצתה' : 'שגיאה בעדכון הנתונים',
+        detail: err.message,
+      })
+      dismissRef.current = setTimeout(() => setToast(null), isQuota ? 12000 : 8000)
     }
   }, [scraping])
 
