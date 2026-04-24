@@ -1733,6 +1733,56 @@ def api_delete_alert(alert_id):
     return jsonify({"status": "deleted"})
 
 
+# ── Watchlist (per-user starred plans) ────────────────────────────────────
+
+@app.route("/api/watchlist", methods=["GET"])
+@require_auth
+@limiter.limit("60 per minute")
+def api_get_watchlist():
+    from db import get_watchlist as _gwl
+    user_email = _current_user_email()
+    if not user_email:
+        return jsonify([])
+    return jsonify(_gwl(user_email, db_path=_db_path()))
+
+
+@app.route("/api/watchlist", methods=["POST"])
+@require_auth
+@limiter.limit("30 per minute")
+def api_add_to_watchlist():
+    from db import add_to_watchlist as _awl
+    user_email = _current_user_email()
+    if not user_email:
+        return jsonify({"error": "auth required"}), 401
+    data = request.get_json(force=True) or {}
+    carrier   = (data.get('carrier') or '').strip()
+    plan_name = (data.get('plan_name') or '').strip()
+    plan_type = (data.get('plan_type') or '').strip()
+    if not all([carrier, plan_name, plan_type]):
+        return jsonify({"error": "carrier, plan_name, plan_type required"}), 400
+    if plan_type not in ('domestic', 'abroad', 'global', 'content'):
+        return jsonify({"error": "plan_type must be domestic/abroad/global/content"}), 400
+    try:
+        _awl(user_email, carrier, plan_name, plan_type, db_path=_db_path())
+        return jsonify({"status": "added"}), 201
+    except Exception as e:
+        logger.error(f"add watchlist failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/watchlist", methods=["DELETE"])
+@require_auth
+def api_remove_from_watchlist():
+    from db import remove_from_watchlist as _rwl
+    user_email = _current_user_email()
+    if not user_email:
+        return jsonify({"error": "auth required"}), 401
+    data = request.get_json(force=True) or {}
+    deleted = _rwl(user_email, data.get('carrier', ''), data.get('plan_name', ''),
+                   data.get('plan_type', ''), db_path=_db_path())
+    return jsonify({"status": "deleted", "rows": deleted})
+
+
 # ── Saved Views (per-user filter presets) ─────────────────────────────────
 
 @app.route("/api/saved-views", methods=["GET"])

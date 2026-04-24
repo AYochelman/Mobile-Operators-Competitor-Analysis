@@ -137,4 +137,13 @@ export const api = {
 
   // Health / status — super_admin operational info
   getHealth: () => fetchApi('/api/health'),
+
+  // Watchlist — per-user starred plans
+  getWatchlist:    () => fetchApi('/api/watchlist'),
+  addToWatchlist:  (plan) => fetchApi('/api/watchlist', { method: 'POST', body: JSON.stringify(plan) }),
+  removeFromWatchlist: (plan) => fetchApi('/api/watchlist', {
+    method: 'DELETE',
+    body: JSON.stringify(plan),
+    headers: { 'Content-Type': 'application/json' },
+  }),
 }

@@ -22,6 +22,7 @@ import SuspendedPage from './pages/SuspendedPage'
 import NotFoundPage from './pages/NotFoundPage'
 import OfflineBanner from './components/OfflineBanner'
 import ViewAsBanner from './components/ViewAsBanner'
+import GlobalSearch from './components/GlobalSearch'
 
 function BrandThemeApplier() {
   const { workspace } = useAuth()
@@ -64,6 +65,7 @@ export default function App() {
       <BrandThemeApplier />
       <ViewAsBanner />
       <OfflineBanner />
+      <GlobalSearch />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/invite/:token" element={<InvitePage />} />

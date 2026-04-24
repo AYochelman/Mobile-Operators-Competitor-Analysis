@@ -217,6 +217,16 @@ def init_db(db_path=None):
                 last_triggered TEXT,
                 created_at     TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS watchlist (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_email TEXT NOT NULL,
+                carrier    TEXT NOT NULL,
+                plan_name  TEXT NOT NULL,
+                plan_type  TEXT NOT NULL,
+                added_at   TEXT NOT NULL,
+                UNIQUE(user_email, carrier, plan_name, plan_type)
+            );
+            CREATE INDEX IF NOT EXISTS idx_watchlist_user ON watchlist(user_email);
             CREATE TABLE IF NOT EXISTS saved_views (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_email   TEXT NOT NULL,
@@ -1135,6 +1145,53 @@ def update_alert_triggered(alert_id, db_path=None):
             (datetime.now().isoformat(), alert_id)
         )
         conn.commit()
+    finally:
+        conn.close()
+
+
+# ── Watchlist CRUD ────────────────────────────────────────────────────────
+
+def add_to_watchlist(user_email, carrier, plan_name, plan_type, db_path=None):
+    """Add a plan to user's watchlist. Idempotent via UNIQUE constraint."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO watchlist (user_email, carrier, plan_name, plan_type, added_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_email, carrier, plan_name, plan_type, datetime.now().isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def remove_from_watchlist(user_email, carrier, plan_name, plan_type, db_path=None):
+    """Remove a plan from user's watchlist. Scoped by user_email."""
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute(
+            "DELETE FROM watchlist WHERE user_email = ? AND carrier = ? AND plan_name = ? AND plan_type = ?",
+            (user_email, carrier, plan_name, plan_type)
+        )
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
+def get_watchlist(user_email, db_path=None):
+    """Return all watched plans for a user (newest first)."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT id, carrier, plan_name, plan_type, added_at FROM watchlist "
+            "WHERE user_email = ? ORDER BY added_at DESC",
+            (user_email,)
+        ).fetchall()
+        return [
+            {"id": r[0], "carrier": r[1], "plan_name": r[2], "plan_type": r[3], "added_at": r[4]}
+            for r in rows
+        ]
     finally:
         conn.close()
 

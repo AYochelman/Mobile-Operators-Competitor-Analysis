@@ -7,6 +7,7 @@ import { getCountriesForAbroadPlan } from '../data/abroadCountries'
 import { getAppsForAbroadPlan } from '../data/abroadApps'
 import AppsModal from './AppsModal'
 import PriceHistoryModal from './PriceHistoryModal'
+import { useWatchlist } from '../hooks/useWatchlist'
 
 const AFFILIATE_PROVIDERS = new Set(['airalo', 'holafly', 'saily', 'globalesim'])
 const AFFILIATE_URLS = {
@@ -197,6 +198,9 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
   const [showAllExtras, setShowAllExtras] = useState(false)
   const [showPlanInfo, setShowPlanInfo] = useState(false)
   const [showPriceHistory, setShowPriceHistory] = useState(false)
+  const { isWatched, toggle: toggleWatch } = useWatchlist()
+  const watchKey = { carrier: plan.carrier, plan_name: plan.plan_name || plan.service || '', plan_type: type }
+  const watched = isWatched(watchKey)
   const isGlobal = type === 'global'
   const isAbroad = type === 'abroad'
   const isContent = type === 'content'
@@ -269,6 +273,22 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
         />
       )}
 
+      {/* Watchlist star — bottom-left */}
+      {watchKey.plan_name && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); toggleWatch(watchKey) }}
+          title={watched ? 'הסר מהמעקב' : 'הוסף למעקב'}
+          className={`absolute bottom-3 right-3 p-1 transition-all ${
+            watched ? 'text-amber-400 hover:text-amber-500' : 'text-gray-300 opacity-0 group-hover:opacity-100 hover:text-amber-400'
+          }`}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill={watched ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
+      )}
+
       {/* Carrier badge — absolute top-right */}
       <div className={`flex items-center gap-1.5 ${CARRIER_LOGOS[carrier] ? 'absolute top-3 right-3' : 'mb-3'}`}>
         <Badge color={badgeColor}>{label}</Badge>
@@ -317,6 +337,11 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
         </div>
         {isGlobal && plan.original_price && plan.currency && plan.currency !== 'ILS' && (
           <div className="text-[11px] text-gray-400 mt-0.5" dir="ltr">{plan.currency} {({'USD':'$','GBP':'£','EUR':'€','AUD':'A$','CAD':'C$','JPY':'¥','CHF':'CHF ','NZD':'NZ$'})[plan.currency] || '$'}{plan.original_price}</div>
+        )}
+        {!isContent && Number(plan.price) > 0 && Number(plan.data_gb) > 0 && (
+          <div className="text-[10px] text-gray-400 mt-0.5" dir="ltr">
+            ₪{(Number(plan.price) / Number(plan.data_gb)).toFixed(2)}/GB
+          </div>
         )}
       </div>
 

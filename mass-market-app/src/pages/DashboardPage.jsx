@@ -13,6 +13,7 @@ import GroupedPlanCard from '../components/GroupedPlanCard'
 import CountryModal from '../components/CountryModal'
 import MarketMoversWidget from '../components/MarketMoversWidget'
 import SavedViewsMenu from '../components/SavedViewsMenu'
+import { useWatchlist } from '../hooks/useWatchlist'
 import FilterTag from '../components/ui/FilterTag'
 import SearchableSelect from '../components/ui/SearchableSelect'
 import Badge from '../components/ui/Badge'
@@ -196,6 +197,8 @@ export default function DashboardPage() {
   const hiddenCarrier = useHiddenCarrier()
   const visibleCarrierIds = useVisibleCarriers(CARRIERS.map(c => c.id))
   const flags = useFeatureFlags()
+  const { items: watchItems, isWatched } = useWatchlist()
+  const [onlyWatched, setOnlyWatched] = useState(false)
   const visibleTabs = useMemo(() => TABS.filter(t => !flags['hide_' + t.id]), [flags])
   const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTab] = useState(searchParams.get('tab') || 'domestic')
@@ -411,13 +414,29 @@ export default function DashboardPage() {
       else if (f.days === '30+') result = result.filter(p => p.days && p.days > 30)
     }
 
+    if (onlyWatched) {
+      result = result.filter(p => isWatched({
+        carrier: p.carrier,
+        plan_name: p.plan_name || p.service || '',
+        plan_type: tab,
+      }))
+    }
+
+    const ppgb = (p) => {
+      const pr = Number(p.price)
+      const gb = Number(p.data_gb)
+      if (!pr || !gb || gb <= 0) return null
+      return pr / gb
+    }
     if (f.sort === 'price_asc') result = [...result].sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999))
     else if (f.sort === 'price_desc') result = [...result].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
     else if (f.sort === 'gb_asc') result = [...result].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
     else if (f.sort === 'gb_desc') result = [...result].sort((a, b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999))
+    else if (f.sort === 'ppgb_asc') result = [...result].sort((a, b) => (ppgb(a) ?? 9999) - (ppgb(b) ?? 9999))
+    else if (f.sort === 'ppgb_desc') result = [...result].sort((a, b) => (ppgb(b) ?? 0) - (ppgb(a) ?? 0))
 
     return result
-  }, [plans, tab, filters])
+  }, [plans, tab, filters, onlyWatched, watchItems, isWatched])
 
   // Group plans into display items (GroupedPlanCard or PlanCard) for global tab
   const displayItems = useMemo(() => {
@@ -653,6 +672,24 @@ export default function DashboardPage() {
               </button>
             )}
 
+            <button
+              onClick={() => setOnlyWatched(v => !v)}
+              className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-colors ${
+                onlyWatched
+                  ? 'bg-amber-50 border-amber-300 text-amber-700'
+                  : 'bg-white border-moca-border/50 text-moca-sub hover:border-moca-bolt/40'
+              }`}
+              title={onlyWatched ? 'הצג הכל' : 'הצג רק חבילות במעקב'}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill={onlyWatched ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              <span>המעקב שלי</span>
+              {watchItems.length > 0 && (
+                <span className="bg-amber-100 text-amber-700 text-[9px] px-1 py-px rounded-full">{watchItems.length}</span>
+              )}
+            </button>
+
             <SavedViewsMenu
               tab={tab}
               filters={filters}
@@ -740,6 +777,8 @@ export default function DashboardPage() {
                       <FilterTag label="מחיר ↓" active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
                       <FilterTag label="GB ↑" active={filters.sort === 'gb_asc'} onClick={() => setFilter('sort', 'gb_asc')} />
                       <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
+                      <FilterTag label="₪/GB ↑" active={filters.sort === 'ppgb_asc'} onClick={() => setFilter('sort', 'ppgb_asc')} />
+                      <FilterTag label="₪/GB ↓" active={filters.sort === 'ppgb_desc'} onClick={() => setFilter('sort', 'ppgb_desc')} />
                     </div>
                   </div>
                 </div>
