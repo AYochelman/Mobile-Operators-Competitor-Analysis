@@ -17,6 +17,7 @@ import WorkspacesAdminPage from './pages/WorkspacesAdminPage'
 import WorkspaceUsersPage from './pages/WorkspaceUsersPage'
 import WorkspaceBrandingPage from './pages/WorkspaceBrandingPage'
 import AuditLogPage from './pages/AuditLogPage'
+import NotificationsPage from './pages/NotificationsPage'
 import InvitePage from './pages/InvitePage'
 import SuspendedPage from './pages/SuspendedPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -82,6 +83,7 @@ export default function App() {
           <Route path="workspace/settings" element={<ProtectedRoute adminOnly><WorkspaceBrandingPage /></ProtectedRoute>} />
           <Route path="admin/workspaces" element={<ProtectedRoute superAdminOnly><WorkspacesAdminPage /></ProtectedRoute>} />
           <Route path="admin/audit" element={<ProtectedRoute superAdminOnly><AuditLogPage /></ProtectedRoute>} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

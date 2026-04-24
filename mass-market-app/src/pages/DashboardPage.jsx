@@ -551,6 +551,19 @@ export default function DashboardPage() {
     setVisibleCount(50)
   }
 
+  // Provider stats — shown when a single carrier/provider is selected
+  const providerStats = useMemo(() => {
+    const active =
+      ((tab === 'domestic' || tab === 'abroad') && filters.carrier !== 'all') ||
+      (tab === 'global' && filters.globalProvider !== 'all')
+    if (!active || filteredPlans.length === 0) return null
+    const prices = filteredPlans.map(p => Number(p.price)).filter(p => p > 0)
+    if (prices.length === 0) return null
+    const avg = prices.reduce((a, b) => a + b, 0) / prices.length
+    const min = Math.min(...prices)
+    return { count: filteredPlans.length, avg, min }
+  }, [filteredPlans, filters, tab])
+
   const exportToExcel = useCallback(() => {
     if (!filteredPlans.length) return
     const TAB_NAMES = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי', content: 'תוכן' }
@@ -999,6 +1012,17 @@ export default function DashboardPage() {
         <div className="flex justify-center py-20"><Spinner /></div>
       )}
 
+      {/* Provider stats strip — when single carrier/provider selected */}
+      {!loading && providerStats && (
+        <div className="mb-3 flex items-center gap-3 px-1 text-sm text-right flex-wrap" dir="rtl">
+          <span className="text-gray-500">{providerStats.count} חבילות</span>
+          <span className="text-gray-300">·</span>
+          <span className="text-gray-500">ממוצע: <strong className="text-gray-700">&#8362;{providerStats.avg.toFixed(0)}</strong></span>
+          <span className="text-gray-300">·</span>
+          <span className="text-gray-500">מינימום: <strong className="text-emerald-600">&#8362;{providerStats.min}</strong></span>
+        </div>
+      )}
+
       {/* Plan cards grid */}
       {!loading && tab !== 'content' && tab !== 'banners' && (
         <>
@@ -1165,7 +1189,44 @@ export default function DashboardPage() {
           >
             <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between" dir="rtl">
               <h2 className="text-base font-bold text-gray-800">השוואת חבילות</h2>
-              <button onClick={() => setShowCompareDrawer(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    const win = window.open('', '_blank')
+                    const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE', orbit: 'Orbit', travelsim: 'Travel Sim' }
+                    const html = `<html dir="rtl"><head><title>השוואת חבילות — MOCA</title>
+<style>body{font-family:Arial,sans-serif;padding:24px;direction:rtl;background:#f9f4ee}
+h1{font-size:20px;font-weight:700;margin-bottom:20px;color:#5c3317}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.card{background:white;border:1px solid #e5e0d8;border-radius:14px;padding:18px;page-break-inside:avoid}
+.carrier{font-size:11px;color:#999;margin-bottom:4px}
+.name{font-size:13px;font-weight:600;color:#333;margin-bottom:10px;line-height:1.4}
+.price{font-size:28px;font-weight:700;color:#1a1a1a;margin-bottom:4px}
+.info{font-size:12px;color:#777}</style></head><body>
+<h1>השוואת חבילות — MOCA</h1>
+<div class="grid">
+${[...compareMap.values()].map(({ plan, planType }) => `
+<div class="card">
+  <div class="carrier">${CARRIER_HEB[plan.carrier] || plan.carrier} · ${planType === 'domestic' ? 'סלולר' : planType === 'abroad' ? 'חו"ל' : 'גלובלי'}</div>
+  <div class="name">${plan.plan_name || plan.service || ''}</div>
+  <div class="price">₪${plan.price}</div>
+  <div class="info">${plan.data_gb === null ? 'ללא הגבלה' : (plan.data_gb || '') + 'GB'}${plan.days ? ' · ' + plan.days + ' ימים' : ''}${plan.minutes ? ' · ' + plan.minutes + ' דקות' : ''}</div>
+</div>`).join('')}
+</div>
+<script>window.print()</script></body></html>`
+                    win.document.write(html)
+                    win.document.close()
+                  }}
+                  className="text-xs text-moca-sub hover:text-moca-bolt border border-moca-border/40 rounded-lg px-3 py-1.5 transition-colors hover:bg-moca-cream flex items-center gap-1.5"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                    <rect x="6" y="14" width="12" height="8"/>
+                  </svg>
+                  ייצוא PDF
+                </button>
+                <button onClick={() => setShowCompareDrawer(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&#10005;</button>
+              </div>
             </div>
             <div className="p-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

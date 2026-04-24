@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
+import { useWatchlist } from '../hooks/useWatchlist'
 import Logo from './Logo'
 
 const NAV_ICONS = {
@@ -59,6 +60,7 @@ const FLAG_FOR_PATH = {
 export default function Navbar() {
   const { user, isAdmin, isSuperAdmin, signOut, workspace } = useAuth()
   const flags = useFeatureFlags()
+  const { changesCount } = useWatchlist()
   const appTitle = workspace?.brand_config?.app_title || null
   const logoUrl  = workspace?.brand_config?.logo_url  || null
   const visibleNav = NAV_ITEMS.filter(item => {
@@ -170,6 +172,21 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-moca-sub hidden sm:inline">{user?.email}</span>
             <NavLink
+              to="/notifications"
+              className="relative text-moca-sub hover:text-moca-bolt transition-colors p-1"
+              title="התראות מעקב"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              {changesCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                  {changesCount > 9 ? '9+' : changesCount}
+                </span>
+              )}
+            </NavLink>
+            <NavLink
               to="/preferences"
               className="text-moca-sub hover:text-moca-bolt transition-colors p-1"
               title="העדפות"
@@ -212,6 +229,25 @@ export default function Navbar() {
               <span className="text-[9px] font-medium">{item.label}</span>
             </NavLink>
           ))}
+          <NavLink
+            to="/notifications"
+            className={({ isActive }) =>
+              `relative flex flex-col items-center gap-0.5 py-1.5 px-3 transition-colors ${
+                isActive ? 'text-moca-bolt' : 'text-moca-muted'
+              }`
+            }
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            {changesCount > 0 && (
+              <span className="absolute top-1 right-2 min-w-[14px] h-3.5 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                {changesCount > 9 ? '9+' : changesCount}
+              </span>
+            )}
+            <span className="text-[9px] font-medium">התראות</span>
+          </NavLink>
           {isAdmin && (
             <NavLink
               to="/settings"

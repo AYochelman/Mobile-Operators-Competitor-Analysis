@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import Badge from './ui/Badge'
 import CountryModal from './CountryModal'
 import Modal from './ui/Modal'
@@ -199,7 +199,17 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
   const [showAllExtras, setShowAllExtras] = useState(false)
   const [showPlanInfo, setShowPlanInfo] = useState(false)
   const [showPriceHistory, setShowPriceHistory] = useState(false)
+  const [copied, setCopied] = useState(false)
   const { isWatched, toggle: toggleWatch } = useWatchlist()
+
+  const handleShare = useCallback((e) => {
+    e.stopPropagation()
+    const url = `${window.location.origin}/?tab=${type}&carrier=${plan.carrier}&highlight=${encodeURIComponent(plan.plan_name || '')}`
+    navigator.clipboard?.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }).catch(() => {})
+  }, [type, plan.carrier, plan.plan_name])
   const watchKey = { carrier: plan.carrier, plan_name: plan.plan_name || plan.service || '', plan_type: type }
   const watched = isWatched(watchKey)
   const isGlobal = type === 'global'
@@ -290,6 +300,30 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
             <rect x="3" y="3" width="18" height="18" rx="2" />
             {isInCompare && <polyline points="9 12 11 14 15 10" />}
           </svg>
+        </button>
+      )}
+
+      {/* Share button — above watchlist star */}
+      {!isContent && plan.plan_name && (
+        <button
+          type="button"
+          onClick={handleShare}
+          title="שתף חבילה"
+          className={`absolute bottom-11 right-3 p-1 transition-all ${
+            copied ? 'text-emerald-500 opacity-100' : 'text-gray-300 opacity-0 group-hover:opacity-100 hover:text-moca-bolt'
+          }`}
+        >
+          {copied ? (
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          ) : (
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+          )}
         </button>
       )}
 
