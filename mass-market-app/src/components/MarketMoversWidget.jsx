@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../lib/api'
+import Badge from './ui/Badge'
 
 const CARRIER_LABELS = {
   partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום',
@@ -10,7 +11,17 @@ const CARRIER_LABELS = {
   voye: 'VOYE', orbit: 'Orbit', travelsim: 'TravelSim',
 }
 
+const CARRIER_COLORS = {
+  partner: 'pink', pelephone: 'blue', hotmobile: 'orange', cellcom: 'green',
+  mobile019: 'purple', xphone: 'teal', wecom: 'amber', neptucom: 'indigo',
+  tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
+  esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
+  saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber',
+  voye: 'pink', orbit: 'indigo', travelsim: 'teal',
+}
+
 const TYPE_LABEL = { domestic: 'סלולר', abroad: 'חו"ל', global: 'גלובלי' }
+const TYPE_BADGE_COLOR = { domestic: 'blue', abroad: 'amber', global: 'purple' }
 
 function formatPrice(p) {
   return `₪${Number(p).toFixed(Number(p) % 1 === 0 ? 0 : 2)}`
@@ -43,15 +54,17 @@ function MoverCard({ mover, onClick, isAllowedCarrier }) {
           <span className="text-xs">{drop ? '↓' : '↑'}</span>
           {pctLabel}
         </span>
-        <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide bg-gray-100 rounded px-1.5 py-0.5">
+        <Badge color={TYPE_BADGE_COLOR[mover.plan_type] || 'gray'}>
           {TYPE_LABEL[mover.plan_type] || mover.plan_type}
-        </span>
+        </Badge>
       </div>
 
-      <p className="text-[13px] font-bold text-gray-900 truncate">{label}</p>
-      <p className="text-[11px] text-gray-600 truncate leading-tight mt-0.5">{mover.plan_name}</p>
+      <div className="mb-1">
+        <Badge color={CARRIER_COLORS[mover.carrier] || 'gray'}>{label}</Badge>
+      </div>
+      <p className="text-[12px] font-medium text-gray-800 truncate leading-tight mt-1">{mover.plan_name}</p>
 
-      <div className="mt-2.5 pt-2 border-t border-gray-100 flex items-baseline gap-2 justify-end" dir="ltr">
+      <div className="mt-2.5 pt-2 border-t border-gray-200 flex items-baseline gap-2 justify-end" dir="ltr">
         <span className="text-[11px] text-gray-400 line-through decoration-2">{formatPrice(mover.old_price)}</span>
         <span className={`text-base font-extrabold ${priceClr}`}>{formatPrice(mover.new_price)}</span>
       </div>
