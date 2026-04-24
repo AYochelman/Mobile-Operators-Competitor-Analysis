@@ -87,7 +87,10 @@ export default function MarketMoversWidget({ onMoverClick, visibleCarriers }) {
         </div>
         <span className="text-[11px] text-gray-400">7 ימים אחרונים</span>
       </div>
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'thin' }}>
+      <div
+        className="flex gap-3 overflow-x-auto -mx-1 px-1 [&::-webkit-scrollbar]:hidden"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         {movers.map((m, i) => (
           <MoverCard
             key={`${m.carrier}-${m.plan_name}-${i}`}
