@@ -1368,6 +1368,64 @@ def get_history_changes(carrier, plan_type='domestic', from_date='', to_date='',
     ]
 
 
+def get_market_movers(days=7, limit=5, db_path=None):
+    """Return the top price moves (absolute % change) across domestic/abroad/global
+    plans over the last `days` days. Content plans are excluded — they're binary
+    status changes, not price points.
+
+    Result item: {carrier, plan_name, plan_type, old_price, new_price,
+                   pct_change, abs_pct, changed_at}
+    Capped at `limit` entries, sorted by |pct_change| descending.
+    """
+    since = (datetime.now() - timedelta(days=days)).isoformat()
+    db_path = db_path or DB_PATH
+    results = []
+    for plan_type in ('domestic', 'abroad', 'global'):
+        table, name_col = _HISTORY_TABLE_MAP[plan_type]
+        conn = _connect(db_path)
+        try:
+            rows = conn.execute(
+                f"SELECT carrier, {name_col}, old_val, new_val, changed_at "
+                f"FROM {table} WHERE change_type = 'price_change' AND changed_at >= ? "
+                f"ORDER BY changed_at DESC",
+                (since,)
+            ).fetchall()
+        finally:
+            conn.close()
+        for carrier, pname, old_v, new_v, ts in rows:
+            try:
+                old_p = float(old_v)
+                new_p = float(new_v)
+            except (ValueError, TypeError):
+                continue
+            if old_p <= 0:
+                continue  # can't compute % against 0
+            pct = (new_p - old_p) / old_p * 100.0
+            if abs(pct) < 0.5:
+                continue  # filter out rounding-noise 'changes'
+            results.append({
+                'carrier':    carrier,
+                'plan_name':  pname,
+                'plan_type':  plan_type,
+                'old_price':  old_p,
+                'new_price':  new_p,
+                'pct_change': round(pct, 1),
+                'abs_pct':    abs(pct),
+                'changed_at': ts,
+            })
+    # Dedup by (carrier, plan_name) — keep the most recent event per plan
+    seen = set()
+    deduped = []
+    for r in sorted(results, key=lambda x: x['changed_at'], reverse=True):
+        key = (r['carrier'], r['plan_name'], r['plan_type'])
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(r)
+    deduped.sort(key=lambda x: x['abs_pct'], reverse=True)
+    return deduped[:limit]
+
+
 def get_history_price_series(carrier, plan_type='domestic', plan_name='', from_date='', db_path=None):
     """Build price time-series from price_change events.
 

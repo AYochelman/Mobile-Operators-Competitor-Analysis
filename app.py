@@ -2892,6 +2892,86 @@ def api_history_changes():
     return jsonify({'changes': changes, 'summary': summary})
 
 
+@app.route('/api/health')
+@require_super_admin
+@limiter.limit('30 per minute')
+def api_health():
+    """System health snapshot for super-admin. Returns operational vitals:
+    last scrape / digest timestamps, DB size, workspace counts, scheduler jobs."""
+    import os as _os
+    from db import DB_PATH as _DB_PATH_CONST
+    from datetime import datetime as _dt, timezone as _tz
+    info = {'ok': True, 'generated_at': _dt.now(_tz.utc).isoformat()}
+
+    db_path = _db_path() or _DB_PATH_CONST
+    try:
+        info['db_size_mb'] = round(_os.path.getsize(db_path) / (1024 * 1024), 2)
+    except OSError:
+        info['db_size_mb'] = None
+
+    try:
+        import sqlite3 as _sq3
+        conn = _sq3.connect(db_path)
+        cur = conn.cursor()
+        cur.execute("SELECT MAX(scraped_at) FROM plans")
+        info['last_scrape'] = (cur.fetchone() or [None])[0]
+        counts = {}
+        for pt, tbl in [('domestic', 'plans'), ('abroad', 'abroad_plans'),
+                        ('global', 'global_plans'), ('content', 'content_plans')]:
+            try:
+                cur.execute(f"SELECT COUNT(*) FROM {tbl}")
+                counts[pt] = cur.fetchone()[0]
+            except Exception:
+                counts[pt] = None
+        info['plans_count'] = counts
+        cur.execute("SELECT MAX(created_at) FROM audit_log WHERE action = 'digest_sent'")
+        info['last_digest_sent'] = (cur.fetchone() or [None])[0]
+        cur.execute("SELECT MAX(created_at) FROM audit_log WHERE action = 'scrape_triggered'")
+        info['last_manual_scrape'] = (cur.fetchone() or [None])[0]
+        conn.close()
+    except Exception as e:
+        logger.warning(f"health: local db snapshot failed: {e}")
+
+    try:
+        conn = _supabase_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*), COUNT(*) FILTER (WHERE active) FROM public.workspaces")
+        total, active = cur.fetchone()
+        info['workspaces_total']  = total
+        info['workspaces_active'] = active
+        conn.close()
+    except Exception as e:
+        logger.warning(f"health: supabase snapshot failed: {e}")
+
+    try:
+        info['scheduled_jobs'] = len(scheduler.get_jobs()) if 'scheduler' in globals() else None
+    except Exception:
+        info['scheduled_jobs'] = None
+
+    return jsonify(info)
+
+
+@app.route('/api/market-movers')
+@limiter.limit('60 per minute')
+def api_market_movers():
+    """Top biggest price moves (by absolute %) across all plan types in the
+    last `days` days. Query params: days (default 7), limit (default 5)."""
+    from db import get_market_movers as _gmm
+    try:
+        days  = max(1, min(int(request.args.get('days', 7)), 90))
+    except (ValueError, TypeError):
+        days = 7
+    try:
+        limit = max(1, min(int(request.args.get('limit', 5)), 20))
+    except (ValueError, TypeError):
+        limit = 5
+    movers = _gmm(days=days, limit=limit * 3, db_path=_db_path())  # fetch extra, filter, then cap
+    hidden = _hidden_carrier_for_request()
+    if hidden:
+        movers = [m for m in movers if m.get('carrier') != hidden]
+    return jsonify({'movers': movers[:limit], 'days': days})
+
+
 @app.route('/api/history/price-series')
 @limiter.limit('60 per minute')
 def api_history_price_series():

@@ -131,4 +131,10 @@ export const api = {
 
   // User preferences
   updateMyPreferences: (prefs) => fetchApi('/api/my-preferences', { method: 'PATCH', body: JSON.stringify(prefs) }),
+
+  // Market movers — top biggest % price moves across plan types
+  getMarketMovers: (days = 7, limit = 5) => fetchApi(`/api/market-movers?days=${days}&limit=${limit}`),
+
+  // Health / status — super_admin operational info
+  getHealth: () => fetchApi('/api/health'),
 }

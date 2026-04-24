@@ -11,6 +11,7 @@ import HistoryTab from '../components/HistoryTab'
 import NewsTab from '../components/NewsTab'
 import GroupedPlanCard from '../components/GroupedPlanCard'
 import CountryModal from '../components/CountryModal'
+import MarketMoversWidget from '../components/MarketMoversWidget'
 import SavedViewsMenu from '../components/SavedViewsMenu'
 import FilterTag from '../components/ui/FilterTag'
 import SearchableSelect from '../components/ui/SearchableSelect'
@@ -589,6 +590,24 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Market movers — only above plan tabs */}
+      {['domestic', 'abroad', 'global'].includes(tab) && (
+        <MarketMoversWidget
+          visibleCarriers={visibleCarrierIds}
+          onMoverClick={(m) => {
+            setTab(m.plan_type)
+            if (m.plan_type === 'global') {
+              setFilter('globalProvider', m.carrier)
+            } else {
+              setFilter('carrier', m.carrier)
+            }
+            setFiltersOpen(true)
+            setHighlightPlan(m.plan_name)
+            setVisibleCount(5000)
+          }}
+        />
+      )}
 
       {/* Tabs — slim underline style */}
       <div className="flex justify-center gap-0 mb-6 border-b border-gray-200">

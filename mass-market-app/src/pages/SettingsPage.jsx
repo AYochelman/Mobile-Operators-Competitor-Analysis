@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import Button from '../components/ui/Button'
+import HealthWidget from '../components/HealthWidget'
 import { useAuth } from '../hooks/useAuth'
 import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
@@ -177,6 +178,7 @@ export default function SettingsPage() {
       {/* === Scrape tab === */}
       {activeTab === 'scrape' && (
         <>
+          {isSuperAdmin && <HealthWidget />}
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <h2 className="font-bold text-sm mb-3">סקרייפרים</h2>
             <p className="text-xs text-gray-400 mb-4">עדכון כל הנתונים אורך כ-12 דקות</p>
