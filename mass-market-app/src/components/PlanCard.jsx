@@ -7,6 +7,7 @@ import { getCountriesForAbroadPlan } from '../data/abroadCountries'
 import { getAppsForAbroadPlan } from '../data/abroadApps'
 import AppsModal from './AppsModal'
 import PriceHistoryModal from './PriceHistoryModal'
+import SparklineMini from './SparklineMini'
 import { useWatchlist } from '../hooks/useWatchlist'
 
 const AFFILIATE_PROVIDERS = new Set(['airalo', 'holafly', 'saily', 'globalesim'])
@@ -192,7 +193,7 @@ function formatDays(days) {
   return `${days} ימים`
 }
 
-export default function PlanCard({ plan, type = 'domestic', changeType, highlighted }) {
+export default function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo, isInCompare, onCompareToggle }) {
   const [showCountries, setShowCountries] = useState(false)
   const [showApps, setShowApps] = useState(false)
   const [showAllExtras, setShowAllExtras] = useState(false)
@@ -273,7 +274,26 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
         />
       )}
 
-      {/* Watchlist star — bottom-left */}
+      {/* Compare toggle — bottom-left (non-content plans) */}
+      {!isContent && onCompareToggle && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onCompareToggle() }}
+          title={isInCompare ? 'הסר מהשוואה' : 'הוסף להשוואה'}
+          className={`absolute bottom-3 left-3 p-1 rounded transition-all ${
+            isInCompare
+              ? 'text-blue-500'
+              : 'text-gray-300 opacity-0 group-hover:opacity-100 hover:text-blue-400'
+          }`}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill={isInCompare ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            {isInCompare && <polyline points="9 12 11 14 15 10" />}
+          </svg>
+        </button>
+      )}
+
+      {/* Watchlist star — bottom-right corner */}
       {watchKey.plan_name && (
         <button
           type="button"
@@ -290,8 +310,18 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
       )}
 
       {/* Carrier badge — absolute top-right */}
-      <div className={`flex items-center gap-1.5 ${CARRIER_LOGOS[carrier] ? 'absolute top-3 right-3' : 'mb-3'}`}>
+      <div className={`flex items-center gap-1 flex-wrap ${CARRIER_LOGOS[carrier] ? 'absolute top-3 right-3 max-w-[140px]' : 'mb-3'}`}>
         <Badge color={badgeColor}>{label}</Badge>
+        {trendInfo && (
+          <span className={`inline-flex items-center text-[8px] font-extrabold px-1.5 py-0.5 rounded-full leading-none ${
+            trendInfo.pct_change <= -10 ? 'bg-emerald-500 text-white' :
+            trendInfo.pct_change < 0   ? 'bg-emerald-100 text-emerald-700' :
+                                         'bg-red-100 text-red-600'
+          }`}>
+            {trendInfo.pct_change < 0 ? '↓' : '↑'}{Math.abs(trendInfo.pct_change).toFixed(0)}%
+            {trendInfo.pct_change <= -10 && ' 🔥'}
+          </span>
+        )}
         {isGlobal && plan.esim && <Badge color="green">eSIM</Badge>}
         {(hasRoaming || hasNeptucomRoaming) && <Badge color="blue">חו״ל</Badge>}
       </div>
@@ -342,6 +372,9 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
           <div className="text-[10px] text-gray-400 mt-0.5" dir="ltr">
             ₪{(Number(plan.price) / Number(plan.data_gb)).toFixed(2)}/GB
           </div>
+        )}
+        {!isContent && plan.plan_name && (
+          <SparklineMini carrier={carrier} planName={plan.plan_name} planType={type} />
         )}
       </div>
 

@@ -87,8 +87,23 @@ export default function GlobalSearch() {
   }, [open])
 
   const results = useMemo(() => {
-    const terms = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
-    if (terms.length === 0) return { plans: [], news: [], workspaces: [] }
+    const raw = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
+    if (raw.length === 0) return { plans: [], news: [], workspaces: [] }
+
+    // Extract numeric range tokens: <50 >30 50gb 50gb+
+    let priceMax = null, priceMin = null, gbMin = null
+    const terms = raw.filter(t => {
+      const lt = t.match(/^<(\d+(?:\.\d+)?)$/)
+      const gt = t.match(/^>(\d+(?:\.\d+)?)$/)
+      const gb = t.match(/^(\d+(?:\.\d+)?)gb\+?$/)
+      if (lt) { priceMax = parseFloat(lt[1]); return false }
+      if (gt) { priceMin = parseFloat(gt[1]); return false }
+      if (gb) { gbMin  = parseFloat(gb[1]);  return false }
+      return true
+    })
+
+    const hasNumeric = priceMax != null || priceMin != null || gbMin != null
+    if (terms.length === 0 && !hasNumeric) return { plans: [], news: [], workspaces: [] }
 
     const matchesTerms = (text) => {
       const hay = (text || '').toLowerCase()
@@ -96,8 +111,11 @@ export default function GlobalSearch() {
     }
 
     const planResults = data.plans
-      .map(p => ({ ...p, __score: matchScore(p, terms) }))
+      .map(p => ({ ...p, __score: terms.length > 0 ? matchScore(p, terms) : 1 }))
       .filter(p => p.__score > 0)
+      .filter(p => priceMax == null || Number(p.price) <= priceMax)
+      .filter(p => priceMin == null || Number(p.price) >= priceMin)
+      .filter(p => gbMin  == null || (p.data_gb != null && Number(p.data_gb) >= gbMin))
       .sort((a, b) => b.__score - a.__score)
       .slice(0, 12)
 
@@ -183,6 +201,10 @@ export default function GlobalSearch() {
             {loaded && q.trim() === '' && (
               <div className="px-4 py-8 text-center text-sm text-gray-400">
                 הקלד לחיפוש בחבילות, ספקים, חדשות{isSuperAdmin ? ', workspaces' : ''}
+                <div className="mt-1 text-[10px] text-gray-400">
+                  טיפ: <code className="font-mono bg-gray-100 px-1 rounded">&lt;50</code> מחיר עד ₪50 ·{' '}
+                  <code className="font-mono bg-gray-100 px-1 rounded">50gb+</code> 50GB ומעלה
+                </div>
                 <div className="mt-3 text-[11px] text-gray-300">
                   <kbd className="font-mono bg-gray-100 text-gray-500 rounded px-1.5 py-0.5 mx-0.5">↑</kbd>
                   <kbd className="font-mono bg-gray-100 text-gray-500 rounded px-1.5 py-0.5 mx-0.5">↓</kbd>

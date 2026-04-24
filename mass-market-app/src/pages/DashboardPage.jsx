@@ -226,6 +226,9 @@ export default function DashboardPage() {
   const [eurRate, setEurRate] = useState(null)
   const [gbpRate, setGbpRate] = useState(null)
   const [visibleCount, setVisibleCount] = useState(5000)
+  const [trendMap, setTrendMap] = useState(new Map())   // carrier|plan_name → {pct_change}
+  const [compareMap, setCompareMap] = useState(new Map()) // key → {plan, planType}
+  const [showCompareDrawer, setShowCompareDrawer] = useState(false)
   const [banners, setBanners] = useState([])
   const [bannersLoaded, setBannersLoaded] = useState(false)
   const [storeBanners, setStoreBanners] = useState([])
@@ -303,6 +306,29 @@ export default function DashboardPage() {
         }
       })
       .catch(() => {})
+  }, [])
+
+  // Fetch market movers once to build the trend badge map
+  useEffect(() => {
+    api.getMarketMovers(7, 20)
+      .then(res => {
+        const map = new Map()
+        for (const m of res?.movers || []) {
+          map.set(`${m.carrier}|${m.plan_name}`, { pct_change: m.pct_change })
+        }
+        setTrendMap(map)
+      })
+      .catch(() => {})
+  }, [])
+
+  const toggleCompare = useCallback((plan, planType) => {
+    const key = `${plan.carrier}|${plan.plan_name}|${planType}`
+    setCompareMap(prev => {
+      const next = new Map(prev)
+      if (next.has(key)) next.delete(key)
+      else if (next.size < 4) next.set(key, { plan, planType })
+      return next
+    })
   }, [])
 
   async function loadTab(t) {
@@ -990,12 +1016,16 @@ export default function DashboardPage() {
               }
               const plan = item.plan
               const key = `${plan.carrier}|${plan.plan_name}`
+              const compareKey = `${key}|${tab}`
               return (
                 <PlanCard
                   key={key + i}
                   plan={plan}
                   type={tab}
                   changeType={changeLookup[key]}
+                  trendInfo={trendMap.get(key) || null}
+                  isInCompare={compareMap.has(compareKey)}
+                  onCompareToggle={() => toggleCompare(plan, tab)}
                   highlighted={highlightPlan && (() => {
                     const h = highlightPlan.toLowerCase().replace(/[\s\-–]+/g, ' ')
                     const name = (plan.plan_name || '').toLowerCase().replace(/[\s\-–]+/g, ' ')
@@ -1102,6 +1132,59 @@ export default function DashboardPage() {
         title={countryModal?.title}
         countries={countryModal?.countries}
       />
+
+      {/* Compare bottom bar */}
+      {compareMap.size > 0 && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 px-5 py-3 flex items-center gap-4" dir="rtl">
+            <span className="text-sm font-semibold text-gray-700">{compareMap.size} חבילות נבחרו</span>
+            <button
+              onClick={() => setShowCompareDrawer(true)}
+              className="bg-[#5c3317] hover:bg-[#7a4520] text-white text-sm font-medium px-4 py-1.5 rounded-xl transition-colors"
+            >
+              השווה
+            </button>
+            <button
+              onClick={() => setCompareMap(new Map())}
+              className="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none"
+              title="נקה בחירה"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Compare drawer */}
+      {showCompareDrawer && (
+        <div className="fixed inset-0 z-[9998] animate-fade-in" onClick={() => setShowCompareDrawer(false)}>
+          <div className="fixed inset-0 bg-black/40" />
+          <div
+            className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-2xl max-h-[85vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between" dir="rtl">
+              <h2 className="text-base font-bold text-gray-800">השוואת חבילות</h2>
+              <button onClick={() => setShowCompareDrawer(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[...compareMap.values()].map(({ plan, planType }, i) => (
+                  <div key={i} className="relative">
+                    <button
+                      onClick={() => toggleCompare(plan, planType)}
+                      className="absolute top-2 left-2 z-10 text-[10px] text-red-500 hover:text-red-700 bg-white rounded-full border border-red-200 px-2 py-0.5 font-medium"
+                    >
+                      הסר
+                    </button>
+                    <PlanCard plan={plan} type={planType} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
