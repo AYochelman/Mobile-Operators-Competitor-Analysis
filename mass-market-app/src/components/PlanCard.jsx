@@ -6,6 +6,7 @@ import { getCountriesForPlan } from '../data/globalCountries'
 import { getCountriesForAbroadPlan } from '../data/abroadCountries'
 import { getAppsForAbroadPlan } from '../data/abroadApps'
 import AppsModal from './AppsModal'
+import PriceHistoryModal from './PriceHistoryModal'
 
 const AFFILIATE_PROVIDERS = new Set(['airalo', 'holafly', 'saily', 'globalesim'])
 const AFFILIATE_URLS = {
@@ -195,6 +196,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
   const [showApps, setShowApps] = useState(false)
   const [showAllExtras, setShowAllExtras] = useState(false)
   const [showPlanInfo, setShowPlanInfo] = useState(false)
+  const [showPriceHistory, setShowPriceHistory] = useState(false)
   const isGlobal = type === 'global'
   const isAbroad = type === 'abroad'
   const isContent = type === 'content'
@@ -297,7 +299,22 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
 
       {/* Price */}
       <div className="mb-3 text-right">
-        <div className="text-3xl font-bold text-gray-900 tracking-tight">{String(plan.price).startsWith('₪') ? plan.price : `₪${plan.price}`}</div>
+        <div className="flex items-baseline gap-2 justify-start">
+          <div className="text-3xl font-bold text-gray-900 tracking-tight">{String(plan.price).startsWith('₪') ? plan.price : `₪${plan.price}`}</div>
+          {!isContent && plan.plan_name && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowPriceHistory(true) }}
+              title="היסטוריית מחיר"
+              className="text-gray-300 hover:text-moca-bolt transition-colors p-1 -m-1"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                <polyline points="17 6 23 6 23 12"/>
+              </svg>
+            </button>
+          )}
+        </div>
         {isGlobal && plan.original_price && plan.currency && plan.currency !== 'ILS' && (
           <div className="text-[11px] text-gray-400 mt-0.5" dir="ltr">{plan.currency} {({'USD':'$','GBP':'£','EUR':'€','AUD':'A$','CAD':'C$','JPY':'¥','CHF':'CHF ','NZD':'NZ$'})[plan.currency] || '$'}{plan.original_price}</div>
         )}
@@ -472,6 +489,16 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
           onClose={() => setShowApps(false)}
           title={appsData.title}
           apps={appsData.apps}
+        />
+      )}
+      {!isContent && plan.plan_name && (
+        <PriceHistoryModal
+          open={showPriceHistory}
+          onClose={() => setShowPriceHistory(false)}
+          carrier={carrier}
+          planName={plan.plan_name}
+          planType={type}
+          currentPrice={plan.price}
         />
       )}
       {planInfo && (
