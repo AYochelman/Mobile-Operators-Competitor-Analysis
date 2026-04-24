@@ -181,10 +181,24 @@ require_super_admin = _require_role({'super_admin'}, 'Unauthorized — super_adm
 
 def _current_user_email():
     """Return the authenticated user's email (lowercased) from the JWT payload
-    set by @require_auth, or None if the caller authenticated via API key
-    (treated as a trusted server-to-server caller)."""
+    set by @require_auth. If the request was authenticated via API key
+    (trusted server-to-server), fall back to decoding any JWT that was also
+    attached — this lets dev-mode callers that send both headers still be
+    identified as a real user for per-user resources (saved views, alerts)."""
     payload = getattr(g, 'jwt_payload', None)
     if payload is None:
+        # API-key auth path — try to pull identity from a JWT if one is present
+        token = None
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+        if not token:
+            token = request.cookies.get("auth_token")
+        if token:
+            p = _verify_supabase_jwt(token)
+            if p:
+                email = (p.get('email') or '').strip().lower()
+                return email or None
         return None
     email = (payload.get('email') or '').strip().lower()
     return email or None
