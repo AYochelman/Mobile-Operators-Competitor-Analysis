@@ -187,13 +187,36 @@ def send_notification(message, config):
         return False
 
 
+import re as _re_slack
+
+# Defence-in-depth: even if a caller forgets to validate, this final guard
+# stops SSRF before requests.post is reached.
+_SLACK_TEAMS_WEBHOOK_RE = _re_slack.compile(
+    r'^https://(hooks\.slack\.com/|.+\.webhook\.office\.com/)'
+)
+
+
 def send_slack(message: str, webhook_url: str) -> bool:
     """Send a message to a Slack/Teams-compatible webhook URL.
 
     Slack and Microsoft Teams both accept POST {"text": "..."} on incoming-webhook URLs,
     so the same function works for both.
+
+    The URL is validated against an allowlist (Slack hooks domain or any
+    *.webhook.office.com host) to prevent the function from being weaponised as
+    an SSRF gadget if a caller passes an attacker-controlled URL.
     """
     if not webhook_url:
+        return False
+    if not _SLACK_TEAMS_WEBHOOK_RE.match(webhook_url.strip()):
+        # Refuse to send to unknown hosts. Log + return False so callers see failure.
+        try:
+            import logging as _logging
+            _logging.getLogger(__name__).warning(
+                "send_slack refused: webhook_url is not on Slack/Teams allowlist"
+            )
+        except Exception:
+            pass
         return False
     try:
         resp = requests.post(webhook_url, json={"text": message}, timeout=10)

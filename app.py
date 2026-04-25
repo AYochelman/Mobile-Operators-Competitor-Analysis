@@ -105,21 +105,22 @@ def require_api_key(f):
 
 def require_auth(f):
     """Accept a valid Supabase JWT (Authorization header or auth_token cookie) OR API key.
-    Sets g.jwt_payload to the decoded payload (or None for API-key auth).
+    Sets g.jwt_payload to the decoded payload (or None for API-key-only auth).
+
+    JWT is checked FIRST so that requests carrying both headers (e.g. dev-mode
+    frontend that sends both Authorization Bearer + X-API-Key) are identified
+    by the real user — otherwise role-aware helpers that read g.jwt_payload
+    would treat the request as anonymous server-to-server and deny per-user
+    actions like managing workspace users.
     """
     @wraps(f)
     def decorated(*args, **kwargs):
-        # 1. API key (server-to-server)
-        api_key_header = request.headers.get("X-API-Key")
-        if api_key_header and hmac.compare_digest(api_key_header, _get_api_key()):
-            g.jwt_payload = None
-            return f(*args, **kwargs)
-        # 2. JWT from Authorization header
+        # 1. JWT from Authorization header
         token = None
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
-        # 3. JWT from httpOnly cookie (fallback)
+        # 2. JWT from httpOnly cookie (fallback)
         if not token:
             token = request.cookies.get("auth_token")
         if token:
@@ -127,19 +128,52 @@ def require_auth(f):
             if payload:
                 g.jwt_payload = payload
                 return f(*args, **kwargs)
+        # 3. API key (server-to-server) — only if no valid JWT was provided
+        api_key_header = request.headers.get("X-API-Key")
+        if api_key_header and hmac.compare_digest(api_key_header, _get_api_key()):
+            g.jwt_payload = None
+            return f(*args, **kwargs)
         return jsonify({"error": "Unauthorized"}), 401
     return decorated
 
 
+def _get_server_admin_key():
+    """Get or generate the SEPARATE server-admin key. This key is what
+    legitimate server-to-server jobs use to bypass role checks. It is
+    intentionally distinct from the regular api_key (which is scoped to
+    scrape-trigger / data-read endpoints) so that a leak of one does not
+    automatically grant admin powers."""
+    try:
+        cfg = load_config()
+        key = cfg.get("server_admin_key")
+        if key:
+            return key
+    except Exception as e:
+        logger.warning(f"Could not read server_admin_key from config: {e}")
+    key = secrets.token_urlsafe(32)
+    try:
+        cfg = load_config()
+        cfg["server_admin_key"] = key
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+        logger.info("New server_admin_key generated and saved")
+    except Exception as e:
+        logger.warning(f"Could not save server_admin_key: {e}")
+    return key
+
+
 def _require_role(allowed_roles, error_msg):
-    """Factory for role-based decorators. API-key auth bypasses role check
-    (trusted server-to-server). JWT auth must resolve to a role in allowed_roles."""
+    """Factory for role-based decorators. JWT auth must resolve to a role
+    in allowed_roles. The regular api_key does NOT bypass this check —
+    only a request bearing the dedicated X-Server-Admin-Key header can,
+    and that key is never sent from the frontend."""
     def decorator(f):
         @wraps(f)
         def decorated(*args, **kwargs):
-            # API key — trusted server, always allowed
-            api_key_header = request.headers.get("X-API-Key")
-            if api_key_header and hmac.compare_digest(api_key_header, _get_api_key()):
+            # Dedicated server-admin key (separate from api_key) — never
+            # exposed to the browser. Used only by trusted server-to-server
+            # callers (e.g. cron scripts) that legitimately need admin access.
+            if _is_server_admin_request():
                 g.jwt_payload = None
                 return f(*args, **kwargs)
             # JWT — extract email, verify role via Supabase
@@ -179,6 +213,22 @@ require_admin = _require_role({'admin', 'super_admin'}, 'Unauthorized — admin 
 require_super_admin = _require_role({'super_admin'}, 'Unauthorized — super_admin required')
 
 
+# Slack / Teams incoming-webhook allowlist — used everywhere a webhook URL is
+# accepted from a request body. Prevents SSRF to internal services / cloud
+# metadata endpoints.
+import re as _re_webhook
+_SLACK_TEAMS_WEBHOOK_RE = _re_webhook.compile(
+    r'^https://(hooks\.slack\.com/|.+\.webhook\.office\.com/)'
+)
+
+
+def _is_valid_slack_webhook(url: str) -> bool:
+    """True iff *url* is an HTTPS Slack or MS Teams incoming-webhook URL."""
+    if not url or not isinstance(url, str):
+        return False
+    return bool(_SLACK_TEAMS_WEBHOOK_RE.match(url.strip()))
+
+
 def _current_user_email():
     """Return the authenticated user's email (lowercased) from the JWT payload
     set by @require_auth. If the request was authenticated via API key
@@ -204,15 +254,35 @@ def _current_user_email():
     return email or None
 
 
+def _is_server_admin_request():
+    """True iff the current request bears the dedicated X-Server-Admin-Key
+    header with the correct value. The regular api_key does NOT count —
+    that key is for scrape triggers and JWT-anonymous reads, not for
+    administrative bypass."""
+    sa_key_header = request.headers.get("X-Server-Admin-Key")
+    if not sa_key_header:
+        return False
+    try:
+        return hmac.compare_digest(sa_key_header, _get_server_admin_key())
+    except Exception:
+        return False
+
+
 def _can_manage_workspace_users(workspace_id):
     """True if the current request may manage users for the given workspace.
-    API-key (server-to-server): always allowed.
+    Server-admin key (dedicated, server-to-server only): always allowed.
     super_admin: always allowed.
     admin: only when their own workspace_id matches the target workspace.
+
+    Note: a request authenticated only by the regular api_key (i.e. the key
+    used by dev mode and scrape triggers) is NOT trusted here. Admin bypass
+    requires the dedicated X-Server-Admin-Key header.
     """
+    if _is_server_admin_request():
+        return True
     payload = getattr(g, 'jwt_payload', None)
     if payload is None:
-        return True  # API key — trusted server caller
+        return False  # api_key alone is not enough for user-management bypass
     email = (payload.get('email') or '').strip().lower()
     ctx = _get_user_context(email)
     role = ctx.get('role', 'viewer')
@@ -563,15 +633,21 @@ def _verify_supabase_jwt(token: str):
                 return None
 
         elif alg == 'HS256':
+            # HS256 is the legacy signing algorithm. Once Supabase has been
+            # migrated to JWT Signing Keys (ES256, the default since late 2025),
+            # the project's HS256 secret is revoked and no legitimate new token
+            # will ever come in with alg=HS256. Reject unconditionally if the
+            # secret is missing — silently accepting unsigned tokens here would
+            # be a complete authentication bypass.
             cfg = load_config()
             secret = cfg.get('supabase_jwt_secret') or os.environ.get('SUPABASE_JWT_SECRET', '')
-            if secret:
-                computed = hmac.new(secret.encode('utf-8'), signing_input, hashlib.sha256).digest()
-                if not hmac.compare_digest(computed, sig_bytes):
-                    logger.warning("HS256 JWT signature verification failed — possible token forgery")
-                    return None
-            else:
-                logger.warning("supabase_jwt_secret not configured — HS256 token accepted without verification")
+            if not secret:
+                logger.warning("HS256 JWT rejected: supabase_jwt_secret not configured (Supabase has migrated to ES256 — this token is either expired or forged)")
+                return None
+            computed = hmac.new(secret.encode('utf-8'), signing_input, hashlib.sha256).digest()
+            if not hmac.compare_digest(computed, sig_bytes):
+                logger.warning("HS256 JWT signature verification failed — possible token forgery")
+                return None
 
         else:
             logger.warning(f"Unsupported JWT algorithm: {alg}")
@@ -1733,16 +1809,32 @@ def api_archive_date_range():
     return jsonify(get_archive_date_range(db_path=_db_path()))
 
 
+_ARCHIVE_BANNER_ROOT = os.path.realpath(os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "data", "archive", "banners"
+))
+
+
 @app.route("/archive-banners/<path:filepath>")
 def serve_archive_banner(filepath):
-    """Serve archived banner PNG files."""
-    base = os.path.dirname(os.path.abspath(__file__))
-    full = os.path.join(base, filepath)
+    """Serve archived banner PNG files. Contained strictly to data/archive/banners/."""
+    # Stored DB paths are relative to the app root (e.g. "data/archive/banners/<carrier>/<date>.png").
+    # Strip the leading data/archive/banners/ prefix if present so we can contain to that root.
+    norm = filepath.replace("\\", "/").lstrip("/")
+    prefix = "data/archive/banners/"
+    if norm.startswith(prefix):
+        norm = norm[len(prefix):]
+
+    # Reject absolute paths and obvious traversal early
+    if not norm or norm.startswith(("/", "\\")) or ":" in norm:
+        abort(404)
+
+    full = os.path.realpath(os.path.join(_ARCHIVE_BANNER_ROOT, norm))
+    if not (full == _ARCHIVE_BANNER_ROOT or full.startswith(_ARCHIVE_BANNER_ROOT + os.sep)):
+        abort(404)
     if not os.path.isfile(full):
         abort(404)
-    directory = os.path.dirname(full)
-    filename = os.path.basename(full)
-    return send_from_directory(directory, filename)
+    # Use the file's own directory so send_from_directory never sees a subpath
+    return send_from_directory(os.path.dirname(full), os.path.basename(full))
 
 
 @app.route("/api/content-changes")
@@ -1807,12 +1899,15 @@ def api_scrape_now():
 @limiter.limit("60 per minute")
 def api_get_alerts():
     """Return alerts owned by the authenticated user.
-    Identity is taken from the verified JWT; API-key callers may optionally
-    pass ?user_email= to filter on behalf of a specific user."""
+    Identity is taken from the verified JWT; API-key callers MUST pass
+    ?user_email= explicitly. Unscoped queries (which would expose every
+    user's alerts) are rejected."""
     user_email = _current_user_email()
     if user_email is None:
-        # Server-to-server (API key) — allow explicit filter
+        # Server-to-server (API key) — explicit user_email is required.
         user_email = (request.args.get("user_email") or "").strip().lower() or None
+        if not user_email:
+            return jsonify({"error": "user_email required for API-key callers"}), 400
     alerts = get_price_alerts(user_email=user_email, db_path=_db_path())
     return jsonify(alerts)
 
@@ -1847,8 +1942,13 @@ def api_create_alert():
 @require_auth
 def api_delete_alert(alert_id):
     """Delete an alert. JWT callers can only delete their own alerts;
-    API-key callers can delete any alert."""
+    API-key callers MUST pass ?user_email= so the delete remains scoped
+    (otherwise an unscoped delete bypasses the per-user IDOR check)."""
     user_email = _current_user_email()
+    if user_email is None:
+        user_email = (request.args.get("user_email") or "").strip().lower() or None
+        if not user_email:
+            return jsonify({"error": "user_email required for API-key callers"}), 400
     deleted = delete_price_alert(alert_id, user_email=user_email, db_path=_db_path())
     if deleted == 0:
         return jsonify({"error": "not found"}), 404
@@ -2355,12 +2455,17 @@ def api_push_test():
 @require_auth
 @limiter.limit("60 per minute")
 def api_my_role():
-    """Legacy endpoint — prefer /api/my-context. Returns only the role."""
+    """Legacy endpoint — prefer /api/my-context. Returns only the role.
+
+    Identity is taken exclusively from the verified JWT. API-key callers
+    have no user identity and receive role='viewer' (no escalation possible
+    via the X-User-Email request header)."""
     payload = getattr(g, 'jwt_payload', None)
-    if payload:
-        email = (payload.get('email') or '').strip().lower()
-    else:
-        email = request.headers.get('X-User-Email', '').strip().lower()
+    if not payload:
+        return jsonify({"role": "viewer"})
+    email = (payload.get('email') or '').strip().lower()
+    if not email:
+        return jsonify({"role": "viewer"})
     return jsonify({"role": _get_user_context(email)["role"]})
 
 
@@ -2406,12 +2511,17 @@ def api_my_context():
 
     super_admin users may have workspace=null (cross-workspace view).
     A non-null workspace with active=false means the customer has been
-    suspended — the frontend should show a friendly 'contact us' screen."""
+    suspended — the frontend should show a friendly 'contact us' screen.
+
+    Identity is taken exclusively from the verified JWT. API-key callers
+    have no user identity and receive an empty context (no escalation via
+    the X-User-Email request header)."""
     payload = getattr(g, 'jwt_payload', None)
-    if payload:
-        email = (payload.get('email') or '').strip().lower()
-    else:
-        email = request.headers.get('X-User-Email', '').strip().lower()
+    if not payload:
+        return jsonify({"role": "viewer", "workspace_id": None, "workspace": None})
+    email = (payload.get('email') or '').strip().lower()
+    if not email:
+        return jsonify({"role": "viewer", "workspace_id": None, "workspace": None})
     return jsonify(_get_user_context(email))
 
 
@@ -3116,8 +3226,7 @@ def api_workspace_branding():
 
     # Validate Slack webhook URL — must be HTTPS to a known incoming-webhook host
     if updates.get('slack_webhook_url'):
-        sw = updates['slack_webhook_url']
-        if not _re.match(r'^https://(hooks\.slack\.com/|.+\.webhook\.office\.com/)', sw):
+        if not _is_valid_slack_webhook(updates['slack_webhook_url']):
             return jsonify({"error": "slack_webhook_url must be a Slack or Teams incoming-webhook HTTPS URL"}), 400
 
     try:
@@ -3164,9 +3273,15 @@ def api_workspace_slack_test():
     if role not in ('admin', 'super_admin') or not ws_id:
         return jsonify({"error": "Unauthorized"}), 403
 
-    # Caller can pass a URL to test before saving, or rely on stored config
+    # Caller can pass a URL to test before saving, or rely on stored config.
+    # NOTE: any URL accepted from the request body MUST be validated against the
+    # Slack/Teams allowlist to prevent SSRF (e.g. http://169.254.169.254/...).
     data = request.get_json(silent=True) or {}
     webhook_url = (data.get('webhook_url') or '').strip()
+    if webhook_url and not _is_valid_slack_webhook(webhook_url):
+        return jsonify({
+            "error": "webhook_url must be a Slack or Teams incoming-webhook HTTPS URL"
+        }), 400
     if not webhook_url:
         try:
             conn = _supabase_conn()

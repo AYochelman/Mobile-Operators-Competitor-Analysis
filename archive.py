@@ -96,6 +96,10 @@ def save_banner_snapshot(carrier: str, src_path: str, is_store: bool = False):
     if not os.path.isfile(src_path):
         return
 
+    # Skip suspiciously small files — WAF-blocked or blank screenshot
+    if os.path.getsize(src_path) < 10_000:
+        return
+
     new_hash = _sha256_file(src_path)
     last_hash = db.get_last_banner_hash(carrier, is_store=is_store)
 

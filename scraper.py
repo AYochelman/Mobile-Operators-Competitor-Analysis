@@ -6848,6 +6848,11 @@ def _banner_019_stealth(url: str, out_path: str, scraped_at: str) -> dict:
                     return {"carrier": "mobile019", "scraped_at": scraped_at, "success": False}
                 _dismiss_popups(page)
                 page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
+                file_size = os.path.getsize(out_path) if os.path.exists(out_path) else 0
+                if file_size < 5000:
+                    logger.warning("_banner_019_stealth: screenshot too small (%d bytes), removing.", file_size)
+                    os.remove(out_path)
+                    return {"carrier": "mobile019", "scraped_at": scraped_at, "success": False}
                 logger.info("Banner screenshot saved (stealth): %s", out_path)
                 return {"carrier": "mobile019", "scraped_at": scraped_at, "success": True}
             finally:
@@ -6865,8 +6870,10 @@ def _banner_xphone_stealth(url: str, out_path: str, scraped_at: str) -> dict:
     try:
         from playwright.sync_api import sync_playwright as _sp
         with _sp() as pw:
+            # AWS WAF serves a JS challenge that headless Chromium fails.
+            # headed=False fails (202 + empty body); headed=True passes the challenge.
             browser = pw.chromium.launch(
-                headless=True,
+                headless=False,
                 channel="chrome",
                 args=["--disable-blink-features=AutomationControlled"],
             )
@@ -6886,10 +6893,10 @@ def _banner_xphone_stealth(url: str, out_path: str, scraped_at: str) -> dict:
             page = context.new_page()
             try:
                 try:
-                    resp = page.goto(url, timeout=40000, wait_until="commit")
+                    resp = page.goto(url, timeout=40000, wait_until="domcontentloaded")
                 except Exception:
                     resp = None
-                page.wait_for_timeout(5000)
+                page.wait_for_timeout(12000)  # extra time for JS challenge to complete
                 body = page.evaluate("document.body.innerText") or ""
                 if len(body) < 300 or "confirm you are human" in body.lower() or "http error 503" in body.lower():
                     logger.warning("_banner_xphone_stealth: site unavailable or WAF block (body=%d chars), skipping.", len(body))
@@ -6900,6 +6907,7 @@ def _banner_xphone_stealth(url: str, out_path: str, scraped_at: str) -> dict:
                 file_size = _os.path.getsize(out_path) if _os.path.exists(out_path) else 0
                 if file_size < 5000:
                     logger.warning("_banner_xphone_stealth: screenshot too small (%d bytes), likely blank.", file_size)
+                    _os.remove(out_path)  # remove bad file so previous good screenshot stays on disk
                     return {"carrier": "xphone", "scraped_at": scraped_at, "success": False}
                 logger.info("Banner screenshot saved (xphone stealth): %s (%d bytes)", out_path, file_size)
                 return {"carrier": "xphone", "scraped_at": scraped_at, "success": True}
