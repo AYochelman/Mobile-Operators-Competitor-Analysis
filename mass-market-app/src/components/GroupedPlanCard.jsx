@@ -1,8 +1,10 @@
 import { useState, useCallback, memo } from 'react'
 import Badge from './ui/Badge'
 import CountryModal from './CountryModal'
+import AnnotationsModal from './AnnotationsModal'
 import { getCountriesForPlan } from '../data/globalCountries'
 import { useWatchlist } from '../hooks/useWatchlist'
+import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
 
 const CARRIER_LOGOS = {
   tuki:            '/logos/tuki.png',
@@ -106,7 +108,9 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [showCountries, setShowCountries] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showAnnotations, setShowAnnotations] = useState(false)
   const { isWatched, toggle: toggleWatch } = useWatchlist()
+  const { countFor } = useAnnotationCounts()
 
   const selectedPlan = plans[selectedIndex]
   const label = GLOBAL_LABELS[carrier] || carrier
@@ -115,6 +119,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
 
   const watchKey = { carrier, plan_name: selectedPlan.plan_name || '', plan_type: 'global' }
   const watched = isWatched(watchKey)
+  const annotationCount = selectedPlan.plan_name ? countFor(carrier, 'global', selectedPlan.plan_name) : 0
 
   const handleShare = useCallback((e) => {
     e.stopPropagation()
@@ -257,6 +262,27 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
             </button>
           )}
 
+          {/* Annotations */}
+          {selectedPlan.plan_name && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowAnnotations(true) }}
+              title={annotationCount > 0 ? `${annotationCount} הערות צוות` : 'הוסף הערה'}
+              className={`relative p-1 transition-all ${
+                annotationCount > 0 ? 'text-moca-bolt' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
+              }`}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill={annotationCount > 0 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              {annotationCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[12px] h-3 bg-moca-bolt text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                  {annotationCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {/* Share */}
           {selectedPlan.plan_name && (
             <button
@@ -306,6 +332,18 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
           onClose={() => setShowCountries(false)}
           title={countryData.title}
           countries={countryData.countries}
+        />
+      )}
+
+      {/* Annotations modal — keyed to currently selected plan (the active GB pill) */}
+      {selectedPlan.plan_name && showAnnotations && (
+        <AnnotationsModal
+          open={showAnnotations}
+          onClose={() => setShowAnnotations(false)}
+          carrier={carrier}
+          planName={selectedPlan.plan_name}
+          planType="global"
+          planLabel={`${destination} · ${selectedPlan.data_gb === null ? 'ללא הגבלה' : selectedPlan.data_gb + 'GB'}`}
         />
       )}
     </div>
