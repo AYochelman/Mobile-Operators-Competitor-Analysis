@@ -13,6 +13,9 @@ import GroupedPlanCard from '../components/GroupedPlanCard'
 import CountryModal from '../components/CountryModal'
 import MarketMoversWidget from '../components/MarketMoversWidget'
 import SavedViewsMenu from '../components/SavedViewsMenu'
+import SavedComparesMenu from '../components/SavedComparesMenu'
+import CarrierAIInsights from '../components/CarrierAIInsights'
+import ScrapeProgressPanel from '../components/ScrapeProgressPanel'
 import { useWatchlist } from '../hooks/useWatchlist'
 import FilterTag from '../components/ui/FilterTag'
 import SearchableSelect from '../components/ui/SearchableSelect'
@@ -331,6 +334,43 @@ export default function DashboardPage() {
     })
   }, [])
 
+  // Load a saved compare set: resolve plan refs to live plan objects from current state
+  const applyCompareSet = useCallback(async (planRefs) => {
+    const next = new Map()
+    // Make sure all plan-type buckets are loaded
+    const types = [...new Set(planRefs.map(r => r.plan_type))]
+    const fetchPromises = []
+    if (types.includes('domestic') && plans.domestic.length === 0) fetchPromises.push(api.getPlans().then(p => ({ k: 'domestic', p })))
+    if (types.includes('abroad')   && plans.abroad.length === 0)   fetchPromises.push(api.getAbroadPlans().then(p => ({ k: 'abroad', p })))
+    if (types.includes('global')   && plans.global.length === 0)   fetchPromises.push(api.getGlobalPlans().then(p => ({ k: 'global', p })))
+    if (fetchPromises.length > 0) {
+      const results = await Promise.all(fetchPromises)
+      const updates = {}
+      for (const r of results) updates[r.k] = r.p
+      setPlans(prev => ({ ...prev, ...updates }))
+      // Use newly fetched data for resolution
+      for (const ref of planRefs) {
+        const pool = updates[ref.plan_type] || plans[ref.plan_type] || []
+        const found = pool.find(p => p.carrier === ref.carrier && p.plan_name === ref.plan_name)
+        if (found) {
+          const k = `${found.carrier}|${found.plan_name}|${ref.plan_type}`
+          next.set(k, { plan: found, planType: ref.plan_type })
+        }
+      }
+    } else {
+      for (const ref of planRefs) {
+        const pool = plans[ref.plan_type] || []
+        const found = pool.find(p => p.carrier === ref.carrier && p.plan_name === ref.plan_name)
+        if (found) {
+          const k = `${found.carrier}|${found.plan_name}|${ref.plan_type}`
+          next.set(k, { plan: found, planType: ref.plan_type })
+        }
+      }
+    }
+    setCompareMap(next)
+    setShowCompareDrawer(true)
+  }, [plans])
+
   async function loadTab(t) {
     setLoading(true)
     try {
@@ -648,6 +688,9 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Live scrape progress — shows during update */}
+      {isAdmin && <ScrapeProgressPanel />}
 
       {/* Market movers — only above plan tabs */}
       {['domestic', 'abroad', 'global'].includes(tab) && (
@@ -1020,6 +1063,9 @@ export default function DashboardPage() {
           <span className="text-gray-500">ממוצע: <strong className="text-gray-700">&#8362;{providerStats.avg.toFixed(0)}</strong></span>
           <span className="text-gray-300">·</span>
           <span className="text-gray-500">מינימום: <strong className="text-emerald-600">&#8362;{providerStats.min}</strong></span>
+          <div className="mr-auto">
+            <CarrierAIInsights carrierId={tab === 'global' ? filters.globalProvider : filters.carrier} />
+          </div>
         </div>
       )}
 
@@ -1163,9 +1209,9 @@ export default function DashboardPage() {
         countries={countryModal?.countries}
       />
 
-      {/* Compare bottom bar */}
-      {compareMap.size > 0 && (
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+      {/* Compare bottom bar — also shows SavedComparesMenu when no plans selected */}
+      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+        {compareMap.size > 0 ? (
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 px-5 py-3 flex items-center gap-4" dir="rtl">
             <span className="text-sm font-semibold text-gray-700">{compareMap.size} חבילות נבחרו</span>
             <button
@@ -1174,6 +1220,10 @@ export default function DashboardPage() {
             >
               השווה
             </button>
+            <SavedComparesMenu
+              comparePlans={[...compareMap.values()]}
+              onApply={applyCompareSet}
+            />
             <button
               onClick={() => setCompareMap(new Map())}
               className="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none"
@@ -1182,8 +1232,8 @@ export default function DashboardPage() {
               ✕
             </button>
           </div>
-        </div>
-      )}
+        ) : null}
+      </div>
 
       {/* Compare drawer */}
       {showCompareDrawer && (

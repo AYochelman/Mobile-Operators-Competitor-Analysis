@@ -14,7 +14,8 @@ export default function SavedViewsMenu({ tab, filters, onApply }) {
   const load = useCallback(async () => {
     try {
       const data = await api.getSavedViews()
-      setViews(data || [])
+      // Compare-set entries are stored under "[CMP] " prefix — exclude them here
+      setViews((data || []).filter(v => !v.name?.startsWith('[CMP] ')))
     } catch (e) {
       setErr(e.message)
     } finally {

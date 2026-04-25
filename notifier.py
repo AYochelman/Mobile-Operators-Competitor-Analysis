@@ -187,6 +187,21 @@ def send_notification(message, config):
         return False
 
 
+def send_slack(message: str, webhook_url: str) -> bool:
+    """Send a message to a Slack/Teams-compatible webhook URL.
+
+    Slack and Microsoft Teams both accept POST {"text": "..."} on incoming-webhook URLs,
+    so the same function works for both.
+    """
+    if not webhook_url:
+        return False
+    try:
+        resp = requests.post(webhook_url, json={"text": message}, timeout=10)
+        return resp.status_code in (200, 201, 202, 204)
+    except requests.RequestException:
+        return False
+
+
 def send_email_report(excel_bytes: bytes, config: dict) -> bool:
     """Send daily Excel report as email attachment via SendGrid API."""
     import base64

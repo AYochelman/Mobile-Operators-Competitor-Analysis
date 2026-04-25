@@ -111,6 +111,7 @@ export const api = {
 
   // Workspace branding — workspace admin of own workspace
   updateWorkspaceBranding: (data) => fetchApi('/api/workspace/branding', { method: 'PATCH', body: JSON.stringify(data) }),
+  testSlackWebhook: (webhook_url) => fetchApi('/api/workspace/slack-test', { method: 'POST', body: JSON.stringify({ webhook_url }) }),
 
   // Audit log — super_admin only
   getAuditLog: (queryString = '') => fetchApi(`/api/audit-log${queryString}`),
@@ -146,4 +147,17 @@ export const api = {
     body: JSON.stringify(plan),
     headers: { 'Content-Type': 'application/json' },
   }),
+
+  // Annotations — workspace-wide team notes on plans
+  getAnnotations: (carrier, planName, planType) => {
+    const p = new URLSearchParams()
+    if (carrier)  p.append('carrier', carrier)
+    if (planName) p.append('plan_name', planName)
+    if (planType) p.append('plan_type', planType)
+    return fetchApi(`/api/annotations${p.toString() ? '?' + p : ''}`)
+  },
+  getAnnotationCounts: () => fetchApi('/api/annotations/counts'),
+  addAnnotation: (data) => fetchApi('/api/annotations', { method: 'POST', body: JSON.stringify(data) }),
+  updateAnnotation: (id, note) => fetchApi(`/api/annotations/${id}`, { method: 'PATCH', body: JSON.stringify({ note }) }),
+  deleteAnnotation: (id) => fetchApi(`/api/annotations/${id}`, { method: 'DELETE' }),
 }

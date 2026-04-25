@@ -312,6 +312,19 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_audit_log_at
                 ON audit_log(created_at);
+            CREATE TABLE IF NOT EXISTS plan_annotations (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                workspace_id TEXT,
+                user_email   TEXT NOT NULL,
+                carrier      TEXT NOT NULL,
+                plan_name    TEXT NOT NULL,
+                plan_type    TEXT NOT NULL,
+                note         TEXT NOT NULL,
+                created_at   TEXT NOT NULL,
+                updated_at   TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_annotations_plan
+                ON plan_annotations(workspace_id, carrier, plan_name, plan_type);
         """)
         conn.commit()
         # Migration: add url column if DB was created before this column existed
@@ -1628,5 +1641,98 @@ def get_audit_log(limit=200, workspace_id=None, db_path=None):
              "workspace_id": r[4], "details": r[5], "created_at": r[6]}
             for r in rows
         ]
+    finally:
+        conn.close()
+
+
+# ── Plan annotations (team notes) ──────────────────────────────────────────
+def add_annotation(workspace_id, user_email, carrier, plan_name, plan_type, note, db_path=None):
+    """Insert a new annotation. Returns inserted id."""
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute(
+            """INSERT INTO plan_annotations
+               (workspace_id, user_email, carrier, plan_name, plan_type, note, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (workspace_id, user_email, carrier, plan_name, plan_type, note, now)
+        )
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
+def get_annotations(workspace_id, carrier=None, plan_name=None, plan_type=None, db_path=None):
+    """Return annotations for the workspace, optionally filtered to a specific plan."""
+    conn = _connect(db_path)
+    try:
+        sql = ("SELECT id, user_email, carrier, plan_name, plan_type, note, created_at, updated_at "
+               "FROM plan_annotations WHERE workspace_id IS ?")
+        params = [workspace_id]
+        if carrier:
+            sql += " AND carrier = ?"
+            params.append(carrier)
+        if plan_name:
+            sql += " AND plan_name = ?"
+            params.append(plan_name)
+        if plan_type:
+            sql += " AND plan_type = ?"
+            params.append(plan_type)
+        sql += " ORDER BY created_at DESC"
+        rows = conn.execute(sql, params).fetchall()
+        return [
+            {"id": r[0], "user_email": r[1], "carrier": r[2], "plan_name": r[3],
+             "plan_type": r[4], "note": r[5], "created_at": r[6], "updated_at": r[7]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def get_annotation_counts(workspace_id, db_path=None):
+    """Return dict {carrier|plan_type|plan_name: count} for all annotations in workspace."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            """SELECT carrier, plan_type, plan_name, COUNT(*) FROM plan_annotations
+               WHERE workspace_id IS ?
+               GROUP BY carrier, plan_type, plan_name""",
+            (workspace_id,)
+        ).fetchall()
+        return {f"{r[0]}|{r[1]}|{r[2]}": r[3] for r in rows}
+    finally:
+        conn.close()
+
+
+def delete_annotation(annotation_id, workspace_id, user_email, db_path=None):
+    """Delete an annotation. Author OR same-workspace admin can delete (caller enforces admin)."""
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute(
+            """DELETE FROM plan_annotations
+               WHERE id = ? AND workspace_id IS ? AND user_email = ?""",
+            (annotation_id, workspace_id, user_email)
+        )
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
+def update_annotation(annotation_id, workspace_id, user_email, note, db_path=None):
+    """Update an annotation. Only author can edit. Returns rows updated."""
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute(
+            """UPDATE plan_annotations SET note = ?, updated_at = ?
+               WHERE id = ? AND workspace_id IS ? AND user_email = ?""",
+            (note, now, annotation_id, workspace_id, user_email)
+        )
+        conn.commit()
+        return cur.rowcount
     finally:
         conn.close()

@@ -8,7 +8,9 @@ import { getAppsForAbroadPlan } from '../data/abroadApps'
 import AppsModal from './AppsModal'
 import PriceHistoryModal from './PriceHistoryModal'
 import SparklineMini from './SparklineMini'
+import AnnotationsModal from './AnnotationsModal'
 import { useWatchlist } from '../hooks/useWatchlist'
+import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
 
 const AFFILIATE_PROVIDERS = new Set(['airalo', 'holafly', 'saily', 'globalesim'])
 const AFFILIATE_URLS = {
@@ -200,7 +202,10 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
   const [showPlanInfo, setShowPlanInfo] = useState(false)
   const [showPriceHistory, setShowPriceHistory] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showAnnotations, setShowAnnotations] = useState(false)
   const { isWatched, toggle: toggleWatch } = useWatchlist()
+  const { countFor } = useAnnotationCounts()
+  const annotationCount = type !== 'content' && plan.plan_name ? countFor(plan.carrier, type, plan.plan_name) : 0
 
   const handleShare = useCallback((e) => {
     e.stopPropagation()
@@ -527,8 +532,27 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
             ) : <span />}
           </div>
 
-          {/* Center: share */}
-          <div className="flex justify-center">
+          {/* Center: annotations + share */}
+          <div className="flex items-center justify-center gap-1">
+            {!isContent && plan.plan_name && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setShowAnnotations(true) }}
+                title={annotationCount > 0 ? `${annotationCount} הערות צוות` : 'הוסף הערה'}
+                className={`relative p-1 transition-all ${
+                  annotationCount > 0 ? 'text-moca-bolt' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
+                }`}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill={annotationCount > 0 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                {annotationCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[12px] h-3 bg-moca-bolt text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                    {annotationCount}
+                  </span>
+                )}
+              </button>
+            )}
             {!isContent && plan.plan_name && (
               <button
                 type="button"
@@ -588,6 +612,16 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
           onClose={() => setShowApps(false)}
           title={appsData.title}
           apps={appsData.apps}
+        />
+      )}
+      {!isContent && plan.plan_name && (
+        <AnnotationsModal
+          open={showAnnotations}
+          onClose={() => setShowAnnotations(false)}
+          carrier={plan.carrier}
+          planName={plan.plan_name}
+          planType={type}
+          planLabel={plan.plan_name}
         />
       )}
       {!isContent && plan.plan_name && (

@@ -45,6 +45,7 @@ const NAV_ICONS = {
 const NAV_ITEMS = [
   { to: '/', label: 'דשבורד', end: true },
   { to: '/compare', label: 'השוואה' },
+  { to: '/positioning', label: 'מיצוב' },
   { to: '/alerts', label: 'התראות' },
   { to: '/executive-summary', label: 'תקציר מנהלים' },
   { to: '/archive', label: 'ארכיב' },
@@ -52,6 +53,7 @@ const NAV_ITEMS = [
 
 const FLAG_FOR_PATH = {
   '/compare':           'hide_compare',
+  '/positioning':       'hide_positioning',
   '/alerts':            'hide_alerts',
   '/executive-summary': 'hide_executive_summary',
   '/archive':           'hide_archive',

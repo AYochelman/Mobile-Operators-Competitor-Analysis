@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useRef, useCallback } from 'react'
-import { api } from '../lib/api'
+import { api, API_BASE } from '../lib/api'
 
 const ScrapeContext = createContext(null)
 
@@ -7,8 +7,32 @@ export function ScrapeProvider({ children }) {
   const [scraping, setScraping]   = useState(false)
   const [countdown, setCountdown] = useState(0)
   const [toast, setToast]         = useState(null) // { type: 'success'|'error', message, detail }
+  const [progress, setProgress]   = useState([])   // array of {at, stage, status, count, message}
   const timerRef    = useRef(null)
   const dismissRef  = useRef(null)
+  const sseRef      = useRef(null)
+
+  const _closeSse = () => {
+    if (sseRef.current) { sseRef.current.close(); sseRef.current = null }
+  }
+
+  const _openSse = () => {
+    _closeSse()
+    try {
+      const es = new EventSource(`${API_BASE}/api/scrape-progress/stream`, { withCredentials: true })
+      es.onmessage = (e) => {
+        try {
+          const ev = JSON.parse(e.data)
+          if (ev.stage === '__done__' || ev.stage === '__timeout__' || ev.stage === '__idle__') {
+            es.close(); return
+          }
+          setProgress(prev => [...prev, ev])
+        } catch {}
+      }
+      es.onerror = () => { es.close() }
+      sseRef.current = es
+    } catch {}
+  }
 
   const _clearTimers = () => {
     if (timerRef.current)   clearInterval(timerRef.current)
@@ -21,6 +45,8 @@ export function ScrapeProvider({ children }) {
     setScraping(true)
     setCountdown(12 * 60)
     setToast(null)
+    setProgress([])
+    _openSse()
 
     timerRef.current = setInterval(() => {
       setCountdown(prev => {
@@ -32,6 +58,7 @@ export function ScrapeProvider({ children }) {
     try {
       const res = await api.scrapeAll()
       _clearTimers()
+      _closeSse()
       setScraping(false)
       setCountdown(0)
       const total   = res.total_plans   ?? '—'
@@ -47,6 +74,7 @@ export function ScrapeProvider({ children }) {
       dismissRef.current = setTimeout(() => setToast(null), 8000)
     } catch (err) {
       _clearTimers()
+      _closeSse()
       setScraping(false)
       setCountdown(0)
       const isQuota = err.message?.includes('מכסת')
@@ -65,7 +93,7 @@ export function ScrapeProvider({ children }) {
   }, [])
 
   return (
-    <ScrapeContext.Provider value={{ scraping, countdown, toast, triggerScrape, dismissToast }}>
+    <ScrapeContext.Provider value={{ scraping, countdown, toast, progress, triggerScrape, dismissToast }}>
       {children}
     </ScrapeContext.Provider>
   )

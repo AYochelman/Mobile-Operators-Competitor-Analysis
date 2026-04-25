@@ -844,6 +844,110 @@ def api_scrape_abroad_now():
         logger.error(f"API error: {e}", exc_info=True); return jsonify({"error": "Internal server error"}), 500
 
 
+# ── Real-time scrape progress (SSE) ──────────────────────────────────────────
+import threading as _threading_progress
+
+_scrape_progress = {
+    'log': [],          # list of {at, stage, status, count, message}
+    'active': False,
+    'started_at': None,
+    'completed_at': None,
+}
+_scrape_lock = _threading_progress.Lock()
+_scrape_signal = _threading_progress.Condition()
+
+
+def _scrape_emit(stage, status='running', count=None, message=None):
+    """Push a progress event to subscribers. Cheap; safe to call from scraper threads."""
+    ev = {
+        'at': datetime.now(timezone.utc).isoformat(),
+        'stage': stage,
+        'status': status,
+        'count': count,
+        'message': message,
+    }
+    with _scrape_lock:
+        _scrape_progress['log'].append(ev)
+    with _scrape_signal:
+        _scrape_signal.notify_all()
+
+
+def _scrape_start():
+    with _scrape_lock:
+        _scrape_progress['log'] = []
+        _scrape_progress['active'] = True
+        _scrape_progress['started_at'] = datetime.now(timezone.utc).isoformat()
+        _scrape_progress['completed_at'] = None
+    with _scrape_signal:
+        _scrape_signal.notify_all()
+
+
+def _scrape_finish(error=None):
+    with _scrape_lock:
+        _scrape_progress['active'] = False
+        _scrape_progress['completed_at'] = datetime.now(timezone.utc).isoformat()
+        if error:
+            _scrape_progress['error'] = str(error)
+    with _scrape_signal:
+        _scrape_signal.notify_all()
+
+
+@app.route("/api/scrape-progress/stream")
+@require_auth
+def api_scrape_progress_stream():
+    """Server-Sent Events stream of scrape progress events."""
+    def gen():
+        import json as _json
+        last_idx = 0
+        # Replay any existing events first
+        with _scrape_lock:
+            for ev in _scrape_progress['log']:
+                yield f"data: {_json.dumps(ev)}\n\n"
+            last_idx = len(_scrape_progress['log'])
+            active = _scrape_progress['active']
+        # If no scrape running, send a heartbeat then close — the client can reconnect
+        if not active and last_idx == 0:
+            yield f"data: {_json.dumps({'stage': '__idle__'})}\n\n"
+            return
+        # Stream new events as they arrive
+        idle_loops = 0
+        while True:
+            with _scrape_signal:
+                _scrape_signal.wait(timeout=2.0)
+            with _scrape_lock:
+                new_events = _scrape_progress['log'][last_idx:]
+                last_idx = len(_scrape_progress['log'])
+                active = _scrape_progress['active']
+            for ev in new_events:
+                yield f"data: {_json.dumps(ev)}\n\n"
+                idle_loops = 0
+            if not active:
+                yield f"data: {_json.dumps({'stage': '__done__'})}\n\n"
+                return
+            idle_loops += 1
+            if idle_loops > 180:  # ~6 min max
+                yield f"data: {_json.dumps({'stage': '__timeout__'})}\n\n"
+                return
+    return Response(
+        gen(),
+        mimetype="text/event-stream",
+        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive'}
+    )
+
+
+@app.route("/api/scrape-progress/state")
+@require_auth
+def api_scrape_progress_state():
+    """One-shot snapshot of current scrape progress (for clients that don't use SSE)."""
+    with _scrape_lock:
+        return jsonify({
+            'active':       _scrape_progress['active'],
+            'started_at':   _scrape_progress['started_at'],
+            'completed_at': _scrape_progress['completed_at'],
+            'log':          list(_scrape_progress['log'][-50:]),
+        })
+
+
 @app.route("/api/scrape-all-now")
 @require_scrape_auth
 def api_scrape_all_now():
@@ -851,6 +955,7 @@ def api_scrape_all_now():
     ok, used, limit = _check_refresh_quota()
     if not ok:
         return jsonify({"error": f"מכסת הרענון החודשית הגיעה לסיום ({used}/{limit}). מחכים לחודש הבא.", "quota_used": used, "quota_limit": limit}), 429
+    _scrape_start()
     try:
         import scraper as sc
         from db import save_plans, save_changes, save_abroad_plans, save_abroad_changes, \
@@ -859,6 +964,7 @@ def api_scrape_all_now():
         results = {}
 
         # ── Domestic ──────────────────────────────────────────────────────
+        _scrape_emit('domestic', 'starting', message='סורק חבילות סלולר ביתיות')
         old_domestic = get_plans(db_path=_db_path())
         new_domestic = sc.scrape_all()
         ch_domestic  = detect_changes(old_domestic, new_domestic)
@@ -866,8 +972,10 @@ def api_scrape_all_now():
         if ch_domestic:
             save_changes(ch_domestic, db_path=_db_path())
         results["domestic"] = {"plans": len(new_domestic), "changes": len(ch_domestic)}
+        _scrape_emit('domestic', 'done', count=len(new_domestic), message=f'{len(new_domestic)} חבילות, {len(ch_domestic)} שינויים')
 
         # ── Abroad ────────────────────────────────────────────────────────
+        _scrape_emit('abroad', 'starting', message='סורק חבילות חו"ל')
         old_abroad = get_abroad_plans(db_path=_db_path())
         new_abroad = sc.scrape_all_abroad()
         existing_abroad_ch = get_abroad_changes(limit=1, db_path=_db_path())
@@ -883,8 +991,10 @@ def api_scrape_all_now():
                 save_abroad_changes(ch_abroad, db_path=_db_path())
         save_abroad_plans(new_abroad, db_path=_db_path())
         results["abroad"] = {"plans": len(new_abroad), "changes": len(ch_abroad)}
+        _scrape_emit('abroad', 'done', count=len(new_abroad), message=f'{len(new_abroad)} חבילות, {len(ch_abroad)} שינויים')
 
         # ── Global ────────────────────────────────────────────────────────
+        _scrape_emit('global', 'starting', message='סורק חבילות גלובל / eSIM')
         old_global = get_global_plans(db_path=_db_path())
         new_global = sc.scrape_all_global()
         existing_global_ch = get_global_changes(limit=1, db_path=_db_path())
@@ -900,8 +1010,10 @@ def api_scrape_all_now():
                 save_global_changes(ch_global, db_path=_db_path())
         save_global_plans(new_global, db_path=_db_path())
         results["global"] = {"plans": len(new_global), "changes": len(ch_global)}
+        _scrape_emit('global', 'done', count=len(new_global), message=f'{len(new_global)} חבילות, {len(ch_global)} שינויים')
 
         # ── Content services ──────────────────────────────────────────────
+        _scrape_emit('content', 'starting', message='סורק שירותי תוכן')
         from db import save_content_plans, save_content_changes
         from change_detector import detect_content_changes
         old_content = get_content_plans(db_path=_db_path())
@@ -911,14 +1023,18 @@ def api_scrape_all_now():
         if ch_content:
             save_content_changes(ch_content, db_path=_db_path())
         results["content"] = {"plans": len(new_content), "changes": len(ch_content)}
+        _scrape_emit('content', 'done', count=len(new_content), message=f'{len(new_content)} שירותים, {len(ch_content)} שינויים')
 
         # ── Archive plan snapshots ─────────────────────────────────────────
+        _scrape_emit('archive', 'starting', message='שומר תמונת מצב לארכיון')
         arc.archive_domestic_plans(new_domestic)
         arc.archive_abroad_plans(new_abroad)
         arc.archive_global_plans(new_global)
         arc.archive_content_plans(new_content)
+        _scrape_emit('archive', 'done')
 
         # ── Banners (homepage + e-store screenshots) ───────────────────────
+        _scrape_emit('banners', 'starting', message='מצלם באנרים')
         banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
         from scraper import scrape_carrier_banners, scrape_carrier_store_banners
         banner_results = scrape_carrier_banners(banners_dir)
@@ -928,6 +1044,7 @@ def api_scrape_all_now():
             "homepage": sum(1 for r in banner_results if r["success"]),
             "store":    sum(1 for r in store_results  if r["success"]),
         }
+        _scrape_emit('banners', 'done', count=results['banners']['homepage'] + results['banners']['store'])
 
         results["status"] = "ok"
         results["total_plans"] = len(new_domestic) + len(new_abroad) + len(new_global) + len(new_content)
@@ -935,9 +1052,14 @@ def api_scrape_all_now():
         results["quota_used"]  = used + 1
         results["quota_limit"] = limit
         _log_refresh('scrape_all')
+        _scrape_emit('all', 'completed', count=results['total_plans'],
+                     message=f"סה\"כ {results['total_plans']} חבילות, {results['total_changes']} שינויים")
+        _scrape_finish()
         logger.info(f"scrape-all-now: {results}")
         return jsonify(results)
     except Exception as e:
+        _scrape_emit('all', 'error', message=str(e))
+        _scrape_finish(error=e)
         logger.error(f"scrape-all-now failed: {e}", exc_info=True)
         logger.error(f"API error: {e}", exc_info=True); return jsonify({"error": "Internal server error"}), 500
 
@@ -1829,6 +1951,94 @@ def api_delete_saved_view(view_id):
     deleted = _dsv(view_id, user_email, db_path=_db_path())
     if deleted == 0:
         return jsonify({"error": "not found"}), 404
+    return jsonify({"status": "deleted"})
+
+
+# ── Plan annotations (team notes) ──────────────────────────────────────────
+
+@app.route("/api/annotations", methods=["GET"])
+@require_auth
+@limiter.limit("60 per minute")
+def api_get_annotations():
+    """Return annotations for current workspace, optionally filtered to a plan."""
+    from db import get_annotations as _ga
+    ctx = _get_user_role_context()
+    ws_id = ctx.get('workspace_id')
+    carrier   = request.args.get('carrier')
+    plan_name = request.args.get('plan_name')
+    plan_type = request.args.get('plan_type')
+    return jsonify(_ga(ws_id, carrier=carrier, plan_name=plan_name, plan_type=plan_type, db_path=_db_path()))
+
+
+@app.route("/api/annotations/counts", methods=["GET"])
+@require_auth
+@limiter.limit("60 per minute")
+def api_annotation_counts():
+    """Return annotation counts grouped by plan key for the workspace."""
+    from db import get_annotation_counts as _gac
+    ctx = _get_user_role_context()
+    ws_id = ctx.get('workspace_id')
+    return jsonify(_gac(ws_id, db_path=_db_path()))
+
+
+@app.route("/api/annotations", methods=["POST"])
+@require_auth
+@limiter.limit("30 per minute")
+def api_add_annotation():
+    from db import add_annotation as _aa
+    user_email = _current_user_email()
+    if not user_email:
+        return jsonify({"error": "auth required"}), 401
+    ctx = _get_user_role_context()
+    ws_id = ctx.get('workspace_id')
+    data = request.get_json(force=True) or {}
+    carrier   = (data.get('carrier') or '').strip()
+    plan_name = (data.get('plan_name') or '').strip()
+    plan_type = (data.get('plan_type') or '').strip()
+    note      = (data.get('note') or '').strip()
+    if not carrier or not plan_name or not plan_type:
+        return jsonify({"error": "carrier/plan_name/plan_type required"}), 400
+    if not note or len(note) > 1000:
+        return jsonify({"error": "note required (max 1000 chars)"}), 400
+    try:
+        new_id = _aa(ws_id, user_email, carrier, plan_name, plan_type, note, db_path=_db_path())
+        return jsonify({"status": "added", "id": new_id}), 201
+    except Exception as exc:
+        logger.error(f"add annotation failed: {exc}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/annotations/<int:ann_id>", methods=["PATCH"])
+@require_auth
+def api_update_annotation(ann_id):
+    from db import update_annotation as _ua
+    user_email = _current_user_email()
+    if not user_email:
+        return jsonify({"error": "auth required"}), 401
+    ctx = _get_user_role_context()
+    ws_id = ctx.get('workspace_id')
+    data = request.get_json(force=True) or {}
+    note = (data.get('note') or '').strip()
+    if not note or len(note) > 1000:
+        return jsonify({"error": "note required (max 1000 chars)"}), 400
+    updated = _ua(ann_id, ws_id, user_email, note, db_path=_db_path())
+    if updated == 0:
+        return jsonify({"error": "not found or not author"}), 404
+    return jsonify({"status": "updated"})
+
+
+@app.route("/api/annotations/<int:ann_id>", methods=["DELETE"])
+@require_auth
+def api_delete_annotation(ann_id):
+    from db import delete_annotation as _da
+    user_email = _current_user_email()
+    if not user_email:
+        return jsonify({"error": "auth required"}), 401
+    ctx = _get_user_role_context()
+    ws_id = ctx.get('workspace_id')
+    deleted = _da(ann_id, ws_id, user_email, db_path=_db_path())
+    if deleted == 0:
+        return jsonify({"error": "not found or not author"}), 404
     return jsonify({"status": "deleted"})
 
 
@@ -2863,7 +3073,7 @@ def api_workspace_branding():
         return jsonify({"error": "Unauthorized"}), 403
 
     data = request.get_json(force=True) or {}
-    allowed_keys = {'primary_color', 'secondary_color', 'app_title', 'logo_url'}
+    allowed_keys = {'primary_color', 'secondary_color', 'app_title', 'logo_url', 'slack_webhook_url'}
     updates = {k: v for k, v in data.items() if k in allowed_keys}
     if not updates:
         return jsonify({"error": "no valid fields provided"}), 400
@@ -2874,6 +3084,12 @@ def api_workspace_branding():
         if colour_key in updates and updates[colour_key]:
             if not _re.match(r'^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$', updates[colour_key]):
                 return jsonify({"error": f"invalid hex colour for {colour_key}"}), 400
+
+    # Validate Slack webhook URL — must be HTTPS to a known incoming-webhook host
+    if updates.get('slack_webhook_url'):
+        sw = updates['slack_webhook_url']
+        if not _re.match(r'^https://(hooks\.slack\.com/|.+\.webhook\.office\.com/)', sw):
+            return jsonify({"error": "slack_webhook_url must be a Slack or Teams incoming-webhook HTTPS URL"}), 400
 
     try:
         conn = _supabase_conn()
@@ -2901,6 +3117,47 @@ def api_workspace_branding():
     except Exception as e:
         logger.error(f"workspace branding update failed: {e}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/workspace/slack-test", methods=["POST"])
+@require_auth
+@limiter.limit("5 per minute")
+def api_workspace_slack_test():
+    """Send a test message to the workspace's configured Slack/Teams webhook.
+    Body: {webhook_url?} — if provided, tests this URL without saving."""
+    from notifier import send_slack
+    email = _current_user_email() or ''
+    if not email:
+        return jsonify({"error": "Unauthorized"}), 403
+    ctx = _get_user_context(email)
+    role = ctx.get('role', 'viewer')
+    ws_id = ctx.get('workspace_id')
+    if role not in ('admin', 'super_admin') or not ws_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    # Caller can pass a URL to test before saving, or rely on stored config
+    data = request.get_json(silent=True) or {}
+    webhook_url = (data.get('webhook_url') or '').strip()
+    if not webhook_url:
+        try:
+            conn = _supabase_conn()
+            cur = conn.cursor()
+            cur.execute("SELECT brand_config FROM public.workspaces WHERE id = %s", (ws_id,))
+            row = cur.fetchone()
+            conn.close()
+            bc = row[0] if row else {}
+            if isinstance(bc, str):
+                import json as _json
+                bc = _json.loads(bc)
+            webhook_url = (bc or {}).get('slack_webhook_url') or ''
+        except Exception:
+            webhook_url = ''
+    if not webhook_url:
+        return jsonify({"error": "no webhook configured"}), 400
+
+    msg = f"✅ MOCA Slack integration test — workspace {ctx.get('workspace', {}).get('name', '')} · sent by {email}"
+    ok = send_slack(msg, webhook_url)
+    return jsonify({"status": "sent" if ok else "failed", "ok": ok})
 
 
 # ── Audit log (super_admin only) ─────────────────────────────────────────────
@@ -3224,6 +3481,49 @@ if __name__ == "__main__":
     def run_scrape_job():
         logger.info("Starting scheduled scrape...")
         config = load_config()
+
+        # Helper: broadcast a notification to every workspace that has a Slack/Teams webhook
+        # configured. The mvno_carrier of each workspace is treated as their "self" carrier
+        # and changes for that carrier are filtered out (they don't want to see themselves).
+        def _broadcast_workspace_slack(changes_list, plan_type_label):
+            if not changes_list:
+                return 0
+            try:
+                from notifier import send_slack
+                conn = _supabase_conn()
+                cur = conn.cursor()
+                cur.execute("SELECT name, mvno_carrier, brand_config FROM public.workspaces WHERE active IS NOT FALSE")
+                rows = cur.fetchall()
+                conn.close()
+            except Exception as exc:
+                logger.warning(f"slack broadcast: workspace fetch failed: {exc}")
+                return 0
+            sent = 0
+            import json as _json
+            for ws_name, mvno, bc in rows:
+                bc_dict = bc if isinstance(bc, dict) else (_json.loads(bc) if isinstance(bc, str) else {})
+                webhook = (bc_dict or {}).get('slack_webhook_url')
+                if not webhook:
+                    continue
+                relevant = [c for c in changes_list if not mvno or c.get('carrier') != mvno]
+                if not relevant:
+                    continue
+                lines = [f"📡 MOCA — שינויים ב{plan_type_label} ({len(relevant)})"]
+                for c in relevant[:15]:
+                    ctype = c.get('change_type', '')
+                    label = {'price_change': '💰', 'new_plan': '🆕', 'removed_plan': '❌'}.get(ctype, '•')
+                    name = c.get('plan_name') or ''
+                    carrier = c.get('carrier') or ''
+                    if ctype == 'price_change':
+                        lines.append(f"{label} {carrier} · {name}: ₪{c.get('old_val')} → ₪{c.get('new_val')}")
+                    else:
+                        lines.append(f"{label} {carrier} · {name}")
+                if len(relevant) > 15:
+                    lines.append(f"_+{len(relevant) - 15} שינויים נוספים_")
+                if send_slack("\n".join(lines), webhook):
+                    sent += 1
+            return sent
+
         try:
             from db import save_plans, save_changes, save_abroad_plans, save_abroad_changes, get_abroad_plans
 
@@ -3241,6 +3541,8 @@ if __name__ == "__main__":
                 logger.info(f"WhatsApp sent: {ok_wa}")
                 n_push = send_push_notifications(changes, config)
                 logger.info(f"Web Push sent: {n_push}")
+                n_slack = _broadcast_workspace_slack(changes, 'חבילות סלולר')
+                logger.info(f"Slack workspaces notified (domestic): {n_slack}")
             else:
                 logger.info("No domestic changes.")
 
@@ -3254,6 +3556,7 @@ if __name__ == "__main__":
                 abroad_msg = format_abroad_message(abroad_changes)
                 ok_tg_abroad = send_notification(abroad_msg, config)
                 ok_wa_abroad = send_whatsapp(abroad_msg, config)
+                _broadcast_workspace_slack(abroad_changes, 'חבילות חו"ל')
                 logger.info(f"Telegram (abroad) sent: {ok_tg_abroad}, WhatsApp: {ok_wa_abroad}, changes: {len(abroad_changes)}")
             else:
                 logger.info("No abroad changes.")
@@ -3278,6 +3581,7 @@ if __name__ == "__main__":
                 global_msg = format_global_message(global_changes)
                 ok_tg_global = send_notification(global_msg, config)
                 ok_wa_global = send_whatsapp(global_msg, config)
+                _broadcast_workspace_slack(global_changes, 'חבילות גלובל (eSIM)')
                 logger.info(f"Telegram (global) sent: {ok_tg_global}, WhatsApp: {ok_wa_global}, changes: {len(global_changes)}")
             else:
                 logger.info("No global changes.")
