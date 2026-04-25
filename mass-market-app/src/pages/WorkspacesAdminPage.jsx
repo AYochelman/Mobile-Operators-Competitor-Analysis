@@ -224,6 +224,7 @@ function WorkspaceRow({ ws, onChange }) {
     secondary_color:   ws.brand_config?.secondary_color || '',
     app_title:         ws.brand_config?.app_title || '',
     logo_url:          ws.brand_config?.logo_url || '',
+    slack_webhook_url: ws.brand_config?.slack_webhook_url || '',
     feature_flags:     ws.feature_flags || {},
     trial_ends_at:     ws.trial_ends_at ? ws.trial_ends_at.slice(0, 10) : '',
     visible_carriers:  ws.visible_carriers || [],
@@ -315,10 +316,11 @@ function WorkspaceRow({ ws, onChange }) {
         active:            form.active,
         trial_ends_at:     form.trial_ends_at || null,
         brand_config: {
-          primary_color:   form.primary_color || null,
-          secondary_color: form.secondary_color || null,
-          app_title:       form.app_title || null,
-          logo_url:        form.logo_url || null,
+          primary_color:     form.primary_color || null,
+          secondary_color:   form.secondary_color || null,
+          app_title:         form.app_title || null,
+          logo_url:          form.logo_url || null,
+          slack_webhook_url: form.slack_webhook_url || null,
         },
         feature_flags:     form.feature_flags,
         visible_carriers:  form.visible_carriers,
@@ -410,6 +412,7 @@ function WorkspaceRow({ ws, onChange }) {
                 secondary_color: ws.brand_config?.secondary_color || '',
                 app_title: ws.brand_config?.app_title || '',
                 logo_url: ws.brand_config?.logo_url || '',
+                slack_webhook_url: ws.brand_config?.slack_webhook_url || '',
                 feature_flags:    ws.feature_flags || {},
                 trial_ends_at:    ws.trial_ends_at ? ws.trial_ends_at.slice(0, 10) : '',
                 visible_carriers: ws.visible_carriers || [],
@@ -594,6 +597,17 @@ function WorkspaceRow({ ws, onChange }) {
               placeholder="https://..."
               className="w-full px-3 py-1.5 border border-moca-border rounded" />
           </label>
+          <label className="text-sm col-span-2">
+            <span className="block mb-1 text-gray-700">Slack / Teams Webhook URL</span>
+            <input type="url" value={form.slack_webhook_url}
+              onChange={e => setForm({...form, slack_webhook_url: e.target.value})}
+              placeholder="https://hooks.slack.com/services/..."
+              dir="ltr"
+              className="w-full px-3 py-1.5 border border-moca-border rounded font-mono text-xs" />
+            <span className="block text-[10px] text-gray-400 mt-1">
+              התראות אוטומטיות על שינויים בחבילות יישלחו לערוץ זה (לאחר סינון הספק העצמי).
+            </span>
+          </label>
           <label className="text-sm">
             <span className="block mb-1 text-gray-700">תאריך סיום פיילוט (trial_ends_at)</span>
             <input type="date" value={form.trial_ends_at}
@@ -742,10 +756,11 @@ export default function WorkspacesAdminPage() {
         mvno_carrier: form.mvno_carrier || null,
         hide_self_carrier: form.hide_self_carrier,
         brand_config: {
-          primary_color:   form.primary_color || null,
-          secondary_color: form.secondary_color || null,
-          app_title:       form.app_title || null,
-          logo_url:        form.logo_url || null,
+          primary_color:     form.primary_color || null,
+          secondary_color:   form.secondary_color || null,
+          app_title:         form.app_title || null,
+          logo_url:          form.logo_url || null,
+          slack_webhook_url: form.slack_webhook_url || null,
         },
         feature_flags: form.feature_flags,
       })
