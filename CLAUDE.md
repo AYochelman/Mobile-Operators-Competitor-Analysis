@@ -82,22 +82,80 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 
 ## React App Structure (mass-market-app/src/)
 
+### Pages
+
 | Path | Purpose |
 |------|---------|
 | pages/DashboardPage.jsx | Main 7-tab view (domestic/abroad/global/content/banners/history/news) with filters |
 | pages/ComparePage.jsx | Price comparison charts (Recharts) |
 | pages/AlertsPage.jsx | Personal price alerts with DB persistence |
-| pages/SettingsPage.jsx | Admin panel — scrape triggers, user management |
+| pages/SettingsPage.jsx | Admin panel — scrape triggers, user management (adminOnly) |
+| pages/ExecutiveSummaryPage.jsx | Summary stats + MarketMoversWidget + SparklineMini charts |
+| pages/PositioningPage.jsx | Competitive positioning matrix |
+| pages/ArchivePage.jsx | Historical plan snapshots (content-hash based, via archive.py) |
+| pages/PreferencesPage.jsx | Per-user display preferences |
+| pages/NotificationsPage.jsx | Web Push / notification settings |
+| pages/WorkspaceUsersPage.jsx | Manage users in current workspace (adminOnly) |
+| pages/WorkspaceBrandingPage.jsx | Workspace logo, colors, MVNO theme (adminOnly) |
+| pages/WorkspacesAdminPage.jsx | Global workspace CRUD (superAdminOnly) |
+| pages/AuditLogPage.jsx | Action audit trail (superAdminOnly) |
+
+### Components
+
+| Path | Purpose |
+|------|---------|
 | components/Logo.jsx | MOCA brand logo (bolt + wordmark), sizes: xs/sm/md |
 | components/PlanCard.jsx | Universal plan card with country/apps modals |
-| components/ChatPanel.jsx | AI chat (🤖 floating button → /api/chat) |
-| data/globalCountries.js | Country lists for 14 global providers + getCountriesForPlan() |
-| data/abroadCountries.js | Country lists for 7 domestic carriers + getCountriesForAbroadPlan() |
-| data/abroadApps.js | Free app lists (Cellcom 6 apps, Pelephone 12 apps) |
-| hooks/useAuth.jsx | Supabase Auth + dev mode (VITE_DEV_AUTH=true) |
+| components/ChatPanel.jsx | AI chat (floating button → /api/chat) |
+| components/NewsTab.jsx | Google News RSS per carrier, client-side filter by carrier + date window |
+| components/GlobalSearch.jsx | Cmd+K / Ctrl+K full-app plan search, portal-rendered |
+| components/AnnotationsModal.jsx | Team notes per plan — pinned to (carrier, plan_name) |
+| components/ScrapeProgressPanel.jsx | Live scrape progress indicator (SSE stream) |
+| components/ViewAsBanner.jsx | Super-admin "viewing as workspace X" banner |
+| components/CarrierAIInsights.jsx | Per-carrier AI summary widget |
+| components/MarketMoversWidget.jsx | Biggest price changes since last scrape |
+| components/SparklineMini.jsx | Inline price-history sparkline (Recharts) |
+| components/SavedComparesMenu.jsx | Save/load named comparison filter sets |
+| components/SavedViewsMenu.jsx | Save/load named dashboard filter states |
+| components/PriceHistoryModal.jsx | Full price history chart for a single plan |
+| components/OfflineBanner.jsx | Offline detection banner (useOnlineStatus) |
+
+### Hooks & Lib
+
+| Path | Purpose |
+|------|---------|
+| hooks/useAuth.jsx | Supabase Auth + dev mode (VITE_DEV_AUTH=true). Exposes user, isAdmin, isSuperAdmin, workspace |
+| hooks/useFeatureFlags.js | Returns workspace.feature_flags (empty obj for super_admin = all features on) |
+| hooks/useHiddenCarrier.js | Per-user hidden carrier list (persisted) |
+| hooks/useScrape.jsx | ScrapeProvider context — SSE progress stream, trigger scrape |
+| hooks/useAnnotationCounts.jsx | Aggregated annotation counts per plan |
+| hooks/useWatchlist.jsx | Per-user watchlist of plan IDs |
+| hooks/useOnlineStatus.js | Navigator online/offline event listener |
 | lib/api.js | Flask API wrapper with JWT headers |
-| components/NewsTab.jsx | News tab — Google News RSS headlines per carrier, client-side filter by carrier + rolling date window (24h/7d/30d/365d) |
 | lib/supabase.js | Supabase client (graceful null if unconfigured) |
+
+### Data Files
+
+| Path | Purpose |
+|------|---------|
+| data/carrierLabels.js | **Single source of truth** for carrier ID → display name. Exports `carrierLabel(id)`, `DOMESTIC_LABELS`, `GLOBAL_LABELS`. Mirror in app.py: `_CARRIER_NAMES`. Update both together when adding a carrier. |
+| data/mvnoBrandColors.js | MVNO-specific primary/secondary colors. `getMvnoColors(mvno_carrier)` used by `BrandThemeApplier` in App.jsx to set `--color-moca-bolt` / `--color-moca-dark` CSS vars. |
+| data/globalCountries.js | Country lists for global eSIM providers + getCountriesForPlan() |
+| data/abroadCountries.js | Country lists for domestic abroad plans + getCountriesForAbroadPlan() |
+| data/abroadApps.js | Free app lists (Cellcom 6 apps, Pelephone 12 apps) |
+
+## Multi-Workspace Architecture
+
+The React app supports multiple isolated workspaces (e.g. different MVNO clients). Key concepts:
+
+- **Roles**: `viewer` / `admin` / `super_admin`. `isSuperAdmin` in `useAuth` bypasses all feature flags and workspace restrictions.
+- **Workspace object** (from Supabase): `id`, `name`, `active`, `feature_flags` (JSON), `brand_config` (primary/secondary colors), `mvno_carrier` (links to mvnoBrandColors.js).
+- **Brand theming**: `BrandThemeApplier` in `App.jsx` applies workspace `brand_config` or `mvno_carrier` colors as CSS variables at runtime — no rebuild needed.
+- **Suspended workspaces**: `workspace.active === false` redirects non-super-admin users to `SuspendedPage`.
+- **ViewAsBanner**: Super-admin can impersonate any workspace; `ViewAsBanner` shows a persistent indicator.
+- **feature_flags**: Gate features per workspace via `useFeatureFlags()`. Super-admin always sees all features regardless of flags.
+
+Route protection uses `<ProtectedRoute adminOnly>` or `<ProtectedRoute superAdminOnly>` wrappers in `App.jsx`.
 
 ## Carriers & Providers
 
@@ -135,7 +193,7 @@ change_detector.py compares old vs new plan lists by (carrier, plan_name) key:
 - CORS restricted to known origins (configurable via ALLOWED_ORIGINS env var)
 - XSS: `escHtml()` sanitizes all scraped data before innerHTML in legacy dashboard
 - React app: dev mode auth requires explicit `VITE_DEV_AUTH=true` in .env
-- Production auth: Supabase with user_roles table (admin/viewer)
+- Production auth: Supabase with user_roles table (viewer/admin/super_admin)
 - Flask binds to 127.0.0.1 by default (set FLASK_HOST=0.0.0.0 for ngrok)
 
 ## Brand & UI
@@ -197,7 +255,28 @@ The global `direction: rtl` in `index.css` affects flex containers differently f
 - **09:00** — send daily Excel email report via SendGrid
 - **10:00 + 16:00** — scrape all (domestic + abroad + global + content), detect changes, notify (Telegram + WhatsApp + Web Push)
 - WhatsApp via Green API (config.json: greenapi_url, greenapi_instance, greenapi_token, whatsapp_phone or whatsapp_group_id)
-- Windows Task Scheduler: task "CellularComparison" at logon runs `python app.py`
+- **Windows Task Scheduler**: two tasks at logon:
+  - `CellularComparison` → runs `scripts/flask_watchdog.bat` (infinite loop, restarts Flask on crash, 15s delay)
+  - `MOCA-Vite` → runs `scripts/vite_watchdog.bat` (infinite loop, restarts Vite on crash, 10s delay)
+  - Both log restart events to `scripts/flask_watchdog.log` / `scripts/vite_watchdog.log`
+
+## Automation Scripts (scripts/)
+
+| File | Purpose |
+|------|---------|
+| flask_watchdog.bat | Keeps Flask alive — loops `python app.py`, restarts after 15s on any exit |
+| vite_watchdog.bat | Keeps Vite alive — loops `npm run dev` via cmd (not PowerShell — execution policy blocks npm.ps1) |
+| backup_to_drive.ps1 | Daily backup of config.json + plans.db + banner PNGs to Google Drive. Auto-restarts GoogleDriveFS if not mounted. |
+| backup_health_check.ps1 | Monthly integrity check: file presence, SQLite PRAGMA integrity_check, row counts per table, Task Scheduler state. Sends email via SendGrid. |
+| drive_monitor.ps1 | Runs 2×/day, monitors Drive mount health, tracks consecutive failures to avoid alert spam. |
+| alert.py | Multi-channel alert sender (SendGrid + Telegram) used by the PS1 scripts. |
+
+## Archive System
+
+`archive.py` stores historical plan snapshots using content hashing:
+- After each scrape, compares SHA-256 of scraped data against last archived snapshot
+- Only writes a new snapshot file when content actually changed (storage-efficient)
+- Snapshots live in `data/archive/` — browsable via `ArchivePage.jsx`
 
 ## Environment Variables
 
