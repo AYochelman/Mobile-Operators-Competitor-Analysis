@@ -1,14 +1,13 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
 import { useHiddenCarrier, useVisibleCarriers } from '../hooks/useHiddenCarrier'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
-import * as XLSX from 'xlsx'
 import PlanCard from '../components/PlanCard'
 import BannerCard from '../components/BannerCard'
-import HistoryTab from '../components/HistoryTab'
-import NewsTab from '../components/NewsTab'
+const HistoryTab = lazy(() => import('../components/HistoryTab'))
+const NewsTab    = lazy(() => import('../components/NewsTab'))
 import GroupedPlanCard from '../components/GroupedPlanCard'
 import CountryModal from '../components/CountryModal'
 import MarketMoversWidget from '../components/MarketMoversWidget'
@@ -604,8 +603,10 @@ export default function DashboardPage() {
     return { count: filteredPlans.length, avg, min }
   }, [filteredPlans, filters, tab])
 
-  const exportToExcel = useCallback(() => {
+  const exportToExcel = useCallback(async () => {
     if (!filteredPlans.length) return
+    // Dynamic-import xlsx (~80KB) only when user clicks export
+    const XLSX = await import('xlsx')
     const TAB_NAMES = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי', content: 'תוכן' }
     const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack', breez: 'Breez' }
     const GB_HEB = { 'all': 'הכל', '0-5': '0-5GB', '5-15': '5-15GB', '15-100': '15-100GB', '100+': '100+GB', 'unlimited': 'ללא הגבלה' }
@@ -1086,7 +1087,9 @@ export default function DashboardPage() {
                     plans={item.plans}
                     trendInfo={trendMap.get(groupKey) || null}
                     isInCompare={compareMap.has(groupCompareKey)}
-                    onCompareToggle={() => toggleCompare(repPlan, tab)}
+                    onCompareToggle={toggleCompare}
+                    repPlan={repPlan}
+                    tabId={tab}
                   />
                 )
               }
@@ -1101,7 +1104,7 @@ export default function DashboardPage() {
                   changeType={changeLookup[key]}
                   trendInfo={trendMap.get(key) || null}
                   isInCompare={compareMap.has(compareKey)}
-                  onCompareToggle={() => toggleCompare(plan, tab)}
+                  onCompareToggle={toggleCompare}
                   highlighted={highlightPlan && (() => {
                     const h = highlightPlan.toLowerCase().replace(/[\s\-–]+/g, ' ')
                     const name = (plan.plan_name || '').toLowerCase().replace(/[\s\-–]+/g, ' ')
@@ -1190,9 +1193,17 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {tab === 'history' && <HistoryTab />}
+      {tab === 'history' && (
+        <Suspense fallback={<div className="flex justify-center py-20"><Spinner /></div>}>
+          <HistoryTab />
+        </Suspense>
+      )}
 
-      {tab === 'news' && <NewsTab />}
+      {tab === 'news' && (
+        <Suspense fallback={<div className="flex justify-center py-20"><Spinner /></div>}>
+          <NewsTab />
+        </Suspense>
+      )}
 
       {!loading && filteredPlans.length === 0 && tab !== 'banners' && tab !== 'history' && tab !== 'news' && (
         <div className="text-center py-20 text-gray-400">

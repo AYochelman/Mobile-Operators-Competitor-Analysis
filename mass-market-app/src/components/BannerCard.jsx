@@ -59,6 +59,8 @@ export default function BannerCard({ banner }) {
         alt={`באנר ${name}`}
         className={className}
         style={{ objectFit: 'cover', ...style }}
+        loading="lazy"
+        decoding="async"
         onError={() => setImgError(true)}
       />
     ) : (

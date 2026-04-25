@@ -1,15 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../lib/api'
 import Badge from './ui/Badge'
-
-const CARRIER_LABELS = {
-  partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום',
-  mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom',
-  tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM',
-  esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global',
-  saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks',
-  voye: 'VOYE', orbit: 'Orbit', travelsim: 'TravelSim',
-}
+import { ALL_CARRIER_LABELS as CARRIER_LABELS } from '../data/carrierLabels'
 
 const CARRIER_COLORS = {
   partner: 'pink', pelephone: 'blue', hotmobile: 'orange', cellcom: 'green',

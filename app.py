@@ -1962,7 +1962,8 @@ def api_delete_saved_view(view_id):
 def api_get_annotations():
     """Return annotations for current workspace, optionally filtered to a plan."""
     from db import get_annotations as _ga
-    ctx = _get_user_role_context()
+    user_email_for_ctx = _current_user_email() or ''
+    ctx = _get_user_context(user_email_for_ctx) if user_email_for_ctx else {}
     ws_id = ctx.get('workspace_id')
     carrier   = request.args.get('carrier')
     plan_name = request.args.get('plan_name')
@@ -1976,7 +1977,8 @@ def api_get_annotations():
 def api_annotation_counts():
     """Return annotation counts grouped by plan key for the workspace."""
     from db import get_annotation_counts as _gac
-    ctx = _get_user_role_context()
+    user_email_for_ctx = _current_user_email() or ''
+    ctx = _get_user_context(user_email_for_ctx) if user_email_for_ctx else {}
     ws_id = ctx.get('workspace_id')
     return jsonify(_gac(ws_id, db_path=_db_path()))
 
@@ -1989,7 +1991,7 @@ def api_add_annotation():
     user_email = _current_user_email()
     if not user_email:
         return jsonify({"error": "auth required"}), 401
-    ctx = _get_user_role_context()
+    ctx = _get_user_context(user_email)
     ws_id = ctx.get('workspace_id')
     data = request.get_json(force=True) or {}
     carrier   = (data.get('carrier') or '').strip()
@@ -2015,7 +2017,7 @@ def api_update_annotation(ann_id):
     user_email = _current_user_email()
     if not user_email:
         return jsonify({"error": "auth required"}), 401
-    ctx = _get_user_role_context()
+    ctx = _get_user_context(user_email)
     ws_id = ctx.get('workspace_id')
     data = request.get_json(force=True) or {}
     note = (data.get('note') or '').strip()
@@ -2034,7 +2036,7 @@ def api_delete_annotation(ann_id):
     user_email = _current_user_email()
     if not user_email:
         return jsonify({"error": "auth required"}), 401
-    ctx = _get_user_role_context()
+    ctx = _get_user_context(user_email)
     ws_id = ctx.get('workspace_id')
     deleted = _da(ann_id, ws_id, user_email, db_path=_db_path())
     if deleted == 0:
@@ -2081,10 +2083,14 @@ def api_chat():
             return f"{round(g*1024)}MB" if g < 1 else f"{g}GB"
 
         # Carrier ID → display name (used in context so AI resolves aliases correctly)
+        # MUST stay in sync with mass-market-app/src/data/carrierLabels.js
         _CARRIER_NAMES = {
+            # Domestic
             'partner': 'פרטנר', 'pelephone': 'פלאפון', 'hotmobile': 'הוט מובייל',
             'cellcom': 'סלקום', 'mobile019': '019', 'xphone': 'XPhone',
             'wecom': 'We-Com', 'neptucom': 'Neptucom', 'golan': 'גולן טלקום',
+            'rami_levy': 'רמי לוי',
+            # Global eSIM
             'tuki': 'Tuki', 'globalesim': 'GlobaleSIM',
             'airalo': 'Airalo', 'airalo_local': 'Airalo', 'airalo_regional': 'Airalo',
             'pelephone_global': 'GlobalSIM', 'esimo': 'eSIMo', 'simtlv': 'SimTLV',
@@ -2092,9 +2098,7 @@ def api_chat():
             'holafly': 'Holafly', 'esimio': 'eSIM.io', 'sparks': 'Sparks',
             'voye': 'VOYE', 'orbit': 'Orbit', 'travelsim': 'Travel Sim',
             'gomoworld': 'GoMoWorld', 'tasim': 'Tasim', 'maya': 'Maya Mobile',
-            'esim70': 'eSIM70',
-            'jetpack': 'Jetpack',
-            'breez': 'Breez',
+            'bcengi': 'Bcengi', 'esim70': 'eSIM70', 'jetpack': 'Jetpack', 'breez': 'Breez',
         }
         def _cn(carrier):
             return _CARRIER_NAMES.get(carrier, carrier)
@@ -2103,7 +2107,10 @@ def api_chat():
             "אתה עוזר נתונים עבור מערכת השוואת חבילות סלולר ישראלית.",
             "להלן הנתונים הנוכחיים מהמסד נתונים. ענה בעברית, בצורה תמציתית וברורה.",
             f"תאריך עדכון: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
-            "שמות ספקים: gomoworld=GoMoWorld=Gomo, airalo/airalo_local/airalo_regional=Airalo, pelephone_global=GlobalSIM, xphone_global=XPhone Global, mobile019=019.",
+            "שמות ספקים (מזהה=שם מוצג): airalo/airalo_local/airalo_regional=Airalo, "
+            "pelephone_global=GlobalSIM, xphone_global=XPhone Global, mobile019=019, "
+            "rami_levy=רמי לוי, gomoworld=GoMoWorld=Gomo, world8=8 World, simtlv=SimTLV, "
+            "esimio=eSIM.io, maya=Maya Mobile, travelsim=Travel Sim, neptucom=Neptucom.",
         ]
         if hidden_carrier:
             lines.append(
@@ -2197,6 +2204,28 @@ def api_chat():
         context = "\n".join(lines)
 
         # ── Call Anthropic API ─────────────────────────────────────────────
+        # Sonnet has dramatically better Hebrew than Haiku; the latency/cost
+        # premium is justified for business-facing reports. Caller can request
+        # 'haiku' explicitly for fast/cheap quick-fire chat.
+        ALLOWED_MODELS = {
+            'sonnet': 'claude-sonnet-4-5',
+            'haiku':  'claude-haiku-4-5-20251001',
+        }
+        requested = (data.get('model') or '').strip().lower()
+        model = ALLOWED_MODELS.get(requested, 'claude-sonnet-4-5')
+
+        # Hebrew-quality system prompt: prepend strict language rules to the context
+        hebrew_rules = (
+            "כללי כתיבה (חובה לעקוב אחריהם):\n"
+            "1. כתוב אך ורק בעברית תקנית. אל תמציא מילים שאינן קיימות במילון העברי.\n"
+            "2. אל תתרגם ישירות מאנגלית — נסח מחדש בעברית טבעית. במקרה של ספק, השאר את המונח באנגלית במקום לתרגם בצורה שגויה.\n"
+            "3. השתמש במילים מלאות, ללא קיצורים שגויים או הברות חסרות (למשל: 'שיחות' ולא 'שיח'; 'צרכנים' ולא 'צרים'; 'בכורה' ולא 'בחור').\n"
+            "4. פעמיים בדוק כל משפט שכתבת — אם משפט נשמע מוזר, נסח אותו מחדש.\n"
+            "5. השתמש במונחי הענף הסלולרי הנכונים: 'חבילת גלישה', 'דקות שיחה', 'הודעות SMS', 'גלישה בחו\"ל', 'תנאי הצטרפות'.\n"
+            "6. אם אין לך מידע ודאי על משהו — אל תמציא, ציין במפורש שהמידע לא זמין.\n\n"
+        )
+        full_system = hebrew_rules + context
+
         resp = _req.post(
             "https://api.anthropic.com/v1/messages",
             headers={
@@ -2205,16 +2234,16 @@ def api_chat():
                 "content-type": "application/json",
             },
             json={
-                "model": "claude-haiku-4-5-20251001",
+                "model": model,
                 "max_tokens": 1024,
-                "system": context,
+                "system": full_system,
                 "messages": [{"role": "user", "content": question}],
             },
-            timeout=30,
+            timeout=45,
         )
         resp.raise_for_status()
         answer = resp.json()["content"][0]["text"]
-        return jsonify({"answer": answer})
+        return jsonify({"answer": answer, "model": model})
 
     except Exception as e:
         logger.error(f"chat failed: {e}", exc_info=True)

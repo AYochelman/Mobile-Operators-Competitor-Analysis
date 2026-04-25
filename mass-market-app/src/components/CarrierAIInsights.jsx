@@ -1,15 +1,7 @@
 import { useState, useCallback } from 'react'
 import { api } from '../lib/api'
 import Modal from './ui/Modal'
-
-const CARRIER_NAMES = {
-  partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום',
-  mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom',
-  golan: 'גולן טלקום', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
-  pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World',
-  xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io',
-  sparks: 'Sparks', voye: 'VOYE', orbit: 'Orbit', travelsim: 'Travel Sim',
-}
+import { ALL_CARRIER_LABELS as CARRIER_NAMES } from '../data/carrierLabels'
 
 export default function CarrierAIInsights({ carrierId }) {
   const [open, setOpen] = useState(false)
@@ -23,16 +15,24 @@ export default function CarrierAIInsights({ carrierId }) {
     setLoading(true)
     setError(null)
     setAnswer('')
-    const prompt = `תן לי דוח תחרותי תמציתי וממוקד על ${carrierName}. כלול:
-1. מספר חבילות וטווח מחירים
-2. החבילות הבולטות והאסטרטגיה (זול/פרימיום/data-heavy/חו"ל)
-3. שינויים אחרונים (אם יש בנתונים)
-4. השוואה קצרה למתחרים — איפה הם חזקים, איפה חלשים
-5. הזדמנויות / נקודות תורפה תחרותיות
+    const prompt = `תן לי דוח תחרותי תמציתי וממוקד על ${carrierName}.
 
-אורך תשובה: עד 200 מילים. השתמש בכותרות קצרות ובנקודות.`
+תוכן רצוי (בסדר הזה):
+1. **מצב נוכחי** — מספר חבילות פעילות וטווחי מחירים (ביתי וחו"ל בנפרד)
+2. **אסטרטגיה** — מה הספק מנסה לעשות? (תחרות במחיר, פרימיום, data-heavy, חו"ל וכד')
+3. **שינויים אחרונים** — מה קרה בחבילות שלו לאחרונה (אם יש בנתונים)
+4. **מול המתחרים** — שני משפטים על נקודות חוזק וחולשה ביחס לאחרים
+5. **הזדמנויות** — 1-3 פעולות שהמתחרים יכולים לנצל
+
+דרישות איכות (חובה):
+- כתוב בעברית תקנית בלבד. אל תמציא מילים. אל תתרגם ישירות מאנגלית — אם אתה לא בטוח במונח, השתמש בעברית פשוטה או השאר באנגלית.
+- בדוק כל משפט לפני שאתה כותב אותו. אם משהו נשמע מוזר — נסח מחדש.
+- השתמש במונחי הענף הנכונים: "חבילת גלישה", "דקות שיחה", "הודעות SMS", "גלישה בחו\\"ל".
+- אורך כולל: עד 220 מילים.
+- פורמט: כותרות מודגשות (## כותרת), נקודות קצרות תחת כל כותרת.`
     try {
-      const res = await api.chat(prompt)
+      // Explicitly request Sonnet for higher Hebrew quality
+      const res = await api.chat(prompt, 'sonnet')
       setAnswer(res?.answer || res?.response || res?.text || JSON.stringify(res))
     } catch (e) {
       setError(e.message || 'שגיאה בטעינת הסיכום')

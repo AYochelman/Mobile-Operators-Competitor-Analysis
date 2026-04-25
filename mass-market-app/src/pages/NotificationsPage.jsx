@@ -4,18 +4,11 @@ import { api } from '../lib/api'
 import { useWatchlist } from '../hooks/useWatchlist'
 import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
+import { ALL_CARRIER_LABELS as CARRIER_LABELS } from '../data/carrierLabels'
 
 const TYPE_LABELS = { domestic: 'סלולר', abroad: 'חו"ל', global: 'גלובלי' }
 const CHANGE_LABELS = { new_plan: 'חדש', price_change: 'שינוי מחיר', removed_plan: 'הוסרה', extras_change: 'שינוי פרטים', details_change: 'עדכון' }
 const CHANGE_COLORS = { new_plan: 'green', price_change: 'amber', removed_plan: 'red', extras_change: 'blue', details_change: 'blue' }
-const CARRIER_LABELS = {
-  partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום',
-  mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom',
-  tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM',
-  esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global',
-  saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
-  orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim', maya: 'Maya',
-}
 
 const keyOf = (p) => `${p.plan_type}|${p.carrier}|${p.plan_name}`
 

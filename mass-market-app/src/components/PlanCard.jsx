@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, lazy, Suspense, memo } from 'react'
 import Badge from './ui/Badge'
 import CountryModal from './CountryModal'
 import Modal from './ui/Modal'
@@ -6,11 +6,13 @@ import { getCountriesForPlan } from '../data/globalCountries'
 import { getCountriesForAbroadPlan } from '../data/abroadCountries'
 import { getAppsForAbroadPlan } from '../data/abroadApps'
 import AppsModal from './AppsModal'
-import PriceHistoryModal from './PriceHistoryModal'
 import SparklineMini from './SparklineMini'
 import AnnotationsModal from './AnnotationsModal'
 import { useWatchlist } from '../hooks/useWatchlist'
 import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
+
+// Lazy — Recharts is ~340KB. Only load when the user actually opens history.
+const PriceHistoryModal = lazy(() => import('./PriceHistoryModal'))
 
 const AFFILIATE_PROVIDERS = new Set(['airalo', 'holafly', 'saily', 'globalesim'])
 const AFFILIATE_URLS = {
@@ -195,7 +197,7 @@ function formatDays(days) {
   return `${days} ימים`
 }
 
-export default function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo, isInCompare, onCompareToggle }) {
+function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo, isInCompare, onCompareToggle }) {
   const [showCountries, setShowCountries] = useState(false)
   const [showApps, setShowApps] = useState(false)
   const [showAllExtras, setShowAllExtras] = useState(false)
@@ -276,6 +278,8 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
         <img
           src={CARRIER_LOGOS[carrier]}
           alt={label}
+          loading="lazy"
+          decoding="async"
           className="absolute top-3 left-3 object-contain"
           style={{ width: LOGO_WIDTHS[carrier] || LOGO_SIZES[carrier] || '32px', height: LOGO_SIZES[carrier] || '32px' }}
         />
@@ -496,104 +500,100 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
         </div>
         )}
 
-        {/* Action icon strip — [compare] [share] [★] */}
-        <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-100">
-          {/* Left: compare toggle or content URL */}
-          <div className="w-7 flex justify-start">
-            {!isContent && onCompareToggle ? (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); onCompareToggle() }}
-                title={isInCompare ? 'הסר מהשוואה' : 'הוסף להשוואה'}
-                className={`p-1 rounded transition-all ${
-                  isInCompare ? 'text-blue-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-blue-400'
-                }`}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill={isInCompare ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  {isInCompare && <polyline points="9 12 11 14 15 10" />}
+        {/* Action icon strip — equal spacing across visible icons */}
+        <div className="flex items-center justify-around pt-2 mt-2 border-t border-gray-100">
+          {/* Compare toggle (or content URL fallback) */}
+          {!isContent && onCompareToggle ? (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onCompareToggle(plan, type) }}
+              title={isInCompare ? 'הסר מהשוואה' : 'הוסף להשוואה'}
+              className={`p-1 rounded transition-all ${
+                isInCompare ? 'text-blue-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-blue-400'
+              }`}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill={isInCompare ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                {isInCompare && <polyline points="9 12 11 14 15 10" />}
+              </svg>
+            </button>
+          ) : contentUrl ? (
+            <a
+              href={contentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1 text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt transition-colors"
+              onClick={(e) => e.stopPropagation()}
+              title="לאתר הספק"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </a>
+          ) : null}
+
+          {/* Annotations */}
+          {!isContent && plan.plan_name && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowAnnotations(true) }}
+              title={annotationCount > 0 ? `${annotationCount} הערות צוות` : 'הוסף הערה'}
+              className={`relative p-1 transition-all ${
+                annotationCount > 0 ? 'text-moca-bolt' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
+              }`}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill={annotationCount > 0 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              {annotationCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[12px] h-3 bg-moca-bolt text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                  {annotationCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* Share */}
+          {!isContent && plan.plan_name && (
+            <button
+              type="button"
+              onClick={handleShare}
+              title="שתף חבילה"
+              className={`p-1 transition-all ${
+                copied ? 'text-emerald-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
+              }`}
+            >
+              {copied ? (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
                 </svg>
-              </button>
-            ) : contentUrl ? (
-              <a
-                href={contentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1 text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt transition-colors"
-                onClick={(e) => e.stopPropagation()}
-                title="לאתר הספק"
-              >
+              ) : (
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                  <polyline points="15 3 21 3 21 9"/>
-                  <line x1="10" y1="14" x2="21" y2="3"/>
+                  <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                 </svg>
-              </a>
-            ) : <span />}
-          </div>
+              )}
+            </button>
+          )}
 
-          {/* Center: annotations + share */}
-          <div className="flex items-center justify-center gap-1">
-            {!isContent && plan.plan_name && (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setShowAnnotations(true) }}
-                title={annotationCount > 0 ? `${annotationCount} הערות צוות` : 'הוסף הערה'}
-                className={`relative p-1 transition-all ${
-                  annotationCount > 0 ? 'text-moca-bolt' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
-                }`}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill={annotationCount > 0 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                {annotationCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[12px] h-3 bg-moca-bolt text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
-                    {annotationCount}
-                  </span>
-                )}
-              </button>
-            )}
-            {!isContent && plan.plan_name && (
-              <button
-                type="button"
-                onClick={handleShare}
-                title="שתף חבילה"
-                className={`p-1 transition-all ${
-                  copied ? 'text-emerald-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
-                }`}
-              >
-                {copied ? (
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                ) : (
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                  </svg>
-                )}
-              </button>
-            )}
-          </div>
-
-          {/* Right: watchlist star */}
-          <div className="w-7 flex justify-end">
-            {watchKey.plan_name && (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); toggleWatch(watchKey) }}
-                title={watched ? 'הסר מהמעקב' : 'הוסף למעקב'}
-                className={`p-1 transition-all ${
-                  watched ? 'text-amber-400 hover:text-amber-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-amber-400'
-                }`}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill={watched ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                </svg>
-              </button>
-            )}
-          </div>
+          {/* Watchlist star */}
+          {watchKey.plan_name && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); toggleWatch(watchKey) }}
+              title={watched ? 'הסר מהמעקב' : 'הוסף למעקב'}
+              className={`p-1 transition-all ${
+                watched ? 'text-amber-400 hover:text-amber-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-amber-400'
+              }`}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill={watched ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -624,7 +624,8 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
           planLabel={plan.plan_name}
         />
       )}
-      {!isContent && plan.plan_name && (
+      {!isContent && plan.plan_name && showPriceHistory && (
+        <Suspense fallback={null}>
         <PriceHistoryModal
           open={showPriceHistory}
           onClose={() => setShowPriceHistory(false)}
@@ -633,6 +634,7 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
           planType={type}
           currentPrice={plan.price}
         />
+        </Suspense>
       )}
       {planInfo && (
         <Modal open={showPlanInfo} onClose={() => setShowPlanInfo(false)} title="מידע נוסף על התוכנית" maxWidth="max-w-md">
@@ -649,3 +651,5 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
     </div>
   )
 }
+
+export default memo(PlanCard)

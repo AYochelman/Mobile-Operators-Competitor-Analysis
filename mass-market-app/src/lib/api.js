@@ -65,8 +65,11 @@ export const api = {
   deleteUser:     (id) => fetchApi(`/api/users/${id}`, { method: 'DELETE' }),
   updateUserRole: (id, role) => fetchApi(`/api/users/${id}/role`, { method: 'POST', body: JSON.stringify({ role }) }),
 
-  // Chat — JWT auth
-  chat: (question) => fetchApi('/api/chat', { method: 'POST', body: JSON.stringify({ question }) }),
+  // Chat — JWT auth. model: 'sonnet' (default, better Hebrew) | 'haiku' (faster/cheaper)
+  chat: (question, model) => fetchApi('/api/chat', {
+    method: 'POST',
+    body: JSON.stringify(model ? { question, model } : { question }),
+  }),
 
   // Alerts — JWT auth
   getAlerts:   () => fetchApi('/api/alerts'),
