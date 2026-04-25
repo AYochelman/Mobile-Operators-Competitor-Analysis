@@ -284,64 +284,6 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
         />
       )}
 
-      {/* Compare toggle — bottom-left (non-content plans) */}
-      {!isContent && onCompareToggle && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onCompareToggle() }}
-          title={isInCompare ? 'הסר מהשוואה' : 'הוסף להשוואה'}
-          className={`absolute bottom-3 left-3 p-1 rounded transition-all ${
-            isInCompare
-              ? 'text-blue-500'
-              : 'text-gray-300 opacity-0 group-hover:opacity-100 hover:text-blue-400'
-          }`}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill={isInCompare ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            {isInCompare && <polyline points="9 12 11 14 15 10" />}
-          </svg>
-        </button>
-      )}
-
-      {/* Share button — above watchlist star */}
-      {!isContent && plan.plan_name && (
-        <button
-          type="button"
-          onClick={handleShare}
-          title="שתף חבילה"
-          className={`absolute bottom-11 right-3 p-1 transition-all ${
-            copied ? 'text-emerald-500 opacity-100' : 'text-gray-300 opacity-0 group-hover:opacity-100 hover:text-moca-bolt'
-          }`}
-        >
-          {copied ? (
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          ) : (
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-            </svg>
-          )}
-        </button>
-      )}
-
-      {/* Watchlist star — bottom-right corner */}
-      {watchKey.plan_name && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); toggleWatch(watchKey) }}
-          title={watched ? 'הסר מהמעקב' : 'הוסף למעקב'}
-          className={`absolute bottom-3 right-3 p-1 transition-all ${
-            watched ? 'text-amber-400 hover:text-amber-500' : 'text-gray-300 opacity-0 group-hover:opacity-100 hover:text-amber-400'
-          }`}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill={watched ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-          </svg>
-        </button>
-      )}
 
       {/* Carrier badge — absolute top-right */}
       <div className={`flex items-center gap-1 flex-wrap ${CARRIER_LOGOS[carrier] ? 'absolute top-3 right-3 max-w-[140px]' : 'mb-3'}`}>
@@ -476,28 +418,11 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
         </div>
       )}
 
-      {/* Content plan — link to provider page (bottom-left corner) */}
-      {contentUrl && (
-        <a
-          href={contentUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="absolute bottom-3 left-3 flex items-center gap-1 text-[11px] text-gray-400 hover:text-moca-bolt transition-colors"
-          onClick={(e) => e.stopPropagation()}
-          title="לאתר הספק"
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-            <polyline points="15 3 21 3 21 9"/>
-            <line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
-          <span>לאתר</span>
-        </a>
-      )}
-
-      {/* Provider link button — pinned to card bottom */}
-      {(plan.url || (isGlobal && AFFILIATE_PROVIDERS.has(plan.carrier))) && (
-        <div className="mt-auto pt-3">
+      {/* Bottom section: provider buttons + icon strip */}
+      <div className="mt-auto">
+        {/* Provider link button */}
+        {(plan.url || (isGlobal && AFFILIATE_PROVIDERS.has(plan.carrier))) && (
+        <div className="pt-3">
           {isGlobal && AFFILIATE_PROVIDERS.has(plan.carrier) ? (
             <div>
               <a
@@ -564,7 +489,89 @@ export default function PlanCard({ plan, type = 'domestic', changeType, highligh
             </div>
           )}
         </div>
-      )}
+        )}
+
+        {/* Action icon strip — [compare] [share] [★] */}
+        <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-100">
+          {/* Left: compare toggle or content URL */}
+          <div className="w-7 flex justify-start">
+            {!isContent && onCompareToggle ? (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onCompareToggle() }}
+                title={isInCompare ? 'הסר מהשוואה' : 'הוסף להשוואה'}
+                className={`p-1 rounded transition-all ${
+                  isInCompare ? 'text-blue-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-blue-400'
+                }`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill={isInCompare ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  {isInCompare && <polyline points="9 12 11 14 15 10" />}
+                </svg>
+              </button>
+            ) : contentUrl ? (
+              <a
+                href={contentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt transition-colors"
+                onClick={(e) => e.stopPropagation()}
+                title="לאתר הספק"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+            ) : <span />}
+          </div>
+
+          {/* Center: share */}
+          <div className="flex justify-center">
+            {!isContent && plan.plan_name && (
+              <button
+                type="button"
+                onClick={handleShare}
+                title="שתף חבילה"
+                className={`p-1 transition-all ${
+                  copied ? 'text-emerald-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
+                }`}
+              >
+                {copied ? (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                ) : (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                  </svg>
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Right: watchlist star */}
+          <div className="w-7 flex justify-end">
+            {watchKey.plan_name && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); toggleWatch(watchKey) }}
+                title={watched ? 'הסר מהמעקב' : 'הוסף למעקב'}
+                className={`p-1 transition-all ${
+                  watched ? 'text-amber-400 hover:text-amber-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-amber-400'
+                }`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill={watched ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Modals */}
       {countryData && (

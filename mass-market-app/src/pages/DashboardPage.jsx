@@ -1029,12 +1029,18 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {displayItems.slice(0, visibleCount).map((item, i) => {
               if (item.isGroup) {
+                const repPlan = item.plans[0]
+                const groupKey = `${item.carrier}|${repPlan.plan_name}`
+                const groupCompareKey = `${groupKey}|${tab}`
                 return (
                   <GroupedPlanCard
                     key={`group-${item.carrier}-${item.destination}`}
                     carrier={item.carrier}
                     destination={item.destination}
                     plans={item.plans}
+                    trendInfo={trendMap.get(groupKey) || null}
+                    isInCompare={compareMap.has(groupCompareKey)}
+                    onCompareToggle={() => toggleCompare(repPlan, tab)}
                   />
                 )
               }
@@ -1194,26 +1200,50 @@ export default function DashboardPage() {
                   onClick={() => {
                     const win = window.open('', '_blank')
                     const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE', orbit: 'Orbit', travelsim: 'Travel Sim' }
-                    const html = `<html dir="rtl"><head><title>השוואת חבילות — MOCA</title>
-<style>body{font-family:Arial,sans-serif;padding:24px;direction:rtl;background:#f9f4ee}
+                    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+                    const getExtras = (plan) => {
+                      if (!plan.extras) return []
+                      const filtered = plan.extras.filter(e => e && typeof e === 'string' && !e.startsWith('__info__|'))
+                      if (plan.carrier === 'orbit' && filtered.length > 1) return []
+                      return filtered
+                    }
+                    const getPlanInfo = (plan) => {
+                      const marker = plan.extras?.find(e => typeof e === 'string' && e.startsWith('__info__|'))
+                      if (marker) return marker.slice('__info__|'.length)
+                      return plan.plan_info || null
+                    }
+                    const html = `<html dir="rtl"><head><meta charset="utf-8"><title>השוואת חבילות — MOCA</title>
+<style>body{font-family:Arial,sans-serif;padding:24px;direction:rtl;background:#f9f4ee;color:#1a1a1a}
 h1{font-size:20px;font-weight:700;margin-bottom:20px;color:#5c3317}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
-.card{background:white;border:1px solid #e5e0d8;border-radius:14px;padding:18px;page-break-inside:avoid}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.card{background:white;border:1px solid #e5e0d8;border-radius:14px;padding:18px;page-break-inside:avoid;text-align:right}
 .carrier{font-size:11px;color:#999;margin-bottom:4px}
 .name{font-size:13px;font-weight:600;color:#333;margin-bottom:10px;line-height:1.4}
 .price{font-size:28px;font-weight:700;color:#1a1a1a;margin-bottom:4px}
-.info{font-size:12px;color:#777}</style></head><body>
+.info{font-size:12px;color:#777;margin-bottom:8px}
+.extras{margin-top:10px;padding-top:10px;border-top:1px solid #f0e8dc;list-style:none;padding-right:0}
+.extras li{font-size:11px;color:#666;line-height:1.5;padding:2px 0;position:relative;padding-right:14px}
+.extras li:before{content:"✦";position:absolute;right:0;color:#c9b893}
+.plan-info{margin-top:10px;padding-top:10px;border-top:1px solid #f0e8dc;font-size:11px;color:#666;line-height:1.5;white-space:pre-line}
+.plan-info-title{font-size:10px;font-weight:600;color:#5c3317;margin-bottom:4px;text-transform:uppercase}
+@media print{body{background:white}.card{break-inside:avoid}}</style></head><body>
 <h1>השוואת חבילות — MOCA</h1>
 <div class="grid">
-${[...compareMap.values()].map(({ plan, planType }) => `
+${[...compareMap.values()].map(({ plan, planType }) => {
+  const extras = getExtras(plan)
+  const planInfo = getPlanInfo(plan)
+  return `
 <div class="card">
-  <div class="carrier">${CARRIER_HEB[plan.carrier] || plan.carrier} · ${planType === 'domestic' ? 'סלולר' : planType === 'abroad' ? 'חו"ל' : 'גלובלי'}</div>
-  <div class="name">${plan.plan_name || plan.service || ''}</div>
-  <div class="price">₪${plan.price}</div>
-  <div class="info">${plan.data_gb === null ? 'ללא הגבלה' : (plan.data_gb || '') + 'GB'}${plan.days ? ' · ' + plan.days + ' ימים' : ''}${plan.minutes ? ' · ' + plan.minutes + ' דקות' : ''}</div>
-</div>`).join('')}
+  <div class="carrier">${esc(CARRIER_HEB[plan.carrier] || plan.carrier)} · ${planType === 'domestic' ? 'סלולר' : planType === 'abroad' ? 'חו"ל' : 'גלובלי'}</div>
+  <div class="name">${esc(plan.plan_name || plan.service || '')}</div>
+  <div class="price">₪${esc(plan.price)}</div>
+  <div class="info">${plan.data_gb === null ? 'ללא הגבלה' : esc(plan.data_gb || '') + 'GB'}${plan.days ? ' · ' + esc(plan.days) + ' ימים' : ''}${plan.minutes ? ' · ' + esc(plan.minutes) + ' דקות' : ''}${plan.sms ? ' · ' + esc(plan.sms) + ' SMS' : ''}</div>
+  ${extras.length > 0 ? `<ul class="extras">${extras.map(e => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}
+  ${planInfo ? `<div class="plan-info"><div class="plan-info-title">תנאי התוכנית</div>${esc(planInfo)}</div>` : ''}
+</div>`
+}).join('')}
 </div>
-<script>window.print()</script></body></html>`
+<script>setTimeout(()=>window.print(),300)</script></body></html>`
                     win.document.write(html)
                     win.document.close()
                   }}
@@ -1234,9 +1264,12 @@ ${[...compareMap.values()].map(({ plan, planType }) => `
                   <div key={i} className="relative">
                     <button
                       onClick={() => toggleCompare(plan, planType)}
-                      className="absolute top-2 left-2 z-10 text-[10px] text-red-500 hover:text-red-700 bg-white rounded-full border border-red-200 px-2 py-0.5 font-medium"
+                      title="הסר מהשוואה"
+                      className="absolute -top-2 -right-2 z-10 w-6 h-6 flex items-center justify-center text-white bg-red-500 hover:bg-red-600 rounded-full shadow-md border-2 border-white transition-colors"
                     >
-                      הסר
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
                     </button>
                     <PlanCard plan={plan} type={planType} />
                   </div>

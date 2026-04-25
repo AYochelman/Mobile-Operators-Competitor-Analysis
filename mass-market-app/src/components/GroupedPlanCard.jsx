@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import Badge from './ui/Badge'
 import CountryModal from './CountryModal'
 import { getCountriesForPlan } from '../data/globalCountries'
+import { useWatchlist } from '../hooks/useWatchlist'
 
 const CARRIER_LOGOS = {
   tuki:            '/logos/tuki.png',
@@ -101,17 +102,31 @@ function formatDays(days) {
   return `${days} ימים`
 }
 
-export default function GroupedPlanCard({ carrier, destination, plans }) {
+export default function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, onCompareToggle }) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [showCountries, setShowCountries] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const { isWatched, toggle: toggleWatch } = useWatchlist()
 
   const selectedPlan = plans[selectedIndex]
   const label = GLOBAL_LABELS[carrier] || carrier
   const badgeColor = GLOBAL_COLORS[carrier] || 'gray'
   const countryData = getCountriesForPlan(selectedPlan)
 
+  const watchKey = { carrier, plan_name: selectedPlan.plan_name || '', plan_type: 'global' }
+  const watched = isWatched(watchKey)
+
+  const handleShare = useCallback((e) => {
+    e.stopPropagation()
+    const url = `${window.location.origin}/?tab=global&carrier=${carrier}&highlight=${encodeURIComponent(selectedPlan.plan_name || '')}`
+    navigator.clipboard?.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }).catch(() => {})
+  }, [carrier, selectedPlan.plan_name])
+
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm relative text-right hover-lift animate-fade-in-up">
+    <div className="bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up flex flex-col">
       {/* Carrier logo — absolute top-left */}
       {CARRIER_LOGOS[carrier] && (
         <img
@@ -123,8 +138,18 @@ export default function GroupedPlanCard({ carrier, destination, plans }) {
       )}
 
       {/* Carrier badges — absolute top-right */}
-      <div className="absolute top-3 right-3 flex items-center gap-1.5">
+      <div className="absolute top-3 right-3 flex items-center gap-1 flex-wrap max-w-[140px]">
         <Badge color={badgeColor}>{label}</Badge>
+        {trendInfo && (
+          <span className={`inline-flex items-center text-[8px] font-extrabold px-1.5 py-0.5 rounded-full leading-none ${
+            trendInfo.pct_change <= -10 ? 'bg-emerald-500 text-white' :
+            trendInfo.pct_change < 0   ? 'bg-emerald-100 text-emerald-700' :
+                                         'bg-red-100 text-red-600'
+          }`}>
+            {trendInfo.pct_change < 0 ? '↓' : '↑'}{Math.abs(trendInfo.pct_change).toFixed(0)}%
+            {trendInfo.pct_change <= -10 && ' 🔥'}
+          </span>
+        )}
         {selectedPlan.esim && <Badge color="green">eSIM</Badge>}
       </div>
 
@@ -178,26 +203,6 @@ export default function GroupedPlanCard({ carrier, destination, plans }) {
         ) : null}
       </p>
 
-      {/* Affiliate buy button */}
-      {AFFILIATE_PROVIDERS.has(carrier) && (
-        <div className="mt-auto pt-3">
-          <a
-            href={AFFILIATE_URLS[carrier] || `https://www.${carrier}.com`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 w-full text-xs text-white bg-[#5c3317] rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-            </svg>
-            רכישה
-          </a>
-          <p className="text-center text-[10px] text-[#a08060] mt-1">דרך MOCA</p>
-        </div>
-      )}
-
       {/* Country modal link */}
       {countryData && (
         <div className="mt-3 pt-3 border-t border-gray-100">
@@ -209,6 +214,94 @@ export default function GroupedPlanCard({ carrier, destination, plans }) {
           </button>
         </div>
       )}
+
+      {/* Bottom section: affiliate buy + icon strip */}
+      <div className="mt-auto">
+        {AFFILIATE_PROVIDERS.has(carrier) && (
+          <div className="pt-3">
+            <a
+              href={AFFILIATE_URLS[carrier] || `https://www.${carrier}.com`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 w-full text-xs text-white bg-[#5c3317] rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              רכישה
+            </a>
+            <p className="text-center text-[10px] text-[#a08060] mt-1">דרך MOCA</p>
+          </div>
+        )}
+
+        {/* Action icon strip — [compare] [share] [★] */}
+        <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-100">
+          {/* Left: compare */}
+          <div className="w-7 flex justify-start">
+            {onCompareToggle && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onCompareToggle() }}
+                title={isInCompare ? 'הסר מהשוואה' : 'הוסף להשוואה'}
+                className={`p-1 rounded transition-all ${
+                  isInCompare ? 'text-blue-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-blue-400'
+                }`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill={isInCompare ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  {isInCompare && <polyline points="9 12 11 14 15 10" />}
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Center: share */}
+          <div className="flex justify-center">
+            {selectedPlan.plan_name && (
+              <button
+                type="button"
+                onClick={handleShare}
+                title="שתף חבילה"
+                className={`p-1 transition-all ${
+                  copied ? 'text-emerald-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
+                }`}
+              >
+                {copied ? (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                ) : (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                  </svg>
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Right: watchlist star */}
+          <div className="w-7 flex justify-end">
+            {watchKey.plan_name && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); toggleWatch(watchKey) }}
+                title={watched ? 'הסר מהמעקב' : 'הוסף למעקב'}
+                className={`p-1 transition-all ${
+                  watched ? 'text-amber-400 hover:text-amber-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-amber-400'
+                }`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill={watched ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Country modal */}
       {countryData && (
