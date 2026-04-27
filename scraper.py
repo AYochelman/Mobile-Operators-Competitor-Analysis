@@ -5428,11 +5428,21 @@ def scrape_maya_global(_page=None, usd_rate=None):
         "1GB":       1,
     }
 
-    def _fetch_html(slug):
-        url = f"https://maya.net/esim/{slug}"
+    def _fetch_html(slug, base="esim"):
+        url = f"https://maya.net/{base}/{slug}"
         req = urllib.request.Request(url, headers={"User-Agent": UA})
         with urllib.request.urlopen(req, timeout=20) as r:
             return r.read().decode("utf-8", errors="replace")
+
+    # Regional eSIM products at /plans/<slug> (different URL prefix from per-country /esim/)
+    MAYA_REGION_TO_HEBREW = {
+        "europe":         "אירופה",          # אירופה
+        "asia":           "אסיה",                       # אסיה
+        "latin-america":  "אמריקה הלטינית",  # אמריקה הלטינית
+        "caribbean":      "קריביים",     # קריביים
+        "middle-east":    "המזרח התיכון",  # המזרח התיכון
+        "balkans":        "בלקן",                        # בלקן
+    }
 
     def _extract_visible_sizes(html):
         """Return the set of size keys (e.g. 'unlimited', '5GB', '10GB') that
@@ -5496,12 +5506,12 @@ def scrape_maya_global(_page=None, usd_rate=None):
                 ))
         return plans
 
-    def _fetch_and_parse(slug, country_heb):
+    def _fetch_and_parse(slug, country_heb, base="esim"):
         try:
-            html = _fetch_html(slug)
+            html = _fetch_html(slug, base=base)
             return _parse_slug(slug, country_heb, html)
         except Exception as exc:
-            logger.warning(f"Maya Mobile {slug}: {exc}")
+            logger.warning(f"Maya Mobile {slug} ({base}): {exc}")
             return []
 
     all_plans = []
@@ -5510,6 +5520,9 @@ def scrape_maya_global(_page=None, usd_rate=None):
             executor.submit(_fetch_and_parse, slug, heb): slug
             for slug, heb in MAYA_SLUG_TO_HEBREW.items()
         }
+        # Add regional eSIM products (Europe+, Asia+, LATAM+, Caribbean+, Middle East, Balkans)
+        for slug, heb in MAYA_REGION_TO_HEBREW.items():
+            futures[executor.submit(_fetch_and_parse, slug, heb, "plans")] = slug
         for future in _as_completed(futures):
             all_plans.extend(future.result())
 
