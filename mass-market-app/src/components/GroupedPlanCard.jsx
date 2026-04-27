@@ -48,6 +48,7 @@ const LOGO_SIZES = {
   travelsim:        '64px',
   gomoworld:        '40px',
   maya:             '43px',
+  bytesim:          '58px',
 }
 
 // Wide logos: width-only override (height stays at LOGO_SIZES default 32px)

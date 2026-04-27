@@ -148,6 +148,7 @@ const LOGO_SIZES = {
   golan:            '45px',
   gomoworld:        '40px',
   maya:             '43px',
+  bytesim:          '58px',
 }
 
 // Wide logos: separate width override (height stays at LOGO_SIZES default 32px)
