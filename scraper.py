@@ -534,6 +534,7 @@ def scrape_neptucom(_page=None):
     Group B: domestic only.
     """
     H = "\u05d7\u05d5\"\u05dc"   # חו"ל
+    G5 = "\u05ea\u05d5\u05de\u05da \u05d3\u05d5\u05e8 5"  # תומך דור 5 — Wave plans run on 5G infra
     _NEPTUCOM_PDF = "https://neptucom.com/wp-content/uploads/pdfn327/{}.pdf"
     plans = [
         # ── Group A: Domestic + International included ──────────────────
@@ -622,6 +623,7 @@ def scrape_neptucom(_page=None):
             "carrier": "neptucom", "plan_name": "HoodWave", "price": 27.0,
             "data_gb": 25, "minutes": "1000",
             "extras": [
+                G5,
                 "1,000 SMS",
                 f'SMS \u05e0\u05db\u05e0\u05e1 \u05de{H} \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4',
                 "eSIM \u05d1\u05dc\u05d1\u05d3",
@@ -632,6 +634,7 @@ def scrape_neptucom(_page=None):
             "carrier": "neptucom", "plan_name": "LocalWave", "price": 33.0,
             "data_gb": 75, "minutes": "3000",
             "extras": [
+                G5,
                 "3,000 SMS",
                 f'SMS \u05e0\u05db\u05e0\u05e1 \u05de{H} \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4',
                 "eSIM \u05d1\u05dc\u05d1\u05d3",
@@ -1286,16 +1289,31 @@ def scrape_rami_levy(_page=None):
 
 
 def scrape_all():
-    """Scrape all carriers sequentially. Returns flat list of plan dicts."""
+    """Scrape all carriers. Returns flat list of plan dicts."""
     _ensure_event_loop()
+    plans = []
+
+    # Phase 1: scrapers that open their own sync_playwright session — must run OUTSIDE
+    # any outer sync_playwright context to avoid nested asyncio event-loop conflict.
+    for fn in [scrape_xphone, scrape_wecom, scrape_019, scrape_neptucom, scrape_golan, scrape_rami_levy]:
+        try:
+            result = fn()
+            if not result:
+                logger.warning(f"{fn.__name__}: returned 0 plans — possible bot-block or selector change. Skipping to avoid false 'removed' alerts.")
+            else:
+                logger.info(f"{fn.__name__}: {len(result)} plans")
+                plans.extend(result)
+        except Exception as e:
+            logger.error(f"{fn.__name__} failed: {e}", exc_info=True)
+
+    # Phase 2: scrapers that share a single Playwright session
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
             args=["--disable-blink-features=AutomationControlled"]
         )
         page = browser.new_page()
-        plans = []
-        for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom, scrape_xphone, scrape_wecom, scrape_019, scrape_neptucom, scrape_golan, scrape_rami_levy]:
+        for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom]:
             try:
                 result = fn(page)
                 if not result:
@@ -1306,6 +1324,7 @@ def scrape_all():
             except Exception as e:
                 logger.error(f"{fn.__name__} failed: {e}", exc_info=True)
         browser.close()
+
     return plans
 
 
@@ -6360,6 +6379,171 @@ def scrape_breez_global(_page=None, usd_rate=None):
     return all_plans
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ByteSim
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Per-country handles → Hebrew names.  Derived from SAILY_SLUG_TO_HEBREW with
+# two handle differences: ByteSim uses "usa" and "uae" instead of the full names.
+BYTESIM_HANDLE_TO_HEBREW = {
+    k: v for k, v in SAILY_SLUG_TO_HEBREW.items()
+    if k not in ("united-states", "united-arab-emirates")
+}
+BYTESIM_HANDLE_TO_HEBREW["usa"] = SAILY_SLUG_TO_HEBREW["united-states"]
+BYTESIM_HANDLE_TO_HEBREW["uae"] = SAILY_SLUG_TO_HEBREW["united-arab-emirates"]
+
+# Zone/regional product handles → Hebrew zone names used as extras[0]
+BYTESIM_ZONE_HANDLES = {
+    # handle: (plan_label used in plan_name, canonical KNOWN_REGIONS string for extras[0])
+    # Global
+    "esim-global":                             ("גלובלי ByteSim – 125 מדינות",         "גלובלי"),
+    "esim-global-148":                         ("גלובלי ByteSim – 109 מדינות",         "גלובלי"),
+    # Europe
+    "europe-esim-unlimited-30-countries-lite": ("אירופה – ByteSim MAX (57 מדינות)",    "אירופה"),
+    "europe-esim-max":                         ("אירופה – ByteSim UK+ (45 מדינות)",    "אירופה"),
+    "europe-esim-lite":                        ("אירופה – ByteSim לייט (42 מדינות)",   "אירופה"),
+    "esim-balkans":                            ("בלקן – ByteSim (12 מדינות)",           "בלקן"),
+    # Asia
+    "esim-asia":                               ("אסיה – ByteSim (25 מדינות)",           "אסיה"),
+    "asia-esim-13-countries":                  ("אסיה פסיפיק – ByteSim (15 מדינות)",   "אסיה פסיפיק"),
+    "esim-china-hong-kong-macao":              ("סין, הונג קונג ומקאו – ByteSim",      "סין + הונג קונג + מקאו"),
+    # Americas
+    "esim-north-america":                      ("צפון אמריקה – ByteSim (3 מדינות)",    "צפון אמריקה"),
+    "esim-us-canada":                          ("ארה\"ב וקנדה – ByteSim",               "צפון אמריקה"),
+    "esim-south-america":                      ("דרום אמריקה – ByteSim (11 מדינות)",   "אמריקה הלטינית"),
+    "south-america-lite":                      ("דרום אמריקה – ByteSim לייט (12 מדינות)", "אמריקה הלטינית"),
+    "esim-caribbean":                          ("הקריביים – ByteSim",                  "קריביים"),
+    # Middle East & Africa
+    "esim-middle-east":                        ("המזרח התיכון – ByteSim",               "המזרח התיכון"),
+    "esim-africa":                             ("אפריקה – ByteSim",                    "אפריקה"),
+}
+
+
+def _parse_bytesim_option1(opt1):
+    """Parse ByteSim plan option1 ('1GB/Day', 'Total 5GB', 'Unlimited Data').
+    Returns (data_gb, data_str_heb)."""
+    if not opt1:
+        return None, "ללא הגבלה"
+    opt1 = opt1.strip()
+    m = re.match(r'^(\d+(?:\.\d+)?)GB/Day$', opt1, re.I)
+    if m:
+        gb = float(m.group(1))
+        gb_int = int(gb) if gb == int(gb) else gb
+        return gb_int, f"{gb_int}GB/יום"
+    m = re.match(r'^(\d+(?:\.\d+)?)MB/Day$', opt1, re.I)
+    if m:
+        mb = float(m.group(1))
+        return round(mb / 1024, 4), f"{int(mb)}MB/יום"
+    m = re.match(r'^Total\s+(\d+(?:\.\d+)?)GB$', opt1, re.I)
+    if m:
+        gb = float(m.group(1))
+        gb_int = int(gb) if gb == int(gb) else gb
+        return gb_int, f"{gb_int}GB"
+    if "unlimited" in opt1.lower():
+        return None, "ללא הגבלה"
+    return None, opt1
+
+
+_BYTESIM_JS = """() => {
+    const s = window.__PRELOAD_STATE__;
+    if (!s || !s.product) return null;
+    return s.product.variants
+        .filter(v => v.available)
+        .map(v => ({o1: v.option1, o2: v.option2, price: v.price}));
+}"""
+
+_BYTESIM_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+
+
+def _scrape_bytesim_batch(items, carrier_label, usd_rate):
+    """Fetch one batch of ByteSim product URLs in a single sequential browser session."""
+    _ensure_event_loop()
+    batch_plans = []
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(
+            headless=True, args=["--disable-blink-features=AutomationControlled"]
+        )
+        page = browser.new_page(user_agent=_BYTESIM_UA)
+        for item in items:
+            url, heb_name = item[0], item[1]
+            # heb_name may be a (plan_label, region_tag) tuple for zone plans
+            if isinstance(heb_name, tuple):
+                plan_label, region_tag = heb_name
+            else:
+                plan_label = region_tag = heb_name
+            try:
+                page.goto(url, timeout=20000, wait_until="domcontentloaded")
+                page.wait_for_timeout(1000)
+                variants = page.evaluate(_BYTESIM_JS)
+                if not variants:
+                    continue
+                for v in variants:
+                    data_gb, data_str = _parse_bytesim_option1(v.get("o1", ""))
+                    try:
+                        days = int(v["o2"])
+                    except (TypeError, ValueError):
+                        continue
+                    price_cents = v.get("price", 0)
+                    if not days or not price_cents:
+                        continue
+                    price_usd = price_cents / 100.0
+                    price_ils = round(price_usd * usd_rate, 2)
+                    day_word = "יום" if days == 1 else "ימים"
+                    plan_name = f"{plan_label} – {data_str} – {days} {day_word}"
+                    batch_plans.append(_make_global_plan(
+                        "bytesim", plan_name, price_ils, "USD", price_usd,
+                        data_gb, days, esim=True, extras=[region_tag],
+                    ))
+            except Exception as exc:
+                logger.warning(f"ByteSim {carrier_label} {url}: {exc}")
+        browser.close()
+    return batch_plans
+
+
+def _scrape_bytesim_product_list(url_iter, carrier_label, usd_rate):
+    """Split url_iter into 4 batches and fetch them in parallel browser sessions.
+    Reduces wall time from ~19 min (sequential) to ~5 min (4-way parallel)."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed as _as_completed
+    url_list = list(url_iter)
+    batch_size = max(1, (len(url_list) + 3) // 4)
+    batches = [url_list[i:i + batch_size] for i in range(0, len(url_list), batch_size)]
+    all_plans = []
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = [pool.submit(_scrape_bytesim_batch, b, carrier_label, usd_rate) for b in batches]
+        for fut in _as_completed(futures, timeout=600):
+            try:
+                all_plans.extend(fut.result())
+            except Exception as exc:
+                logger.warning(f"ByteSim {carrier_label} batch error: {exc}")
+    return all_plans
+
+
+def scrape_bytesim_global(_page=None, usd_rate=None):
+    """Scrape ByteSim per-country eSIM plans (~197 countries)."""
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    url_iter = [
+        (f"https://bytesim.com/products/esim-{handle}", heb)
+        for handle, heb in BYTESIM_HANDLE_TO_HEBREW.items()
+    ]
+    plans = _scrape_bytesim_product_list(url_iter, "countries", usd_rate)
+    logger.info(f"ByteSim global: {len(plans)} plans from {len(BYTESIM_HANDLE_TO_HEBREW)} countries")
+    return plans
+
+
+def scrape_bytesim_regions(_page=None, usd_rate=None):
+    """Scrape ByteSim zone/regional eSIM plans."""
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    url_iter = [
+        (f"https://bytesim.com/products/{handle}", (plan_label, region_tag))
+        for handle, (plan_label, region_tag) in BYTESIM_ZONE_HANDLES.items()
+    ]
+    plans = _scrape_bytesim_product_list(url_iter, "zones", usd_rate)
+    logger.info(f"ByteSim regions: {len(plans)} plans from {len(BYTESIM_ZONE_HANDLES)} zones")
+    return plans
+
+
 def scrape_all_global():
     """Scrape global eSIM packages from all providers. Returns flat list of plan dicts.
 
@@ -6410,6 +6594,8 @@ def scrape_all_global():
         ("scrape_esim70_global",        lambda: scrape_esim70_global(eur_rate=eur_rate)),
         ("scrape_jetpack_global",       lambda: scrape_jetpack_global(usd_rate=usd_rate)),
         ("scrape_breez_global",         scrape_breez_global),
+        ("scrape_bytesim_global",       lambda: scrape_bytesim_global(usd_rate=usd_rate)),
+        ("scrape_bytesim_regions",      lambda: scrape_bytesim_regions(usd_rate=usd_rate)),
     ]
 
     plans = []
@@ -6738,18 +6924,32 @@ def scrape_all_content():
 
 
 def scrape_all_abroad():
-    """Scrape abroad packages from all 5 carriers. Returns flat list of plan dicts."""
+    """Scrape abroad packages from all carriers. Returns flat list of plan dicts."""
     _ensure_event_loop()
+    plans = []
+
+    # Phase 1: scrapers that open their own sync_playwright session — must run OUTSIDE
+    # any outer sync_playwright context to avoid nested asyncio event-loop conflict.
+    for fn in [scrape_wecom_abroad, scrape_019_abroad, scrape_golan_abroad, scrape_rami_levy_abroad]:
+        try:
+            result = fn()
+            if not result:
+                logger.warning(f"{fn.__name__}: returned 0 plans — possible bot-block or selector change. Skipping.")
+            else:
+                logger.info(f"{fn.__name__}: {len(result)} abroad plans")
+                plans.extend(result)
+        except Exception as e:
+            logger.error(f"{fn.__name__} failed: {e}", exc_info=True)
+
+    # Phase 2: scrapers that share a single Playwright session
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
             args=["--disable-blink-features=AutomationControlled"]
         )
         page = browser.new_page()
-        plans = []
         for fn in [scrape_partner_abroad, scrape_pelephone_abroad,
-                   scrape_hotmobile_abroad, scrape_cellcom_abroad, scrape_wecom_abroad,
-                   scrape_019_abroad, scrape_golan_abroad, scrape_rami_levy_abroad]:
+                   scrape_hotmobile_abroad, scrape_cellcom_abroad]:
             try:
                 result = fn(page)
                 if not result:
@@ -6760,6 +6960,7 @@ def scrape_all_abroad():
             except Exception as e:
                 logger.error(f"{fn.__name__} failed: {e}", exc_info=True)
         browser.close()
+
     return plans
 
 
