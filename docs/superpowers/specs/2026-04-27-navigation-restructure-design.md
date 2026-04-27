@@ -102,9 +102,53 @@ Existing pages relevant to scope:
 - Tab state persisted via `?tab=price` / `?tab=watchlist` query param. Default = `price`.
 - `/notifications` route **remains** but redirects to `/alerts?tab=watchlist` (preserves bell icon link, deep-links from emails, browser bookmarks).
 
-### 3.3 `/ai-insights` — new page
+### 3.3 `/ai-insights` — new page (inline rendering)
 
-A vertical list aggregating `CarrierAIInsights` for every domestic carrier the user can see (respecting `useHiddenCarrier()`).
+A vertical list aggregating `CarrierAIInsights` for every domestic carrier the user can see (respecting `useHiddenCarrier()`). On this page each card renders the report **inline (expand-in-place)** instead of opening a modal — modal stays the default for the existing dashboard usage.
+
+#### 3.3.1 Refactor `CarrierAIInsights` to support inline mode
+
+Add an optional prop `inline?: boolean` (default `false`).
+
+- **`inline === false`** (default, used by Dashboard): existing behavior preserved — button opens a `<Modal>`.
+- **`inline === true`** (used by `/ai-insights`): no modal. The trigger button toggles an inline section beneath itself that contains the same loading/error/answer/refresh states. Clicking the same button after content is loaded collapses the section.
+
+Implementation sketch:
+```jsx
+export default function CarrierAIInsights({ carrierId, inline = false }) {
+  const [open, setOpen] = useState(false)
+  // ...existing state (loading, answer, error)
+
+  const Body = (
+    <div className="text-right">
+      {/* existing loading / error / answer JSX */}
+    </div>
+  )
+
+  if (inline) {
+    return (
+      <div>
+        <button onClick={() => { if (!open) loadInsights(); setOpen(o => !o) }}>
+          {/* same trigger styling */}
+          {open ? 'הסתר דוח' : `דוח AI על ${carrierName}`}
+        </button>
+        {open && <div className="mt-3 border-t pt-3">{Body}</div>}
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <button onClick={() => { setOpen(true); loadInsights() }}>...</button>
+      <Modal open={open} onClose={() => setOpen(false)}>{Body}</Modal>
+    </>
+  )
+}
+```
+
+Body JSX is extracted once and reused — no duplicate logic. Existing dashboard call sites (which pass no `inline` prop) keep working unchanged.
+
+#### 3.3.2 New page
 
 ```jsx
 // pages/AIInsightsPage.jsx
@@ -120,7 +164,7 @@ export default function AIInsightsPage() {
       <h1 className="text-lg font-semibold mb-4">AI Insights — תובנות תחרותיות לכל ספק</h1>
       {carriers.map(c => (
         <div key={c} className="bg-white border border-moca-border/60 rounded-xl p-4">
-          <CarrierAIInsights carrierId={c} />
+          <CarrierAIInsights carrierId={c} inline />
         </div>
       ))}
     </div>
@@ -128,7 +172,7 @@ export default function AIInsightsPage() {
 }
 ```
 
-Lazy-loaded route added in `App.jsx`. **Uses existing `CarrierAIInsights` component as-is — no widget changes.** Each card renders the existing modal-trigger button (`carrierId` prop, not `carrier`). Loading is lazy by design: nothing fires the AI API until the user clicks a specific carrier's button. Verify post-implementation: if the multi-card layout feels weak, a future enhancement can add an `inline` prop to `CarrierAIInsights` to render inline instead of in a modal — out of scope for this iteration.
+Lazy-loaded via `lazy()` in `App.jsx`. Loading remains lazy at the API level: nothing fires until the user clicks a specific carrier's button.
 
 ### 3.4 Mobile bottom-bar
 
@@ -155,6 +199,7 @@ Flat list of 5 most-used items + "עוד":
 | `pages/AlertsPage.jsx` | Becomes a tab wrapper; old body → `components/alerts/AlertsTab.jsx` |
 | `pages/NotificationsPage.jsx` | Body extracted to `components/alerts/WatchlistTab.jsx`; page becomes a redirect |
 | `pages/AIInsightsPage.jsx` | **NEW** |
+| `components/CarrierAIInsights.jsx` | Add optional `inline` prop (default `false`); preserves existing modal behavior on Dashboard, renders expand-in-place when `inline` |
 | `App.jsx` | Add `/ai-insights` route; `/notifications` → `<Navigate to="/alerts?tab=watchlist" replace />` |
 | `hooks/useFeatureFlags.js` | Add support for `hide_ai_insights` flag (still defaults to visible — super-admin always sees) |
 
@@ -210,5 +255,5 @@ No backend changes. No DB schema changes. No API changes.
 
 - **Dropdown UX is a new interaction pattern** for this app. Mitigation: click-to-open (not hover) — consistent across desktop and mobile sheet, matches app's existing modal patterns (SearchableSelect, AnnotationsModal).
 - **`/alerts` merge changes URL semantics** — old `/notifications` deep-links must keep working. Mitigation: explicit `<Navigate>` redirect, validated in tests.
-- **AI Insights page perf** — rendering all carriers' AI summaries simultaneously could be heavy. Mitigation: each `CarrierAIInsights` is already lazy with its own loading state; reuse as-is. If perf degrades, defer rendering with intersection observer in a follow-up.
+- **AI Insights page perf** — page renders 8 inline-mode cards but each defers its API call until the user clicks. No simultaneous fan-out; cost stays linear with user clicks. If a future enhancement auto-loads all on mount, revisit with intersection observer.
 - **Feature flag for AI Insights defaults to visible** — workspace admins who want to hide it must set `hide_ai_insights: true` in `feature_flags`. No back-compat issue (new flag).
