@@ -118,9 +118,9 @@ function formatDays(days) {
 }
 
 function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, onCompareToggle, repPlan, tabId }) {
-  const isBytesim = carrier === 'bytesim'
+  const hasDataDaysMatrix = carrier === 'bytesim' || carrier === 'maya'
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [selectedDays, setSelectedDays] = useState(() => isBytesim ? (plans[0]?.days ?? null) : null)
+  const [selectedDays, setSelectedDays] = useState(() => hasDataDaysMatrix ? (plans[0]?.days ?? null) : null)
   const [showCountries, setShowCountries] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAnnotations, setShowAnnotations] = useState(false)
@@ -129,40 +129,40 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
 
   // bytesim: one representative plan per data_str, ordered by data_gb
   const dataOptions = useMemo(() => {
-    if (!isBytesim) return null
+    if (!hasDataDaysMatrix) return null
     const seen = new Map()
     for (const p of plans) {
       const ds = getPillLabel(p)
       if (!seen.has(ds)) seen.set(ds, p)
     }
     return [...seen.values()].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
-  }, [isBytesim, plans])
+  }, [hasDataDaysMatrix, plans])
 
   // bytesim: unique sorted days for the currently selected data option
   const availableDays = useMemo(() => {
-    if (!isBytesim || !dataOptions) return null
+    if (!hasDataDaysMatrix || !dataOptions) return null
     const rep = dataOptions[selectedIndex]
     if (!rep) return null
     const ds = getPillLabel(rep)
     return [...new Set(plans.filter(p => getPillLabel(p) === ds && p.days).map(p => p.days))].sort((a, b) => a - b)
-  }, [isBytesim, dataOptions, selectedIndex, plans])
+  }, [hasDataDaysMatrix, dataOptions, selectedIndex, plans])
 
   // Active plan: for bytesim match by (data_str, days); for others use index directly
   const selectedPlan = useMemo(() => {
-    if (!isBytesim) return plans[selectedIndex] || plans[0]
+    if (!hasDataDaysMatrix) return plans[selectedIndex] || plans[0]
     const rep = dataOptions?.[selectedIndex]
     const ds = rep ? getPillLabel(rep) : null
     return plans.find(p => getPillLabel(p) === ds && p.days === selectedDays) || plans[0]
-  }, [isBytesim, plans, dataOptions, selectedIndex, selectedDays])
+  }, [hasDataDaysMatrix, plans, dataOptions, selectedIndex, selectedDays])
 
   const handleDataSelect = useCallback((idx) => {
     setSelectedIndex(idx)
-    if (isBytesim && dataOptions) {
+    if (hasDataDaysMatrix && dataOptions) {
       const ds = getPillLabel(dataOptions[idx])
       const first = plans.find(p => getPillLabel(p) === ds)
       setSelectedDays(first?.days ?? null)
     }
-  }, [isBytesim, dataOptions, plans])
+  }, [hasDataDaysMatrix, dataOptions, plans])
   const label = GLOBAL_LABELS[carrier] || carrier
   const badgeColor = GLOBAL_COLORS[carrier] || 'gray'
   const countryData = getCountriesForPlan(selectedPlan)
@@ -219,7 +219,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
       </h3>
 
       {/* Data / days selector */}
-      {isBytesim ? (
+      {hasDataDaysMatrix ? (
         <>
           <div className="flex flex-wrap gap-1.5 mb-2">
             {dataOptions?.map((rep, idx) => (

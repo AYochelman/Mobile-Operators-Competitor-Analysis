@@ -538,9 +538,10 @@ export default function DashboardPage() {
       } else {
         const byGb = new Map()
         for (const p of plans) {
-          // bytesim: keep all (data × days) combinations; other carriers: keep cheapest per GB
-          const gbKey = p.carrier === 'bytesim' ? p.plan_name : (p.data_gb ?? 0)
-          if (!byGb.has(gbKey) || (p.carrier !== 'bytesim' && p.price < byGb.get(gbKey).price)) byGb.set(gbKey, p)
+          // bytesim/maya: keep all (data × days) combinations; other carriers: keep cheapest per GB
+          const keepAll = p.carrier === 'bytesim' || p.carrier === 'maya'
+          const gbKey = keepAll ? p.plan_name : (p.data_gb ?? 0)
+          if (!byGb.has(gbKey) || (!keepAll && p.price < byGb.get(gbKey).price)) byGb.set(gbKey, p)
         }
         const unique = [...byGb.values()].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
         // bytesim: destination shown as product label extracted from plan_name
