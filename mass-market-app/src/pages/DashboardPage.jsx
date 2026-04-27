@@ -517,11 +517,15 @@ export default function DashboardPage() {
       const dest = plan.extras?.[0]
       if (dest) {
         // bytesim: group by product label (plan_name minus last 2 parts) to separate MAX/UK+/Lite
+        // airalo: split Discover (data only) vs Discover+ (data+calls+sms) like Airalo's website tabs
         let key
         if (plan.carrier === 'bytesim') {
           const parts = plan.plan_name?.split(' – ') || []
           const productLabel = parts.slice(0, -2).join(' – ') || dest
           key = `bytesim|${productLabel}`
+        } else if (plan.carrier === 'airalo') {
+          const operator = (plan.plan_name || '').includes('Discover+') ? 'Discover+' : 'Discover'
+          key = `airalo|${dest}|${operator}`
         } else {
           key = `${plan.carrier}|${dest}`
         }
@@ -545,10 +549,15 @@ export default function DashboardPage() {
         }
         const unique = [...byGb.values()].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
         // bytesim: destination shown as product label extracted from plan_name
+        // airalo: destination shows Discover vs Discover+ to mirror Airalo's site tabs
         let destination
         if (unique[0].carrier === 'bytesim') {
           const parts = unique[0].plan_name?.split(' – ') || []
           destination = parts.slice(0, -2).join(' – ') || unique[0].extras[0]
+        } else if (unique[0].carrier === 'airalo') {
+          const isPlus = (unique[0].plan_name || '').includes('Discover+')
+          const opLabel = isPlus ? 'Airalo Discover+ — דאטה ושיחות' : 'Airalo Discover — דאטה'
+          destination = `${opLabel} (${unique[0].extras[0]})`
         } else {
           destination = unique[0].extras[0]
         }
