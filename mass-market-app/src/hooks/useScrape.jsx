@@ -3,6 +3,8 @@ import { api, API_BASE } from '../lib/api'
 
 const ScrapeContext = createContext(null)
 
+const _DEV_API_KEY = import.meta.env.VITE_DEV_API_KEY || ''
+
 export function ScrapeProvider({ children }) {
   const [scraping, setScraping]   = useState(false)
   const [countdown, setCountdown] = useState(0)
@@ -10,28 +12,53 @@ export function ScrapeProvider({ children }) {
   const [progress, setProgress]   = useState([])   // array of {at, stage, status, count, message}
   const timerRef    = useRef(null)
   const dismissRef  = useRef(null)
-  const sseRef      = useRef(null)
+  const sseRef      = useRef(null)  // AbortController for fetch-based SSE
 
   const _closeSse = () => {
-    if (sseRef.current) { sseRef.current.close(); sseRef.current = null }
+    if (sseRef.current) { sseRef.current.abort(); sseRef.current = null }
   }
 
-  const _openSse = () => {
+  // EventSource doesn't support custom headers, so JWT (stored in localStorage)
+  // can't be sent — the server returns 401 and no events arrive.
+  // Use fetch streaming instead so we can attach Authorization + API key headers.
+  const _openSse = (onEvent) => {
     _closeSse()
-    try {
-      const es = new EventSource(`${API_BASE}/api/scrape-progress/stream`, { withCredentials: true })
-      es.onmessage = (e) => {
-        try {
-          const ev = JSON.parse(e.data)
-          if (ev.stage === '__done__' || ev.stage === '__timeout__' || ev.stage === '__idle__') {
-            es.close(); return
+    const controller = new AbortController()
+    sseRef.current = controller
+    const headers = { 'ngrok-skip-browser-warning': 'true' }
+    const token = localStorage.getItem('auth_token')
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    if (_DEV_API_KEY) headers['X-API-Key'] = _DEV_API_KEY
+
+    fetch(`${API_BASE}/api/scrape-progress/stream`, {
+      headers,
+      credentials: 'include',
+      signal: controller.signal,
+    }).then(res => {
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      function pump() {
+        return reader.read().then(({ done, value }) => {
+          if (done) return
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop()
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue
+            try {
+              const ev = JSON.parse(line.slice(6))
+              if (ev.stage === '__done__' || ev.stage === '__timeout__' || ev.stage === '__idle__') {
+                controller.abort(); return
+              }
+              onEvent(ev)
+            } catch {}
           }
-          setProgress(prev => [...prev, ev])
-        } catch {}
+          return pump()
+        }).catch(() => {})
       }
-      es.onerror = () => { es.close() }
-      sseRef.current = es
-    } catch {}
+      return pump()
+    }).catch(() => {})
   }
 
   const _clearTimers = () => {
@@ -46,7 +73,7 @@ export function ScrapeProvider({ children }) {
     setCountdown(12 * 60)
     setToast(null)
     setProgress([])
-    _openSse()
+    _openSse(ev => setProgress(prev => [...prev, ev]))
 
     timerRef.current = setInterval(() => {
       setCountdown(prev => {
