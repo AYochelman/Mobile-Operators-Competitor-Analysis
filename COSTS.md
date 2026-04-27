@@ -34,7 +34,7 @@
 **תפקיד:** סנטימנט סושיאל יומי + Executive Summary יומי + AI Chat לפי דרישה  
 **מודל חיוב:** Pay-per-use (אין מינימום חודשי)
 
-#### סנטימנט סושיאל — `claude-sonnet-4-5`
+#### סנטימנט סושיאל — `claude-sonnet-4-6`
 רץ ב-08:10 כל יום עבור 7 ספקים  
 תמחור: $3/MTok input · $15/MTok output
 
@@ -44,7 +44,7 @@
 | Output tokens/יום | ~1,750 (7 × ~250, max_tokens=350) |
 | עלות יומית | ~$0.09 |
 
-#### Executive Summary — `claude-sonnet-4-5`
+#### Executive Summary — `claude-sonnet-4-6`
 רץ פעם ביום, מסכם שינויי מחירים וסנטימנט
 
 | פרמטר | ערך |

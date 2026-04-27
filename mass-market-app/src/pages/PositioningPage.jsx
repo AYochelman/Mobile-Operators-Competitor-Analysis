@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import Spinner from '../components/ui/Spinner'
 import { useVisibleCarriers } from '../hooks/useHiddenCarrier'
+import { classifyPriority } from '../data/networkPriority'
 
 const CARRIERS = [
   { id: 'partner', label: 'פרטנר', color: '#ec4899' },
@@ -13,6 +14,7 @@ const CARRIERS = [
   { id: 'xphone', label: 'XPhone', color: '#14b8a6' },
   { id: 'wecom', label: 'We-Com', color: '#f59e0b' },
   { id: 'neptucom', label: 'Neptucom', color: '#6366f1' },
+  { id: 'rami_levy', label: 'רמי לוי', color: '#e32032' },
 ]
 
 const PRICE_BUCKETS = [
@@ -31,6 +33,14 @@ const GB_BUCKETS = [
   { id: 'unlim',   label: 'ללא הגבלה', min: -1,  max: -1 },
 ]
 
+const PRIORITY_BUCKETS = [
+  { id: 'none',    label: 'ללא 5G' },
+  { id: 'basic',   label: '5G בסיסי' },
+  { id: 'max',     label: 'תעדוף מקסימלי' },
+]
+
+// classifyPriority + MAX_PRIORITY_KEYWORDS imported from data/networkPriority.js
+
 function heatColor(v, max) {
   if (v === 0) return 'bg-gray-50 text-gray-300'
   const intensity = Math.min(1, v / Math.max(1, max))
@@ -44,7 +54,7 @@ export default function PositioningPage() {
   const navigate = useNavigate()
   const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
-  const [axis, setAxis] = useState('price') // 'price' | 'gb'
+  const [axis, setAxis] = useState('price') // 'price' | 'gb' | 'priority'
   const visibleCarrierIds = useVisibleCarriers(CARRIERS.map(c => c.id))
 
   useEffect(() => {
@@ -59,7 +69,7 @@ export default function PositioningPage() {
     [visibleCarrierIds]
   )
 
-  const buckets = axis === 'price' ? PRICE_BUCKETS : GB_BUCKETS
+  const buckets = axis === 'price' ? PRICE_BUCKETS : axis === 'gb' ? GB_BUCKETS : PRIORITY_BUCKETS
 
   // matrix[carrierId][bucketId] = { count, minPrice, plans }
   const matrix = useMemo(() => {
@@ -77,12 +87,14 @@ export default function PositioningPage() {
         for (const b of PRICE_BUCKETS) {
           if (price >= b.min && price < b.max) { bucketId = b.id; break }
         }
-      } else {
+      } else if (axis === 'gb') {
         if (gb === null || gb === undefined) bucketId = 'unlim'
         else for (const b of GB_BUCKETS) {
           if (b.id === 'unlim') continue
           if (gb >= b.min && gb < b.max) { bucketId = b.id; break }
         }
+      } else {
+        bucketId = classifyPriority(p)
       }
       if (!bucketId) continue
       const cell = m[p.carrier][bucketId]
@@ -167,6 +179,14 @@ export default function PositioningPage() {
           }`}
         >
           לפי גלישה
+        </button>
+        <button
+          onClick={() => setAxis('priority')}
+          className={`text-xs px-3 py-1 rounded-lg transition-colors ${
+            axis === 'priority' ? 'bg-moca-bolt text-white' : 'bg-white border border-moca-border/50 text-moca-sub hover:bg-moca-cream'
+          }`}
+        >
+          לפי תעדוף
         </button>
         <span className="mr-auto text-xs text-gray-400">{totalPlans} חבילות סך הכל</span>
       </div>

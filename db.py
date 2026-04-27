@@ -1438,10 +1438,12 @@ def get_history_changes(carrier, plan_type='domestic', from_date='', to_date='',
     ]
 
 
-def get_market_movers(days=7, limit=5, db_path=None):
-    """Return the top price moves (absolute % change) across domestic/abroad/global
-    plans over the last `days` days. Content plans are excluded — they're binary
-    status changes, not price points.
+def get_market_movers(days=7, limit=5, plan_types=None, db_path=None):
+    """Return the top price moves (absolute % change) over the last `days` days.
+    Content plans are excluded — they're binary status changes, not price points.
+
+    Args:
+        plan_types: iterable subset of ('domestic','abroad','global'). None = all.
 
     Result item: {carrier, plan_name, plan_type, old_price, new_price,
                    pct_change, abs_pct, changed_at}
@@ -1450,7 +1452,12 @@ def get_market_movers(days=7, limit=5, db_path=None):
     since = (datetime.now() - timedelta(days=days)).isoformat()
     db_path = db_path or DB_PATH
     results = []
-    for plan_type in ('domestic', 'abroad', 'global'):
+    valid_types = ('domestic', 'abroad', 'global')
+    if plan_types:
+        types_iter = tuple(t for t in plan_types if t in valid_types) or valid_types
+    else:
+        types_iter = valid_types
+    for plan_type in types_iter:
         table, name_col = _HISTORY_TABLE_MAP[plan_type]
         conn = _connect(db_path)
         try:
@@ -1471,8 +1478,8 @@ def get_market_movers(days=7, limit=5, db_path=None):
             if old_p <= 0:
                 continue  # can't compute % against 0
             pct = (new_p - old_p) / old_p * 100.0
-            if abs(pct) < 0.5:
-                continue  # filter out rounding-noise 'changes'
+            if abs(pct) < 5.0:
+                continue  # filter out small/noise price changes
             results.append({
                 'carrier':    carrier,
                 'plan_name':  pname,

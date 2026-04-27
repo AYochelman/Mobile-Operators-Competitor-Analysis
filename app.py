@@ -981,7 +981,20 @@ def api_scrape_progress_stream():
                 yield f"data: {_json.dumps(ev)}\n\n"
             last_idx = len(_scrape_progress['log'])
             active = _scrape_progress['active']
-        # If no scrape running, send a heartbeat then close — the client can reconnect
+        # If idle with no history, wait up to ~16s for a scrape to start.
+        # The client opens SSE before dispatching the scrape API call, so
+        # without this wait the stream closes with __idle__ before the scrape begins.
+        startup_loops = 0
+        while not active and last_idx == 0 and startup_loops < 8:
+            with _scrape_signal:
+                _scrape_signal.wait(timeout=2.0)
+            with _scrape_lock:
+                new_events = _scrape_progress['log'][last_idx:]
+                last_idx = len(_scrape_progress['log'])
+                active = _scrape_progress['active']
+            for ev in new_events:
+                yield f"data: {_json.dumps(ev)}\n\n"
+            startup_loops += 1
         if not active and last_idx == 0:
             yield f"data: {_json.dumps({'stage': '__idle__'})}\n\n"
             return
@@ -1189,7 +1202,8 @@ _HISTORY_CARRIER_NAMES = {
     'maya': 'Maya Mobile',
     'esim70': 'eSIM70',
     'jetpack': 'Jetpack',
-    'breez': 'Breez',
+    'breez': 'Breeze',
+    'bytesim': 'ByteSim',
 }
 _HISTORY_TYPE_NAMES = {
     'domestic': '\u05de\u05e7\u05d5\u05de\u05d9',
@@ -1209,7 +1223,7 @@ CARRIER_DISPLAY = {
     "wecom":     {"name": "וי-קום",     "url": "https://we-com.co.il",             "color": "#006633"},
     "neptucom":  {"name": "נפטוקום",    "url": "https://www.neptucom.com",         "color": "#004488"},
     "golan":     {"name": "גולן טלקום", "url": "https://www.golantelecom.co.il",   "color": "#009688"},
-    "rami_levy": {"name": "רמי לוי",    "url": "https://mobile.rami-levy.co.il",  "color": "#e32032"},
+    "rami_levy": {"name": "רמי לוי תקשורת", "url": "https://mobile.rami-levy.co.il",  "color": "#e32032"},
 }
 
 CARRIER_STORE_DISPLAY = {
@@ -1490,7 +1504,7 @@ def generate_social_sentiment():
                     "content-type": "application/json",
                 },
                 json={
-                    "model": "claude-sonnet-4-5",
+                    "model": "claude-sonnet-4-6",
                     "max_tokens": 400,
                     "system": system_prompt,
                     "messages": [{"role": "user", "content": prompt}],
@@ -1602,7 +1616,7 @@ def generate_executive_summary():
                     "content-type": "application/json",
                 },
                 json={
-                    "model": "claude-sonnet-4-5",
+                    "model": "claude-sonnet-4-6",
                     "max_tokens": 400,
                     "system": (
                         "אתה אנליסט שוק בכיר במחלקת השיווק של Pelephone. "
@@ -2189,7 +2203,7 @@ def api_chat():
             'partner': 'פרטנר', 'pelephone': 'פלאפון', 'hotmobile': 'הוט מובייל',
             'cellcom': 'סלקום', 'mobile019': '019', 'xphone': 'XPhone',
             'wecom': 'We-Com', 'neptucom': 'Neptucom', 'golan': 'גולן טלקום',
-            'rami_levy': 'רמי לוי',
+            'rami_levy': 'רמי לוי תקשורת',
             # Global eSIM
             'tuki': 'Tuki', 'globalesim': 'GlobaleSIM',
             'airalo': 'Airalo', 'airalo_local': 'Airalo', 'airalo_regional': 'Airalo',
@@ -2198,7 +2212,8 @@ def api_chat():
             'holafly': 'Holafly', 'esimio': 'eSIM.io', 'sparks': 'Sparks',
             'voye': 'VOYE', 'orbit': 'Orbit', 'travelsim': 'Travel Sim',
             'gomoworld': 'GoMoWorld', 'tasim': 'Tasim', 'maya': 'Maya Mobile',
-            'bcengi': 'Bcengi', 'esim70': 'eSIM70', 'jetpack': 'Jetpack', 'breez': 'Breez',
+            'bcengi': 'Bcengi', 'esim70': 'eSIM70', 'jetpack': 'Jetpack', 'breez': 'Breeze',
+            'bytesim': 'ByteSim',
         }
         def _cn(carrier):
             return _CARRIER_NAMES.get(carrier, carrier)
@@ -2206,10 +2221,10 @@ def api_chat():
         lines = [
             "אתה עוזר נתונים עבור מערכת השוואת חבילות סלולר ישראלית.",
             "להלן הנתונים הנוכחיים מהמסד נתונים. ענה בעברית, בצורה תמציתית וברורה.",
-            f"תאריך עדכון: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            f"תאריך עדכון: {datetime.now().strftime('%d/%m/%Y')}",
             "שמות ספקים (מזהה=שם מוצג): airalo/airalo_local/airalo_regional=Airalo, "
             "pelephone_global=GlobalSIM, xphone_global=XPhone Global, mobile019=019, "
-            "rami_levy=רמי לוי, gomoworld=GoMoWorld=Gomo, world8=8 World, simtlv=SimTLV, "
+            "rami_levy=רמי לוי תקשורת, gomoworld=GoMoWorld=Gomo, world8=8 World, simtlv=SimTLV, "
             "esimio=eSIM.io, maya=Maya Mobile, travelsim=Travel Sim, neptucom=Neptucom.",
         ]
         if hidden_carrier:
@@ -2308,11 +2323,11 @@ def api_chat():
         # premium is justified for business-facing reports. Caller can request
         # 'haiku' explicitly for fast/cheap quick-fire chat.
         ALLOWED_MODELS = {
-            'sonnet': 'claude-sonnet-4-5',
+            'sonnet': 'claude-sonnet-4-6',
             'haiku':  'claude-haiku-4-5-20251001',
         }
         requested = (data.get('model') or '').strip().lower()
-        model = ALLOWED_MODELS.get(requested, 'claude-sonnet-4-5')
+        model = ALLOWED_MODELS.get(requested, 'claude-sonnet-4-6')
 
         # Hebrew-quality system prompt: prepend strict language rules to the context
         hebrew_rules = (
@@ -2336,13 +2351,29 @@ def api_chat():
             json={
                 "model": model,
                 "max_tokens": 1024,
-                "system": full_system,
+                "system": [
+                    {
+                        "type": "text",
+                        "text": full_system,
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
                 "messages": [{"role": "user", "content": question}],
             },
             timeout=45,
         )
         resp.raise_for_status()
-        answer = resp.json()["content"][0]["text"]
+        body = resp.json()
+        usage = body.get("usage", {}) or {}
+        logger.info(
+            "chat ok: model=%s in=%s cache_read=%s cache_write=%s out=%s",
+            model,
+            usage.get("input_tokens"),
+            usage.get("cache_read_input_tokens"),
+            usage.get("cache_creation_input_tokens"),
+            usage.get("output_tokens"),
+        )
+        answer = body["content"][0]["text"]
         return jsonify({"answer": answer, "model": model})
 
     except Exception as e:
@@ -3405,8 +3436,12 @@ def api_health():
 @app.route('/api/market-movers')
 @limiter.limit('60 per minute')
 def api_market_movers():
-    """Top biggest price moves (by absolute %) across all plan types in the
-    last `days` days. Query params: days (default 7), limit (default 5)."""
+    """Top biggest price moves (by absolute %) in the last `days` days.
+    Query params:
+        days       (default 7)
+        limit      (default 5)
+        plan_types (default 'domestic,abroad,global'; comma-separated subset)
+    """
     from db import get_market_movers as _gmm
     try:
         days  = max(1, min(int(request.args.get('days', 7)), 90))
@@ -3416,7 +3451,9 @@ def api_market_movers():
         limit = max(1, min(int(request.args.get('limit', 5)), 20))
     except (ValueError, TypeError):
         limit = 5
-    movers = _gmm(days=days, limit=limit * 3, db_path=_db_path())  # fetch extra, filter, then cap
+    raw_types = request.args.get('plan_types', '').strip()
+    plan_types = tuple(t.strip() for t in raw_types.split(',') if t.strip()) if raw_types else None
+    movers = _gmm(days=days, limit=limit * 3, plan_types=plan_types, db_path=_db_path())  # fetch extra, filter, then cap
     hidden = _hidden_carrier_for_request()
     if hidden:
         movers = [m for m in movers if m.get('carrier') != hidden]

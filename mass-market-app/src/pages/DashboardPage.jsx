@@ -4,6 +4,7 @@ import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
 import { useHiddenCarrier, useVisibleCarriers } from '../hooks/useHiddenCarrier'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
+import { has5G, hasMaxPriority } from '../data/networkPriority'
 import PlanCard from '../components/PlanCard'
 import BannerCard from '../components/BannerCard'
 const HistoryTab = lazy(() => import('../components/HistoryTab'))
@@ -157,6 +158,9 @@ const KNOWN_REGIONS = new Set([
   '167+ מדינות','156+ מדינות',
   'ספארי אפריקה','האיחוד האירופי ובריטניה',
   'הקריביים','כלל העולם',
+  // Breeze regions
+  'אירופה+','אמריקה המרכזית','הבלקן','חבר המדינות',
+  'אירופה וארה"ב','פורטוגל וספרד','המזרח התיכון לייט','אירופה לייט',
 ])
 
 const CARRIERS = [
@@ -190,7 +194,8 @@ const GLOBAL_PROVIDERS = [
   { id: 'bcengi', label: 'Bcengi' },
   { id: 'esim70', label: 'eSIM70' },
   { id: 'jetpack', label: 'Jetpack' },
-  { id: 'breez', label: 'Breez' },
+  { id: 'breez', label: 'Breeze' },
+  { id: 'bytesim', label: 'ByteSim' },
 ]
 
 export default function DashboardPage() {
@@ -434,8 +439,9 @@ export default function DashboardPage() {
       if (f.carrier !== 'all') result = result.filter(p => p.carrier === f.carrier)
     }
     if (tab === 'domestic' && f.gen !== 'all') {
-      const has5G = (p) => (p.plan_name && /5G|\u05d3\u05d5\u05e8\s?5/.test(p.plan_name)) || (p.extras && p.extras.some(e => /5G|\u05d3\u05d5\u05e8\s?5/.test(e)))
-      if (f.gen === '5g') result = result.filter(has5G)
+      // "5G" = basic 5G only (excludes priority); "5G מתועדף" = priority only
+      if (f.gen === '5g') result = result.filter(p => has5G(p) && !hasMaxPriority(p))
+      if (f.gen === '5g_priority') result = result.filter(hasMaxPriority)
       if (f.gen === '4g') result = result.filter(p => !has5G(p))
     }
     if (tab === 'domestic' && f.roaming === 'yes') {
@@ -511,7 +517,15 @@ export default function DashboardPage() {
     for (const plan of filteredPlans) {
       const dest = plan.extras?.[0]
       if (dest) {
-        const key = `${plan.carrier}|${dest}`
+        // bytesim: group by product label (plan_name minus last 2 parts) to separate MAX/UK+/Lite
+        let key
+        if (plan.carrier === 'bytesim') {
+          const parts = plan.plan_name?.split(' – ') || []
+          const productLabel = parts.slice(0, -2).join(' – ') || dest
+          key = `bytesim|${productLabel}`
+        } else {
+          key = `${plan.carrier}|${dest}`
+        }
         if (!grouped.has(key)) grouped.set(key, [])
         grouped.get(key).push(plan)
       } else {
@@ -525,11 +539,20 @@ export default function DashboardPage() {
       } else {
         const byGb = new Map()
         for (const p of plans) {
-          const gb = p.data_gb ?? 0
-          if (!byGb.has(gb) || p.price < byGb.get(gb).price) byGb.set(gb, p)
+          // bytesim: keep all (data × days) combinations; other carriers: keep cheapest per GB
+          const gbKey = p.carrier === 'bytesim' ? p.plan_name : (p.data_gb ?? 0)
+          if (!byGb.has(gbKey) || (p.carrier !== 'bytesim' && p.price < byGb.get(gbKey).price)) byGb.set(gbKey, p)
         }
-        const unique = [...byGb.values()].sort((a, b) => (a.data_gb ?? 0) - (b.data_gb ?? 0))
-        result.push({ isGroup: true, carrier: unique[0].carrier, destination: unique[0].extras[0], plans: unique })
+        const unique = [...byGb.values()].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
+        // bytesim: destination shown as product label extracted from plan_name
+        let destination
+        if (unique[0].carrier === 'bytesim') {
+          const parts = unique[0].plan_name?.split(' – ') || []
+          destination = parts.slice(0, -2).join(' – ') || unique[0].extras[0]
+        } else {
+          destination = unique[0].extras[0]
+        }
+        result.push({ isGroup: true, carrier: unique[0].carrier, destination, plans: unique })
       }
     }
     return [...result, ...singles]
@@ -696,7 +719,8 @@ export default function DashboardPage() {
       {/* Market movers — only above plan tabs */}
       {['domestic', 'abroad', 'global'].includes(tab) && (
         <MarketMoversWidget
-          visibleCarriers={visibleCarrierIds}
+          tab={tab}
+          visibleCarriers={tab === 'global' ? [] : visibleCarrierIds}
           onMoverClick={(m) => {
             setTab(m.plan_type)
             if (m.plan_type === 'global') {
@@ -851,6 +875,7 @@ export default function DashboardPage() {
                       <FilterTag label="כולם" active={filters.gen === 'all'} onClick={() => setFilter('gen', 'all')} />
                       <FilterTag label="4G" active={filters.gen === '4g'} onClick={() => setFilter('gen', '4g')} />
                       <FilterTag label="5G" active={filters.gen === '5g'} onClick={() => setFilter('gen', '5g')} />
+                      <FilterTag label="5G מתועדף" active={filters.gen === '5g_priority'} onClick={() => setFilter('gen', '5g_priority')} />
                     </div>
                   </div>
                   <div className="border border-moca-border/60 rounded-xl p-2.5">

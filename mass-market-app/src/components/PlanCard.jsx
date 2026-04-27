@@ -4,7 +4,8 @@ import CountryModal from './CountryModal'
 import Modal from './ui/Modal'
 import { getCountriesForPlan } from '../data/globalCountries'
 import { getCountriesForAbroadPlan } from '../data/abroadCountries'
-import { getAppsForAbroadPlan } from '../data/abroadApps'
+import { getAppsForPlan } from '../data/abroadApps'
+import { has5G as detect5G } from '../data/networkPriority'
 import AppsModal from './AppsModal'
 import SparklineMini from './SparklineMini'
 import AnnotationsModal from './AnnotationsModal'
@@ -67,10 +68,12 @@ function slugify(str) {
 const CARRIER_COLORS = {
   partner: 'pink', pelephone: 'blue', hotmobile: 'orange', cellcom: 'green',
   mobile019: 'purple', xphone: 'teal', wecom: 'amber', neptucom: 'indigo',
+  golan: 'teal', rami_levy: 'red',
 }
 const CARRIER_LABELS = {
   partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום',
   mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom',
+  golan: 'גולן טלקום', rami_levy: 'רמי לוי תקשורת',
 }
 const GLOBAL_LABELS = {
   tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
@@ -79,7 +82,7 @@ const GLOBAL_LABELS = {
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
   orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
   maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack',
-  breez: 'Breez',
+  breez: 'Breeze',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
@@ -100,6 +103,7 @@ const CARRIER_LOGOS = {
   xphone:          '/logos/xphone_global.png',
   wecom:           '/logos/wecom.png',
   golan:           '/logos/golan.png',
+  rami_levy:       '/logos/rami_levy.png',
   // Global eSIM
   tuki:            '/logos/tuki.png',
   globalesim:      '/logos/globalesim.png',
@@ -124,6 +128,7 @@ const CARRIER_LOGOS = {
   esim70:         '/logos/esim70.png',
   jetpack:        '/logos/jetpack.png',
   breez:          '/logos/breez.png',
+  bytesim:        '/logos/bytesim.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
@@ -230,7 +235,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
       : hasNeptucomRoaming
         ? getCountriesForAbroadPlan(plan)
         : null
-  const appsData = isAbroad ? getAppsForAbroadPlan(plan) : null
+  const appsData = isContent ? null : getAppsForPlan(plan)
   const carrier = plan.carrier
   const label = isGlobal ? (GLOBAL_LABELS[carrier] || carrier) : (CARRIER_LABELS[carrier] || carrier)
   const badgeColor = isGlobal ? (GLOBAL_COLORS[carrier] || 'gray') : (CARRIER_COLORS[carrier] || 'gray')
@@ -261,10 +266,9 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
 
   // 5G marker — true if plan name or extras indicate 5G support
   const supports5G = (
-    (plan.plan_name && /5G|\u05d3\u05d5\u05e8\s?5/.test(plan.plan_name)) ||
-    (plan.extras && plan.extras.some(e => typeof e === 'string' && /5G|\u05d3\u05d5\u05e8\s?5/.test(e)))
+    detect5G(plan)
   )
-  const nameHas5G = plan.plan_name && /5G/i.test(plan.plan_name)
+  const nameHas5G = plan.plan_name && /\b5G\b/i.test(plan.plan_name)
 
   const hasRoaming = !isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
   const contentUrl = isContent ? (CONTENT_URLS[`${plan.service}_${carrier}`] || null) : null

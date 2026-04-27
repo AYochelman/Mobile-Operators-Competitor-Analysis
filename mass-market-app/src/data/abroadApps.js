@@ -27,10 +27,11 @@ export const PELEPHONE_APPS = [
 ];
 
 /**
- * Get free apps list for an abroad plan.
- * Returns { title, apps } or null.
+ * Get free apps list for a plan (domestic or abroad).
+ * Returns { title, apps } or null. Pelephone and Cellcom both market "גלישה
+ * חופשית באפליקציות נבחרות" on their 5G domestic plans, not just abroad.
  */
-export function getAppsForAbroadPlan(plan) {
+export function getAppsForPlan(plan) {
   const carrier = plan.carrier;
   const extras = plan.extras || [];
   const hasApps = extras.some(e => /אפליקציות/.test(e));
@@ -43,3 +44,6 @@ export function getAppsForAbroadPlan(plan) {
   }
   return null;
 }
+
+// Back-compat alias — older imports
+export const getAppsForAbroadPlan = getAppsForPlan;

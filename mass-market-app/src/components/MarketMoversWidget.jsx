@@ -4,16 +4,17 @@ import Badge from './ui/Badge'
 import { ALL_CARRIER_LABELS as CARRIER_LABELS } from '../data/carrierLabels'
 
 const CARRIER_COLORS = {
+  // domestic
   partner: 'pink', pelephone: 'blue', hotmobile: 'orange', cellcom: 'green',
-  mobile019: 'purple', xphone: 'teal', wecom: 'amber', neptucom: 'indigo',
-  tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
-  esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
-  saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber',
-  voye: 'pink', orbit: 'indigo', travelsim: 'teal',
+  mobile019: 'purple', xphone: 'orange', wecom: 'amber', neptucom: 'purple',
+  // global — warm palette so widget looks consistent across tabs
+  tuki: 'amber', globalesim: 'orange', airalo: 'orange', pelephone_global: 'orange',
+  esimo: 'amber', simtlv: 'pink', world8: 'amber', xphone_global: 'orange',
+  saily: 'pink', holafly: 'orange', esimio: 'orange', sparks: 'amber',
+  voye: 'pink', orbit: 'amber', travelsim: 'amber',
 }
 
-const TYPE_LABEL = { domestic: 'סלולר', abroad: 'חו"ל', global: 'גלובלי' }
-const TYPE_BADGE_COLOR = { domestic: 'blue', abroad: 'amber', global: 'purple' }
+const TAB_TITLE = { domestic: 'חבילות סלולר', abroad: 'חבילות חו"ל', global: 'חבילות גלובלי' }
 
 function formatPrice(p) {
   return `₪${Number(p).toFixed(Number(p) % 1 === 0 ? 0 : 2)}`
@@ -32,7 +33,7 @@ function MoverCard({ mover, onClick, isAllowedCarrier }) {
     <button
       onClick={() => onClick?.(mover)}
       disabled={!isAllowedCarrier}
-      className={`relative flex-shrink-0 w-[215px] bg-white border border-gray-200 rounded-2xl shadow p-3.5 pr-5 text-right overflow-hidden hover-lift
+      className={`relative flex-shrink-0 w-[215px] bg-white border border-gray-200 rounded-2xl shadow p-3.5 pr-5 text-right overflow-hidden hover-lift outline-none focus:outline-none
         ${!isAllowedCarrier
           ? 'opacity-40 cursor-not-allowed'
           : 'cursor-pointer'}`}
@@ -46,9 +47,6 @@ function MoverCard({ mover, onClick, isAllowedCarrier }) {
           <span className="text-xs">{drop ? '↓' : '↑'}</span>
           {pctLabel}
         </span>
-        <Badge color={TYPE_BADGE_COLOR[mover.plan_type] || 'gray'}>
-          {TYPE_LABEL[mover.plan_type] || mover.plan_type}
-        </Badge>
       </div>
 
       <div className="mb-1">
@@ -64,19 +62,22 @@ function MoverCard({ mover, onClick, isAllowedCarrier }) {
   )
 }
 
-export default function MarketMoversWidget({ onMoverClick, visibleCarriers }) {
+export default function MarketMoversWidget({ onMoverClick, visibleCarriers, tab = 'domestic' }) {
   const [movers, setMovers] = useState([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState(null)
 
   useEffect(() => {
     let cancelled = false
-    api.getMarketMovers(7, 5)
+    setLoading(true)
+    setMovers([])
+    setErr(null)
+    api.getMarketMovers(30, 5, [tab])
       .then(res => { if (!cancelled) setMovers(res?.movers || []) })
       .catch(e => !cancelled && setErr(e.message))
       .finally(() => !cancelled && setLoading(false))
     return () => { cancelled = true }
-  }, [])
+  }, [tab])
 
   if (loading || err || movers.length === 0) return null
 
@@ -88,9 +89,9 @@ export default function MarketMoversWidget({ onMoverClick, visibleCarriers }) {
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
             <polyline points="17 6 23 6 23 12"/>
           </svg>
-          <h2 className="text-sm font-semibold text-gray-800">שינויי המחיר המשמעותיים השבוע</h2>
+          <h2 className="text-sm font-semibold text-gray-800">שינויי מחיר משמעותיים ב{TAB_TITLE[tab] || 'חבילות סלולר'}</h2>
         </div>
-        <span className="text-[11px] text-gray-400">7 ימים אחרונים</span>
+        <span className="text-[11px] text-gray-400">30 ימים אחרונים</span>
       </div>
       <div
         className="flex gap-3 overflow-x-auto -mx-1 px-1 [&::-webkit-scrollbar]:hidden"

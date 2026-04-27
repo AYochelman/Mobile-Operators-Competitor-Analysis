@@ -3,8 +3,35 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuth } from '../hooks/useAuth'
+import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import { ALL_CARRIER_LABELS as CARRIER_LABELS } from '../data/carrierLabels'
 const TYPE_LABELS = { domestic: 'סלולר', abroad: 'חו"ל', global: 'גלובלי' }
+
+// App pages — command-palette style navigation. The `keywords` field lets users
+// find a page by Hebrew name, English name, or related concepts.
+const ALL_PAGES = [
+  { path: '/',                   label: 'דשבורד',          keywords: 'dashboard home plans חבילות' },
+  { path: '/compare',            label: 'השוואה',          keywords: 'compare comparison גרף chart' },
+  { path: '/positioning',        label: 'מיצוב תחרותי',   keywords: 'positioning matrix white space competition מטריצה' },
+  { path: '/alerts',             label: 'התראות מחיר',    keywords: 'alerts price התראות' },
+  { path: '/executive-summary',  label: 'תקציר מנהלים',   keywords: 'executive summary report דוח' },
+  { path: '/archive',            label: 'ארכיב',            keywords: 'archive history snapshots ארכיון היסטוריה' },
+  { path: '/preferences',        label: 'העדפות',          keywords: 'preferences settings profile' },
+  { path: '/notifications',      label: 'הגדרות התראות',  keywords: 'notifications push web' },
+  { path: '/settings',           label: 'הגדרות מערכת',   keywords: 'settings admin scrape', adminOnly: true },
+  { path: '/workspace/users',    label: 'הצוות',            keywords: 'team users workspace members', adminOnly: true },
+  { path: '/workspace/settings', label: 'מיתוג Workspace', keywords: 'branding logo colors theme', adminOnly: true },
+  { path: '/admin/workspaces',   label: 'Workspaces',       keywords: 'workspaces tenants admin', superAdminOnly: true },
+  { path: '/admin/audit',        label: 'יומן ביקורת',    keywords: 'audit log activity', superAdminOnly: true },
+]
+
+const FLAG_FOR_PATH = {
+  '/compare':           'hide_compare',
+  '/positioning':       'hide_positioning',
+  '/alerts':            'hide_alerts',
+  '/executive-summary': 'hide_executive_summary',
+  '/archive':           'hide_archive',
+}
 
 function matchScore(plan, terms) {
   if (terms.length === 0) return 0
@@ -26,7 +53,8 @@ function matchScore(plan, terms) {
 
 export default function GlobalSearch() {
   const navigate = useNavigate()
-  const { isSuperAdmin } = useAuth()
+  const { isAdmin, isSuperAdmin } = useAuth()
+  const flags = useFeatureFlags()
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const [selectedIdx, setSelectedIdx] = useState(0)
@@ -78,9 +106,18 @@ export default function GlobalSearch() {
     else { setQ(''); setSelectedIdx(0) }
   }, [open])
 
+  // Pages visible to this user (gated by role + workspace feature flags)
+  const visiblePages = useMemo(() => ALL_PAGES.filter(p => {
+    if (p.superAdminOnly && !isSuperAdmin) return false
+    if (p.adminOnly && !isAdmin) return false
+    const flag = FLAG_FOR_PATH[p.path]
+    if (flag && flags[flag]) return false
+    return true
+  }), [isAdmin, isSuperAdmin, flags])
+
   const results = useMemo(() => {
     const raw = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
-    if (raw.length === 0) return { plans: [], news: [], workspaces: [] }
+    if (raw.length === 0) return { pages: [], plans: [], news: [], workspaces: [] }
 
     // Extract numeric range tokens: <50 >30 50gb 50gb+
     let priceMax = null, priceMin = null, gbMin = null
@@ -95,12 +132,17 @@ export default function GlobalSearch() {
     })
 
     const hasNumeric = priceMax != null || priceMin != null || gbMin != null
-    if (terms.length === 0 && !hasNumeric) return { plans: [], news: [], workspaces: [] }
+    if (terms.length === 0 && !hasNumeric) return { pages: [], plans: [], news: [], workspaces: [] }
 
     const matchesTerms = (text) => {
       const hay = (text || '').toLowerCase()
       return terms.every(t => hay.includes(t))
     }
+
+    // Pages — match against label + keywords, no numeric filters apply
+    const pageResults = terms.length === 0 ? [] : visiblePages
+      .filter(pg => matchesTerms(`${pg.label} ${pg.keywords} ${pg.path}`))
+      .slice(0, 6)
 
     const planResults = data.plans
       .map(p => ({ ...p, __score: terms.length > 0 ? matchScore(p, terms) : 1 }))
@@ -119,10 +161,11 @@ export default function GlobalSearch() {
       .filter(w => matchesTerms(`${w.name || ''} ${w.slug || ''} ${w.mvno_carrier || ''}`))
       .slice(0, 5)
 
-    return { plans: planResults, news: newsResults, workspaces: wsResults }
-  }, [q, data])
+    return { pages: pageResults, plans: planResults, news: newsResults, workspaces: wsResults }
+  }, [q, data, visiblePages])
 
   const flatResults = useMemo(() => [
+    ...results.pages.map(pg => ({ kind: 'page', item: pg })),
     ...results.plans.map(p => ({ kind: 'plan', item: p })),
     ...results.news.map(n => ({ kind: 'news', item: n })),
     ...results.workspaces.map(w => ({ kind: 'workspace', item: w })),
@@ -145,6 +188,10 @@ export default function GlobalSearch() {
 
   const goTo = (r) => {
     setOpen(false)
+    if (r.kind === 'page') {
+      navigate(r.item.path)
+      return
+    }
     if (r.kind === 'plan') {
       const p = r.item
       const params = new URLSearchParams({
@@ -179,7 +226,7 @@ export default function GlobalSearch() {
               value={q}
               onChange={e => setQ(e.target.value)}
               onKeyDown={onKeyDownInput}
-              placeholder="חפש חבילה, ספק, ידיעה..."
+              placeholder="עבור לדף, חפש חבילה, ספק, ידיעה..."
               className="flex-1 bg-transparent outline-none text-sm"
             />
             <kbd className="text-[10px] font-mono bg-gray-100 text-gray-500 rounded px-1.5 py-0.5">ESC</kbd>
@@ -192,9 +239,10 @@ export default function GlobalSearch() {
             )}
             {loaded && q.trim() === '' && (
               <div className="px-4 py-8 text-center text-sm text-gray-400">
-                הקלד לחיפוש בחבילות, ספקים, חדשות{isSuperAdmin ? ', workspaces' : ''}
+                הקלד לחיפוש בדפים, חבילות, ספקים, חדשות{isSuperAdmin ? ', workspaces' : ''}
                 <div className="mt-1 text-[10px] text-gray-400">
-                  טיפ: <code className="font-mono bg-gray-100 px-1 rounded">&lt;50</code> מחיר עד ₪50 ·{' '}
+                  טיפ: <code className="font-mono bg-gray-100 px-1 rounded">מיצוב</code> קפיצה לדף ·{' '}
+                  <code className="font-mono bg-gray-100 px-1 rounded">&lt;50</code> מחיר עד ₪50 ·{' '}
                   <code className="font-mono bg-gray-100 px-1 rounded">50gb+</code> 50GB ומעלה
                 </div>
                 <div className="mt-3 text-[11px] text-gray-300">
@@ -210,11 +258,37 @@ export default function GlobalSearch() {
               <div className="px-4 py-8 text-center text-sm text-gray-400">אין תוצאות עבור "{q}"</div>
             )}
 
+            {results.pages.length > 0 && (
+              <div className="border-b border-gray-100">
+                <p className="text-[10px] font-semibold uppercase text-gray-400 px-4 pt-3 pb-1 tracking-wider">דפים</p>
+                {results.pages.map((pg, i) => {
+                  const idx = i
+                  const sel = idx === selectedIdx
+                  return (
+                    <button
+                      key={`page-${pg.path}`}
+                      onClick={() => goTo({ kind: 'page', item: pg })}
+                      onMouseEnter={() => setSelectedIdx(idx)}
+                      className={`w-full text-right px-4 py-2 flex items-center justify-between gap-3 ${sel ? 'bg-moca-cream' : 'hover:bg-gray-50'}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 flex-shrink-0">
+                          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 5 12 12 19"/>
+                        </svg>
+                        <span className="text-sm font-medium text-gray-800">{pg.label}</span>
+                      </div>
+                      <code className="text-[10px] text-gray-400 font-mono">{pg.path}</code>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
             {results.plans.length > 0 && (
               <div className="border-b border-gray-100">
                 <p className="text-[10px] font-semibold uppercase text-gray-400 px-4 pt-3 pb-1 tracking-wider">חבילות</p>
                 {results.plans.map((p, i) => {
-                  const idx = i
+                  const idx = results.pages.length + i
                   const sel = idx === selectedIdx
                   return (
                     <button
@@ -243,7 +317,7 @@ export default function GlobalSearch() {
               <div className="border-b border-gray-100">
                 <p className="text-[10px] font-semibold uppercase text-gray-400 px-4 pt-3 pb-1 tracking-wider">חדשות</p>
                 {results.news.map((n, i) => {
-                  const idx = results.plans.length + i
+                  const idx = results.pages.length + results.plans.length + i
                   const sel = idx === selectedIdx
                   return (
                     <button
@@ -267,7 +341,7 @@ export default function GlobalSearch() {
               <div>
                 <p className="text-[10px] font-semibold uppercase text-gray-400 px-4 pt-3 pb-1 tracking-wider">Workspaces</p>
                 {results.workspaces.map((w, i) => {
-                  const idx = results.plans.length + results.news.length + i
+                  const idx = results.pages.length + results.plans.length + results.news.length + i
                   const sel = idx === selectedIdx
                   return (
                     <button

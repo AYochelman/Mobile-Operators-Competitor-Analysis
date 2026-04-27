@@ -4,8 +4,15 @@ import { api } from '../lib/api'
 const _cache = new Map()
 const _pending = new Set()
 
+const MIN_TREND_PCT = 5  // hide sparkline when overall change is below this %
+
 function buildPath(points, w, h, pad = 3) {
   const prices = points.map(p => p.price)
+  const first = prices[0]
+  const last = prices[prices.length - 1]
+  if (!first || first <= 0) return null
+  const pct = ((last - first) / first) * 100
+  if (Math.abs(pct) < MIN_TREND_PCT) return null
   const min = Math.min(...prices)
   const max = Math.max(...prices)
   const range = max - min || 1
@@ -13,8 +20,6 @@ function buildPath(points, w, h, pad = 3) {
   const xs = points.map((_, i) => pad + (i / (n - 1)) * (w - 2 * pad))
   const ys = points.map(p => h - pad - ((p.price - min) / range) * (h - 2 * pad))
   const d = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${ys[i].toFixed(1)}`).join(' ')
-  const last = prices[prices.length - 1]
-  const first = prices[0]
   return { d, trend: last < first - 0.01 ? 'down' : last > first + 0.01 ? 'up' : 'flat' }
 }
 

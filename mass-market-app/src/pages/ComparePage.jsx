@@ -3,6 +3,7 @@ import { api } from '../lib/api'
 import Spinner from '../components/ui/Spinner'
 import FilterTag from '../components/ui/FilterTag'
 import SearchableSelect from '../components/ui/SearchableSelect'
+import { has5G as detect5G, hasMaxPriority } from '../data/networkPriority'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import {
   AIRALO_DISCOVER, AIRALO_REGION_MAP, GLOBALESIM_COUNTRIES, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
@@ -64,7 +65,8 @@ const CARRIERS_BY_TAB = {
     { id: 'bcengi', label: 'Bcengi', color: '#1d4ed8' },
     { id: 'esim70', label: 'eSIM70', color: '#10b981' },
     { id: 'jetpack', label: 'Jetpack', color: '#0ea5e9' },
-    { id: 'breez', label: 'Breez', color: '#06b6d4' },
+    { id: 'breez', label: 'Breeze', color: '#06b6d4' },
+    { id: 'bytesim', label: 'ByteSim', color: '#00b490' },
   ],
 }
 
@@ -257,12 +259,14 @@ export default function ComparePage() {
     if (tab === 'domestic' && roamingFilter === 'yes') {
       result = result.filter(p => p.extras && p.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+/.test(e) && /GB|גלישה/i.test(e)))
     }
-    const has5G = (p) => (p.plan_name && /5G|\u05d3\u05d5\u05e8\s?5/.test(p.plan_name)) || (p.extras && p.extras.some(e => /5G|\u05d3\u05d5\u05e8\s?5/.test(e)))
     if (tab === 'domestic' && genFilter === '5g') {
-      result = result.filter(has5G)
+      result = result.filter(p => detect5G(p) && !hasMaxPriority(p))
+    }
+    if (tab === 'domestic' && genFilter === '5g_priority') {
+      result = result.filter(hasMaxPriority)
     }
     if (tab === 'domestic' && genFilter === '4g') {
-      result = result.filter(p => !has5G(p))
+      result = result.filter(p => !detect5G(p))
     }
 
     if (sortBy === 'price_asc') result = [...result].sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999))
@@ -414,6 +418,7 @@ export default function ComparePage() {
                 <FilterTag label="הכל" active={genFilter === 'all'} onClick={() => setGenFilter('all')} />
                 <FilterTag label="4G" active={genFilter === '4g'} onClick={() => setGenFilter('4g')} />
                 <FilterTag label="5G" active={genFilter === '5g'} onClick={() => setGenFilter('5g')} />
+                <FilterTag label="5G מתועדף" active={genFilter === '5g_priority'} onClick={() => setGenFilter('5g_priority')} />
               </div>
             </div>
           )}

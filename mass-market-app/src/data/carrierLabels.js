@@ -18,7 +18,7 @@ export const DOMESTIC_LABELS = {
   wecom:      'We-Com',
   neptucom:   'Neptucom',
   golan:      'גולן טלקום',
-  rami_levy:  'רמי לוי',
+  rami_levy:  'רמי לוי תקשורת',
 }
 
 export const GLOBAL_LABELS = {
@@ -45,7 +45,8 @@ export const GLOBAL_LABELS = {
   bcengi:           'Bcengi',
   esim70:           'eSIM70',
   jetpack:          'Jetpack',
-  breez:            'Breez',
+  breez:            'Breeze',
+  bytesim:          'ByteSim',
 }
 
 export const ALL_CARRIER_LABELS = {

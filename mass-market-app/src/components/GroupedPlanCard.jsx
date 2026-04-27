@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react'
+import { useState, useCallback, useMemo, memo } from 'react'
 import Badge from './ui/Badge'
 import CountryModal from './CountryModal'
 import AnnotationsModal from './AnnotationsModal'
@@ -31,6 +31,7 @@ const CARRIER_LOGOS = {
   esim70:          '/logos/esim70.png',
   jetpack:         '/logos/jetpack.png',
   breez:           '/logos/breez.png',
+  bytesim:         '/logos/bytesim.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
@@ -83,18 +84,29 @@ const GLOBAL_LABELS = {
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
   orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld',
   tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack',
+  bytesim: 'ByteSim',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', airalo_local: 'orange', airalo_regional: 'orange', pelephone_global: 'blue',
   esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
   saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber', voye: 'pink',
   orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'violet', maya: 'teal', esim70: 'emerald', jetpack: 'sky',
+  bytesim: 'blue',
 }
 
 function formatGB(gb) {
   if (gb === null || gb === undefined) return 'ללא הגבלה'
   if (gb < 1) return `${Math.round(gb * 1024)}MB`
   return `${gb}GB`
+}
+
+function getPillLabel(plan) {
+  if (plan.carrier === 'bytesim') {
+    const parts = plan.plan_name?.split(' – ') || []
+    const dataStr = parts.at(-2)
+    if (dataStr) return dataStr
+  }
+  return formatGB(plan.data_gb)
 }
 
 function formatDays(days) {
@@ -105,14 +117,51 @@ function formatDays(days) {
 }
 
 function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, onCompareToggle, repPlan, tabId }) {
+  const isBytesim = carrier === 'bytesim'
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [selectedDays, setSelectedDays] = useState(() => isBytesim ? (plans[0]?.days ?? null) : null)
   const [showCountries, setShowCountries] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAnnotations, setShowAnnotations] = useState(false)
   const { isWatched, toggle: toggleWatch } = useWatchlist()
   const { countFor } = useAnnotationCounts()
 
-  const selectedPlan = plans[selectedIndex]
+  // bytesim: one representative plan per data_str, ordered by data_gb
+  const dataOptions = useMemo(() => {
+    if (!isBytesim) return null
+    const seen = new Map()
+    for (const p of plans) {
+      const ds = getPillLabel(p)
+      if (!seen.has(ds)) seen.set(ds, p)
+    }
+    return [...seen.values()].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
+  }, [isBytesim, plans])
+
+  // bytesim: unique sorted days for the currently selected data option
+  const availableDays = useMemo(() => {
+    if (!isBytesim || !dataOptions) return null
+    const rep = dataOptions[selectedIndex]
+    if (!rep) return null
+    const ds = getPillLabel(rep)
+    return [...new Set(plans.filter(p => getPillLabel(p) === ds && p.days).map(p => p.days))].sort((a, b) => a - b)
+  }, [isBytesim, dataOptions, selectedIndex, plans])
+
+  // Active plan: for bytesim match by (data_str, days); for others use index directly
+  const selectedPlan = useMemo(() => {
+    if (!isBytesim) return plans[selectedIndex] || plans[0]
+    const rep = dataOptions?.[selectedIndex]
+    const ds = rep ? getPillLabel(rep) : null
+    return plans.find(p => getPillLabel(p) === ds && p.days === selectedDays) || plans[0]
+  }, [isBytesim, plans, dataOptions, selectedIndex, selectedDays])
+
+  const handleDataSelect = useCallback((idx) => {
+    setSelectedIndex(idx)
+    if (isBytesim && dataOptions) {
+      const ds = getPillLabel(dataOptions[idx])
+      const first = plans.find(p => getPillLabel(p) === ds)
+      setSelectedDays(first?.days ?? null)
+    }
+  }, [isBytesim, dataOptions, plans])
   const label = GLOBAL_LABELS[carrier] || carrier
   const badgeColor = GLOBAL_COLORS[carrier] || 'gray'
   const countryData = getCountriesForPlan(selectedPlan)
@@ -168,22 +217,59 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
         <bdi>{destination}</bdi>
       </h3>
 
-      {/* GB selector pills */}
-      <div className="flex flex-wrap gap-1.5 mb-3">
-        {plans.map((plan, idx) => (
-          <button
-            key={idx}
-            onClick={() => setSelectedIndex(idx)}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all duration-150 ${
-              selectedIndex === idx
-                ? 'bg-moca-bolt text-white shadow-sm'
-                : 'bg-moca-cream text-moca-sub hover:bg-moca-sand hover:text-moca-text'
-            }`}
-          >
-            {formatGB(plan.data_gb)}
-          </button>
-        ))}
-      </div>
+      {/* Data / days selector */}
+      {isBytesim ? (
+        <>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {dataOptions?.map((rep, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleDataSelect(idx)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all duration-150 ${
+                  selectedIndex === idx
+                    ? 'bg-moca-bolt text-white shadow-sm'
+                    : 'bg-moca-cream text-moca-sub hover:bg-moca-sand hover:text-moca-text'
+                }`}
+              >
+                {getPillLabel(rep)}
+              </button>
+            ))}
+          </div>
+          {availableDays && availableDays.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {availableDays.map(days => (
+                <button
+                  key={days}
+                  onClick={() => setSelectedDays(days)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all duration-150 ${
+                    selectedDays === days
+                      ? 'bg-moca-sand text-moca-text shadow-sm border border-moca-bolt/30'
+                      : 'bg-white text-moca-sub border border-gray-200 hover:bg-moca-cream hover:text-moca-text'
+                  }`}
+                >
+                  {days} ימים
+                </button>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {plans.map((plan, idx) => (
+            <button
+              key={idx}
+              onClick={() => setSelectedIndex(idx)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all duration-150 ${
+                selectedIndex === idx
+                  ? 'bg-moca-bolt text-white shadow-sm'
+                  : 'bg-moca-cream text-moca-sub hover:bg-moca-sand hover:text-moca-text'
+              }`}
+            >
+              {getPillLabel(plan)}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Price */}
       <div className="mb-2">
@@ -199,7 +285,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
 
       {/* Info line */}
       <p className="text-sm text-gray-500 mb-3">
-        <bdi>{formatGB(selectedPlan.data_gb)}</bdi>
+        <bdi>{getPillLabel(selectedPlan)}</bdi>
         <span className="mx-1.5 text-gray-300">·</span>
         <bdi>{formatDays(selectedPlan.days)}</bdi>
         {selectedPlan.minutes ? (
