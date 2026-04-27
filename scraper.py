@@ -5434,6 +5434,19 @@ def scrape_maya_global(_page=None, usd_rate=None):
         with urllib.request.urlopen(req, timeout=20) as r:
             return r.read().decode("utf-8", errors="replace")
 
+    def _extract_visible_sizes(html):
+        """Return the set of size keys (e.g. 'unlimited', '5GB', '10GB') that
+        Maya is actually advertising in the page's plan-card UI. The full
+        regionPricing JSON often contains stale tiers (e.g. 1GB for global)
+        that Maya keeps in the backend but no longer renders."""
+        visible = set()
+        if "UNLIMITED DATA" in html:
+            visible.add("unlimited")
+        # Card headings render as "<N> GB" (single space); avoid "<N>Gigabytes"
+        for m_ in _re.finditer(r'\b(\d{1,3})\s+GB\b', html):
+            visible.add(f"{m_.group(1)}GB")
+        return visible
+
     def _parse_slug(slug, country_heb, html):
         m = _re.search(r"var regionPricing = JSON\.parse\('(.+?)'\);", html)
         if not m:
@@ -5444,10 +5457,15 @@ def scrape_maya_global(_page=None, usd_rate=None):
         except Exception:
             return []
 
+        visible_sizes = _extract_visible_sizes(html)
+
         url = f"https://maya.net/esim/{slug}"
         plans = []
         for size_key, gb_val in SIZE_TO_GB.items():
             if size_key not in pricing:
+                continue
+            # Skip tiers Maya no longer advertises in the UI (e.g. 1GB/global)
+            if visible_sizes and size_key not in visible_sizes:
                 continue
             for days_str, price_val in pricing[size_key].items():
                 if not price_val:
