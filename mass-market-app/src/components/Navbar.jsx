@@ -1,5 +1,5 @@
-import { NavLink, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import { useWatchlist } from '../hooks/useWatchlist'
@@ -44,7 +44,70 @@ const FLAG_FOR_PATH = {
   '/ai-insights':       'hide_ai_insights',
 }
 
-const itemCls = ({ isActive }) =>
+function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut }) {
+  const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    const onEsc = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [open])
+
+  const go = (path) => { setOpen(false); navigate(path) }
+
+  const initial = (user?.email || '?')[0]?.toUpperCase()
+  const itemCls = 'w-full text-right px-3 py-2 text-[12px] text-moca-text hover:bg-moca-cream rounded-md transition-colors flex items-center justify-between'
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-7 h-7 rounded-full bg-moca-cream text-moca-bolt text-[11px] font-bold flex items-center justify-center hover:ring-2 hover:ring-moca-bolt/30 transition-all"
+        title={user?.email || 'פרופיל'}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        {initial}
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 min-w-[200px] bg-white rounded-xl shadow-xl border border-moca-border/40 p-1.5 z-50 animate-fade-in">
+          <div className="px-3 py-2 text-[10px] text-moca-sub border-b border-moca-border/30 mb-1 truncate" dir="ltr">{user?.email}</div>
+          <button onClick={() => go('/preferences')} className={itemCls}>העדפות</button>
+          <button onClick={() => go('/alerts?tab=watchlist')} className={itemCls}>הגדרות התראות</button>
+          {isAdmin && !isSuperAdmin && (
+            <>
+              <div className="h-px bg-moca-border/30 my-1" />
+              <button onClick={() => go('/workspace/users')} className={itemCls}>הצוות</button>
+              <button onClick={() => go('/workspace/settings')} className={itemCls}>מיתוג Workspace</button>
+            </>
+          )}
+          {isAdmin && (
+            <button onClick={() => go('/settings')} className={itemCls}>הגדרות מערכת</button>
+          )}
+          {isSuperAdmin && (
+            <>
+              <div className="h-px bg-moca-border/30 my-1" />
+              <button onClick={() => go('/admin/workspaces')} className={itemCls}>Workspaces</button>
+              <button onClick={() => go('/admin/audit')} className={itemCls}>יומן ביקורת</button>
+            </>
+          )}
+          <div className="h-px bg-moca-border/30 my-1" />
+          <button onClick={() => { setOpen(false); signOut() }} className={`${itemCls} text-red-600 hover:bg-red-50`}>יציאה</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const dropdownItemCls = ({ isActive }) =>
   `block px-4 py-2 text-[13px] transition-colors ${
     isActive
       ? 'text-moca-bolt bg-moca-cream font-medium'
@@ -67,7 +130,7 @@ export default function Navbar() {
   const groups = [
     {
       key: 'analysis',
-      label: 'ניתוח', // ניתוח
+      label: 'ניתוח',
       items: [
         { to: '/',        label: 'דשבורד', visible: true },
         { to: '/compare', label: 'השוואה', visible: visible('/compare') },
@@ -76,16 +139,16 @@ export default function Navbar() {
     },
     {
       key: 'insights',
-      label: 'תובנות', // תובנות
+      label: 'תובנות',
       items: [
         { to: '/executive-summary', label: 'תקציר מנהלים', visible: visible('/executive-summary') },
-        { to: '/positioning',       label: 'מיצוב תחרותי',          visible: visible('/positioning') },
-        { to: '/ai-insights',       label: 'AI Insights',                                          visible: visible('/ai-insights') },
+        { to: '/positioning',       label: 'מיצוב תחרותי', visible: visible('/positioning') },
+        { to: '/ai-insights',       label: 'AI Insights',  visible: visible('/ai-insights') },
       ],
     },
     {
       key: 'history',
-      label: 'היסטוריה', // היסטוריה
+      label: 'היסטוריה',
       items: [
         { to: '/archive',      label: 'ארכיב snapshots', visible: visible('/archive') },
         { to: '/?tab=history', label: 'שינויי היסטוריה', visible: true },
@@ -93,13 +156,13 @@ export default function Navbar() {
     },
     {
       key: 'admin',
-      label: 'ניהול', // ניהול
+      label: 'ניהול',
       items: [
         { to: '/workspace/users',    label: 'הצוות',         visible: isAdmin },
         { to: '/workspace/settings', label: 'מיתוג',         visible: isAdmin },
-        { to: '/settings',           label: 'הגדרות', visible: isAdmin },
-        { to: '/admin/workspaces',   label: 'Workspaces',                            visible: isSuperAdmin },
-        { to: '/admin/audit',        label: 'יומן ביקורת', visible: isSuperAdmin },
+        { to: '/settings',           label: 'הגדרות',        visible: isAdmin },
+        { to: '/admin/workspaces',   label: 'Workspaces',    visible: isSuperAdmin },
+        { to: '/admin/audit',        label: 'יומן ביקורת',   visible: isSuperAdmin },
       ],
     },
   ]
@@ -119,7 +182,7 @@ export default function Navbar() {
     { to: '/',                  label: 'דשבורד', icon: NAV_ICONS['/'],                  visible: true },
     { to: '/compare',           label: 'השוואה', icon: NAV_ICONS['/compare'],           visible: visible('/compare') },
     { to: '/alerts',            label: 'התראות', icon: NAV_ICONS['/alerts'],            visible: visible('/alerts') },
-    { to: '/executive-summary', label: 'תקציר',       icon: NAV_ICONS['/executive-summary'], visible: visible('/executive-summary') },
+    { to: '/executive-summary', label: 'תקציר', icon: NAV_ICONS['/executive-summary'], visible: visible('/executive-summary') },
   ].filter(i => i.visible)
 
   // ---------- Mobile sheet sections ----------
@@ -130,7 +193,7 @@ export default function Navbar() {
         key={i.to}
         to={i.to}
         end={i.to === '/'}
-        className={itemCls}
+        className={dropdownItemCls}
       >
         {i.label}
       </NavLink>
@@ -150,7 +213,7 @@ export default function Navbar() {
             {groups.map(g => (
               <NavDropdown key={g.key} label={g.label} isActive={isGroupActive(g)}>
                 {g.items.map(i => (
-                  <NavLink key={i.to} to={i.to} end={i.to === '/'} className={itemCls}>
+                  <NavLink key={i.to} to={i.to} end={i.to === '/'} className={dropdownItemCls}>
                     {i.label}
                   </NavLink>
                 ))}
@@ -159,7 +222,6 @@ export default function Navbar() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-moca-sub hidden sm:inline">{user?.email}</span>
             <NavLink
               to="/alerts?tab=watchlist"
               className="relative text-moca-sub hover:text-moca-bolt transition-colors p-1"
@@ -175,27 +237,7 @@ export default function Navbar() {
                 </span>
               )}
             </NavLink>
-            <NavLink
-              to="/preferences"
-              className="text-moca-sub hover:text-moca-bolt transition-colors p-1"
-              title="העדפות"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
-            </NavLink>
-            <button
-              onClick={signOut}
-              className="text-[11px] text-moca-sub hover:text-moca-bolt transition-colors p-1"
-              title="יציאה"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            </button>
+            <ProfileMenu user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} signOut={signOut} />
           </div>
         </div>
       </header>
