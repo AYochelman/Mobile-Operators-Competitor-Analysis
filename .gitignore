@@ -11,10 +11,12 @@ __pycache__/
 **/.env.*
 **/.env.local
 config.json
+config.backup*.json
 SECRETS_LOCAL_ONLY.md
 *.egg-info/
 .pytest_cache/
 .playwright-mcp/
 *.log
+*.err
 *.state
 .worktrees/
