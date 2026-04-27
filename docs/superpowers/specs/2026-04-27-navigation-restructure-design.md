@@ -201,7 +201,8 @@ Flat list of 5 most-used items + "עוד":
 | `pages/AIInsightsPage.jsx` | **NEW** |
 | `components/CarrierAIInsights.jsx` | Add optional `inline` prop (default `false`); preserves existing modal behavior on Dashboard, renders expand-in-place when `inline` |
 | `App.jsx` | Add `/ai-insights` route; `/notifications` → `<Navigate to="/alerts?tab=watchlist" replace />` |
-| `hooks/useFeatureFlags.js` | Add support for `hide_ai_insights` flag (still defaults to visible — super-admin always sees) |
+
+**Feature flag note**: `useFeatureFlags()` is already a generic passthrough that returns `workspace.feature_flags`. No hook change is needed — adding `hide_ai_insights` to the navbar's `FLAG_FOR_PATH` map is sufficient. Super-admin still bypasses all flags via the existing `if (isSuperAdmin) return {}` early return in the hook.
 
 No backend changes. No DB schema changes. No API changes.
 
