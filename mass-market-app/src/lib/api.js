@@ -56,8 +56,9 @@ export const api = {
   },
 
   // Scrape — admin only, triggers via JWT auth
-  scrapeAll: () => fetchApi('/api/scrape-all-now'),
-  getRefreshQuota: () => fetchApi('/api/refresh-quota'),
+  scrapeAll:        () => fetchApi('/api/scrape-all-now'),
+  scrapeProgress:   () => fetchApi('/api/scrape-progress/state'),
+  getRefreshQuota:  () => fetchApi('/api/refresh-quota'),
 
   // Users — admin only, JWT auth
   getUsers:       () => fetchApi('/api/users'),
@@ -136,8 +137,14 @@ export const api = {
   // User preferences
   updateMyPreferences: (prefs) => fetchApi('/api/my-preferences', { method: 'PATCH', body: JSON.stringify(prefs) }),
 
-  // Market movers — top biggest % price moves across plan types
-  getMarketMovers: (days = 7, limit = 5) => fetchApi(`/api/market-movers?days=${days}&limit=${limit}`),
+  // Market movers — top biggest % price moves. planTypes: array/string of 'domestic','abroad','global'
+  getMarketMovers: (days = 7, limit = 5, planTypes = null) => {
+    const qs = new URLSearchParams({ days: String(days), limit: String(limit) })
+    if (planTypes && planTypes.length) {
+      qs.set('plan_types', Array.isArray(planTypes) ? planTypes.join(',') : planTypes)
+    }
+    return fetchApi(`/api/market-movers?${qs.toString()}`)
+  },
 
   // Health / status — super_admin operational info
   getHealth: () => fetchApi('/api/health'),

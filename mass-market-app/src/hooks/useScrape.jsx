@@ -1,69 +1,41 @@
 import { createContext, useContext, useState, useRef, useCallback } from 'react'
-import { api, API_BASE } from '../lib/api'
+import { api } from '../lib/api'
 
 const ScrapeContext = createContext(null)
-
-const _DEV_API_KEY = import.meta.env.VITE_DEV_API_KEY || ''
 
 export function ScrapeProvider({ children }) {
   const [scraping, setScraping]   = useState(false)
   const [countdown, setCountdown] = useState(0)
-  const [toast, setToast]         = useState(null) // { type: 'success'|'error', message, detail }
-  const [progress, setProgress]   = useState([])   // array of {at, stage, status, count, message}
-  const timerRef    = useRef(null)
-  const dismissRef  = useRef(null)
-  const sseRef      = useRef(null)  // AbortController for fetch-based SSE
-
-  const _closeSse = () => {
-    if (sseRef.current) { sseRef.current.abort(); sseRef.current = null }
-  }
-
-  // EventSource doesn't support custom headers, so JWT (stored in localStorage)
-  // can't be sent — the server returns 401 and no events arrive.
-  // Use fetch streaming instead so we can attach Authorization + API key headers.
-  const _openSse = (onEvent) => {
-    _closeSse()
-    const controller = new AbortController()
-    sseRef.current = controller
-    const headers = { 'ngrok-skip-browser-warning': 'true' }
-    const token = localStorage.getItem('auth_token')
-    if (token) headers['Authorization'] = `Bearer ${token}`
-    if (_DEV_API_KEY) headers['X-API-Key'] = _DEV_API_KEY
-
-    fetch(`${API_BASE}/api/scrape-progress/stream`, {
-      headers,
-      credentials: 'include',
-      signal: controller.signal,
-    }).then(res => {
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      function pump() {
-        return reader.read().then(({ done, value }) => {
-          if (done) return
-          buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split('\n')
-          buffer = lines.pop()
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue
-            try {
-              const ev = JSON.parse(line.slice(6))
-              if (ev.stage === '__done__' || ev.stage === '__timeout__' || ev.stage === '__idle__') {
-                controller.abort(); return
-              }
-              onEvent(ev)
-            } catch {}
-          }
-          return pump()
-        }).catch(() => {})
-      }
-      return pump()
-    }).catch(() => {})
-  }
+  const [toast, setToast]         = useState(null)
+  const [progress, setProgress]   = useState([])
+  const timerRef   = useRef(null)
+  const pollRef    = useRef(null)
+  const dismissRef = useRef(null)
 
   const _clearTimers = () => {
     if (timerRef.current)   clearInterval(timerRef.current)
+    if (pollRef.current)    clearInterval(pollRef.current)
     if (dismissRef.current) clearTimeout(dismissRef.current)
+  }
+
+  // Poll /api/scrape-progress/state every 2s via fetchApi (handles auth correctly).
+  // SSE via EventSource was unusable: no custom-header support meant the JWT
+  // (kept in localStorage by Supabase) was never forwarded → 401 on every connect.
+  // Fetch-streaming failed for the same reason when auth_token wasn't set, and
+  // is also buffered by ngrok. Polling avoids all of these issues.
+  const _startPolling = () => {
+    let seenIdx = 0
+    pollRef.current = setInterval(async () => {
+      try {
+        const data = await api.scrapeProgress()
+        const log = data.log || []
+        if (log.length > seenIdx) {
+          const newEvents = log.slice(seenIdx)
+          seenIdx = log.length
+          setProgress(prev => [...prev, ...newEvents])
+        }
+      } catch {}
+    }, 2000)
   }
 
   const triggerScrape = useCallback(async () => {
@@ -73,7 +45,7 @@ export function ScrapeProvider({ children }) {
     setCountdown(12 * 60)
     setToast(null)
     setProgress([])
-    _openSse(ev => setProgress(prev => [...prev, ev]))
+    _startPolling()
 
     timerRef.current = setInterval(() => {
       setCountdown(prev => {
@@ -85,7 +57,6 @@ export function ScrapeProvider({ children }) {
     try {
       const res = await api.scrapeAll()
       _clearTimers()
-      _closeSse()
       setScraping(false)
       setCountdown(0)
       const total   = res.total_plans   ?? '—'
@@ -101,7 +72,6 @@ export function ScrapeProvider({ children }) {
       dismissRef.current = setTimeout(() => setToast(null), 8000)
     } catch (err) {
       _clearTimers()
-      _closeSse()
       setScraping(false)
       setCountdown(0)
       const isQuota = err.message?.includes('מכסת')
