@@ -22,8 +22,8 @@ const WorkspacesAdminPage   = lazy(() => import('./pages/WorkspacesAdminPage'))
 const WorkspaceUsersPage    = lazy(() => import('./pages/WorkspaceUsersPage'))
 const WorkspaceBrandingPage = lazy(() => import('./pages/WorkspaceBrandingPage'))
 const AuditLogPage          = lazy(() => import('./pages/AuditLogPage'))
-const NotificationsPage     = lazy(() => import('./pages/NotificationsPage'))
 const PositioningPage       = lazy(() => import('./pages/PositioningPage'))
+const AIInsightsPage        = lazy(() => import('./pages/AIInsightsPage'))
 const InvitePage            = lazy(() => import('./pages/InvitePage'))
 const SuspendedPage         = lazy(() => import('./pages/SuspendedPage'))
 const NotFoundPage          = lazy(() => import('./pages/NotFoundPage'))
@@ -91,7 +91,8 @@ export default function App() {
             <Route path="workspace/settings" element={<ProtectedRoute adminOnly><WorkspaceBrandingPage /></ProtectedRoute>} />
             <Route path="admin/workspaces" element={<ProtectedRoute superAdminOnly><WorkspacesAdminPage /></ProtectedRoute>} />
             <Route path="admin/audit" element={<ProtectedRoute superAdminOnly><AuditLogPage /></ProtectedRoute>} />
-            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="notifications" element={<Navigate to="/alerts?tab=watchlist" replace />} />
+            <Route path="ai-insights" element={<AIInsightsPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
