@@ -4,7 +4,8 @@ import { useLocation } from 'react-router-dom'
 export default function MobileMoreSheet({ open, onClose, sections }) {
   const location = useLocation()
 
-  // Close on route change
+  // Close on route change — onClose intentionally excluded to avoid effect re-run on every render
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (open) onClose() }, [location.pathname, location.search])
 
   // Close on Escape

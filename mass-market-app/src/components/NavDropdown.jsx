@@ -6,7 +6,9 @@ export default function NavDropdown({ label, isActive = false, children }) {
   const wrapRef = useRef(null)
   const location = useLocation()
 
-  // Close on route change
+  // Close on route change. Effect is the right tool here — read more at
+  // https://react.dev/learn/synchronizing-with-effects#what-are-effects-and-how-are-they-different-from-events
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setOpen(false) }, [location.pathname, location.search])
 
   // Close on outside click + Escape
