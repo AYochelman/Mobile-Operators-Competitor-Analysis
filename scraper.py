@@ -3029,7 +3029,9 @@ def scrape_xphone_global(page=None):
                                  if gb else f"{region} \u2014 {tab['label']}")
 
                     group_key = f"{region} \u2014 {tab['label']}"  # e.g. אירופה — גלישה בלבד
-                    extras = [group_key]
+                    # Unify all "גלובלי — *" variants under canonical "גלובלי" region (qualifier stays in plan_name)
+                    region_for_extras = "גלובלי" if region == "גלובלי" else group_key
+                    extras = [region_for_extras]
                     if minutes:
                         extras.append(f"{minutes} \u05d3\u05e7\u05d5\u05ea \u05d5-{sms} SMS")  # N דקות ו-N SMS
 
@@ -4756,9 +4758,11 @@ def scrape_orbit_global(_page=None, usd_rate=None):
                 price_ils = round(float(price_usd) * usd_rate, 2)
                 gb_str = f"{int(gb)}GB" if gb >= 1 else f"{round(gb * 1024)}MB"
                 plan_name = f"{zone_heb} - {gb_str} - {days} \u05d9\u05de\u05d9\u05dd"
+                # Unify "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9 \u05e4\u05dc\u05d5\u05e1" under canonical "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9" region (qualifier remains in plan_name)
+                region_for_extras = "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9" if zone_id == 17 else zone_heb
                 all_plans.append(_make_global_plan(
                     "orbit", plan_name, price_ils, "USD", float(original_usd),
-                    data_gb=gb, days=days, esim=True, extras=[zone_heb] + zone_countries_heb
+                    data_gb=gb, days=days, esim=True, extras=[region_for_extras] + zone_countries_heb
                 ))
                 zone_count += 1
 
