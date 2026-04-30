@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>MOCA — אבחון</title>
+<style>
+  body { font-family: 'Courier New', monospace; background: #f9f4ee; color: #2a2a2a;
+         padding: 20px; margin: 0; }
+  h1 { color: #5c3317; margin-bottom: 6px; }
+  .row { display: flex; padding: 8px 12px; border-bottom: 1px solid #e5d8c5;
+         font-size: 13px; align-items: flex-start; }
+  .key { font-weight: bold; min-width: 240px; color: #5c3317; }
+  .val { word-break: break-all; flex: 1; }
+  .ok    { color: #10b981; }
+  .bad   { color: #ef4444; }
+  .warn  { color: #f59e0b; }
+  pre { background: white; border: 1px solid #e5d8c5; padding: 12px; border-radius: 8px;
+        font-size: 12px; max-height: 200px; overflow: auto; }
+  button { background: #5c3317; color: white; border: 0; padding: 10px 24px;
+           border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 16px; }
+</style>
+</head>
+<body>
+  <h1>🔍 MOCA — אבחון מצב</h1>
+  <p style="font-size:13px;color:#666;">צלם את הדף הזה ושלח לקלוד.</p>
+  <div id="results"></div>
+  <button onclick="hardReset()">🧹 איפוס מלא + יציאה (לחזור ב-Ctrl+Shift+R)</button>
+
+<script>
+const r = document.getElementById('results');
+function row(k, v, cls='') {
+  const d = document.createElement('div'); d.className='row';
+  const kk = document.createElement('div'); kk.className='key'; kk.textContent = k;
+  const vv = document.createElement('div'); vv.className = 'val ' + cls;
+  if (typeof v === 'object') { const p = document.createElement('pre'); p.textContent = JSON.stringify(v,null,2); vv.appendChild(p); }
+  else vv.textContent = v;
+  d.appendChild(kk); d.appendChild(vv); r.appendChild(d);
+}
+
+(async () => {
+  // 1. Service workers
+  let sws = [];
+  if ('serviceWorker' in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    sws = regs.map(reg => ({ scope: reg.scope, state: reg.active?.state, scriptURL: reg.active?.scriptURL }));
+  }
+  row('Service Workers (' + sws.length + ')', sws.length === 0 ? 'אין — תקין' : sws, sws.length === 0 ? 'ok' : 'bad');
+
+  // 2. Caches
+  let caches_ = [];
+  if ('caches' in window) {
+    caches_ = await caches.keys();
+  }
+  row('Cache buckets (' + caches_.length + ')', caches_.length === 0 ? 'ריק — תקין' : caches_, caches_.length === 0 ? 'ok' : 'bad');
+
+  // 3. localStorage
+  const ls = {};
+  for (const k of Object.keys(localStorage)) {
+    const v = localStorage.getItem(k);
+    ls[k] = v && v.length > 80 ? v.slice(0,80) + '… (' + v.length + ' chars)' : v;
+  }
+  row('localStorage', ls);
+
+  // 4. Test fetch to API
+  try {
+    const t0 = Date.now();
+    const res = await fetch('/api/reseller-plans');
+    const ms = Date.now() - t0;
+    row('GET /api/reseller-plans', res.status + ' (' + ms + 'ms)', res.ok ? 'ok' : 'bad');
+    if (res.ok) {
+      const data = await res.json();
+      row('  → response', `${data.length} plans`);
+    }
+  } catch (e) {
+    row('GET /api/reseller-plans', 'FAILED: ' + e.message, 'bad');
+  }
+
+  // 5. Test fetch to main app
+  try {
+    const res = await fetch('/');
+    const html = await res.text();
+    row('GET / (HTML size)', html.length + ' bytes', 'ok');
+    row('Has <div id="root">?', html.includes('id="root"') ? 'כן' : 'לא', html.includes('id="root"') ? 'ok' : 'bad');
+    row('Has main.jsx import?', html.includes('main.jsx') ? 'כן' : 'לא', html.includes('main.jsx') ? 'ok' : 'bad');
+  } catch (e) {
+    row('GET /', 'FAILED: ' + e.message, 'bad');
+  }
+
+  // 6. Test main.jsx itself
+  try {
+    const res = await fetch('/src/main.jsx');
+    const code = await res.text();
+    row('main.jsx size', code.length + ' bytes', 'ok');
+  } catch (e) {
+    row('main.jsx', 'FAILED: ' + e.message, 'bad');
+  }
+
+  // 7. UA
+  row('User Agent', navigator.userAgent.slice(0, 120));
+  row('Online', navigator.onLine ? 'כן' : 'לא');
+})();
+
+async function hardReset() {
+  if ('serviceWorker' in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r => r.unregister()));
+  }
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+  }
+  localStorage.clear();
+  sessionStorage.clear();
+  alert('הכל נוקה. סגור את הדפדפן לגמרי, פתח מחדש, ובא ל-localhost:5173 שוב.');
+  window.close();
+}
+</script>
+</body>
+</html>

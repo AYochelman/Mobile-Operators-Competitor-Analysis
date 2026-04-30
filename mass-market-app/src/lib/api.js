@@ -30,6 +30,7 @@ export const api = {
   getAbroadChanges:() => fetchApi('/api/abroad-changes'),
   getGlobalPlans:  () => fetchApi('/api/global-plans'),
   getGlobalChanges:() => fetchApi('/api/global-changes'),
+  getResellerPlans: (params) => fetchApi(`/api/reseller-plans${params ? '?' + new URLSearchParams(params) : ''}`),
   getContentPlans: () => fetchApi('/api/content-plans'),
   getContentChanges:() => fetchApi('/api/content-changes'),
   getBanners:      () => fetchApi('/api/banners'),

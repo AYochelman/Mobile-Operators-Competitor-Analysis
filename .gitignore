@@ -20,3 +20,5 @@ SECRETS_LOCAL_ONLY.md
 *.err
 *.state
 .worktrees/
+data/*.session
+data/telegram_pending.json

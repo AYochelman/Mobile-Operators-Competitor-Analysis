@@ -228,6 +228,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   const isGlobal = type === 'global'
   const isAbroad = type === 'abroad'
   const isContent = type === 'content'
+  const isReseller = type === 'resellers'
   const hasNeptucomRoaming = plan.carrier === 'neptucom' && plan.extras && plan.extras.some(e => /\u05db\u05dc\u05d5\u05dc/.test(e) && /\u05d7\u05d5"?\u05dc/.test(e))
   const countryData = isGlobal
     ? getCountriesForPlan(plan)
@@ -240,6 +241,10 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   const carrier = plan.carrier
   const label = isGlobal ? (GLOBAL_LABELS[carrier] || carrier) : (CARRIER_LABELS[carrier] || carrier)
   const badgeColor = isGlobal ? (GLOBAL_COLORS[carrier] || 'gray') : (CARRIER_COLORS[carrier] || 'gray')
+  // For reseller plans, link out to the source post/page (Instagram, FB, reseller site)
+  // instead of the underlying carrier's homepage. Must be declared AFTER `carrier`.
+  const providerUrl = isReseller && plan.source_url ? plan.source_url : CARRIER_HOME_URLS[carrier]
+  const providerLabel = isReseller ? 'לפוסט המקור' : 'לאתר הספק'
 
   // Build info line: data + period, dot-separated
   const infoParts = []
@@ -485,19 +490,27 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                 תנאי התוכנית
               </a>
               )}
-              {CARRIER_HOME_URLS[carrier] && (
+              {providerUrl && (
                 <a
-                  href={CARRIER_HOME_URLS[carrier]}
+                  href={providerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-1.5 flex-1 text-xs text-white bg-[#5c3317] rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                  </svg>
-                  לאתר הספק
+                  {isReseller ? (
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/>
+                      <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                  ) : (
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                    </svg>
+                  )}
+                  {providerLabel}
                 </a>
               )}
             </div>

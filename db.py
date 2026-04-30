@@ -325,6 +325,23 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_annotations_plan
                 ON plan_annotations(workspace_id, carrier, plan_name, plan_type);
+            CREATE TABLE IF NOT EXISTS reseller_plans (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                reseller_id  TEXT NOT NULL,
+                carrier      TEXT NOT NULL,
+                plan_name    TEXT NOT NULL,
+                price        REAL,
+                data_gb      REAL,
+                minutes      INTEGER,
+                sms          INTEGER,
+                extras       TEXT,
+                source_url   TEXT,
+                seen_at      TEXT,
+                scraped_at   TEXT,
+                UNIQUE(reseller_id, carrier, plan_name)
+            );
+            CREATE INDEX IF NOT EXISTS idx_reseller_plans_carrier
+                ON reseller_plans(carrier);
         """)
         conn.commit()
         # Migration: add url column if DB was created before this column existed
@@ -1800,5 +1817,68 @@ def update_annotation(annotation_id, workspace_id, user_email, note, db_path=Non
         )
         conn.commit()
         return cur.rowcount
+    finally:
+        conn.close()
+
+
+def save_reseller_plans(plans, db_path=None):
+    """Upsert reseller plans. Each plan dict needs reseller_id, carrier, plan_name, price."""
+    conn = _connect(db_path)
+    try:
+        now = datetime.now().isoformat()
+        for plan in plans:
+            conn.execute("""
+                INSERT INTO reseller_plans
+                  (reseller_id, carrier, plan_name, price, data_gb, minutes, sms, extras, source_url, seen_at, scraped_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(reseller_id, carrier, plan_name) DO UPDATE SET
+                    price      = excluded.price,
+                    data_gb    = excluded.data_gb,
+                    minutes    = excluded.minutes,
+                    sms        = excluded.sms,
+                    extras     = excluded.extras,
+                    source_url = excluded.source_url,
+                    seen_at    = excluded.seen_at,
+                    scraped_at = excluded.scraped_at
+            """, (
+                plan["reseller_id"], plan["carrier"], plan["plan_name"],
+                plan.get("price"), plan.get("data_gb"),
+                plan.get("minutes"), plan.get("sms"),
+                json.dumps(plan.get("extras", []), ensure_ascii=False),
+                plan.get("source_url"),
+                plan.get("seen_at"),
+                now,
+            ))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_reseller_plans(reseller_id=None, carrier=None, db_path=None):
+    """Return reseller plans. Filter by reseller_id and/or underlying carrier."""
+    conn = _connect(db_path)
+    try:
+        sql = ("SELECT reseller_id, carrier, plan_name, price, data_gb, minutes, "
+               "sms, extras, source_url, seen_at, scraped_at FROM reseller_plans")
+        clauses, params = [], []
+        if reseller_id:
+            clauses.append("reseller_id = ?")
+            params.append(reseller_id)
+        if carrier:
+            clauses.append("carrier = ?")
+            params.append(carrier)
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        sql += " ORDER BY price"
+        rows = conn.execute(sql, params).fetchall()
+        return [
+            {
+                "reseller_id": r[0], "carrier": r[1], "plan_name": r[2],
+                "price": r[3], "data_gb": r[4], "minutes": r[5], "sms": r[6],
+                "extras": json.loads(r[7]) if r[7] else [],
+                "source_url": r[8], "seen_at": r[9], "scraped_at": r[10],
+            }
+            for r in rows
+        ]
     finally:
         conn.close()

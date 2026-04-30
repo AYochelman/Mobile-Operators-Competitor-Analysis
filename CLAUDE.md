@@ -41,6 +41,14 @@ python app.py                    # Restart
 GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 ```
 
+### Reseller Plans (משווקים tab)
+```bash
+python seed_resellers.py                            # seed/upsert manually-curated reseller plans
+python telegram_resellers.py login_request          # phase 1: send code to user's Telegram app
+python telegram_resellers.py login_verify <code>    # phase 2: complete sign-in (one-time)
+python telegram_resellers.py scrape                 # ingest channels listed in config.json
+```
+
 ## Architecture
 
 ```
@@ -73,10 +81,12 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 |------|---------|
 | app.py | Flask server, API routes, APScheduler, CORS, API key auth. `CARRIER_DISPLAY` (8 carriers, homepage URLs) and `CARRIER_STORE_DISPLAY` (4 carriers with e-stores) drive the banners API. |
 | scraper.py | 40+ scrapers (domestic + abroad + global per-country/regional + content) + `scrape_carrier_banners()` / `scrape_carrier_store_banners()` for screenshots + `scrape_carrier_news()` for Google News RSS |
-| db.py | SQLite CRUD — 10 tables with UPSERT logic |
+| db.py | SQLite CRUD — 11 tables with UPSERT logic |
 | change_detector.py | Diff old vs new plans, detect price/extras/details changes |
 | notifier.py | Format + send notifications (Telegram, Email, WhatsApp, Web Push) |
 | excel_report.py | Daily Excel report (openpyxl, RTL, yellow=changed) |
+| seed_resellers.py | Manually-curated reseller plan data — UPSERTs `reseller_plans` table |
+| telegram_resellers.py | Telethon-based scraper for public Telegram channels → `reseller_plans`. Two-phase login flow. |
 | config.json | All credentials — NOT in git, auto-generates VAPID keys |
 | templates/index.html | Legacy RTL Hebrew dashboard (2,300+ lines, escHtml XSS protection) |
 
@@ -86,7 +96,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 
 | Path | Purpose |
 |------|---------|
-| pages/DashboardPage.jsx | Main 7-tab view (domestic/abroad/global/content/banners/history/news) with filters |
+| pages/DashboardPage.jsx | Main 8-tab view (domestic/abroad/global/**resellers**/content/banners/history/news) with filters. `RESELLERS` const lists reseller IDs+labels mapped to underlying carriers |
 | pages/ComparePage.jsx | Price comparison charts (Recharts) |
 | pages/AlertsPage.jsx | Personal price alerts with DB persistence |
 | pages/SettingsPage.jsx | Admin panel — scrape triggers, user management (adminOnly) |
@@ -164,10 +174,11 @@ Route protection uses `<ProtectedRoute adminOnly>` or `<ProtectedRoute superAdmi
 **E-store carriers (4)**: pelephone, cellcom, partner, hotmobile — screenshots saved as `{carrier}_store.png` in `data/banners/`
 **Global eSIM (15)**: tuki, globalesim, airalo, pelephone_global, esimo, simtlv, world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (183 countries + 10 regions), sparks (143 countries), voye (157 countries + 5 regions + global), orbit (195 countries + 9 zones, REST API at be.orbitmobile.com), travelsim (global + USA + Middle East zones)
 **Content (5 services × 4 carriers)**: eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי
+**Resellers (משווקים)**: independent shops/social pages selling carrier plans at unique prices not on the carrier's own rate card. Currently tracked: `cellcomshefamr` (Instagram, Cellcom). Data is sparse — Israeli reseller market has minimal social-media pricing presence (verified by scanning 1,400 messages across 7 large Israeli deal Telegram channels — zero plan-pricing matches).
 
 ## Database Schema (SQLite — data/plans.db)
 
-10 tables. Key constraints: UNIQUE(carrier, plan_name) for plans, UNIQUE(service, carrier) for content, UNIQUE(url) for news.
+11 tables. Key constraints: UNIQUE(carrier, plan_name) for plans, UNIQUE(service, carrier) for content, UNIQUE(url) for news, UNIQUE(reseller_id, carrier, plan_name) for resellers.
 
 | Table | Key Fields |
 |-------|-----------|
@@ -176,6 +187,7 @@ Route protection uses `<ProtectedRoute adminOnly>` or `<ProtectedRoute superAdmi
 | abroad_plans | + days, sms |
 | global_plans | + currency, original_price, days, sms, esim |
 | content_plans | service, carrier, price, free_trial, note, status |
+| reseller_plans | reseller_id, carrier (underlying), plan_name, price, data_gb, minutes, sms, extras (JSON), source_url, seen_at |
 | push_subscriptions | endpoint, p256dh, auth |
 | news_articles | carrier, headline, url (UNIQUE), source, published_at (ISO 8601), fetched_at |
 
@@ -252,6 +264,20 @@ The global `direction: rtl` in `index.css` affects flex containers differently f
 - `justify-start` in RTL flex = physical **right** edge ✓
 - Icons inside flex rows: in RTL flex the first child renders on the right, so place the icon before the text in JSX to have it appear to the left of the text visually
 
+### PlanCard const-ordering pitfall (TDZ)
+
+PlanCard.jsx declares many derived consts at the top of the function body. **Any const that references `carrier` (e.g. `CARRIER_HOME_URLS[carrier]`) must be declared AFTER `const carrier = plan.carrier`** — otherwise the JS Temporal Dead Zone throws `ReferenceError: Cannot access 'carrier' before initialization`, which crashes PlanCard, which unmounts the entire dashboard, leaving a blank screen with no visible error in production. The error appears in dev console only. Same rule for `isGlobal`/`isAbroad`/`isContent`/`isReseller` references that depend on `type` — those are declared early so they can be referenced anywhere in the function body.
+
+## Resellers tab + Telegram scraper
+
+The "משווקים" tab (between גלובלי and תוכן) shows independent reseller offers that don't appear on the carrier's own site. Two ingest paths:
+
+1. **Manual transcription** — `seed_resellers.py` is a runnable script with a `PLANS` array. Edit + run to upsert. Source URLs (Instagram/Facebook posts) become click-through targets via PlanCard's "לפוסט המקור" button. PlanCard checks `type === 'resellers'` and uses `plan.source_url` instead of `CARRIER_HOME_URLS[carrier]`.
+
+2. **Telegram channels** — `telegram_resellers.py` uses Telethon (free) to fetch messages from public channels in `config.json -> telegram_reseller_channels`. Filter logic: must contain a carrier name (`סלקום`/`פלאפון`/`פרטנר`/`הוט מובייל` or English) AND a price match (`\d+\s*(?:₪|ש"ח)`) between 5-500. Login is two-phase (`login_request` → user receives code in Telegram app → `login_verify <code>`). Session persists in `data/telegram_session.session` (gitignored).
+
+PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global', 'content']`). For other plan types (e.g. `resellers`) it skips the API call and renders the empty state — no error toast. The backend's `/api/history/price-series` rejects unknown plan_types with 400, so the whitelist must stay in sync.
+
 ## Schedule
 
 - **08:00** — screenshot all carrier homepages (`scrape_carrier_banners`) + 4 e-store pages (`scrape_carrier_store_banners`), saved as PNG in `data/banners/`
@@ -288,6 +314,11 @@ The global `direction: rtl` in `index.css` affects flex containers differently f
 - `FLASK_HOST` — bind address (default: 127.0.0.1)
 - `ALLOWED_ORIGINS` — comma-separated CORS origins
 
+### Telegram (config.json)
+- `telegram_api_id` / `telegram_api_hash` — from https://my.telegram.org → API development tools
+- `telegram_user_phone` — international format `+972...`
+- `telegram_reseller_channels` — array of `{username, label, limit}` or plain usernames
+
 ### React (mass-market-app/.env)
 - `VITE_SUPABASE_URL` — Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` — Supabase anon key
@@ -312,7 +343,7 @@ The global `direction: rtl` in `index.css` affects flex containers differently f
 ## Key UI Components
 
 - **SearchableSelect** (`components/ui/SearchableSelect.jsx`): Custom dropdown with search input, renders via React Portal to avoid clipping
-- **PlanCard**: Universal card for all plan types (domestic/abroad/global/content via `type` prop), supports highlight animation from chat. Content cards skip plan name and info line; all text must use explicit `text-right` or RTL-aware flex (`justify-start`)
+- **PlanCard**: Universal card for all plan types (domestic/abroad/global/resellers/content via `type` prop), supports highlight animation from chat. Content cards skip plan name and info line; all text must use explicit `text-right` or RTL-aware flex (`justify-start`). For `type='resellers'`, the "לאתר הספק" button becomes "לפוסט המקור" and links to `plan.source_url` instead of `CARRIER_HOME_URLS[carrier]`. The DashboardPage `loadTab` injects `"משווק: <label>"` as `extras[0]` so the reseller name appears as a bullet on the card.
 - **BannerCard** (`components/BannerCard.jsx`): Carrier screenshot card (16:7 ratio), modal on click, fallback gradient. Used for both homepage banners and e-store banners in the Banners tab
 - **GroupedPlanCard** (`components/GroupedPlanCard.jsx`): Used for XPhone "גולשים ומדברים" plans — renders GB selector pills + price + info line (GB · days · minutes · SMS)
 - **ChatPanel**: AI chat with clickable carrier names that navigate to filtered dashboard

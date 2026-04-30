@@ -132,16 +132,31 @@ const TAB_ICONS = {
       <line x1="7" y1="16" x2="13" y2="16"/>
     </svg>
   ),
+  resellers: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <path d="M16 10a4 4 0 0 1-8 0"/>
+    </svg>
+  ),
 }
 
 const TABS = [
   { id: 'domestic', label: 'חבילות סלולר' },
   { id: 'abroad', label: 'חו"ל' },
   { id: 'global', label: 'גלובלי' },
+  { id: 'resellers', label: 'משווקים' },
   { id: 'content', label: 'תוכן' },
   { id: 'banners', label: 'באנרים ראשיים' },
   { id: 'history', label: 'היסטוריה' },
   { id: 'news', label: '\u05d1\u05d7\u05d3\u05e9\u05d5\u05ea' },
+]
+
+const RESELLERS = [
+  { id: 'm_pelephone',    label: '\u05de.\u05e4\u05dc\u05d0\u05e4\u05d5\u05df (\u05d0\u05d9\u05e0\u05e1\u05d8\u05d2\u05e8\u05dd)', underlying: 'pelephone',
+    source_url: 'https://www.instagram.com/m.pelephone/' },
+  { id: 'cellcomshefamr', label: '\u05e1\u05dc\u05e7\u05d5\u05dd \u05e9\u05e4\u05e8\u05e2\u05dd',          underlying: 'cellcom',
+    source_url: 'https://www.instagram.com/cellcomshefamr/' },
 ]
 
 const KNOWN_REGIONS = new Set([
@@ -218,12 +233,12 @@ export default function DashboardPage() {
   }, [flags]) // eslint-disable-line react-hooks/exhaustive-deps
   const [loading, setLoading] = useState(true)
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [plans, setPlans] = useState({ domestic: [], abroad: [], global: [], content: [] })
+  const [plans, setPlans] = useState({ domestic: [], abroad: [], global: [], content: [], resellers: [] })
   const [changes, setChanges] = useState({ domestic: [], abroad: [], global: [], content: [] })
   const [filters, setFilters] = useState({
     carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', roaming: 'all',
     globalProvider: 'all', destination: 'all', region: 'all', days: 'all',
-    contentCarrier: 'all', contentService: 'all',
+    contentCarrier: 'all', contentService: 'all', reseller: 'all',
   })
   const [countryModal, setCountryModal] = useState(null)
   const [highlightPlan, setHighlightPlan] = useState(null)
@@ -259,6 +274,10 @@ export default function DashboardPage() {
       if (filters.contentCarrier !== 'all') count++
       if (filters.contentService !== 'all') count++
     }
+    if (tab === 'resellers') {
+      if (filters.reseller !== 'all') count++
+      if (filters.carrier !== 'all') count++
+    }
     if (tab !== 'content') {
       if (filters.gb !== 'all') count++
       if (filters.days !== 'all') count++
@@ -272,7 +291,7 @@ export default function DashboardPage() {
     const urlTab = searchParams.get('tab')
     const urlCarrier = searchParams.get('carrier')
     const urlHighlight = searchParams.get('highlight')
-    if (urlTab && ['domestic', 'abroad', 'global', 'content'].includes(urlTab)) {
+    if (urlTab && ['domestic', 'abroad', 'global', 'content', 'resellers'].includes(urlTab)) {
       setTab(urlTab)
       if (urlCarrier) {
         if (urlTab === 'global') {
@@ -393,6 +412,16 @@ export default function DashboardPage() {
         const [p, c] = await Promise.all([api.getGlobalPlans(), api.getGlobalChanges()])
         setPlans(prev => ({ ...prev, global: p }))
         setChanges(prev => ({ ...prev, global: c }))
+      } else if (t === 'resellers' && plans.resellers.length === 0) {
+        const p = await api.getResellerPlans()
+        // Tag each plan with its underlying carrier label and reseller name in extras for PlanCard rendering
+        const enriched = p.map(plan => {
+          const reseller = RESELLERS.find(r => r.id === plan.reseller_id)
+          const resellerLabel = reseller ? reseller.label : plan.reseller_id
+          const tag = `משווק: ${resellerLabel}`
+          return { ...plan, extras: [tag, ...(plan.extras || [])] }
+        })
+        setPlans(prev => ({ ...prev, resellers: enriched }))
       } else if (t === 'content' && plans.content.length === 0) {
         const p = await api.getContentPlans()
         setPlans(prev => ({ ...prev, content: p }))
@@ -467,6 +496,10 @@ export default function DashboardPage() {
       if (f.contentCarrier !== 'all') result = result.filter(p => p.carrier === f.contentCarrier)
       if (f.contentService !== 'all') result = result.filter(p => p.service === f.contentService)
       result = result.filter(p => !p.price || !NA.some(v => String(p.price).includes(v)))
+    }
+    if (tab === 'resellers') {
+      if (f.reseller !== 'all') result = result.filter(p => p.reseller_id === f.reseller)
+      if (f.carrier !== 'all') result = result.filter(p => p.carrier === f.carrier)
     }
 
     if (f.gb !== 'all' && tab !== 'content') {
@@ -1077,6 +1110,41 @@ export default function DashboardPage() {
                         {CARRIERS.find(x => x.id === c)?.label || c}
                       </button>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Resellers */}
+              {tab === 'resellers' && (
+                <div className="border border-moca-border/60 rounded-xl p-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[11px] font-medium text-gray-500">משווקים</p>
+                    <button
+                      onClick={() => setFilter('reseller', 'all')}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
+                        filters.reseller === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                      }`}
+                    >
+                      כולם
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-1">
+                    {RESELLERS.map(r => {
+                      const cnt = plans.resellers?.filter(p => p.reseller_id === r.id).length || 0
+                      return (
+                        <button
+                          key={r.id}
+                          onClick={() => cnt > 0 ? setFilter('reseller', r.id) : null}
+                          className={`px-1 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
+                            filters.reseller === r.id ? 'bg-gray-900 text-white' :
+                            cnt === 0 ? 'text-moca-border cursor-default' :
+                            'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                          }`}
+                        >
+                          {r.label} {cnt > 0 ? `(${cnt})` : ''}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               )}

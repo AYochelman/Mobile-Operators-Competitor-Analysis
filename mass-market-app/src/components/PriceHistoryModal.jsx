@@ -27,8 +27,16 @@ export default function PriceHistoryModal({ open, onClose, carrier, planName, pl
   const [error, setError]     = useState(null)
   const [points, setPoints]   = useState([])
 
+  // Plan types tracked by the history pipeline. Others (e.g. 'resellers') skip the API call
+  // and render the empty state directly — there's no historical series for them.
+  const HAS_HISTORY = ['domestic', 'abroad', 'global', 'content']
+
   useEffect(() => {
     if (!open || !carrier || !planName) return
+    if (!HAS_HISTORY.includes(planType)) {
+      setLoading(false); setError(null); setPoints([])
+      return
+    }
     let cancelled = false
     setLoading(true); setError(null); setPoints([])
     api.getHistoryPriceSeries(carrier, planType, planName, '')

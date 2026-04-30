@@ -22,7 +22,8 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                upsert_news_articles, get_news_articles, \
                log_affiliate_click, get_affiliate_stats, \
                log_audit, get_audit_log, \
-               create_workspace_invite, get_workspace_invite, use_workspace_invite
+               create_workspace_invite, get_workspace_invite, use_workspace_invite, \
+               get_reseller_plans, save_reseller_plans
 import archive as arc
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -777,6 +778,16 @@ def api_abroad_plans():
 def api_global_plans():
     carrier = request.args.get("carrier")
     plans = get_global_plans(carrier=carrier, db_path=_db_path())
+    return jsonify(_filter_hidden_carrier(plans))
+
+
+@app.route("/api/reseller-plans")
+@limiter.limit("60 per minute")
+def api_reseller_plans():
+    """Plans offered by Israeli authorized resellers (משווקים) — promo prices not on the carriers' own sites."""
+    reseller = request.args.get("reseller")
+    carrier = request.args.get("carrier")
+    plans = get_reseller_plans(reseller_id=reseller, carrier=carrier, db_path=_db_path())
     return jsonify(_filter_hidden_carrier(plans))
 
 
