@@ -6605,7 +6605,7 @@ BESIM_SLUG_TO_HEBREW = {
     "nigeria":                  "ניגריה",
     "reunion":                  "ראוניון",
     "senegal":                  "סנגל",
-    "seychelles":               "איי סישל",
+    "seychelles":               "איי סיישל",
     "south-africa":             "דרום אפריקה",
     "sudan":                    "סודן",
     "tanzania":                 "טנזניה",
