@@ -668,9 +668,67 @@ def compute_executive_metrics(category, usd_rate=3.7, eur_rate=4.0, db_path=None
         conn.close()
 
 
+def filter_already_notified(changes, table_name, key_field='carrier', within_hours=24, db_path=None):
+    """Drop changes that were already recorded in `table_name` within the last N hours.
+
+    Why: if a plan disappears from a carrier's site for several scrapes in a row,
+    detect_changes will report the same `removed_plan` event on every scrape. The
+    user only wants to be notified ONCE per change. This helper reads the change
+    log and filters out anything already seen.
+
+    The key tuple is (key_field, plan_name, change_type) — typically that's
+    (carrier, plan_name, change_type), or for content (service, carrier, change_type).
+
+    Returns the subset of `changes` that has NOT been seen recently.
+    """
+    if not changes:
+        return []
+    cutoff = (datetime.now() - timedelta(hours=within_hours)).isoformat()
+    conn = _connect(db_path)
+    try:
+        # content_changes uses (service, carrier) as its identity rather than
+        # (carrier, plan_name); pick the column accordingly.
+        if table_name == 'content_changes':
+            rows = conn.execute(
+                "SELECT service, carrier, change_type FROM content_changes WHERE changed_at >= ?",
+                (cutoff,)
+            ).fetchall()
+            already = {(r[0], r[1], r[2]) for r in rows}
+            return [c for c in changes
+                    if (c.get('service'), c.get('carrier'), c.get('change_type')) not in already]
+        rows = conn.execute(
+            f"SELECT {key_field}, plan_name, change_type FROM {table_name} WHERE changed_at >= ?",
+            (cutoff,)
+        ).fetchall()
+        already = {(r[0], r[1], r[2]) for r in rows}
+    finally:
+        conn.close()
+    return [c for c in changes
+            if (c.get(key_field), c.get('plan_name'), c.get('change_type')) not in already]
+
+
+def _delete_stale_carrier_rows(conn, table, plans):
+    """Delete rows for carriers that returned plans, when those rows aren't in the new scrape.
+
+    Guard: only acts on carriers that returned ≥1 plan in `plans`. A carrier
+    that returned 0 plans (e.g. blocked by Incapsula) leaves its existing rows
+    untouched — same logic as detect_changes' removal guard.
+    """
+    by_carrier = {}
+    for p in plans:
+        by_carrier.setdefault(p["carrier"], set()).add(p["plan_name"])
+    for carrier, names in by_carrier.items():
+        placeholders = ",".join("?" * len(names))
+        conn.execute(
+            f"DELETE FROM {table} WHERE carrier=? AND plan_name NOT IN ({placeholders})",
+            (carrier, *names)
+        )
+
+
 def save_plans(plans, db_path=None):
     conn = _connect(db_path)
     try:
+        _delete_stale_carrier_rows(conn, "plans", plans)
         now = datetime.now().isoformat()
         for plan in plans:
             conn.execute("""
@@ -816,6 +874,7 @@ def get_global_changes(limit=50, db_path=None):
 def save_abroad_plans(plans, db_path=None):
     conn = _connect(db_path)
     try:
+        _delete_stale_carrier_rows(conn, "abroad_plans", plans)
         now = datetime.now().isoformat()
         for plan in plans:
             conn.execute("""
