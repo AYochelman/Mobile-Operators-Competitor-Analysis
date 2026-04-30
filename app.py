@@ -856,7 +856,7 @@ def api_scrape_global_now():
     """Manual trigger: scrape global eSIM packages, detect changes, save to DB."""
     try:
         import scraper as sc
-        from db import save_global_plans, save_global_changes
+        from db import save_global_plans, save_global_changes, filter_already_notified
         from change_detector import detect_changes
         old_plans = get_global_plans(db_path=_db_path())
         new_plans = sc.scrape_all_global()
@@ -869,6 +869,7 @@ def api_scrape_global_now():
             changes = seed
         else:
             changes = detect_changes(old_plans, new_plans)
+            changes = filter_already_notified(changes, 'global_changes', db_path=_db_path())
             if changes:
                 save_global_changes(changes, db_path=_db_path())
         save_global_plans(new_plans, db_path=_db_path())
@@ -896,7 +897,7 @@ def api_scrape_abroad_now():
     """Manual trigger: scrape abroad packages, detect changes, save to DB."""
     try:
         import scraper as sc
-        from db import save_abroad_plans, save_abroad_changes
+        from db import save_abroad_plans, save_abroad_changes, filter_already_notified
         from change_detector import detect_changes
         old_plans = get_abroad_plans(db_path=_db_path())
         new_plans = sc.scrape_all_abroad()
@@ -910,6 +911,7 @@ def api_scrape_abroad_now():
             changes = seed
         else:
             changes = detect_changes(old_plans, new_plans)
+            changes = filter_already_notified(changes, 'abroad_changes', db_path=_db_path())
             if changes:
                 save_abroad_changes(changes, db_path=_db_path())
         save_abroad_plans(new_plans, db_path=_db_path())
@@ -1048,7 +1050,7 @@ def api_scrape_all_now():
     try:
         import scraper as sc
         from db import save_plans, save_changes, save_abroad_plans, save_abroad_changes, \
-                       save_global_plans, save_global_changes
+                       save_global_plans, save_global_changes, filter_already_notified
         from change_detector import detect_changes
         results = {}
 
@@ -1058,6 +1060,9 @@ def api_scrape_all_now():
         new_domestic = sc.scrape_all()
         ch_domestic  = detect_changes(old_domestic, new_domestic)
         save_plans(new_domestic, db_path=_db_path())
+        # Drop changes already announced in the last 24h so the dashboard
+        # changes log isn't polluted with repeats from consecutive scrapes.
+        ch_domestic = filter_already_notified(ch_domestic, 'changes', db_path=_db_path())
         if ch_domestic:
             save_changes(ch_domestic, db_path=_db_path())
         results["domestic"] = {"plans": len(new_domestic), "changes": len(ch_domestic)}
@@ -1076,6 +1081,7 @@ def api_scrape_all_now():
             ch_abroad = seed
         else:
             ch_abroad = detect_changes(old_abroad, new_abroad)
+            ch_abroad = filter_already_notified(ch_abroad, 'abroad_changes', db_path=_db_path())
             if ch_abroad:
                 save_abroad_changes(ch_abroad, db_path=_db_path())
         save_abroad_plans(new_abroad, db_path=_db_path())
@@ -1095,6 +1101,7 @@ def api_scrape_all_now():
             ch_global = seed
         else:
             ch_global = detect_changes(old_global, new_global)
+            ch_global = filter_already_notified(ch_global, 'global_changes', db_path=_db_path())
             if ch_global:
                 save_global_changes(ch_global, db_path=_db_path())
         save_global_plans(new_global, db_path=_db_path())
@@ -1109,6 +1116,7 @@ def api_scrape_all_now():
         new_content = sc.scrape_all_content()
         ch_content = detect_content_changes(old_content, new_content)
         save_content_plans(new_content, db_path=_db_path())
+        ch_content = filter_already_notified(ch_content, 'content_changes', key_field='service', db_path=_db_path())
         if ch_content:
             save_content_changes(ch_content, db_path=_db_path())
         results["content"] = {"plans": len(new_content), "changes": len(ch_content)}
@@ -1868,12 +1876,13 @@ def api_scrape_content_now():
     """Manual trigger: scrape content services, detect changes, save to DB."""
     try:
         import scraper as sc
-        from db import save_content_plans, save_content_changes
+        from db import save_content_plans, save_content_changes, filter_already_notified
         from change_detector import detect_content_changes
         old_plans = get_content_plans(db_path=_db_path())
         new_plans = sc.scrape_all_content()
         changes = detect_content_changes(old_plans, new_plans)
         save_content_plans(new_plans, db_path=_db_path())
+        changes = filter_already_notified(changes, 'content_changes', key_field='service', db_path=_db_path())
         if changes:
             save_content_changes(changes, db_path=_db_path())
         arc.archive_content_plans(new_plans)
@@ -1889,7 +1898,7 @@ def api_scrape_now():
     """Manual trigger for testing. Debug endpoint."""
     try:
         import scraper as sc
-        from db import save_plans, save_changes
+        from db import save_plans, save_changes, filter_already_notified
         from change_detector import detect_changes
         from notifier import format_message
 
@@ -1897,6 +1906,7 @@ def api_scrape_now():
         old_plans = get_plans(db_path=_db_path())
         changes = detect_changes(old_plans, new_plans)
         save_plans(new_plans, db_path=_db_path())
+        changes = filter_already_notified(changes, 'changes', db_path=_db_path())
         if changes:
             save_changes(changes, db_path=_db_path())
         arc.archive_domestic_plans(new_plans)
@@ -3706,41 +3716,53 @@ if __name__ == "__main__":
             return sent
 
         try:
-            from db import save_plans, save_changes, save_abroad_plans, save_abroad_changes, get_abroad_plans
+            from db import (save_plans, save_changes, save_abroad_plans, save_abroad_changes,
+                            get_abroad_plans, filter_already_notified)
 
             # ── Domestic plans ─────────────────────────────────────────────
             new_plans = scraper.scrape_all()
             old_plans = get_plans()
             changes = detect_changes(old_plans, new_plans)
             save_plans(new_plans)
-            if changes:
-                save_changes(changes)
-                msg = format_message(changes)
+            # Drop changes already announced in the last 24h so users don't
+            # receive repeat notifications (e.g. when the same removal sticks
+            # around across consecutive scrapes).
+            fresh = filter_already_notified(changes, 'changes')
+            if fresh:
+                save_changes(fresh)
+                msg = format_message(fresh)
                 ok_tg = send_notification(msg, config)
                 logger.info(f"Telegram (domestic) sent: {ok_tg}")
                 ok_wa = send_whatsapp(msg, config)
                 logger.info(f"WhatsApp sent: {ok_wa}")
-                n_push = send_push_notifications(changes, config)
+                n_push = send_push_notifications(fresh, config)
                 logger.info(f"Web Push sent: {n_push}")
-                n_slack = _broadcast_workspace_slack(changes, 'חבילות סלולר')
+                n_slack = _broadcast_workspace_slack(fresh, 'חבילות סלולר')
                 logger.info(f"Slack workspaces notified (domestic): {n_slack}")
             else:
-                logger.info("No domestic changes.")
+                if changes:
+                    logger.info(f"Domestic: {len(changes)} change(s) detected but already notified within 24h — skipping.")
+                else:
+                    logger.info("No domestic changes.")
 
             # ── Abroad plans ───────────────────────────────────────────────
             new_abroad = scraper.scrape_all_abroad()
             old_abroad = get_abroad_plans()
             abroad_changes = detect_changes(old_abroad, new_abroad)
             save_abroad_plans(new_abroad)
-            if abroad_changes:
-                save_abroad_changes(abroad_changes)
-                abroad_msg = format_abroad_message(abroad_changes)
+            fresh_abroad = filter_already_notified(abroad_changes, 'abroad_changes')
+            if fresh_abroad:
+                save_abroad_changes(fresh_abroad)
+                abroad_msg = format_abroad_message(fresh_abroad)
                 ok_tg_abroad = send_notification(abroad_msg, config)
                 ok_wa_abroad = send_whatsapp(abroad_msg, config)
-                _broadcast_workspace_slack(abroad_changes, 'חבילות חו"ל')
-                logger.info(f"Telegram (abroad) sent: {ok_tg_abroad}, WhatsApp: {ok_wa_abroad}, changes: {len(abroad_changes)}")
+                _broadcast_workspace_slack(fresh_abroad, 'חבילות חו"ל')
+                logger.info(f"Telegram (abroad) sent: {ok_tg_abroad}, WhatsApp: {ok_wa_abroad}, changes: {len(fresh_abroad)}")
             else:
-                logger.info("No abroad changes.")
+                if abroad_changes:
+                    logger.info(f"Abroad: {len(abroad_changes)} change(s) detected but already notified within 24h — skipping.")
+                else:
+                    logger.info("No abroad changes.")
 
             # ── Global eSIM ────────────────────────────────────────────────
             from db import save_global_plans, save_global_changes
@@ -3755,17 +3777,22 @@ if __name__ == "__main__":
                 global_changes = seed
             else:
                 global_changes = detect_changes(old_global, new_global)
-                if global_changes:
-                    save_global_changes(global_changes)
             save_global_plans(new_global)
-            if global_changes:
-                global_msg = format_global_message(global_changes)
+            fresh_global = filter_already_notified(global_changes, 'global_changes')
+            if fresh_global:
+                if existing_global_ch:
+                    # Seed already saved above; only persist non-seed fresh changes
+                    save_global_changes(fresh_global)
+                global_msg = format_global_message(fresh_global)
                 ok_tg_global = send_notification(global_msg, config)
                 ok_wa_global = send_whatsapp(global_msg, config)
-                _broadcast_workspace_slack(global_changes, 'חבילות גלובל (eSIM)')
-                logger.info(f"Telegram (global) sent: {ok_tg_global}, WhatsApp: {ok_wa_global}, changes: {len(global_changes)}")
+                _broadcast_workspace_slack(fresh_global, 'חבילות גלובל (eSIM)')
+                logger.info(f"Telegram (global) sent: {ok_tg_global}, WhatsApp: {ok_wa_global}, changes: {len(fresh_global)}")
             else:
-                logger.info("No global changes.")
+                if global_changes:
+                    logger.info(f"Global: {len(global_changes)} change(s) detected but already notified within 24h — skipping.")
+                else:
+                    logger.info("No global changes.")
 
             # ── Content services ───────────────────────────────────────────
             from db import save_content_plans, save_content_changes
@@ -3774,14 +3801,18 @@ if __name__ == "__main__":
             new_content = scraper.scrape_all_content()
             content_changes = detect_content_changes(old_content, new_content)
             save_content_plans(new_content)
-            if content_changes:
-                save_content_changes(content_changes)
-                content_msg = format_content_message(content_changes)
+            fresh_content = filter_already_notified(content_changes, 'content_changes', key_field='service')
+            if fresh_content:
+                save_content_changes(fresh_content)
+                content_msg = format_content_message(fresh_content)
                 ok_tg_content = send_notification(content_msg, config)
                 ok_wa_content = send_whatsapp(content_msg, config)
-                logger.info(f"Telegram (content) sent: {ok_tg_content}, WhatsApp: {ok_wa_content}, changes: {len(content_changes)}")
+                logger.info(f"Telegram (content) sent: {ok_tg_content}, WhatsApp: {ok_wa_content}, changes: {len(fresh_content)}")
             else:
-                logger.info("No content changes.")
+                if content_changes:
+                    logger.info(f"Content: {len(content_changes)} change(s) detected but already notified within 24h — skipping.")
+                else:
+                    logger.info("No content changes.")
 
             logger.info(f"Done. {len(new_plans)} domestic, {len(new_abroad)} abroad, "
                         f"{len(new_global)} global, {len(new_content)} content plans.")

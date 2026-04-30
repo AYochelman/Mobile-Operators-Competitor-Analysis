@@ -60,7 +60,7 @@ GET http://localhost:5000/api/scrape-all-now?api_key=<KEY>
 │  ├─ /api/chat (Claude AI, @require_api_key)          │
 │  └─ /api/push/* (Web Push VAPID)                     │
 ├──────────────────────────────────────────────────────┤
-│  APScheduler: 08:00 banners, 08:10 news, 09:00 email, 10:00+16:00 scrape │
+│  APScheduler: 08:00 banners, 08:10 news, 09:00 email, 07:30+17:00 scrape │
 ├──────────────────────────────────────────────────────┤
 │  scraper.py (Playwright sync) → change_detector.py   │
 │  → db.py (SQLite) → notifier.py (Telegram/Email/Push)│
@@ -187,6 +187,10 @@ change_detector.py compares old vs new plan lists by (carrier, plan_name) key:
 - `extras_change` / `details_change` — array/field diffs
 - `_coerce()` normalizes '7000' vs 7000 vs 7000.0
 
+`save_plans` and `save_abroad_plans` call `db._delete_stale_carrier_rows()` before the upsert — for any carrier that returned ≥1 plan, rows whose `plan_name` is no longer in the scrape are deleted. This prevents the "stuck removal" loop where a discontinued plan stays in the DB and triggers the same `removed_plan` event on every scrape. `save_global_plans` deliberately skips this guard because some global scrapers are per-country and partial failures are common — global notification dedup is handled by `filter_already_notified()` instead.
+
+`db.filter_already_notified(changes, table_name, key_field='carrier', within_hours=24)` reads the corresponding `*_changes` table and drops any change whose (key_field, plan_name, change_type) already appeared in the last N hours. Wired into every scrape path (scheduled job + `/api/scrape-*-now` endpoints) so Telegram / WhatsApp / Web Push / Slack only fire on genuinely new events. Use `key_field='service'` for `content_changes`.
+
 ## Security
 
 - Sensitive endpoints protected by `@require_api_key` decorator (auto-generated key in config.json)
@@ -253,7 +257,7 @@ The global `direction: rtl` in `index.css` affects flex containers differently f
 - **08:00** — screenshot all carrier homepages (`scrape_carrier_banners`) + 4 e-store pages (`scrape_carrier_store_banners`), saved as PNG in `data/banners/`
 - **08:10** — scrape Google News RSS for all 8 carriers (`scrape_carrier_news()` → `upsert_news_articles()`), INSERT OR IGNORE by URL
 - **09:00** — send daily Excel email report via SendGrid
-- **10:00 + 16:00** — scrape all (domestic + abroad + global + content), detect changes, notify (Telegram + WhatsApp + Web Push)
+- **07:30 + 17:00** — scrape all (domestic + abroad + global + content), detect changes, notify (Telegram + WhatsApp + Web Push). Times come from `config.json:schedule_times`. Notifications are deduplicated against the last 24h of changes — `db.filter_already_notified()` drops any (carrier, plan_name, change_type) already announced, so a sticky removal isn't reported twice.
 - WhatsApp via Green API (config.json: greenapi_url, greenapi_instance, greenapi_token, whatsapp_phone or whatsapp_group_id)
 - **Windows Task Scheduler**: two tasks at logon:
   - `CellularComparison` → runs `scripts/flask_watchdog.bat` (infinite loop, restarts Flask on crash, 15s delay)
