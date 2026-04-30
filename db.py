@@ -86,6 +86,10 @@ _DEST_NORM = {
     '\u05de\u05d5\u05e0\u05d8\u05e1\u05e8\u05d0\u05d8': '\u05de\u05d5\u05e0\u05e1\u05e8\u05d0\u05d8',                                  # מונטסראט → מונסראט
     '\u05e1\u05e0\u05d8 \u05de\u05e8\u05d8\u05df': '\u05e1\u05df \u05de\u05e8\u05d8\u05df',                                            # סנט מרטן → סן מרטן
     '\u05e1\u05d9\u05e0\u05d8 \u05de\u05d0\u05e8\u05d8\u05df': '\u05e1\u05e0\u05d8 \u05de\u05d0\u05e8\u05d8\u05df',                   # סינט מארטן → סנט מארטן
+    # ── definite-article-doubling dedup (collapse ה+ה / spurious ה prefix on regions) ──
+    'ההפיליפינים': 'הפיליפינים',  # ההפיליפינים → הפיליפינים
+    'הבלקן': 'בלקן',                                                                              # הבלקן → בלקן
+    'הקריביים': 'קריביים',                                    # הקריביים → קריביים
 }
 
 def _norm_extras(extras):
