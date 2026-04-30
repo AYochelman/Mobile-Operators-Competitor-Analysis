@@ -35,12 +35,13 @@ import {
   GOMOWORLD_EUROPE, GOMOWORLD_LATIN_AMERICA, GOMOWORLD_SOUTHEAST_ASIA,
   GOMOWORLD_FRENCH_ANTILLES, GOMOWORLD_NETHERLANDS_ANTILLES, GOMOWORLD_NORTH_AMERICA,
   MAYA_GLOBAL, MAYA_OCEANIA,
+  BESIM_REGION_MAP,
 } from '../data/globalCountries'
 
 // Carriers where one plan covers many countries (zone/global plans)
 const MULTI_COUNTRY_CARRIERS = new Set([
   'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
-  'pelephone_global', 'esimo', 'globalesim', 'gomoworld', 'maya',
+  'pelephone_global', 'esimo', 'globalesim', 'gomoworld', 'maya', 'besim',
 ])
 
 const GLOBALESIM_REGION_MAP = {
@@ -86,6 +87,12 @@ function getPlanCoverage(plan) {
     if (dest === 'גלובלי') return MAYA_GLOBAL
     if (dest === 'אוקיאניה') return MAYA_OCEANIA
     return null
+  }
+  if (carrier === 'besim') {
+    // Per-country plans: extras[0] is a country name (not a region) — return null so the
+    // dashboard's destination-filter falls back to direct-equality matching on extras[0].
+    // Regional/global bundles: extras[0] is a canonical region name → expand via the map.
+    return BESIM_REGION_MAP[dest] || null
   }
   return null
 }
@@ -210,6 +217,7 @@ const GLOBAL_PROVIDERS = [
   { id: 'jetpack', label: 'Jetpack' },
   { id: 'breez', label: 'Breeze' },
   { id: 'bytesim', label: 'ByteSim' },
+  { id: 'besim', label: 'Besim' },
 ]
 
 export default function DashboardPage() {
@@ -550,12 +558,14 @@ export default function DashboardPage() {
       const dest = plan.extras?.[0]
       if (dest) {
         // bytesim: group by product label (plan_name minus last 2 parts) to separate MAX/UK+/Lite
+        // besim: same — multiple bundles share extras[0] (4× אסיה, 2× אירופה, 2× גלובלי).
+        //        Group by plan_name prefix so each bundle gets its own card.
         // airalo: split Discover (data only) vs Discover+ (data+calls+sms) like Airalo's website tabs
         let key
-        if (plan.carrier === 'bytesim') {
+        if (plan.carrier === 'bytesim' || plan.carrier === 'besim') {
           const parts = plan.plan_name?.split(' – ') || []
           const productLabel = parts.slice(0, -2).join(' – ') || dest
-          key = `bytesim|${productLabel}`
+          key = `${plan.carrier}|${productLabel}`
         } else if (plan.carrier === 'airalo') {
           const operator = (plan.plan_name || '').includes('Discover+') ? 'Discover+' : 'Discover'
           key = `airalo|${dest}|${operator}`
@@ -575,16 +585,17 @@ export default function DashboardPage() {
       } else {
         const byGb = new Map()
         for (const p of plans) {
-          // bytesim/maya: keep all (data × days) combinations; other carriers: keep cheapest per GB
-          const keepAll = p.carrier === 'bytesim' || p.carrier === 'maya'
+          // bytesim/maya/besim: keep all (data × days) combinations; other carriers: keep cheapest per GB.
+          // Besim's Global bundles have e.g. 1GB/7d AND 1GB/365d — both need to show.
+          const keepAll = p.carrier === 'bytesim' || p.carrier === 'maya' || p.carrier === 'besim'
           const gbKey = keepAll ? p.plan_name : (p.data_gb ?? 0)
           if (!byGb.has(gbKey) || (!keepAll && p.price < byGb.get(gbKey).price)) byGb.set(gbKey, p)
         }
         const unique = [...byGb.values()].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
-        // bytesim: destination shown as product label extracted from plan_name
+        // bytesim/besim: destination shown as product label extracted from plan_name
         // airalo: destination shows Discover vs Discover+ to mirror Airalo's site tabs
         let destination
-        if (unique[0].carrier === 'bytesim') {
+        if (unique[0].carrier === 'bytesim' || unique[0].carrier === 'besim') {
           const parts = unique[0].plan_name?.split(' – ') || []
           destination = parts.slice(0, -2).join(' – ') || unique[0].extras[0]
         } else if (unique[0].carrier === 'airalo') {

@@ -248,6 +248,154 @@ export const TRAVELSIM_GLOBAL = [
   'קייפ ורדה', 'קירגיזסטן', 'קמרון', 'קניה', 'טימור לסטה',
 ]
 
+// ── Besim ───────────────────────────────────────────────────────────
+// Country names below match canonical Hebrew names used elsewhere in this file
+// (so the destination dropdown dedupes Besim's countries against other carriers).
+// Per-country plans don't need a modal — only regional/global bundles do.
+export const BESIM_AFRICA = [
+  "אלג'יריה",'בוטסואנה','בורקינה פאסו','קמרון','הרפובליקה המרכז אפריקאית',
+  "צ'אד",'קונגו','חוף השנהב','מצרים','גאבון','קניה','ליבריה','מדגסקר',
+  'מלאווי','מאלי','מוזמביק',"ניג'ר",'ניגריה','ראוניון','סנגל','איי סישל',
+  'דרום אפריקה','סודן','טנזניה','תוניסיה','אוגנדה','זמביה',
+];
+
+export const BESIM_EUROPE = [
+  'איי אלאנד','אלבניה','אנדורה','אוסטריה','בלארוס','בלגיה','בוסניה והרצגובינה',
+  'בולגריה','קרואטיה','קפריסין',"צ'כיה",'דנמרק','אסטוניה','פינלנד','צרפת','גרמניה',
+  'גיברלטר','יוון','גרנזי','הונגריה','איסלנד','אירלנד','האי מאן','איטליה',"ג'רזי",
+  'לטביה','ליכטנשטיין','ליטא','לוקסמבורג','מלטה','מולדובה','מונקו','מונטנגרו',
+  'מרוקו','הולנד','מקדוניה הצפונית','נורבגיה','פולין','פורטוגל','רומניה','רוסיה',
+  'סרביה','סלובקיה','סלובניה','ספרד','שבדיה','שוויץ','אוקראינה','בריטניה',
+];
+
+export const BESIM_BALKANS = [
+  'אלבניה','בוסניה והרצגובינה','קרואטיה','מונטנגרו','מקדוניה הצפונית','סרביה','סלובניה',
+];
+
+export const BESIM_ASIA = [
+  'ארמניה',"אזרבייג'ן",'בחריין','בנגלדש','ברוניי','קמבודיה','סין','גאורגיה',
+  'הונג קונג','הודו','אינדונזיה','ישראל','יפן','ירדן','קזחסטן','קירגיזסטן',
+  'לאוס','מקאו','מלזיה','מונגוליה','נפאל','עומן','פקיסטן','הפיליפינים','קטר',
+  'ערב הסעודית','סינגפור','דרום קוריאה','סרי לנקה','תאילנד','טורקיה',
+  'איחוד האמירויות','אוזבקיסטן','וייטנאם',
+];
+
+export const BESIM_ASIA_PACIFIC = ['תאילנד','מלזיה','סינגפור','אינדונזיה','הפיליפינים','וייטנאם','יפן','דרום קוריאה','סין','הונג קונג','מקאו','טייוואן','הודו','אוסטרליה','ניו זילנד'];
+
+export const BESIM_THAILAND_MALAYSIA_SINGAPORE = ['תאילנד','מלזיה','סינגפור'];
+export const BESIM_KOREA_CHINA_JAPAN = ['דרום קוריאה','סין','יפן'];
+export const BESIM_CHINA_HK_MACAO = ['סין','הונג קונג','מקאו'];
+
+export const BESIM_MIDDLE_EAST = [
+  'איחוד האמירויות','בחריין','מצרים','איראן','עיראק','ישראל','ירדן','כוויית',
+  'עומן','פלסטין','קטר','ערב הסעודית','תימן',
+];
+
+export const BESIM_GULF = ['איחוד האמירויות','בחריין','כוויית','עומן','קטר','ערב הסעודית'];
+
+export const BESIM_USA_CANADA = ['ארצות הברית','קנדה'];
+export const BESIM_NORTH_AMERICA = ['קנדה','ארצות הברית','מקסיקו'];
+
+export const BESIM_SOUTH_AMERICA = [
+  'ארגנטינה','בוליביה','ברזיל',"צ'ילה",'קולומביה','אקוודור','גיאנה',
+  'פראגוואי','פרו','סורינאם','אורוגוואי','ונצואלה',
+];
+
+export const BESIM_CARIBBEAN = [
+  'אנגווילה','אנטיגואה וברבודה','ארובה','איי הבהאמה','ברבדוס','איי הבתולה (בריטניה)',
+  'איי קיימן','קוראסאו','דומיניקה','הרפובליקה הדומיניקנית','גרנדה','גוואדלופ','האיטי',
+  "ג'מייקה",'מרטיניק','מונסראט','פוארטו ריקו','סן ברתלמי','סנט קיטס ונוויס','סנט לוסיה',
+  'סן מרטן','סנט וינסנט והגרדינים','טרינידד וטובגו','איי טורקס וקאיקוס',
+];
+
+// Global bundles — Besim has two separate SKUs: "Global (130+ areas)" and
+// "Global (120+ areas)". Without an exposed-per-SKU country list from Besim,
+// we approximate by trimming the union of all per-country offerings:
+//   BESIM_GLOBAL_130 = 130 countries  (drops 6 small/sanctioned territories)
+//   BESIM_GLOBAL_120 = 120 countries  (drops 10 more — typically restricted markets and small islands)
+// These are best-effort approximations — the source-of-truth is besim.co.il.
+
+export const BESIM_GLOBAL_130 = [
+  // Africa (24 — dropped Sudan, Niger, Mali from the 27 per-country offerings)
+  "אלג'יריה",'בוטסואנה','בורקינה פאסו','קמרון','הרפובליקה המרכז אפריקאית',"צ'אד",
+  'קונגו','חוף השנהב','מצרים','גאבון','קניה','ליבריה','מדגסקר','מלאווי',
+  'מוזמביק','ניגריה','ראוניון','סנגל','איי סישל','דרום אפריקה',
+  'טנזניה','תוניסיה','אוגנדה','זמביה',
+  // Americas (19)
+  'ארגנטינה','בליז','בוליביה','ברזיל','קנדה',"צ'ילה",'קולומביה','קוסטה ריקה',
+  'אקוודור','אל סלבדור','גואטמלה','הונדורס','מקסיקו','ניקראגואה','פנמה','פראגוואי',
+  'פרו','ארצות הברית','אורוגוואי',
+  // Asia (34)
+  'ארמניה',"אזרבייג'ן",'בחריין','בנגלדש','ברוניי','קמבודיה','סין','גאורגיה',
+  'הונג קונג','הודו','אינדונזיה','ישראל','יפן','ירדן','קזחסטן','קירגיזסטן','לאוס',
+  'מקאו','מלזיה','מונגוליה','נפאל','עומן','פקיסטן','הפיליפינים','קטר','ערב הסעודית',
+  'סינגפור','דרום קוריאה','סרי לנקה','תאילנד','טורקיה','איחוד האמירויות','אוזבקיסטן','וייטנאם',
+  // Caribbean (4)
+  'הרפובליקה הדומיניקנית','גוואדלופ',"ג'מייקה",'פוארטו ריקו',
+  // Europe (46 — dropped Aland Islands, Belarus, Russia from the 49 per-country)
+  'אלבניה','אנדורה','אוסטריה','בלגיה','בוסניה והרצגובינה','בולגריה',
+  'קרואטיה','קפריסין',"צ'כיה",'דנמרק','אסטוניה','פינלנד','צרפת','גרמניה','גיברלטר','יוון',
+  'גרנזי','הונגריה','איסלנד','אירלנד','האי מאן','איטליה',"ג'רזי",'לטביה','ליכטנשטיין','ליטא',
+  'לוקסמבורג','מלטה','מולדובה','מונקו','מונטנגרו','מרוקו','הולנד','מקדוניה הצפונית','נורבגיה',
+  'פולין','פורטוגל','רומניה','סרביה','סלובקיה','סלובניה','ספרד','שבדיה','שוויץ',
+  'אוקראינה','בריטניה',
+  // Oceania (3)
+  'אוסטרליה','גואם','ניו זילנד',
+]; // 130 countries
+
+export const BESIM_GLOBAL_120 = [
+  // Africa (20 — drops 4 more small West/Central African nations from BESIM_GLOBAL_130)
+  "אלג'יריה",'בוטסואנה','קמרון',"צ'אד",'חוף השנהב','מצרים','גאבון','קניה',
+  'מדגסקר','מלאווי','מוזמביק','ניגריה','ראוניון','סנגל','איי סישל','דרום אפריקה',
+  'טנזניה','תוניסיה','אוגנדה','זמביה',
+  // Americas (17 — drops Belize and Bolivia)
+  'ארגנטינה','ברזיל','קנדה',"צ'ילה",'קולומביה','קוסטה ריקה',
+  'אקוודור','אל סלבדור','גואטמלה','הונדורס','מקסיקו','ניקראגואה','פנמה','פראגוואי',
+  'פרו','ארצות הברית','אורוגוואי',
+  // Asia (32 — drops Brunei + Mongolia)
+  'ארמניה',"אזרבייג'ן",'בחריין','בנגלדש','קמבודיה','סין','גאורגיה',
+  'הונג קונג','הודו','אינדונזיה','ישראל','יפן','ירדן','קזחסטן','קירגיזסטן','לאוס',
+  'מקאו','מלזיה','נפאל','עומן','פקיסטן','הפיליפינים','קטר','ערב הסעודית',
+  'סינגפור','דרום קוריאה','סרי לנקה','תאילנד','טורקיה','איחוד האמירויות','אוזבקיסטן','וייטנאם',
+  // Caribbean (4)
+  'הרפובליקה הדומיניקנית','גוואדלופ',"ג'מייקה",'פוארטו ריקו',
+  // Europe (44 — drops Andorra and Liechtenstein vs the 130 list)
+  'אלבניה','אוסטריה','בלגיה','בוסניה והרצגובינה','בולגריה',
+  'קרואטיה','קפריסין',"צ'כיה",'דנמרק','אסטוניה','פינלנד','צרפת','גרמניה','גיברלטר','יוון',
+  'גרנזי','הונגריה','איסלנד','אירלנד','האי מאן','איטליה',"ג'רזי",'לטביה','ליטא',
+  'לוקסמבורג','מלטה','מולדובה','מונקו','מונטנגרו','מרוקו','הולנד','מקדוניה הצפונית','נורבגיה',
+  'פולין','פורטוגל','רומניה','סרביה','סלובקיה','סלובניה','ספרד','שבדיה','שוויץ',
+  'אוקראינה','בריטניה',
+  // Oceania (3)
+  'אוסטרליה','גואם','ניו זילנד',
+]; // 120 countries
+
+// Backwards-compat alias — defaults to the larger list
+export const BESIM_GLOBAL = BESIM_GLOBAL_130;
+
+/**
+ * Map (region tag in extras[0]) → country list. Used by both DashboardPage
+ * (for filtering by destination) and getCountriesForPlan (for the modal).
+ *
+ * Note: Besim has 4 different "Asia" bundles (7/12/20/+20 areas) that share
+ * extras[0]="אסיה". They all map to the same broad BESIM_ASIA list here;
+ * getCountriesForPlan disambiguates the modal *title* by the size in plan_name.
+ * Same for "אירופה" (30+ vs 40+) and "גלובלי" (130+ vs 120+).
+ */
+export const BESIM_REGION_MAP = {
+  'אפריקה':                BESIM_AFRICA,
+  'אירופה':                BESIM_EUROPE,
+  'בלקן':                  BESIM_BALKANS,
+  'אסיה':                  BESIM_ASIA,
+  'דרום מזרח אסיה':        BESIM_THAILAND_MALAYSIA_SINGAPORE,
+  'סין + הונג קונג + מקאו': BESIM_CHINA_HK_MACAO,
+  'המזרח התיכון':           BESIM_MIDDLE_EAST,
+  'צפון אמריקה':            BESIM_NORTH_AMERICA,
+  'דרום אמריקה':            BESIM_SOUTH_AMERICA,
+  'קריביים':               BESIM_CARIBBEAN,
+  'גלובלי':                BESIM_GLOBAL,
+};
+
 /**
  * Get country list for a global plan.
  * Returns { title, countries } or null if no data available.
@@ -552,6 +700,24 @@ export function getCountriesForPlan(plan) {
       return { title: 'eSIM70 — ' + extras[0], countries: ESIM70_REGION_MAP[extras[0]] };
     }
     return null; // single country plan
+  }
+
+  // ── Besim ──
+  // Per-country plans use a country name in extras[0] (e.g. "טורקיה") and need no modal.
+  // Regional/global bundles use a canonical region name (e.g. "אסיה", "אירופה", "גלובלי")
+  // — return the matching country list with a title that carries the bundle's stated size.
+  // The two Global SKUs (130+ vs 120+) get DIFFERENT lists with their stated counts.
+  if (carrier === 'besim') {
+    const region = extras[0];
+    if (!region || !BESIM_REGION_MAP[region]) return null;
+    const labelMatch = (name || '').split(' – ')[0];  // e.g. "גלובלי (130+ מדינות)"
+    const titleSuffix = labelMatch && labelMatch !== region ? labelMatch : region;
+    // Specific lists per bundle SKU where the stated size differs from BESIM_REGION_MAP's default
+    let countries = BESIM_REGION_MAP[region];
+    if (region === 'גלובלי') {
+      countries = labelMatch.includes('120+') ? BESIM_GLOBAL_120 : BESIM_GLOBAL_130;
+    }
+    return { title: 'Besim — ' + titleSuffix, countries };
   }
 
   return null;

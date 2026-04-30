@@ -1223,6 +1223,7 @@ _HISTORY_CARRIER_NAMES = {
     'jetpack': 'Jetpack',
     'breez': 'Breeze',
     'bytesim': 'ByteSim',
+    'besim': 'Besim',
 }
 _HISTORY_TYPE_NAMES = {
     'domestic': '\u05de\u05e7\u05d5\u05de\u05d9',
@@ -2234,7 +2235,7 @@ def api_chat():
             'voye': 'VOYE', 'orbit': 'Orbit', 'travelsim': 'Travel Sim',
             'gomoworld': 'GoMoWorld', 'tasim': 'Tasim', 'maya': 'Maya Mobile',
             'bcengi': 'Bcengi', 'esim70': 'eSIM70', 'jetpack': 'Jetpack', 'breez': 'Breeze',
-            'bytesim': 'ByteSim',
+            'bytesim': 'ByteSim', 'besim': 'Besim',
         }
         def _cn(carrier):
             return _CARRIER_NAMES.get(carrier, carrier)

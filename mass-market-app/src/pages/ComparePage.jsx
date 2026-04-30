@@ -67,6 +67,7 @@ const CARRIERS_BY_TAB = {
     { id: 'jetpack', label: 'Jetpack', color: '#0ea5e9' },
     { id: 'breez', label: 'Breeze', color: '#06b6d4' },
     { id: 'bytesim', label: 'ByteSim', color: '#00b490' },
+    { id: 'besim', label: 'Besim', color: '#0ea5a4' },
   ],
 }
 
