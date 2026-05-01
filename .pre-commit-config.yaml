@@ -1,0 +1,68 @@
+# Pre-commit hooks — run automatically before each `git commit`.
+#
+# Setup (one-time, per machine):
+#   pip install pre-commit
+#   pre-commit install
+#
+# After that, every commit will run the checks below. To bypass once
+# (for emergency fixes only): git commit --no-verify
+#
+# To run manually on the whole repo:
+#   pre-commit run --all-files
+
+repos:
+  # Generic file-level checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(debug_archive/|mass-market-app/dist/)
+      - id: end-of-file-fixer
+        exclude: ^(debug_archive/|mass-market-app/dist/)
+      - id: check-yaml
+        # Validates ci.yml, docker-compose.yml etc. — catches typos that would
+        # only surface when GitHub Actions tries to parse the file.
+      - id: check-json
+        exclude: ^(mass-market-app/package-lock\.json|debug_archive/)
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=2000']
+        # Catches accidental commits of plans.db or banner PNGs > 2MB
+      - id: detect-private-key
+        # Catches accidental SSH/PGP private keys
+
+  # Python — ruff for linting + import-sort. Fast and modern.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+        exclude: ^(debug_archive/|tests/)
+        # Tests get more leeway (long lines for fixtures, etc.).
+
+  # Secret scanning — catches accidentally committed API keys, JWTs, tokens
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: ^(mass-market-app/package-lock\.json|debug_archive/|\.secrets\.baseline)$
+
+  # Custom local hooks: refuse commits that re-add the kinds of files we
+  # just cleaned up. Mirrors the security check in .github/workflows/ci.yml
+  # so issues surface at commit time, not in CI.
+  # The shell scripts live in scripts/precommit/ — keeping the inline form
+  # out of YAML avoids escaping pain.
+  - repo: local
+    hooks:
+      - id: refuse-secret-files
+        name: Refuse commits of secret-shaped files
+        entry: scripts/precommit/refuse_secret_files.sh
+        language: script
+        pass_filenames: false
+
+      - id: warn-vite-dev-auth-prod
+        name: Refuse VITE_DEV_AUTH=true in .env.production
+        entry: scripts/precommit/check_vite_dev_auth.sh
+        language: script
+        pass_filenames: false

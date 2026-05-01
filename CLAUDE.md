@@ -298,8 +298,19 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 | vite_watchdog.bat | Keeps Vite alive — loops `npm run dev` via cmd (not PowerShell — execution policy blocks npm.ps1) |
 | backup_to_drive.ps1 | Daily backup of config.json + plans.db + banner PNGs to Google Drive. Auto-restarts GoogleDriveFS if not mounted. |
 | backup_health_check.ps1 | Monthly integrity check: file presence, SQLite PRAGMA integrity_check, row counts per table, Task Scheduler state. Sends email via SendGrid. |
+| backup_restore_test.ps1 | **Quarterly DR drill** — extracts latest backup, runs PRAGMA integrity_check, verifies all 8 carriers + config.json keys, alerts on failure. Run via Task Scheduler "First Sunday every 3 months at 04:00". |
+| keep_supabase_alive.bat | Daily ping to Supabase to prevent Free-tier auto-suspension (7-day rule). Schedule: daily 03:00 via Task Scheduler. |
 | drive_monitor.ps1 | Runs 2×/day, monitors Drive mount health, tracks consecutive failures to avoid alert spam. |
 | alert.py | Multi-channel alert sender (SendGrid + Telegram) used by the PS1 scripts. |
+
+## Operations & DR
+
+- **[docs/RUNBOOK.md](docs/RUNBOOK.md)** — operator runbook for 13 common failure scenarios (Flask down, ngrok URL change, Supabase suspended, scraper failing, SQLite locked, disaster recovery, secret rotation, etc.)
+- **[Dockerfile](Dockerfile)** + **[docker-compose.yml](docker-compose.yml)** — containerized DR path. RTO drops from 4-12h to ~10min. Mount `data/`, `config.json:ro`, `logs/` from host.
+- **[.github/workflows/ci.yml](.github/workflows/ci.yml)** — backend pytest + frontend build + secret scan on every push/PR. Integration tests run weekly (Mondays 06:00 UTC).
+- **[.pre-commit-config.yaml](.pre-commit-config.yaml)** — local pre-commit hooks (ruff, detect-secrets, yaml/json lint, refuse-secret-files). Setup: `pip install pre-commit && pre-commit install`.
+- **`/healthz`** — public liveness probe (no auth, no DB). Use for Docker HEALTHCHECK / k8s probes / external uptime monitors. Distinct from `/api/health` (super-admin only) which exposes db_size/last_scrape.
+- **`SENTRY_DSN` env var** (optional) — when set, app.py initializes Sentry SDK with FlaskIntegration + LoggingIntegration. `send_default_pii=False` and `_SecretRedactingFilter` keep tokens out of error reports.
 
 ## Archive System
 

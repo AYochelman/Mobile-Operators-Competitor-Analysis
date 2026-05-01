@@ -69,6 +69,42 @@ class _SecretRedactingFilter(logging.Filter):
 for _h in logging.getLogger().handlers:
     _h.addFilter(_SecretRedactingFilter())
 
+
+# ── Sentry (optional, enabled when SENTRY_DSN env var is set) ───────────────
+# Why optional: most operators won't have Sentry. Only initialize if DSN
+# is set. No-op overhead when not used.
+# Setup: get free DSN at https://sentry.io → set env SENTRY_DSN before
+# starting Flask. Errors will appear in your Sentry dashboard with full
+# stack traces, request context, breadcrumbs.
+_sentry_dsn = os.environ.get("SENTRY_DSN", "").strip()
+if _sentry_dsn:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.flask import FlaskIntegration
+        from sentry_sdk.integrations.logging import LoggingIntegration
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            integrations=[
+                FlaskIntegration(),
+                # Capture INFO+ logs as breadcrumbs, ERROR+ as events.
+                LoggingIntegration(level=logging.INFO, event_level=logging.ERROR),
+            ],
+            # 5% transaction sampling — keep paid-tier costs predictable
+            traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.05")),
+            # PII filter: belt-and-braces against tokens leaking into Sentry.
+            # The _SecretRedactingFilter on the logging handler runs first,
+            # but Sentry sees raw exceptions too.
+            send_default_pii=False,
+            release=os.environ.get("SENTRY_RELEASE") or os.environ.get("GIT_SHA") or None,
+            environment=os.environ.get("SENTRY_ENV", "production"),
+        )
+        logger.info(f"Sentry initialized (env={os.environ.get('SENTRY_ENV', 'production')})")
+    except ImportError:
+        logger.warning("SENTRY_DSN set but sentry-sdk not installed. Run: pip install sentry-sdk[flask]")
+    except Exception as _e:
+        # Don't let a Sentry config error block startup.
+        logger.warning(f"Sentry init failed: {_e}")
+
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
 
 app = Flask(__name__)

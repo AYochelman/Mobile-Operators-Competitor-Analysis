@@ -8,3 +8,10 @@ pytest-timeout==2.4.0
 ruff>=0.6.0
 # Optional but useful for measuring test coverage during refactors
 pytest-cov>=5.0.0
+# Pre-commit hooks (install via `pre-commit install` after first pip install)
+pre-commit>=4.0.0
+detect-secrets>=1.5.0
+# Sentry SDK — only initialized if SENTRY_DSN env var is set (see app.py).
+# Listed here as dev-extra so production installs that don't need error
+# tracking can omit it. To enable in prod: add to requirements.txt too.
+sentry-sdk[flask]>=2.18.0
