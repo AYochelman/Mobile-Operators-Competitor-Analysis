@@ -35,12 +35,13 @@ import {
   GOMOWORLD_EUROPE, GOMOWORLD_LATIN_AMERICA, GOMOWORLD_SOUTHEAST_ASIA,
   GOMOWORLD_FRENCH_ANTILLES, GOMOWORLD_NETHERLANDS_ANTILLES, GOMOWORLD_NORTH_AMERICA,
   MAYA_GLOBAL, MAYA_OCEANIA,
+  BESIM_REGION_MAP,
 } from '../data/globalCountries'
 
 // Carriers where one plan covers many countries (zone/global plans)
 const MULTI_COUNTRY_CARRIERS = new Set([
   'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
-  'pelephone_global', 'esimo', 'globalesim', 'gomoworld', 'maya',
+  'pelephone_global', 'esimo', 'globalesim', 'gomoworld', 'maya', 'besim',
 ])
 
 const GLOBALESIM_REGION_MAP = {
@@ -86,6 +87,12 @@ function getPlanCoverage(plan) {
     if (dest === 'גלובלי') return MAYA_GLOBAL
     if (dest === 'אוקיאניה') return MAYA_OCEANIA
     return null
+  }
+  if (carrier === 'besim') {
+    // Per-country plans: extras[0] is a country name (not a region) — return null so the
+    // dashboard's destination-filter falls back to direct-equality matching on extras[0].
+    // Regional/global bundles: extras[0] is a canonical region name → expand via the map.
+    return BESIM_REGION_MAP[dest] || null
   }
   return null
 }
@@ -171,11 +178,27 @@ const KNOWN_REGIONS = new Set([
   'אירופה — גלישה בלבד','אירופה — גולשים ומדברים',
   '167+ מדינות','156+ מדינות',
   'ספארי אפריקה','האיחוד האירופי ובריטניה',
-  'הקריביים','כלל העולם',
+  'כלל העולם',
   // Breeze regions
-  'אירופה+','אמריקה המרכזית','הבלקן','חבר המדינות',
+  'אירופה+','אמריקה המרכזית','חבר המדינות',
   'אירופה וארה"ב','פורטוגל וספרד','המזרח התיכון לייט','אירופה לייט',
 ])
+
+// Region-label consolidation rules:
+// 1. Any "<N>+? מדינות" tag with N > 100 → unified "גלובלי" (global multi-country bundle).
+// 2. Any tag whose name contains the word "אירופה" (e.g. "אירופה+", "אירופה לייט",
+//    "אירופה — גלישה בלבד", "מזרח אירופה") → unified "אירופה" so the regions
+//    dropdown shows one Europe entry instead of six near-duplicates.
+const MULTI_COUNTRY_REGION_RE = /^(\d+)\+?\s*מדינות$/
+function isLargeMultiCountryRegion(region) {
+  const m = region && String(region).match(MULTI_COUNTRY_REGION_RE)
+  return !!m && parseInt(m[1], 10) > 100
+}
+function normalizeRegionLabel(region) {
+  if (isLargeMultiCountryRegion(region)) return 'גלובלי'
+  if (region && String(region).includes('אירופה')) return 'אירופה'
+  return region
+}
 
 const CARRIERS = [
   { id: 'partner', label: 'פרטנר' },
@@ -210,6 +233,7 @@ const GLOBAL_PROVIDERS = [
   { id: 'jetpack', label: 'Jetpack' },
   { id: 'breez', label: 'Breeze' },
   { id: 'bytesim', label: 'ByteSim' },
+  { id: 'besim', label: 'Besim' },
 ]
 
 export default function DashboardPage() {
@@ -480,7 +504,7 @@ export default function DashboardPage() {
         const ids = f.globalProvider === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [f.globalProvider]
         result = result.filter(p => ids.includes(p.carrier))
       }
-      if (f.region !== 'all') result = result.filter(p => p.extras && p.extras[0] === f.region)
+      if (f.region !== 'all') result = result.filter(p => p.extras && normalizeRegionLabel(p.extras[0]) === f.region)
       else if (f.destination !== 'all') result = result.filter(p => {
         if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
           const coverage = getPlanCoverage(p)
@@ -550,12 +574,14 @@ export default function DashboardPage() {
       const dest = plan.extras?.[0]
       if (dest) {
         // bytesim: group by product label (plan_name minus last 2 parts) to separate MAX/UK+/Lite
+        // besim: same — multiple bundles share extras[0] (4× אסיה, 2× אירופה, 2× גלובלי).
+        //        Group by plan_name prefix so each bundle gets its own card.
         // airalo: split Discover (data only) vs Discover+ (data+calls+sms) like Airalo's website tabs
         let key
-        if (plan.carrier === 'bytesim') {
+        if (plan.carrier === 'bytesim' || plan.carrier === 'besim') {
           const parts = plan.plan_name?.split(' – ') || []
           const productLabel = parts.slice(0, -2).join(' – ') || dest
-          key = `bytesim|${productLabel}`
+          key = `${plan.carrier}|${productLabel}`
         } else if (plan.carrier === 'airalo') {
           const operator = (plan.plan_name || '').includes('Discover+') ? 'Discover+' : 'Discover'
           key = `airalo|${dest}|${operator}`
@@ -575,16 +601,17 @@ export default function DashboardPage() {
       } else {
         const byGb = new Map()
         for (const p of plans) {
-          // bytesim/maya: keep all (data × days) combinations; other carriers: keep cheapest per GB
-          const keepAll = p.carrier === 'bytesim' || p.carrier === 'maya'
+          // bytesim/maya/besim: keep all (data × days) combinations; other carriers: keep cheapest per GB.
+          // Besim's Global bundles have e.g. 1GB/7d AND 1GB/365d — both need to show.
+          const keepAll = p.carrier === 'bytesim' || p.carrier === 'maya' || p.carrier === 'besim'
           const gbKey = keepAll ? p.plan_name : (p.data_gb ?? 0)
           if (!byGb.has(gbKey) || (!keepAll && p.price < byGb.get(gbKey).price)) byGb.set(gbKey, p)
         }
         const unique = [...byGb.values()].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
-        // bytesim: destination shown as product label extracted from plan_name
+        // bytesim/besim: destination shown as product label extracted from plan_name
         // airalo: destination shows Discover vs Discover+ to mirror Airalo's site tabs
         let destination
-        if (unique[0].carrier === 'bytesim') {
+        if (unique[0].carrier === 'bytesim' || unique[0].carrier === 'besim') {
           const parts = unique[0].plan_name?.split(' – ') || []
           destination = parts.slice(0, -2).join(' – ') || unique[0].extras[0]
         } else if (unique[0].carrier === 'airalo') {
@@ -608,7 +635,11 @@ export default function DashboardPage() {
       const ids = filters.globalProvider === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [filters.globalProvider]
       src = src.filter(p => ids.includes(p.carrier))
     }
-    return [...new Set(src.filter(p => p.extras && p.extras[0] && KNOWN_REGIONS.has(p.extras[0])).map(p => p.extras[0]))].sort((a, b) => a.localeCompare(b, 'he'))
+    return [...new Set(
+      src
+        .filter(p => p.extras && p.extras[0] && (KNOWN_REGIONS.has(p.extras[0]) || isLargeMultiCountryRegion(p.extras[0])))
+        .map(p => normalizeRegionLabel(p.extras[0]))
+    )].sort((a, b) => a.localeCompare(b, 'he'))
   }, [plans.global, tab, filters.globalProvider])
 
   // Destinations for global tab

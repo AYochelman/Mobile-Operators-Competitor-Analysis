@@ -67,6 +67,7 @@ const CARRIERS_BY_TAB = {
     { id: 'jetpack', label: 'Jetpack', color: '#0ea5e9' },
     { id: 'breez', label: 'Breeze', color: '#06b6d4' },
     { id: 'bytesim', label: 'ByteSim', color: '#00b490' },
+    { id: 'besim', label: 'Besim', color: '#0ea5a4' },
   ],
 }
 
@@ -83,10 +84,26 @@ const KNOWN_REGIONS = new Set([
   '167+ מדינות','156+ מדינות',
   'ספארי אפריקה','האיחוד האירופי ובריטניה',
   'איי התעלה','האנטילים הצרפתיים','אנטילים הולנדיים',
-  'הקריביים','כלל העולם',
-  'אירופה+','חבר המדינות','הבלקן','אמריקה המרכזית','אירופה וארה"ב','פורטוגל וספרד',
+  'כלל העולם',
+  'אירופה+','חבר המדינות','אמריקה המרכזית','אירופה וארה"ב','פורטוגל וספרד',
   'המזרח התיכון לייט','אירופה לייט','גלובלי',
 ])
+
+// Region-label consolidation rules:
+// 1. Any "<N>+? מדינות" tag with N > 100 → unified "גלובלי" (global multi-country bundle).
+// 2. Any tag whose name contains the word "אירופה" (e.g. "אירופה+", "אירופה לייט",
+//    "אירופה — גלישה בלבד", "מזרח אירופה") → unified "אירופה" so the regions
+//    dropdown shows one Europe entry instead of six near-duplicates.
+const MULTI_COUNTRY_REGION_RE = /^(\d+)\+?\s*מדינות$/
+function isLargeMultiCountryRegion(region) {
+  const m = region && String(region).match(MULTI_COUNTRY_REGION_RE)
+  return !!m && parseInt(m[1], 10) > 100
+}
+function normalizeRegionLabel(region) {
+  if (isLargeMultiCountryRegion(region)) return 'גלובלי'
+  if (region && String(region).includes('אירופה')) return 'אירופה'
+  return region
+}
 
 export default function ComparePage() {
   const [tab, setTab] = useState('domestic')
@@ -200,7 +217,11 @@ export default function ComparePage() {
       }
     })
 
-    const regions = [...new Set(plans.filter(p => p.extras && p.extras[0] && KNOWN_REGIONS.has(p.extras[0])).map(p => p.extras[0]))].sort((a, b) => a.localeCompare(b, 'he'))
+    const regions = [...new Set(
+      plans
+        .filter(p => p.extras && p.extras[0] && (KNOWN_REGIONS.has(p.extras[0]) || isLargeMultiCountryRegion(p.extras[0])))
+        .map(p => normalizeRegionLabel(p.extras[0]))
+    )].sort((a, b) => a.localeCompare(b, 'he'))
     const destinations = Object.keys(map).sort((a, b) => a.localeCompare(b, 'he'))
 
     return { availableRegions: regions, availableDestinations: destinations, countryCarrierMap: map }
@@ -220,7 +241,7 @@ export default function ComparePage() {
     }
 
     if (regionFilter !== 'all') {
-      result = result.filter(p => p.extras && p.extras[0] === regionFilter)
+      result = result.filter(p => p.extras && normalizeRegionLabel(p.extras[0]) === regionFilter)
     } else if (destinationFilter !== 'all') {
       const carriersForCountry = countryCarrierMap[destinationFilter] || new Set()
       result = result.filter(p => {
@@ -358,7 +379,7 @@ export default function ComparePage() {
                         setRegionFilter(val)
                         if (val !== 'all') {
                           setDestinationFilter('all')
-                          const regionCarriers = [...new Set(plans.filter(p => p.extras && p.extras[0] === val).map(p => p.carrier))]
+                          const regionCarriers = [...new Set(plans.filter(p => p.extras && normalizeRegionLabel(p.extras[0]) === val).map(p => p.carrier))]
                           setSelectedCarriers(regionCarriers)
                         }
                       }}
