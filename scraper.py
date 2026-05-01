@@ -5893,7 +5893,7 @@ ESIM70_REGION_BASE_TO_HEBREW = {
     "North America": "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
     "Asia Pacific": "\u05d0\u05e1\u05d9\u05d4 \u05e4\u05e1\u05d9\u05e4\u05d9\u05e7",
     "Asia": "\u05d0\u05e1\u05d9\u05d4",
-    "Global Package": "\u05d7\u05d1\u05d9\u05dc\u05d4 \u05d2\u05dc\u05d5\u05d1\u05dc\u05d9\u05ea",
+    "Global Package": "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9",
 }
 
 

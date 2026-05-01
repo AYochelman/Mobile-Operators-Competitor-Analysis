@@ -92,6 +92,10 @@ _DEST_NORM = {
     'הקריביים': 'קריביים',                                    # הקריביים → קריביים
     # ASCII-only-safe: 'aii sishl' -> 'aii siishl' (Seychelles)
     '\u05d0\u05d9\u05d9 \u05e1\u05d9\u05e9\u05dc': '\u05d0\u05d9\u05d9 \u05e1\u05d9\u05d9\u05e9\u05dc',
+    # Kiribati / El Salvador / eSIM70 'Global Package' label
+    '\u05e7\u05d9\u05e8\u05d9\u05d1\u05d8\u05d9': '\u05e7\u05d9\u05e8\u05d9\u05d1\u05d0\u05d8\u05d9',
+    '\u05d0\u05dc \u05e1\u05dc\u05d5\u05d5\u05d3\u05d5\u05e8': '\u05d0\u05dc \u05e1\u05dc\u05d1\u05d3\u05d5\u05e8',
+    '\u05d7\u05d1\u05d9\u05dc\u05d4 \u05d2\u05dc\u05d5\u05d1\u05dc\u05d9\u05ea': '\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9',
 }
 
 def _norm_extras(extras):
