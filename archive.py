@@ -47,7 +47,18 @@ def save_plan_snapshot(carrier: str, plan_type: str, plans: list):
     if db.has_archive_snapshot_today(carrier, plan_type, today):
         return  # already saved today
 
-    plans_json = json.dumps(plans, ensure_ascii=False, sort_keys=True)
+    # Apply destination-name normalization to extras[0] so archive snapshots
+    # match the canonical names shown in the dashboard (db.save_*_plans does
+    # this on write — archive must mirror, otherwise the History tab shows
+    # "שוודיה" while the live tab shows "שבדיה").
+    normalized = []
+    for p in plans:
+        np = dict(p)
+        if isinstance(np.get("extras"), list):
+            np["extras"] = db._norm_extras(np["extras"])
+        normalized.append(np)
+
+    plans_json = json.dumps(normalized, ensure_ascii=False, sort_keys=True)
     new_hash = _sha256(plans_json)
     db.insert_archive_snapshot(carrier, plan_type, today, plans_json, new_hash)
 

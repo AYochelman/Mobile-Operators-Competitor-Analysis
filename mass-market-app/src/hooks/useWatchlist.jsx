@@ -11,14 +11,20 @@ export function WatchlistProvider({ children }) {
   const [items, setItems] = useState([])
   const [loaded, setLoaded] = useState(false)
   const [changesCount, setChangesCount] = useState(0)
+  const [error, setError] = useState(null)
 
   const load = useCallback(async () => {
-    if (!user) { setItems([]); setLoaded(true); return }
+    if (!user) { setItems([]); setLoaded(true); setError(null); return }
     try {
       const data = await api.getWatchlist()
       setItems(data || [])
-    } catch {
+      setError(null)
+    } catch (err) {
+      // Track the error so the UI can surface it instead of silently rendering
+      // an empty list. Empty list is also an OK fallback; we just don't pretend
+      // success.
       setItems([])
+      setError(err?.message || 'failed to load watchlist')
     } finally {
       setLoaded(true)
     }
@@ -62,7 +68,7 @@ export function WatchlistProvider({ children }) {
   }
 
   return (
-    <WatchlistContext.Provider value={{ items, loaded, isWatched, toggle, reload: load, changesCount }}>
+    <WatchlistContext.Provider value={{ items, loaded, isWatched, toggle, reload: load, changesCount, error }}>
       {children}
     </WatchlistContext.Provider>
   )

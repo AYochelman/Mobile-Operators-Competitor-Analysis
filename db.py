@@ -103,7 +103,17 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "plan
 def _connect(db_path=None):
     path = db_path or DB_PATH
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    return sqlite3.connect(path)
+    conn = sqlite3.connect(path, timeout=30.0)
+    # WAL: readers don't block writers, single-writer concurrency for the
+    # APScheduler job + API requests pattern. busy_timeout: wait up to 5s
+    # before raising SQLITE_BUSY rather than failing immediately.
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
+        conn.execute("PRAGMA synchronous=NORMAL")
+    except sqlite3.Error:
+        pass
+    return conn
 
 
 def init_db(db_path=None):
@@ -371,6 +381,64 @@ def init_db(db_path=None):
             conn.commit()
         except Exception:
             pass  # column already exists
+
+        # Indexes on hot query paths. CREATE INDEX IF NOT EXISTS is idempotent
+        # so this is safe to run on every startup. Targets:
+        #   - filter_already_notified — hits *_changes by changed_at + (key, plan_name, change_type)
+        #   - get_history_changes / get_market_movers — by changed_at
+        #   - audit_log retention — by created_at
+        for ddl in (
+            "CREATE INDEX IF NOT EXISTS idx_changes_at ON changes(changed_at)",
+            "CREATE INDEX IF NOT EXISTS idx_changes_dedup ON changes(carrier, plan_name, change_type)",
+            "CREATE INDEX IF NOT EXISTS idx_abroad_changes_at ON abroad_changes(changed_at)",
+            "CREATE INDEX IF NOT EXISTS idx_abroad_changes_dedup ON abroad_changes(carrier, plan_name, change_type)",
+            "CREATE INDEX IF NOT EXISTS idx_global_changes_at ON global_changes(changed_at)",
+            "CREATE INDEX IF NOT EXISTS idx_global_changes_dedup ON global_changes(carrier, plan_name, change_type)",
+            "CREATE INDEX IF NOT EXISTS idx_content_changes_at ON content_changes(changed_at)",
+            "CREATE INDEX IF NOT EXISTS idx_content_changes_dedup ON content_changes(service, carrier, change_type)",
+            "CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at)",
+            "CREATE INDEX IF NOT EXISTS idx_news_articles_published_at ON news_articles(published_at)",
+        ):
+            try:
+                conn.execute(ddl)
+            except Exception:
+                pass
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def prune_audit_log(days=180, db_path=None):
+    """Delete audit_log rows older than `days`. Call periodically (daily) to
+    cap unbounded growth — the table accumulates rows on every workspace CRUD,
+    refresh trigger, digest send, etc.
+    """
+    conn = _connect(db_path)
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        cur = conn.execute("DELETE FROM audit_log WHERE created_at < ?", (cutoff,))
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
+def prune_changes(days=365, db_path=None):
+    """Delete *_changes rows older than `days`. Mirror retention to keep the
+    DB lean — by default keeps 1 year of historical changes for the History tab.
+    """
+    conn = _connect(db_path)
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        total = 0
+        for table in ("changes", "abroad_changes", "global_changes", "content_changes"):
+            try:
+                cur = conn.execute(f"DELETE FROM {table} WHERE changed_at < ?", (cutoff,))
+                total += cur.rowcount
+            except Exception:
+                pass
+        conn.commit()
+        return total
     finally:
         conn.close()
 
@@ -700,7 +768,18 @@ def filter_already_notified(changes, table_name, key_field='carrier', within_hou
     """
     if not changes:
         return []
-    cutoff = (datetime.now() - timedelta(hours=within_hours)).isoformat()
+    # Whitelist table_name and key_field to defend against future callers
+    # passing user input. Must stay aligned with the *_changes table schemas.
+    _ALLOWED_TABLES = {'changes', 'abroad_changes', 'global_changes', 'content_changes'}
+    _ALLOWED_KEYS = {'carrier', 'service'}
+    if table_name not in _ALLOWED_TABLES:
+        raise ValueError(f"filter_already_notified: refusing unknown table {table_name!r}")
+    if key_field not in _ALLOWED_KEYS:
+        raise ValueError(f"filter_already_notified: refusing unknown key {key_field!r}")
+    # UTC consistent with save_*_changes(). Mixing local and UTC timestamps
+    # produced a 2-3h skew under Israel TZ, dropping legitimate-but-recent
+    # changes from the dedup window.
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=within_hours)).isoformat()
     conn = _connect(db_path)
     try:
         # content_changes uses (service, carrier) as its identity rather than
@@ -730,11 +809,29 @@ def _delete_stale_carrier_rows(conn, table, plans):
     Guard: only acts on carriers that returned ≥1 plan in `plans`. A carrier
     that returned 0 plans (e.g. blocked by Incapsula) leaves its existing rows
     untouched — same logic as detect_changes' removal guard.
+
+    Stronger guard: if the new scrape returned <50% of the rows currently in
+    DB for that carrier, skip deletion entirely. Catches partial-failure cases
+    (e.g. Pelephone's selector breaks and returns 4/12 plans) that would
+    otherwise produce 8 spurious removed_plan notifications.
     """
+    # Whitelist tables to defend against future caller passing user-controlled
+    # value into the f-string SQL.
+    _ALLOWED = {"plans", "abroad_plans", "global_plans", "content_plans", "reseller_plans"}
+    if table not in _ALLOWED:
+        raise ValueError(f"_delete_stale_carrier_rows: refusing unknown table {table!r}")
     by_carrier = {}
     for p in plans:
         by_carrier.setdefault(p["carrier"], set()).add(p["plan_name"])
     for carrier, names in by_carrier.items():
+        # Skip deletion if scrape returned far less than what's in DB
+        # (partial-failure protection)
+        existing_count = conn.execute(
+            f"SELECT COUNT(*) FROM {table} WHERE carrier=?", (carrier,)
+        ).fetchone()[0]
+        if existing_count >= 4 and len(names) < (existing_count * 0.5):
+            # Likely partial scraper failure — leave existing rows alone.
+            continue
         placeholders = ",".join("?" * len(names))
         conn.execute(
             f"DELETE FROM {table} WHERE carrier=? AND plan_name NOT IN ({placeholders})",
@@ -746,7 +843,7 @@ def save_plans(plans, db_path=None):
     conn = _connect(db_path)
     try:
         _delete_stale_carrier_rows(conn, "plans", plans)
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         for plan in plans:
             conn.execute("""
                 INSERT INTO plans (carrier, plan_name, price, data_gb, minutes, extras, scraped_at, url)
@@ -761,7 +858,7 @@ def save_plans(plans, db_path=None):
             """, (
                 plan["carrier"], plan["plan_name"], plan.get("price"),
                 plan.get("data_gb"), plan.get("minutes"),
-                json.dumps(plan.get("extras", []), ensure_ascii=False),
+                json.dumps(_norm_extras(plan.get("extras", [])), ensure_ascii=False),
                 now, plan.get("url")
             ))
         conn.commit()
@@ -799,7 +896,7 @@ def get_plans(carrier=None, db_path=None):
 def save_global_plans(plans, db_path=None):
     conn = _connect(db_path)
     try:
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         for plan in plans:
             conn.execute("""
                 INSERT INTO global_plans
@@ -856,7 +953,7 @@ def get_global_plans(carrier=None, db_path=None):
 def save_global_changes(changes, db_path=None):
     conn = _connect(db_path)
     try:
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         for ch in changes:
             conn.execute(
                 "INSERT INTO global_changes (carrier, plan_name, change_type, old_val, new_val, changed_at) "
@@ -892,7 +989,7 @@ def save_abroad_plans(plans, db_path=None):
     conn = _connect(db_path)
     try:
         _delete_stale_carrier_rows(conn, "abroad_plans", plans)
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         for plan in plans:
             conn.execute("""
                 INSERT INTO abroad_plans (carrier, plan_name, price, days, data_gb, minutes, sms, extras, scraped_at)
@@ -909,7 +1006,7 @@ def save_abroad_plans(plans, db_path=None):
                 plan["carrier"], plan["plan_name"], plan.get("price"),
                 plan.get("days"), plan.get("data_gb"), plan.get("minutes"),
                 plan.get("sms"),
-                json.dumps(plan.get("extras", []), ensure_ascii=False),
+                json.dumps(_norm_extras(plan.get("extras", [])), ensure_ascii=False),
                 now
             ))
         conn.commit()
@@ -947,7 +1044,7 @@ def get_abroad_plans(carrier=None, db_path=None):
 def save_abroad_changes(changes, db_path=None):
     conn = _connect(db_path)
     try:
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         for ch in changes:
             conn.execute(
                 "INSERT INTO abroad_changes (carrier, plan_name, change_type, old_val, new_val, changed_at) "
@@ -982,7 +1079,7 @@ def get_abroad_changes(limit=50, db_path=None):
 def save_changes(changes, db_path=None):
     conn = _connect(db_path)
     try:
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         for ch in changes:
             conn.execute(
                 "INSERT INTO changes (carrier, plan_name, change_type, old_val, new_val, changed_at) "
@@ -1054,7 +1151,7 @@ def get_push_subscriptions(user_email=None, db_path=None):
 def save_content_plans(plans, db_path=None):
     conn = _connect(db_path)
     try:
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         for plan in plans:
             conn.execute("""
                 INSERT INTO content_plans (service, carrier, price, free_trial, note, status, scraped_at)
@@ -1113,7 +1210,7 @@ def get_content_plans(service=None, carrier=None, db_path=None):
 def save_content_changes(changes, db_path=None):
     conn = _connect(db_path)
     try:
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         for ch in changes:
             conn.execute(
                 "INSERT INTO content_changes (service, carrier, change_type, old_val, new_val, changed_at) "
@@ -1825,7 +1922,7 @@ def save_reseller_plans(plans, db_path=None):
     """Upsert reseller plans. Each plan dict needs reseller_id, carrier, plan_name, price."""
     conn = _connect(db_path)
     try:
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         for plan in plans:
             conn.execute("""
                 INSERT INTO reseller_plans

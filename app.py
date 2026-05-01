@@ -26,16 +26,77 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                get_reseller_plans, save_reseller_plans
 import archive as arc
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+_LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+os.makedirs(_LOG_DIR, exist_ok=True)
+_log_fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+# RotatingFileHandler: 10 MB per file, keep 5 backups (~50 MB cap)
+from logging.handlers import RotatingFileHandler as _RotatingFileHandler
+_file_handler = _RotatingFileHandler(
+    os.path.join(_LOG_DIR, "flask.log"),
+    maxBytes=10_000_000, backupCount=5, encoding="utf-8"
+)
+_file_handler.setFormatter(_log_fmt)
+_stream_handler = logging.StreamHandler()
+_stream_handler.setFormatter(_log_fmt)
+logging.basicConfig(level=logging.INFO, handlers=[_file_handler, _stream_handler])
 logger = logging.getLogger(__name__)
+
+
+class _SecretRedactingFilter(logging.Filter):
+    """Redact common secret-shaped substrings from log records.
+
+    Belt-and-braces against accidental leakage when libraries (psycopg2,
+    requests) raise exceptions whose __str__ contains the connection string
+    with embedded password=... or similar.
+    """
+    _PATTERNS = [
+        (__import__("re").compile(r"password\s*=\s*[^\s'\"&]+", __import__("re").IGNORECASE), "password=***"),
+        (__import__("re").compile(r"(api[_-]?key|token|secret)['\"]?\s*[:=]\s*['\"]?[A-Za-z0-9_\-]{16,}", __import__("re").IGNORECASE), r"\1=***"),
+    ]
+
+    def filter(self, record):
+        try:
+            msg = record.getMessage()
+            for pat, repl in self._PATTERNS:
+                msg = pat.sub(repl, msg)
+            record.msg = msg
+            record.args = ()
+        except Exception:
+            pass
+        return True
+
+
+for _h in logging.getLogger().handlers:
+    _h.addFilter(_SecretRedactingFilter())
 
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
 
 app = Flask(__name__)
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
-# Rate limiting
-limiter = Limiter(get_remote_address, app=app, default_limits=["200 per minute"], storage_uri="memory://")
+# ProxyFix: when running behind ngrok/Cloudflare/etc, request.remote_addr is
+# 127.0.0.1 (the tunnel) for every caller. Rate limits keyed off remote_addr
+# would then become global instead of per-client. ProxyFix tells Flask to
+# trust X-Forwarded-For from one upstream proxy.
+try:
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+except Exception as _pfx_err:
+    logger.warning(f"ProxyFix not available: {_pfx_err}")
+
+
+def _real_client_addr():
+    """Use the leftmost X-Forwarded-For entry if present (ProxyFix already
+    trusts one upstream), otherwise fall back to remote_addr. This prevents
+    a single ngrok tunnel from sharing rate limits across all callers."""
+    xff = request.headers.get("X-Forwarded-For", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    return get_remote_address()
+
+
+# Rate limiting — per real client IP, not per ngrok tunnel.
+limiter = Limiter(_real_client_addr, app=app, default_limits=["200 per minute"], storage_uri="memory://")
 
 # CORS: restrict to known origins
 ALLOWED_ORIGINS = [
@@ -44,10 +105,15 @@ ALLOWED_ORIGINS = [
     "https://lucent-kulfi-f037ad.netlify.app",
     # ngrok URLs added dynamically via ALLOWED_ORIGINS env var
 ]
-# Add ngrok/netlify URLs from environment if set
+# Add ngrok/netlify URLs from environment if set. Strip empties + reject "*"
+# to prevent a misconfiguration from echoing ACAO:* together with credentials.
 _extra_origins = os.environ.get("ALLOWED_ORIGINS", "")
 if _extra_origins:
-    ALLOWED_ORIGINS.extend(_extra_origins.split(","))
+    for o in _extra_origins.split(","):
+        o = o.strip()
+        if o and o != "*":
+            ALLOWED_ORIGINS.append(o)
+assert "*" not in ALLOWED_ORIGINS, "Wildcard origin is incompatible with credentials=True"
 CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS, "supports_credentials": True}})
 
 @app.after_request
@@ -96,9 +162,9 @@ def require_api_key(f):
     """Decorator to require X-API-Key header only (no URL query param)."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        provided = request.headers.get("X-API-Key")
-        expected = _get_api_key()
-        if not provided or provided != expected:
+        provided = request.headers.get("X-API-Key") or ""
+        expected = _get_api_key() or ""
+        if not provided or not hmac.compare_digest(provided, expected):
             return jsonify({"error": "Unauthorized — API key required"}), 401
         return f(*args, **kwargs)
     return decorated
@@ -427,13 +493,18 @@ def _get_user_context(email):
 
 
 def require_api_key_or_query(f):
-    """Accepts API key via header OR ?api_key= query param.
-    Use ONLY on /api/scrape-*-now for manual browser convenience."""
+    """Decorator: requires API key via X-API-Key header.
+
+    Historically accepted ?api_key= query param for browser convenience, but
+    query strings leak into Flask access logs, ngrok request logs, browser
+    history, and Referer headers. Removed 2026-05-01. Use curl with the
+    header instead: `curl -H "X-API-Key: ..." https://.../api/scrape-all-now`.
+    """
     @wraps(f)
     def decorated(*args, **kwargs):
-        provided = request.headers.get("X-API-Key") or request.args.get("api_key")
-        expected = _get_api_key()
-        if not provided or provided != expected:
+        provided = request.headers.get("X-API-Key") or ""
+        expected = _get_api_key() or ""
+        if not provided or not hmac.compare_digest(provided, expected):
             return jsonify({"error": "Unauthorized — API key required"}), 401
         return f(*args, **kwargs)
     return decorated
@@ -447,9 +518,11 @@ def require_scrape_auth(f):
     Sets g.jwt_payload when JWT is used; g.jwt_payload=None for API key callers."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        # API key path — trusted caller, no quota
-        provided = request.headers.get("X-API-Key") or request.args.get("api_key")
-        if provided and provided == _get_api_key():
+        # API key path — trusted caller, no quota. Header only (no query
+        # string — see require_api_key_or_query for rationale).
+        provided = request.headers.get("X-API-Key") or ""
+        expected = _get_api_key() or ""
+        if provided and hmac.compare_digest(provided, expected):
             g.jwt_payload = None
             return f(*args, **kwargs)
         # JWT path — workspace admin or super_admin
@@ -654,14 +727,27 @@ def _verify_supabase_jwt(token: str):
             logger.warning(f"Unsupported JWT algorithm: {alg}")
             return None
 
-        # Check expiry — allow up to 4-hour grace period for clock skew.
-        # Production servers have correct clocks so this never triggers there.
-        # Local dev on Windows can drift significantly (seen: +2h) which would
-        # cause every fresh JWT to appear expired without this leeway.
+        # Check expiry — 60s skew tolerance. If Windows clock drifts beyond
+        # this, fix it with `w32tm /resync` rather than widening the window.
         exp = payload.get('exp')
-        if exp is not None and _time.time() > exp + 14400:
-            logger.warning("JWT has expired (beyond grace period)")
+        if exp is not None and _time.time() > exp + 60:
+            logger.warning("JWT has expired")
             return None
+
+        # Check issuer matches our Supabase project — defends against
+        # tokens minted for a different project but signed with a key
+        # that happens to be in our cached JWKS.
+        try:
+            cfg = load_config()
+            expected_iss = (cfg.get('supabase_url') or os.environ.get('SUPABASE_URL') or '').rstrip('/')
+            if expected_iss:
+                expected_iss = f"{expected_iss}/auth/v1"
+                iss = payload.get('iss', '')
+                if iss and iss != expected_iss:
+                    logger.warning(f"JWT iss mismatch: {iss}")
+                    return None
+        except Exception:
+            pass
 
         return payload
 
@@ -671,15 +757,24 @@ def _verify_supabase_jwt(token: str):
 
 
 def _supabase_conn():
-    """Get a psycopg2 connection to Supabase DB using credentials from config."""
+    """Get a psycopg2 connection to Supabase DB using credentials from config.
+
+    On failure raises a clean RuntimeError with no chained exception, so the
+    psycopg2 OperationalError (which can include the connection string with
+    embedded password) does not flow into log handlers via exc_info.
+    """
     import psycopg2
     cfg = load_config()
-    return psycopg2.connect(
-        host=cfg.get("supabase_db_host", os.environ.get("SUPABASE_DB_HOST", "")),
-        port=5432, dbname='postgres', user='postgres',
-        password=cfg.get("supabase_db_password", os.environ.get("SUPABASE_DB_PASSWORD", "")),
-        sslmode='require'
-    )
+    try:
+        return psycopg2.connect(
+            host=cfg.get("supabase_db_host", os.environ.get("SUPABASE_DB_HOST", "")),
+            port=5432, dbname='postgres', user='postgres',
+            password=cfg.get("supabase_db_password", os.environ.get("SUPABASE_DB_PASSWORD", "")),
+            sslmode='require'
+        )
+    except Exception:
+        # Suppress chain — psycopg2's __str__ can leak credentials.
+        raise RuntimeError("supabase_conn_failed") from None
 
 
 def _db_path():
@@ -2707,10 +2802,17 @@ def api_delete_user(user_id):
         return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/api/users/<user_id>/role", methods=["POST"])
-@require_admin
+@require_super_admin
 @limiter.limit("20 per minute")
 def api_update_user_role(user_id):
-    """Update a user's role."""
+    """Update a user's role.
+
+    Restricted to super_admin: this endpoint is GLOBAL — it can promote any
+    user to admin in any workspace. Workspace-scoped role changes go through
+    /api/workspaces/<ws>/users which uses _can_manage_workspace_users.
+    Without this restriction, a workspace admin could escalate themselves
+    to global admin by calling this route directly.
+    """
     data = request.get_json(force=True)
     role = data.get('role', 'viewer')
     if role not in ('admin', 'viewer'):
@@ -3874,6 +3976,22 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error("Store banner screenshot job failed: %s", e, exc_info=True)
 
+    def _retention_job():
+        """Daily 03:30 — prune audit_log (>180d) and *_changes (>365d).
+
+        Without this, both tables grow forever. Audit_log accumulates rows on
+        every workspace CRUD / refresh / digest. *_changes accumulates rows
+        on every scrape. After a year the SQLite file balloons and PRAGMA
+        integrity_check (in monthly health check) starts taking minutes.
+        """
+        try:
+            from db import prune_audit_log, prune_changes
+            audit_deleted = prune_audit_log(days=180, db_path=_db_path())
+            changes_deleted = prune_changes(days=365, db_path=_db_path())
+            logger.info(f"Retention pass: pruned {audit_deleted} audit_log rows, {changes_deleted} *_changes rows")
+        except Exception as e:
+            logger.error(f"Retention job failed: {e}")
+
     def check_trial_expiry_job():
         """Daily 00:05 — auto-suspend workspaces past their trial end date."""
         try:
@@ -3972,16 +4090,30 @@ if __name__ == "__main__":
     init_db()
     config = load_config()
     scheduler = BackgroundScheduler()
+    # Common job hardening:
+    # - misfire_grace_time=900: if Flask was down at scheduled time, run when
+    #   it comes back up within 15 minutes (instead of skipping silently).
+    # - coalesce=True: if multiple misfires accumulated, run once not N times.
+    # - max_instances=1: never start a second copy while the first still runs.
+    _job_defaults = dict(misfire_grace_time=900, coalesce=True, max_instances=1)
     for time_str in config.get("schedule_times", ["10:00", "16:00"]):
         hour, minute = map(int, time_str.split(":"))
-        scheduler.add_job(run_scrape_job, "cron", hour=hour, minute=minute)
+        scheduler.add_job(run_scrape_job, "cron", hour=hour, minute=minute, **_job_defaults)
     report_time = config.get("email_report_time", "09:00")
     rh, rm = map(int, report_time.split(":"))
-    scheduler.add_job(run_email_report_job, "cron", hour=rh, minute=rm)
-    scheduler.add_job(scrape_banners_job, "cron", hour=8, minute=0)
-    scheduler.add_job(scrape_store_banners_job, "cron", hour=8, minute=0)
-    scheduler.add_job(generate_executive_summary, "cron", hour=8, minute=5, id="executive_summary")
-    scheduler.add_job(scrape_news_job, "cron", hour=8, minute=10, id="news_scrape")
+    scheduler.add_job(run_email_report_job, "cron", hour=rh, minute=rm, **_job_defaults)
+    # Banners + store banners run at 08:00; offset store_banners by 1 minute to
+    # avoid two Playwright browsers simultaneously holding ~2GB RAM.
+    scheduler.add_job(scrape_banners_job, "cron", hour=8, minute=0, **_job_defaults)
+    scheduler.add_job(scrape_store_banners_job, "cron", hour=8, minute=1, **_job_defaults)
+    scheduler.add_job(generate_executive_summary, "cron", hour=8, minute=5,
+                      id="executive_summary", **_job_defaults)
+    scheduler.add_job(scrape_news_job, "cron", hour=8, minute=10,
+                      id="news_scrape", **_job_defaults)
+    # Daily retention pass — keep audit_log + *_changes from growing forever.
+    # Runs at 03:30 (low-traffic hour).
+    scheduler.add_job(_retention_job, "cron", hour=3, minute=30,
+                      id="retention", **_job_defaults)
     # Social sentiment: every 3 days at 08:00 — use interval trigger with next 08:00 as start
     from datetime import datetime as _dt, timedelta as _td
     _now = _dt.now()
@@ -3989,10 +4121,11 @@ if __name__ == "__main__":
     if _next_8 <= _now:
         _next_8 += _td(days=1)
     scheduler.add_job(generate_social_sentiment, "interval", days=3,
-                      start_date=_next_8, id="social_sentiment")
+                      start_date=_next_8, id="social_sentiment", **_job_defaults)
     scheduler.add_job(weekly_digest_job, "cron", day_of_week="sun", hour=8, minute=30,
-                      id="weekly_digest")
-    scheduler.add_job(check_trial_expiry_job, "cron", hour=0, minute=5, id="trial_expiry")
+                      id="weekly_digest", **_job_defaults)
+    scheduler.add_job(check_trial_expiry_job, "cron", hour=0, minute=5,
+                      id="trial_expiry", **_job_defaults)
     scheduler.start()
     logger.info("Flask starting → http://0.0.0.0:5000")
     try:

@@ -1,0 +1,10 @@
+# Development-only dependencies. Install with:
+#   pip install -r requirements-dev.txt
+# Production deploys should use only requirements.txt.
+-r requirements.txt
+pytest==9.0.2
+pytest-timeout==2.4.0
+# Code quality
+ruff>=0.6.0
+# Optional but useful for measuring test coverage during refactors
+pytest-cov>=5.0.0

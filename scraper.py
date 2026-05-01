@@ -7083,12 +7083,20 @@ def _banner_019_stealth(url: str, out_path: str, scraped_at: str) -> dict:
                     logger.warning("_banner_019_stealth: WAF challenge still active, skipping screenshot.")
                     return {"carrier": "mobile019", "scraped_at": scraped_at, "success": False}
                 _dismiss_popups(page)
-                page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
-                file_size = os.path.getsize(out_path) if os.path.exists(out_path) else 0
+                # Atomic write: screenshot to .tmp, validate, then os.replace.
+                # Prevents serving a half-written or undersized PNG to the API
+                # while we're deciding whether to keep it.
+                tmp_path = out_path + ".tmp"
+                page.screenshot(path=tmp_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
+                file_size = os.path.getsize(tmp_path) if os.path.exists(tmp_path) else 0
                 if file_size < 5000:
-                    logger.warning("_banner_019_stealth: screenshot too small (%d bytes), removing.", file_size)
-                    os.remove(out_path)
+                    logger.warning("_banner_019_stealth: screenshot too small (%d bytes), discarding.", file_size)
+                    try:
+                        os.remove(tmp_path)
+                    except OSError:
+                        pass
                     return {"carrier": "mobile019", "scraped_at": scraped_at, "success": False}
+                os.replace(tmp_path, out_path)
                 logger.info("Banner screenshot saved (stealth): %s", out_path)
                 return {"carrier": "mobile019", "scraped_at": scraped_at, "success": True}
             finally:
@@ -7138,13 +7146,19 @@ def _banner_xphone_stealth(url: str, out_path: str, scraped_at: str) -> dict:
                     logger.warning("_banner_xphone_stealth: site unavailable or WAF block (body=%d chars), skipping.", len(body))
                     return {"carrier": "xphone", "scraped_at": scraped_at, "success": False}
                 _dismiss_popups(page)
-                page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
                 import os as _os
-                file_size = _os.path.getsize(out_path) if _os.path.exists(out_path) else 0
+                # Atomic write: screenshot to .tmp, validate, then os.replace.
+                tmp_path = out_path + ".tmp"
+                page.screenshot(path=tmp_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
+                file_size = _os.path.getsize(tmp_path) if _os.path.exists(tmp_path) else 0
                 if file_size < 5000:
-                    logger.warning("_banner_xphone_stealth: screenshot too small (%d bytes), likely blank.", file_size)
-                    _os.remove(out_path)  # remove bad file so previous good screenshot stays on disk
+                    logger.warning("_banner_xphone_stealth: screenshot too small (%d bytes), discarding.", file_size)
+                    try:
+                        _os.remove(tmp_path)
+                    except OSError:
+                        pass
                     return {"carrier": "xphone", "scraped_at": scraped_at, "success": False}
+                _os.replace(tmp_path, out_path)
                 logger.info("Banner screenshot saved (xphone stealth): %s (%d bytes)", out_path, file_size)
                 return {"carrier": "xphone", "scraped_at": scraped_at, "success": True}
             finally:

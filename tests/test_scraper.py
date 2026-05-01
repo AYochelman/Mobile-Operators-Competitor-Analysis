@@ -140,12 +140,29 @@ def test_scrape_all_global_merges_parallel_and_sequential(monkeypatch):
                "scrape_esimo_global", "scrape_simtlv_global", "scrape_world8_global"]:
         monkeypatch.setattr(scraper, fn, _fake_seq)
 
-    for fn in ["scrape_xphone_global", "scrape_saily_global", "scrape_saily_regions",
-               "scrape_esimio_destinations", "scrape_esimio_regions",
-               "scrape_holafly_global", "scrape_holafly_regions",
-               "scrape_sparks_global", "scrape_voye_global",
-               "scrape_orbit_global", "scrape_travelsim"]:
+    parallel_fns = [
+        "scrape_xphone_global", "scrape_saily_global", "scrape_saily_regions",
+        "scrape_esimio_destinations", "scrape_esimio_regions",
+        "scrape_holafly_global", "scrape_holafly_regions",
+        "scrape_sparks_global", "scrape_voye_global",
+        "scrape_orbit_global", "scrape_travelsim",
+    ]
+    # Newer providers added to scrape_all_global over time. Mock each one if
+    # it exists; if a future scraper is added without updating this test,
+    # the assertion below will catch the drift.
+    for fn in [
+        "scrape_gomoworld_global", "scrape_tasim_global",
+        "scrape_maya_global", "scrape_maya_regions",
+        "scrape_bcengi_global", "scrape_esim70_global",
+        "scrape_jetpack_global", "scrape_breez_global",
+        "scrape_bytesim_global", "scrape_bytesim_regions",
+        "scrape_airalo_local", "scrape_airalo_regional",
+    ]:
+        if hasattr(scraper, fn):
+            parallel_fns.append(fn)
+    for fn in parallel_fns:
         monkeypatch.setattr(scraper, fn, _fake_par)
+    parallel_count = len(parallel_fns)
 
     class _FakePage:
         pass
@@ -163,8 +180,14 @@ def test_scrape_all_global_merges_parallel_and_sequential(monkeypatch):
 
     plans = scraper.scrape_all_global()
 
-    # 10 sequential × 1 plan + 11 parallel × 1 plan = 21 plans
-    assert len(plans) == 21
+    # 10 sequential × 1 plan each + N parallel (whichever providers exist) × 1 each.
+    # If this assertion fails because a new global scraper was added without
+    # updating parallel_fns above, add it to the list.
+    assert len(plans) == 10 + parallel_count, (
+        f"Expected {10 + parallel_count} plans (10 seq + {parallel_count} par); "
+        f"got {len(plans)}. A new global scraper likely needs to be added to "
+        f"the parallel_fns list in this test."
+    )
     carriers = {p["carrier"] for p in plans}
     assert "tuki" in carriers
     assert "saily" in carriers

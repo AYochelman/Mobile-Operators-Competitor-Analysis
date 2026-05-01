@@ -23,72 +23,9 @@ import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import Button from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
-import {
-  TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
-  SIMTLV_COUNTRIES, PELEPHONE_GLOBAL_COUNTRIES, ESIMO_COUNTRIES,
-  WORLD8_EUROPE_USA, WORLD8_WORLDWIDE,
-  XPHONE_EUROPE, XPHONE_WORLD,
-  AIRALO_DISCOVER,
-  AIRALO_REGION_MAP,
-  GLOBALESIM_EUROPE, GLOBALESIM_ASIA, GLOBALESIM_NORTH_AMERICA,
-  GLOBALESIM_SOUTH_AMERICA, GLOBALESIM_AFRICA, GLOBALESIM_OCEANIA, GLOBALESIM_GLOBAL_REGION,
-  GOMOWORLD_EUROPE, GOMOWORLD_LATIN_AMERICA, GOMOWORLD_SOUTHEAST_ASIA,
-  GOMOWORLD_FRENCH_ANTILLES, GOMOWORLD_NETHERLANDS_ANTILLES, GOMOWORLD_NORTH_AMERICA,
-  MAYA_GLOBAL, MAYA_OCEANIA,
-} from '../data/globalCountries'
-
-// Carriers where one plan covers many countries (zone/global plans)
-const MULTI_COUNTRY_CARRIERS = new Set([
-  'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
-  'pelephone_global', 'esimo', 'globalesim', 'gomoworld', 'maya',
-])
-
-const GLOBALESIM_REGION_MAP = {
-  'אפריקה': GLOBALESIM_AFRICA,
-  'אסיה': GLOBALESIM_ASIA,
-  'צפון אמריקה': GLOBALESIM_NORTH_AMERICA,
-  'דרום אמריקה': GLOBALESIM_SOUTH_AMERICA,
-  'אוקיאניה': GLOBALESIM_OCEANIA,
-  'אירופה': GLOBALESIM_EUROPE,
-  'גלובלי': GLOBALESIM_GLOBAL_REGION,
-}
-
-function getPlanCoverage(plan) {
-  const carrier = plan.carrier
-  const dest = plan.extras?.[0] || ''
-  const name = plan.plan_name || ''
-  if (carrier === 'travelsim') {
-    if (dest === 'ארצות הברית') return TRAVELSIM_USA
-    if (dest === 'המזרח התיכון') return TRAVELSIM_ME
-    return TRAVELSIM_GLOBAL
-  }
-  if (carrier === 'xphone_global') {
-    return dest.startsWith('אירופה') ? XPHONE_EUROPE : XPHONE_WORLD
-  }
-  if (carrier === 'simtlv') return SIMTLV_COUNTRIES
-  if (carrier === 'world8') {
-    return (name.includes('אירופה') || name.includes('Europe')) ? WORLD8_EUROPE_USA : WORLD8_WORLDWIDE
-  }
-  if (carrier === 'airalo') return AIRALO_DISCOVER
-  if (carrier === 'airalo_regional') return AIRALO_REGION_MAP[dest] || null
-  if (carrier === 'pelephone_global') return PELEPHONE_GLOBAL_COUNTRIES
-  if (carrier === 'esimo') return ESIMO_COUNTRIES
-  if (carrier === 'globalesim') return GLOBALESIM_REGION_MAP[dest] || GLOBALESIM_GLOBAL_REGION
-  if (carrier === 'gomoworld') {
-    const GOMOWORLD_ZONE_MAP = {
-      'אירופה': GOMOWORLD_EUROPE, 'אמריקה הלטינית': GOMOWORLD_LATIN_AMERICA,
-      'דרום מזרח אסיה': GOMOWORLD_SOUTHEAST_ASIA, 'האנטילים הצרפתיים': GOMOWORLD_FRENCH_ANTILLES,
-      'אנטילים הולנדיים': GOMOWORLD_NETHERLANDS_ANTILLES, 'צפון אמריקה': GOMOWORLD_NORTH_AMERICA,
-    }
-    return GOMOWORLD_ZONE_MAP[dest] || null
-  }
-  if (carrier === 'maya') {
-    if (dest === 'גלובלי') return MAYA_GLOBAL
-    if (dest === 'אוקיאניה') return MAYA_OCEANIA
-    return null
-  }
-  return null
-}
+// Multi-country logic moved to data/multiCountry.js so DashboardPage and
+// ComparePage stay in sync. See that file for the canonical implementation.
+import { MULTI_COUNTRY_CARRIERS, getPlanCoverage, KNOWN_REGIONS } from '../data/multiCountry'
 
 const TAB_ICONS = {
   domestic: (
@@ -159,23 +96,7 @@ const RESELLERS = [
     source_url: 'https://www.instagram.com/cellcomshefamr/' },
 ]
 
-const KNOWN_REGIONS = new Set([
-  'אירופה','אסיה','אסיה ואוקיאניה','אפריקה','גלובלי','קריביים','איי הקריביים',
-  'אמריקה הלטינית','צפון אמריקה','המזרח התיכון','המזרח התיכון וצפון אפריקה',
-  'דרום מזרח אסיה','סקנדינביה','בלקן','מזרח אירופה','מרכז אמריקה','אוקיאניה',
-  'סין + הונג קונג + מקאו','יפן וקוריאה','יפן וסין',
-  'אסיה פסיפיק','מרכז אסיה','צפון אפריקה',
-  'שוויץ+','גוודלופ','קפריסין+',
-  'אמריקה הדרומית','דרום אמריקה',
-  'צפון ודרום אמריקה','מדינות האיים הקריביים',
-  'אירופה — גלישה בלבד','אירופה — גולשים ומדברים',
-  '167+ מדינות','156+ מדינות',
-  'ספארי אפריקה','האיחוד האירופי ובריטניה',
-  'הקריביים','כלל העולם',
-  // Breeze regions
-  'אירופה+','אמריקה המרכזית','הבלקן','חבר המדינות',
-  'אירופה וארה"ב','פורטוגל וספרד','המזרח התיכון לייט','אירופה לייט',
-])
+// KNOWN_REGIONS imported from data/multiCountry.js (single source of truth).
 
 const CARRIERS = [
   { id: 'partner', label: 'פרטנר' },
@@ -286,11 +207,19 @@ export default function DashboardPage() {
   }, [filters, tab])
 
   // Load data
-  // Apply URL params from chat navigation
+  // Apply URL params from chat navigation. Guard against the effect-loop
+  // pattern where setSearchParams({}) inside an effect that depends on
+  // searchParams triggers itself indefinitely. We early-return if the URL
+  // has no relevant params, so the second invocation is a no-op.
   useEffect(() => {
     const urlTab = searchParams.get('tab')
     const urlCarrier = searchParams.get('carrier')
     const urlHighlight = searchParams.get('highlight')
+    // Early exit if there's nothing to consume — prevents the setSearchParams
+    // → re-run cycle from doing work on every render.
+    if (!urlTab && !urlCarrier && !urlHighlight) {
+      return
+    }
     if (urlTab && ['domestic', 'abroad', 'global', 'content', 'resellers'].includes(urlTab)) {
       setTab(urlTab)
       if (urlCarrier) {
@@ -310,6 +239,7 @@ export default function DashboardPage() {
       }
       setSearchParams({}, { replace: true })
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
   useEffect(() => { loadTab(tab) }, [tab])

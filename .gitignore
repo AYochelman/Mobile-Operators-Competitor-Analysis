@@ -21,4 +21,19 @@ SECRETS_LOCAL_ONLY.md
 *.state
 .worktrees/
 data/*.session
+data/*.session-journal
+data/*.session-shm
+data/*.session-wal
+data/*.session*
 data/telegram_pending.json
+logs/
+flask_log.txt
+flask.log
+flask.log.*
+vite_log.txt
+# Recovery / 2FA / backup codes — never track these.
+*Recovery Codes*
+*recovery_codes*
+*.pem
+*.key
+secrets/

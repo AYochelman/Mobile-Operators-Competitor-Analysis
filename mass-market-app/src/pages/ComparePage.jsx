@@ -11,6 +11,37 @@ import {
   XPHONE_EUROPE, XPHONE_WORLD, ORBIT_COUNTRIES, TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
   getCountriesForPlan
 } from '../data/globalCountries'
+import { DOMESTIC_LABELS, GLOBAL_LABELS } from '../data/carrierLabels'
+import { KNOWN_REGIONS, CARRIER_COUNTRY_LISTS as MULTI_CARRIER_COUNTRY_LISTS } from '../data/multiCountry'
+
+// Chart colors per carrier — kept here because they're specific to the
+// comparison chart's visual identity. Labels come from carrierLabels.js
+// (single source of truth).
+const COMPARE_COLORS_DOMESTIC = {
+  partner: '#e91e63', pelephone: '#2196f3', hotmobile: '#ff5722',
+  cellcom: '#4caf50', mobile019: '#9c27b0', xphone: '#0d9488',
+  wecom: '#d97706', neptucom: '#d97706', golan: '#009688', rami_levy: '#e32032',
+}
+const COMPARE_COLORS_GLOBAL = {
+  tuki: '#3b82f6', globalesim: '#22c55e', airalo: '#f97316',
+  pelephone_global: '#2196f3', esimo: '#a855f7', simtlv: '#ef4444',
+  world8: '#0d9488', xphone_global: '#14b8a6', saily: '#7c3aed',
+  holafly: '#ea580c', esimio: '#2563eb', sparks: '#f59e0b',
+  voye: '#ec4899', orbit: '#6366f1', travelsim: '#0d9488',
+  gomoworld: '#0891b2', tasim: '#7c3aed', maya: '#0f766e',
+  bcengi: '#1d4ed8', esim70: '#10b981', jetpack: '#0ea5e9',
+  breez: '#06b6d4', bytesim: '#00b490',
+}
+
+function _build(carrierIds, labelSource, colorSource) {
+  return carrierIds
+    .filter(id => id !== 'airalo_local' && id !== 'airalo_regional')
+    .map(id => ({
+      id,
+      label: labelSource[id] || id,
+      color: colorSource[id] || '#888',
+    }))
+}
 
 const TABS = [
   { id: 'domestic', label: 'חבילות סלולר' },
@@ -18,75 +49,19 @@ const TABS = [
   { id: 'global', label: 'גלובלי' },
 ]
 
+// Domestic and abroad share the same carrier set. Global is the eSIM list.
+// Built from the centralized labels — adding a new carrier in
+// data/carrierLabels.js + adding an entry to COMPARE_COLORS_* above
+// is enough; no other change needed here.
+const _DOMESTIC_TAB = _build(Object.keys(DOMESTIC_LABELS), DOMESTIC_LABELS, COMPARE_COLORS_DOMESTIC)
+const _GLOBAL_TAB = _build(Object.keys(GLOBAL_LABELS), GLOBAL_LABELS, COMPARE_COLORS_GLOBAL)
 const CARRIERS_BY_TAB = {
-  domestic: [
-    { id: 'partner', label: 'פרטנר', color: '#e91e63' },
-    { id: 'pelephone', label: 'פלאפון', color: '#2196f3' },
-    { id: 'hotmobile', label: 'הוט מובייל', color: '#ff5722' },
-    { id: 'cellcom', label: 'סלקום', color: '#4caf50' },
-    { id: 'mobile019', label: '019', color: '#9c27b0' },
-    { id: 'xphone', label: 'XPhone', color: '#0d9488' },
-    { id: 'wecom', label: 'We-Com', color: '#d97706' },
-    { id: 'neptucom', label: 'Neptucom', color: '#d97706' },
-    { id: 'golan', label: 'גולן טלקום', color: '#009688' },
-    { id: 'rami_levy', label: 'רמי לוי', color: '#e32032' },
-  ],
-  abroad: [
-    { id: 'partner', label: 'פרטנר', color: '#e91e63' },
-    { id: 'pelephone', label: 'פלאפון', color: '#2196f3' },
-    { id: 'hotmobile', label: 'הוט מובייל', color: '#ff5722' },
-    { id: 'cellcom', label: 'סלקום', color: '#4caf50' },
-    { id: 'mobile019', label: '019', color: '#9c27b0' },
-    { id: 'xphone', label: 'XPhone', color: '#0d9488' },
-    { id: 'wecom', label: 'We-Com', color: '#d97706' },
-    { id: 'neptucom', label: 'Neptucom', color: '#d97706' },
-    { id: 'golan', label: 'גולן טלקום', color: '#009688' },
-    { id: 'rami_levy', label: 'רמי לוי', color: '#e32032' },
-  ],
-  global: [
-    { id: 'tuki', label: 'Tuki', color: '#3b82f6' },
-    { id: 'globalesim', label: 'GlobaleSIM', color: '#22c55e' },
-    { id: 'airalo', label: 'Airalo', color: '#f97316' },
-    { id: 'pelephone_global', label: 'GlobalSIM', color: '#2196f3' },
-    { id: 'esimo', label: 'eSIMo', color: '#a855f7' },
-    { id: 'simtlv', label: 'SimTLV', color: '#ef4444' },
-    { id: 'world8', label: '8 World', color: '#0d9488' },
-    { id: 'xphone_global', label: 'XPhone', color: '#14b8a6' },
-    { id: 'saily', label: 'Saily', color: '#7c3aed' },
-    { id: 'holafly', label: 'Holafly', color: '#ea580c' },
-    { id: 'esimio', label: 'eSIM.io', color: '#2563eb' },
-    { id: 'sparks', label: 'Sparks', color: '#f59e0b' },
-    { id: 'voye', label: 'VOYE', color: '#ec4899' },
-    { id: 'orbit', label: 'Orbit', color: '#6366f1' },
-    { id: 'travelsim', label: 'Travel Sim', color: '#0d9488' },
-    { id: 'gomoworld', label: 'GoMoWorld', color: '#0891b2' },
-    { id: 'tasim', label: 'Tasim', color: '#7c3aed' },
-    { id: 'maya', label: 'Maya', color: '#0f766e' },
-    { id: 'bcengi', label: 'Bcengi', color: '#1d4ed8' },
-    { id: 'esim70', label: 'eSIM70', color: '#10b981' },
-    { id: 'jetpack', label: 'Jetpack', color: '#0ea5e9' },
-    { id: 'breez', label: 'Breeze', color: '#06b6d4' },
-    { id: 'bytesim', label: 'ByteSim', color: '#00b490' },
-  ],
+  domestic: _DOMESTIC_TAB,
+  abroad:   _DOMESTIC_TAB,
+  global:   _GLOBAL_TAB,
 }
 
-const KNOWN_REGIONS = new Set([
-  'אירופה','אסיה','אסיה ואוקיאניה','אפריקה','גלובלי','קריביים','איי הקריביים',
-  'אמריקה הלטינית','צפון אמריקה','המזרח התיכון','המזרח התיכון וצפון אפריקה',
-  'דרום מזרח אסיה','סקנדינביה','בלקן','מזרח אירופה','מרכז אמריקה','אוקיאניה',
-  'סין + הונג קונג + מקאו','יפן וקוריאה','יפן וסין',
-  'אסיה פסיפיק','מרכז אסיה','צפון אפריקה',
-  'אמריקה הדרומית','דרום אמריקה',
-  'שוויץ+','גוודלופ','קפריסין+',
-  'צפון ודרום אמריקה','מדינות האיים הקריביים',
-  'אירופה — גלישה בלבד','אירופה — גולשים ומדברים',
-  '167+ מדינות','156+ מדינות',
-  'ספארי אפריקה','האיחוד האירופי ובריטניה',
-  'איי התעלה','האנטילים הצרפתיים','אנטילים הולנדיים',
-  'הקריביים','כלל העולם',
-  'אירופה+','חבר המדינות','הבלקן','אמריקה המרכזית','אירופה וארה"ב','פורטוגל וספרד',
-  'המזרח התיכון לייט','אירופה לייט','גלובלי',
-])
+// KNOWN_REGIONS imported from data/multiCountry.js (single source of truth).
 
 export default function ComparePage() {
   const [tab, setTab] = useState('domestic')
@@ -148,19 +123,9 @@ export default function ComparePage() {
   const getLabel = (id) => carrierOptions.find(x => x.id === id)?.label || id
   const getColor = (id) => carrierOptions.find(x => x.id === id)?.color || '#888'
 
-  // Static country lists for carriers that don't store country in extras
-  const CARRIER_COUNTRY_LISTS = useMemo(() => ({
-    tuki: TUKI_COUNTRIES,
-    globalesim: GLOBALESIM_COUNTRIES,
-    airalo: AIRALO_DISCOVER,
-    pelephone_global: PELEPHONE_GLOBAL_COUNTRIES,
-    esimo: ESIMO_COUNTRIES,
-    simtlv: SIMTLV_COUNTRIES,
-    world8: [...new Set([...WORLD8_WORLDWIDE, ...WORLD8_EUROPE_USA])],
-    xphone_global: [...new Set([...XPHONE_EUROPE, ...XPHONE_WORLD])],
-    orbit: ORBIT_COUNTRIES,
-    travelsim: [...new Set([...TRAVELSIM_GLOBAL, ...TRAVELSIM_USA, ...TRAVELSIM_ME])],
-  }), [])
+  // Pull from data/multiCountry.js (shared with DashboardPage). Wrapped in
+  // useMemo only so the dependency array of the next useMemo can stay stable.
+  const CARRIER_COUNTRY_LISTS = MULTI_CARRIER_COUNTRY_LISTS
 
   // Build complete country → carriers mapping
   const { availableRegions, availableDestinations, countryCarrierMap } = useMemo(() => {

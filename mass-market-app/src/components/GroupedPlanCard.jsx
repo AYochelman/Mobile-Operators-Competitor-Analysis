@@ -5,6 +5,7 @@ import AnnotationsModal from './AnnotationsModal'
 import { getCountriesForPlan } from '../data/globalCountries'
 import { useWatchlist } from '../hooks/useWatchlist'
 import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
+import { GLOBAL_LABELS as GLOBAL_LABELS_SOURCE } from '../data/carrierLabels'
 
 const CARRIER_LOGOS = {
   tuki:            '/logos/tuki.png',
@@ -78,15 +79,8 @@ function slugify(str) {
     .replace(/^-|-$/g, '') || 'plan'
 }
 
-const GLOBAL_LABELS = {
-  tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', airalo_local: 'Airalo', airalo_regional: 'Airalo',
-  pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV',
-  world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
-  holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
-  orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld',
-  tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack',
-  bytesim: 'ByteSim',
-}
+// Pull labels from the single source of truth (data/carrierLabels.js).
+const GLOBAL_LABELS = GLOBAL_LABELS_SOURCE
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', airalo_local: 'orange', airalo_regional: 'orange', pelephone_global: 'blue',
   esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',

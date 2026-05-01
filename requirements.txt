@@ -11,4 +11,6 @@ cryptography==46.0.6
 Pillow==12.1.1
 psycopg2-binary==2.9.11
 gunicorn==23.0.0
-pytest
+# pytest is dev-only — see requirements-dev.txt. Kept here for backward
+# compatibility with deploy scripts that don't read the dev file.
+pytest==9.0.2

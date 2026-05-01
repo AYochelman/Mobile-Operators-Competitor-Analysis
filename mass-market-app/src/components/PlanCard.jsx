@@ -11,6 +11,7 @@ import SparklineMini from './SparklineMini'
 import AnnotationsModal from './AnnotationsModal'
 import { useWatchlist } from '../hooks/useWatchlist'
 import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
+import { DOMESTIC_LABELS, GLOBAL_LABELS as GLOBAL_LABELS_SOURCE } from '../data/carrierLabels'
 
 // Lazy — Recharts is ~340KB. Only load when the user actually opens history.
 const PriceHistoryModal = lazy(() => import('./PriceHistoryModal'))
@@ -70,20 +71,10 @@ const CARRIER_COLORS = {
   mobile019: 'purple', xphone: 'teal', wecom: 'amber', neptucom: 'indigo',
   golan: 'teal', rami_levy: 'red',
 }
-const CARRIER_LABELS = {
-  partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום',
-  mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom',
-  golan: 'גולן טלקום', rami_levy: 'רמי לוי תקשורת',
-}
-const GLOBAL_LABELS = {
-  tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
-  pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV',
-  world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
-  holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
-  orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
-  maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack',
-  breez: 'Breeze',
-}
+// Pull labels from the single source of truth (data/carrierLabels.js).
+// Adding a new provider there propagates to every component automatically.
+const CARRIER_LABELS = DOMESTIC_LABELS
+const GLOBAL_LABELS = GLOBAL_LABELS_SOURCE
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
   esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
@@ -124,7 +115,6 @@ const CARRIER_LOGOS = {
   tasim:           '/logos/tasim.png',
   maya:            '/logos/maya.png',
   bcengi:         '/logos/bcengi.png',
-  rami_levy:      '/logos/rami_levy.png',
   esim70:         '/logos/esim70.png',
   jetpack:        '/logos/jetpack.png',
   breez:          '/logos/breez.png',
@@ -526,11 +516,13 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               type="button"
               onClick={(e) => { e.stopPropagation(); onCompareToggle(plan, type) }}
               title={isInCompare ? 'הסר מהשוואה' : 'הוסף להשוואה'}
+              aria-label={isInCompare ? 'הסר מהשוואה' : 'הוסף להשוואה'}
+              aria-pressed={isInCompare}
               className={`p-1 rounded transition-all ${
                 isInCompare ? 'text-blue-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-blue-400'
               }`}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill={isInCompare ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill={isInCompare ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 {isInCompare && <polyline points="9 12 11 14 15 10" />}
               </svg>
@@ -543,8 +535,9 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               className="p-1 text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt transition-colors"
               onClick={(e) => e.stopPropagation()}
               title="לאתר הספק"
+              aria-label="לאתר הספק"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
                 <polyline points="15 3 21 3 21 9"/>
                 <line x1="10" y1="14" x2="21" y2="3"/>
@@ -558,11 +551,12 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               type="button"
               onClick={(e) => { e.stopPropagation(); setShowAnnotations(true) }}
               title={annotationCount > 0 ? `${annotationCount} הערות צוות` : 'הוסף הערה'}
+              aria-label={annotationCount > 0 ? `${annotationCount} הערות צוות` : 'הוסף הערה'}
               className={`relative p-1 transition-all ${
                 annotationCount > 0 ? 'text-moca-bolt' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
               }`}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill={annotationCount > 0 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill={annotationCount > 0 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
               {annotationCount > 0 && (
@@ -579,16 +573,17 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               type="button"
               onClick={handleShare}
               title="שתף חבילה"
+              aria-label={copied ? 'הקישור הועתק' : 'שתף חבילה'}
               className={`p-1 transition-all ${
                 copied ? 'text-emerald-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
               }`}
             >
               {copied ? (
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
               ) : (
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                   <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
                   <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
@@ -603,11 +598,13 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               type="button"
               onClick={(e) => { e.stopPropagation(); toggleWatch(watchKey) }}
               title={watched ? 'הסר מהמעקב' : 'הוסף למעקב'}
+              aria-label={watched ? 'הסר מהמעקב' : 'הוסף למעקב'}
+              aria-pressed={watched}
               className={`p-1 transition-all ${
                 watched ? 'text-amber-400 hover:text-amber-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-amber-400'
               }`}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill={watched ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill={watched ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
               </svg>
             </button>

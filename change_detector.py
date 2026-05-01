@@ -134,7 +134,10 @@ def detect_content_changes(old_plans, new_plans):
                              "change_type": "price_change",
                              "old_val": old_price, "new_val": price})
 
-        if old_trial and trial and old_trial != trial:
+        # Symmetric: also detect when a trial is added (old=None, trial="חודש חינם")
+        # or removed (old="חודש חינם", trial=None). Previous version required
+        # both sides truthy and missed both add and remove cases.
+        if (old_trial or trial) and old_trial != trial:
             changes.append({"service": plan["service"], "carrier": plan["carrier"],
                              "change_type": "trial_change",
                              "old_val": old_trial, "new_val": trial})

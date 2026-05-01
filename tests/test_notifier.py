@@ -43,9 +43,16 @@ def test_format_removed_plan_contains_x():
     assert "❌" in msg
     assert "OLD" in msg
 
-def test_format_contains_localhost_url():
+def test_format_contains_app_url():
+    """Notifications include a clickable link back to the app. As of
+    2026-05-01 this is a public URL (Netlify), no longer localhost:5000,
+    so off-device recipients (Telegram/WhatsApp) can actually follow it."""
     msg = format_message(PRICE_DROP)
-    assert "localhost:5000" in msg
+    # Custom URL via param
+    assert "https://example.com" in format_message(PRICE_DROP, app_url="https://example.com")
+    # Default fallback is a real URL (not localhost)
+    assert "http" in msg
+    assert "localhost" not in msg
 
 def test_format_multi_carrier_shows_count():
     changes = PRICE_DROP + PRICE_RISE
@@ -53,7 +60,10 @@ def test_format_multi_carrier_shows_count():
     assert "2" in msg
 
 def test_send_notification_success():
-    config = {"telegram_bot_token": "TOKEN123", "telegram_chat_id": "CHAT456"}
+    # Token must match the Telegram bot-token format <digits>:<35+ alnum>.
+    # The validator rejects garbage tokens (e.g. "TOKEN123") to defend
+    # against config tampering / path traversal.
+    config = {"telegram_bot_token": "1234567890:ABCdefGHIjklMNOpqrsTUVwxyz0123456789", "telegram_chat_id": "CHAT456"}
     mock_resp = MagicMock()
     mock_resp.status_code = 200
     with patch("notifier.requests.post", return_value=mock_resp) as mock_post:
@@ -61,14 +71,24 @@ def test_send_notification_success():
     assert result is True
     mock_post.assert_called_once()
     call_kwargs = mock_post.call_args
-    assert "TOKEN123" in call_kwargs.args[0]
+    assert "1234567890" in call_kwargs.args[0]
     assert call_kwargs.kwargs["json"]["chat_id"] == "CHAT456"
     assert call_kwargs.kwargs["json"]["text"] == "test message"
 
 def test_send_notification_failure():
-    config = {"telegram_bot_token": "BAD", "telegram_chat_id": "BAD"}
+    config = {"telegram_bot_token": "1234567890:ABCdefGHIjklMNOpqrsTUVwxyz0123456789", "telegram_chat_id": "BAD"}
     mock_resp = MagicMock()
     mock_resp.status_code = 401
     with patch("notifier.requests.post", return_value=mock_resp):
         result = send_notification("msg", config)
     assert result is False
+
+def test_send_notification_rejects_malformed_token():
+    """The validator should refuse to call requests.post with a token that
+    doesn't match the bot-token shape — defends against config-injected
+    path traversal in the URL."""
+    config = {"telegram_bot_token": "BAD", "telegram_chat_id": "X"}
+    with patch("notifier.requests.post") as mock_post:
+        result = send_notification("msg", config)
+    assert result is False
+    mock_post.assert_not_called()

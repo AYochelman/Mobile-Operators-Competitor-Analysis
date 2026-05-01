@@ -5,6 +5,7 @@ import { useHiddenCarrier } from '../../hooks/useHiddenCarrier'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
 import SearchableSelect from '../ui/SearchableSelect'
+import { DOMESTIC_LABELS, GLOBAL_LABELS } from '../../data/carrierLabels'
 
 const TAB_ICONS = {
   domestic: (
@@ -30,39 +31,19 @@ const TABS = [
   { id: 'global', label: 'גלובלי' },
 ]
 
-const CARRIERS = [
-  { id: 'partner', label: 'פרטנר' },
-  { id: 'pelephone', label: 'פלאפון' },
-  { id: 'hotmobile', label: 'הוט מובייל' },
-  { id: 'cellcom', label: 'סלקום' },
-  { id: 'mobile019', label: '019' },
-  { id: 'xphone', label: 'XPhone' },
-  { id: 'wecom', label: 'We-Com' },
-]
+// Carriers/providers built from the centralized labels. Adding a new
+// provider in carrierLabels.js will appear in the alerts dropdowns
+// automatically. Only the original ~7 domestic carriers had price alerts
+// historically — we keep that scope and exclude golan / rami_levy /
+// neptucom from this dropdown to match prior behavior.
+const _DOMESTIC_PRICE_ALERT_IDS = ['partner', 'pelephone', 'hotmobile', 'cellcom', 'mobile019', 'xphone', 'wecom']
+const CARRIERS = _DOMESTIC_PRICE_ALERT_IDS
+  .filter(id => DOMESTIC_LABELS[id])
+  .map(id => ({ id, label: DOMESTIC_LABELS[id] }))
 
-const GLOBAL_PROVIDERS = [
-  { id: 'tuki', label: 'Tuki' },
-  { id: 'globalesim', label: 'GlobaleSIM' },
-  { id: 'airalo', label: 'Airalo' },
-  { id: 'pelephone_global', label: 'GlobalSIM' },
-  { id: 'esimo', label: 'eSIMo' },
-  { id: 'simtlv', label: 'SimTLV' },
-  { id: 'world8', label: '8 World' },
-  { id: 'saily', label: 'Saily' },
-  { id: 'holafly', label: 'Holafly' },
-  { id: 'esimio', label: 'eSIM.io' },
-  { id: 'xphone_global', label: 'XPhone Global' },
-  { id: 'sparks', label: 'Sparks' },
-  { id: 'voye', label: 'VOYE' },
-  { id: 'orbit', label: 'Orbit' },
-  { id: 'travelsim', label: 'Travel Sim' },
-  { id: 'gomoworld', label: 'GoMoWorld' },
-  { id: 'tasim', label: 'Tasim' },
-  { id: 'maya', label: 'Maya Mobile' },
-  { id: 'bcengi', label: 'Bcengi' },
-  { id: 'esim70', label: 'eSIM70' },
-  { id: 'jetpack', label: 'Jetpack' },
-]
+const GLOBAL_PROVIDERS = Object.entries(GLOBAL_LABELS)
+  .filter(([id]) => id !== 'airalo_local' && id !== 'airalo_regional' && id !== 'breez' && id !== 'bytesim')
+  .map(([id, label]) => ({ id, label }))
 
 const CARRIER_COLORS = {
   partner: 'blue', pelephone: 'orange', hotmobile: 'red', cellcom: 'purple',

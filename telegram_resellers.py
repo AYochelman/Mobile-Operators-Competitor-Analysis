@@ -215,10 +215,28 @@ def main():
         asyncio.run(cmd_login_request())
     elif cmd == "login_verify":
         if len(sys.argv) < 3:
-            print("Usage: telegram_resellers.py login_verify <code> [2fa_password]")
+            print("Usage: telegram_resellers.py login_verify <code>")
+            print("  2FA password (if required) is read interactively via getpass")
+            print("  — NEVER pass it on the command line, since `tasklist /v` and")
+            print("    bash history would expose it to other users on the box.")
             sys.exit(1)
         code = sys.argv[2]
-        pw = sys.argv[3] if len(sys.argv) > 3 else None
+        pw = None
+        # Telegram 2FA password should NEVER be on the command line. Read it
+        # interactively if the account has 2FA — getpass hides it from stdin
+        # and from the process list.
+        if len(sys.argv) > 3:
+            print("Refusing to accept 2FA password as argv[3] — see usage above.")
+            sys.exit(2)
+        if os.environ.get("TELEGRAM_2FA_PASSWORD"):
+            pw = os.environ.get("TELEGRAM_2FA_PASSWORD")
+        else:
+            try:
+                import getpass
+                pw_input = getpass.getpass("2FA password (leave empty if none): ")
+                pw = pw_input or None
+            except Exception:
+                pw = None
         asyncio.run(cmd_login_verify(code, pw))
     elif cmd == "scrape":
         asyncio.run(cmd_scrape())

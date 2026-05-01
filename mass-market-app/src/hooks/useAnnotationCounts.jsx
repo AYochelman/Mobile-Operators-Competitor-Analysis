@@ -7,14 +7,17 @@ const AnnotationCountsContext = createContext(null)
 export function AnnotationCountsProvider({ children }) {
   const { user } = useAuth()
   const [counts, setCounts] = useState({})
+  const [error, setError] = useState(null)
 
   const reload = useCallback(async () => {
-    if (!user) { setCounts({}); return }
+    if (!user) { setCounts({}); setError(null); return }
     try {
       const data = await api.getAnnotationCounts()
       setCounts(data || {})
-    } catch {
+      setError(null)
+    } catch (err) {
       setCounts({})
+      setError(err?.message || 'failed to load annotation counts')
     }
   }, [user])
 
@@ -24,7 +27,7 @@ export function AnnotationCountsProvider({ children }) {
     counts[`${carrier}|${planType}|${planName}`] || 0
 
   return (
-    <AnnotationCountsContext.Provider value={{ counts, countFor, reload }}>
+    <AnnotationCountsContext.Provider value={{ counts, countFor, reload, error }}>
       {children}
     </AnnotationCountsContext.Provider>
   )

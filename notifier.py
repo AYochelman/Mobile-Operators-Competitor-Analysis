@@ -1,13 +1,69 @@
 import json
+import re
 import requests
 import smtplib
 import ssl
+import time
 from datetime import datetime
 from collections import defaultdict
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email import encoders
+from html import escape as _h
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _retry(func, *, retries=2, backoff=1.5, retriable=(requests.RequestException,)):
+    """Run func() with exponential backoff. Returns True on success, False after exhaustion.
+
+    Usage: _retry(lambda: requests.post(url, json=...))
+    """
+    delay = 1.0
+    for attempt in range(retries + 1):
+        try:
+            resp = func()
+            # Treat HTTP 5xx as retriable; everything else (incl. 4xx) is final.
+            if hasattr(resp, "status_code") and 500 <= resp.status_code < 600:
+                if attempt < retries:
+                    time.sleep(delay)
+                    delay *= backoff
+                    continue
+                return False
+            return resp
+        except retriable as e:
+            if attempt >= retries:
+                logger.warning(f"_retry: gave up after {attempt+1} attempts: {e}")
+                return None
+            time.sleep(delay)
+            delay *= backoff
+    return None
+
+
+def _safe_url(url: str, *, https_only: bool = True) -> str:
+    """Return url if it looks like a safe http(s) URL, else empty string.
+
+    Defends against javascript:/data: schemes injected via brand_config.logo_url.
+    """
+    if not isinstance(url, str):
+        return ""
+    if not url:
+        return ""
+    u = url.strip()
+    if https_only:
+        return u if re.match(r'^https://[^"\'<>\s]+$', u) else ""
+    return u if re.match(r'^https?://[^"\'<>\s]+$', u) else ""
+
+
+def _safe_color(c: str, fallback: str = "#5c3317") -> str:
+    """Return c if it's a valid CSS hex color, else fallback. Defends against
+    CSS-injection via brand_config.primary_color (e.g. 'red;background:url(...)').
+    """
+    if isinstance(c, str) and re.match(r'^#[0-9a-fA-F]{3,8}$', c.strip()):
+        return c.strip()
+    return fallback
 
 CARRIER_NAMES = {
     "partner":   "פרטנר",
@@ -16,6 +72,18 @@ CARRIER_NAMES = {
     "cellcom":   "סלקום",
     "mobile019": "019",
 }
+
+# Default public app URL for messages. Recipients viewing notifications on
+# their phone (Telegram/WhatsApp) cannot reach localhost:5000 from the
+# operator's PC. Override via config["app_url"] / env DEFAULT_APP_URL.
+import os as _os_env
+DEFAULT_APP_URL = (_os_env.environ.get("DEFAULT_APP_URL")
+                   or "https://lucent-kulfi-f037ad.netlify.app")
+
+
+def _public_app_url(config):
+    return (config.get("app_url") if isinstance(config, dict) else None) or DEFAULT_APP_URL
+
 
 GLOBAL_PROVIDER_NAMES = {
     "tuki":             "Tuki",
@@ -28,7 +96,7 @@ GLOBAL_PROVIDER_NAMES = {
 }
 
 
-def format_message(changes):
+def format_message(changes, app_url=None):
     now = datetime.now().strftime("%H:%M")
     by_carrier = defaultdict(list)
     for ch in changes:
@@ -60,11 +128,11 @@ def format_message(changes):
             elif ct == "details_change":
                 lines.append(f"📋 {ch['plan_name']}: {ch['new_val']} (היה: {ch['old_val']})")
 
-    lines += ["", "📊 http://localhost:5000"]
+    lines += ["", f"📊 {app_url or DEFAULT_APP_URL}"]
     return "\n".join(lines)
 
 
-def format_abroad_message(changes):
+def format_abroad_message(changes, app_url=None):
     now = datetime.now().strftime("%H:%M")
     by_carrier = defaultdict(list)
     for ch in changes:
@@ -99,11 +167,11 @@ def format_abroad_message(changes):
             elif ct == "details_change":
                 lines.append(f"📋 {ch['plan_name']}: {ch['new_val']} (היה: {ch['old_val']})")
 
-    lines += ["", "📊 http://localhost:5000"]
+    lines += ["", f"📊 {app_url or DEFAULT_APP_URL}"]
     return "\n".join(lines)
 
 
-def format_global_message(changes):
+def format_global_message(changes, app_url=None):
     now = datetime.now().strftime("%H:%M")
     by_provider = defaultdict(list)
     for ch in changes:
@@ -138,11 +206,11 @@ def format_global_message(changes):
             elif ct == "details_change":
                 lines.append(f"📋 {ch['plan_name']}: {ch['new_val']} (היה: {ch['old_val']})")
 
-    lines += ["", "📊 http://localhost:5000"]
+    lines += ["", f"📊 {app_url or DEFAULT_APP_URL}"]
     return "\n".join(lines)
 
 
-def format_content_message(changes):
+def format_content_message(changes, app_url=None):
     now = datetime.now().strftime("%H:%M")
     by_service = defaultdict(list)
     for ch in changes:
@@ -168,31 +236,37 @@ def format_content_message(changes):
             elif ct == "trial_change":
                 lines.append(f"🎁 {carrier_name}: ניסיון {ch['old_val']} ← {ch['new_val']}")
 
-    lines += ["", "📊 http://localhost:5000"]
+    lines += ["", f"📊 {app_url or DEFAULT_APP_URL}"]
     return "\n".join(lines)
 
 
 def send_notification(message, config):
     token = config["telegram_bot_token"]
     chat_id = config["telegram_chat_id"]
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    try:
-        resp = requests.post(
-            url,
-            json={"chat_id": chat_id, "text": message},
-            timeout=10
-        )
-        return resp.status_code == 200
-    except requests.RequestException:
+    # Validate token shape — bot tokens are <digits>:<35+ alphanumeric>.
+    # Defends against config tampering injecting a path-traversal token.
+    if not re.fullmatch(r'\d+:[\w-]{30,}', token or ''):
+        logger.warning("send_notification: telegram_bot_token has invalid shape")
         return False
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    # NOTE: do NOT add parse_mode='Markdown'/'HTML' here. Plan names contain
+    # user-controlled text scraped from carrier sites. Adding parse_mode
+    # without escaping would let a poisoned plan name inject markdown links.
+    resp = _retry(lambda: requests.post(
+        url,
+        json={"chat_id": chat_id, "text": message},
+        timeout=10
+    ))
+    return bool(resp) and getattr(resp, "status_code", 0) == 200
 
 
 import re as _re_slack
 
 # Defence-in-depth: even if a caller forgets to validate, this final guard
-# stops SSRF before requests.post is reached.
+# stops SSRF before requests.post is reached. Tightened so the office.com
+# pattern can't accept hosts like `evil.com.webhook.office.com.attacker.com`.
 _SLACK_TEAMS_WEBHOOK_RE = _re_slack.compile(
-    r'^https://(hooks\.slack\.com/|.+\.webhook\.office\.com/)'
+    r'^https://(hooks\.slack\.com/|[^./]+\.webhook\.office\.com/)'
 )
 
 
@@ -210,19 +284,10 @@ def send_slack(message: str, webhook_url: str) -> bool:
         return False
     if not _SLACK_TEAMS_WEBHOOK_RE.match(webhook_url.strip()):
         # Refuse to send to unknown hosts. Log + return False so callers see failure.
-        try:
-            import logging as _logging
-            _logging.getLogger(__name__).warning(
-                "send_slack refused: webhook_url is not on Slack/Teams allowlist"
-            )
-        except Exception:
-            pass
+        logger.warning("send_slack refused: webhook_url is not on Slack/Teams allowlist")
         return False
-    try:
-        resp = requests.post(webhook_url, json={"text": message}, timeout=10)
-        return resp.status_code in (200, 201, 202, 204)
-    except requests.RequestException:
-        return False
+    resp = _retry(lambda: requests.post(webhook_url, json={"text": message}, timeout=10))
+    return bool(resp) and getattr(resp, "status_code", 0) in (200, 201, 202, 204)
 
 
 def send_email_report(excel_bytes: bytes, config: dict) -> bool:
@@ -236,11 +301,16 @@ def send_email_report(excel_bytes: bytes, config: dict) -> bool:
 
     today    = datetime.now().strftime("%d.%m.%Y")
     filename = f"cellular_report_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
+    # Use configured public app URL — recipients of this email don't have
+    # access to localhost:5000 from outside the operator's PC.
+    public_url = (config.get("app_url") or
+                  config.get("public_url") or
+                  "https://lucent-kulfi-f037ad.netlify.app")
     body = (
         f"שלום,\n\n"
         f"מצורף דו\"ח חבילות הסלולר של {today}.\n"
         f"שורות המסומנות בצהוב עברו שינוי ב-24 השעות האחרונות.\n\n"
-        f"http://localhost:5000"
+        f"{public_url}"
     )
     payload = {
         "personalizations": [{"to": [{"email": recipient}]}],
@@ -254,16 +324,13 @@ def send_email_report(excel_bytes: bytes, config: dict) -> bool:
             "disposition": "attachment",
         }],
     }
-    try:
-        resp = requests.post(
-            "https://api.sendgrid.com/v3/mail/send",
-            json=payload,
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=20,
-        )
-        return resp.status_code == 202
-    except requests.RequestException:
-        return False
+    resp = _retry(lambda: requests.post(
+        "https://api.sendgrid.com/v3/mail/send",
+        json=payload,
+        headers={"Authorization": f"Bearer {api_key}"},
+        timeout=20,
+    ))
+    return bool(resp) and getattr(resp, "status_code", 0) == 202
 
 
 def send_push_notifications(changes, config, db_path=None):
@@ -437,22 +504,37 @@ CARRIER_LABEL_HE = {
 
 def _build_digest_html(workspace_name: str, app_title: str, primary: str, secondary: str, logo_url: str,
                        app_url: str, by_carrier: dict, change_label: dict, total: int) -> str:
-    """Render the weekly digest as inline-styled HTML (email-client-safe)."""
+    """Render the weekly digest as inline-styled HTML (email-client-safe).
+
+    All workspace-controlled fields (app_title, logo_url, primary/secondary
+    colors) and scrape-derived fields (plan_name, old_val, new_val) are
+    HTML-escaped or whitelist-validated to defeat XSS via brand_config or
+    poisoned scrape data.
+    """
+    # Sanitize workspace-controlled fields
+    safe_workspace = _h(workspace_name or "")
+    safe_app_title = _h(app_title or "MOCA")
+    safe_primary = _safe_color(primary, "#5c3317")
+    safe_secondary = _safe_color(secondary, "#9a8670")
+    safe_logo_url = _safe_url(logo_url)
+    safe_app_url = _safe_url(app_url) or "#"
+
     sections = []
     for carrier, chs in sorted(by_carrier.items()):
-        label = CARRIER_LABEL_HE.get(carrier, carrier)
+        label = _h(CARRIER_LABEL_HE.get(carrier, carrier))
         rows = []
         for ch in chs[:8]:
-            kind = change_label.get(ch.get('change_type', ''), ch.get('change_type', ''))
-            old_v = ch.get('old_val', '') or ''
-            new_v = ch.get('new_val', '') or ''
+            kind = _h(change_label.get(ch.get('change_type', ''), ch.get('change_type', '')))
+            old_v = _h(str(ch.get('old_val') or ''))
+            new_v = _h(str(ch.get('new_val') or ''))
+            plan_name = _h(ch.get('plan_name', '') or '')
             arrow = (f'<span style="color:#9a8670;">{old_v}</span> '
-                     f'<span style="color:{primary};font-weight:600;">&#8594; {new_v}</span>') if (old_v or new_v) else ''
+                     f'<span style="color:{safe_primary};font-weight:600;">&#8594; {new_v}</span>') if (old_v or new_v) else ''
             rows.append(
                 f'<tr><td style="padding:8px 0;border-bottom:1px solid #efe7d9;font-size:13px;color:#4a3a24;">'
-                f'<span style="display:inline-block;padding:2px 8px;background:{secondary};color:#fff;'
+                f'<span style="display:inline-block;padding:2px 8px;background:{safe_secondary};color:#fff;'
                 f'border-radius:10px;font-size:10px;margin-left:8px;">{kind}</span>'
-                f'{ch.get("plan_name","")}'
+                f'{plan_name}'
                 f'</td><td style="padding:8px 0;border-bottom:1px solid #efe7d9;font-size:12px;text-align:left;" dir="ltr">'
                 f'{arrow}</td></tr>'
             )
@@ -462,37 +544,37 @@ def _build_digest_html(workspace_name: str, app_title: str, primary: str, second
                     f'+ \u05e2\u05d5\u05d3 {len(chs)-8} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd</p>')
         sections.append(
             f'<div style="margin:16px 0;background:#fff;border:1px solid #e5d8c5;border-radius:12px;padding:16px;">'
-            f'<h3 style="margin:0 0 10px;color:{primary};font-size:15px;font-weight:700;">'
+            f'<h3 style="margin:0 0 10px;color:{safe_primary};font-size:15px;font-weight:700;">'
             f'{label} <span style="color:#9a8670;font-weight:400;font-size:12px;">({len(chs)})</span></h3>'
             f'<table style="width:100%;border-collapse:collapse;">{"".join(rows)}</table>{more}'
             f'</div>'
         )
     logo_block = ''
-    if logo_url:
-        logo_block = f'<img src="{logo_url}" alt="{app_title}" style="max-height:40px;margin-bottom:12px;" />'
+    if safe_logo_url:
+        logo_block = f'<img src="{safe_logo_url}" alt="{safe_app_title}" style="max-height:40px;margin-bottom:12px;" />'
     return f'''<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0;background:#f9f4ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f4ee;padding:24px 0;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-<tr><td style="background:{primary};border-radius:12px 12px 0 0;padding:24px;text-align:right;">
+<tr><td style="background:{safe_primary};border-radius:12px 12px 0 0;padding:24px;text-align:right;">
 {logo_block}
-<h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">{app_title}</h1>
-<p style="margin:6px 0 0;color:#fce8d0;font-size:13px;">\u05e1\u05d9\u05db\u05d5\u05dd \u05e9\u05d1\u05d5\u05e2\u05d9 \u2014 {workspace_name}</p>
+<h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">{safe_app_title}</h1>
+<p style="margin:6px 0 0;color:#fce8d0;font-size:13px;">\u05e1\u05d9\u05db\u05d5\u05dd \u05e9\u05d1\u05d5\u05e2\u05d9 \u2014 {safe_workspace}</p>
 </td></tr>
 <tr><td style="background:#fff;padding:20px 24px;border-right:1px solid #e5d8c5;border-left:1px solid #e5d8c5;">
 <p style="margin:0;color:#4a3a24;font-size:14px;">
 \u05d1-7 \u05d9\u05de\u05d9\u05dd \u05d4\u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd \u05e0\u05e8\u05e9\u05de\u05d5
-<strong style="color:{primary};">{total} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd</strong> \u05d1\u05ea\u05d5\u05db\u05e0\u05d9\u05d5\u05ea \u05d4\u05de\u05ea\u05d7\u05e8\u05d9\u05dd.</p>
+<strong style="color:{safe_primary};">{total} \u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd</strong> \u05d1\u05ea\u05d5\u05db\u05e0\u05d9\u05d5\u05ea \u05d4\u05de\u05ea\u05d7\u05e8\u05d9\u05dd.</p>
 <p style="margin:6px 0 0;color:#9a8670;font-size:11px;">\u05ea\u05d0\u05e8\u05d9\u05da: {datetime.now().strftime('%d/%m/%Y')}</p>
 </td></tr>
 <tr><td style="background:#f9f4ee;padding:4px 24px;border-right:1px solid #e5d8c5;border-left:1px solid #e5d8c5;">
 {"".join(sections)}
 </td></tr>
-<tr><td style="background:{primary};border-radius:0 0 12px 12px;padding:20px 24px;text-align:center;">
-<a href="{app_url}" style="display:inline-block;padding:10px 24px;background:#fff;color:{primary};border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">
+<tr><td style="background:{safe_primary};border-radius:0 0 12px 12px;padding:20px 24px;text-align:center;">
+<a href="{safe_app_url}" style="display:inline-block;padding:10px 24px;background:#fff;color:{safe_primary};border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">
 \u05e4\u05ea\u05d9\u05d7\u05ea \u05d4\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d4 \u2190</a>
-<p style="margin:14px 0 0;color:#fce8d0;font-size:11px;">\u05e0\u05e9\u05dc\u05d7 \u05d0\u05d5\u05d8\u05d5\u05de\u05d8\u05d9\u05ea \u05de-{app_title}</p>
+<p style="margin:14px 0 0;color:#fce8d0;font-size:11px;">\u05e0\u05e9\u05dc\u05d7 \u05d0\u05d5\u05d8\u05d5\u05de\u05d8\u05d9\u05ea \u05de-{safe_app_title}</p>
 </td></tr>
 </table></td></tr></table></body></html>'''
 
@@ -607,16 +689,13 @@ def send_welcome_email(to_email: str, workspace_name: str, role: str, config: di
         "subject": f"MOCA \u2014 \u05d4\u05ea\u05d5\u05d5\u05e1\u05e4\u05ea \u05dc-{workspace_name}",
         "content": [{"type": "text/plain", "value": body}],
     }
-    try:
-        resp = requests.post(
-            "https://api.sendgrid.com/v3/mail/send",
-            json=payload,
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=20,
-        )
-        return resp.status_code == 202
-    except requests.RequestException:
-        return False
+    resp = _retry(lambda: requests.post(
+        "https://api.sendgrid.com/v3/mail/send",
+        json=payload,
+        headers={"Authorization": f"Bearer {api_key}"},
+        timeout=20,
+    ))
+    return bool(resp) and getattr(resp, "status_code", 0) == 202
 
 
 def send_whatsapp(message, config):
@@ -629,12 +708,9 @@ def send_whatsapp(message, config):
         return False
     url = f"{base_url}/waInstance{instance}/sendMessage/{token}"
     chat_id = group_id if group_id else f"{phone}@c.us"
-    try:
-        resp = requests.post(
-            url,
-            json={"chatId": chat_id, "message": message},
-            timeout=10
-        )
-        return resp.status_code == 200
-    except requests.RequestException:
-        return False
+    resp = _retry(lambda: requests.post(
+        url,
+        json={"chatId": chat_id, "message": message},
+        timeout=10
+    ))
+    return bool(resp) and getattr(resp, "status_code", 0) == 200

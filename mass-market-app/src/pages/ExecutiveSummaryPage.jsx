@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { api } from '../lib/api'
 import { useAuth } from '../hooks/useAuth'
+import { ALL_CARRIER_LABELS } from '../data/carrierLabels'
 
 const CATEGORY_ICONS = {
   domestic: (
@@ -33,21 +34,18 @@ const CATEGORIES = [
   { id: 'content',  label: 'תוכן'           },
 ]
 
+// Centralized labels (data/carrierLabels.js) — adding a new provider there
+// propagates here automatically. The few overrides below preserve display
+// strings that ExecutiveSummaryPage historically used (e.g. "וי-קום" vs
+// "We-Com", "World8" vs "8 World") so the chart legend doesn't shift visually.
 const CARRIER_NAMES = {
-  partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל',
-  cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'וי-קום',
-  neptucom: 'נפטוקום', golan: 'גולן טלקום', tuki: 'Tuki', globalesim: 'GlobaleSIM',
-  airalo: 'Airalo', airalo_local: 'Airalo', airalo_regional: 'Airalo',
-  pelephone_global: 'GlobalSIM', esimo: 'eSIMo',
-  simtlv: 'SimTLV', world8: 'World8', saily: 'Saily', holafly: 'Holafly',
-  esimio: 'eSIMio', sparks: 'Sparks', voye: 'Voye', orbit: 'Orbit',
-  travelsim: 'TravelSim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
-  maya: 'Maya Mobile',
-  bcengi: 'Bcengi',
-  esim70: 'eSIM70',
-  jetpack: 'Jetpack',
-  breez: 'Breeze',
-  bytesim: 'ByteSim',
+  ...ALL_CARRIER_LABELS,
+  wecom:    'וי-קום',
+  neptucom: 'נפטוקום',
+  world8:   'World8',
+  voye:     'Voye',
+  esimio:   'eSIMio',
+  travelsim: 'TravelSim',
   rami_levy: 'רמי לוי',
 }
 

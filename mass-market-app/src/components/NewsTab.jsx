@@ -46,6 +46,9 @@ const CARRIERS = [
   { id: 'rami_levy', label: 'רמי לוי' },
   { id: 'breez',     label: 'Breeze' },
   { id: 'bytesim',   label: 'ByteSim' },
+  // Note: list above is mixed because legacy escapes coexist with literals.
+  // For new entries, prefer adding to DOMESTIC_LABELS in data/carrierLabels.js
+  // and rebuilding this list (see TODO).
 ]
 
 const CARRIER_TAG_COLORS = {

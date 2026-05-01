@@ -57,3 +57,30 @@ export const ALL_CARRIER_LABELS = {
 export function carrierLabel(id) {
   return ALL_CARRIER_LABELS[id] || id
 }
+
+/** Reverse map: Hebrew/English label → { id, tab } for ChatPanel-style
+ * carrier-name detection in free text. Includes lower-case + the id itself
+ * as recognizable forms so users can write "saily" or "Saily" or
+ * "Maya Mobile" interchangeably.
+ *
+ * Tab is 'domestic' for entries in DOMESTIC_LABELS, 'global' otherwise.
+ */
+export const CARRIER_NAME_TO_ID = (() => {
+  const map = {}
+  const add = (label, id, tab) => {
+    if (!label) return
+    map[label] = { id, tab }
+    // Also include lower-case variant for English labels
+    const lower = label.toLowerCase()
+    if (lower !== label) map[lower] = { id, tab }
+  }
+  for (const [id, label] of Object.entries(DOMESTIC_LABELS)) {
+    add(label, id, 'domestic')
+    add(id, id, 'domestic')
+  }
+  for (const [id, label] of Object.entries(GLOBAL_LABELS)) {
+    add(label, id, 'global')
+    add(id, id, 'global')
+  }
+  return map
+})()

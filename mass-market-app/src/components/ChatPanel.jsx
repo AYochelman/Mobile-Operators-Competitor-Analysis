@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
+import { CARRIER_NAME_TO_ID } from '../data/carrierLabels'
 
 const EXAMPLES = [
   'מה החבילה הכי זולה עם 5G?',
@@ -11,58 +12,18 @@ const EXAMPLES = [
   'השוו Airalo ו-Holafly לאירופה',
 ]
 
-// Map carrier names (Hebrew + English) to their IDs and tabs
+// Carrier-name → {id, tab} map is built from the centralized
+// carrierLabels.js so adding a new provider (esim70, breez, jetpack,
+// bytesim, ...) propagates to ChatPanel automatically. A few extra aliases
+// are layered on top for forms users commonly type.
 const CARRIER_MAP = {
-  'פרטנר': { id: 'partner', tab: 'domestic' },
-  'פלאפון': { id: 'pelephone', tab: 'domestic' },
-  'הוט מובייל': { id: 'hotmobile', tab: 'domestic' },
-  'סלקום': { id: 'cellcom', tab: 'domestic' },
-  '019': { id: 'mobile019', tab: 'domestic' },
-  'xphone': { id: 'xphone', tab: 'domestic' },
-  'XPhone': { id: 'xphone', tab: 'domestic' },
-  'we-com': { id: 'wecom', tab: 'domestic' },
-  'We-Com': { id: 'wecom', tab: 'domestic' },
-  'Tuki': { id: 'tuki', tab: 'global' },
-  'GlobaleSIM': { id: 'globalesim', tab: 'global' },
-  'Airalo': { id: 'airalo', tab: 'global' },
-  'GlobalSIM': { id: 'pelephone_global', tab: 'global' },
-  'eSIMo': { id: 'esimo', tab: 'global' },
-  'SimTLV': { id: 'simtlv', tab: 'global' },
-  '8 World': { id: 'world8', tab: 'global' },
-  'XPhone Global': { id: 'xphone_global', tab: 'global' },
-  'Saily': { id: 'saily', tab: 'global' },
-  'Holafly': { id: 'holafly', tab: 'global' },
-  'eSIM.io': { id: 'esimio', tab: 'global' },
-  'esimio': { id: 'esimio', tab: 'global' },
-  'esim.io': { id: 'esimio', tab: 'global' },
-  'Sparks': { id: 'sparks', tab: 'global' },
-  'sparks': { id: 'sparks', tab: 'global' },
-  'VOYE': { id: 'voye', tab: 'global' },
-  'voye': { id: 'voye', tab: 'global' },
-  'Voye': { id: 'voye', tab: 'global' },
-  'airalo': { id: 'airalo', tab: 'global' },
-  'saily': { id: 'saily', tab: 'global' },
-  'holafly': { id: 'holafly', tab: 'global' },
-  'tuki': { id: 'tuki', tab: 'global' },
-  // Domestic
-  'נפטוקום': { id: 'neptucom', tab: 'domestic' },
-  'Neptucom': { id: 'neptucom', tab: 'domestic' },
-  'neptucom': { id: 'neptucom', tab: 'domestic' },
-  // Global — additional providers
-  'Orbit': { id: 'orbit', tab: 'global' },
-  'orbit': { id: 'orbit', tab: 'global' },
-  'Travel Sim': { id: 'travelsim', tab: 'global' },
-  'TravelSim': { id: 'travelsim', tab: 'global' },
-  'travelsim': { id: 'travelsim', tab: 'global' },
-  'GoMoWorld': { id: 'gomoworld', tab: 'global' },
-  'gomoworld': { id: 'gomoworld', tab: 'global' },
-  'Tasim': { id: 'tasim', tab: 'global' },
-  'tasim': { id: 'tasim', tab: 'global' },
-  'Maya Mobile': { id: 'maya', tab: 'global' },
-  'Maya': { id: 'maya', tab: 'global' },
-  'maya': { id: 'maya', tab: 'global' },
-  'Bcengi': { id: 'bcengi', tab: 'global' },
-  'bcengi': { id: 'bcengi', tab: 'global' },
+  ...CARRIER_NAME_TO_ID,
+  // Aliases not derivable from the canonical label
+  'esim.io':       { id: 'esimio',  tab: 'global' },
+  'we-com':        { id: 'wecom',   tab: 'domestic' },
+  'Voye':          { id: 'voye',    tab: 'global' },
+  'Travel Sim':    { id: 'travelsim', tab: 'global' },
+  'נפטוקום':       { id: 'neptucom', tab: 'domestic' },
 }
 
 // Build regex from carrier names (longest first to avoid partial matches)

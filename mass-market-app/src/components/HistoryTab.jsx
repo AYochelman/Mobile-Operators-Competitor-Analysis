@@ -3,48 +3,21 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
-import * as XLSX from 'xlsx'
+// xlsx is dynamically imported inside exportToExcel — it's ~80KB gzipped and
+// only needed when the user explicitly exports. Keeps the History tab's
+// initial bundle smaller.
 import { api } from '../lib/api'
 import Spinner from './ui/Spinner'
+import { DOMESTIC_LABELS, GLOBAL_LABELS } from '../data/carrierLabels'
 
-const DOMESTIC_CARRIERS = [
-  { id: 'partner',   label: 'פרטנר' },
-  { id: 'pelephone', label: 'פלאפון' },
-  { id: 'hotmobile', label: 'הוט מובייל' },
-  { id: 'cellcom',   label: 'סלקום' },
-  { id: 'mobile019', label: '019' },
-  { id: 'xphone',    label: 'XPhone' },
-  { id: 'wecom',     label: 'We-Com' },
-  { id: 'neptucom',  label: 'Neptucom' },
-  { id: 'golan',     label: 'גולן טלקום' },
-  { id: 'rami_levy', label: 'רמי לוי' },
-]
-
-const GLOBAL_CARRIERS = [
-  { id: 'tuki',             label: 'Tuki' },
-  { id: 'globalesim',       label: 'GlobaleSIM' },
-  { id: 'airalo',           label: 'Airalo' },
-  { id: 'pelephone_global', label: 'GlobalSIM' },
-  { id: 'esimo',            label: 'eSIMo' },
-  { id: 'simtlv',           label: 'SimTLV' },
-  { id: 'world8',           label: '8 World' },
-  { id: 'xphone_global',    label: 'XPhone Global' },
-  { id: 'saily',            label: 'Saily' },
-  { id: 'holafly',          label: 'Holafly' },
-  { id: 'esimio',           label: 'eSIM.io' },
-  { id: 'sparks',           label: 'Sparks' },
-  { id: 'voye',             label: 'VOYE' },
-  { id: 'orbit',            label: 'Orbit' },
-  { id: 'travelsim',        label: 'Travel Sim' },
-  { id: 'gomoworld',        label: 'GoMoWorld' },
-  { id: 'tasim',            label: 'Tasim' },
-  { id: 'maya',             label: 'Maya Mobile' },
-  { id: 'bcengi',         label: 'Bcengi' },
-  { id: 'esim70',         label: 'eSIM70' },
-  { id: 'jetpack',        label: 'Jetpack' },
-  { id: 'breez',          label: 'Breeze' },
-  { id: 'bytesim',        label: 'ByteSim' },
-]
+// Build carrier-list shape ({id, label}[]) from centralized labels. Adding
+// a new provider in carrierLabels.js will propagate to the History tab
+// automatically — no need to edit this list.
+const DOMESTIC_CARRIERS = Object.entries(DOMESTIC_LABELS).map(([id, label]) => ({ id, label }))
+const GLOBAL_CARRIERS = Object.entries(GLOBAL_LABELS)
+  // Hide alias rows so users don't see Airalo three times (airalo, airalo_local, airalo_regional)
+  .filter(([id]) => id !== 'airalo_local' && id !== 'airalo_regional')
+  .map(([id, label]) => ({ id, label }))
 
 const CARRIERS_BY_TYPE = {
   domestic: DOMESTIC_CARRIERS,
@@ -199,7 +172,7 @@ export default function HistoryTab() {
     }
   }
 
-  function exportToExcel() {
+  async function exportToExcel() {
     const rows = changes.map(c => ({
       'תאריך':  c.changed_at?.slice(0, 10),
       'חבילה':  c.plan_name,
@@ -207,6 +180,8 @@ export default function HistoryTab() {
       'לפני':   c.old_val,
       'אחרי':   c.new_val,
     }))
+    // Lazy load xlsx only when the user actually exports.
+    const XLSX = await import('xlsx')
     const ws = XLSX.utils.json_to_sheet(rows)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'היסטוריה')
