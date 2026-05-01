@@ -1,0 +1,56 @@
+# Build & runtime artifacts that don't belong in the image
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.eggs
+*.egg-info
+
+# Frontend (built separately and served by Netlify)
+mass-market-app/node_modules
+mass-market-app/dist
+mass-market-app/.vite
+
+# Logs and runtime state — should be mounted as volumes, not baked in
+logs
+*.log
+*.err
+data/*.db
+data/*.session*
+data/banners
+data/archive
+data/cache
+
+# Secrets — must come from env / mounted file at runtime
+config.json
+.env
+.env.*
+
+# Local dev tooling
+.git
+.github
+.claude
+.superpowers
+.idea
+.vscode
+.DS_Store
+
+# Debug history (not needed in production image)
+debug_archive
+
+# Docs (image is for runtime, not reading)
+docs
+*.md
+
+# Test outputs
+.pytest_cache
+test-results
+
+# Backups and one-off scripts not needed in container
+scripts/*.bat
+scripts/*.ps1
+backups

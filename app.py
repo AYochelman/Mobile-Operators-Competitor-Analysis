@@ -823,6 +823,20 @@ def index():
     return resp
 
 
+@app.route("/healthz")
+@limiter.exempt
+def api_healthz():
+    """Lightweight liveness probe — no auth, no DB query.
+
+    For Docker HEALTHCHECK, k8s probes, and uptime monitors. Returns 200 when
+    the process is alive and the request loop is responsive. Does NOT check
+    DB / Supabase / scrapers — those are in /api/health (super-admin only)
+    so internal errors don't leak to anonymous probers. Use this for
+    is-the-process-up checks, not for is-the-system-healthy checks.
+    """
+    return jsonify({"status": "ok"}), 200
+
+
 @app.route("/sw.js")
 def service_worker():
     resp = make_response(send_from_directory("static", "sw.js"))

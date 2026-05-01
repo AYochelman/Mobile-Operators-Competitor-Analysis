@@ -1,0 +1,73 @@
+# MOCA backend stack.
+#
+# Start:    docker compose up -d
+# Logs:     docker compose logs -f moca
+# Stop:     docker compose down
+# Rebuild:  docker compose build --no-cache && docker compose up -d
+#
+# This runs Flask + APScheduler in a single container. The frontend is
+# deployed separately to Netlify (see CLAUDE.md). The container needs:
+#   - data/      — SQLite DB + Telegram session (mounted)
+#   - config.json — secrets (mounted read-only)
+#   - logs/      — rotated app logs (mounted)
+#
+# DR usage: clone repo, drop config.json + data/plans.db into the working
+# directory, run `docker compose up -d`. Service is back in ~10 minutes
+# instead of 4-12 hours of manual setup. See docs/RUNBOOK.md.
+
+services:
+  moca:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: moca-backend:latest
+    container_name: moca-backend
+    restart: unless-stopped
+
+    # Bind-mount stateful directories from the host so they survive image
+    # rebuilds. config.json is read-only — the container should never write
+    # to it. data/ is read-write (SQLite, banners, telegram session).
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config.json:/app/config.json:ro
+
+    ports:
+      - "5000:5000"
+
+    environment:
+      # Bind to all interfaces inside the container so the port mapping
+      # can reach it. ngrok / reverse proxy will hit container:5000.
+      FLASK_HOST: 0.0.0.0
+      # ngrok forwards the real client IP via X-Forwarded-For;
+      # ProxyFix in app.py trusts one upstream.
+      # Add your ngrok URL here for CORS:
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://lucent-kulfi-f037ad.netlify.app,https://terra-nonrestrained-overpiteously.ngrok-free.dev}
+
+    # Use the HEALTHCHECK from the Dockerfile (curl 127.0.0.1:5000/).
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:5000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+    # Resource cap — Playwright + scrapers can spike RAM during scrape.
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+# To add ngrok as a sidecar (replaces the host ngrok install):
+#
+#   ngrok:
+#     image: ngrok/ngrok:latest
+#     command: http moca:5000 --domain=terra-nonrestrained-overpiteously.ngrok-free.dev
+#     environment:
+#       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+#     depends_on:
+#       moca:
+#         condition: service_healthy
+#     restart: unless-stopped

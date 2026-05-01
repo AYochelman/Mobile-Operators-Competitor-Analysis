@@ -32,6 +32,15 @@ def client(tmp_path):
     with flask_app.test_client() as c:
         yield c
 
+
+def test_healthz_returns_ok_without_auth(client):
+    """/healthz must answer 200 to anonymous probes (Docker, k8s, uptime
+    monitors). Returns minimal info — doesn't leak DB / Supabase state."""
+    resp = client.get("/healthz")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data == {"status": "ok"}
+
 @pytest.fixture
 def client_with_history(tmp_path):
     db = str(tmp_path / "test.db")
