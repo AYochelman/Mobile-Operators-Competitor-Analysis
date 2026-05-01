@@ -1,0 +1,122 @@
+name: CI
+
+# Triggers:
+# - push to main: full check on the integration branch
+# - pull_request to main: full check before merge
+# - schedule: weekly run of integration tests (live network) on Mondays 06:00 UTC
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # Mondays 06:00 UTC
+  workflow_dispatch:  # manual trigger from the Actions tab
+
+# Avoid running multiple jobs for the same branch — newer pushes cancel older runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run unit tests (skip integration)
+        # Integration tests hit real carrier sites + Playwright. Run them in
+        # the scheduled job, not on every push.
+        run: pytest tests/ -m "not integration" --maxfail=3 -v
+
+      - name: Run integration tests (scheduled only)
+        if: github.event_name == 'schedule'
+        run: |
+          python -m playwright install --with-deps chromium
+          pytest tests/ -m integration --maxfail=1 -v
+        continue-on-error: true  # carrier sites flap; don't fail the workflow
+
+  frontend:
+    name: Frontend (lint + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mass-market-app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: mass-market-app/package-lock.json
+
+      - name: Install dependencies
+        # --legacy-peer-deps because vite-plugin-pwa peer-dep is loose; matches
+        # the local install instructions in CLAUDE.md.
+        run: npm install --legacy-peer-deps
+
+      - name: Lint
+        run: npm run lint --if-present
+        continue-on-error: true  # don't block the PR on style; surface the issue
+
+      - name: Build
+        # Production build — verifies that the bundle actually compiles, that
+        # all imports resolve, and that no env-only code paths break.
+        env:
+          # Provide dummy values so build doesn't error on the supabase null
+          # check we added 2026-05-01. These are NOT used at runtime — Netlify
+          # provides the real values from its env vars.
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_ANON_KEY: dummy.build.token
+          VITE_API_URL: https://example.com
+        run: npm run build
+
+      - name: Bundle size report
+        run: |
+          echo "## Bundle sizes" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          du -h dist/assets/*.js | sort -rh | head -10 >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  security:
+    name: Security checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Refuse common secret-shaped files
+        # Hard-coded check for files we never want to land in git. Add to
+        # this list as needed.
+        run: |
+          if git ls-files | grep -E "(Recovery Codes|recovery_codes|\.pem$|\.key$|secrets/|config\.json$)" > /tmp/found 2>&1; then
+            echo "::error::Secret-shaped files tracked in git:"
+            cat /tmp/found
+            exit 1
+          fi
+
+      - name: Verify VITE_DEV_AUTH not in production .env
+        # CLAUDE.md: "Never set VITE_DEV_AUTH=true in .env.production"
+        # Catches accidental commits that would expose super-admin to anyone.
+        run: |
+          if [ -f mass-market-app/.env.production ] && grep -E "^VITE_DEV_AUTH\s*=\s*true" mass-market-app/.env.production; then
+            echo "::error::VITE_DEV_AUTH=true in .env.production — this would expose super_admin to all visitors"
+            exit 1
+          fi
