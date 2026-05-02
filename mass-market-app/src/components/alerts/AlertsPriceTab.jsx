@@ -62,6 +62,7 @@ const GLOBAL_PROVIDERS = [
   { id: 'bcengi', label: 'Bcengi' },
   { id: 'esim70', label: 'eSIM70' },
   { id: 'jetpack', label: 'Jetpack' },
+  { id: 'besim', label: 'Besim' },
 ]
 
 const CARRIER_COLORS = {
@@ -71,7 +72,7 @@ const CARRIER_COLORS = {
   esimo: 'purple', simtlv: 'teal', world8: 'pink', saily: 'blue', holafly: 'green',
   esimio: 'blue', xphone_global: 'teal', sparks: 'amber', voye: 'pink',
   orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'purple',
-  maya: 'teal', esim70: 'emerald', jetpack: 'sky',
+  maya: 'teal', esim70: 'emerald', jetpack: 'sky', besim: 'teal',
 }
 
 const TAB_LABELS = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי' }

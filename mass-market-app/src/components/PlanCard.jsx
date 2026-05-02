@@ -52,6 +52,7 @@ const CARRIER_HOME_URLS = {
   maya:            'https://maya.net/esim',
   esim70:          'https://www.esim70.com',
   jetpack:         'https://www.jetpacglobal.com',
+  besim:           'https://besim.co.il',
 }
 
 function slugify(str) {
@@ -82,7 +83,7 @@ const GLOBAL_LABELS = {
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
   orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
   maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack',
-  breez: 'Breeze',
+  breez: 'Breeze', bytesim: 'ByteSim', besim: 'Besim',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
@@ -90,6 +91,7 @@ const GLOBAL_COLORS = {
   saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber', voye: 'pink',
   orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'violet',
   maya: 'teal', esim70: 'emerald', jetpack: 'sky', breez: 'cyan',
+  bytesim: 'emerald', besim: 'teal',
 }
 
 const CARRIER_LOGOS = {
@@ -129,6 +131,7 @@ const CARRIER_LOGOS = {
   jetpack:        '/logos/jetpack.png',
   breez:          '/logos/breez.png',
   bytesim:        '/logos/bytesim.png',
+  besim:          '/logos/besim.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
@@ -149,6 +152,7 @@ const LOGO_SIZES = {
   gomoworld:        '40px',
   maya:             '43px',
   bytesim:          '58px',
+  besim:            '52px',
 }
 
 // Wide logos: separate width override (height stays at LOGO_SIZES default 32px)

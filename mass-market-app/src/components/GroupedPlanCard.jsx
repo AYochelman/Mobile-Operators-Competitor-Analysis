@@ -32,6 +32,7 @@ const CARRIER_LOGOS = {
   jetpack:         '/logos/jetpack.png',
   breez:           '/logos/breez.png',
   bytesim:         '/logos/bytesim.png',
+  besim:           '/logos/besim.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
@@ -49,6 +50,7 @@ const LOGO_SIZES = {
   gomoworld:        '40px',
   maya:             '43px',
   bytesim:          '58px',
+  besim:            '52px',
 }
 
 // Wide logos: width-only override (height stays at LOGO_SIZES default 32px)
@@ -85,14 +87,14 @@ const GLOBAL_LABELS = {
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
   orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld',
   tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack',
-  bytesim: 'ByteSim',
+  bytesim: 'ByteSim', besim: 'Besim',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', airalo_local: 'orange', airalo_regional: 'orange', pelephone_global: 'blue',
   esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
   saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber', voye: 'pink',
   orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'violet', maya: 'teal', esim70: 'emerald', jetpack: 'sky',
-  bytesim: 'blue',
+  bytesim: 'blue', besim: 'teal',
 }
 
 function formatGB(gb) {
@@ -102,7 +104,7 @@ function formatGB(gb) {
 }
 
 function getPillLabel(plan) {
-  if (plan.carrier === 'bytesim') {
+  if (plan.carrier === 'bytesim' || plan.carrier === 'besim') {
     const parts = plan.plan_name?.split(' – ') || []
     const dataStr = parts.at(-2)
     if (dataStr) return dataStr
@@ -118,7 +120,7 @@ function formatDays(days) {
 }
 
 function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, onCompareToggle, repPlan, tabId }) {
-  const hasDataDaysMatrix = carrier === 'bytesim' || carrier === 'maya'
+  const hasDataDaysMatrix = carrier === 'bytesim' || carrier === 'maya' || carrier === 'besim'
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [selectedDays, setSelectedDays] = useState(() => hasDataDaysMatrix ? (plans[0]?.days ?? null) : null)
   const [showCountries, setShowCountries] = useState(false)

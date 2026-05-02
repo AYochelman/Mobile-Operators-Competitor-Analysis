@@ -57,6 +57,16 @@ export default function SearchableSelect({ value, onChange, options, placeholder
     ? options.filter(o => o.label.includes(search))
     : options
 
+  // Cap initial render to avoid freezing the page when the list has thousands
+  // of entries (e.g. global eSIM providers with per-country×data×days plans).
+  // Search bypasses the cap — once the user types, the filter narrows things
+  // fast enough that rendering filtered results in full is fine.
+  const RENDER_CAP = 200
+  const visible = (!search && filtered.length > RENDER_CAP)
+    ? filtered.slice(0, RENDER_CAP)
+    : filtered
+  const hiddenCount = filtered.length - visible.length
+
   const selectedLabel = value === 'all'
     ? placeholder
     : (options.find(o => o.value === value)?.label || value)
@@ -118,7 +128,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
               {placeholder}
             </button>
 
-            {filtered.map(o => (
+            {visible.map(o => (
               <button
                 key={o.value}
                 onClick={() => handleSelect(o.value)}
@@ -129,6 +139,12 @@ export default function SearchableSelect({ value, onChange, options, placeholder
                 {o.label}
               </button>
             ))}
+
+            {hiddenCount > 0 && (
+              <p className="px-2.5 py-2 text-[11px] text-gray-400 text-center border-t border-gray-100">
+                ועוד {hiddenCount.toLocaleString('he-IL')} תוצאות — חפש לצמצום
+              </p>
+            )}
 
             {filtered.length === 0 && (
               <p className="px-2.5 py-2 text-xs text-gray-400 text-center">לא נמצאו תוצאות</p>

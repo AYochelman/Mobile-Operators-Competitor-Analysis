@@ -47,6 +47,7 @@ export const GLOBAL_LABELS = {
   jetpack:          'Jetpack',
   breez:            'Breeze',
   bytesim:          'ByteSim',
+  besim:            'Besim',
 }
 
 export const ALL_CARRIER_LABELS = {

@@ -6,6 +6,7 @@ import {
 import * as XLSX from 'xlsx'
 import { api } from '../lib/api'
 import Spinner from './ui/Spinner'
+import SearchableSelect from './ui/SearchableSelect'
 
 const DOMESTIC_CARRIERS = [
   { id: 'partner',   label: 'פרטנר' },
@@ -44,6 +45,7 @@ const GLOBAL_CARRIERS = [
   { id: 'jetpack',        label: 'Jetpack' },
   { id: 'breez',          label: 'Breeze' },
   { id: 'bytesim',        label: 'ByteSim' },
+  { id: 'besim',          label: 'Besim' },
 ]
 
 const CARRIERS_BY_TYPE = {
@@ -120,8 +122,8 @@ function Delta({ change }) {
 }
 
 export default function HistoryTab() {
-  const [carrier,  setCarrier]  = useState('pelephone')
   const [planType, setPlanType] = useState('domestic')
+  const [carrier,  setCarrier]  = useState('pelephone')
   const [planName, setPlanName] = useState('all')
   const [range,    setRange]    = useState('year')
   const [changes,  setChanges]  = useState([])
@@ -130,12 +132,52 @@ export default function HistoryTab() {
   const [loading,  setLoading]  = useState(false)
   const [analysis,       setAnalysis]       = useState(null)
   const [analyzeLoading, setAnalyzeLoading] = useState(false)
+  // Currently-active plan names for the selected carrier+type. Sourced from the
+  // plans tables (not the changes log) so the dropdown is populated even for
+  // carriers that haven't had any detected changes yet.
+  const [activePlanNames, setActivePlanNames] = useState([])
 
   // Reset plan selection when carrier or plan type changes
   useEffect(() => {
     setPlanName('all')
     setAnalysis(null)
     setAnalyzeLoading(false)
+  }, [carrier, planType])
+
+  // When the type changes to a category where the current carrier isn't
+  // available (e.g. switching from domestic→global keeps `pelephone` selected
+  // even though it isn't in GLOBAL_CARRIERS), reset to the first valid carrier
+  // for that type. Prevents showing an invalid empty selection.
+  useEffect(() => {
+    const list = CARRIERS_BY_TYPE[planType] || []
+    if (list.length && !list.some(c => c.id === carrier)) {
+      setCarrier(list[0].id)
+    }
+  }, [planType, carrier])
+
+  // Fetch the active plan list for the dropdown. Runs only on carrier/planType
+  // change — independent of `planName`/`range`, which only affect the history.
+  useEffect(() => {
+    if (!carrier) { setActivePlanNames([]); return }
+    let cancelled = false
+    const fetchByType = {
+      domestic: () => api.getPlans({ carrier }),
+      abroad:   () => api.getAbroadPlans({ carrier }),
+      global:   () => api.getGlobalPlans({ carrier }),
+      content:  () => api.getContentPlans({ carrier }),
+    }
+    const fn = fetchByType[planType]
+    if (!fn) { setActivePlanNames([]); return }
+    fn()
+      .then(rows => {
+        if (cancelled) return
+        const names = (Array.isArray(rows) ? rows : [])
+          .map(r => r.plan_name || r.service)
+          .filter(Boolean)
+        setActivePlanNames(names)
+      })
+      .catch(() => { if (!cancelled) setActivePlanNames([]) })
+    return () => { cancelled = true }
   }, [carrier, planType])
 
   useEffect(() => {
@@ -156,11 +198,14 @@ export default function HistoryTab() {
       .finally(() => setLoading(false))
   }, [carrier, planType, planName, range])
 
-  // Unique plan names from current changes data (for drill-down dropdown)
-  const planOptions = useMemo(
-    () => [...new Set(changes.map(c => c.plan_name))].sort(),
-    [changes]
-  )
+  // Plan names for the drill-down dropdown. Union of currently-active plans
+  // (so newly-added carriers show up before any change is detected) and plan
+  // names that appear in the changes log (so removed/renamed plans with
+  // historical data remain selectable).
+  const planOptions = useMemo(() => {
+    const fromChanges = changes.map(c => c.plan_name).filter(Boolean)
+    return [...new Set([...activePlanNames, ...fromChanges])].sort()
+  }, [activePlanNames, changes])
 
   // Reset planName when options change and current selection is no longer valid
   useEffect(() => {
@@ -214,22 +259,15 @@ export default function HistoryTab() {
   }
 
   const carriers = CARRIERS_BY_TYPE[planType] || DOMESTIC_CARRIERS
+  const planSelectOptions = useMemo(
+    () => planOptions.map(n => ({ value: n, label: n })),
+    [planOptions]
+  )
 
   return (
     <div>
-      {/* Filter bar */}
+      {/* Filter bar — RTL flow: סוג → מפעיל → חבילה (right to left) */}
       <div className="flex flex-wrap gap-3 items-end mb-4 bg-white border border-moca-border/60 rounded-xl p-3">
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase text-moca-muted tracking-wide">מפעיל</span>
-          <select
-            value={carrier}
-            onChange={e => setCarrier(e.target.value)}
-            className="border border-moca-border rounded-lg px-2 py-1.5 text-sm bg-moca-cream text-moca-text"
-          >
-            {carriers.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-          </select>
-        </div>
-
         <div className="flex flex-col gap-1">
           <span className="text-[10px] font-semibold uppercase text-moca-muted tracking-wide">סוג</span>
           <select
@@ -244,15 +282,25 @@ export default function HistoryTab() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase text-moca-muted tracking-wide">חבילה</span>
+          <span className="text-[10px] font-semibold uppercase text-moca-muted tracking-wide">מפעיל</span>
           <select
-            value={planName}
-            onChange={e => setPlanName(e.target.value)}
-            className="border border-moca-border rounded-lg px-2 py-1.5 text-sm bg-moca-cream text-moca-text min-w-[160px]"
+            value={carrier}
+            onChange={e => setCarrier(e.target.value)}
+            className="border border-moca-border rounded-lg px-2 py-1.5 text-sm bg-moca-cream text-moca-text"
           >
-            <option value="all">כל החבילות</option>
-            {planOptions.map(n => <option key={n} value={n}>{n}</option>)}
+            {carriers.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
           </select>
+        </div>
+
+        <div className="flex flex-col gap-1 min-w-[200px]">
+          <span className="text-[10px] font-semibold uppercase text-moca-muted tracking-wide">חבילה</span>
+          <SearchableSelect
+            value={planName}
+            onChange={setPlanName}
+            options={planSelectOptions}
+            placeholder="כל החבילות"
+            size="md"
+          />
         </div>
 
         <div className="flex gap-1.5 items-center">

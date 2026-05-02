@@ -15,7 +15,7 @@ _DEST_NORM = {
     '\u05d0\u05d9\u05d9 \u05d8\u05e8\u05e7\u05e1 \u05d5\u05e7\u05d9\u05d9\u05e7\u05d5\u05e1': '\u05d0\u05d9\u05d9 \u05d8\u05d5\u05e8\u05e7\u05e1 \u05d5\u05e7\u05d0\u05d9\u05e7\u05d5\u05e1',  # איי טרקס וקייקוס
     # ── 10 canonical renames ────────────────────────────────────────────────
     '\u05d0\u05e8\u05d4"\u05d1': '\u05d0\u05e8\u05e6\u05d5\u05ea \u05d4\u05d1\u05e8\u05d9\u05ea',                            # ארה"ב → ארצות הברית
-    '\u05d0\u05e0\u05d8\u05d9\u05dc\u05d9\u05dd \u05d4\u05d4\u05d5\u05dc\u05e0\u05d3\u05d9\u05d9\u05dd': '\u05d0\u05e0\u05d8\u05d9\u05dc\u05d9\u05dd \u05d4\u05d4\u05d5\u05dc\u05e0\u05d3\u05d9\u05dd',  # אנטילים ההולנדיים → אנטילים ההולנדים
+    '\u05d0\u05e0\u05d8\u05d9\u05dc\u05d9\u05dd \u05d4\u05d4\u05d5\u05dc\u05e0\u05d3\u05d9\u05d9\u05dd': '\u05d0\u05e0\u05d8\u05d9\u05dc\u05d9\u05dd \u05d4\u05d5\u05dc\u05e0\u05d3\u05d9\u05d9\u05dd',  # אנטילים ההולנדיים → אנטילים ההולנדים
     '\u05d1\u05d5\u05e6\u05d5\u05d0\u05e0\u05d4': '\u05d1\u05d5\u05d8\u05e1\u05d5\u05d0\u05e0\u05d4',                       # בוצוואנה → בוטסואנה
     '\u05d2\u05d5\u05d0\u05d3\u05dc\u05d5\u05e4': '\u05d2\u05d5\u05d5\u05d0\u05d3\u05dc\u05d5\u05e4',                       # גואדלופ → גוואדלופ
     '\u05d2\u05d9\u05e0\u05d0\u05d4-\u05d1\u05d9\u05e1\u05d0\u05d5': '\u05d2\u05d9\u05e0\u05d0\u05d4 \u05d1\u05d9\u05e1\u05d0\u05d5',  # גינאה-ביסאו → גינאה ביסאו
@@ -46,7 +46,7 @@ _DEST_NORM = {
     '\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d2\u05e8\u05e0\u05d3\u05d9\u05e0\u05e1': '\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d4\u05d2\u05e8\u05d3\u05d9\u05e0\u05d9\u05dd',  # סנט וינסנט וגרנדינס → סנט וינסנט והגרדינים
     '\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d4\u05d2\u05e8\u05e0\u05d3\u05d9\u05e0\u05d9\u05dd': '\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d4\u05d2\u05e8\u05d3\u05d9\u05e0\u05d9\u05dd',  # סנט וינסנט והגרנדינים → סנט וינסנט והגרדינים
     '\u05e1\u05d5\u05e8\u05d9\u05e0\u05dd': '\u05e1\u05d5\u05e8\u05d9\u05e0\u05d0\u05dd',                                                    # סורינם → סורינאם
-    '\u05e2\u05d5\u05de\u05d0\u05df': '\u05e2\u05d5\u05de\u05df',                                                              # עומאן → עומן
+    '\u05e2\u05d5\u05de\u05df': '\u05e2\u05d5\u05de\u05d0\u05df',                                                              # עומאן → עומן
     '\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df \u05d4\u05d8\u05d5\u05e8\u05e7\u05d9\u05ea': '\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df \u05d4\u05e6\u05e4\u05d5\u05e0\u05d9\u05ea',  # קפריסין הטורקית → קפריסין הצפונית
     '\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df \u05d4\u05d9\u05d5\u05d5\u05e0\u05d9\u05ea': '\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df',                     # קפריסין היוונית → קפריסין
     '\u05de\u05d6\u05e8\u05d7 \u05d8\u05d9\u05de\u05d5\u05e8': '\u05d8\u05d9\u05de\u05d5\u05e8 \u05dc\u05e1\u05d8\u05d4',                                    # מזרח טימור → טימור לסטה
@@ -86,6 +86,18 @@ _DEST_NORM = {
     '\u05de\u05d5\u05e0\u05d8\u05e1\u05e8\u05d0\u05d8': '\u05de\u05d5\u05e0\u05e1\u05e8\u05d0\u05d8',                                  # מונטסראט → מונסראט
     '\u05e1\u05e0\u05d8 \u05de\u05e8\u05d8\u05df': '\u05e1\u05df \u05de\u05e8\u05d8\u05df',                                            # סנט מרטן → סן מרטן
     '\u05e1\u05d9\u05e0\u05d8 \u05de\u05d0\u05e8\u05d8\u05df': '\u05e1\u05e0\u05d8 \u05de\u05d0\u05e8\u05d8\u05df',                   # סינט מארטן → סנט מארטן
+    # ── definite-article-doubling dedup (collapse ה+ה / spurious ה prefix on regions) ──
+    'ההפיליפינים': 'הפיליפינים',  # ההפיליפינים → הפיליפינים
+    'הבלקן': 'בלקן',                                                                              # הבלקן → בלקן
+    'הקריביים': 'קריביים',                                    # הקריביים → קריביים
+    # ASCII-only-safe: 'aii sishl' -> 'aii siishl' (Seychelles)
+    '\u05d0\u05d9\u05d9 \u05e1\u05d9\u05e9\u05dc': '\u05d0\u05d9\u05d9 \u05e1\u05d9\u05d9\u05e9\u05dc',
+    # Kiribati / El Salvador / eSIM70 'Global Package' label
+    '\u05e7\u05d9\u05e8\u05d9\u05d1\u05d8\u05d9': '\u05e7\u05d9\u05e8\u05d9\u05d1\u05d0\u05d8\u05d9',
+    '\u05d0\u05dc \u05e1\u05dc\u05d5\u05d5\u05d3\u05d5\u05e8': '\u05d0\u05dc \u05e1\u05dc\u05d1\u05d3\u05d5\u05e8',
+    '\u05d7\u05d1\u05d9\u05dc\u05d4 \u05d2\u05dc\u05d5\u05d1\u05dc\u05d9\u05ea': '\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9',
+    # Saba (canonical 'sabah' with he-final, drop alef-final)
+    '\u05e1\u05d0\u05d1\u05d0': '\u05e1\u05d0\u05d1\u05d4',
 }
 
 def _norm_extras(extras):
