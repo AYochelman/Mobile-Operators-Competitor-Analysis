@@ -556,3 +556,11 @@ export function getCountriesForPlan(plan) {
 
   return null;
 }
+
+// ── Besim ───────────────────────────────────────────────────────────
+// Region → country-list map for besim's regional/global bundles.
+// Currently empty — besim scraper has not yet been added; the map exists
+// so DashboardPage's `getPlanCoverage` can do `BESIM_REGION_MAP[dest] || null`
+// without crashing on import. Per-country plans fall back to direct-equality
+// matching on extras[0]; regional bundles will return null until populated.
+export const BESIM_REGION_MAP = {};
