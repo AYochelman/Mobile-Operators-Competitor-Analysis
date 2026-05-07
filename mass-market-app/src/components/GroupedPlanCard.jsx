@@ -120,7 +120,7 @@ function formatDays(days) {
 }
 
 function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, onCompareToggle, repPlan, tabId }) {
-  const hasDataDaysMatrix = carrier === 'bytesim' || carrier === 'maya' || carrier === 'besim'
+  const hasDataDaysMatrix = carrier === 'bytesim' || carrier === 'maya' || carrier === 'besim' || carrier === 'voye'
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [selectedDays, setSelectedDays] = useState(() => hasDataDaysMatrix ? (plans[0]?.days ?? null) : null)
   const [showCountries, setShowCountries] = useState(false)

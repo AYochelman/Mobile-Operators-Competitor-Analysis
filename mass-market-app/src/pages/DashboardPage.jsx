@@ -214,26 +214,30 @@ const CARRIERS = [
 ]
 
 const GLOBAL_PROVIDERS = [
-  { id: 'tuki', label: 'Tuki' }, { id: 'globalesim', label: 'GlobaleSIM' },
+  { id: 'world8', label: '8 World' },
   { id: 'airalo', label: 'Airalo' },
-  { id: 'pelephone_global', label: 'GlobalSIM' },
-  { id: 'esimo', label: 'eSIMo' }, { id: 'simtlv', label: 'SimTLV' },
-  { id: 'world8', label: '8 World' }, { id: 'xphone_global', label: 'XPhone' },
-  { id: 'saily', label: 'Saily' }, { id: 'holafly', label: 'Holafly' },
-  { id: 'esimio', label: 'eSIM.io' },
-  { id: 'sparks', label: 'Sparks' },
-  { id: 'voye', label: 'VOYE' },
-  { id: 'orbit', label: 'Orbit' },
-  { id: 'travelsim', label: 'Travel Sim' },
-  { id: 'gomoworld', label: 'GoMoWorld' },
-  { id: 'tasim', label: 'Tasim' },
-  { id: 'maya', label: 'Maya' },
   { id: 'bcengi', label: 'Bcengi' },
-  { id: 'esim70', label: 'eSIM70' },
-  { id: 'jetpack', label: 'Jetpack' },
+  { id: 'besim', label: 'Besim' },
   { id: 'breez', label: 'Breeze' },
   { id: 'bytesim', label: 'ByteSim' },
-  { id: 'besim', label: 'Besim' },
+  { id: 'esimio', label: 'eSIM.io' },
+  { id: 'esim70', label: 'eSIM70' },
+  { id: 'esimo', label: 'eSIMo' },
+  { id: 'globalesim', label: 'GlobaleSIM' },
+  { id: 'pelephone_global', label: 'GlobalSIM' },
+  { id: 'gomoworld', label: 'GoMoWorld' },
+  { id: 'holafly', label: 'Holafly' },
+  { id: 'jetpack', label: 'Jetpack' },
+  { id: 'maya', label: 'Maya' },
+  { id: 'orbit', label: 'Orbit' },
+  { id: 'saily', label: 'Saily' },
+  { id: 'simtlv', label: 'SimTLV' },
+  { id: 'sparks', label: 'Sparks' },
+  { id: 'tasim', label: 'Tasim' },
+  { id: 'travelsim', label: 'Travel Sim' },
+  { id: 'tuki', label: 'Tuki' },
+  { id: 'voye', label: 'VOYE' },
+  { id: 'xphone_global', label: 'XPhone' },
 ]
 
 export default function DashboardPage() {
@@ -497,7 +501,15 @@ export default function DashboardPage() {
       if (f.gen === '4g') result = result.filter(p => !has5G(p))
     }
     if (tab === 'domestic' && f.roaming === 'yes') {
-      result = result.filter(p => p.extras && p.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+/.test(e) && /GB|גלישה/i.test(e)))
+      // Accept either a quantified data note ("1GB גלישה בחו\"ל בכל חודש") OR a
+      // qualitative "חו\"ל כלול"-style tag (premium plans share total data pool).
+      result = result.filter(p => p.extras && p.extras.some(e => {
+        const hasIntl = /חו"ל|חו״ל/.test(e)
+        if (!hasIntl) return false
+        const hasQuantifiedData = /\d+/.test(e) && /GB|גלישה/i.test(e)
+        const hasIncludedTag = /(?:כלול(?:ה|ים)?|כולל)/.test(e)
+        return hasQuantifiedData || hasIncludedTag
+      }))
     }
     if (tab === 'global') {
       if (f.globalProvider !== 'all') {
@@ -603,8 +615,13 @@ export default function DashboardPage() {
         for (const p of plans) {
           // bytesim/maya/besim: keep all (data × days) combinations; other carriers: keep cheapest per GB.
           // Besim's Global bundles have e.g. 1GB/7d AND 1GB/365d — both need to show.
+          // Unlimited plans (data_gb null) are differentiated by days so VOYE-style
+          // 3GB/יום × {3,7,10,15,20,30}-day variants don't collapse into one card.
           const keepAll = p.carrier === 'bytesim' || p.carrier === 'maya' || p.carrier === 'besim'
-          const gbKey = keepAll ? p.plan_name : (p.data_gb ?? 0)
+          const isUnlimited = p.data_gb == null
+          const gbKey = keepAll
+            ? p.plan_name
+            : (isUnlimited ? `unl-${p.days ?? 0}` : p.data_gb)
           if (!byGb.has(gbKey) || (!keepAll && p.price < byGb.get(gbKey).price)) byGb.set(gbKey, p)
         }
         const unique = [...byGb.values()].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))

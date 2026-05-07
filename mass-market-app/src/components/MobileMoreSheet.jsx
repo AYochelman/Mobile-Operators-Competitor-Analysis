@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 
-export default function MobileMoreSheet({ open, onClose, sections }) {
+export default function MobileMoreSheet({ open, onClose, sections, title = 'תפריט' }) {
   const location = useLocation()
 
   // Close on route change — onClose intentionally excluded to avoid effect re-run on every render
@@ -30,7 +30,7 @@ export default function MobileMoreSheet({ open, onClose, sections }) {
         className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white rounded-t-2xl shadow-2xl max-h-[80vh] overflow-y-auto"
       >
         <div className="sticky top-0 bg-white border-b border-moca-border/60 px-4 py-3 flex items-center justify-between">
-          <span className="text-sm font-semibold text-moca-text">תפריט</span>
+          <span className="text-sm font-semibold text-moca-text">{title}</span>
           <button
             onClick={onClose}
             className="text-moca-muted hover:text-moca-text p-1"
@@ -43,16 +43,22 @@ export default function MobileMoreSheet({ open, onClose, sections }) {
         </div>
 
         <div className="px-2 py-2 pb-6">
-          {sections.filter(s => s.items.length > 0).map(section => (
-            <div key={section.title} className="mb-2">
-              <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-moca-sub">
-                {section.title}
+          {(() => {
+            const visibleSections = sections.filter(s => s.items.length > 0)
+            const showSectionTitles = visibleSections.length > 1
+            return visibleSections.map(section => (
+              <div key={section.title} className="mb-2">
+                {showSectionTitles && (
+                  <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-moca-sub">
+                    {section.title}
+                  </div>
+                )}
+                <div className="space-y-0.5">
+                  {section.items}
+                </div>
               </div>
-              <div className="space-y-0.5">
-                {section.items}
-              </div>
-            </div>
-          ))}
+            ))
+          })()}
         </div>
       </div>
     </>

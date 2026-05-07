@@ -367,6 +367,11 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
         {isGlobal && plan.original_price && plan.currency && plan.currency !== 'ILS' && (
           <div className="text-[11px] text-gray-400 mt-0.5" dir="ltr">{plan.currency} {({'USD':'$','GBP':'£','EUR':'€','AUD':'A$','CAD':'C$','JPY':'¥','CHF':'CHF ','NZD':'NZ$'})[plan.currency] || '$'}{plan.original_price}</div>
         )}
+        {plan.promo_price != null && plan.promo_months != null && (
+          <div className="text-[11px] text-moca-bolt font-medium mt-0.5">
+            {plan.promo_months === 2 ? 'חודשיים ראשונים' : `${plan.promo_months} חודשים ראשונים`} ב-₪{plan.promo_price} לחודש
+          </div>
+        )}
         {!isContent && Number(plan.price) > 0 && Number(plan.data_gb) > 0 && (
           <div className="text-[10px] text-gray-400 mt-0.5" dir="ltr">
             ₪{(Number(plan.price) / Number(plan.data_gb)).toFixed(2)}/GB

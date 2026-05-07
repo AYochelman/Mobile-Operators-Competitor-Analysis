@@ -123,15 +123,17 @@ def init_db(db_path=None):
     try:
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS plans (
-                id         INTEGER PRIMARY KEY,
-                carrier    TEXT NOT NULL,
-                plan_name  TEXT NOT NULL,
-                price      REAL,
-                data_gb    INTEGER,
-                minutes    TEXT,
-                extras     TEXT,
-                scraped_at TEXT,
-                url        TEXT,
+                id           INTEGER PRIMARY KEY,
+                carrier      TEXT NOT NULL,
+                plan_name    TEXT NOT NULL,
+                price        REAL,
+                data_gb      INTEGER,
+                minutes      TEXT,
+                extras       TEXT,
+                scraped_at   TEXT,
+                url          TEXT,
+                promo_price  REAL,
+                promo_months INTEGER,
                 UNIQUE(carrier, plan_name)
             );
             CREATE TABLE IF NOT EXISTS changes (
@@ -383,6 +385,13 @@ def init_db(db_path=None):
             conn.commit()
         except Exception:
             pass  # column already exists
+        # Migration: promo pricing on domestic plans (e.g. "3 חודשים ראשונים ב-39 ₪")
+        for col, sql in (("promo_price", "REAL"), ("promo_months", "INTEGER")):
+            try:
+                conn.execute(f"ALTER TABLE plans ADD COLUMN {col} {sql}")
+                conn.commit()
+            except Exception:
+                pass  # column already exists
     finally:
         conn.close()
 
@@ -761,20 +770,23 @@ def save_plans(plans, db_path=None):
         now = datetime.now().isoformat()
         for plan in plans:
             conn.execute("""
-                INSERT INTO plans (carrier, plan_name, price, data_gb, minutes, extras, scraped_at, url)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO plans (carrier, plan_name, price, data_gb, minutes, extras, scraped_at, url, promo_price, promo_months)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(carrier, plan_name) DO UPDATE SET
-                    price      = excluded.price,
-                    data_gb    = excluded.data_gb,
-                    minutes    = excluded.minutes,
-                    extras     = excluded.extras,
-                    scraped_at = excluded.scraped_at,
-                    url        = excluded.url
+                    price        = excluded.price,
+                    data_gb      = excluded.data_gb,
+                    minutes      = excluded.minutes,
+                    extras       = excluded.extras,
+                    scraped_at   = excluded.scraped_at,
+                    url          = excluded.url,
+                    promo_price  = excluded.promo_price,
+                    promo_months = excluded.promo_months
             """, (
                 plan["carrier"], plan["plan_name"], plan.get("price"),
                 plan.get("data_gb"), plan.get("minutes"),
                 json.dumps(plan.get("extras", []), ensure_ascii=False),
-                now, plan.get("url")
+                now, plan.get("url"),
+                plan.get("promo_price"), plan.get("promo_months")
             ))
         conn.commit()
     finally:
@@ -786,13 +798,13 @@ def get_plans(carrier=None, db_path=None):
     try:
         if carrier:
             rows = conn.execute(
-                "SELECT carrier, plan_name, price, data_gb, minutes, extras, scraped_at, url "
+                "SELECT carrier, plan_name, price, data_gb, minutes, extras, scraped_at, url, promo_price, promo_months "
                 "FROM plans WHERE carrier=? ORDER BY price",
                 (carrier,)
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT carrier, plan_name, price, data_gb, minutes, extras, scraped_at, url "
+                "SELECT carrier, plan_name, price, data_gb, minutes, extras, scraped_at, url, promo_price, promo_months "
                 "FROM plans ORDER BY carrier, price"
             ).fetchall()
         return [
@@ -800,7 +812,8 @@ def get_plans(carrier=None, db_path=None):
                 "carrier": r[0], "plan_name": r[1], "price": r[2],
                 "data_gb": r[3], "minutes": r[4],
                 "extras": json.loads(r[5]) if r[5] else [],
-                "scraped_at": r[6], "url": r[7]
+                "scraped_at": r[6], "url": r[7],
+                "promo_price": r[8], "promo_months": r[9]
             }
             for r in rows
         ]
