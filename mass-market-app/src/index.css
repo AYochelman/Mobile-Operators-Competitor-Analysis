@@ -12,18 +12,30 @@
   --color-moca-sand:   #e8d5bc;
   --color-moca-scroll: #c4a882;
   --color-moca-mist:   #faf5ee;
+
+  /* Semantic — price/change indicators */
+  --color-moca-up:     #b4472d;  /* price up = bad for us */
+  --color-moca-down:   #4a7c3f;  /* price down = good for us */
+  --color-moca-hot:    #c9622f;  /* attention, NEW tags */
+
+  /* Type families (utility classes: font-display, font-body) */
+  --font-display: 'Frank Ruhl Libre', 'Assistant', system-ui, serif;
+  --font-body:    'Assistant', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 @layer base {
   html {
     direction: rtl;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   body {
     @apply bg-moca-bg text-gray-900 min-h-screen;
+    font-family: var(--font-body);
   }
+  /* Tabular numbers for prices, deltas, counters */
+  .tnum { font-feature-settings: "tnum"; }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; }
@@ -148,6 +160,17 @@
 .tab-underline.active::after,
 .tab-underline[data-active="true"]::after {
   transform: scaleX(1);
+}
+
+/* ── MOCA design-system shadows + radii ─────────────────────────
+   Shared box shadows for cards/modals/drawers per design handoff.
+   Use as inline style: `boxShadow: 'var(--sh-card)'`. */
+:root {
+  --sh-card:        0 1px 0 var(--color-moca-border), 0 8px 22px -16px rgba(60,40,20,0.25);
+  --sh-card-hover:  0 1px 0 var(--color-moca-border), 0 14px 28px -16px rgba(60,40,20,0.4);
+  --sh-modal:       0 30px 80px -20px rgba(40,30,15,0.5);
+  --sh-drawer:      4px 0 32px rgba(40,30,15,0.18);
+  --sh-popover:     0 12px 40px rgba(60,40,20,0.18);
 }
 
 /* Reduced motion — respect accessibility */
