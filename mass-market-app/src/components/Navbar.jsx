@@ -110,7 +110,7 @@ const dropdownItemCls = ({ isActive }) =>
       : 'text-moca-text hover:bg-gray-50'
   }`
 
-export default function Navbar() {
+export default function Navbar({ onMobileMenuOpen }) {
   const { user, isAdmin, isSuperAdmin, signOut, workspace } = useAuth()
   const flags = useFeatureFlags()
   const { changesCount } = useWatchlist()
@@ -226,6 +226,20 @@ export default function Navbar() {
           </nav>
 
           <div className="flex items-center gap-2">
+            {onMobileMenuOpen && (
+              <button
+                onClick={onMobileMenuOpen}
+                className="text-moca-sub hover:text-moca-bolt transition-colors p-1"
+                title="פתח תפריט"
+                aria-label="פתח תפריט"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              </button>
+            )}
             <NavLink
               to="/alerts?tab=watchlist"
               className="relative text-moca-sub hover:text-moca-bolt transition-colors p-1"

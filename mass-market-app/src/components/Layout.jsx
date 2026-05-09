@@ -12,6 +12,7 @@ import { useFeatureFlags } from '../hooks/useFeatureFlags'
 export default function Layout() {
   const flags = useFeatureFlags()
   const [tmOpen, setTmOpen] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   return (
     <div className="min-h-screen flex flex-col bg-moca-bg">
@@ -26,7 +27,7 @@ export default function Layout() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Mobile top bar — Navbar's <header> hides on md+ via md:hidden.
               Mobile bottom-nav also lives inside Navbar and stays visible. */}
-          <Navbar />
+          <Navbar onMobileMenuOpen={() => setMobileNavOpen(true)} />
 
           {/* Desktop topbar */}
           <Topbar onTimeMachine={() => setTmOpen(true)} />
@@ -36,6 +37,9 @@ export default function Layout() {
           </main>
         </div>
       </div>
+
+      {/* Mobile sidebar drawer — same content as desktop, hamburger-triggered */}
+      <Sidebar mobile open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
       {!flags.hide_chat && <ChatPanel />}
       <ScrapeToast />

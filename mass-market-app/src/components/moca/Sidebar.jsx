@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useFeatureFlags } from '../../hooks/useFeatureFlags'
@@ -71,7 +73,7 @@ const Icons = {
   ),
 }
 
-function NavItem({ to, icon, label, badge, badgeColor, end, onClick, isActive }) {
+function NavItem({ to, icon, label, badge, badgeColor, end, onClick, isActive, onAfterNav }) {
   // We support both internal route navigation (NavLink) and pure-button items
   // (e.g. search opens a Cmd+K modal). When `onClick` is provided and `to` is
   // null, we render a button.
@@ -132,7 +134,7 @@ function NavItem({ to, icon, label, badge, badgeColor, end, onClick, isActive })
   if (!to && onClick) {
     return (
       <button
-        onClick={onClick}
+        onClick={() => { onClick(); onAfterNav && onAfterNav() }}
         style={{
           background: 'transparent',
           border: 'none',
@@ -153,7 +155,7 @@ function NavItem({ to, icon, label, badge, badgeColor, end, onClick, isActive })
     <NavLink
       to={to}
       end={end}
-      onClick={onClick}
+      onClick={() => { onClick && onClick(); onAfterNav && onAfterNav() }}
       style={{ textDecoration: 'none', display: 'block' }}
     >
       {({ isActive: linkActive }) => inner(isActive ?? linkActive)}
@@ -178,11 +180,36 @@ function GroupLabel({ children }) {
   )
 }
 
-export default function Sidebar({ className = '' }) {
+/**
+ * Universal sidebar — same content on desktop (always-visible aside) and
+ * mobile (slide-in drawer triggered by the hamburger button).
+ *
+ * Desktop:  <Sidebar />               — sticky right column, hidden <md
+ * Mobile:   <Sidebar mobile open onClose={...} /> — portal drawer
+ */
+export default function Sidebar({ className = '', mobile = false, open = false, onClose }) {
   const { isAdmin, isSuperAdmin, workspace } = useAuth()
   const flags = useFeatureFlags()
   const { changesCount } = useWatchlist()
   const location = useLocation()
+
+  // Mobile-mode: lock body scroll + Esc to close while drawer is open
+  useEffect(() => {
+    if (!mobile || !open) return
+    document.body.style.overflow = 'hidden'
+    const onKey = (e) => { if (e.key === 'Escape') onClose && onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = ''
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [mobile, open, onClose])
+
+  // Mobile-mode: auto-close when route changes (user tapped a nav item)
+  useEffect(() => {
+    if (mobile && open && onClose) onClose()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, location.search])
 
   const visible = (path) => !FLAG_FOR_PATH[path] || !flags[FLAG_FOR_PATH[path]]
   const appTitle = workspace?.brand_config?.app_title || null
@@ -212,6 +239,154 @@ export default function Sidebar({ className = '' }) {
     }))
   }
 
+  // Pure-button NavItems (search) need explicit close in mobile mode since
+  // they don't trigger a route change.
+  const afterNav = mobile ? onClose : undefined
+
+  const body = (
+    <>
+      {/* Logo block */}
+      <div style={{ padding: '18px 14px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <NavLink
+          to="/"
+          onClick={() => { afterNav && afterNav() }}
+          style={{ textDecoration: 'none' }}
+        >
+          <Logo size="md" appTitle={appTitle} logoUrl={logoUrl} />
+        </NavLink>
+        {mobile && (
+          <button
+            onClick={onClose}
+            aria-label="סגור תפריט"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 999,
+              background: 'var(--color-moca-white, #fff)',
+              border: '1px solid var(--color-moca-border)',
+              color: 'var(--color-moca-sub)',
+              fontSize: 18,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'inherit',
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
+          >
+            ×
+          </button>
+        )}
+      </div>
+
+      <nav style={{ padding: '8px 8px 16px', display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {/* ─── ניטור ─── */}
+        <GroupLabel>ניטור</GroupLabel>
+        <NavItem to="/" end icon={Icons.dashboard} label="דשבורד" isActive={isPath('/')} onAfterNav={afterNav} />
+        {visible('/executive-summary') && (
+          <NavItem to="/executive-summary" icon={Icons.exec} label="דוח מנהלים" isActive={isPath('/executive-summary')} onAfterNav={afterNav} />
+        )}
+        {visible('/positioning') && (
+          <NavItem to="/positioning" icon={Icons.positioning} label="מיצוב תחרותי" isActive={isPath('/positioning')} onAfterNav={afterNav} />
+        )}
+        <NavItem to="/?tab=history" icon={Icons.history} label="היסטוריית שינויים" isActive={isPath(null, 'history')} onAfterNav={afterNav} />
+        {visible('/alerts') && (
+          <NavItem
+            to="/alerts"
+            icon={Icons.alerts}
+            label="התראות"
+            badge={changesCount > 0 ? (changesCount > 99 ? '99+' : changesCount) : null}
+            badgeColor="var(--color-moca-up)"
+            isActive={isPath('/alerts')}
+            onAfterNav={afterNav}
+          />
+        )}
+
+        {/* ─── תובנות ─── */}
+        <GroupLabel>תובנות</GroupLabel>
+        {visible('/ai-insights') && (
+          <NavItem to="/ai-insights" icon={Icons.ai} label="AI Insights" isActive={isPath('/ai-insights')} onAfterNav={afterNav} />
+        )}
+        <NavItem to="/?tab=banners" icon={Icons.banners} label="באנרים" isActive={isPath(null, 'banners')} onAfterNav={afterNav} />
+        {visible('/archive') && (
+          <NavItem to="/archive" icon={Icons.archive} label="ארכיב Snapshots" isActive={isPath('/archive')} onAfterNav={afterNav} />
+        )}
+
+        {/* ─── מסלולים ─── */}
+        <GroupLabel>מסלולים</GroupLabel>
+        {visible('/compare') && (
+          <NavItem to="/compare" icon={Icons.plans} label="השוואת מסלולים" isActive={isPath('/compare')} onAfterNav={afterNav} />
+        )}
+        <NavItem to="/?tab=abroad" icon={Icons.roaming} label={'חו״ל · Roaming'} isActive={isPath(null, 'abroad')} onAfterNav={afterNav} />
+        <NavItem to="/?tab=global" icon={Icons.esim} label="eSIM גלובלי" isActive={isPath(null, 'global')} onAfterNav={afterNav} />
+
+        {/* ─── כלים ─── */}
+        <GroupLabel>כלים</GroupLabel>
+        <NavItem
+          icon={Icons.search}
+          label={<span>חיפוש מתקדם <kbd style={{ fontSize: 9, padding: '1px 4px', borderRadius: 3, background: 'var(--color-moca-sand)', color: 'var(--color-moca-sub)', marginInlineStart: 6, fontFamily: 'inherit' }}>Ctrl K</kbd></span>}
+          onClick={openSearch}
+          onAfterNav={afterNav}
+        />
+        {(isAdmin || isSuperAdmin) && (
+          <NavItem
+            to={isSuperAdmin ? '/admin/workspaces' : '/workspace/users'}
+            icon={Icons.workspace}
+            label="Workspace"
+            isActive={location.pathname.startsWith('/workspace') || location.pathname.startsWith('/admin')}
+            onAfterNav={afterNav}
+          />
+        )}
+      </nav>
+    </>
+  )
+
+  // Mobile drawer mode — render as portal slide-in from RTL start (right)
+  if (mobile) {
+    if (!open) return null
+    return createPortal(
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9050,
+          background: 'rgba(40,30,15,0.35)',
+          backdropFilter: 'blur(2px)',
+          WebkitBackdropFilter: 'blur(2px)',
+          display: 'flex',
+          justifyContent: 'flex-start',
+          animation: 'fadeIn 200ms var(--ease-out)',
+        }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="תפריט ניווט"
+      >
+        <aside
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: 280,
+            maxWidth: '85vw',
+            height: '100%',
+            background: 'var(--color-moca-cream)',
+            overflowY: 'auto',
+            boxShadow: 'var(--sh-drawer)',
+            direction: 'rtl',
+            animation: 'drawerSlideIn 250ms var(--ease-out)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {body}
+        </aside>
+      </div>,
+      document.body
+    )
+  }
+
+  // Desktop sticky aside
   return (
     <aside
       className={`hidden md:flex md:flex-col ${className}`}
@@ -228,69 +403,7 @@ export default function Sidebar({ className = '' }) {
         zIndex: 30,
       }}
     >
-      {/* Logo block */}
-      <div style={{ padding: '18px 14px 8px' }}>
-        <NavLink to="/" style={{ textDecoration: 'none' }}>
-          <Logo size="md" appTitle={appTitle} logoUrl={logoUrl} />
-        </NavLink>
-      </div>
-
-      <nav style={{ padding: '8px 8px 16px', display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {/* ─── ניטור ─── */}
-        <GroupLabel>ניטור</GroupLabel>
-        <NavItem to="/" end icon={Icons.dashboard} label="דשבורד" isActive={isPath('/')} />
-        {visible('/executive-summary') && (
-          <NavItem to="/executive-summary" icon={Icons.exec} label="דוח מנהלים" isActive={isPath('/executive-summary')} />
-        )}
-        {visible('/positioning') && (
-          <NavItem to="/positioning" icon={Icons.positioning} label="מיצוב תחרותי" isActive={isPath('/positioning')} />
-        )}
-        <NavItem to="/?tab=history" icon={Icons.history} label="היסטוריית שינויים" isActive={isPath(null, 'history')} />
-        {visible('/alerts') && (
-          <NavItem
-            to="/alerts"
-            icon={Icons.alerts}
-            label="התראות"
-            badge={changesCount > 0 ? (changesCount > 99 ? '99+' : changesCount) : null}
-            badgeColor="var(--color-moca-up)"
-            isActive={isPath('/alerts')}
-          />
-        )}
-
-        {/* ─── תובנות ─── */}
-        <GroupLabel>תובנות</GroupLabel>
-        {visible('/ai-insights') && (
-          <NavItem to="/ai-insights" icon={Icons.ai} label="AI Insights" isActive={isPath('/ai-insights')} />
-        )}
-        <NavItem to="/?tab=banners" icon={Icons.banners} label="באנרים" isActive={isPath(null, 'banners')} />
-        {visible('/archive') && (
-          <NavItem to="/archive" icon={Icons.archive} label="ארכיב Snapshots" isActive={isPath('/archive')} />
-        )}
-
-        {/* ─── מסלולים ─── */}
-        <GroupLabel>מסלולים</GroupLabel>
-        {visible('/compare') && (
-          <NavItem to="/compare" icon={Icons.plans} label="השוואת מסלולים" isActive={isPath('/compare')} />
-        )}
-        <NavItem to="/?tab=abroad" icon={Icons.roaming} label={'חו״ל · Roaming'} isActive={isPath(null, 'abroad')} />
-        <NavItem to="/?tab=global" icon={Icons.esim} label="eSIM גלובלי" isActive={isPath(null, 'global')} />
-
-        {/* ─── כלים ─── */}
-        <GroupLabel>כלים</GroupLabel>
-        <NavItem
-          icon={Icons.search}
-          label={<span>חיפוש מתקדם <kbd style={{ fontSize: 9, padding: '1px 4px', borderRadius: 3, background: 'var(--color-moca-sand)', color: 'var(--color-moca-sub)', marginInlineStart: 6, fontFamily: 'inherit' }}>Ctrl K</kbd></span>}
-          onClick={openSearch}
-        />
-        {(isAdmin || isSuperAdmin) && (
-          <NavItem
-            to={isSuperAdmin ? '/admin/workspaces' : '/workspace/users'}
-            icon={Icons.workspace}
-            label="Workspace"
-            isActive={location.pathname.startsWith('/workspace') || location.pathname.startsWith('/admin')}
-          />
-        )}
-      </nav>
+      {body}
     </aside>
   )
 }
