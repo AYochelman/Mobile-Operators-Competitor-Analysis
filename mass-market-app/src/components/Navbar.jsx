@@ -206,8 +206,8 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Desktop header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200/60 sticky top-0 z-40">
+      {/* Mobile top header — replaced on desktop by <Topbar> in Layout */}
+      <header className="md:hidden bg-white/80 backdrop-blur-md border-b border-gray-200/60 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 h-12 flex items-center justify-between">
           <NavLink to="/" className="flex items-center">
             <Logo size="md" appTitle={appTitle} logoUrl={logoUrl} />
