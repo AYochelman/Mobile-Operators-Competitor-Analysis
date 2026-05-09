@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useLocation } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
 import { useHiddenCarrier, useVisibleCarriers } from '../hooks/useHiddenCarrier'
@@ -251,7 +251,28 @@ export default function DashboardPage() {
   const [onlyWatched, setOnlyWatched] = useState(false)
   const visibleTabs = useMemo(() => TABS.filter(t => !flags['hide_' + t.id]), [flags])
   const [searchParams, setSearchParams] = useSearchParams()
-  const [tab, setTab] = useState(searchParams.get('tab') || 'domestic')
+  const location = useLocation()
+
+  // Pathname → locked tab (per phase-9 clean routes /plans /roaming /esim /banners /history).
+  // When set, the tab navigation is hidden and the in-page tab can't be switched —
+  // the URL is the source of truth.
+  const lockedTab = useMemo(() => {
+    const m = {
+      '/plans':    'domestic',
+      '/roaming':  'abroad',
+      '/esim':     'global',
+      '/banners':  'banners',
+      '/history':  'history',
+    }
+    return m[location.pathname] || null
+  }, [location.pathname])
+
+  const [tab, setTab] = useState(lockedTab || searchParams.get('tab') || 'domestic')
+
+  // Reflect lockedTab into local state on path change so loadTab() fires.
+  useEffect(() => {
+    if (lockedTab && tab !== lockedTab) setTab(lockedTab)
+  }, [lockedTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // If active tab gets hidden by feature flags, fall back to first visible tab
   useEffect(() => {
@@ -840,23 +861,26 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Tabs — slim underline style */}
-      <div className="flex justify-center gap-0 mb-6 border-b border-gray-200">
-        {visibleTabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => { setTab(t.id); setVisibleCount(50); setFilter('carrier', 'all'); setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
-            className={`relative px-4 py-2.5 text-[13px] font-medium transition-all duration-150
-              ${tab === t.id
-                ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-2 after:h-[2px] after:bg-moca-bolt after:rounded-full'
-                : 'text-moca-muted hover:text-moca-bolt'
-              }`}
-          >
-            <span className="hidden sm:inline-flex items-center gap-1.5">{TAB_ICONS[t.id]}</span>
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {/* Tabs — hidden on dedicated routes (/plans, /roaming, /esim, /banners, /history)
+          where the URL itself is the tab selector. */}
+      {!lockedTab && (
+        <div className="flex justify-center gap-0 mb-6 border-b border-gray-200">
+          {visibleTabs.map(t => (
+            <button
+              key={t.id}
+              onClick={() => { setTab(t.id); setVisibleCount(50); setFilter('carrier', 'all'); setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
+              className={`relative px-4 py-2.5 text-[13px] font-medium transition-all duration-150
+                ${tab === t.id
+                  ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-2 after:h-[2px] after:bg-moca-bolt after:rounded-full'
+                  : 'text-moca-muted hover:text-moca-bolt'
+                }`}
+            >
+              <span className="hidden sm:inline-flex items-center gap-1.5">{TAB_ICONS[t.id]}</span>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Filter strip — hidden on banners tab which has no plan filters */}
       <div className="mb-4" style={tab === 'banners' || tab === 'history' || tab === 'news' ? {display:'none'} : undefined}>

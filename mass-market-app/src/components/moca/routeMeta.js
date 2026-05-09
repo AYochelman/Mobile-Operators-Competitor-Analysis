@@ -7,17 +7,13 @@
  */
 
 export const ROUTE_META = [
-  { match: '/?tab=history',    kicker: 'ניטור',     title: 'היסטוריית שינויים' },
-  { match: '/?tab=banners',    kicker: 'תובנות',    title: 'באנרים פעילים' },
-  { match: '/?tab=abroad',     kicker: 'מסלולים',   title: 'חו״ל · Roaming' },
-  { match: '/?tab=global',     kicker: 'מסלולים',   title: 'eSIM גלובלי' },
-  { match: '/?tab=resellers',  kicker: 'מסלולים',   title: 'משווקים' },
-  { match: '/?tab=content',    kicker: 'מסלולים',   title: 'שירותי תוכן' },
-  { match: '/?tab=news',       kicker: 'תובנות',    title: 'חדשות' },
-  { match: '/?tab=domestic',   kicker: 'ניטור',     title: 'דשבורד' },
-
   { match: '/',                kicker: 'ניטור',     title: 'דשבורד' },
-  { match: '/compare',         kicker: 'מסלולים',   title: 'השוואת מסלולים' },
+  { match: '/plans',           kicker: 'מסלולים',   title: 'השוואת מסלולים' },
+  { match: '/roaming',         kicker: 'מסלולים',   title: 'חו״ל · Roaming' },
+  { match: '/esim',            kicker: 'מסלולים',   title: 'eSIM גלובלי' },
+  { match: '/banners',         kicker: 'תובנות',    title: 'באנרים פעילים' },
+  { match: '/history',         kicker: 'ניטור',     title: 'היסטוריית שינויים' },
+  { match: '/compare',         kicker: 'מסלולים',   title: 'השוואת מחירים · גרפים' },
   { match: '/positioning',     kicker: 'ניטור',     title: 'מיצוב תחרותי' },
   { match: '/alerts',          kicker: 'ניטור',     title: 'התראות' },
   { match: '/executive-summary', kicker: 'ניטור',   title: 'דוח מנהלים שבועי' },
@@ -32,16 +28,7 @@ export const ROUTE_META = [
   { match: '/admin/audit',     kicker: 'ניהול',     title: 'יומן ביקורת' },
 ]
 
-export function resolveRouteMeta(pathname, search) {
-  // Build a tab key (?tab=foo) for tab-suffix matching
-  const tab = new URLSearchParams(search || '').get('tab')
-  const fullKey = tab ? `${pathname}?tab=${tab}` : pathname
-
-  // First try exact full-key match (with tab)
-  for (const r of ROUTE_META) {
-    if (r.match === fullKey) return r
-  }
-  // Then exact pathname match
+export function resolveRouteMeta(pathname /*, search */) {
   for (const r of ROUTE_META) {
     if (r.match === pathname) return r
   }

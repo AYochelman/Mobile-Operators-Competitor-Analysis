@@ -215,17 +215,10 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
   const appTitle = workspace?.brand_config?.app_title || null
   const logoUrl  = workspace?.brand_config?.logo_url  || null
 
-  // Custom active-detection for tab-suffixed routes — NavLink's default
-  // `end` matching doesn't account for `?tab=X` query strings.
-  const isPath = (path, tab) => {
-    if (tab) {
-      const currentTab = new URLSearchParams(location.search).get('tab')
-      return location.pathname === '/' && currentTab === tab
-    }
-    if (path === '/') {
-      const currentTab = new URLSearchParams(location.search).get('tab')
-      return location.pathname === '/' && (!currentTab || currentTab === 'domestic')
-    }
+  // Active-detection — phase 9 uses clean routes (/plans /roaming /esim /banners
+  // /history) so we just match pathnames directly.
+  const isPath = (path) => {
+    if (path === '/') return location.pathname === '/'
     return location.pathname === path || location.pathname.startsWith(path + '/')
   }
 
@@ -291,7 +284,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         {visible('/positioning') && (
           <NavItem to="/positioning" icon={Icons.positioning} label="מיצוב תחרותי" isActive={isPath('/positioning')} onAfterNav={afterNav} />
         )}
-        <NavItem to="/?tab=history" icon={Icons.history} label="היסטוריית שינויים" isActive={isPath(null, 'history')} onAfterNav={afterNav} />
+        <NavItem to="/history" icon={Icons.history} label="היסטוריית שינויים" isActive={isPath('/history')} onAfterNav={afterNav} />
         {visible('/alerts') && (
           <NavItem
             to="/alerts"
@@ -309,18 +302,16 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         {visible('/ai-insights') && (
           <NavItem to="/ai-insights" icon={Icons.ai} label="AI Insights" isActive={isPath('/ai-insights')} onAfterNav={afterNav} />
         )}
-        <NavItem to="/?tab=banners" icon={Icons.banners} label="באנרים" isActive={isPath(null, 'banners')} onAfterNav={afterNav} />
+        <NavItem to="/banners" icon={Icons.banners} label="באנרים" isActive={isPath('/banners')} onAfterNav={afterNav} />
         {visible('/archive') && (
           <NavItem to="/archive" icon={Icons.archive} label="ארכיב Snapshots" isActive={isPath('/archive')} onAfterNav={afterNav} />
         )}
 
         {/* ─── מסלולים ─── */}
         <GroupLabel>מסלולים</GroupLabel>
-        {visible('/compare') && (
-          <NavItem to="/compare" icon={Icons.plans} label="השוואת מסלולים" isActive={isPath('/compare')} onAfterNav={afterNav} />
-        )}
-        <NavItem to="/?tab=abroad" icon={Icons.roaming} label={'חו״ל · Roaming'} isActive={isPath(null, 'abroad')} onAfterNav={afterNav} />
-        <NavItem to="/?tab=global" icon={Icons.esim} label="eSIM גלובלי" isActive={isPath(null, 'global')} onAfterNav={afterNav} />
+        <NavItem to="/plans" icon={Icons.plans} label="השוואת מסלולים" isActive={isPath('/plans')} onAfterNav={afterNav} />
+        <NavItem to="/roaming" icon={Icons.roaming} label={'חו״ל · Roaming'} isActive={isPath('/roaming')} onAfterNav={afterNav} />
+        <NavItem to="/esim" icon={Icons.esim} label="eSIM גלובלי" isActive={isPath('/esim')} onAfterNav={afterNav} />
 
         {/* ─── כלים ─── */}
         <GroupLabel>כלים</GroupLabel>

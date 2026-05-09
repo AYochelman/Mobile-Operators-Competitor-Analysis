@@ -78,6 +78,12 @@ export default function App() {
           <Route path="/invite/:token" element={<InvitePage />} />
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<DashboardPage />} />
+            {/* Phase 9 — clean URLs for tab views; DashboardPage detects pathname */}
+            <Route path="plans"    element={<DashboardPage />} />
+            <Route path="roaming"  element={<DashboardPage />} />
+            <Route path="esim"     element={<DashboardPage />} />
+            <Route path="banners"  element={<DashboardPage />} />
+            <Route path="history"  element={<DashboardPage />} />
             <Route path="compare" element={<ComparePage />} />
             <Route path="positioning" element={<PositioningPage />} />
             <Route path="alerts" element={<AlertsPage />} />
