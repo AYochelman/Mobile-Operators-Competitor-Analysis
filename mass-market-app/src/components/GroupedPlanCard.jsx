@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, memo } from 'react'
 import Badge from './ui/Badge'
+import Delta from './moca/Delta'
 import CountryModal from './CountryModal'
 import AnnotationsModal from './AnnotationsModal'
 import { getCountriesForPlan } from '../data/globalCountries'
@@ -200,13 +201,9 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
       <div className="absolute top-3 right-3 flex items-center gap-1 flex-wrap max-w-[140px]">
         <Badge color={badgeColor}>{label}</Badge>
         {trendInfo && (
-          <span className={`inline-flex items-center text-[8px] font-extrabold px-1.5 py-0.5 rounded-full leading-none ${
-            trendInfo.pct_change <= -10 ? 'bg-emerald-500 text-white' :
-            trendInfo.pct_change < 0   ? 'bg-emerald-100 text-emerald-700' :
-                                         'bg-red-100 text-red-600'
-          }`}>
-            {trendInfo.pct_change < 0 ? '↓' : '↑'}{Math.abs(trendInfo.pct_change).toFixed(0)}%
-            {trendInfo.pct_change <= -10 && ' 🔥'}
+          <span className="inline-flex items-center gap-0.5">
+            <Delta value={Math.round(trendInfo.pct_change)} size="sm" suffix="%" />
+            {trendInfo.pct_change <= -10 && <span aria-hidden="true" className="text-[10px]">🔥</span>}
           </span>
         )}
         {selectedPlan.esim && <Badge color="green">eSIM</Badge>}
