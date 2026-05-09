@@ -1,7 +1,12 @@
 import { useMemo } from 'react'
 import CarrierChip from './CarrierChip'
+import Sparkline from './Sparkline'
 import Delta from './Delta'
-import { getCarrierName } from './carrierMeta'
+import { getCarrierColor, getCarrierName } from './carrierMeta'
+import { useCarrierPriceTrend } from '../../hooks/useCarrierPriceTrend'
+
+// Shared 5-column grid: [carrier+meta] [sparkline] [min] [avg] [position vs ours]
+const GRID_COLS = 'minmax(160px, 1.4fr) 110px 60px 90px 100px'
 
 /**
  * At-a-glance competitive snapshot — one row per carrier.
@@ -79,6 +84,120 @@ function buildSnapshots(plans, carrierIds, changes) {
       netDelta24h: Math.round(netDelta),
     }
   })
+}
+
+// Trim a long series to the last N points so all sparklines render at a
+// consistent visual scale even if some carriers have months of history.
+function trimSeries(points, maxPoints = 30) {
+  if (!points || points.length <= maxPoints) return points
+  return points.slice(points.length - maxPoints)
+}
+
+function CompetitorRow({ row, isOurs, oursAvg, onRowClick }) {
+  const empty = row.plans === 0
+  const trend = useCarrierPriceTrend(row.carrier, 'domestic')
+  const sparkData = trend ? trimSeries(trend) : null
+  const sparkColor = isOurs ? 'var(--color-moca-bolt)' : getCarrierColor(row.carrier)
+
+  return (
+    <button
+      type="button"
+      onClick={() => onRowClick && !empty && onRowClick(row.carrier)}
+      disabled={empty || !onRowClick}
+      style={{
+        width: '100%',
+        display: 'grid',
+        gridTemplateColumns: GRID_COLS,
+        gap: 10,
+        padding: '12px 18px',
+        background: isOurs ? 'var(--color-moca-cream)' : 'transparent',
+        border: 'none',
+        borderBottom: '1px solid var(--color-moca-border)',
+        cursor: empty || !onRowClick ? 'default' : 'pointer',
+        textAlign: 'right',
+        fontFamily: 'inherit',
+        color: 'inherit',
+        position: 'relative',
+        transition: 'background 120ms ease',
+        opacity: empty ? 0.5 : 1,
+      }}
+      onMouseEnter={(e) => {
+        if (!isOurs && !empty && onRowClick) e.currentTarget.style.background = 'var(--color-moca-mist)'
+      }}
+      onMouseLeave={(e) => {
+        if (!isOurs && !empty && onRowClick) e.currentTarget.style.background = 'transparent'
+      }}
+    >
+      {isOurs && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            insetInlineStart: 0,
+            top: 0,
+            bottom: 0,
+            width: 3,
+            background: 'var(--color-moca-bolt)',
+          }}
+        />
+      )}
+
+      {/* Carrier */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+        <CarrierChip id={row.carrier} size={28} />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-moca-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {getCarrierName(row.carrier)}
+            {isOurs && (
+              <span style={{ color: 'var(--color-moca-bolt)', marginInlineStart: 6, fontSize: 10.5, fontWeight: 700 }}>· שלנו</span>
+            )}
+          </div>
+          <div style={{ fontSize: 10.5, color: 'var(--color-moca-muted)', marginTop: 1 }}>
+            {empty
+              ? 'אין מסלולים זמינים'
+              : `${row.plans} מסלולים${row.changes7d > 0 ? ` · ${row.changes7d} שינויים · 7 ימים` : ''}`}
+          </div>
+        </div>
+      </div>
+
+      {/* Sparkline */}
+      <div style={{ alignSelf: 'center', display: 'flex', alignItems: 'center' }}>
+        {sparkData && sparkData.length >= 2 ? (
+          <Sparkline data={sparkData} color={sparkColor} w={110} h={26} fill strokeWidth={1.6} />
+        ) : (
+          <span style={{ fontSize: 10, color: 'var(--color-moca-muted)' }}>
+            {trend === undefined ? '…' : '—'}
+          </span>
+        )}
+      </div>
+
+      {/* Min price */}
+      <div className="tnum" style={{ textAlign: 'left', fontSize: 13, color: 'var(--color-moca-sub)', alignSelf: 'center', direction: 'ltr' }}>
+        {row.min != null ? `${row.min}₪` : '—'}
+      </div>
+
+      {/* Avg price */}
+      <div className="tnum" style={{ textAlign: 'left', alignSelf: 'center' }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-moca-dark)', direction: 'ltr', letterSpacing: -0.2 }}>
+          {row.avg != null ? `${row.avg}₪` : '—'}
+        </div>
+        {row.netDelta24h !== 0 && (
+          <div style={{ marginTop: 2 }}>
+            <Delta value={row.netDelta24h} suffix="₪" />
+          </div>
+        )}
+      </div>
+
+      {/* Position vs ours */}
+      <div style={{ textAlign: 'left', alignSelf: 'center' }}>
+        {isOurs ? (
+          <span style={{ fontSize: 10.5, color: 'var(--color-moca-bolt)', fontWeight: 700 }}>BENCHMARK</span>
+        ) : (
+          <PositionLabel row={row} oursAvg={oursAvg} />
+        )}
+      </div>
+    </button>
+  )
 }
 
 function PositionLabel({ row, oursAvg }) {
@@ -201,7 +320,7 @@ export default function CompetitorBoard({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(160px, 1.5fr) 70px 90px 90px 110px',
+          gridTemplateColumns: GRID_COLS,
           gap: 10,
           padding: '8px 18px',
           borderBottom: '1px solid var(--color-moca-border)',
@@ -214,7 +333,7 @@ export default function CompetitorBoard({
         }}
       >
         <span>מתחרה</span>
-        <span style={{ textAlign: 'left' }}>מסלולים</span>
+        <span>מגמת מחיר</span>
         <span style={{ textAlign: 'left' }}>מ-</span>
         <span style={{ textAlign: 'left' }}>ממוצע</span>
         <span style={{ textAlign: 'left' }}>ביחס לשלך</span>
@@ -222,103 +341,15 @@ export default function CompetitorBoard({
 
       {/* Rows */}
       <div>
-        {sorted.map((row) => {
-          const isOurs = row.carrier === oursCarrier
-          const empty = row.plans === 0
-          return (
-            <button
-              key={row.carrier}
-              onClick={() => onRowClick && !empty && onRowClick(row.carrier)}
-              disabled={empty || !onRowClick}
-              style={{
-                width: '100%',
-                display: 'grid',
-                gridTemplateColumns: 'minmax(160px, 1.5fr) 70px 90px 90px 110px',
-                gap: 10,
-                padding: '12px 18px',
-                background: isOurs ? 'var(--color-moca-cream)' : 'transparent',
-                border: 'none',
-                borderBottom: '1px solid var(--color-moca-border)',
-                cursor: empty || !onRowClick ? 'default' : 'pointer',
-                textAlign: 'right',
-                fontFamily: 'inherit',
-                color: 'inherit',
-                position: 'relative',
-                transition: 'background 120ms ease',
-                opacity: empty ? 0.5 : 1,
-              }}
-              onMouseEnter={(e) => {
-                if (!isOurs && !empty && onRowClick) e.currentTarget.style.background = 'var(--color-moca-mist)'
-              }}
-              onMouseLeave={(e) => {
-                if (!isOurs && !empty && onRowClick) e.currentTarget.style.background = 'transparent'
-              }}
-            >
-              {isOurs && (
-                <span
-                  aria-hidden="true"
-                  style={{
-                    position: 'absolute',
-                    insetInlineStart: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 3,
-                    background: 'var(--color-moca-bolt)',
-                  }}
-                />
-              )}
-
-              {/* Carrier */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                <CarrierChip id={row.carrier} size={28} />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-moca-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {getCarrierName(row.carrier)}
-                    {isOurs && (
-                      <span style={{ color: 'var(--color-moca-bolt)', marginInlineStart: 6, fontSize: 10.5, fontWeight: 700 }}>· שלנו</span>
-                    )}
-                  </div>
-                  {row.changes7d > 0 && (
-                    <div style={{ fontSize: 10.5, color: 'var(--color-moca-muted)', marginTop: 1 }}>
-                      {row.changes7d} שינויים · 7 ימים
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Plans count */}
-              <div className="tnum" style={{ textAlign: 'left', fontSize: 14, fontWeight: 700, color: 'var(--color-moca-text)', alignSelf: 'center' }}>
-                {empty ? '—' : row.plans}
-              </div>
-
-              {/* Min price */}
-              <div className="tnum" style={{ textAlign: 'left', fontSize: 13, color: 'var(--color-moca-sub)', alignSelf: 'center', direction: 'ltr' }}>
-                {row.min != null ? `${row.min}₪` : '—'}
-              </div>
-
-              {/* Avg price */}
-              <div className="tnum" style={{ textAlign: 'left', alignSelf: 'center' }}>
-                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-moca-dark)', direction: 'ltr', letterSpacing: -0.2 }}>
-                  {row.avg != null ? `${row.avg}₪` : '—'}
-                </div>
-                {row.netDelta24h !== 0 && (
-                  <div style={{ marginTop: 2 }}>
-                    <Delta value={row.netDelta24h} suffix="₪" />
-                  </div>
-                )}
-              </div>
-
-              {/* Position vs ours */}
-              <div style={{ textAlign: 'left', alignSelf: 'center' }}>
-                {isOurs ? (
-                  <span style={{ fontSize: 10.5, color: 'var(--color-moca-bolt)', fontWeight: 700 }}>BENCHMARK</span>
-                ) : (
-                  <PositionLabel row={row} oursAvg={oursAvg} />
-                )}
-              </div>
-            </button>
-          )
-        })}
+        {sorted.map((row) => (
+          <CompetitorRow
+            key={row.carrier}
+            row={row}
+            isOurs={row.carrier === oursCarrier}
+            oursAvg={oursAvg}
+            onRowClick={onRowClick}
+          />
+        ))}
       </div>
     </section>
   )
