@@ -176,7 +176,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
 
   const handleShare = useCallback((e) => {
     e.stopPropagation()
-    const url = `${window.location.origin}/?tab=global&carrier=${carrier}&highlight=${encodeURIComponent(selectedPlan.plan_name || '')}`
+    const url = `${window.location.origin}/esim?carrier=${carrier}&highlight=${encodeURIComponent(selectedPlan.plan_name || '')}`
     navigator.clipboard?.writeText(url).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)

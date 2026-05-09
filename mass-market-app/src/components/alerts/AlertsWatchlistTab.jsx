@@ -91,7 +91,14 @@ export default function AlertsWatchlistTab() {
                   )}
                 </div>
                 <button
-                  onClick={() => navigate(`/?tab=${c.plan_type}&carrier=${c.carrier}&highlight=${encodeURIComponent(c.plan_name || '')}`)}
+                  onClick={() => {
+                    // Map plan_type to phase-9 clean route; legacy ?tab= is the
+                    // fallback for types without a dedicated route (content, etc).
+                    const PATH = { domestic: '/plans', abroad: '/roaming', global: '/esim' }
+                    const base = PATH[c.plan_type] || `/?tab=${c.plan_type}`
+                    const sep = base.includes('?') ? '&' : '?'
+                    navigate(`${base}${sep}carrier=${c.carrier}&highlight=${encodeURIComponent(c.plan_name || '')}`)
+                  }}
                   className="shrink-0 text-xs text-moca-bolt hover:text-moca-dark transition-colors px-2.5 py-1.5 rounded-lg border border-moca-border/50 hover:bg-moca-cream"
                 >
                   צפה

@@ -222,7 +222,13 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
 
   const handleShare = useCallback((e) => {
     e.stopPropagation()
-    const url = `${window.location.origin}/?tab=${type}&carrier=${plan.carrier}&highlight=${encodeURIComponent(plan.plan_name || '')}`
+    // Map plan type to phase-9 clean route. Falls back to ?tab= for types
+    // that don't have a dedicated route yet (resellers, content, news).
+    const PATH_FOR_TYPE = { domestic: '/plans', abroad: '/roaming', global: '/esim' }
+    const cleanPath = PATH_FOR_TYPE[type]
+    const url = cleanPath
+      ? `${window.location.origin}${cleanPath}?carrier=${plan.carrier}&highlight=${encodeURIComponent(plan.plan_name || '')}`
+      : `${window.location.origin}/?tab=${type}&carrier=${plan.carrier}&highlight=${encodeURIComponent(plan.plan_name || '')}`
     navigator.clipboard?.writeText(url).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)

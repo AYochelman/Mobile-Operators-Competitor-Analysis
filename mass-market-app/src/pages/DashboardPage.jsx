@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react'
-import { useSearchParams, useLocation } from 'react-router-dom'
+import { useSearchParams, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
 import { useHiddenCarrier, useVisibleCarriers } from '../hooks/useHiddenCarrier'
@@ -252,26 +252,45 @@ export default function DashboardPage() {
   const visibleTabs = useMemo(() => TABS.filter(t => !flags['hide_' + t.id]), [flags])
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
+  const navigate = useNavigate()
 
   // Pathname → locked tab (per phase-9 clean routes /plans /roaming /esim /banners /history).
   // When set, the tab navigation is hidden and the in-page tab can't be switched —
   // the URL is the source of truth.
-  const lockedTab = useMemo(() => {
-    const m = {
-      '/plans':    'domestic',
-      '/roaming':  'abroad',
-      '/esim':     'global',
-      '/banners':  'banners',
-      '/history':  'history',
-    }
-    return m[location.pathname] || null
-  }, [location.pathname])
+  const TAB_ROUTES = {
+    '/plans':    'domestic',
+    '/roaming':  'abroad',
+    '/esim':     'global',
+    '/banners':  'banners',
+    '/history':  'history',
+  }
+  const TAB_TO_PATH = {
+    domestic: '/plans',
+    abroad:   '/roaming',
+    global:   '/esim',
+    banners:  '/banners',
+    history:  '/history',
+  }
+  const lockedTab = useMemo(() => TAB_ROUTES[location.pathname] || null, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [tab, setTab] = useState(lockedTab || searchParams.get('tab') || 'domestic')
+  const [tab, _setTab] = useState(lockedTab || searchParams.get('tab') || 'domestic')
+
+  // When on a locked route, switching tabs has to navigate — otherwise our
+  // own useEffect below would snap the tab back to whatever the URL says.
+  // Off a locked route we mutate state in place (and let setSearchParams
+  // mirror it for legacy bookmarks).
+  const setTab = useCallback((nextTab) => {
+    if (lockedTab && nextTab !== lockedTab && TAB_TO_PATH[nextTab]) {
+      const qs = location.search
+      navigate(`${TAB_TO_PATH[nextTab]}${qs}`)
+      return
+    }
+    _setTab(nextTab)
+  }, [lockedTab, navigate, location.search]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reflect lockedTab into local state on path change so loadTab() fires.
   useEffect(() => {
-    if (lockedTab && tab !== lockedTab) setTab(lockedTab)
+    if (lockedTab && tab !== lockedTab) _setTab(lockedTab)
   }, [lockedTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // If active tab gets hidden by feature flags, fall back to first visible tab

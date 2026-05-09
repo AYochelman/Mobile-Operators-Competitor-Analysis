@@ -148,7 +148,7 @@ export default function Navbar({ onMobileMenuOpen }) {
       label: 'היסטוריה',
       items: [
         { to: '/archive',      label: 'ארכיב snapshots', visible: visible('/archive') },
-        { to: '/?tab=history', label: 'שינויי היסטוריה', visible: true },
+        { to: '/history', label: 'שינויי היסטוריה', visible: true },
       ],
     },
     {
@@ -169,7 +169,7 @@ export default function Navbar({ onMobileMenuOpen }) {
   function isGroupActive(group) {
     return group.items.some(i => {
       if (i.to === '/') return location.pathname === '/' && !location.search.includes('tab=history')
-      if (i.to === '/?tab=history') return location.pathname === '/' && location.search.includes('tab=history')
+      if (i.to === '/history') return location.pathname === '/history'
       return location.pathname === i.to || location.pathname.startsWith(i.to + '/')
     })
   }

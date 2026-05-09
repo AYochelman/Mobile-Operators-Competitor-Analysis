@@ -146,12 +146,8 @@ export default function PositioningPage() {
     return empty
   }, [matrix, visibleCarriers, buckets])
 
-  const handleCellClick = (carrierId, bucket) => {
-    if (axis === 'price') {
-      navigate(`/?tab=domestic&carrier=${carrierId}`)
-    } else {
-      navigate(`/?tab=domestic&carrier=${carrierId}`)
-    }
+  const handleCellClick = (carrierId, _bucket) => {
+    navigate(`/plans?carrier=${carrierId}`)
   }
 
   return (
