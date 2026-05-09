@@ -806,22 +806,24 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 pb-20 md:pb-6">
-      {/* Header row */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      {/* Header row — context meta + admin scrape trigger.
+          Page identity (kicker + title) lives in the Topbar. */}
+      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 tnum">
           {lastUpdate && (
-            <p className="text-[11px] text-gray-400">
-              עדכון: {new Date(lastUpdate).toLocaleDateString('he-IL')} {lastUpdate.slice(11, 16)}
-            </p>
+            <span className="text-[11px] text-moca-muted">
+              <span className="font-bold uppercase tracking-wider text-[9px] me-1">עדכון</span>
+              {new Date(lastUpdate).toLocaleDateString('he-IL')} {lastUpdate.slice(11, 16)}
+            </span>
           )}
           {usdRate && (
-            <p className="text-[11px] text-gray-400">שער דולר: ₪{usdRate.toFixed(2)}</p>
+            <span className="text-[11px] text-moca-muted" dir="ltr">USD ₪{usdRate.toFixed(2)}</span>
           )}
           {eurRate && (
-            <p className="text-[11px] text-gray-400">שער אירו: ₪{eurRate.toFixed(2)}</p>
+            <span className="text-[11px] text-moca-muted" dir="ltr">EUR ₪{eurRate.toFixed(2)}</span>
           )}
           {gbpRate && (
-            <p className="text-[11px] text-gray-400">שער פאונד: ₪{gbpRate.toFixed(2)}</p>
+            <span className="text-[11px] text-moca-muted" dir="ltr">GBP ₪{gbpRate.toFixed(2)}</span>
           )}
         </div>
         {isAdmin && (

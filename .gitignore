@@ -1,5 +1,6 @@
 .claude/
 .superpowers/
+design-handoff/
 data/*.db
 __pycache__/
 *.pyc

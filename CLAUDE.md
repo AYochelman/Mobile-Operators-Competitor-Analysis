@@ -96,7 +96,7 @@ python telegram_resellers.py scrape                 # ingest channels listed in 
 
 | Path | Purpose |
 |------|---------|
-| pages/DashboardPage.jsx | Main 8-tab view (domestic/abroad/global/**resellers**/content/banners/history/news) with filters. `RESELLERS` const lists reseller IDs+labels mapped to underlying carriers |
+| pages/DashboardPage.jsx | Main 8-tab view (domestic/abroad/global/**resellers**/content/banners/history/news) with filters. **Lazy-loaded** since phase 15. `RESELLERS` const lists reseller IDs+labels mapped to underlying carriers. Reads `lockedTab` from `useLocation().pathname` — when on a clean URL like `/plans` or `/banners` the tab navigation hides and `setTab` navigates instead of mutating state. |
 | pages/ComparePage.jsx | Price comparison charts (Recharts) |
 | pages/AlertsPage.jsx | Personal price alerts with DB persistence |
 | pages/SettingsPage.jsx | Admin panel — scrape triggers, user management (adminOnly) |
@@ -115,20 +115,42 @@ python telegram_resellers.py scrape                 # ingest channels listed in 
 | Path | Purpose |
 |------|---------|
 | components/Logo.jsx | MOCA brand logo (bolt + wordmark), sizes: xs/sm/md |
-| components/PlanCard.jsx | Universal plan card with country/apps modals |
+| components/PlanCard.jsx | Universal plan card with country/apps modals. Uses `<Delta>` from moca/ for price-trend pills |
 | components/ChatPanel.jsx | AI chat (floating button → /api/chat) |
 | components/NewsTab.jsx | Google News RSS per carrier, client-side filter by carrier + date window |
 | components/GlobalSearch.jsx | Cmd+K / Ctrl+K full-app plan search, portal-rendered |
 | components/AnnotationsModal.jsx | Team notes per plan — pinned to (carrier, plan_name) |
 | components/ScrapeProgressPanel.jsx | Live scrape progress indicator (SSE stream) |
-| components/ViewAsBanner.jsx | Super-admin "viewing as workspace X" banner |
-| components/CarrierAIInsights.jsx | Per-carrier AI summary widget |
+| components/ViewAsBanner.jsx | Super-admin "viewing as workspace X" banner. Rendered inside Layout (above the sidebar+main flex row) — not sticky |
+| components/CarrierAIInsights.jsx | Per-carrier AI summary widget. Used inline in DashboardPage; `/ai-insights` page uses its own feed-style layout |
 | components/MarketMoversWidget.jsx | Biggest price changes since last scrape |
-| components/SparklineMini.jsx | Inline price-history sparkline (Recharts) |
+| components/SparklineMini.jsx | Inline price-history sparkline (Recharts) — API-fetching variant |
 | components/SavedComparesMenu.jsx | Save/load named comparison filter sets |
 | components/SavedViewsMenu.jsx | Save/load named dashboard filter states |
 | components/PriceHistoryModal.jsx | Full price history chart for a single plan |
 | components/OfflineBanner.jsx | Offline detection banner (useOnlineStatus) |
+
+### MOCA Design System (`components/moca/`)
+
+Shared primitives that drive the new visual language. Import via the barrel: `import { CarrierChip, Delta, Tag, PageHeader, ... } from '../components/moca'`.
+
+| Path | Purpose |
+|------|---------|
+| moca/CarrierChip.jsx | Circular avatar with brand color (from `mvnoBrandColors.js`) + 1-2 letter glyph + optional name. Workspace-themed |
+| moca/Sparkline.jsx | **Pure presentational** SVG sparkline (no API). Pair with `useCarrierPriceTrend` for fetched data |
+| moca/Delta.jsx | +/- pill with ▲/▼ arrows. Positive=red (`--color-moca-up`)=bad-for-us; negative=green (`--color-moca-down`)=good-for-us |
+| moca/Tag.jsx | Compact uppercase status pill — NEW, HOT, PRICE UP, BENCHMARK |
+| moca/PageHeader.jsx | Standard page top — kicker + title + subtitle + actions + tabs. Title is **optional** (omit when Topbar already shows it) |
+| moca/Sidebar.jsx | Universal: desktop sticky aside on RTL start; pass `mobile open onClose` for the slide-in drawer variant |
+| moca/Topbar.jsx | Desktop topbar — kicker + dynamic title from `routeMeta.js` + LIVE pulse + ⌘K search + Time Machine + alerts + profile |
+| moca/TimeMachineModal.jsx | `/api/archive` viewer — carrier dropdown + date picker, renders historical banners + plans for the picked snapshot |
+| moca/CompetitorBoard.jsx | Per-carrier competitive snapshot row — chip + sparkline + min/avg price + delta + "ביחס לשלך". Domestic-tab only |
+| moca/BannerMosaic.jsx | column-count layout for banners (3→2→1 responsive). Wires tiles → drawer state. Per-banner `kind` overrides mosaic-level `source` |
+| moca/BannerTile.jsx | Single banner tile with carrier color dot + freshness pill (היום / אתמול / לפני N ימים) + hover lift |
+| moca/BannerDrawer.jsx | Slide-in detail drawer (480px from RTL start) for a banner — large preview + facts grid + actions |
+| moca/routeMeta.js | Pathname → `{ kicker, title }` map used by Topbar. Add new entries when adding routes |
+| moca/carrierMeta.js | `getCarrierColor(id)` / `getCarrierLetter(id)` / `getCarrierName(id)` for the chip primitives |
+| moca/index.js | Barrel re-export — always import from here for consistency |
 
 ### Hooks & Lib
 
@@ -141,6 +163,7 @@ python telegram_resellers.py scrape                 # ingest channels listed in 
 | hooks/useAnnotationCounts.jsx | Aggregated annotation counts per plan |
 | hooks/useWatchlist.jsx | Per-user watchlist of plan IDs |
 | hooks/useOnlineStatus.js | Navigator online/offline event listener |
+| hooks/useCarrierPriceTrend.js | Aggregate per-carrier price-history series (avg across all plans, daily). Module-scope cache + in-flight coalescing. Used by `<CompetitorBoard>` |
 | lib/api.js | Flask API wrapper with JWT headers |
 | lib/supabase.js | Supabase client (graceful null if unconfigured) |
 
@@ -214,12 +237,44 @@ change_detector.py compares old vs new plan lists by (carrier, plan_name) key:
 
 ## Brand & UI
 
-The React app uses a **mocha-latte** color palette defined in `index.css` `@theme` block:
-- Body background: `#f9f4ee` (light cream)
-- Primary actions / active states: `#5c3317` (espresso)
-- Hover backgrounds: `#f5ede0` (cream)
-- Filter/card borders: `border-moca-border/60` (subtle, rounded-xl)
-- Carrier/provider badge colors (blue, green, orange, etc.) are intentionally preserved
+The React app uses the **MOCA mocha-latte** design system (per Claude Design handoff, see `design-handoff/` at the repo root). All tokens live in `index.css` `@theme` block:
+
+**Surface colors**:
+- `--color-moca-bg: #f9f4ee` (page background)
+- `--color-moca-cream: #f5ede0` (cards, hover)
+- `--color-moca-mist: #faf5ee` (subtle hover)
+- `--color-moca-sand: #e8d5bc` (warm dividers)
+- `--color-moca-border: #e0cdb5` (default border)
+
+**Brand / text**:
+- `--color-moca-bolt: #5c3317` (primary brand — buttons, accents). Aliased as `--color-moca-espresso`
+- `--color-moca-dark: #4a2a13` (darkest text)
+- `--color-moca-text: #3b1f0d` (body text)
+- `--color-moca-sub: #8a6a4a` (secondary text)
+- `--color-moca-muted: #a08468` (tertiary)
+
+**Semantic** (added phase 1):
+- `--color-moca-up: #b4472d` (price ↑ — bad-for-us in competitive context)
+- `--color-moca-down: #4a7c3f` (price ↓ — good-for-us)
+- `--color-moca-hot: #c9622f` (NEW / attention)
+
+**Typography** (added phase 1):
+- `--font-display: 'Frank Ruhl Libre', serif` — page titles, big headings
+- `--font-body: 'Assistant', system-ui, sans-serif` — everything else (set on `body`)
+- Both loaded via `<link>` in `index.html` from Google Fonts
+
+**Shadows** (added phase 1, scoped to `:root`):
+- `--sh-card`, `--sh-card-hover`, `--sh-modal`, `--sh-drawer`, `--sh-popover`
+
+**Layout shell** (rebuilt phase 2):
+- Desktop: right-side `<Sidebar>` (RTL start) + sticky `<Topbar>` + content. Layout is `flex-col md:flex-row` so the sidebar is the first flex child = physical right in RTL
+- Mobile: existing `<Navbar>` top bar + bottom-nav + hamburger that opens `<Sidebar mobile>` drawer
+- `BrandThemeApplier` in App.jsx still overrides `--color-moca-bolt` / `--color-moca-dark` per workspace (mvno_carrier or brand_config)
+
+**Routing — clean URLs** (added phase 9):
+- `/` — Dashboard (CompetitorBoard widget + tab navigation)
+- `/plans` `/roaming` `/esim` `/banners` `/history` — all mount `DashboardPage` with a `lockedTab` derived from pathname; tab nav is hidden on these routes. Legacy `?tab=X` URLs still resolve via the searchParams fallback in DashboardPage
+- Other routes: `/compare`, `/positioning`, `/alerts`, `/executive-summary`, `/archive`, `/ai-insights`, `/preferences`, `/notifications`, `/settings`, `/workspace/users`, `/workspace/settings`, `/admin/workspaces`, `/admin/audit`
 
 PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` prop (xs/sm/md) and `showSubtext` prop (default true, set false on login page).
 

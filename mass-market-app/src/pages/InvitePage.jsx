@@ -42,7 +42,7 @@ export default function InvitePage() {
   const roleHe = invite?.role === 'admin' ? 'מנהל' : 'צופה'
 
   return (
-    <div className="min-h-screen bg-[#f9f4ee] flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-moca-bg flex flex-col items-center justify-center p-6">
       <div className="mb-8">
         <Logo size="md" showSubtext={false} />
       </div>
