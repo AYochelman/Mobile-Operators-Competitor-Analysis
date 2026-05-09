@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom'
 import AlertsPriceTab from '../components/alerts/AlertsPriceTab'
 import AlertsWatchlistTab from '../components/alerts/AlertsWatchlistTab'
+import { PageHeader } from '../components/moca'
 
 const TABS = [
   { id: 'price',     label: 'התראות מחיר' },
@@ -21,27 +22,19 @@ export default function AlertsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 pt-4">
-      <div className="border-b border-moca-border/60 mb-4">
-        <div className="flex gap-1">
-          {TABS.map(t => (
-            <button
-              key={t.id}
-              onClick={() => selectTab(t.id)}
-              className={`px-4 py-2 text-sm font-medium transition-colors relative ${
-                tab === t.id
-                  ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-0 after:h-[2px] after:bg-moca-bolt'
-                  : 'text-moca-muted hover:text-moca-text'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+    <>
+      <PageHeader
+        kicker="ניטור · התראות"
+        title="התראות מחיר ו-Watchlist"
+        subtitle="התראות שוטפות + מסלולים שאתה עוקב אחריהם להתראות Push."
+        tabs={TABS}
+        activeTab={tab}
+        onTabChange={selectTab}
+      />
+      <div className="max-w-[1320px] mx-auto px-8 pb-8 pt-4">
+        {tab === 'price' && <AlertsPriceTab />}
+        {tab === 'watchlist' && <AlertsWatchlistTab />}
       </div>
-
-      {tab === 'price' && <AlertsPriceTab />}
-      {tab === 'watchlist' && <AlertsWatchlistTab />}
-    </div>
+    </>
   )
 }

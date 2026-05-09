@@ -39,10 +39,9 @@ export default function PreferencesPage() {
 
   return (
     <div className="max-w-xl mx-auto p-6">
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold">העדפות</h1>
-        <p className="text-sm text-gray-500 mt-1">{user?.email}</p>
-      </div>
+      {/* Page identity is owned by the Topbar (kicker + title); we keep
+          only contextual meta here (the user's email) to avoid a duplicate H1. */}
+      <p className="text-sm text-gray-500 mb-5">{user?.email}</p>
 
       <div className="bg-white border border-moca-border/60 rounded-xl p-5">
         <h2 className="text-sm font-semibold mb-1">התראות דוא"ל</h2>

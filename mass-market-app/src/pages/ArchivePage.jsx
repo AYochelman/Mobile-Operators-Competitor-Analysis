@@ -92,13 +92,10 @@ export default function ArchivePage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      {/* Page title */}
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-moca-text">ארכיב היסטורי</h1>
-        <p className="text-[13px] text-moca-muted mt-0.5">
-          חבילות ובאנרים של ספק בתאריך נבחר
-        </p>
-      </div>
+      {/* Page identity is owned by the Topbar — keep only the subtitle hint. */}
+      <p className="text-[13px] text-moca-muted mb-6">
+        חבילות ובאנרים של ספק בתאריך נבחר
+      </p>
 
       {/* Filter row */}
       <div className="bg-white border border-moca-border/60 rounded-xl p-4 mb-6 flex flex-wrap gap-3 items-end">

@@ -439,7 +439,6 @@ export default function ExecutiveSummaryPage() {
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-6">
-        <h1 className="text-xl font-bold text-moca-text mb-6 text-right">תקציר מנהלים</h1>
         {[0, 1, 2, 3].map(i => <SkeletonSection key={i} />)}
       </div>
     )
@@ -448,7 +447,6 @@ export default function ExecutiveSummaryPage() {
   if (notGenerated) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-6">
-        <h1 className="text-xl font-bold text-moca-text mb-6 text-right">תקציר מנהלים</h1>
         <div className="bg-white rounded-xl p-12 text-center border border-moca-border/40">
           <div className="text-4xl mb-3">🕗</div>
           <p className="text-moca-muted text-sm">הניתוח ייווצר ב-08:00 הקרוב</p>

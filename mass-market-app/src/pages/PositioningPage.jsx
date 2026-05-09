@@ -156,10 +156,10 @@ export default function PositioningPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      <div className="mb-6 text-right">
-        <h1 className="text-xl font-bold text-gray-900">מיצוב תחרותי</h1>
-        <p className="text-xs text-gray-400 mt-0.5">פיזור חבילות סלולר לפי ספק וקטגוריה — אתר את ה-white space</p>
-      </div>
+      {/* Page identity is owned by the Topbar — only the helper subtitle stays. */}
+      <p className="text-xs text-gray-400 mb-6 text-right">
+        פיזור חבילות סלולר לפי ספק וקטגוריה — אתר את ה-white space
+      </p>
 
       {/* Axis toggle */}
       <div className="mb-6 flex items-center gap-2">
