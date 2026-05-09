@@ -107,6 +107,12 @@
   animation: gentlePulse 1.8s var(--ease-in-out) infinite;
 }
 
+/* Drawer slide-in from RTL start (physical right) — for BannerDrawer + future drawers */
+@keyframes drawerSlideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
 /* Highlight pulse — for recommended plan from chat */
 @keyframes pulseHighlight {
   0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }

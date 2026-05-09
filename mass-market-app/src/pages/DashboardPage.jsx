@@ -6,7 +6,7 @@ import { useHiddenCarrier, useVisibleCarriers } from '../hooks/useHiddenCarrier'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import { has5G, hasMaxPriority } from '../data/networkPriority'
 import PlanCard from '../components/PlanCard'
-import BannerCard from '../components/BannerCard'
+import BannerMosaic from '../components/moca/BannerMosaic'
 const HistoryTab = lazy(() => import('../components/HistoryTab'))
 const NewsTab    = lazy(() => import('../components/NewsTab'))
 import GroupedPlanCard from '../components/GroupedPlanCard'
@@ -1342,19 +1342,41 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <h2 className="text-right font-semibold text-lg text-[#5c3317] mb-3">באנרים - עמוד ראשי</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {banners.map(banner => (
-              <BannerCard key={banner.carrier} banner={banner} />
-            ))}
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 18,
+              fontWeight: 800,
+              color: 'var(--color-moca-dark)',
+              margin: '0 0 14px',
+              letterSpacing: -0.3,
+              textAlign: 'right',
+            }}
+          >
+            עמוד ראשי
+          </h2>
+          <div className="mb-8">
+            <BannerMosaic banners={banners} source="home" />
           </div>
 
-          <h2 className="text-right font-semibold text-lg text-[#5c3317] mb-3">באנרים - חנות ציוד קצה</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {storeBanners.map(banner => (
-              <BannerCard key={banner.carrier + '_store'} banner={banner} />
-            ))}
-          </div>
+          {storeBanners.length > 0 && (
+            <>
+              <h2
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 18,
+                  fontWeight: 800,
+                  color: 'var(--color-moca-dark)',
+                  margin: '0 0 14px',
+                  letterSpacing: -0.3,
+                  textAlign: 'right',
+                }}
+              >
+                חנות ציוד קצה
+              </h2>
+              <BannerMosaic banners={storeBanners} source="store" />
+            </>
+          )}
         </div>
       )}
 
