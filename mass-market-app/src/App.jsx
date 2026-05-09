@@ -5,12 +5,17 @@ import { ScrapeProvider } from './hooks/useScrape'
 import { getMvnoColors } from './data/mvnoBrandColors'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
 import OfflineBanner from './components/OfflineBanner'
 import GlobalSearch from './components/GlobalSearch'
 import Spinner from './components/ui/Spinner'
 
 // Lazy-loaded pages (split into separate chunks)
+// DashboardPage is the heaviest single page (1500+ lines, pulls in PlanCard,
+// BannerMosaic, CompetitorBoard, HistoryTab, NewsTab, charts, modals, ...).
+// Splitting it out shrinks the initial bundle for users who land elsewhere
+// (bookmarks, /alerts, /archive, etc.) and doesn't hurt the dashboard
+// itself — Suspense's PageFallback already wraps the route tree.
+const DashboardPage         = lazy(() => import('./pages/DashboardPage'))
 const ComparePage           = lazy(() => import('./pages/ComparePage'))
 const AlertsPage            = lazy(() => import('./pages/AlertsPage'))
 const ExecutiveSummaryPage  = lazy(() => import('./pages/ExecutiveSummaryPage'))
