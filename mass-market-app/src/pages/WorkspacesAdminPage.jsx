@@ -777,13 +777,10 @@ export default function WorkspacesAdminPage() {
 
   return (
     <div className="max-w-5xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">ניהול Workspaces</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            כל workspace הוא לקוח MVNO נפרד עם צבעי מותג, feature flags וסינון ספקים משלו.
-          </p>
-        </div>
+      <div className="flex items-center justify-between mb-6 gap-4">
+        <p className="text-sm text-gray-600 flex-1">
+          כל workspace הוא לקוח MVNO נפרד עם צבעי מותג, feature flags וסינון ספקים משלו.
+        </p>
         <Button onClick={() => setCreating(c => !c)} variant="primary">
           {creating ? 'סגור' : '+ workspace חדש'}
         </Button>

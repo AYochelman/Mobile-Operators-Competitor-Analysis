@@ -81,12 +81,9 @@ export default function WorkspaceUsersPage() {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">הצוות שלנו</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          ניהול משתמשים עבור workspace <strong>{workspace?.name}</strong>
-        </p>
-      </div>
+      <p className="text-sm text-gray-600 mb-6">
+        ניהול משתמשים עבור workspace <strong>{workspace?.name}</strong>
+      </p>
 
       <div className="bg-white rounded-xl border border-moca-border p-5 space-y-4">
         {loading ? (

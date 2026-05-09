@@ -53,12 +53,9 @@ export default function WorkspaceBrandingPage() {
 
   return (
     <div className="max-w-xl mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">מיתוג Workspace</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          התאמה אישית של מראה האפליקציה עבור <strong>{workspace?.name}</strong>
-        </p>
-      </div>
+      <p className="text-sm text-gray-600 mb-6">
+        התאמה אישית של מראה האפליקציה עבור <strong>{workspace?.name}</strong>
+      </p>
 
       <form onSubmit={save} className="bg-white rounded-xl border border-moca-border p-5 space-y-4">
         {FIELDS.map(f => (

@@ -67,10 +67,7 @@ export default function AuditLogPage() {
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="mb-5 flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold">יומן ביקורת</h1>
-          <p className="text-sm text-gray-500 mt-0.5">פעולות מערכת — 200 אחרונות</p>
-        </div>
+        <p className="text-sm text-gray-500">פעולות מערכת — 200 אחרונות</p>
         <div className="flex items-center gap-2">
           {uniqueWorkspaces.length > 0 && (
             <select
