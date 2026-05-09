@@ -16,6 +16,7 @@ import SavedViewsMenu from '../components/SavedViewsMenu'
 import SavedComparesMenu from '../components/SavedComparesMenu'
 import CarrierAIInsights from '../components/CarrierAIInsights'
 import ScrapeProgressPanel from '../components/ScrapeProgressPanel'
+import CompetitorBoard from '../components/moca/CompetitorBoard'
 import { useWatchlist } from '../hooks/useWatchlist'
 import FilterTag from '../components/ui/FilterTag'
 import SearchableSelect from '../components/ui/SearchableSelect'
@@ -241,7 +242,7 @@ const GLOBAL_PROVIDERS = [
 ]
 
 export default function DashboardPage() {
-  const { isAdmin } = useAuth()
+  const { isAdmin, workspace } = useAuth()
   const { scraping, countdown, triggerScrape } = useScrape()
   const hiddenCarrier = useHiddenCarrier()
   const visibleCarrierIds = useVisibleCarriers(CARRIERS.map(c => c.id))
@@ -805,6 +806,20 @@ export default function DashboardPage() {
 
       {/* Live scrape progress — shows during update */}
       {isAdmin && <ScrapeProgressPanel />}
+
+      {/* Competitive snapshot — domestic plans only */}
+      {tab === 'domestic' && (
+        <CompetitorBoard
+          plans={plans.domestic}
+          changes={changes.domestic}
+          carrierIds={visibleCarrierIds}
+          oursCarrier={workspace?.mvno_carrier}
+          onRowClick={(carrierId) => {
+            setFilter('carrier', carrierId)
+            setFiltersOpen(true)
+          }}
+        />
+      )}
 
       {/* Market movers — only above plan tabs */}
       {['domestic', 'abroad', 'global'].includes(tab) && (

@@ -17,6 +17,9 @@ export { default as Sidebar } from './Sidebar'
 export { default as Topbar } from './Topbar'
 export { default as TimeMachineModal } from './TimeMachineModal'
 
+// Widgets
+export { default as CompetitorBoard } from './CompetitorBoard'
+
 // Helpers
 export { getCarrierColor, getCarrierLetter, getCarrierName } from './carrierMeta'
 export { resolveRouteMeta, ROUTE_META } from './routeMeta'
