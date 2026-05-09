@@ -41,19 +41,21 @@ export default function PageHeader({
               {kicker}
             </div>
           )}
-          <h1
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 26,
-              fontWeight: 800,
-              color: 'var(--color-moca-dark)',
-              letterSpacing: -0.5,
-              margin: 0,
-              lineHeight: 1.15,
-            }}
-          >
-            {title}
-          </h1>
+          {title && (
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 26,
+                fontWeight: 800,
+                color: 'var(--color-moca-dark)',
+                letterSpacing: -0.5,
+                margin: 0,
+                lineHeight: 1.15,
+              }}
+            >
+              {title}
+            </h1>
+          )}
           {subtitle && (
             <p
               style={{

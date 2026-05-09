@@ -3,6 +3,7 @@ import { api } from '../lib/api'
 import Spinner from '../components/ui/Spinner'
 import FilterTag from '../components/ui/FilterTag'
 import SearchableSelect from '../components/ui/SearchableSelect'
+import { PageHeader } from '../components/moca'
 import { has5G as detect5G, hasMaxPriority } from '../data/networkPriority'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import {
@@ -330,21 +331,13 @@ export default function ComparePage() {
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
-      {/* Tab selector */}
-      <div className="flex gap-1 mb-4">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === t.id ? 'bg-moca-bolt text-white' : 'bg-white text-moca-sub border border-moca-border hover:bg-moca-cream hover:text-moca-text'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <>
+      <PageHeader
+        tabs={TABS}
+        activeTab={tab}
+        onTabChange={setTab}
+      />
+      <div className="max-w-5xl mx-auto px-4 py-6">
 
       {/* Filter count + reset row */}
       <div className="flex items-center gap-2 mb-2">
@@ -504,7 +497,22 @@ export default function ComparePage() {
       {/* Chart: price range per carrier */}
       {chartData.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-          <h2 className="text-sm font-bold mb-4">טווח מחירים לפי ספק (מינימום / ממוצע / מקסימום)</h2>
+          <h2
+            className="mb-4 text-right"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 16,
+              fontWeight: 700,
+              color: 'var(--color-moca-dark)',
+              letterSpacing: -0.2,
+              margin: '0 0 14px',
+            }}
+          >
+            טווח מחירים לפי ספק
+            <span style={{ marginInlineStart: 8, fontSize: 11, fontWeight: 500, color: 'var(--color-moca-muted)', fontFamily: 'var(--font-body)' }}>
+              מינימום · ממוצע · מקסימום
+            </span>
+          </h2>
           <div style={{ direction: 'ltr' }}>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }} barGap={1} barCategoryGap="15%">
@@ -576,6 +584,7 @@ export default function ComparePage() {
           <p className="text-sm">בחר לפחות ספק אחד להשוואה</p>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }
