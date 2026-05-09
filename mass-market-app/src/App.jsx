@@ -7,7 +7,6 @@ import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import OfflineBanner from './components/OfflineBanner'
-import ViewAsBanner from './components/ViewAsBanner'
 import GlobalSearch from './components/GlobalSearch'
 import Spinner from './components/ui/Spinner'
 
@@ -71,7 +70,6 @@ export default function App() {
   return (
     <ScrapeProvider>
       <BrandThemeApplier />
-      <ViewAsBanner />
       <OfflineBanner />
       <GlobalSearch />
       <Suspense fallback={<PageFallback />}>
