@@ -285,27 +285,74 @@ function WatchlistSidebar({ plans }) {
   )
 }
 
-/** Bottom-right pinned "ours" chip per the design. */
-function OursPinned({ carrierId }) {
-  if (!carrierId) return null
+/** Bottom-right pinned "ours" chip per the design. Always visible:
+ *  - With carrier: shows the workspace's mvno_carrier as a permanent reminder
+ *  - Without carrier: invites the user to configure mvno_carrier (admin only,
+ *    so non-admin users don't get a dead CTA). */
+function OursPinned({ carrierId, isAdmin }) {
+  const navigate = useNavigate()
+
+  // Same fixed positioning for both states. RTL: insetInlineStart = right edge.
+  const baseStyle = {
+    position: 'fixed',
+    insetBlockEnd: 16,
+    insetInlineStart: 16,
+    zIndex: 30,
+    background: 'var(--color-moca-white, #fff)',
+    border: '1px solid var(--color-moca-border)',
+    borderRadius: 999,
+    padding: '8px 14px 8px 12px',
+    boxShadow: 'var(--sh-card-hover)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 10,
+    fontFamily: 'inherit',
+    color: 'inherit',
+    textAlign: 'inherit',
+  }
+
+  if (!carrierId) {
+    if (!isAdmin) return null  // viewers without carrier — no dead CTA
+    return (
+      <button
+        type="button"
+        onClick={() => navigate('/workspace/settings')}
+        title="הגדר את הספק שלי כדי לראות אותו מודגש בכל מקום"
+        style={{ ...baseStyle, cursor: 'pointer', border: '1px dashed var(--color-moca-border)' }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: 999,
+            background: 'var(--color-moca-cream)',
+            color: 'var(--color-moca-bolt)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 18,
+            fontWeight: 700,
+            lineHeight: 1,
+            flexShrink: 0,
+          }}
+        >
+          +
+        </span>
+        <div>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--color-moca-bolt)' }}>
+            הגדר ספק שלי
+          </div>
+          <div style={{ fontSize: 9.5, color: 'var(--color-moca-muted)', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>
+            לחץ להגדרה
+          </div>
+        </div>
+      </button>
+    )
+  }
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        insetBlockEnd: 16,
-        // RTL start = right edge. Use logical property so it adapts.
-        insetInlineStart: 16,  // physical left in RTL? actually start = right in RTL
-        zIndex: 30,
-        background: 'var(--color-moca-white, #fff)',
-        border: '1px solid var(--color-moca-border)',
-        borderRadius: 999,
-        padding: '8px 14px 8px 12px',
-        boxShadow: 'var(--sh-card-hover)',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 10,
-      }}
-    >
+    <div style={baseStyle}>
       <CarrierChip id={carrierId} size={26} />
       <div>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-moca-dark)' }}>
@@ -320,7 +367,7 @@ function OursPinned({ carrierId }) {
 }
 
 export default function EditorialDashboardPage() {
-  const { workspace } = useAuth()
+  const { workspace, isAdmin } = useAuth()
   const flags = useFeatureFlags()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -415,7 +462,7 @@ export default function EditorialDashboardPage() {
       </div>
 
       {/* Pinned "ours" chip */}
-      <OursPinned carrierId={oursCarrier} />
+      <OursPinned carrierId={oursCarrier} isAdmin={isAdmin} />
     </div>
   )
 }
