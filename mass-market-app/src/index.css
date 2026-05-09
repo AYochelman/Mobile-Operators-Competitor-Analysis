@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --color-moca-bolt:   #5c3317;
-  --color-moca-dark:   #4a2a13;
+  --color-moca-bolt:    #5c3317;
+  --color-moca-espresso: #5c3317;  /* alias for bolt — used by Login/PriceHistoryModal/ScrapeToast/GlobalSearch */
+  --color-moca-dark:    #4a2a13;
   --color-moca-text:   #3b1f0d;
   --color-moca-sub:    #8a6a4a;
   --color-moca-muted:  #a08468;

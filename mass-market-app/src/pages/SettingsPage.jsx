@@ -300,7 +300,7 @@ export default function SettingsPage() {
                 </thead>
                 <tbody>
                   {users.map(u => (
-                    <tr key={u.id} className="border-b border-moca-border/50 last:border-0 hover:bg-moca-hover/30 transition-colors">
+                    <tr key={u.id} className="border-b border-moca-border/50 last:border-0 hover:bg-moca-mist transition-colors">
                       <td className="py-2.5 pr-1 text-right">
                         <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${u.role === 'admin' ? 'bg-[#f5ede0] text-[#5c3317]' : 'bg-gray-100 text-gray-500'}`}>
                           {u.role === 'admin' ? 'מנהל' : 'צופה'}
