@@ -18,8 +18,14 @@ export default function BannerMosaic({ banners, source = 'home' }) {
   if (!banners || banners.length === 0) return null
 
   const handleClick = (banner) => {
-    // Tag the banner with its source so the drawer can label it correctly.
-    setActive({ ...banner, kind: source === 'store' ? 'store' : 'home' })
+    // Per-banner kind wins; otherwise fall back to the mosaic's `source` prop.
+    // (Archive views pre-tag each banner because the same mosaic mixes home
+    // + store; the dashboard banners tab uses a single source per mosaic.)
+    if (banner?.kind === 'home' || banner?.kind === 'store') {
+      setActive(banner)
+    } else {
+      setActive({ ...banner, kind: source === 'store' ? 'store' : 'home' })
+    }
   }
 
   return (

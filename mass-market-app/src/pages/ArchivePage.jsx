@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { api, API_BASE } from '../lib/api'
+import { api } from '../lib/api'
 import PlanCard from '../components/PlanCard'
-import BannerCard from '../components/BannerCard'
+import BannerMosaic from '../components/moca/BannerMosaic'
 
 // All carriers / providers that may appear in the archive
 const ALL_PROVIDERS = [
@@ -177,42 +177,31 @@ export default function ArchivePage() {
             </div>
           )}
 
-          {/* Banners */}
+          {/* Banners — single mosaic with per-banner kind so the drawer
+              labels each one correctly ("עמוד ראשי" / "חנות ציוד"). */}
           {(result.banners?.homepage || result.banners?.store) && (
             <section>
               <h3 className="text-[13px] font-medium text-gray-500 mb-3">באנרים</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {result.banners.homepage && (
-                  <div>
-                    <p className="text-[11px] text-moca-muted mb-1.5">
-                      דף בית — {result.banners.homepage.archive_date}
-                    </p>
-                    <BannerCard banner={{
-                      carrier,
-                      name: providerInfo?.label || carrier,
-                      url: '#',
-                      color: providerInfo?.color || '#888',
-                      image_url: result.banners.homepage.url,
-                      scraped_at: result.banners.homepage.archive_date,
-                    }} />
-                  </div>
-                )}
-                {result.banners.store && (
-                  <div>
-                    <p className="text-[11px] text-moca-muted mb-1.5">
-                      חנות — {result.banners.store.archive_date}
-                    </p>
-                    <BannerCard banner={{
-                      carrier,
-                      name: providerInfo?.label || carrier,
-                      url: '#',
-                      color: providerInfo?.color || '#888',
-                      image_url: result.banners.store.url,
-                      scraped_at: result.banners.store.archive_date,
-                    }} />
-                  </div>
-                )}
-              </div>
+              <BannerMosaic banners={[
+                result.banners.homepage && {
+                  carrier,
+                  name: providerInfo?.label || carrier,
+                  url: '#',
+                  color: providerInfo?.color || '#888',
+                  image_url: result.banners.homepage.url,
+                  scraped_at: result.banners.homepage.archive_date,
+                  kind: 'home',
+                },
+                result.banners.store && {
+                  carrier,
+                  name: providerInfo?.label || carrier,
+                  url: '#',
+                  color: providerInfo?.color || '#888',
+                  image_url: result.banners.store.url,
+                  scraped_at: result.banners.store.archive_date,
+                  kind: 'store',
+                },
+              ].filter(Boolean)} />
             </section>
           )}
 
