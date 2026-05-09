@@ -15,6 +15,7 @@ import Spinner from './components/ui/Spinner'
 // Splitting it out shrinks the initial bundle for users who land elsewhere
 // (bookmarks, /alerts, /archive, etc.) and doesn't hurt the dashboard
 // itself — Suspense's PageFallback already wraps the route tree.
+const EditorialDashboardPage = lazy(() => import('./pages/EditorialDashboardPage'))
 const DashboardPage         = lazy(() => import('./pages/DashboardPage'))
 const ComparePage           = lazy(() => import('./pages/ComparePage'))
 const AlertsPage            = lazy(() => import('./pages/AlertsPage'))
@@ -82,7 +83,11 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/invite/:token" element={<InvitePage />} />
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route index element={<DashboardPage />} />
+            {/* Phase 19 — / is the Editorial Deep dashboard (executive view).
+                Plan cards UI lives at /plans (and other tab views at /roaming
+                /esim /banners /history). Legacy /?tab=X URLs are redirected
+                inside EditorialDashboardPage on mount. */}
+            <Route index element={<EditorialDashboardPage />} />
             {/* Phase 9 — clean URLs for tab views; DashboardPage detects pathname */}
             <Route path="plans"    element={<DashboardPage />} />
             <Route path="roaming"  element={<DashboardPage />} />

@@ -23,6 +23,11 @@ export { default as BannerMosaic } from './BannerMosaic'
 export { default as BannerTile } from './BannerTile'
 export { default as BannerDrawer } from './BannerDrawer'
 
+// Editorial Deep dashboard pieces
+export { default as EditorialHero } from './EditorialHero'
+export { default as KpiCard } from './KpiCard'
+export { default as ChangeHeatmap } from './ChangeHeatmap'
+
 // Helpers
 export { getCarrierColor, getCarrierLetter, getCarrierName } from './carrierMeta'
 export { resolveRouteMeta, ROUTE_META } from './routeMeta'
