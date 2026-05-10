@@ -1166,10 +1166,20 @@ def api_scrape_all_now():
         logger.info(f"scrape-all-now: {results}")
         return jsonify(results)
     except Exception as e:
+        import traceback as _tb
+        tb_short = _tb.format_exc(limit=4)
         _scrape_emit('all', 'error', message=str(e))
         _scrape_finish(error=e)
         logger.error(f"scrape-all-now failed: {e}", exc_info=True)
-        logger.error(f"API error: {e}", exc_info=True); return jsonify({"error": "Internal server error"}), 500
+        # Surface the actual error to the dashboard. This is a single-tenant
+        # admin tool; the operator (Alon) needs to see what blew up rather
+        # than the generic "Internal server error" toast that masks the cause.
+        return jsonify({
+            "error": f"שגיאה בסקרייפר: {type(e).__name__}: {e}",
+            "exception": type(e).__name__,
+            "message": str(e),
+            "traceback": tb_short,
+        }), 500
 
 
 @app.route("/api/content-plans")
