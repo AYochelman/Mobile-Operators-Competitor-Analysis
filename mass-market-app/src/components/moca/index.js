@@ -28,6 +28,9 @@ export { default as EditorialHero } from './EditorialHero'
 export { default as KpiCard } from './KpiCard'
 export { default as ChangeHeatmap } from './ChangeHeatmap'
 
+// Workspace utilities
+export { default as MyCarrierModal } from './MyCarrierModal'
+
 // Helpers
 export { getCarrierColor, getCarrierLetter, getCarrierName } from './carrierMeta'
 export { resolveRouteMeta, ROUTE_META } from './routeMeta'

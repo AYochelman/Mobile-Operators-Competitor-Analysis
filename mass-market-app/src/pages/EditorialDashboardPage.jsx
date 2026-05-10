@@ -12,6 +12,7 @@ import {
   KpiCard,
   ChangeHeatmap,
   Tag,
+  MyCarrierModal,
 } from '../components/moca'
 import { getCarrierColor, getCarrierName } from '../components/moca/carrierMeta'
 import Spinner from '../components/ui/Spinner'
@@ -292,7 +293,7 @@ function WatchlistSidebar({ plans }) {
  *  - Without carrier (regular admin): CTA → /workspace/settings (best they can
  *    do; they can't change mvno_carrier without a super_admin's help).
  *  - Without carrier (viewer): hidden (no dead CTA). */
-function OursPinned({ carrierId, isAdmin, isSuperAdmin }) {
+function OursPinned({ carrierId, isAdmin, isSuperAdmin, onOpenCarrierModal }) {
   const navigate = useNavigate()
 
   // Same fixed positioning for both states. RTL: insetInlineStart = right edge.
@@ -316,17 +317,19 @@ function OursPinned({ carrierId, isAdmin, isSuperAdmin }) {
 
   if (!carrierId) {
     if (!isAdmin && !isSuperAdmin) return null  // viewers without carrier — no dead CTA
-    // super_admin → /admin/workspaces (the only page that can set mvno_carrier)
-    // admin     → /workspace/settings (can edit brand_config but not mvno_carrier;
-    //                                  they'd need a super_admin to change carrier)
-    const target = isSuperAdmin ? '/admin/workspaces' : '/workspace/settings'
+    // super_admin → open MyCarrierModal (one-click fix from this CTA)
+    // admin       → fall back to /workspace/settings; the underlying API gates
+    //               carrier change to super_admin so admins can't actually set it
+    const handler = isSuperAdmin
+      ? () => onOpenCarrierModal && onOpenCarrierModal()
+      : () => navigate('/workspace/settings')
     const titleText = isSuperAdmin
-      ? 'בחר workspace ב-/admin/workspaces והגדר את שדה mvno_carrier'
-      : 'הגדר את הספק שלי בעמוד מיתוג'
+      ? 'בחר את הספק שלי — נשמר ל-workspace.mvno_carrier'
+      : 'הגדר את הספק שלי בעמוד מיתוג (דורש super_admin)'
     return (
       <button
         type="button"
-        onClick={() => navigate(target)}
+        onClick={handler}
         title={titleText}
         style={{ ...baseStyle, cursor: 'pointer', border: '1px dashed var(--color-moca-border)' }}
       >
@@ -381,6 +384,7 @@ export default function EditorialDashboardPage() {
   const flags = useFeatureFlags()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const [carrierModalOpen, setCarrierModalOpen] = useState(false)
 
   // Legacy /?tab=X URL → redirect to clean route (phase 9).
   useEffect(() => {
@@ -472,7 +476,13 @@ export default function EditorialDashboardPage() {
       </div>
 
       {/* Pinned "ours" chip */}
-      <OursPinned carrierId={oursCarrier} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} />
+      <OursPinned
+        carrierId={oursCarrier}
+        isAdmin={isAdmin}
+        isSuperAdmin={isSuperAdmin}
+        onOpenCarrierModal={() => setCarrierModalOpen(true)}
+      />
+      <MyCarrierModal open={carrierModalOpen} onClose={() => setCarrierModalOpen(false)} />
     </div>
   )
 }
