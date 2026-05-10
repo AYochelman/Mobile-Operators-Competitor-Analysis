@@ -16,6 +16,29 @@ import { api } from '../lib/api'
 
 const HEATMAP_DAYS = 14
 
+/**
+ * Filter out spurious change events caused by upstream data-quality issues
+ * (e.g. an XPhone scrape where the price regex returned null, causing
+ * the next save to record a "price changed from 29.90 to NULL" event).
+ *
+ * A `price_change` row is only meaningful if BOTH sides are positive numbers.
+ * Other change types (new_plan, removed_plan, extras_change) have known-null
+ * sides by design, so they pass through.
+ */
+function isValidChange(c) {
+  if (!c?.change_type) return false
+  if (c.change_type === 'price_change') {
+    const o = Number(c.old_val)
+    const n = Number(c.new_val)
+    return Number.isFinite(o) && o > 0 && Number.isFinite(n) && n > 0
+  }
+  if (c.change_type === 'new_plan') {
+    const n = Number(c.new_val)
+    return Number.isFinite(n) && n > 0
+  }
+  return true
+}
+
 function impactScore(change) {
   // Bigger absolute price change AND change types we care about score higher.
   if (!change) return 0
@@ -37,6 +60,7 @@ function pickLeadChange(changes, plans, oursCarrier) {
   const candidates = (changes || []).filter((c) => {
     if (!c?.carrier || c.carrier === oursCarrier) return false  // not us
     if (c.change_type === 'extras_change' || c.change_type === 'details_change') return false
+    if (!isValidChange(c)) return false  // skip null/0 price events from scraper hiccups
     const ts = c.changed_at ? new Date(c.changed_at).getTime() : 0
     return ts >= recent24h
   })
@@ -140,6 +164,7 @@ function buildHeatmap(changes, carrierIds) {
   for (const c of changes || []) {
     if (!c?.carrier || !c?.changed_at) continue
     if (!carrierIds.includes(c.carrier)) continue
+    if (!isValidChange(c)) continue  // skip data-quality artefacts
     const day = isoDay(new Date(c.changed_at).getTime())
     if (!days.includes(day)) continue
     const key = `${c.carrier}|${day}`
@@ -180,7 +205,7 @@ export function useDashboardData(oursCarrier, carrierIds) {
   const heatmap = useMemo(() => buildHeatmap(changes, carrierIds), [changes, carrierIds])
 
   const recentChanges = useMemo(() => {
-    const arr = [...(changes || [])]
+    const arr = (changes || []).filter(isValidChange)
     arr.sort((a, b) => {
       const ta = a?.changed_at ? new Date(a.changed_at).getTime() : 0
       const tb = b?.changed_at ? new Date(b.changed_at).getTime() : 0

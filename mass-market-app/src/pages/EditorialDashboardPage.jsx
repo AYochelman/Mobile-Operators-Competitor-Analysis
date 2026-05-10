@@ -287,9 +287,12 @@ function WatchlistSidebar({ plans }) {
 
 /** Bottom-right pinned "ours" chip per the design. Always visible:
  *  - With carrier: shows the workspace's mvno_carrier as a permanent reminder
- *  - Without carrier: invites the user to configure mvno_carrier (admin only,
- *    so non-admin users don't get a dead CTA). */
-function OursPinned({ carrierId, isAdmin }) {
+ *  - Without carrier (super_admin): CTA → /admin/workspaces (the only place
+ *    that can set mvno_carrier — /workspace/settings only edits brand_config).
+ *  - Without carrier (regular admin): CTA → /workspace/settings (best they can
+ *    do; they can't change mvno_carrier without a super_admin's help).
+ *  - Without carrier (viewer): hidden (no dead CTA). */
+function OursPinned({ carrierId, isAdmin, isSuperAdmin }) {
   const navigate = useNavigate()
 
   // Same fixed positioning for both states. RTL: insetInlineStart = right edge.
@@ -312,12 +315,19 @@ function OursPinned({ carrierId, isAdmin }) {
   }
 
   if (!carrierId) {
-    if (!isAdmin) return null  // viewers without carrier — no dead CTA
+    if (!isAdmin && !isSuperAdmin) return null  // viewers without carrier — no dead CTA
+    // super_admin → /admin/workspaces (the only page that can set mvno_carrier)
+    // admin     → /workspace/settings (can edit brand_config but not mvno_carrier;
+    //                                  they'd need a super_admin to change carrier)
+    const target = isSuperAdmin ? '/admin/workspaces' : '/workspace/settings'
+    const titleText = isSuperAdmin
+      ? 'בחר workspace ב-/admin/workspaces והגדר את שדה mvno_carrier'
+      : 'הגדר את הספק שלי בעמוד מיתוג'
     return (
       <button
         type="button"
-        onClick={() => navigate('/workspace/settings')}
-        title="הגדר את הספק שלי כדי לראות אותו מודגש בכל מקום"
+        onClick={() => navigate(target)}
+        title={titleText}
         style={{ ...baseStyle, cursor: 'pointer', border: '1px dashed var(--color-moca-border)' }}
       >
         <span
@@ -367,7 +377,7 @@ function OursPinned({ carrierId, isAdmin }) {
 }
 
 export default function EditorialDashboardPage() {
-  const { workspace, isAdmin } = useAuth()
+  const { workspace, isAdmin, isSuperAdmin } = useAuth()
   const flags = useFeatureFlags()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -462,7 +472,7 @@ export default function EditorialDashboardPage() {
       </div>
 
       {/* Pinned "ours" chip */}
-      <OursPinned carrierId={oursCarrier} isAdmin={isAdmin} />
+      <OursPinned carrierId={oursCarrier} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} />
     </div>
   )
 }

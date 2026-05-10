@@ -213,8 +213,15 @@ def scrape_xphone(_page=None):
 
                 # ── Price ──────────────────────────────────────────────────
                 # On XPhone, price appears on line BEFORE ₪ (e.g. "34.90\n₪")
-                price_m = re.search(r'(\d+(?:\.\d+)?)\s*\n\s*\u20aa', block)
+                # XPhone has rendered price two ways:
+                #   "34.90\n\u20aa"  (newline-separated, original)
+                #   "34.90 \u20aa"   (space-separated, observed 2026-05)
+                # The newline-only regex caused price=None on the latter, which
+                # cascaded into spurious "price dropped to 0\u20aa" change events.
+                # `\s*` matches any whitespace (newline / space / nothing).
+                price_m = re.search(r'(\d+(?:\.\d+)?)\s*\u20aa', block)
                 if not price_m:
+                    # Fallback: \u20aa before digits (e.g. "\u20aa34.90")
                     price_m = re.search(r'\u20aa\s*(\d+(?:\.\d+)?)', block)
                 if price_m:
                     v = float(price_m.group(1))
