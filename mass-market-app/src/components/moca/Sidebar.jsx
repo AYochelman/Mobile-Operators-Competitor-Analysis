@@ -322,7 +322,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
 
         {/* ─── מסלולים ─── */}
         <GroupLabel>מסלולים</GroupLabel>
-        <NavItem to="/plans" icon={Icons.plans} label="השוואת מסלולים" isActive={isPath('/plans')} onAfterNav={afterNav} />
+        <NavItem to="/plans" icon={Icons.plans} label="Mass Market" isActive={isPath('/plans')} onAfterNav={afterNav} />
         <NavItem to="/roaming" icon={Icons.roaming} label={'חו״ל · Roaming'} isActive={isPath('/roaming')} onAfterNav={afterNav} />
         <NavItem to="/esim" icon={Icons.esim} label="eSIM גלובלי" isActive={isPath('/esim')} onAfterNav={afterNav} />
         <NavItem to="/resellers" icon={Icons.resellers} label="משווקים" isActive={isPath('/resellers')} onAfterNav={afterNav} />
