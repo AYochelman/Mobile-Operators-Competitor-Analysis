@@ -1539,7 +1539,25 @@ def scrape_partner(page):
         gb_el    = card.query_selector(".plan-banner .size")
         extras   = list(dict.fromkeys(el.inner_text().strip() for el in card.query_selector_all(".plan-advantages p") if el.inner_text().strip()))
         name  = name_el.inner_text().strip()  if name_el  else "לא ידוע"
-        price = _parse_price(price_el.inner_text()) if price_el else None
+        # Strip any "before-discount" / strikethrough descendants before parsing.
+        # Partner occasionally renders a `<del>` or line-through-styled span next
+        # to the actual price; _parse_price grabs the first numeric token and
+        # would otherwise capture the regular price (e.g. 99.99) instead of the
+        # promo price (34.9). One such false reading on 2026-04-01 produced a
+        # spurious "99.99 → 34.9" change for Partner Prince.
+        price = None
+        if price_el:
+            try:
+                price_text = price_el.evaluate("""el => {
+                    const clone = el.cloneNode(true);
+                    clone.querySelectorAll(
+                        'del, s, strike, .strike, .old-price, .price-old, .before-price, [style*="line-through"]'
+                    ).forEach(n => n.remove());
+                    return clone.innerText.trim();
+                }""")
+                price = _parse_price(price_text)
+            except Exception:
+                price = _parse_price(price_el.inner_text())
         gb    = _parse_gb(gb_el.inner_text())       if gb_el    else None
         # Match plan name to URL via prefix lookup
         plan_url = None

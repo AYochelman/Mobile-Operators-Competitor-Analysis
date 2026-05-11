@@ -355,31 +355,45 @@ export default function DashboardPage() {
   }, [filters, tab])
 
   // Load data
-  // Apply URL params from chat navigation
+  // Apply URL params from chat navigation / change-feed clicks.
+  // Two URL shapes converge here:
+  //   legacy: /?tab=domestic&carrier=partner&highlight=X
+  //   clean : /plans?carrier=partner&highlight=X   (tab implicit via lockedTab)
   useEffect(() => {
     const urlTab = searchParams.get('tab')
     const urlCarrier = searchParams.get('carrier')
     const urlHighlight = searchParams.get('highlight')
-    if (urlTab && ['domestic', 'abroad', 'global', 'content', 'resellers'].includes(urlTab)) {
-      setTab(urlTab)
-      if (urlCarrier) {
-        if (urlTab === 'global') {
-          setFilter('globalProvider', urlCarrier)
-        } else {
-          setFilter('carrier', urlCarrier)
-        }
-        setFiltersOpen(true)
-      }
-      if (urlHighlight) {
-        // Delay highlight until data loads
-        setTimeout(() => {
-          setHighlightPlan(urlHighlight)
-          setTimeout(() => setHighlightPlan(null), 6000)
-        }, 2000)
-      }
+    if (!urlTab && !urlCarrier && !urlHighlight) return
+
+    const validTabs = ['domestic', 'abroad', 'global', 'content', 'resellers']
+    const targetTab = urlTab && validTabs.includes(urlTab)
+      ? urlTab
+      : (lockedTab && validTabs.includes(lockedTab) ? lockedTab : null)
+
+    if (!targetTab) {
       setSearchParams({}, { replace: true })
+      return
     }
-  }, [searchParams])
+
+    if (urlTab) setTab(targetTab)
+
+    if (urlCarrier) {
+      if (targetTab === 'global') {
+        setFilter('globalProvider', urlCarrier)
+      } else {
+        setFilter('carrier', urlCarrier)
+      }
+      setFiltersOpen(true)
+    }
+    if (urlHighlight) {
+      // Delay highlight until data loads
+      setTimeout(() => {
+        setHighlightPlan(urlHighlight)
+        setTimeout(() => setHighlightPlan(null), 6000)
+      }, 2000)
+    }
+    setSearchParams({}, { replace: true })
+  }, [searchParams, lockedTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { loadTab(tab) }, [tab])
   useEffect(() => {

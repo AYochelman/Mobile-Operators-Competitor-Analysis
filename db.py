@@ -1650,9 +1650,22 @@ def get_history_price_series(carrier, plan_type='domestic', plan_name='', from_d
     series = []
     for pname, events in top:
         try:
-            pts = [{'date': events[0]['date'], 'price': float(events[0]['old'])}]
+            pts = []
+            prev_new = None
             for e in events:
-                pts.append({'date': e['date'], 'price': float(e['new'])})
+                old = float(e['old'])
+                new = float(e['new'])
+                # First event: seed with its old price.
+                # Subsequent events: if old != previous new, the chain is
+                # broken (likely a transient scraper artifact or a missed
+                # intermediate scrape). Add the discontinuous "old" so the
+                # chart faithfully reflects what was recorded — otherwise
+                # we'd silently drop a price point that's visible in the
+                # changes log.
+                if prev_new is None or old != prev_new:
+                    pts.append({'date': e['date'], 'price': old})
+                pts.append({'date': e['date'], 'price': new})
+                prev_new = new
             series.append({'plan_name': pname, 'points': pts})
         except (ValueError, TypeError):
             continue
