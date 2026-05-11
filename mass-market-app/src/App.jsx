@@ -93,6 +93,7 @@ export default function App() {
             <Route path="roaming"   element={<DashboardPage />} />
             <Route path="esim"      element={<DashboardPage />} />
             <Route path="resellers" element={<DashboardPage />} />
+            <Route path="content"   element={<DashboardPage />} />
             <Route path="banners"  element={<DashboardPage />} />
             <Route path="history"  element={<DashboardPage />} />
             <Route path="compare" element={<ComparePage />} />

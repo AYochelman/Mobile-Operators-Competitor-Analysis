@@ -68,6 +68,9 @@ const Icons = {
   resellers: (
     <svg {...ICON_PROPS}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
   ),
+  content: (
+    <svg {...ICON_PROPS}><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8l2 2-2 2M11 12h6"/></svg>
+  ),
   search: (
     <svg {...ICON_PROPS}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
   ),
@@ -316,6 +319,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         <NavItem to="/roaming" icon={Icons.roaming} label={'חו״ל · Roaming'} isActive={isPath('/roaming')} onAfterNav={afterNav} />
         <NavItem to="/esim" icon={Icons.esim} label="eSIM גלובלי" isActive={isPath('/esim')} onAfterNav={afterNav} />
         <NavItem to="/resellers" icon={Icons.resellers} label="משווקים" isActive={isPath('/resellers')} onAfterNav={afterNav} />
+        <NavItem to="/content" icon={Icons.content} label="תוכן" isActive={isPath('/content')} onAfterNav={afterNav} />
 
         {/* ─── כלים ─── */}
         <GroupLabel>כלים</GroupLabel>
