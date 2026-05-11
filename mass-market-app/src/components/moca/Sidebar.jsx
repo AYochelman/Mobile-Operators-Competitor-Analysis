@@ -65,6 +65,9 @@ const Icons = {
   esim: (
     <svg {...ICON_PROPS}><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="13" y2="11"/><circle cx="12" cy="17" r="1.5"/></svg>
   ),
+  resellers: (
+    <svg {...ICON_PROPS}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+  ),
   search: (
     <svg {...ICON_PROPS}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
   ),
@@ -312,6 +315,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         <NavItem to="/plans" icon={Icons.plans} label="השוואת מסלולים" isActive={isPath('/plans')} onAfterNav={afterNav} />
         <NavItem to="/roaming" icon={Icons.roaming} label={'חו״ל · Roaming'} isActive={isPath('/roaming')} onAfterNav={afterNav} />
         <NavItem to="/esim" icon={Icons.esim} label="eSIM גלובלי" isActive={isPath('/esim')} onAfterNav={afterNav} />
+        <NavItem to="/resellers" icon={Icons.resellers} label="משווקים" isActive={isPath('/resellers')} onAfterNav={afterNav} />
 
         {/* ─── כלים ─── */}
         <GroupLabel>כלים</GroupLabel>

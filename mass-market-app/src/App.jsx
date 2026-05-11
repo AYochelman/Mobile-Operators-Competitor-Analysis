@@ -89,9 +89,10 @@ export default function App() {
                 inside EditorialDashboardPage on mount. */}
             <Route index element={<EditorialDashboardPage />} />
             {/* Phase 9 — clean URLs for tab views; DashboardPage detects pathname */}
-            <Route path="plans"    element={<DashboardPage />} />
-            <Route path="roaming"  element={<DashboardPage />} />
-            <Route path="esim"     element={<DashboardPage />} />
+            <Route path="plans"     element={<DashboardPage />} />
+            <Route path="roaming"   element={<DashboardPage />} />
+            <Route path="esim"      element={<DashboardPage />} />
+            <Route path="resellers" element={<DashboardPage />} />
             <Route path="banners"  element={<DashboardPage />} />
             <Route path="history"  element={<DashboardPage />} />
             <Route path="compare" element={<ComparePage />} />

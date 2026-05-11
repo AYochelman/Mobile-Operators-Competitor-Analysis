@@ -23,7 +23,7 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                log_affiliate_click, get_affiliate_stats, \
                log_audit, get_audit_log, \
                create_workspace_invite, get_workspace_invite, use_workspace_invite, \
-               get_reseller_plans, save_reseller_plans
+               get_reseller_plans, save_reseller_plans, filter_undominated_reseller_plans
 import archive as arc
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -784,10 +784,18 @@ def api_global_plans():
 @app.route("/api/reseller-plans")
 @limiter.limit("60 per minute")
 def api_reseller_plans():
-    """Plans offered by Israeli authorized resellers (משווקים) — promo prices not on the carriers' own sites."""
+    """Plans offered by Israeli authorized resellers (משווקים).
+
+    By rule, only plans that are CHEAPER than the carrier's own offering (or have
+    no comparable carrier plan) are returned. Pass ?all=1 to bypass the filter
+    (useful for debugging / admin).
+    """
     reseller = request.args.get("reseller")
     carrier = request.args.get("carrier")
+    show_all = request.args.get("all") == "1"
     plans = get_reseller_plans(reseller_id=reseller, carrier=carrier, db_path=_db_path())
+    if not show_all:
+        plans = filter_undominated_reseller_plans(plans, db_path=_db_path())
     return jsonify(_filter_hidden_carrier(plans))
 
 
@@ -1693,6 +1701,27 @@ def scrape_news_job():
         logger.info(f"News scrape complete: {len(articles)} articles saved")
     except Exception as e:
         logger.error(f"News scrape job failed: {e}", exc_info=True)
+
+
+def scrape_resellers_job():
+    """Scrape known reseller websites for promotional plans not on the carrier rate cards.
+
+    Runs daily at 08:15 via APScheduler. Each reseller has its own scraper module;
+    they're called sequentially so a failure in one doesn't block the others.
+    """
+    logger.info("Scraping reseller websites...")
+    from db import save_reseller_plans
+    for module_name in ("pelephon4u_scraper", "pelephone_join_scraper"):
+        try:
+            mod = __import__(module_name)
+            plans = mod.scrape()
+            if plans:
+                save_reseller_plans(plans, db_path=_db_path())
+                logger.info(f"{module_name}: {len(plans)} plans upserted")
+            else:
+                logger.warning(f"{module_name}: 0 plans matched — site layout may have changed")
+        except Exception as e:
+            logger.error(f"{module_name} scrape failed: {e}", exc_info=True)
 
 
 @app.route("/api/executive-summary")
@@ -3993,6 +4022,7 @@ if __name__ == "__main__":
     scheduler.add_job(scrape_store_banners_job, "cron", hour=8, minute=0)
     scheduler.add_job(generate_executive_summary, "cron", hour=8, minute=5, id="executive_summary")
     scheduler.add_job(scrape_news_job, "cron", hour=8, minute=10, id="news_scrape")
+    scheduler.add_job(scrape_resellers_job, "cron", hour=8, minute=15, id="resellers_scrape")
     # Social sentiment: every 3 days at 08:00 — use interval trigger with next 08:00 as start
     from datetime import datetime as _dt, timedelta as _td
     _now = _dt.now()

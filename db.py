@@ -1892,6 +1892,45 @@ def save_reseller_plans(plans, db_path=None):
         conn.close()
 
 
+def filter_undominated_reseller_plans(reseller_plans, db_path=None):
+    """Remove reseller plans that are dominated by the official carrier's own plans.
+
+    Dominance: a carrier plan dominates a reseller plan if it offers >=data_gb at <=price.
+    Reseller plans with no comparable carrier offering (e.g. smaller GB tier the carrier
+    doesn't publish) are always kept. data_gb=None is treated as unlimited (∞).
+
+    This is the rule "show only resellers whose plans are cheaper than the carrier OR
+    not on the carrier's site." Applied lazily at API time so the DB keeps full history.
+    """
+    if not reseller_plans:
+        return []
+    carriers_needed = {p["carrier"] for p in reseller_plans}
+    carrier_plans_by_id = {c: get_plans(carrier=c, db_path=db_path) for c in carriers_needed}
+
+    def _gb(v):
+        return float("inf") if v is None else v
+
+    kept = []
+    for rp in reseller_plans:
+        r_price = rp.get("price")
+        if r_price is None:
+            kept.append(rp)
+            continue
+        r_gb = _gb(rp.get("data_gb"))
+        cps = carrier_plans_by_id.get(rp["carrier"], [])
+        dominated = False
+        for cp in cps:
+            c_price = cp.get("price")
+            if c_price is None:
+                continue
+            if _gb(cp.get("data_gb")) >= r_gb and c_price <= r_price:
+                dominated = True
+                break
+        if not dominated:
+            kept.append(rp)
+    return kept
+
+
 def get_reseller_plans(reseller_id=None, carrier=None, db_path=None):
     """Return reseller plans. Filter by reseller_id and/or underlying carrier."""
     conn = _connect(db_path)

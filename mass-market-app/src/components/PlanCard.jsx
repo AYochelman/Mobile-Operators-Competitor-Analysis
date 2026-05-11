@@ -290,9 +290,22 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   const hasRoaming = !isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
   const contentUrl = isContent ? (CONTENT_URLS[`${plan.service}_${carrier}`] || null) : null
 
+  // For reseller cards: click anywhere outside an interactive element opens the source.
+  // Browsers + screen readers still get the explicit "לפוסט המקור" anchor below for accessibility.
+  const onCardClick = isReseller && providerUrl
+    ? (e) => {
+        if (e.target.closest('a, button, input, textarea, select, [role="button"]')) return
+        window.open(providerUrl, '_blank', 'noopener,noreferrer')
+      }
+    : undefined
+
   return (
-    <div className={`bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up flex flex-col ${highlighted ? 'ring-2 ring-amber-400 shadow-amber-100 shadow-lg animate-pulse-highlight' : ''}`}
+    <div className={`bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up flex flex-col ${highlighted ? 'ring-2 ring-amber-400 shadow-amber-100 shadow-lg animate-pulse-highlight' : ''} ${isReseller ? 'cursor-pointer' : ''}`}
       ref={highlighted ? (el) => { if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }) } : undefined}
+      onClick={onCardClick}
+      role={isReseller ? 'link' : undefined}
+      tabIndex={isReseller ? 0 : undefined}
+      onKeyDown={isReseller ? (e) => { if (e.key === 'Enter' && providerUrl) window.open(providerUrl, '_blank', 'noopener,noreferrer') } : undefined}
     >
       {/* Carrier logo — top-left, no background */}
       {CARRIER_LOGOS[carrier] && (
