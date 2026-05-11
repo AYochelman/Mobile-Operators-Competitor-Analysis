@@ -265,6 +265,7 @@ export default function DashboardPage() {
     '/esim':      'global',
     '/resellers': 'resellers',
     '/content':   'content',
+    '/news':      'news',
     '/banners':   'banners',
     '/history':   'history',
   }
@@ -274,6 +275,7 @@ export default function DashboardPage() {
     global:    '/esim',
     resellers: '/resellers',
     content:   '/content',
+    news:      '/news',
     banners:   '/banners',
     history:   '/history',
   }

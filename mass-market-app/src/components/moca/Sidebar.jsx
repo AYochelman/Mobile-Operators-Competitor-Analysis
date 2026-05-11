@@ -71,6 +71,12 @@ const Icons = {
   content: (
     <svg {...ICON_PROPS}><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8l2 2-2 2M11 12h6"/></svg>
   ),
+  news: (
+    <svg {...ICON_PROPS}><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8V6Z"/></svg>
+  ),
+  compare: (
+    <svg {...ICON_PROPS}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+  ),
   search: (
     <svg {...ICON_PROPS}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
   ),
@@ -308,6 +314,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         {visible('/ai-insights') && (
           <NavItem to="/ai-insights" icon={Icons.ai} label="AI Insights" isActive={isPath('/ai-insights')} onAfterNav={afterNav} />
         )}
+        <NavItem to="/news" icon={Icons.news} label="בחדשות" isActive={isPath('/news')} onAfterNav={afterNav} />
         <NavItem to="/banners" icon={Icons.banners} label="באנרים" isActive={isPath('/banners')} onAfterNav={afterNav} />
         {visible('/archive') && (
           <NavItem to="/archive" icon={Icons.archive} label="ארכיב Snapshots" isActive={isPath('/archive')} onAfterNav={afterNav} />
@@ -320,6 +327,9 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         <NavItem to="/esim" icon={Icons.esim} label="eSIM גלובלי" isActive={isPath('/esim')} onAfterNav={afterNav} />
         <NavItem to="/resellers" icon={Icons.resellers} label="משווקים" isActive={isPath('/resellers')} onAfterNav={afterNav} />
         <NavItem to="/content" icon={Icons.content} label="תוכן" isActive={isPath('/content')} onAfterNav={afterNav} />
+        {visible('/compare') && (
+          <NavItem to="/compare" icon={Icons.compare} label="השוואת מחירים" isActive={isPath('/compare')} onAfterNav={afterNav} />
+        )}
 
         {/* ─── כלים ─── */}
         <GroupLabel>כלים</GroupLabel>

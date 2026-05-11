@@ -13,6 +13,7 @@ export const ROUTE_META = [
   { match: '/esim',            kicker: 'מסלולים',   title: 'eSIM גלובלי' },
   { match: '/resellers',       kicker: 'מסלולים',   title: 'משווקים' },
   { match: '/content',         kicker: 'מסלולים',   title: 'שירותי תוכן' },
+  { match: '/news',            kicker: 'תובנות',    title: 'בחדשות' },
   { match: '/banners',         kicker: 'תובנות',    title: 'באנרים פעילים' },
   { match: '/history',         kicker: 'ניטור',     title: 'היסטוריית שינויים' },
   { match: '/compare',         kicker: 'מסלולים',   title: 'השוואת מחירים · גרפים' },
