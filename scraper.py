@@ -6786,6 +6786,466 @@ def scrape_bytesim_regions(_page=None, usd_rate=None):
     return plans
 
 
+# ── 7G eSIM ───────────────────────────────────────────────────────────────────
+
+SEVEN_G_DESTINATIONS = [
+    "Afghanistan", "Africa", "Africa (25+ areas)", "Albania", "Algeria", "Andorra",
+    "Anguilla", "Antigua And Barbuda", "Antilles", "Argentina", "Armenia", "Aruba",
+    "Asia (12 areas)", "Asia (20 areas)", "Asia (20+ areas)", "Asia (7 areas)",
+    "Australia", "Australia & New Zealand", "Austria", "Azerbaijan", "Azores",
+    "Bahamas", "Bahrain", "Balkans (5+ areas)", "Bangladesh", "Barbados", "Belarus",
+    "Belgium", "Belize", "Benin", "Bermuda", "Bhutan", "Bolivia", "Bonaire",
+    "Bosnia and Herzegovina", "Botswana", "Brazil", "British Virgin Islands", "Brunei",
+    "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Canada",
+    "Canary Islands", "Cape Verde", "Caribbean Islands", "Cayman Islands",
+    "Central African Republic", "Central Asia", "Chad", "Chile", "China",
+    "China mainland & Japan & South Korea", "Colombia", "Costa Rica",
+    "Côte d'Ivoire", "Croatia", "Curaçao", "Cyprus",
+    "Czech Republic", "Democratic Republic Of The Congo", "Denmark", "Dominica",
+    "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Estonia", "Eswatini",
+    "Ethiopia", "Europe (30+ areas)", "Europe (40+ areas)", "Faroe Islands", "Fiji",
+    "Finland", "France", "French Guiana", "French Polynesia", "Gabon", "Gambia",
+    "GCC", "Georgia", "Germany", "Ghana", "Gibraltar", "Global (120+ areas)",
+    "Global (130+ areas)", "Greece", "Greenland", "Grenada", "Guadeloupe", "Guam",
+    "Guatemala", "Guinea", "Guinea-Bissau", "Gulf Region", "Guyana", "Haiti",
+    "Honduras", "Hong Kong", "Hungary", "Iceland", "India", "Indonesia",
+    "Iran (Islamic Republic of)", "Iraq", "Ireland", "Isle of Man", "Israel",
+    "Italy", "Jamaica", "Japan", "Jersey", "Jordan", "Kazakhstan", "Kenya",
+    "Kosovo", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho",
+    "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Macao",
+    "Madagascar", "Madeira", "Malawi", "Malaysia", "Maldives", "Mali", "Malta",
+    "Marie-Galante", "Martinique", "Mauritius", "Mayotte", "Mexico", "Middle East",
+    "Middle East & North Africa", "Middle East and North Africa", "Moldova",
+    "Monaco", "Mongolia", "Montenegro", "Montserrat", "Morocco", "Mozambique",
+    "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua",
+    "Niger", "Nigeria", "North America", "North America (3 areas)",
+    "North Macedonia", "Northern Cyprus", "Norway", "Oceania", "Oman", "Pakistan",
+    "Palestine, State of", "Panama", "Papua New Guinea", "Paraguay", "Peru",
+    "Philippines", "Poland", "Portugal", "Puerto Rico", "Qatar",
+    "Republic of the Congo", "Réunion", "Romania", "Russia", "Rwanda",
+    "Saba", "Saint Barthélemy", "Saint Kitts and Nevis", "Saint Lucia",
+    "Saint Martin (French Part)", "Saint Vincent and the Grenadines", "Samoa",
+    "Saudi Arabia", "Scotland", "Senegal", "Serbia", "Seychelles", "Sierra Leone",
+    "Singapore", "Singapore & Malaysia & Thailand", "Sint Eustatius",
+    "Sint Maarten (Dutch Part)", "Slovakia", "Slovenia", "South Africa",
+    "South America (15+ areas)", "South Korea", "Spain", "Sri Lanka", "Suriname",
+    "Sweden", "Switzerland", "Taiwan", "Tajikistan", "Tanzania", "Thailand",
+    "Timor - Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey",
+    "Turks and Caicos Islands", "Uganda", "Ukraine", "United Arab Emirates",
+    "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu",
+    "Vatican City", "Venezuela", "Vietnam", "Virgin Islands (U.S.)", "Zambia",
+    "Zimbabwe",
+]
+
+_SEVEN_G_SLUG_OVERRIDES = {
+    "republic of the congo": "congo",
+}
+
+# Regions whose slugs can't be derived from the name — map directly to /he/esim/region/{slug}
+SEVEN_G_REGION_SLUG_MAP = {
+    "Africa":                                "africa",
+    "Africa (25+ areas)":                    "af-29",
+    "Asia (12 areas)":                       "as-12",
+    "Asia (20 areas)":                       "as-20",
+    "Asia (20+ areas)":                      "as-21",
+    "Asia (7 areas)":                        "as-7",
+    "Australia & New Zealand":               "aunz-2",
+    "Balkans (5+ areas)":                    "eu-7",
+    "Caribbean Islands":                     "caribbean-islands",
+    "Central Asia":                          "as-5",
+    "China mainland & Japan & South Korea":  "cnjpkr-3",
+    "Europe (30+ areas)":                    "eu-30",
+    "Europe (40+ areas)":                    "eu-42",
+    "GCC":                                   "gcc",
+    "Global (120+ areas)":                   "gl-120",
+    "Global (130+ areas)":                   "gl-139",
+    "Gulf Region":                           "me-6",
+    "Middle East":                           "me-13",
+    "Middle East & North Africa":            "me-12",
+    "Middle East and North Africa":          "middle-east-and-north-africa",
+    "North America":                         "north-america",
+    "North America (3 areas)":               "na-3",
+    "Oceania":                               "oceania",
+    "Singapore & Malaysia & Thailand":       "sgmyth-3",
+    "South America (15+ areas)":             "sa-18",
+}
+
+
+def _seven_g_slugify(name):
+    import unicodedata as _ud
+    lower = name.lower()
+    if lower in _SEVEN_G_SLUG_OVERRIDES:
+        return _SEVEN_G_SLUG_OVERRIDES[lower]
+    name = re.sub(r"\s*\([^)]*\)", "", name).strip()
+    n = _ud.normalize("NFD", name)
+    n = "".join(c for c in n if _ud.category(c) != "Mn")
+    n = n.replace("'", "").replace("’", "")
+    n = n.lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", n).strip("-")
+    return slug
+
+
+def _parse_seven_g_page(html, usd_rate, eng_name):
+    from html.parser import HTMLParser as _HP
+
+    class _TE(_HP):
+        def __init__(self):
+            super().__init__()
+            self.texts = []
+
+        def handle_data(self, d):
+            if d.strip():
+                self.texts.append(d.strip())
+
+    p = _TE()
+    p.feed(html)
+    lines = p.texts
+
+    # Hebrew name from title: "eSIM ל{name} – ..."
+    heb_name = eng_name
+    title_m = re.search(r"<title>([^<]+)</title>", html)
+    if title_m:
+        m = re.search(r"eSIM [לב](.+?) [–—]", title_m.group(1))
+        if m:
+            heb_name = m.group(1).strip()
+
+    # Parse plan blocks: N GB → M ימים → US$ → price (each plan appears twice)
+    seen = {}
+    i = 0
+    while i < len(lines):
+        gb_m = re.match(r"^(\d+(?:\.\d+)?)\s*GB$", lines[i], re.I)
+        if gb_m and i + 2 < len(lines):
+            day_m = re.match(r"^(\d+)\s*ימים$", lines[i + 1])
+            if day_m:
+                price = None
+                for j in range(i + 2, min(i + 8, len(lines))):
+                    if lines[j] == "US$" and j + 1 < len(lines):
+                        pm = re.match(r"^(\d+\.?\d*)$", lines[j + 1])
+                        if pm:
+                            price = float(pm.group(1))
+                            break
+                    pm = re.match(r"^US\$(\d+\.?\d*)$", lines[j])
+                    if pm:
+                        price = float(pm.group(1))
+                        break
+                if price is not None:
+                    gb = float(gb_m.group(1))
+                    days = int(day_m.group(1))
+                    key = (gb, days)
+                    if key not in seen or price < seen[key]:
+                        seen[key] = price
+        i += 1
+
+    plans = []
+    for (gb, days), usd in seen.items():
+        gb_label = int(gb) if gb == int(gb) else gb
+        plans.append(_make_global_plan(
+            "seven_g", f"{heb_name} – ‏{gb_label}GB – ‏{days} ימים",
+            round(usd * usd_rate, 2), "USD", usd,
+            gb, days, extras=[heb_name],
+        ))
+    return plans
+
+
+def _fetch_seven_g_destination(name, usd_rate):
+    import urllib.request as _ur
+    _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    if name in SEVEN_G_REGION_SLUG_MAP:
+        url = f"https://7g.app/he/esim/region/{SEVEN_G_REGION_SLUG_MAP[name]}"
+        try:
+            req = _ur.Request(url, headers={"User-Agent": _UA})
+            with _ur.urlopen(req, timeout=15) as r:
+                html = r.read().decode("utf-8")
+            return _parse_seven_g_page(html, usd_rate, name)
+        except Exception:
+            return []
+    slug = _seven_g_slugify(name)
+    if not slug:
+        return []
+    try:
+        req = _ur.Request(f"https://7g.app/he/esim/{slug}", headers={"User-Agent": _UA})
+        with _ur.urlopen(req, timeout=15) as r:
+            html = r.read().decode("utf-8")
+        return _parse_seven_g_page(html, usd_rate, name)
+    except Exception:
+        return []
+
+
+def scrape_seven_g_global(_page=None, usd_rate=None):
+    """Scrape 7G eSIM plans from all destinations (~190+ countries and regions)."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed as _ac
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    all_plans = []
+    with ThreadPoolExecutor(max_workers=10) as ex:
+        futures = {
+            ex.submit(_fetch_seven_g_destination, name, usd_rate): name
+            for name in SEVEN_G_DESTINATIONS
+        }
+        for fut in _ac(futures):
+            try:
+                all_plans.extend(fut.result() or [])
+            except Exception as e:
+                logger.debug(f"seven_g: {futures[fut]}: {e}")
+    logger.info(f"7G global: {len(all_plans)} plans from {len(SEVEN_G_DESTINATIONS)} destinations")
+    return all_plans
+
+
+# ── Best Connect ──────────────────────────────────────────────────────────────
+
+_BC_API_HEADERS = {
+    "x-partition-id": "c8468e6f-3041-4320-a813-bcff3ae990cf",
+    "authorization": "Basic MTAxOjEwMQ==",
+    "x-platform": "3",
+    "accept": "application/json",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+}
+
+# Regional slugs not in SAILY_SLUG_TO_HEBREW — checked before the generic lookup
+_BC_REGIONAL_HEBREW = {
+    "europe-esim":               "אירופה",
+    "balkan":                    "בלקן",
+    "turkey-and-greek-islands":  "טורקיה ואיי יוון",
+}
+
+
+def _fetch_bestconnect_catalog(slug, eng_name, catalog_id, usd_rate):
+    import urllib.request as _ur, json as _json
+    try:
+        req = _ur.Request(
+            f"https://bestconnect.online/api/v1/product/offerings?filters[catalog_id]={catalog_id}",
+            headers=_BC_API_HEADERS,
+        )
+        with _ur.urlopen(req, timeout=15) as r:
+            data = _json.loads(r.read())
+        # Resolve Hebrew name — regional overrides first, then SAILY lookup
+        if slug in _BC_REGIONAL_HEBREW:
+            heb_name = _BC_REGIONAL_HEBREW[slug]
+        else:
+            saily_slug = re.sub(r'-esim$', '', slug)
+            heb_name = SAILY_SLUG_TO_HEBREW.get(saily_slug, SAILY_SLUG_TO_HEBREW.get(slug, eng_name))
+        plans = []
+        for listing in data.get("listings", []):
+            prices = listing.get("prices", [])
+            services = listing.get("services", [])
+            if not prices or not services:
+                continue
+            usd = prices[0].get("price")
+            days = prices[0].get("validity_days")
+            total_mb = services[0].get("total_mb")
+            if not (usd and days and total_mb):
+                continue
+            gb = round(total_mb / 1024, 3)
+            gb_label = int(gb) if gb == int(gb) else gb
+            plan_name = f"{heb_name} – ‏{gb_label}GB – ‏{int(days)} ימים"
+            plans.append(_make_global_plan(
+                "bestconnect", plan_name,
+                round(float(usd) * usd_rate, 2), "USD", float(usd),
+                gb, int(days), extras=[heb_name],
+            ))
+        return plans
+    except Exception as e:
+        logger.debug(f"bestconnect {slug}: {e}")
+        return []
+
+
+def scrape_bestconnect_global(_page=None, usd_rate=None):
+    """Scrape Best Connect eSIM plans via REST API (~158 destinations)."""
+    import urllib.request as _ur, json as _json
+    from concurrent.futures import ThreadPoolExecutor, as_completed as _ac
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    try:
+        req = _ur.Request(
+            "https://bestconnect.online/api/v1/product/catalogs",
+            headers=_BC_API_HEADERS,
+        )
+        with _ur.urlopen(req, timeout=15) as r:
+            data = _json.loads(r.read())
+        catalogs = [(l["slug"], l["name"], l["catalog_id"]) for l in data.get("listings", [])]
+    except Exception as e:
+        logger.error(f"bestconnect: catalog fetch failed: {e}")
+        return []
+    all_plans = []
+    with ThreadPoolExecutor(max_workers=10) as ex:
+        futures = {
+            ex.submit(_fetch_bestconnect_catalog, slug, name, cid, usd_rate): slug
+            for slug, name, cid in catalogs
+        }
+        for fut in _ac(futures):
+            try:
+                all_plans.extend(fut.result() or [])
+            except Exception as e:
+                logger.debug(f"bestconnect: {futures[fut]}: {e}")
+    logger.info(f"Best Connect: {len(all_plans)} plans from {len(catalogs)} catalogs")
+    return all_plans
+
+
+# ── eSIM Plus ─────────────────────────────────────────────────────────────────
+
+# Maps eSIM Plus slugs that differ from SAILY_SLUG_TO_HEBREW keys
+_ESIMPLUS_TO_SAILY = {
+    "united-kingdom-of-great-britain": "united-kingdom",
+    "usa": "united-states",
+    "brunei-darussalam": "brunei",
+    "viet-nam": "vietnam",
+    "russian-federation": "russia",
+    "cte-divoire": "cote-d-ivoire",
+    "curaao": "curacao",
+    "cabo-verde": "cape-verde",
+    "czechia": "czech-republic",
+    "macao": "macau",
+    "palestine-state-of": "israel",   # db.py _DEST_NORM maps Palestine → Israel
+    "runion": "reunion",
+    "saint-barthlemy": "saint-barthelemy",
+    "virgin-islands-british": "british-virgin-islands",
+    "virgin-islands-us": "us-virgin-islands",
+    "bonaire-sint-eustatius-and-saba": "bonaire",
+    "congo-democratic-republic-of-the": "democratic-republic-of-congo",
+    "land-islands": None,   # skip
+    "holy-see": None,       # skip
+}
+
+ESIMPLUS_COUNTRY_SLUGS = [
+    "albania", "algeria", "andorra", "angola", "anguilla", "antigua-and-barbuda",
+    "argentina", "armenia", "aruba", "australia", "austria", "azerbaijan",
+    "bahamas", "bahrain", "bangladesh", "barbados", "belarus", "belgium", "belize",
+    "benin", "bermuda", "bolivia", "bonaire-sint-eustatius-and-saba",
+    "bosnia-and-herzegovina", "botswana", "brazil", "brunei-darussalam", "bulgaria",
+    "burkina-faso", "cabo-verde", "cambodia", "cameroon", "canada", "cayman-islands",
+    "central-african-republic", "chad", "chile", "china", "colombia", "congo",
+    "congo-democratic-republic-of-the", "costa-rica", "cte-divoire", "croatia",
+    "cuba", "curaao", "cyprus", "czechia", "denmark", "dominica",
+    "dominican-republic", "ecuador", "egypt", "el-salvador", "equatorial-guinea",
+    "estonia", "eswatini", "ethiopia", "faroe-islands", "fiji", "finland", "france",
+    "french-guiana", "french-polynesia", "gabon", "gambia", "georgia", "germany",
+    "ghana", "gibraltar", "greece", "greenland", "grenada", "guadeloupe", "guam",
+    "guatemala", "guernsey", "guinea", "guinea-bissau", "guyana", "haiti",
+    "honduras", "hong-kong", "hungary", "iceland", "india", "indonesia", "iran",
+    "iraq", "ireland", "isle-of-man", "israel", "italy", "jamaica", "japan",
+    "jersey", "jordan", "kazakhstan", "kenya", "south-korea", "kyrgyzstan", "laos",
+    "latvia", "lebanon", "lesotho", "liberia", "liechtenstein", "lithuania",
+    "luxembourg", "macao", "madagascar", "malawi", "malaysia", "mali", "malta",
+    "martinique", "mauritania", "mauritius", "mayotte", "mexico", "moldova",
+    "monaco", "mongolia", "montenegro", "montserrat", "morocco", "mozambique",
+    "myanmar", "namibia", "nauru", "netherlands", "new-zealand", "nicaragua",
+    "niger", "nigeria", "north-macedonia", "norway", "oman", "pakistan",
+    "palestine-state-of", "panama", "papua-new-guinea", "paraguay", "peru",
+    "philippines", "poland", "portugal", "puerto-rico", "qatar", "runion",
+    "romania", "russian-federation", "rwanda", "saint-barthlemy",
+    "saint-kitts-and-nevis", "saint-lucia", "saint-martin-french-part",
+    "saint-vincent-and-the-grenadines", "samoa", "saudi-arabia", "senegal",
+    "serbia", "seychelles", "sierra-leone", "singapore", "slovakia", "slovenia",
+    "south-africa", "south-sudan", "spain", "sri-lanka", "sudan", "suriname",
+    "sweden", "switzerland", "taiwan", "tajikistan", "tanzania", "thailand",
+    "togo", "tonga", "trinidad-and-tobago", "tunisia", "turkey",
+    "turks-and-caicos-islands", "uganda", "ukraine", "united-arab-emirates",
+    "united-kingdom-of-great-britain", "usa", "uruguay", "uzbekistan", "vanuatu",
+    "viet-nam", "virgin-islands-british", "virgin-islands-us", "zambia",
+    "netherlands-antilles",
+    # Multi-country regions (esim-regional page)
+    "asia", "africa", "balkans", "europe", "north-america", "oceania", "caribbean",
+    "europe-usa", "middle-east", "americas-us-ca",
+    # Global packages (esim-global page)
+    "global", "global-max", "global-light", "global-standard", "europe-usa-business-hubs",
+]
+
+_ESIMPLUS_REGION_HEB = {
+    "asia":                     "אסיה",
+    "africa":                   "אפריקה",
+    "balkans":                  "בלקן",
+    "europe":                   "אירופה",
+    "north-america":            "צפון אמריקה",
+    "oceania":                  "אוקיאניה",
+    "caribbean":                "הקריבי",
+    "europe-usa":               "Europe + USA",
+    "middle-east":              "המזרח התיכון ואפריקה",
+    "americas-us-ca":           "Americas",
+    "global":                   "גלובלי",
+    "global-max":               "Global Premium",
+    "global-light":             "Global Light",
+    "global-standard":          "Global Plus",
+    "europe-usa-business-hubs": "Europe + USA Business",
+}
+
+
+def _fetch_esimplus_country(slug, usd_rate):
+    import urllib.request as _ur, base64 as _b64
+    _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    # Resolve Hebrew name
+    saily_slug = _ESIMPLUS_TO_SAILY.get(slug, slug)
+    if saily_slug is None:
+        return []
+    heb_name = (
+        _ESIMPLUS_REGION_HEB.get(slug)
+        or SAILY_SLUG_TO_HEBREW.get(saily_slug)
+        or SAILY_SLUG_TO_HEBREW.get(slug)
+    )
+    try:
+        req = _ur.Request(
+            f"https://esimplus.me/esim-{slug}",
+            headers={"User-Agent": _UA},
+        )
+        with _ur.urlopen(req, timeout=15) as r:
+            html = r.read().decode("utf-8")
+        if heb_name is None:
+            title_m = re.search(r"<title>eSIM (?:for )?([^|]+)\|", html)
+            heb_name = title_m.group(1).strip() if title_m else slug.replace("-", " ").title()
+        # Decode paymentCode base64 PHP-serialized objects for exact prices
+        codes = re.findall(r"paymentCode=([A-Za-z0-9+/%]+)", html)
+        seen = {}
+        for code in codes:
+            try:
+                data_bytes = _b64.b64decode(code + "==")
+                p   = re.search(rb"\x00\*\x00price\";d:([\d.]+)", data_bytes)
+                d   = re.search(rb"\x00\*\x00dataAmount\";i:(\d+)", data_bytes)
+                dur = re.search(rb"\x00\*\x00duration\";i:(\d+)", data_bytes)
+                t   = re.search(rb'\x00\*\x00type\";s:\d+:"([^"]+)"', data_bytes)
+                if p and d and dur:
+                    usd = float(p.group(1))
+                    gb = int(d.group(1)) / 1000.0
+                    days = int(dur.group(1))
+                    plan_type = t.group(1).decode("utf-8") if t else "regular"
+                    key = (gb, days, plan_type)
+                    if key not in seen or usd < seen[key][0]:
+                        seen[key] = (usd, plan_type)
+            except Exception:
+                continue
+        plans = []
+        for (gb, days, plan_type), (usd, _) in seen.items():
+            gb_label = int(gb) if gb == int(gb) else gb
+            suffix = " (שיחות+SMS)" if plan_type == "legacy" else ""
+            plans.append(_make_global_plan(
+                "esimplus", f"{heb_name} – ‏{gb_label}GB – ‏{days} ימים{suffix}",
+                round(usd * usd_rate, 2), "USD", usd,
+                gb, days, extras=[heb_name],
+            ))
+        return plans
+    except Exception as e:
+        logger.debug(f"esimplus {slug}: {e}")
+        return []
+
+
+def scrape_esimplus_global(_page=None, usd_rate=None):
+    """Scrape eSIM Plus plans via per-country pages (~214 destinations)."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed as _ac
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    all_plans = []
+    with ThreadPoolExecutor(max_workers=10) as ex:
+        futures = {
+            ex.submit(_fetch_esimplus_country, slug, usd_rate): slug
+            for slug in ESIMPLUS_COUNTRY_SLUGS
+        }
+        for fut in _ac(futures):
+            try:
+                all_plans.extend(fut.result() or [])
+            except Exception as e:
+                logger.debug(f"esimplus: {e}")
+    logger.info(f"eSIM Plus: {len(all_plans)} plans from {len(ESIMPLUS_COUNTRY_SLUGS)} destinations")
+    return all_plans
+
+
 def scrape_all_global():
     """Scrape global eSIM packages from all providers. Returns flat list of plan dicts.
 
@@ -6838,6 +7298,9 @@ def scrape_all_global():
         ("scrape_breez_global",         scrape_breez_global),
         ("scrape_bytesim_global",       lambda: scrape_bytesim_global(usd_rate=usd_rate)),
         ("scrape_bytesim_regions",      lambda: scrape_bytesim_regions(usd_rate=usd_rate)),
+        ("scrape_seven_g_global",       lambda: scrape_seven_g_global(usd_rate=usd_rate)),
+        ("scrape_bestconnect_global",   lambda: scrape_bestconnect_global(usd_rate=usd_rate)),
+        ("scrape_esimplus_global",      lambda: scrape_esimplus_global(usd_rate=usd_rate)),
     ]
 
     plans = []
