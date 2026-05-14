@@ -323,7 +323,7 @@ export default function DashboardPage() {
   const [usdRate, setUsdRate] = useState(null)
   const [eurRate, setEurRate] = useState(null)
   const [gbpRate, setGbpRate] = useState(null)
-  const [visibleCount, setVisibleCount] = useState(5000)
+  const [visibleCount, setVisibleCount] = useState(50)
   const [trendMap, setTrendMap] = useState(new Map())   // carrier|plan_name → {pct_change}
   const [compareMap, setCompareMap] = useState(new Map()) // key → {plan, planType}
   const [showCompareDrawer, setShowCompareDrawer] = useState(false)

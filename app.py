@@ -29,6 +29,12 @@ import archive as arc
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
+# In-memory TTL caches (avoids repeated Supabase/SQLite roundtrips)
+_USER_CONTEXT_CACHE: dict = {}   # email → (timestamp, context_dict)
+_USER_CONTEXT_TTL = 60           # seconds — workspace config rarely changes
+_PLAN_CACHE: dict = {}           # 'plans'|'abroad_plans'|'global_plans' → (timestamp, rows)
+_PLAN_CACHE_TTL = 300            # 5 minutes — invalidated after every scrape
+
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
 
 app = Flask(__name__)
@@ -369,6 +375,10 @@ def _get_user_context(email):
     """
     if not email:
         return {"role": "viewer", "workspace_id": None, "workspace": None}
+    _now = _time.time()
+    _cached = _USER_CONTEXT_CACHE.get(email)
+    if _cached and _now - _cached[0] < _USER_CONTEXT_TTL:
+        return _cached[1]
     try:
         conn = _supabase_conn()
         cur = conn.cursor()
@@ -388,7 +398,9 @@ def _get_user_context(email):
         row = cur.fetchone()
         conn.close()
         if not row:
-            return {"role": "viewer", "workspace_id": None, "workspace": None, "digest_opt_out": False}
+            _result = {"role": "viewer", "workspace_id": None, "workspace": None, "digest_opt_out": False}
+            _USER_CONTEXT_CACHE[email] = (_time.time(), _result)
+            return _result
         role, ws_id = row[0], row[1]
         digest_opt_out = bool(row[11])
         workspace = None
@@ -419,8 +431,10 @@ def _get_user_context(email):
                 "trial_expired":     trial_expired,
                 "visible_carriers":  visible_carriers,
             }
-        return {"role": role, "workspace_id": str(ws_id) if ws_id else None,
-                "workspace": workspace, "digest_opt_out": digest_opt_out}
+        _result = {"role": role, "workspace_id": str(ws_id) if ws_id else None,
+                   "workspace": workspace, "digest_opt_out": digest_opt_out}
+        _USER_CONTEXT_CACHE[email] = (_time.time(), _result)
+        return _result
     except Exception as e:
         logger.error(f"_get_user_context({email!r}) failed: {e}")
         return {"role": "viewer", "workspace_id": None, "workspace": None, "digest_opt_out": False}
@@ -746,11 +760,29 @@ def serve_banner(filename):
     return send_from_directory(banners_dir, filename)
 
 
+def _cached_plans(key, fetch_fn):
+    """Return plan list from TTL cache or fetch fresh from DB."""
+    now = _time.time()
+    entry = _PLAN_CACHE.get(key)
+    if entry and now - entry[0] < _PLAN_CACHE_TTL:
+        return entry[1]
+    data = fetch_fn()
+    _PLAN_CACHE[key] = (_time.time(), data)
+    return data
+
+
+def _invalidate_plan_cache():
+    _PLAN_CACHE.clear()
+
+
 @app.route("/api/plans")
 @limiter.limit("60 per minute")
 def api_plans():
     carrier = request.args.get("carrier")
-    plans = get_plans(carrier=carrier, db_path=_db_path())
+    if carrier:
+        plans = get_plans(carrier=carrier, db_path=_db_path())
+    else:
+        plans = _cached_plans('plans', lambda: get_plans(db_path=_db_path()))
     return jsonify(_filter_hidden_carrier(plans))
 
 
@@ -769,7 +801,10 @@ def api_changes():
 @limiter.limit("60 per minute")
 def api_abroad_plans():
     carrier = request.args.get("carrier")
-    plans = get_abroad_plans(carrier=carrier, db_path=_db_path())
+    if carrier:
+        plans = get_abroad_plans(carrier=carrier, db_path=_db_path())
+    else:
+        plans = _cached_plans('abroad_plans', lambda: get_abroad_plans(db_path=_db_path()))
     return jsonify(_filter_hidden_carrier(plans))
 
 
@@ -777,7 +812,10 @@ def api_abroad_plans():
 @limiter.limit("60 per minute")
 def api_global_plans():
     carrier = request.args.get("carrier")
-    plans = get_global_plans(carrier=carrier, db_path=_db_path())
+    if carrier:
+        plans = get_global_plans(carrier=carrier, db_path=_db_path())
+    else:
+        plans = _cached_plans('global_plans', lambda: get_global_plans(db_path=_db_path()))
     return jsonify(_filter_hidden_carrier(plans))
 
 
@@ -1162,6 +1200,7 @@ def api_scrape_all_now():
         }
         _scrape_emit('banners', 'done', count=results['banners']['homepage'] + results['banners']['store'])
 
+        _invalidate_plan_cache()
         results["status"] = "ok"
         results["total_plans"] = len(new_domestic) + len(new_abroad) + len(new_global) + len(new_content)
         results["total_changes"] = len(ch_domestic) + len(ch_abroad) + len(ch_global) + len(ch_content)
@@ -3865,6 +3904,7 @@ if __name__ == "__main__":
                 else:
                     logger.info("No content changes.")
 
+            _invalidate_plan_cache()
             logger.info(f"Done. {len(new_plans)} domestic, {len(new_abroad)} abroad, "
                         f"{len(new_global)} global, {len(new_content)} content plans.")
 
