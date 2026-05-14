@@ -217,12 +217,15 @@ const CARRIERS = [
 ]
 
 const GLOBAL_PROVIDERS = [
+  { id: 'seven_g', label: '7G' },
   { id: 'world8', label: '8 World' },
   { id: 'airalo', label: 'Airalo' },
   { id: 'bcengi', label: 'Bcengi' },
   { id: 'besim', label: 'Besim' },
+  { id: 'bestconnect', label: 'Best Connect' },
   { id: 'breez', label: 'Breeze' },
   { id: 'bytesim', label: 'ByteSim' },
+  { id: 'esimplus', label: 'eSIM Plus' },
   { id: 'esimio', label: 'eSIM.io' },
   { id: 'esim70', label: 'eSIM70' },
   { id: 'esimo', label: 'eSIMo' },

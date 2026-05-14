@@ -22,6 +22,7 @@ export const DOMESTIC_LABELS = {
 }
 
 export const GLOBAL_LABELS = {
+  seven_g:          '7G',
   tuki:             'Tuki',
   globalesim:       'GlobaleSIM',
   airalo:           'Airalo',
@@ -47,7 +48,9 @@ export const GLOBAL_LABELS = {
   jetpack:          'Jetpack',
   breez:            'Breeze',
   bytesim:          'ByteSim',
+  bestconnect:      'Best Connect',
   besim:            'Besim',
+  esimplus:         'eSIM Plus',
 }
 
 export const ALL_CARRIER_LABELS = {

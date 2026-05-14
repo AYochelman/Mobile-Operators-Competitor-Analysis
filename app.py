@@ -1281,6 +1281,9 @@ _HISTORY_CARRIER_NAMES = {
     'breez': 'Breeze',
     'bytesim': 'ByteSim',
     'besim': 'Besim',
+    'seven_g': '7G',
+    'bestconnect': 'Best Connect',
+    'esimplus': 'eSIM Plus',
 }
 _HISTORY_TYPE_NAMES = {
     'domestic': '\u05de\u05e7\u05d5\u05de\u05d9',
@@ -2313,7 +2316,8 @@ def api_chat():
             'voye': 'VOYE', 'orbit': 'Orbit', 'travelsim': 'Travel Sim',
             'gomoworld': 'GoMoWorld', 'tasim': 'Tasim', 'maya': 'Maya Mobile',
             'bcengi': 'Bcengi', 'esim70': 'eSIM70', 'jetpack': 'Jetpack', 'breez': 'Breeze',
-            'bytesim': 'ByteSim', 'besim': 'Besim',
+            'bytesim': 'ByteSim', 'besim': 'Besim', 'seven_g': '7G',
+            'bestconnect': 'Best Connect', 'esimplus': 'eSIM Plus',
         }
         def _cn(carrier):
             return _CARRIER_NAMES.get(carrier, carrier)
