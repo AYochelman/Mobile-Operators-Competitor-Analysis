@@ -54,6 +54,9 @@ const CARRIER_HOME_URLS = {
   esim70:          'https://www.esim70.com',
   jetpack:         'https://www.jetpacglobal.com',
   besim:           'https://besim.co.il',
+  seven_g:         'https://7g.app',
+  bestconnect:     'https://bestconnect.online',
+  esimplus:        'https://esimplus.me',
 }
 
 function slugify(str) {
@@ -85,6 +88,7 @@ const GLOBAL_LABELS = {
   orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
   maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack',
   breez: 'Breeze', bytesim: 'ByteSim', besim: 'Besim',
+  seven_g: '7G', bestconnect: 'Best Connect', esimplus: 'eSIM Plus',
 }
 const GLOBAL_COLORS = {
   tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
@@ -93,6 +97,7 @@ const GLOBAL_COLORS = {
   orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'violet',
   maya: 'teal', esim70: 'emerald', jetpack: 'sky', breez: 'cyan',
   bytesim: 'emerald', besim: 'teal',
+  seven_g: 'violet', bestconnect: 'blue', esimplus: 'blue',
 }
 
 const CARRIER_LOGOS = {
@@ -133,6 +138,9 @@ const CARRIER_LOGOS = {
   breez:          '/logos/breez.png',
   bytesim:        '/logos/bytesim.png',
   besim:          '/logos/besim.png',
+  seven_g:        '/logos/seven_g.png',
+  bestconnect:    '/logos/bestconnect.png',
+  esimplus:       '/logos/esimplus.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px

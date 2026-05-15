@@ -34,6 +34,9 @@ const CARRIER_LOGOS = {
   breez:           '/logos/breez.png',
   bytesim:         '/logos/bytesim.png',
   besim:           '/logos/besim.png',
+  seven_g:         '/logos/seven_g.png',
+  bestconnect:     '/logos/bestconnect.png',
+  esimplus:        '/logos/esimplus.png',
 }
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
@@ -121,51 +124,58 @@ function formatDays(days) {
 }
 
 function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, onCompareToggle, repPlan, tabId }) {
-  const hasDataDaysMatrix = carrier === 'bytesim' || carrier === 'maya' || carrier === 'besim' || carrier === 'voye'
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [selectedDays, setSelectedDays] = useState(() => hasDataDaysMatrix ? (plans[0]?.days ?? null) : null)
+  const [selectedDays, setSelectedDays] = useState(() => {
+    // Initialize to the days of the first data option (sorted by data_gb ascending)
+    const seen = new Map()
+    for (const p of plans) {
+      const ds = getPillLabel(p)
+      if (!seen.has(ds)) seen.set(ds, p)
+    }
+    const sorted = [...seen.values()].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
+    return sorted[0]?.days ?? null
+  })
   const [showCountries, setShowCountries] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAnnotations, setShowAnnotations] = useState(false)
   const { isWatched, toggle: toggleWatch } = useWatchlist()
   const { countFor } = useAnnotationCounts()
 
-  // bytesim: one representative plan per data_str, ordered by data_gb
+  // One representative plan per unique data label, sorted by data_gb ascending
   const dataOptions = useMemo(() => {
-    if (!hasDataDaysMatrix) return null
     const seen = new Map()
     for (const p of plans) {
       const ds = getPillLabel(p)
       if (!seen.has(ds)) seen.set(ds, p)
     }
     return [...seen.values()].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
-  }, [hasDataDaysMatrix, plans])
+  }, [plans])
 
-  // bytesim: unique sorted days for the currently selected data option
+  // Unique sorted days for the currently selected data option (empty = no choice)
   const availableDays = useMemo(() => {
-    if (!hasDataDaysMatrix || !dataOptions) return null
     const rep = dataOptions[selectedIndex]
-    if (!rep) return null
+    if (!rep) return []
     const ds = getPillLabel(rep)
     return [...new Set(plans.filter(p => getPillLabel(p) === ds && p.days).map(p => p.days))].sort((a, b) => a - b)
-  }, [hasDataDaysMatrix, dataOptions, selectedIndex, plans])
+  }, [dataOptions, selectedIndex, plans])
 
-  // Active plan: for bytesim match by (data_str, days); for others use index directly
+  // Active plan: match by (data_label, days); fall back to first plan for that data label
   const selectedPlan = useMemo(() => {
-    if (!hasDataDaysMatrix) return plans[selectedIndex] || plans[0]
-    const rep = dataOptions?.[selectedIndex]
+    const rep = dataOptions[selectedIndex]
     const ds = rep ? getPillLabel(rep) : null
-    return plans.find(p => getPillLabel(p) === ds && p.days === selectedDays) || plans[0]
-  }, [hasDataDaysMatrix, plans, dataOptions, selectedIndex, selectedDays])
+    if (selectedDays !== null) {
+      const exact = plans.find(p => getPillLabel(p) === ds && p.days === selectedDays)
+      if (exact) return exact
+    }
+    return plans.find(p => getPillLabel(p) === ds) || plans[0]
+  }, [plans, dataOptions, selectedIndex, selectedDays])
 
   const handleDataSelect = useCallback((idx) => {
     setSelectedIndex(idx)
-    if (hasDataDaysMatrix && dataOptions) {
-      const ds = getPillLabel(dataOptions[idx])
-      const first = plans.find(p => getPillLabel(p) === ds)
-      setSelectedDays(first?.days ?? null)
-    }
-  }, [hasDataDaysMatrix, dataOptions, plans])
+    const ds = getPillLabel(dataOptions[idx])
+    const first = plans.find(p => getPillLabel(p) === ds)
+    setSelectedDays(first?.days ?? null)
+  }, [dataOptions, plans])
   const label = GLOBAL_LABELS[carrier] || carrier
   const badgeColor = GLOBAL_COLORS[carrier] || 'gray'
   const countryData = getCountriesForPlan(selectedPlan)
@@ -217,59 +227,41 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
         <bdi>{destination}</bdi>
       </h3>
 
-      {/* Data / days selector */}
-      {hasDataDaysMatrix ? (
-        <>
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {dataOptions?.map((rep, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleDataSelect(idx)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all duration-150 ${
-                  selectedIndex === idx
-                    ? 'bg-moca-bolt text-white shadow-sm'
-                    : 'bg-moca-cream text-moca-sub hover:bg-moca-sand hover:text-moca-text'
-                }`}
-              >
-                {getPillLabel(rep)}
-              </button>
-            ))}
-          </div>
-          {availableDays && availableDays.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {availableDays.map(days => (
-                <button
-                  key={days}
-                  onClick={() => setSelectedDays(days)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all duration-150 ${
-                    selectedDays === days
-                      ? 'bg-moca-sand text-moca-text shadow-sm border border-moca-bolt/30'
-                      : 'bg-white text-moca-sub border border-gray-200 hover:bg-moca-cream hover:text-moca-text'
-                  }`}
-                >
-                  {days} ימים
-                </button>
-              ))}
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {plans.map((plan, idx) => (
+      {/* Data / days selector — deduplicated for all carriers */}
+      <>
+        <div className={`flex flex-wrap gap-1.5 ${availableDays.length > 1 ? 'mb-2' : 'mb-3'}`}>
+          {dataOptions.map((rep, idx) => (
             <button
               key={idx}
-              onClick={() => setSelectedIndex(idx)}
+              onClick={() => handleDataSelect(idx)}
               className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all duration-150 ${
                 selectedIndex === idx
                   ? 'bg-moca-bolt text-white shadow-sm'
                   : 'bg-moca-cream text-moca-sub hover:bg-moca-sand hover:text-moca-text'
               }`}
             >
-              {getPillLabel(plan)}
+              {getPillLabel(rep)}
             </button>
           ))}
         </div>
-      )}
+        {availableDays.length > 1 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {availableDays.map(days => (
+              <button
+                key={days}
+                onClick={() => setSelectedDays(days)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all duration-150 ${
+                  selectedDays === days
+                    ? 'bg-moca-sand text-moca-text shadow-sm border border-moca-bolt/30'
+                    : 'bg-white text-moca-sub border border-gray-200 hover:bg-moca-cream hover:text-moca-text'
+                }`}
+              >
+                {days} ימים
+              </button>
+            ))}
+          </div>
+        )}
+      </>
 
       {/* Price */}
       <div className="mb-2">
