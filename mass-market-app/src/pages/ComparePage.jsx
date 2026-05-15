@@ -4,6 +4,8 @@ import Spinner from '../components/ui/Spinner'
 import FilterTag from '../components/ui/FilterTag'
 import SearchableSelect from '../components/ui/SearchableSelect'
 import { PageHeader } from '../components/moca'
+import { getCarrierColor } from '../components/moca/carrierMeta'
+import { MVNO_BRAND_COLORS } from '../data/mvnoBrandColors'
 import { has5G as detect5G, hasMaxPriority } from '../data/networkPriority'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import {
@@ -21,28 +23,28 @@ const TABS = [
 
 const CARRIERS_BY_TAB = {
   domestic: [
-    { id: 'partner', label: 'פרטנר', color: '#e91e63' },
-    { id: 'pelephone', label: 'פלאפון', color: '#2196f3' },
-    { id: 'hotmobile', label: 'הוט מובייל', color: '#ff5722' },
-    { id: 'cellcom', label: 'סלקום', color: '#4caf50' },
-    { id: 'mobile019', label: '019', color: '#9c27b0' },
-    { id: 'xphone', label: 'XPhone', color: '#0d9488' },
-    { id: 'wecom', label: 'We-Com', color: '#d97706' },
-    { id: 'neptucom', label: 'Neptucom', color: '#d97706' },
-    { id: 'golan', label: 'גולן טלקום', color: '#009688' },
-    { id: 'rami_levy', label: 'רמי לוי', color: '#e32032' },
+    { id: 'partner',   label: 'פרטנר' },
+    { id: 'pelephone', label: 'פלאפון' },
+    { id: 'hotmobile', label: 'הוט מובייל' },
+    { id: 'cellcom',   label: 'סלקום' },
+    { id: 'mobile019', label: '019' },
+    { id: 'xphone',    label: 'XPhone' },
+    { id: 'wecom',     label: 'We-Com' },
+    { id: 'neptucom',  label: 'Neptucom' },
+    { id: 'golan',     label: 'גולן טלקום' },
+    { id: 'rami_levy', label: 'רמי לוי' },
   ],
   abroad: [
-    { id: 'partner', label: 'פרטנר', color: '#e91e63' },
-    { id: 'pelephone', label: 'פלאפון', color: '#2196f3' },
-    { id: 'hotmobile', label: 'הוט מובייל', color: '#ff5722' },
-    { id: 'cellcom', label: 'סלקום', color: '#4caf50' },
-    { id: 'mobile019', label: '019', color: '#9c27b0' },
-    { id: 'xphone', label: 'XPhone', color: '#0d9488' },
-    { id: 'wecom', label: 'We-Com', color: '#d97706' },
-    { id: 'neptucom', label: 'Neptucom', color: '#d97706' },
-    { id: 'golan', label: 'גולן טלקום', color: '#009688' },
-    { id: 'rami_levy', label: 'רמי לוי', color: '#e32032' },
+    { id: 'partner',   label: 'פרטנר' },
+    { id: 'pelephone', label: 'פלאפון' },
+    { id: 'hotmobile', label: 'הוט מובייל' },
+    { id: 'cellcom',   label: 'סלקום' },
+    { id: 'mobile019', label: '019' },
+    { id: 'xphone',    label: 'XPhone' },
+    { id: 'wecom',     label: 'We-Com' },
+    { id: 'neptucom',  label: 'Neptucom' },
+    { id: 'golan',     label: 'גולן טלקום' },
+    { id: 'rami_levy', label: 'רמי לוי' },
   ],
   global: [
     { id: 'seven_g', label: '7G eSIM', color: '#7c3aed' },
@@ -185,7 +187,14 @@ export default function ComparePage() {
   }, [plans, carrierOptions])
 
   const getLabel = (id) => carrierOptions.find(x => x.id === id)?.label || id
-  const getColor = (id) => carrierOptions.find(x => x.id === id)?.color || '#888'
+  // For domestic/abroad MVNOs use the real brand color via getCarrierColor()
+  // (same source of truth as CarrierChip, CompetitorBoard, PositioningPage).
+  // For global providers — not in MVNO_BRAND_COLORS — fall back to the
+  // per-provider color hardcoded in CARRIERS_BY_TAB.global.
+  const getColor = (id) => {
+    if (MVNO_BRAND_COLORS[id]) return getCarrierColor(id)
+    return carrierOptions.find(x => x.id === id)?.color || '#888'
+  }
 
   // Static country lists for carriers that don't store country in extras
   const CARRIER_COUNTRY_LISTS = useMemo(() => ({
@@ -501,7 +510,7 @@ export default function ComparePage() {
                 className={`px-1 py-1.5 rounded-md text-[11px] font-medium text-center transition-all duration-150 truncate ${
                   selectedCarriers.includes(c.id) ? 'text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                 }`}
-                style={selectedCarriers.includes(c.id) ? { backgroundColor: c.color } : {}}
+                style={selectedCarriers.includes(c.id) ? { backgroundColor: getColor(c.id) } : {}}
               >
                 {c.label}
               </button>
