@@ -1308,22 +1308,22 @@ _HISTORY_TYPE_NAMES = {
 
 
 CARRIER_DISPLAY = {
-    "partner":   {"name": "פרטנר",      "url": "https://www.partner.net.il",       "color": "#e8003d"},
-    "pelephone": {"name": "פלאפון",     "url": "https://www.pelephone.co.il",      "color": "#ff6600"},
+    "partner":   {"name": "פרטנר",      "url": "https://www.partner.net.il",       "color": "#2ed5c4"},
+    "pelephone": {"name": "פלאפון",     "url": "https://www.pelephone.co.il",      "color": "#001fff"},
     "hotmobile": {"name": "הוט מובייל", "url": "https://www.hotmobile.co.il",      "color": "#e3001e"},
-    "cellcom":   {"name": "סלקום",      "url": "https://www.cellcom.co.il",        "color": "#003b7a"},
-    "mobile019": {"name": "019 מובייל", "url": "https://www.019mobile.co.il",      "color": "#555555"},
-    "xphone":    {"name": "XPhone",     "url": "https://www.xphone.co.il",         "color": "#6a0dad"},
-    "wecom":     {"name": "וי-קום",     "url": "https://we-com.co.il",             "color": "#006633"},
-    "neptucom":  {"name": "נפטוקום",    "url": "https://www.neptucom.com",         "color": "#004488"},
-    "golan":     {"name": "גולן טלקום", "url": "https://www.golantelecom.co.il",   "color": "#009688"},
-    "rami_levy": {"name": "רמי לוי תקשורת", "url": "https://mobile.rami-levy.co.il",  "color": "#e32032"},
+    "cellcom":   {"name": "סלקום",      "url": "https://www.cellcom.co.il",        "color": "#9530ff"},
+    "mobile019": {"name": "019 מובייל", "url": "https://www.019mobile.co.il",      "color": "#e8202a"},
+    "xphone":    {"name": "XPhone",     "url": "https://www.xphone.co.il",         "color": "#2b9fd5"},
+    "wecom":     {"name": "וי-קום",     "url": "https://we-com.co.il",             "color": "#ff4500"},
+    "neptucom":  {"name": "נפטוקום",    "url": "https://www.neptucom.com",         "color": "#29b6d6"},
+    "golan":     {"name": "גולן טלקום", "url": "https://www.golantelecom.co.il",   "color": "#cc1717"},
+    "rami_levy": {"name": "רמי לוי תקשורת", "url": "https://mobile.rami-levy.co.il",  "color": "#e8178a"},
 }
 
 CARRIER_STORE_DISPLAY = {
-    "pelephone": {"name": "פלאפון",     "url": "https://www.pelephone.co.il/ds/heb/eshop/lobby/", "color": "#ff6600"},
-    "cellcom":   {"name": "סלקום",      "url": "https://shop.cellcom.co.il/",                      "color": "#003b7a"},
-    "partner":   {"name": "פרטנר",      "url": "https://store.partner.co.il/home",                 "color": "#e8003d"},
+    "pelephone": {"name": "פלאפון",     "url": "https://www.pelephone.co.il/ds/heb/eshop/lobby/", "color": "#001fff"},
+    "cellcom":   {"name": "סלקום",      "url": "https://shop.cellcom.co.il/",                      "color": "#9530ff"},
+    "partner":   {"name": "פרטנר",      "url": "https://store.partner.co.il/home",                 "color": "#2ed5c4"},
     "hotmobile": {"name": "הוט מובייל", "url": "https://hotstore.hotmobile.co.il/smartphones.html","color": "#e3001e"},
 }
 

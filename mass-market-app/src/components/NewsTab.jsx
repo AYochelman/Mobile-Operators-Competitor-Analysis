@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../lib/api'
+import { getCarrierColor } from './moca/carrierMeta'
 // Inline SVG icons (lucide-react not installed)
 function Newspaper({ size = 24, className = '' }) {
   return (
@@ -49,21 +50,6 @@ const CARRIERS = [
   { id: 'besim',     label: 'Besim' },
 ]
 
-const CARRIER_TAG_COLORS = {
-  partner:   'bg-blue-100 text-blue-700',
-  pelephone: 'bg-pink-100 text-pink-700',
-  hotmobile: 'bg-orange-100 text-orange-700',
-  cellcom:   'bg-green-100 text-green-700',
-  mobile019: 'bg-violet-100 text-violet-700',
-  xphone:    'bg-sky-100 text-sky-700',
-  wecom:     'bg-yellow-100 text-yellow-800',
-  neptucom:  'bg-slate-100 text-slate-600',
-  golan:     'bg-teal-100 text-teal-700',
-  rami_levy: 'bg-red-100 text-red-700',
-  breez:     'bg-cyan-100 text-cyan-700',
-  bytesim:   'bg-emerald-100 text-emerald-700',
-  besim:     'bg-teal-100 text-teal-700',
-}
 
 const CARRIER_LABEL = Object.fromEntries(CARRIERS.map(c => [c.id, c.label]))
 
@@ -238,7 +224,13 @@ export default function NewsTab() {
 
             {/* Carrier tag + link icon */}
             <div className="flex items-center justify-between">
-              <span className={`text-xs px-2 py-0.5 rounded font-medium ${CARRIER_TAG_COLORS[article.carrier] || 'bg-gray-100 text-gray-600'}`}>
+              <span
+                className="text-xs px-2 py-0.5 rounded font-medium"
+                style={{
+                  backgroundColor: getCarrierColor(article.carrier) + '22',
+                  color: getCarrierColor(article.carrier),
+                }}
+              >
                 {CARRIER_LABEL[article.carrier] || article.carrier}
               </span>
               <ExternalLink size={13} className="text-[#a08060]" />

@@ -1,4 +1,4 @@
-import{r as e}from"./rolldown-runtime-Dw2cE7zH.js";import{g as t,t as n}from"./vendor-react-C3NxGbLO.js";import{n as r}from"./api-C1q8cSyK.js";import{t as i}from"./CarrierChip-BmXZIebt.js";import{a,s as o,t as s}from"./carrierMeta-CRvBqZRG.js";import{n as c}from"./useHiddenCarrier-Bz0RbkDK.js";import{o as l}from"./moca-Bb9CA-YP.js";var u=e(t(),1),d=n(),f=e=>`תן לי דוח תחרותי תמציתי וממוקד על ${e}.
+import{r as e}from"./rolldown-runtime-Dw2cE7zH.js";import{g as t,t as n}from"./vendor-react-C3NxGbLO.js";import{n as r}from"./api-C1q8cSyK.js";import{t as i}from"./CarrierChip-BmXZIebt.js";import{a,s as o,t as s}from"./carrierMeta-CRvBqZRG.js";import{n as c}from"./useHiddenCarrier-Bz0RbkDK.js";import{o as l}from"./moca-Dq5hU3fn.js";var u=e(t(),1),d=n(),f=e=>`תן לי דוח תחרותי תמציתי וממוקד על ${e}.
 
 תוכן רצוי (בסדר הזה):
 1. **מצב נוכחי** — מספר חבילות פעילות וטווחי מחירים (ביתי וחו"ל בנפרד)

@@ -4,14 +4,16 @@ import { getCarrierColor, getCarrierName } from './carrierMeta'
 
 // Fallback gradient per carrier when screenshot isn't available yet
 const CARRIER_GRADIENT = {
-  partner:   'linear-gradient(135deg,#e8003d,#ff6b8a)',
-  pelephone: 'linear-gradient(135deg,#ff6600,#ffaa44)',
-  hotmobile: 'linear-gradient(135deg,#e3001e,#ff5555)',
-  cellcom:   'linear-gradient(135deg,#003b7a,#0077cc)',
-  mobile019: 'linear-gradient(135deg,#1a1a1a,#555)',
-  xphone:    'linear-gradient(135deg,#6a0dad,#b44fec)',
-  wecom:     'linear-gradient(135deg,#006633,#22bb66)',
-  neptucom:  'linear-gradient(135deg,#004488,#2277cc)',
+  partner:   'linear-gradient(135deg,#2ed5c4,#1fa396)',
+  pelephone: 'linear-gradient(135deg,#001fff,#0018cc)',
+  hotmobile: 'linear-gradient(135deg,#e3001e,#b50018)',
+  cellcom:   'linear-gradient(135deg,#9530ff,#7120cc)',
+  mobile019: 'linear-gradient(135deg,#e8202a,#b81818)',
+  xphone:    'linear-gradient(135deg,#2b9fd5,#1f75a0)',
+  wecom:     'linear-gradient(135deg,#ff4500,#cc3600)',
+  neptucom:  'linear-gradient(135deg,#29b6d6,#1d8ca3)',
+  golan:     'linear-gradient(135deg,#cc1717,#a01212)',
+  rami_levy: 'linear-gradient(135deg,#e8178a,#b51069)',
 }
 
 function formatDate(iso) {
