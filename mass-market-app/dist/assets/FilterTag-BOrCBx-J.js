@@ -1,0 +1,2 @@
+import{t as e}from"./vendor-react-C3NxGbLO.js";var t=e();function n({label:e,active:n,onClick:r,count:i}){return(0,t.jsx)(`button`,{onClick:r,className:`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150
+        ${n?`bg-moca-bolt text-moca-cream`:`text-moca-sub hover:text-moca-text hover:bg-moca-cream`}`,children:e})}export{n as t};

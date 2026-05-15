@@ -4,17 +4,18 @@ import { api } from '../lib/api'
 import Spinner from '../components/ui/Spinner'
 import { useVisibleCarriers } from '../hooks/useHiddenCarrier'
 import { classifyPriority } from '../data/networkPriority'
+import { getCarrierColor } from '../components/moca/carrierMeta'
 
 const CARRIERS = [
-  { id: 'partner', label: 'פרטנר', color: '#ec4899' },
-  { id: 'pelephone', label: 'פלאפון', color: '#3b82f6' },
-  { id: 'hotmobile', label: 'הוט מובייל', color: '#f97316' },
-  { id: 'cellcom', label: 'סלקום', color: '#22c55e' },
-  { id: 'mobile019', label: '019', color: '#a855f7' },
-  { id: 'xphone', label: 'XPhone', color: '#14b8a6' },
-  { id: 'wecom', label: 'We-Com', color: '#f59e0b' },
-  { id: 'neptucom', label: 'Neptucom', color: '#6366f1' },
-  { id: 'rami_levy', label: 'רמי לוי', color: '#e32032' },
+  { id: 'partner',   label: 'פרטנר' },
+  { id: 'pelephone', label: 'פלאפון' },
+  { id: 'hotmobile', label: 'הוט מובייל' },
+  { id: 'cellcom',   label: 'סלקום' },
+  { id: 'mobile019', label: '019' },
+  { id: 'xphone',    label: 'XPhone' },
+  { id: 'wecom',     label: 'We-Com' },
+  { id: 'neptucom',  label: 'Neptucom' },
+  { id: 'rami_levy', label: 'רמי לוי' },
 ]
 
 const PRICE_BUCKETS = [
@@ -211,7 +212,7 @@ export default function PositioningPage() {
                     <tr key={c.id} className="border-b border-gray-50">
                       <td className="px-3 py-2.5">
                         <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full" style={{ background: c.color }} />
+                          <span className="w-2 h-2 rounded-full" style={{ background: getCarrierColor(c.id) }} />
                           <span className="text-[12px] font-medium text-gray-700">{c.label}</span>
                         </div>
                       </td>

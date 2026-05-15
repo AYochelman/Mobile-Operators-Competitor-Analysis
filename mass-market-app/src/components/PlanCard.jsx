@@ -308,7 +308,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
     : undefined
 
   return (
-    <div className={`bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up flex flex-col ${highlighted ? 'ring-2 ring-amber-400 shadow-amber-100 shadow-lg animate-pulse-highlight' : ''} ${isReseller ? 'cursor-pointer' : ''}`}
+    <div style={{ contain: 'layout style' }} className={`bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up flex flex-col ${highlighted ? 'ring-2 ring-amber-400 shadow-amber-100 shadow-lg animate-pulse-highlight' : ''} ${isReseller ? 'cursor-pointer' : ''}`}
       ref={highlighted ? (el) => { if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }) } : undefined}
       onClick={onCardClick}
       role={isReseller ? 'link' : undefined}

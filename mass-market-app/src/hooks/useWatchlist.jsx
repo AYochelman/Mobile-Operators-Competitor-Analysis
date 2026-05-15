@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { api } from '../lib/api'
 import { useAuth } from './useAuth'
 
@@ -11,6 +11,8 @@ export function WatchlistProvider({ children }) {
   const [items, setItems] = useState([])
   const [loaded, setLoaded] = useState(false)
   const [changesCount, setChangesCount] = useState(0)
+  // Cache recent changes so we don't re-fetch on every watchlist toggle
+  const recentChangesRef = useRef([])
 
   const load = useCallback(async () => {
     if (!user) { setItems([]); setLoaded(true); return }
@@ -26,24 +28,28 @@ export function WatchlistProvider({ children }) {
 
   useEffect(() => { load() }, [load])
 
-  // Count recent changes for watched plans (last 7 days)
+  // Fetch changes data once when user loads — stored in ref, never triggers re-fetches
   useEffect(() => {
-    if (!loaded || items.length === 0) { setChangesCount(0); return }
-    const watchedKeys = new Set(items.map(keyOf))
+    if (!user) return
+    const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
     Promise.all([
       api.getChanges(100).catch(() => []),
       api.getAbroadChanges().catch(() => []),
       api.getGlobalChanges().catch(() => []),
     ]).then(([domestic, abroad, global]) => {
-      const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-      const all = [
+      recentChangesRef.current = [
         ...(Array.isArray(domestic) ? domestic : []).map(c => ({ ...c, plan_type: 'domestic' })),
         ...(Array.isArray(abroad) ? abroad : []).map(c => ({ ...c, plan_type: 'abroad' })),
         ...(Array.isArray(global) ? global : []).map(c => ({ ...c, plan_type: 'global' })),
-      ]
-      const count = all.filter(c => c.changed_at >= cutoff && watchedKeys.has(keyOf(c))).length
-      setChangesCount(count)
+      ].filter(c => c.changed_at >= cutoff)
     })
+  }, [user])
+
+  // Recompute count from cached data whenever items changes — no extra network calls
+  useEffect(() => {
+    if (!loaded || items.length === 0) { setChangesCount(0); return }
+    const watchedKeys = new Set(items.map(keyOf))
+    setChangesCount(recentChangesRef.current.filter(c => watchedKeys.has(keyOf(c))).length)
   }, [loaded, items])
 
   const keys = new Set(items.map(keyOf))

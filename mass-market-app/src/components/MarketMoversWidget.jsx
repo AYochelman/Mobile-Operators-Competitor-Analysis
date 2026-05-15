@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { api } from '../lib/api'
 import Badge from './ui/Badge'
 import { ALL_CARRIER_LABELS as CARRIER_LABELS } from '../data/carrierLabels'
@@ -20,7 +20,7 @@ function formatPrice(p) {
   return `₪${Number(p).toFixed(Number(p) % 1 === 0 ? 0 : 2)}`
 }
 
-function MoverCard({ mover, onClick, isAllowedCarrier }) {
+const MoverCard = memo(function MoverCard({ mover, onClick, isAllowedCarrier }) {
   const drop = mover.pct_change < 0
   const pctLabel = `${drop ? '' : '+'}${mover.pct_change}%`
   const label = CARRIER_LABELS[mover.carrier] || mover.carrier
@@ -60,7 +60,7 @@ function MoverCard({ mover, onClick, isAllowedCarrier }) {
       </div>
     </button>
   )
-}
+})
 
 export default function MarketMoversWidget({ onMoverClick, visibleCarriers, tab = 'domestic' }) {
   const [movers, setMovers] = useState([])

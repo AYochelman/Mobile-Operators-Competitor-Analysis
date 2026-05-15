@@ -9,6 +9,7 @@ import time as _time
 from datetime import datetime, timezone, timedelta
 from functools import wraps
 from flask import Flask, jsonify, render_template, request, make_response, send_from_directory, g, abort, redirect
+from flask_compress import Compress
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -40,8 +41,19 @@ CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.j
 app = Flask(__name__)
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
+# gzip/brotli compression on JSON + text responses.
+# Auto-applied to >500-byte responses with Accept-Encoding: gzip/br.
+# Skips already-compressed mimetypes (image/*, video/*) automatically.
+Compress(app)
+
 # Rate limiting
 limiter = Limiter(get_remote_address, app=app, default_limits=["200 per minute"], storage_uri="memory://")
+
+
+def _public_cache(resp, max_age):
+    """Stamp a public Cache-Control on a response; PWA + browser cache it for max_age seconds."""
+    resp.headers["Cache-Control"] = f"public, max-age={max_age}"
+    return resp
 
 # CORS: restrict to known origins
 ALLOWED_ORIGINS = [
@@ -753,11 +765,13 @@ def service_worker():
 
 @app.route("/banners/<string:filename>")
 def serve_banner(filename):
-    """Serve carrier homepage screenshot PNGs."""
+    """Serve carrier homepage screenshot PNGs. Banners refresh daily at 08:00 — cache for 1 day."""
     if not filename.endswith(".png"):
         abort(404)
     banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
-    return send_from_directory(banners_dir, filename)
+    resp = make_response(send_from_directory(banners_dir, filename))
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
 
 
 def _cached_plans(key, fetch_fn):
@@ -783,7 +797,7 @@ def api_plans():
         plans = get_plans(carrier=carrier, db_path=_db_path())
     else:
         plans = _cached_plans('plans', lambda: get_plans(db_path=_db_path()))
-    return jsonify(_filter_hidden_carrier(plans))
+    return _public_cache(jsonify(_filter_hidden_carrier(plans)), 600)
 
 
 @app.route("/api/changes")
@@ -794,7 +808,7 @@ def api_changes():
     except (ValueError, TypeError):
         limit = 20
     changes = get_changes(limit=limit, db_path=_db_path())
-    return jsonify(_filter_hidden_carrier(changes))
+    return _public_cache(jsonify(_filter_hidden_carrier(changes)), 600)
 
 
 @app.route("/api/abroad-plans")
@@ -805,7 +819,7 @@ def api_abroad_plans():
         plans = get_abroad_plans(carrier=carrier, db_path=_db_path())
     else:
         plans = _cached_plans('abroad_plans', lambda: get_abroad_plans(db_path=_db_path()))
-    return jsonify(_filter_hidden_carrier(plans))
+    return _public_cache(jsonify(_filter_hidden_carrier(plans)), 600)
 
 
 @app.route("/api/global-plans")
@@ -816,7 +830,7 @@ def api_global_plans():
         plans = get_global_plans(carrier=carrier, db_path=_db_path())
     else:
         plans = _cached_plans('global_plans', lambda: get_global_plans(db_path=_db_path()))
-    return jsonify(_filter_hidden_carrier(plans))
+    return _public_cache(jsonify(_filter_hidden_carrier(plans)), 600)
 
 
 @app.route("/api/reseller-plans")
@@ -843,7 +857,7 @@ def api_news():
     """Return cached news articles. Optional ?carrier=<id> filter."""
     carrier = request.args.get('carrier', None)
     articles = get_news_articles(carrier=carrier, db_path=_db_path())
-    return jsonify(_filter_hidden_carrier(articles))
+    return _public_cache(jsonify(_filter_hidden_carrier(articles)), 600)
 
 
 _AFFILIATE_FALLBACK_URLS = {
@@ -904,7 +918,7 @@ def api_global_changes():
     except (ValueError, TypeError):
         limit = 50
     changes = get_global_changes(limit=limit, db_path=_db_path())
-    return jsonify(_filter_hidden_carrier(changes))
+    return _public_cache(jsonify(_filter_hidden_carrier(changes)), 600)
 
 
 @app.route("/api/scrape-global-now")
@@ -945,7 +959,7 @@ def api_abroad_changes():
     except (ValueError, TypeError):
         limit = 50
     changes = get_abroad_changes(limit=limit, db_path=_db_path())
-    return jsonify(_filter_hidden_carrier(changes))
+    return _public_cache(jsonify(_filter_hidden_carrier(changes)), 600)
 
 
 @app.route("/api/scrape-abroad-now")
@@ -1235,7 +1249,7 @@ def api_content_plans():
     carrier = request.args.get("carrier")
     service = request.args.get("service")
     plans = get_content_plans(service=service, carrier=carrier, db_path=_db_path())
-    return jsonify(_filter_hidden_carrier(plans))
+    return _public_cache(jsonify(_filter_hidden_carrier(plans)), 600)
 
 
 def _price_direction(change):
@@ -1843,7 +1857,7 @@ def api_banners():
             "image_url":  f"/banners/{carrier}.png" if exists else None,
             "scraped_at": scraped_at,
         })
-    return jsonify(_filter_hidden_carrier(result))
+    return _public_cache(jsonify(_filter_hidden_carrier(result)), 600)
 
 
 @app.route("/api/store-banners")
@@ -1867,7 +1881,7 @@ def api_store_banners():
             "image_url":  f"/banners/{carrier}_store.png" if exists else None,
             "scraped_at": scraped_at,
         })
-    return jsonify(_filter_hidden_carrier(result))
+    return _public_cache(jsonify(_filter_hidden_carrier(result)), 600)
 
 
 @app.route("/api/archive")
@@ -1960,7 +1974,7 @@ def api_content_changes():
     except (ValueError, TypeError):
         limit = 50
     changes = get_content_changes(limit=limit, db_path=_db_path())
-    return jsonify(_filter_hidden_carrier(changes))
+    return _public_cache(jsonify(_filter_hidden_carrier(changes)), 600)
 
 
 @app.route("/api/scrape-content-now")

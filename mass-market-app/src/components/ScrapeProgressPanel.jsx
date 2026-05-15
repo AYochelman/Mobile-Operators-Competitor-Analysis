@@ -1,4 +1,4 @@
-import { useScrape } from '../hooks/useScrape'
+import { useScrape, useScrapeProgress } from '../hooks/useScrape'
 
 const STAGE_LABELS = {
   domestic: 'חבילות סלולר',
@@ -13,7 +13,8 @@ const STAGE_LABELS = {
 const STAGE_ORDER = ['domestic', 'abroad', 'global', 'content', 'archive', 'banners']
 
 export default function ScrapeProgressPanel() {
-  const { scraping, progress } = useScrape()
+  const { scraping } = useScrape()
+  const progress = useScrapeProgress()
 
   if (!scraping && progress.length === 0) return null
 

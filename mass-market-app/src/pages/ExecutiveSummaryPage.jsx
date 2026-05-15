@@ -49,6 +49,9 @@ const CARRIER_NAMES = {
   breez: 'Breeze',
   bytesim: 'ByteSim',
   besim: 'Besim',
+  seven_g: '7G eSIM',
+  bestconnect: 'Best Connect',
+  esimplus: 'eSIM Plus',
   rami_levy: 'רמי לוי',
 }
 

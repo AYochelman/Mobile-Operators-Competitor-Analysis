@@ -41,6 +41,9 @@ const ALL_PROVIDERS = [
   { id: 'breez',          label: 'Breeze',          color: '#06b6d4' },
   { id: 'bytesim',        label: 'ByteSim',        color: '#00b490' },
   { id: 'besim',          label: 'Besim',          color: '#0ea5a4' },
+  { id: 'seven_g',        label: '7G eSIM',        color: '#7c3aed' },
+  { id: 'bestconnect',    label: 'Best Connect',   color: '#0f766e' },
+  { id: 'esimplus',       label: 'eSIM Plus',      color: '#059669' },
 ]
 
 const PLAN_TYPE_LABELS = {

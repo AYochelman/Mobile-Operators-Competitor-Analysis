@@ -1,7 +1,10 @@
 import { createContext, useContext, useState, useRef, useCallback } from 'react'
 import { api } from '../lib/api'
 
-const ScrapeContext = createContext(null)
+// Split into two contexts so progress polling (every 2s during scrape) only
+// re-renders ScrapeProgressPanel — not DashboardPage, ScrapeToast, SettingsPage.
+const ScrapeContext         = createContext(null)
+const ScrapeProgressContext = createContext([])
 
 export function ScrapeProvider({ children }) {
   const [scraping, setScraping]   = useState(false)
@@ -90,8 +93,10 @@ export function ScrapeProvider({ children }) {
   }, [])
 
   return (
-    <ScrapeContext.Provider value={{ scraping, countdown, toast, progress, triggerScrape, dismissToast }}>
-      {children}
+    <ScrapeContext.Provider value={{ scraping, countdown, toast, triggerScrape, dismissToast }}>
+      <ScrapeProgressContext.Provider value={progress}>
+        {children}
+      </ScrapeProgressContext.Provider>
     </ScrapeContext.Provider>
   )
 }
@@ -100,4 +105,8 @@ export function useScrape() {
   const ctx = useContext(ScrapeContext)
   if (!ctx) throw new Error('useScrape must be used inside ScrapeProvider')
   return ctx
+}
+
+export function useScrapeProgress() {
+  return useContext(ScrapeProgressContext)
 }

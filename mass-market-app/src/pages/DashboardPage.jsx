@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, startTransition, lazy, Suspense } from 'react'
 import { useSearchParams, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
@@ -37,12 +37,16 @@ import {
   GOMOWORLD_FRENCH_ANTILLES, GOMOWORLD_NETHERLANDS_ANTILLES, GOMOWORLD_NORTH_AMERICA,
   MAYA_GLOBAL, MAYA_OCEANIA,
   BESIM_REGION_MAP,
+  BESTCONNECT_REGION_MAP,
+  ESIMPLUS_REGION_MAP,
+  SEVEN_G_REGION_MAP,
 } from '../data/globalCountries'
 
 // Carriers where one plan covers many countries (zone/global plans)
 const MULTI_COUNTRY_CARRIERS = new Set([
   'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
   'pelephone_global', 'esimo', 'globalesim', 'gomoworld', 'maya', 'besim',
+  'bestconnect', 'esimplus', 'seven_g',
 ])
 
 const GLOBALESIM_REGION_MAP = {
@@ -94,6 +98,13 @@ function getPlanCoverage(plan) {
     // dashboard's destination-filter falls back to direct-equality matching on extras[0].
     // Regional/global bundles: extras[0] is a canonical region name → expand via the map.
     return BESIM_REGION_MAP[dest] || null
+  }
+  if (carrier === 'bestconnect') return BESTCONNECT_REGION_MAP[dest] || null
+  if (carrier === 'esimplus') return ESIMPLUS_REGION_MAP[dest] || null
+  if (carrier === 'seven_g') {
+    // plan_name first segment is the English region name (e.g. "Asia (12 areas)")
+    const regionName = (name || '').split(' – ')[0]?.trim() || ''
+    return SEVEN_G_REGION_MAP[regionName] || null
   }
   return null
 }
@@ -327,6 +338,7 @@ export default function DashboardPage() {
   const [eurRate, setEurRate] = useState(null)
   const [gbpRate, setGbpRate] = useState(null)
   const [visibleCount, setVisibleCount] = useState(50)
+  const loadIdRef = useRef(0)  // incremented on every loadTab call; stale loads bail early
   const [trendMap, setTrendMap] = useState(new Map())   // carrier|plan_name → {pct_change}
   const [compareMap, setCompareMap] = useState(new Map()) // key → {plan, planType}
   const [showCompareDrawer, setShowCompareDrawer] = useState(false)
@@ -409,35 +421,65 @@ export default function DashboardPage() {
   useEffect(() => { loadTab(tab) }, [tab])
   useEffect(() => {
     const base = import.meta.env.VITE_API_URL || ''
-    fetch(`${base}/api/exchange-rates`, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+    const controller = new AbortController()
+    const CACHE_KEY = 'moca_fx_rates'
+    const CACHE_TTL = 60 * 60 * 1000 // 1 hour
+
+    const applyRates = (d) => {
+      if (controller.signal.aborted) return
+      setUsdRate(d.usd)
+      setEurRate(d.eur)
+      if (d.gbp) setGbpRate(d.gbp)
+    }
+
+    // Serve from localStorage cache if fresh
+    try {
+      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
+      if (cached && Date.now() - cached.ts < CACHE_TTL) {
+        applyRates(cached)
+        return () => controller.abort()
+      }
+    } catch { /* ignore corrupt cache */ }
+
+    fetch(`${base}/api/exchange-rates`, {
+      headers: { 'ngrok-skip-browser-warning': 'true' },
+      signal: controller.signal,
+    })
       .then(r => r.json())
       .then(d => {
-        setUsdRate(d.usd)
-        setEurRate(d.eur)
-        if (d.gbp) {
-          setGbpRate(d.gbp)
-        } else {
+        if (controller.signal.aborted) return
+        // Persist to cache with timestamp
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ...d, ts: Date.now() })) } catch { /* quota */ }
+        applyRates(d)
+        if (!d.gbp) {
           // Flask not yet updated — fetch GBP→ILS directly
-          fetch('https://open.er-api.com/v6/latest/GBP')
+          fetch('https://open.er-api.com/v6/latest/GBP', { signal: controller.signal })
             .then(r2 => r2.json())
-            .then(d2 => { if (d2.rates?.ILS) setGbpRate(d2.rates.ILS) })
+            .then(d2 => {
+              if (!controller.signal.aborted && d2.rates?.ILS) setGbpRate(d2.rates.ILS)
+            })
             .catch(() => {})
         }
       })
       .catch(() => {})
+
+    return () => controller.abort()
   }, [])
 
-  // Fetch market movers once to build the trend badge map
+  // Fetch market movers for trend badges — deferred 1s so critical plan data loads first
   useEffect(() => {
-    api.getMarketMovers(7, 20)
-      .then(res => {
-        const map = new Map()
-        for (const m of res?.movers || []) {
-          map.set(`${m.carrier}|${m.plan_name}`, { pct_change: m.pct_change })
-        }
-        setTrendMap(map)
-      })
-      .catch(() => {})
+    const timer = setTimeout(() => {
+      api.getMarketMovers(7, 20)
+        .then(res => {
+          const map = new Map()
+          for (const m of res?.movers || []) {
+            map.set(`${m.carrier}|${m.plan_name}`, { pct_change: m.pct_change })
+          }
+          setTrendMap(map)
+        })
+        .catch(() => {})
+    }, 1000)
+    return () => clearTimeout(timer)
   }, [])
 
   const toggleCompare = useCallback((plan, planType) => {
@@ -488,10 +530,12 @@ export default function DashboardPage() {
   }, [plans])
 
   async function loadTab(t) {
+    const id = ++loadIdRef.current
     setLoading(true)
     try {
       if (t === 'domestic' && plans.domestic.length === 0) {
         const [p, c] = await Promise.all([api.getPlans(), api.getChanges()])
+        if (id !== loadIdRef.current) return  // tab changed while fetching
         setPlans(prev => ({ ...prev, domestic: p }))
         setChanges(prev => ({ ...prev, domestic: c }))
         if (p.length) {
@@ -500,10 +544,12 @@ export default function DashboardPage() {
         }
       } else if (t === 'abroad' && plans.abroad.length === 0) {
         const [p, c] = await Promise.all([api.getAbroadPlans(), api.getAbroadChanges()])
+        if (id !== loadIdRef.current) return
         setPlans(prev => ({ ...prev, abroad: p }))
         setChanges(prev => ({ ...prev, abroad: c }))
       } else if (t === 'global' && plans.global.length === 0) {
         const [p, c] = await Promise.all([api.getGlobalPlans(), api.getGlobalChanges()])
+        if (id !== loadIdRef.current) return
         setPlans(prev => ({ ...prev, global: p }))
         setChanges(prev => ({ ...prev, global: c }))
       } else if (t === 'resellers' && plans.resellers.length === 0) {
@@ -530,7 +576,7 @@ export default function DashboardPage() {
         setStoreBannersLoaded(true)
       }
     } catch (err) { console.error(err) }
-    setLoading(false)
+    if (id === loadIdRef.current) setLoading(false)
   }
 
   // Build change lookup
@@ -656,7 +702,7 @@ export default function DashboardPage() {
         //        Group by plan_name prefix so each bundle gets its own card.
         // airalo: split Discover (data only) vs Discover+ (data+calls+sms) like Airalo's website tabs
         let key
-        if (plan.carrier === 'bytesim' || plan.carrier === 'besim') {
+        if (plan.carrier === 'bytesim' || plan.carrier === 'besim' || plan.carrier === 'seven_g') {
           const parts = plan.plan_name?.split(' – ') || []
           const productLabel = parts.slice(0, -2).join(' – ') || dest
           key = `${plan.carrier}|${productLabel}`
@@ -683,7 +729,7 @@ export default function DashboardPage() {
           // Besim's Global bundles have e.g. 1GB/7d AND 1GB/365d — both need to show.
           // Unlimited plans (data_gb null) are differentiated by days so VOYE-style
           // 3GB/יום × {3,7,10,15,20,30}-day variants don't collapse into one card.
-          const keepAll = p.carrier === 'bytesim' || p.carrier === 'maya' || p.carrier === 'besim'
+          const keepAll = p.carrier === 'bytesim' || p.carrier === 'maya' || p.carrier === 'besim' || p.carrier === 'seven_g'
           const isUnlimited = p.data_gb == null
           const gbKey = keepAll
             ? p.plan_name
@@ -694,7 +740,7 @@ export default function DashboardPage() {
         // bytesim/besim: destination shown as product label extracted from plan_name
         // airalo: destination shows Discover vs Discover+ to mirror Airalo's site tabs
         let destination
-        if (unique[0].carrier === 'bytesim' || unique[0].carrier === 'besim') {
+        if (unique[0].carrier === 'bytesim' || unique[0].carrier === 'besim' || unique[0].carrier === 'seven_g') {
           const parts = unique[0].plan_name?.split(' – ') || []
           destination = parts.slice(0, -2).join(' – ') || unique[0].extras[0]
         } else if (unique[0].carrier === 'airalo') {
@@ -758,15 +804,19 @@ export default function DashboardPage() {
   const handleScrape = () => triggerScrape()
 
   const setFilter = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }))
-    setVisibleCount(50)
+    startTransition(() => {
+      setFilters(prev => ({ ...prev, [key]: value }))
+      setVisibleCount(50)
+    })
   }
 
   const resetFilters = () => {
-    setFilters({ carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', roaming: 'all',
-      globalProvider: 'all', destination: 'all', region: 'all', days: 'all',
-      contentCarrier: 'all', contentService: 'all' })
-    setVisibleCount(50)
+    startTransition(() => {
+      setFilters({ carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', roaming: 'all',
+        globalProvider: 'all', destination: 'all', region: 'all', days: 'all',
+        contentCarrier: 'all', contentService: 'all' })
+      setVisibleCount(50)
+    })
   }
 
   // Provider stats — shown when a single carrier/provider is selected
@@ -781,6 +831,13 @@ export default function DashboardPage() {
     const min = Math.min(...prices)
     return { count: filteredPlans.length, avg, min }
   }, [filteredPlans, filters, tab])
+
+  // Pre-compute highlight tokens once — avoids repeating toLowerCase/replace inside every PlanCard render
+  const highlightMatcher = useMemo(() => {
+    if (!highlightPlan) return null
+    const h = highlightPlan.toLowerCase().replace(/[\s\-–]+/g, ' ')
+    return { h, prefix: h.length > 5 ? h.slice(0, 15) : null, firstWord: h.split(' ')[0] }
+  }, [highlightPlan])
 
   const exportToExcel = useCallback(async () => {
     if (!filteredPlans.length) return
@@ -1340,14 +1397,12 @@ export default function DashboardPage() {
                   trendInfo={trendMap.get(key) || null}
                   isInCompare={compareMap.has(compareKey)}
                   onCompareToggle={toggleCompare}
-                  highlighted={highlightPlan && (() => {
-                    const h = highlightPlan.toLowerCase().replace(/[\s\-–]+/g, ' ')
+                  highlighted={highlightMatcher && (() => {
                     const name = (plan.plan_name || '').toLowerCase().replace(/[\s\-–]+/g, ' ')
                     if (plan.carrier === highlightPlan) return true
-                    if (name.includes(h)) return true
-                    if (h.length > 5 && name.includes(h.slice(0, 15))) return true
-                    const firstWord = h.split(' ')[0]
-                    if (firstWord.length > 2 && name.includes(firstWord)) return true
+                    if (name.includes(highlightMatcher.h)) return true
+                    if (highlightMatcher.prefix && name.includes(highlightMatcher.prefix)) return true
+                    if (highlightMatcher.firstWord.length > 2 && name.includes(highlightMatcher.firstWord)) return true
                     return false
                   })()}
                 />

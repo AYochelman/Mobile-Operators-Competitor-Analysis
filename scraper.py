@@ -6841,6 +6841,35 @@ _SEVEN_G_SLUG_OVERRIDES = {
     "republic of the congo": "congo",
 }
 
+# Canonical Hebrew region labels for extras[0] — keeps plans in the region filter
+_SEVEN_G_REGION_HEB = {
+    "Africa":                               "אפריקה",
+    "Africa (25+ areas)":                   "אפריקה",
+    "Asia (12 areas)":                      "אסיה",
+    "Asia (20 areas)":                      "אסיה",
+    "Asia (20+ areas)":                     "אסיה",
+    "Asia (7 areas)":                       "אסיה",
+    "Australia & New Zealand":              "אוקיאניה",
+    "Balkans (5+ areas)":                   "בלקן",
+    "Caribbean Islands":                    "איי הקריביים",
+    "Central Asia":                         "מרכז אסיה",
+    "China mainland & Japan & South Korea": "אסיה",
+    "Europe (30+ areas)":                   "אירופה",
+    "Europe (40+ areas)":                   "אירופה",
+    "GCC":                                  "המזרח התיכון",
+    "Global (120+ areas)":                  "גלובלי",
+    "Global (130+ areas)":                  "גלובלי",
+    "Gulf Region":                          "המזרח התיכון",
+    "Middle East":                          "המזרח התיכון",
+    "Middle East & North Africa":           "המזרח התיכון וצפון אפריקה",
+    "Middle East and North Africa":         "המזרח התיכון וצפון אפריקה",
+    "North America":                        "צפון אמריקה",
+    "North America (3 areas)":              "צפון אמריקה",
+    "Oceania":                              "אוקיאניה",
+    "Singapore & Malaysia & Thailand":      "אסיה",
+    "South America (15+ areas)":            "אמריקה הלטינית",
+}
+
 # Regions whose slugs can't be derived from the name — map directly to /he/esim/region/{slug}
 SEVEN_G_REGION_SLUG_MAP = {
     "Africa":                                "africa",
@@ -6885,7 +6914,7 @@ def _seven_g_slugify(name):
     return slug
 
 
-def _parse_seven_g_page(html, usd_rate, eng_name):
+def _parse_seven_g_page(html, usd_rate, eng_name, extras_region=None):
     from html.parser import HTMLParser as _HP
 
     class _TE(_HP):
@@ -6942,7 +6971,7 @@ def _parse_seven_g_page(html, usd_rate, eng_name):
         plans.append(_make_global_plan(
             "seven_g", f"{heb_name} – ‏{gb_label}GB – ‏{days} ימים",
             round(usd * usd_rate, 2), "USD", usd,
-            gb, days, extras=[heb_name],
+            gb, days, extras=[extras_region if extras_region is not None else heb_name],
         ))
     return plans
 
@@ -6956,7 +6985,7 @@ def _fetch_seven_g_destination(name, usd_rate):
             req = _ur.Request(url, headers={"User-Agent": _UA})
             with _ur.urlopen(req, timeout=15) as r:
                 html = r.read().decode("utf-8")
-            return _parse_seven_g_page(html, usd_rate, name)
+            return _parse_seven_g_page(html, usd_rate, name, extras_region=_SEVEN_G_REGION_HEB.get(name))
         except Exception:
             return []
     slug = _seven_g_slugify(name)
@@ -7157,15 +7186,24 @@ _ESIMPLUS_REGION_HEB = {
     "europe":                   "אירופה",
     "north-america":            "צפון אמריקה",
     "oceania":                  "אוקיאניה",
-    "caribbean":                "הקריבי",
-    "europe-usa":               "Europe + USA",
+    "caribbean":                "איי הקריביים",
+    "europe-usa":               'אירופה וארה"ב',
     "middle-east":              "המזרח התיכון ואפריקה",
-    "americas-us-ca":           "Americas",
+    "americas-us-ca":           "האמריקות",
     "global":                   "גלובלי",
-    "global-max":               "Global Premium",
-    "global-light":             "Global Light",
-    "global-standard":          "Global Plus",
-    "europe-usa-business-hubs": "Europe + USA Business",
+    "global-max":               "גלובלי",
+    "global-light":             "גלובלי",
+    "global-standard":          "גלובלי",
+    "europe-usa-business-hubs": 'אירופה וארה"ב',
+}
+
+# Plan-name prefix for global variants that share extras[0]="גלובלי"
+# Keeps DB plan_name distinct so UPSERT doesn't collide between tiers
+_ESIMPLUS_PLAN_PREFIX = {
+    "global-max":               "גלובלי Premium",
+    "global-light":             "גלובלי Light",
+    "global-standard":          "גלובלי Plus",
+    "europe-usa-business-hubs": 'אירופה וארה"ב עסקים',
 }
 
 
@@ -7211,12 +7249,13 @@ def _fetch_esimplus_country(slug, usd_rate):
                         seen[key] = (usd, plan_type)
             except Exception:
                 continue
+        plan_prefix = _ESIMPLUS_PLAN_PREFIX.get(slug, heb_name)
         plans = []
         for (gb, days, plan_type), (usd, _) in seen.items():
             gb_label = int(gb) if gb == int(gb) else gb
             suffix = " (שיחות+SMS)" if plan_type == "legacy" else ""
             plans.append(_make_global_plan(
-                "esimplus", f"{heb_name} – ‏{gb_label}GB – ‏{days} ימים{suffix}",
+                "esimplus", f"{plan_prefix} – ‏{gb_label}GB – ‏{days} ימים{suffix}",
                 round(usd * usd_rate, 2), "USD", usd,
                 gb, days, extras=[heb_name],
             ))

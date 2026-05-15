@@ -2,15 +2,15 @@
 // `secondary` is a ~20% darker shade of primary for hover/active states.
 export const MVNO_BRAND_COLORS = {
   partner:   { primary: '#2ed5c4', secondary: '#1fa396' },
-  pelephone: { primary: '#ff6600', secondary: '#cc5200' },
+  pelephone: { primary: '#001fff', secondary: '#0018cc' },
   hotmobile: { primary: '#e3001e', secondary: '#b50018' },
-  cellcom:   { primary: '#003b7a', secondary: '#002e5e' },
-  mobile019: { primary: '#555555', secondary: '#333333' },
-  xphone:    { primary: '#6a0dad', secondary: '#4d0980' },
-  wecom:     { primary: '#006633', secondary: '#004d26' },
-  neptucom:  { primary: '#004488', secondary: '#003366' },
-  golan:     { primary: '#009688', secondary: '#00695f' },
-  rami_levy: { primary: '#e32032', secondary: '#b51a28' },
+  cellcom:   { primary: '#9530ff', secondary: '#7120cc' },
+  mobile019: { primary: '#e8202a', secondary: '#b81818' },
+  xphone:    { primary: '#2b9fd5', secondary: '#1f75a0' },
+  wecom:     { primary: '#ff4500', secondary: '#cc3600' },
+  neptucom:  { primary: '#29b6d6', secondary: '#1d8ca3' },
+  golan:     { primary: '#cc1717', secondary: '#a01212' },
+  rami_levy: { primary: '#e8178a', secondary: '#b51069' },
 }
 
 export function getMvnoColors(mvno) {

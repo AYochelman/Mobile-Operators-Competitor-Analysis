@@ -395,6 +395,62 @@ export const BESIM_REGION_MAP = {
   'גלובלי':                BESIM_GLOBAL,
 };
 
+// ── 7G ────────────────────────────────────────────────────────────────
+// 7G uses Airalo's regional bundles (cdn.airalo.com images, slug format).
+// Where the country count matches an Airalo regional array exactly, we reuse it.
+// For explicit named regions (Australia & New Zealand, etc.), we curate directly.
+// Other 7G regions are intentionally omitted — 7G's site doesn't expose the
+// country list and we don't want to guess.
+// Key = the English region name as it appears in plan_name (parsed from page title).
+export const SEVEN_G_REGION_MAP = {
+  'China mainland & Japan & South Korea': ['סין','יפן','דרום קוריאה'],
+  'Singapore & Malaysia & Thailand':      ['סינגפור','מלזיה','תאילנד'],
+  'Australia & New Zealand':              ['אוסטרליה','ניו זילנד'],
+  'Gulf Region':                          ['בחריין','כוויית','עומאן','קטר','ערב הסעודית','איחוד האמירויות'],
+  'Central Asia':                         ['קזחסטן','קירגיזסטן',"טג'יקיסטן",'טורקמניסטן','אוזבקיסטן'],
+  'North America':                        ['קנדה','מקסיקו','ארצות הברית'],
+  'North America (3 areas)':              ['קנדה','מקסיקו','ארצות הברית'],
+  'Caribbean Islands':                    AIRALO_REGIONAL_CARIBBEAN_ISLANDS,
+  'Oceania':                              AIRALO_REGIONAL_OCEANIA,
+  'South America (15+ areas)':            AIRALO_REGIONAL_LATIN_AMERICA,
+  'Middle East':                          AIRALO_REGIONAL_MIDDLE_EAST_AND_NORTH_AFRICA,
+  'Europe (40+ areas)':                   AIRALO_REGIONAL_EUROPE,
+};
+
+// ── Best Connect ─────────────────────────────────────────────────────
+export const BESTCONNECT_EUROPE = ['אוסטריה','בלגיה','בולגריה','קרואטיה','קפריסין',"צ'כיה",'דנמרק','אסטוניה','פינלנד','צרפת','גרמניה','יוון','הונגריה','אירלנד','איטליה','לטביה','ליטא','לוקסמבורג','מלטה','הולנד','נורבגיה','פולין','פורטוגל','רומניה','סלובקיה','סלובניה','ספרד','שבדיה','שוויץ'];
+export const BESTCONNECT_BALKANS = ['אלבניה','בוסניה והרצגובינה','מקדוניה הצפונית','מונטנגרו','סרביה'];
+export const BESTCONNECT_TURKEY_GREECE = ['יוון','טורקיה'];
+export const BESTCONNECT_REGION_MAP = {
+  'אירופה':            BESTCONNECT_EUROPE,
+  'בלקן':              BESTCONNECT_BALKANS,
+  'טורקיה ואיי יוון': BESTCONNECT_TURKEY_GREECE,
+};
+
+// ── eSIM Plus ─────────────────────────────────────────────────────────
+export const ESIMPLUS_EUROPE = ['אוסטריה','בלגיה','בולגריה','שוויץ','קפריסין',"צ'כיה",'גרמניה','דנמרק','אסטוניה','ספרד','פינלנד','צרפת','בריטניה','יוון','קרואטיה','הונגריה','אירלנד','איסלנד','איטליה','ליכטנשטיין','ליטא','לוקסמבורג','לטביה','מלטה','הולנד','נורבגיה','פולין','פורטוגל','רומניה','שבדיה','סלובניה','סלובקיה','טורקיה','ותיקן'];
+export const ESIMPLUS_EUROPE_USA = ['איחוד האמירויות','אוסטריה','אוסטרליה','בלגיה','בולגריה','קנדה','שוויץ','סין','קפריסין',"צ'כיה",'גרמניה','דנמרק','אסטוניה','מצרים','ספרד','פינלנד','צרפת','בריטניה','יוון','הונג קונג','קרואטיה','הונגריה','אירלנד','איסלנד','איטליה','יפן','דרום קוריאה','ליכטנשטיין','ליטא','לוקסמבורג','לטביה','מלטה','הולנד','נורבגיה','פולין','פורטוגל','רומניה','שבדיה','סינגפור','סלובניה','סלובקיה','טורקיה','ארצות הברית','ותיקן'];
+export const ESIMPLUS_MIDDLE_EAST_AFRICA = ['איחוד האמירויות','מצרים','ישראל','ירדן','כוויית','מרוקו','עומאן','טורקיה','בחריין','ערב הסעודית','תוניסיה','קטר'];
+export const ESIMPLUS_AMERICAS = ['ארגנטינה','ברזיל','קנדה',"צ'ילה",'קולומביה','קוסטה ריקה','אקוודור','גיאנה הצרפתית','מקסיקו','פרו','אל סלבדור','ארצות הברית','אורוגוואי'];
+export const ESIMPLUS_BALKANS = ['אלבניה','בוסניה והרצגובינה','בולגריה','יוון','קרואטיה','מונטנגרו','מקדוניה הצפונית','רומניה','סרביה','סלובניה','מולדובה','קוסובו'];
+export const ESIMPLUS_ASIA = ['אינדונזיה','מלזיה','סינגפור','טייוואן','תאילנד','וייטנאם','אוסטרליה','הונג קונג','דרום קוריאה','סרי לנקה','מקאו','ניו זילנד','פקיסטן','אוזבקיסטן'];
+export const ESIMPLUS_AFRICA = ['קמרון','רפובליקת קונגו','מצרים','גמביה','גאנה','גינאה ביסאו','קניה','מרוקו','דרום אפריקה','אוגנדה','מדגסקר','מאוריציוס','ניגריה','ראוניון','תוניסיה','טנזניה','זמביה'];
+export const ESIMPLUS_NORTH_AMERICA = ['קנדה','מקסיקו','פוארטו ריקו','ארצות הברית'];
+export const ESIMPLUS_OCEANIA = ['אוסטרליה','ניו זילנד'];
+export const ESIMPLUS_CARIBBEAN = ['אנטיגואה וברבודה','אנגווילה','אנטילים הולנדיים','ברבדוס','ברמודה','בונייר','איי הבהאמה','קוראסאו','דומיניקה','גרנדה','גיאנה הצרפתית','גיאנה','האיטי',"ג'מייקה",'סנט קיטס ונוויס','איי קיימן','סנט לוסיה','מרטיניק','מונסראט','סורינאם','אל סלבדור','איי טורקס וקאיקוס','טרינידד וטובגו','סנט וינסנט והגרדינים','איי הבתולה (בריטניה)','סן ברתלמי','הרפובליקה הדומיניקנית','סן מרטן'];
+export const ESIMPLUS_REGION_MAP = {
+  'אירופה':               ESIMPLUS_EUROPE,
+  'אירופה וארה"ב':        ESIMPLUS_EUROPE_USA,
+  'המזרח התיכון ואפריקה': ESIMPLUS_MIDDLE_EAST_AFRICA,
+  'האמריקות':             ESIMPLUS_AMERICAS,
+  'בלקן':                 ESIMPLUS_BALKANS,
+  'אסיה':                 ESIMPLUS_ASIA,
+  'אפריקה':               ESIMPLUS_AFRICA,
+  'צפון אמריקה':          ESIMPLUS_NORTH_AMERICA,
+  'אוקיאניה':             ESIMPLUS_OCEANIA,
+  'איי הקריביים':         ESIMPLUS_CARIBBEAN,
+};
+
 /**
  * Get country list for a global plan.
  * Returns { title, countries } or null if no data available.
@@ -717,6 +773,33 @@ export function getCountriesForPlan(plan) {
       countries = labelMatch.includes('120+') ? BESIM_GLOBAL_120 : BESIM_GLOBAL_130;
     }
     return { title: 'Besim — ' + titleSuffix, countries };
+  }
+
+  // ── 7G ──
+  // plan_name format: "<English region name> – ‏<GB>GB – ‏<days> ימים"
+  // The region name comes from the page title parse, in English (e.g. "Asia (12 areas)").
+  if (carrier === 'seven_g') {
+    const regionName = (name || '').split(' – ')[0]?.trim() || '';
+    if (SEVEN_G_REGION_MAP[regionName]) {
+      return { title: '7G — ' + regionName, countries: SEVEN_G_REGION_MAP[regionName] };
+    }
+    return null;
+  }
+
+  // ── Best Connect ──
+  if (carrier === 'bestconnect') {
+    if (extras[0] && BESTCONNECT_REGION_MAP[extras[0]]) {
+      return { title: 'Best Connect — ' + extras[0], countries: BESTCONNECT_REGION_MAP[extras[0]] };
+    }
+    return null;
+  }
+
+  // ── eSIM Plus ──
+  if (carrier === 'esimplus') {
+    if (extras[0] && ESIMPLUS_REGION_MAP[extras[0]]) {
+      return { title: 'eSIM Plus — ' + extras[0], countries: ESIMPLUS_REGION_MAP[extras[0]] };
+    }
+    return null;
   }
 
   return null;

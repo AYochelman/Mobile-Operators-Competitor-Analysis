@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, memo } from 'react'
 import CarrierChip from './CarrierChip'
 import Sparkline from './Sparkline'
 import Delta from './Delta'
@@ -93,7 +93,7 @@ function trimSeries(points, maxPoints = 30) {
   return points.slice(points.length - maxPoints)
 }
 
-function CompetitorRow({ row, isOurs, oursAvg, onRowClick }) {
+const CompetitorRow = memo(function CompetitorRow({ row, isOurs, oursAvg, onRowClick }) {
   const empty = row.plans === 0
   const trend = useCarrierPriceTrend(row.carrier, 'domestic')
   const sparkData = trend ? trimSeries(trend) : null
@@ -198,7 +198,7 @@ function CompetitorRow({ row, isOurs, oursAvg, onRowClick }) {
       </div>
     </button>
   )
-}
+})
 
 function PositionLabel({ row, oursAvg }) {
   if (oursAvg == null || row.avg == null || row.carrier === undefined) return null

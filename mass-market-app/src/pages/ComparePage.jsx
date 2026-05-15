@@ -45,14 +45,17 @@ const CARRIERS_BY_TAB = {
     { id: 'rami_levy', label: 'רמי לוי', color: '#e32032' },
   ],
   global: [
+    { id: 'seven_g', label: '7G eSIM', color: '#7c3aed' },
     { id: 'world8', label: '8 World', color: '#0d9488' },
     { id: 'airalo', label: 'Airalo', color: '#f97316' },
     { id: 'bcengi', label: 'Bcengi', color: '#1d4ed8' },
+    { id: 'bestconnect', label: 'Best Connect', color: '#0f766e' },
     { id: 'besim', label: 'Besim', color: '#0ea5a4' },
     { id: 'breez', label: 'Breeze', color: '#06b6d4' },
     { id: 'bytesim', label: 'ByteSim', color: '#00b490' },
     { id: 'esimio', label: 'eSIM.io', color: '#2563eb' },
     { id: 'esim70', label: 'eSIM70', color: '#10b981' },
+    { id: 'esimplus', label: 'eSIM Plus', color: '#059669' },
     { id: 'esimo', label: 'eSIMo', color: '#a855f7' },
     { id: 'globalesim', label: 'GlobaleSIM', color: '#22c55e' },
     { id: 'pelephone_global', label: 'GlobalSIM', color: '#2196f3' },
@@ -88,6 +91,10 @@ const KNOWN_REGIONS = new Set([
   'כלל העולם',
   'אירופה+','חבר המדינות','אמריקה המרכזית','אירופה וארה"ב','פורטוגל וספרד',
   'המזרח התיכון לייט','אירופה לייט','גלובלי',
+  // Best Connect regional
+  'טורקיה ואיי יוון',
+  // eSIM Plus regional
+  'המזרח התיכון ואפריקה','האמריקות',
 ])
 
 // Region-label consolidation rules:
@@ -102,7 +109,21 @@ function isLargeMultiCountryRegion(region) {
 }
 function normalizeRegionLabel(region) {
   if (isLargeMultiCountryRegion(region)) return 'גלובלי'
-  if (region && String(region).includes('אירופה')) return 'אירופה'
+  if (!region) return region
+  const r = String(region)
+  // English legacy names from old DB scrapes (Best Connect, 7G, eSIM Plus)
+  if (r === 'Africa') return 'אפריקה'
+  if (r === 'Caribbean Islands' || r === 'הקריבי') return 'איי הקריביים'
+  if (r === 'GCC' || r === 'Gulf Region') return 'המזרח התיכון'
+  if (r === 'Oceania') return 'אוקיאניה'
+  if (r === 'Balkan' || r === 'Balkans') return 'בלקן'
+  if (r === 'Central Asia') return 'מרכז אסיה'
+  if (r === 'North America') return 'צפון אמריקה'
+  if (r === 'Middle East') return 'המזרח התיכון'
+  if (r === 'Middle East and North Africa' || r === 'Middle East & North Africa') return 'המזרח התיכון וצפון אפריקה'
+  if (r === 'Americas' || r === 'Americas + US + CA') return 'האמריקות'
+  if (/^Global (Light|Max|Standard|Premium|Plus)$/i.test(r)) return 'גלובלי'
+  if (r.includes('אירופה') || /^Europe/i.test(r)) return 'אירופה'
   return region
 }
 
@@ -188,7 +209,7 @@ export default function ComparePage() {
 
     // From extras[0] (saily, holafly, esimio per-country plans)
     plans.forEach(p => {
-      if (p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(p.extras[0])) {
+      if (p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(normalizeRegionLabel(p.extras[0]))) {
         if (!map[p.extras[0]]) map[p.extras[0]] = new Set()
         map[p.extras[0]].add(p.carrier)
       }
@@ -207,7 +228,7 @@ export default function ComparePage() {
 
     // Also index saily/holafly/esimio regional plans' included countries
     plans.forEach(p => {
-      if (p.extras && p.extras[0] && KNOWN_REGIONS.has(p.extras[0])) {
+      if (p.extras && p.extras[0] && KNOWN_REGIONS.has(normalizeRegionLabel(p.extras[0]))) {
         const data = getCountriesForPlan(p)
         if (data && data.countries) {
           data.countries.forEach(country => {
@@ -220,7 +241,7 @@ export default function ComparePage() {
 
     const regions = [...new Set(
       plans
-        .filter(p => p.extras && p.extras[0] && (KNOWN_REGIONS.has(p.extras[0]) || isLargeMultiCountryRegion(p.extras[0])))
+        .filter(p => p.extras && p.extras[0] && (KNOWN_REGIONS.has(normalizeRegionLabel(p.extras[0])) || isLargeMultiCountryRegion(p.extras[0])))
         .map(p => normalizeRegionLabel(p.extras[0]))
     )].sort((a, b) => a.localeCompare(b, 'he'))
     const destinations = Object.keys(map).sort((a, b) => a.localeCompare(b, 'he'))

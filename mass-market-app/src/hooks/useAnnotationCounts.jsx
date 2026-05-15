@@ -20,8 +20,10 @@ export function AnnotationCountsProvider({ children }) {
 
   useEffect(() => { reload() }, [reload])
 
-  const countFor = (carrier, planType, planName) =>
-    counts[`${carrier}|${planType}|${planName}`] || 0
+  const countFor = useCallback(
+    (carrier, planType, planName) => counts[`${carrier}|${planType}|${planName}`] || 0,
+    [counts]
+  )
 
   return (
     <AnnotationCountsContext.Provider value={{ counts, countFor, reload }}>

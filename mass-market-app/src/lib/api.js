@@ -1,8 +1,15 @@
 export const API_BASE = import.meta.env.VITE_API_URL || ''
 const DEV_API_KEY = import.meta.env.VITE_DEV_API_KEY || ''
 
+// Deduplicate concurrent GET requests to the same URL.
+// If a request is already in-flight, callers share the same Promise instead of
+// making duplicate network calls (e.g. DashboardPage + WatchlistProvider both
+// calling getChanges on mount).
+const _inflight = new Map()
+
 async function fetchApi(path, options = {}) {
   const url = `${API_BASE}${path}`
+  const method = (options.method || 'GET').toUpperCase()
   const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', ...options.headers }
 
   const token = localStorage.getItem('auth_token')
@@ -10,16 +17,24 @@ async function fetchApi(path, options = {}) {
   // Dev-only API key (only present in .env, never in .env.production)
   if (DEV_API_KEY) headers['X-API-Key'] = DEV_API_KEY
 
-  const res = await fetch(url, {
+  if (method === 'GET' && _inflight.has(url)) return _inflight.get(url)
+
+  const promise = fetch(url, {
     ...options,
     headers,
     credentials: 'include',  // sends httpOnly auth_token cookie on every request
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'שגיאת שרת' }))
-    throw new Error(err.error || `HTTP ${res.status}`)
-  }
-  return res.json()
+    .then(async res => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'שגיאת שרת' }))
+        throw new Error(err.error || `HTTP ${res.status}`)
+      }
+      return res.json()
+    })
+    .finally(() => { _inflight.delete(url) })
+
+  if (method === 'GET') _inflight.set(url, promise)
+  return promise
 }
 
 export const api = {

@@ -17,10 +17,9 @@ export default defineConfig({
         runtimeCaching: [
           {
             urlPattern: /\/api\/(plans|abroad-plans|global-plans|content-plans|changes|abroad-changes|banners|store-banners|news)/,
-            handler: 'NetworkFirst',
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'api-data-cache',
-              networkTimeoutSeconds: 5,
               expiration: { maxEntries: 50, maxAgeSeconds: 43200 },
               cacheableResponse: { statuses: [0, 200] }
             }
@@ -38,6 +37,20 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router')) {
+            return 'vendor-react'
+          }
+          if (id.includes('node_modules/@supabase/')) {
+            return 'vendor-supabase'
+          }
+        },
+      },
+    },
+  },
   server: {
     watch: {
       usePolling: true,

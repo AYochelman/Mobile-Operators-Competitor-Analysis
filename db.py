@@ -115,7 +115,12 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "plan
 def _connect(db_path=None):
     path = db_path or DB_PATH
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    return sqlite3.connect(path)
+    conn = sqlite3.connect(path)
+    # WAL allows concurrent reads during writes — critical during scrape windows
+    # when bulk inserts hold the writer lock for many seconds. Persists in the DB file.
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    return conn
 
 
 def init_db(db_path=None):
@@ -356,6 +361,17 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_reseller_plans_carrier
                 ON reseller_plans(carrier);
+            -- Speed up the per-carrier filters on the dashboard. UNIQUE(carrier, plan_name)
+            -- already covers (carrier) lookups via prefix, but an explicit single-column
+            -- index makes the planner's choice predictable across SQLite versions.
+            CREATE INDEX IF NOT EXISTS idx_plans_carrier ON plans(carrier);
+            CREATE INDEX IF NOT EXISTS idx_global_plans_carrier ON global_plans(carrier);
+            CREATE INDEX IF NOT EXISTS idx_abroad_plans_carrier ON abroad_plans(carrier);
+            -- changes tables are queried ORDER BY changed_at DESC LIMIT N — needs an index.
+            CREATE INDEX IF NOT EXISTS idx_changes_changed_at ON changes(changed_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_abroad_changes_changed_at ON abroad_changes(changed_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_global_changes_changed_at ON global_changes(changed_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_content_changes_changed_at ON content_changes(changed_at DESC);
         """)
         conn.commit()
         # Migration: add url column if DB was created before this column existed
