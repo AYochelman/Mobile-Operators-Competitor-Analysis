@@ -1571,16 +1571,6 @@ def scrape_partner(page):
     return plans
 
 
-# Pelephone's "מסלול חו"ל Travel" benefit (auto-activated, pay-per-use abroad route).
-# Identical terms across all premium plans that bundle it — confirmed against pids 348/329/336/351.
-# Distinct from "5G Max VIP Global NEW" which has its own monthly 10GB abroad bundle.
-_PELEPHONE_TRAVEL_RE = re.compile('מסלול[\\s​]*חו["״]ל')
-_PELEPHONE_TRAVEL_DETAIL = (
-    "0.5GB גלישה ליום ב-₪39.90 "
-    "+ ₪29 חד-פעמי לנסיעה (עד 30 יום)"
-)
-
-
 def scrape_pelephone(page):
     page.goto(
         "https://www.pelephone.co.il/ds/heb/packages/mobile-packages/join-pelephone-online/",
@@ -1640,14 +1630,6 @@ def scrape_pelephone(page):
             if fa and fa not in inc_texts:
                 inc_texts.append(fa)
         extras = inc_texts
-        # Pelephone displays "מסלול חו"ל ​Travel" without specifics on the card.
-        # Inject the actual Travel terms so the comparison surfaces real cost.
-        travel_idx = next(
-            (i for i, e in enumerate(extras) if _PELEPHONE_TRAVEL_RE.search(e)),
-            None,
-        )
-        if travel_idx is not None and _PELEPHONE_TRAVEL_DETAIL not in extras:
-            extras.insert(travel_idx + 1, _PELEPHONE_TRAVEL_DETAIL)
         name  = name_el.inner_text().strip() if name_el else "לא ידוע"
         price = _parse_price(price_el.inner_text()) if price_el else None
         gb    = _parse_gb(gb_el.inner_text())       if gb_el    else None
