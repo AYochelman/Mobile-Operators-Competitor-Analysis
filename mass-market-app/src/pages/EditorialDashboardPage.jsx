@@ -152,19 +152,13 @@ function ChangeFeed({ changes, onItemClick }) {
             <button
               key={`${c.carrier}-${c.plan_name}-${c.changed_at}-${i}`}
               onClick={() => onItemClick && onItemClick(c)}
+              className="w-full grid gap-2 md:gap-3 px-2 py-2.5 grid-cols-[28px_1fr_72px] md:grid-cols-[40px_1fr_100px_90px] items-center text-right"
               style={{
-                display: 'grid',
-                gridTemplateColumns: '40px 1fr 100px 90px',
-                gap: 12,
-                alignItems: 'center',
-                padding: '10px 8px',
                 borderTop: i === 0 ? 'none' : '1px solid var(--color-moca-border)',
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
-                textAlign: 'right',
                 fontFamily: 'inherit',
-                width: '100%',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-moca-mist)' }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
@@ -173,10 +167,10 @@ function ChangeFeed({ changes, onItemClick }) {
                 {String(i + 1).padStart(2, '0')}
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
                   <CarrierChip id={c.carrier} size={20} showName />
                   <span style={{ color: 'var(--color-moca-muted)' }}>·</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-moca-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-moca-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '1 1 0%' }}>
                     {c.plan_name}
                   </span>
                   {isHot && <Tag color="var(--color-moca-hot)">HOT</Tag>}
@@ -187,6 +181,7 @@ function ChangeFeed({ changes, onItemClick }) {
                   {c.change_type === 'new_plan' && 'מסלול חדש'}
                   {c.change_type === 'removed_plan' && 'הוסר'}
                   {c.change_type === 'extras_change' && 'שינוי הטבות'}
+                  <span className="md:hidden" style={{ marginInlineStart: 6, opacity: 0.7 }}>· {fmtAgo(c.changed_at)}</span>
                 </div>
               </div>
               <div className="tnum" style={{ direction: 'ltr', textAlign: 'left' }}>
@@ -201,7 +196,7 @@ function ChangeFeed({ changes, onItemClick }) {
                   </div>
                 )}
               </div>
-              <div style={{ fontSize: 10.5, color: 'var(--color-moca-muted)', textAlign: 'left' }}>
+              <div className="hidden md:block" style={{ fontSize: 10.5, color: 'var(--color-moca-muted)', textAlign: 'left' }}>
                 {fmtAgo(c.changed_at)}
               </div>
             </button>
