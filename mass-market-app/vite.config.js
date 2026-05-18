@@ -63,7 +63,16 @@ export default defineConfig({
       },
       '/banners': {
         target: 'http://localhost:5000',
-        changeOrigin: true
+        changeOrigin: true,
+        // Flask only serves PNG files under /banners/<file>. The SPA also has
+        // a /banners route (Banners tab). Without this bypass, /banners would
+        // hit Flask and 404. Only proxy paths that look like image files.
+        bypass: (req) => {
+          if (!/^\/banners\/[^/]+\.(png|jpe?g|webp|svg)$/i.test(req.url)) {
+            return req.url
+          }
+          return null
+        }
       },
       '/archive-banners': {
         target: 'http://localhost:5000',

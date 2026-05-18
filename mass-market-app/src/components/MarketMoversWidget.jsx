@@ -93,19 +93,28 @@ export default function MarketMoversWidget({ onMoverClick, visibleCarriers, tab 
         </div>
         <span className="text-[11px] text-gray-400">30 ימים אחרונים</span>
       </div>
-      <div
-        className="flex gap-3 overflow-x-auto -mx-1 px-1 [&::-webkit-scrollbar]:hidden"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {movers.map((m, i) => (
-          <MoverCard
-            key={`${m.carrier}-${m.plan_name}-${i}`}
-            mover={m}
-            onClick={onMoverClick}
-            visibleCarriers={visibleCarriers}
-            isAllowedCarrier={!visibleCarriers || visibleCarriers.length === 0 || visibleCarriers.includes(m.carrier)}
-          />
-        ))}
+      <div className="relative">
+        <div
+          className="flex gap-3 overflow-x-auto -mx-1 px-1 [&::-webkit-scrollbar]:hidden snap-x snap-mandatory scroll-px-1"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {movers.map((m, i) => (
+            <div key={`${m.carrier}-${m.plan_name}-${i}`} className="snap-start shrink-0">
+              <MoverCard
+                mover={m}
+                onClick={onMoverClick}
+                visibleCarriers={visibleCarriers}
+                isAllowedCarrier={!visibleCarriers || visibleCarriers.length === 0 || visibleCarriers.includes(m.carrier)}
+              />
+            </div>
+          ))}
+        </div>
+        {/* Edge fade cue — RTL: physical left edge hints there's more to scroll to */}
+        <div
+          aria-hidden="true"
+          className="md:hidden pointer-events-none absolute top-0 bottom-0 left-0 w-10"
+          style={{ background: 'linear-gradient(to left, transparent, var(--color-moca-bg) 90%)' }}
+        />
       </div>
     </div>
   )

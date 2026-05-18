@@ -895,7 +895,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 tnum">
           {lastUpdate && (
-            <span className="text-[11px] text-moca-muted">
+            <span className="hidden md:inline text-[11px] text-moca-muted">
               <span className="font-bold uppercase tracking-wider text-[9px] me-1">עדכון</span>
               {new Date(lastUpdate).toLocaleDateString('he-IL')} {lastUpdate.slice(11, 16)}
             </span>

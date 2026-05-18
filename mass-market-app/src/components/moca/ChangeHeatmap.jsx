@@ -24,12 +24,12 @@ export default function ChangeHeatmap({ data }) {
 
   return (
     <section
+      className="px-3 py-4 md:px-[18px] md:py-4"
       style={{
         background: 'var(--color-moca-white, #fff)',
         border: '1px solid var(--color-moca-border)',
         borderRadius: 14,
         boxShadow: 'var(--sh-card)',
-        padding: '16px 18px',
       }}
     >
       <header style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -51,12 +51,7 @@ export default function ChangeHeatmap({ data }) {
       </header>
 
       <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(90px, 130px) 1fr',
-          gap: 10,
-          alignItems: 'stretch',
-        }}
+        className="grid gap-2 md:gap-2.5 grid-cols-[80px_1fr] md:grid-cols-[minmax(90px,130px)_1fr] items-stretch"
       >
         {/* Carrier name column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: CELL_GAP, paddingTop: 18 }}>
