@@ -308,13 +308,15 @@ export default function ComparePage() {
     }
 
     if (tab === 'domestic' && roamingFilter === 'yes') {
+      // Match plans with actual included abroad data — either quantified
+      // ("5GB גלישה בחו\"ל") or marked כלול/כולל. Pay-per-use routes like
+      // Pelephone's "מסלול חו\"ל Travel" are excluded by design.
       result = result.filter(p => p.extras && p.extras.some(e => {
         const hasIntl = /חו"ל|חו״ל/.test(e)
         if (!hasIntl) return false
         const hasQuantifiedData = /\d+/.test(e) && /GB|גלישה/i.test(e)
         const hasIncludedTag = /(?:כלול(?:ה|ים)?|כולל)/.test(e)
-        const hasBundledRoute = /מסלול[\s​]*חו["״]ל/.test(e)
-        return hasQuantifiedData || hasIncludedTag || hasBundledRoute
+        return hasQuantifiedData || hasIncludedTag
       }))
     }
     if (tab === 'domestic' && genFilter === '5g') {

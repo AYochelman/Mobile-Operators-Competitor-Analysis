@@ -613,16 +613,16 @@ export default function DashboardPage() {
       if (f.gen === '4g') result = result.filter(p => !has5G(p))
     }
     if (tab === 'domestic' && f.roaming === 'yes') {
-      // Accept either a quantified data note ("1GB גלישה בחו\"ל בכל חודש"), a
-      // qualitative "חו\"ל כלול"-style tag (premium plans share total data pool),
-      // or a branded included-route tag like Pelephone's "מסלול חו\"ל Travel".
+      // Accept either a quantified data note ("1GB גלישה בחו\"ל בכל חודש") OR a
+      // qualitative "חו\"ל כלול"-style tag (premium plans share total data pool).
+      // Pay-per-use abroad routes (e.g. Pelephone's "מסלול חו\"ל Travel") are
+      // deliberately NOT matched — they have no included data volume.
       result = result.filter(p => p.extras && p.extras.some(e => {
         const hasIntl = /חו"ל|חו״ל/.test(e)
         if (!hasIntl) return false
         const hasQuantifiedData = /\d+/.test(e) && /GB|גלישה/i.test(e)
         const hasIncludedTag = /(?:כלול(?:ה|ים)?|כולל)/.test(e)
-        const hasBundledRoute = /מסלול[\s​]*חו["״]ל/.test(e)
-        return hasQuantifiedData || hasIncludedTag || hasBundledRoute
+        return hasQuantifiedData || hasIncludedTag
       }))
     }
     if (tab === 'global') {
