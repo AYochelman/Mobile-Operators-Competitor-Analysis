@@ -613,14 +613,16 @@ export default function DashboardPage() {
       if (f.gen === '4g') result = result.filter(p => !has5G(p))
     }
     if (tab === 'domestic' && f.roaming === 'yes') {
-      // Accept either a quantified data note ("1GB גלישה בחו\"ל בכל חודש") OR a
-      // qualitative "חו\"ל כלול"-style tag (premium plans share total data pool).
+      // Accept either a quantified data note ("1GB גלישה בחו\"ל בכל חודש"), a
+      // qualitative "חו\"ל כלול"-style tag (premium plans share total data pool),
+      // or a branded included-route tag like Pelephone's "מסלול חו\"ל Travel".
       result = result.filter(p => p.extras && p.extras.some(e => {
         const hasIntl = /חו"ל|חו״ל/.test(e)
         if (!hasIntl) return false
         const hasQuantifiedData = /\d+/.test(e) && /GB|גלישה/i.test(e)
         const hasIncludedTag = /(?:כלול(?:ה|ים)?|כולל)/.test(e)
-        return hasQuantifiedData || hasIncludedTag
+        const hasBundledRoute = /מסלול[\s​]*חו["״]ל/.test(e)
+        return hasQuantifiedData || hasIncludedTag || hasBundledRoute
       }))
     }
     if (tab === 'global') {

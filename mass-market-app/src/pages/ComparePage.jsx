@@ -308,7 +308,14 @@ export default function ComparePage() {
     }
 
     if (tab === 'domestic' && roamingFilter === 'yes') {
-      result = result.filter(p => p.extras && p.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+/.test(e) && /GB|גלישה/i.test(e)))
+      result = result.filter(p => p.extras && p.extras.some(e => {
+        const hasIntl = /חו"ל|חו״ל/.test(e)
+        if (!hasIntl) return false
+        const hasQuantifiedData = /\d+/.test(e) && /GB|גלישה/i.test(e)
+        const hasIncludedTag = /(?:כלול(?:ה|ים)?|כולל)/.test(e)
+        const hasBundledRoute = /מסלול[\s​]*חו["״]ל/.test(e)
+        return hasQuantifiedData || hasIncludedTag || hasBundledRoute
+      }))
     }
     if (tab === 'domestic' && genFilter === '5g') {
       result = result.filter(p => detect5G(p) && !hasMaxPriority(p))
