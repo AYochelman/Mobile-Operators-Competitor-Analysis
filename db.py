@@ -64,7 +64,7 @@ _DEST_NORM = {
     'North America': '\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4',                                           # North America → צפון אמריקה
     '\u05e7\u05d8\u05d0\u05e8': '\u05e7\u05d8\u05e8',                                                                           # קטאר → קטר
     '\u05d0\u05e0\u05d2\u05d9\u05dc\u05d4': '\u05d0\u05e0\u05d2\u05d5\u05d5\u05d9\u05dc\u05d4',                                   # אנגילה → אנגווילה
-    '\u05d0\u05e1\u05d5\u05d5\u05d8\u05d9\u05e0\u05d9': '\u05d0\u05e1\u05d5\u05d0\u05d5\u05d8\u05d9\u05e0\u05d9',                # אסווטיני → אסוואטיני
+    '\u05d0\u05e1\u05d5\u05d5\u05d8\u05d9\u05e0\u05d9': '\u05d0\u05e1\u05d5\u05d5\u05d0\u05d8\u05d9\u05e0\u05d9',                # אסווטיני → אסוואטיני
     '\u05d1\u05d5\u05e6\u05d5\u05d0\u05e0\u05d4': '\u05d1\u05d5\u05d8\u05e1\u05d5\u05d0\u05e0\u05d4',                            # בוצואנה → בוטסואנה
     '\u05d2\u05d1\u05d5\u05df': '\u05d2\u05d0\u05d1\u05d5\u05df',                                                                 # גבון → גאבון
     '\u05d2\u05d5\u05d5\u05d3\u05dc\u05d5\u05e4': '\u05d2\u05d5\u05d5\u05d0\u05d3\u05dc\u05d5\u05e4',                            # גוודלופ → גוואדלופ
@@ -73,7 +73,9 @@ _DEST_NORM = {
     '\u05e7\u05d5\u05e0\u05d2\u05d5 \u05d4\u05d3\u05de\u05d5\u05e7\u05e8\u05d8\u05d9\u05ea': '\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4 \u05d4\u05d3\u05de\u05d5\u05e7\u05e8\u05d8\u05d9\u05ea \u05e9\u05dc \u05e7\u05d5\u05e0\u05d2\u05d5',  # קונגו הדמוקרטית → הרפובליקה הדמוקרטית של קונגו
     '\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df \u05d4\u05d3\u05e8\u05d5\u05de\u05d9\u05ea': '\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df',  # קפריסין הדרומית → קפריסין
     '\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df+': '\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df',                                 # קפריסין+ → קפריסין
-    '\u05e4\u05dc\u05e1\u05d8\u05d9\u05df': '\u05d9\u05e9\u05e8\u05d0\u05dc',                                                   # פלסטין → ישראל
+    '\u05e4\u05dc\u05e1\u05d8\u05d9\u05df': '\u05d9\u05e9\u05e8\u05d0\u05dc',
+    '\u05d4\u05e9\u05d8\u05d7\u05d9\u05dd \u05d4\u05e4\u05dc\u05e1\u05d8\u05d9\u05e0\u05d9\u05d9\u05dd': '\u05d9\u05e9\u05e8\u05d0\u05dc',  # השטחים הפלסטיניים → ישראל
+    '\u05d4\u05e9\u05d8\u05d7\u05d9\u05dd \u05d4\u05e4\u05dc\u05e1\u05d8\u05d9\u05e0\u05d9\u05dd': '\u05d9\u05e9\u05e8\u05d0\u05dc',  # השטחים הפלסטינים → ישראל                                                   # פלסטין → ישראל
     '\u05d8\u05d9\u05de\u05d5\u05e8-\u05dc\u05e1\u05d8\u05d4': '\u05d8\u05d9\u05de\u05d5\u05e8 \u05dc\u05e1\u05d8\u05d4',      # טימור-לסטה → טימור לסטה
     '\u05de\u05dc\u05d3\u05d9\u05d1\u05d9\u05d9\u05dd': '\u05d4\u05d0\u05d9\u05d9\u05dd \u05d4\u05de\u05dc\u05d3\u05d9\u05d1\u05d9\u05d9\u05dd',  # מלדיביים → האיים המלדיביים
     # ── additional dedup fixes ──────────────────────────────────────────────
@@ -130,6 +132,38 @@ _DEST_NORM = {
     "\u05e1\u05e0\u05d8 \u05d1\u05e8\u05ea\u05d5\u05dc\u05d5\u05de\u05d9\u05d0\u05d5": "\u05e1\u05df \u05d1\u05e8\u05ea\u05dc\u05de\u05d9",
     "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4 \u05e9\u05dc \u05de\u05e8\u05db\u05d6 \u05d0\u05e4\u05e8\u05d9\u05e7\u05d4": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4 \u05d4\u05de\u05e8\u05db\u05d6 \u05d0\u05e4\u05e8\u05d9\u05e7\u05d0\u05d9\u05ea",
     "\u05d8\u05d5\u05e0\u05d9\u05e1\u05d9\u05d4": "\u05ea\u05d5\u05e0\u05d9\u05e1\u05d9\u05d4",
+    # ── English country labels from bestconnect / esimplus / seven_g (2026-05-18) ──
+    "Angola": "\u05d0\u05e0\u05d2\u05d5\u05dc\u05d4",  # Angola → אנגולה
+    "Antilles": "\u05d0\u05e0\u05d8\u05d9\u05dc\u05d9\u05dd \u05d4\u05d5\u05dc\u05e0\u05d3\u05d9\u05d9\u05dd",  # Antilles → אנטילים הולנדיים
+    "Azores": "\u05d4\u05d0\u05d9\u05d9\u05dd \u05d4\u05d0\u05d6\u05d5\u05e8\u05d9\u05d9\u05dd",  # Azores → האיים האזוריים
+    "Bailiwick of Guernsey": "\u05d2\u05e8\u05e0\u05d6\u05d9",  # Bailiwick of Guernsey → גרנזי
+    "Bailiwick of Jersey": "\u05d2'\u05e8\u05d6\u05d9",  # Bailiwick of Jersey → ג'רזי
+    "Belarus": "\u05d1\u05dc\u05d0\u05e8\u05d5\u05e1",  # Belarus → בלארוס
+    "Canary Islands": "\u05d4\u05d0\u05d9\u05d9\u05dd \u05d4\u05e7\u05e0\u05e8\u05d9\u05d9\u05dd",  # Canary Islands → האיים הקנריים
+    "Congo - Brazzaville": "\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05ea \u05e7\u05d5\u05e0\u05d2\u05d5",  # Congo - Brazzaville → רפובליקת קונגו
+    "Cuba": "\u05e7\u05d5\u05d1\u05d4",  # Cuba → קובה
+    "Democratic Republic of the Congo": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4 \u05d4\u05d3\u05de\u05d5\u05e7\u05e8\u05d8\u05d9\u05ea \u05e9\u05dc \u05e7\u05d5\u05e0\u05d2\u05d5",  # Democratic Republic of the Congo → הרפובליקה הדמוקרטית של קונגו
+    "Equatorial Guinea": "\u05d2\u05d9\u05e0\u05d0\u05d4 \u05d4\u05de\u05e9\u05d5\u05d5\u05e0\u05d9\u05ea",  # Equatorial Guinea → גינאה המשוונית
+    "Ethiopia": "\u05d0\u05ea\u05d9\u05d5\u05e4\u05d9\u05d4",  # Ethiopia → אתיופיה
+    "Iran": "\u05d0\u05d9\u05e8\u05d0\u05df",  # Iran → איראן
+    "Ivory Coast": "\u05d7\u05d5\u05e3 \u05d4\u05e9\u05e0\u05d4\u05d1",  # Ivory Coast → חוף השנהב
+    "Lebanon": "\u05dc\u05d1\u05e0\u05d5\u05df",  # Lebanon → לבנון
+    "Libya": "\u05dc\u05d5\u05d1",  # Libya → לוב
+    "Macau": "\u05de\u05e7\u05d0\u05d5",  # Macau → מקאו
+    "Madeira": "\u05de\u05d3\u05d9\u05d9\u05e8\u05d4",  # Madeira → מדיירה
+    "Marie-Galante": "\u05de\u05e8\u05d9-\u05d2\u05dc\u05e0\u05d8",  # Marie-Galante → מרי-גלנט
+    "Myanmar": "\u05de\u05d9\u05d0\u05e0\u05de\u05e8",  # Myanmar → מיאנמר
+    "Myanmar (Burma)": "\u05de\u05d9\u05d0\u05e0\u05de\u05e8",  # Myanmar (Burma) → מיאנמר
+    "North Macedonia": "\u05de\u05e7\u05d3\u05d5\u05e0\u05d9\u05d4 \u05d4\u05e6\u05e4\u05d5\u05e0\u05d9\u05ea",  # North Macedonia → מקדוניה הצפונית
+    "Northern Cyprus": "\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df \u05d4\u05e6\u05e4\u05d5\u05e0\u05d9\u05ea",  # Northern Cyprus → קפריסין הצפונית
+    "Reunion Islands": "\u05e8\u05d9\u05d5\u05e0\u05d9\u05d5\u05df",  # Reunion Islands → ריוניון
+    "Russia": "\u05e8\u05d5\u05e1\u05d9\u05d4",  # Russia → רוסיה
+    "Saba": "\u05e1\u05d0\u05d1\u05d4",  # Saba → סאבה
+    "Saint Vincent and the Grenadines": "\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d4\u05d2\u05e8\u05d3\u05d9\u05e0\u05d9\u05dd",  # Saint Vincent and the Grenadines → סנט וינסנט והגרדינים
+    "Scotland": "\u05e1\u05e7\u05d5\u05d8\u05dc\u05e0\u05d3",  # Scotland → סקוטלנד
+    "Sint Eustatius": "\u05e1\u05d9\u05e0\u05d8 \u05d0\u05d5\u05e1\u05d8\u05d8\u05d9\u05d5\u05e1",  # Sint Eustatius → סינט אוסטטיוס
+    "St. Martin": "\u05e1\u05df \u05de\u05e8\u05d8\u05df",  # St. Martin → סן מרטן
+    "St. Vincent &amp; Grenadines": "\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d4\u05d2\u05e8\u05d3\u05d9\u05e0\u05d9\u05dd",  # St. Vincent &amp; Grenadines → סנט וינסנט והגרדינים
 }
 
 def _norm_extras(extras):

@@ -61,7 +61,9 @@ export default function SearchableSelect({ value, onChange, options, placeholder
   // of entries (e.g. global eSIM providers with per-country×data×days plans).
   // Search bypasses the cap — once the user types, the filter narrows things
   // fast enough that rendering filtered results in full is fine.
-  const RENDER_CAP = 200
+  // 1000 keeps a safety net for truly massive lists while letting full country
+  // lists (~275) render in their entirety so scrolling reaches every entry.
+  const RENDER_CAP = 1000
   const visible = (!search && filtered.length > RENDER_CAP)
     ? filtered.slice(0, RENDER_CAP)
     : filtered
