@@ -96,40 +96,42 @@ export default function AuditLogPage() {
         ) : entries.length === 0 ? (
           <p className="text-sm text-gray-500 p-5">אין רשומות.</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-gray-500 border-b bg-gray-50/60">
-                <th className="text-right py-2 px-4">זמן</th>
-                <th className="text-right py-2 px-4">פעולה</th>
-                <th className="text-right py-2 px-4">מבצע</th>
-                <th className="text-right py-2 px-4">יעד</th>
-                <th className="text-right py-2 px-4">פרטים</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map(e => (
-                <tr key={e.id} className="border-b border-moca-border/20 hover:bg-gray-50/40">
-                  <td className="py-2 px-4 text-xs text-gray-500 whitespace-nowrap">
-                    {e.created_at
-                      ? new Date(e.created_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })
-                      : '—'}
-                  </td>
-                  <td className="py-2 px-4">
-                    <ActionBadge action={e.action} />
-                  </td>
-                  <td className="py-2 px-4 text-xs text-gray-700 max-w-[180px] truncate">
-                    {e.actor_email || '—'}
-                  </td>
-                  <td className="py-2 px-4 text-xs text-gray-700 max-w-[180px] truncate">
-                    {e.target_email || '—'}
-                  </td>
-                  <td className="py-2 px-4 text-xs text-gray-500 max-w-[220px] truncate">
-                    {e.details || '—'}
-                  </td>
+          <div className="-mx-4 px-4 overflow-x-auto md:mx-0 md:px-0">
+            <table className="w-full text-sm min-w-[720px] md:min-w-0">
+              <thead>
+                <tr className="text-xs text-gray-500 border-b bg-gray-50/60">
+                  <th className="text-right py-2 px-4 whitespace-nowrap">זמן</th>
+                  <th className="text-right py-2 px-4 whitespace-nowrap">פעולה</th>
+                  <th className="text-right py-2 px-4 whitespace-nowrap">מבצע</th>
+                  <th className="text-right py-2 px-4 whitespace-nowrap">יעד</th>
+                  <th className="text-right py-2 px-4 whitespace-nowrap">פרטים</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {entries.map(e => (
+                  <tr key={e.id} className="border-b border-moca-border/20 hover:bg-gray-50/40">
+                    <td className="py-2 px-4 text-xs text-gray-500 whitespace-nowrap">
+                      {e.created_at
+                        ? new Date(e.created_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })
+                        : '—'}
+                    </td>
+                    <td className="py-2 px-4">
+                      <ActionBadge action={e.action} />
+                    </td>
+                    <td className="py-2 px-4 text-xs text-gray-700 max-w-[180px] truncate">
+                      {e.actor_email || '—'}
+                    </td>
+                    <td className="py-2 px-4 text-xs text-gray-700 max-w-[180px] truncate">
+                      {e.target_email || '—'}
+                    </td>
+                    <td className="py-2 px-4 text-xs text-gray-500 max-w-[220px] truncate">
+                      {e.details || '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

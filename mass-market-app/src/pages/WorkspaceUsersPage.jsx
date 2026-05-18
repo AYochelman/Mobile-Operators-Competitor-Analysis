@@ -93,35 +93,37 @@ export default function WorkspaceUsersPage() {
         ) : users.length === 0 ? (
           <p className="text-gray-500 text-sm">אין משתמשים ב-workspace זה.</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-gray-500 border-b">
-                <th className="text-right py-1.5">אימייל</th>
-                <th className="text-right py-1.5">תפקיד</th>
-                <th className="text-right py-1.5">כניסה אחרונה</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u.id} className="border-b border-moca-border/30">
-                  <td className="py-2">{u.email}</td>
-                  <td className="py-2">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                      u.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
-                    }`}>{u.role}</span>
-                  </td>
-                  <td className="py-2 text-xs text-gray-500">
-                    {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString('he-IL') : '—'}
-                  </td>
-                  <td className="py-2 text-left">
-                    <button onClick={() => unassign(u.id)}
-                      className="text-xs text-red-500 hover:underline">הסרה</button>
-                  </td>
+          <div className="-mx-4 px-4 overflow-x-auto md:mx-0 md:px-0">
+            <table className="w-full text-sm min-w-[480px] md:min-w-0">
+              <thead>
+                <tr className="text-xs text-gray-500 border-b">
+                  <th className="text-right py-1.5 whitespace-nowrap">אימייל</th>
+                  <th className="text-right py-1.5 whitespace-nowrap">תפקיד</th>
+                  <th className="text-right py-1.5 whitespace-nowrap">כניסה אחרונה</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id} className="border-b border-moca-border/30">
+                    <td className="py-2 whitespace-nowrap" dir="ltr">{u.email}</td>
+                    <td className="py-2">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                        u.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
+                      }`}>{u.role}</span>
+                    </td>
+                    <td className="py-2 text-xs text-gray-500 whitespace-nowrap">
+                      {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString('he-IL') : '—'}
+                    </td>
+                    <td className="py-2 text-left">
+                      <button onClick={() => unassign(u.id)}
+                        className="text-xs text-red-500 hover:underline">הסרה</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         <div className="pt-3 border-t border-moca-border/30">

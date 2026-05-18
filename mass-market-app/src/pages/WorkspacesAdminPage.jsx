@@ -127,31 +127,33 @@ function UsersSection({ workspaceId, onChange }) {
       ) : users.length === 0 ? (
         <p className="text-xs text-gray-500">אין משתמשים ב-workspace זה.</p>
       ) : (
-        <table className="w-full text-sm mb-3">
-          <thead>
-            <tr className="text-xs text-gray-500 border-b">
-              <th className="text-right py-1">אימייל</th>
-              <th className="text-right py-1">תפקיד</th>
-              <th className="text-right py-1">כניסה אחרונה</th>
-              <th className="text-right py-1"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(u => (
-              <tr key={u.id} className="border-b border-moca-border/30">
-                <td className="py-1.5">{u.email}</td>
-                <td className="py-1.5">{u.role}</td>
-                <td className="py-1.5 text-xs text-gray-500">
-                  {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString('he-IL') : '—'}
-                </td>
-                <td className="py-1.5 text-left">
-                  <button onClick={() => unassign(u.id)}
-                    className="text-xs text-red-600 hover:underline">הסרה</button>
-                </td>
+        <div className="overflow-x-auto mb-3">
+          <table className="w-full text-sm min-w-[460px] md:min-w-0">
+            <thead>
+              <tr className="text-xs text-gray-500 border-b">
+                <th className="text-right py-1 whitespace-nowrap">אימייל</th>
+                <th className="text-right py-1 whitespace-nowrap">תפקיד</th>
+                <th className="text-right py-1 whitespace-nowrap">כניסה אחרונה</th>
+                <th className="text-right py-1"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id} className="border-b border-moca-border/30">
+                  <td className="py-1.5 whitespace-nowrap" dir="ltr">{u.email}</td>
+                  <td className="py-1.5">{u.role}</td>
+                  <td className="py-1.5 text-xs text-gray-500 whitespace-nowrap">
+                    {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString('he-IL') : '—'}
+                  </td>
+                  <td className="py-1.5 text-left">
+                    <button onClick={() => unassign(u.id)}
+                      className="text-xs text-red-600 hover:underline">הסרה</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <form onSubmit={assign} className="flex gap-2 items-center flex-wrap">
