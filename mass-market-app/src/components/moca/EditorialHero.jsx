@@ -136,22 +136,24 @@ export default function EditorialHero({ leadChange, oursCarrier, onAnalyze, onPo
   if (!headline || !leadChange) {
     return (
       <div
-        className="px-5 py-6 md:px-7 md:py-8"
+        className="py-6 md:py-8"
         style={{
           background: 'linear-gradient(135deg, var(--color-moca-cream) 0%, var(--color-moca-sand) 100%)',
           borderBottom: '1px solid var(--color-moca-border)',
         }}
       >
-        <div style={{ maxWidth: 720 }}>
-          <div style={{ fontSize: 11, color: 'var(--color-moca-muted)', fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
-            ברוכים הבאים · MOCA
+        <div className="max-w-[1320px] mx-auto px-6">
+          <div style={{ maxWidth: 720 }}>
+            <div style={{ fontSize: 11, color: 'var(--color-moca-muted)', fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+              ברוכים הבאים · MOCA
+            </div>
+            <h1 className="text-[22px] md:text-[30px]" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--color-moca-dark)', letterSpacing: -0.5, lineHeight: 1.2, margin: 0 }}>
+              אין שינויים משמעותיים ב-24 שעות האחרונות
+            </h1>
+            <p style={{ fontSize: 14, color: 'var(--color-moca-sub)', lineHeight: 1.65, marginTop: 12, maxWidth: 520 }}>
+              השוק שקט. כשמתחרה משנה משהו משמעותי — מחיר, מסלול חדש, הוצאה — תראה זאת כאן בראש העמוד.
+            </p>
           </div>
-          <h1 className="text-[22px] md:text-[30px]" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--color-moca-dark)', letterSpacing: -0.5, lineHeight: 1.2, margin: 0 }}>
-            אין שינויים משמעותיים ב-24 שעות האחרונות
-          </h1>
-          <p style={{ fontSize: 14, color: 'var(--color-moca-sub)', lineHeight: 1.65, marginTop: 12, maxWidth: 520 }}>
-            השוק שקט. כשמתחרה משנה משהו משמעותי — מחיר, מסלול חדש, הוצאה — תראה זאת כאן בראש העמוד.
-          </p>
         </div>
       </div>
     )
@@ -163,13 +165,13 @@ export default function EditorialHero({ leadChange, oursCarrier, onAnalyze, onPo
 
   return (
     <div
-      className="px-5 py-6 md:px-7 md:py-8"
+      className="py-6 md:py-8"
       style={{
         background: 'linear-gradient(135deg, var(--color-moca-cream) 0%, var(--color-moca-sand) 100%)',
         borderBottom: '1px solid var(--color-moca-border)',
       }}
     >
-      <div className="grid grid-cols-1 md:[grid-template-columns:1fr_min(380px,40%)] gap-6 md:gap-7 items-stretch md:items-center max-w-[1320px] mx-auto">
+      <div className="max-w-[1320px] mx-auto px-6 grid grid-cols-1 md:[grid-template-columns:1fr_min(380px,40%)] gap-6 md:gap-7 items-stretch md:items-center">
         {/* Story */}
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 11, color: 'var(--color-moca-bolt)', fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
