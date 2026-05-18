@@ -1,6 +1,7 @@
 import { useState, useCallback, lazy, Suspense, memo } from 'react'
 import Badge from './ui/Badge'
 import Delta from './moca/Delta'
+import { getCarrierColor } from './moca/carrierMeta'
 import CountryModal from './CountryModal'
 import Modal from './ui/Modal'
 import { getCountriesForPlan } from '../data/globalCountries'
@@ -338,7 +339,19 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
 
       {/* Carrier badge — absolute top-right */}
       <div className={`flex items-center gap-1 flex-wrap ${CARRIER_LOGOS[carrier] ? 'absolute top-3 right-3 max-w-[140px]' : 'mb-3'}`}>
-        <Badge color={badgeColor}>{label}</Badge>
+        {isContent ? (
+          <span
+            className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold tracking-wide"
+            style={{
+              backgroundColor: getCarrierColor(carrier) + '22',
+              color: getCarrierColor(carrier),
+            }}
+          >
+            {label}
+          </span>
+        ) : (
+          <Badge color={badgeColor}>{label}</Badge>
+        )}
         {trendInfo && (
           <span className="inline-flex items-center gap-0.5">
             <Delta value={Math.round(trendInfo.pct_change)} size="sm" suffix="%" />
