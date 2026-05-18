@@ -136,9 +136,9 @@ export default function EditorialHero({ leadChange, oursCarrier, onAnalyze, onPo
   if (!headline || !leadChange) {
     return (
       <div
+        className="px-5 py-6 md:px-7 md:py-8"
         style={{
           background: 'linear-gradient(135deg, var(--color-moca-cream) 0%, var(--color-moca-sand) 100%)',
-          padding: '32px 28px',
           borderBottom: '1px solid var(--color-moca-border)',
         }}
       >
@@ -146,7 +146,7 @@ export default function EditorialHero({ leadChange, oursCarrier, onAnalyze, onPo
           <div style={{ fontSize: 11, color: 'var(--color-moca-muted)', fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
             ברוכים הבאים · MOCA
           </div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 800, color: 'var(--color-moca-dark)', letterSpacing: -0.5, lineHeight: 1.2, margin: 0 }}>
+          <h1 className="text-[22px] md:text-[30px]" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--color-moca-dark)', letterSpacing: -0.5, lineHeight: 1.2, margin: 0 }}>
             אין שינויים משמעותיים ב-24 שעות האחרונות
           </h1>
           <p style={{ fontSize: 14, color: 'var(--color-moca-sub)', lineHeight: 1.65, marginTop: 12, maxWidth: 520 }}>
@@ -163,22 +163,22 @@ export default function EditorialHero({ leadChange, oursCarrier, onAnalyze, onPo
 
   return (
     <div
+      className="px-5 py-6 md:px-7 md:py-8"
       style={{
         background: 'linear-gradient(135deg, var(--color-moca-cream) 0%, var(--color-moca-sand) 100%)',
-        padding: '32px 28px',
         borderBottom: '1px solid var(--color-moca-border)',
       }}
     >
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr min(380px, 40%)', gap: 28, alignItems: 'center', maxWidth: 1320, margin: '0 auto' }}>
+      <div className="grid grid-cols-1 md:[grid-template-columns:1fr_min(380px,40%)] gap-6 md:gap-7 items-stretch md:items-center max-w-[1320px] mx-auto">
         {/* Story */}
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 11, color: 'var(--color-moca-bolt)', fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
             ◆ {headline.kicker}
           </div>
           <h1
+            className="text-[22px] md:text-[32px]"
             style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 32,
               fontWeight: 800,
               color: 'var(--color-moca-dark)',
               letterSpacing: -0.6,

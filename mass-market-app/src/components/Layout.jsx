@@ -34,7 +34,7 @@ export default function Layout() {
           {/* Desktop topbar */}
           <Topbar onTimeMachine={() => setTmOpen(true)} />
 
-          <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+          <main className="flex-1 overflow-y-auto pb-28 md:pb-0">
             {/* ErrorBoundary keyed on pathname: if a route crashes, navigating
                 to a different one auto-resets the boundary instead of
                 requiring "נסה שוב". The shell (sidebar + topbar) stays mounted. */}

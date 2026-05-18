@@ -6,7 +6,8 @@ import { getCarrierColor, getCarrierName } from './carrierMeta'
 import { useCarrierPriceTrend } from '../../hooks/useCarrierPriceTrend'
 
 // Shared 5-column grid: [carrier+meta] [sparkline] [min] [avg] [position vs ours]
-const GRID_COLS = 'minmax(160px, 1.4fr) 110px 60px 90px 100px'
+// Mobile collapses to 2 cols (carrier + avg) — sparkline/min/position-label hide.
+const GRID_COLS_CLASS = 'grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(160px,1.4fr)_110px_60px_90px_100px]'
 
 /**
  * At-a-glance competitive snapshot — one row per carrier.
@@ -104,12 +105,8 @@ const CompetitorRow = memo(function CompetitorRow({ row, isOurs, oursAvg, onRowC
       type="button"
       onClick={() => onRowClick && !empty && onRowClick(row.carrier)}
       disabled={empty || !onRowClick}
+      className={`w-full grid gap-2.5 px-4 py-3 md:px-[18px] md:py-3 ${GRID_COLS_CLASS}`}
       style={{
-        width: '100%',
-        display: 'grid',
-        gridTemplateColumns: GRID_COLS,
-        gap: 10,
-        padding: '12px 18px',
         background: isOurs ? 'var(--color-moca-cream)' : 'transparent',
         border: 'none',
         borderBottom: '1px solid var(--color-moca-border)',
@@ -160,8 +157,8 @@ const CompetitorRow = memo(function CompetitorRow({ row, isOurs, oursAvg, onRowC
         </div>
       </div>
 
-      {/* Sparkline */}
-      <div style={{ alignSelf: 'center', display: 'flex', alignItems: 'center' }}>
+      {/* Sparkline — desktop only (saves space on mobile) */}
+      <div className="hidden md:flex" style={{ alignSelf: 'center', alignItems: 'center' }}>
         {sparkData && sparkData.length >= 2 ? (
           <Sparkline data={sparkData} color={sparkColor} w={110} h={26} fill strokeWidth={1.6} />
         ) : (
@@ -171,8 +168,8 @@ const CompetitorRow = memo(function CompetitorRow({ row, isOurs, oursAvg, onRowC
         )}
       </div>
 
-      {/* Min price */}
-      <div className="tnum" style={{ textAlign: 'left', fontSize: 13, color: 'var(--color-moca-sub)', alignSelf: 'center', direction: 'ltr' }}>
+      {/* Min price — desktop only */}
+      <div className="tnum hidden md:block" style={{ textAlign: 'left', fontSize: 13, color: 'var(--color-moca-sub)', alignSelf: 'center', direction: 'ltr' }}>
         {row.min != null ? `${row.min}₪` : '—'}
       </div>
 
@@ -188,8 +185,8 @@ const CompetitorRow = memo(function CompetitorRow({ row, isOurs, oursAvg, onRowC
         )}
       </div>
 
-      {/* Position vs ours */}
-      <div style={{ textAlign: 'left', alignSelf: 'center' }}>
+      {/* Position vs ours — desktop only */}
+      <div className="hidden md:block" style={{ textAlign: 'left', alignSelf: 'center' }}>
         {isOurs ? (
           <span style={{ fontSize: 10.5, color: 'var(--color-moca-bolt)', fontWeight: 700 }}>BENCHMARK</span>
         ) : (
@@ -318,11 +315,8 @@ export default function CompetitorBoard({
 
       {/* Column headers */}
       <div
+        className={`grid gap-2.5 px-4 py-2 md:px-[18px] ${GRID_COLS_CLASS}`}
         style={{
-          display: 'grid',
-          gridTemplateColumns: GRID_COLS,
-          gap: 10,
-          padding: '8px 18px',
           borderBottom: '1px solid var(--color-moca-border)',
           background: 'var(--color-moca-mist)',
           fontSize: 10,
@@ -333,10 +327,10 @@ export default function CompetitorBoard({
         }}
       >
         <span>מתחרה</span>
-        <span>מגמת מחיר</span>
-        <span style={{ textAlign: 'left' }}>מ-</span>
+        <span className="hidden md:inline">מגמת מחיר</span>
+        <span className="hidden md:inline" style={{ textAlign: 'left' }}>מ-</span>
         <span style={{ textAlign: 'left' }}>ממוצע</span>
-        <span style={{ textAlign: 'left' }}>ביחס לשלך</span>
+        <span className="hidden md:inline" style={{ textAlign: 'left' }}>ביחס לשלך</span>
       </div>
 
       {/* Rows */}

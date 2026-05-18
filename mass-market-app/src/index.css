@@ -30,10 +30,12 @@
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
   }
   body {
     @apply bg-moca-bg text-gray-900 min-h-screen;
     font-family: var(--font-body);
+    overflow-x: hidden;
   }
   /* Tabular numbers for prices, deltas, counters */
   .tnum { font-feature-settings: "tnum"; }

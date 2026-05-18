@@ -198,7 +198,7 @@ export default function PositioningPage() {
               <table className="w-full text-right" dir="rtl">
                 <thead>
                   <tr className="bg-moca-cream/60 border-b border-moca-border/40">
-                    <th className="px-3 py-2.5 text-[11px] font-semibold text-moca-sub text-right">ספק</th>
+                    <th className="px-3 py-2.5 text-[11px] font-semibold text-moca-sub text-right sticky right-0 bg-moca-cream/95 backdrop-blur-sm z-10 md:static md:bg-transparent">ספק</th>
                     {buckets.map(b => (
                       <th key={b.id} className="px-2 py-2.5 text-[11px] font-semibold text-moca-sub text-center min-w-[88px]">
                         {b.label}
@@ -210,7 +210,7 @@ export default function PositioningPage() {
                 <tbody>
                   {visibleCarriers.map(c => (
                     <tr key={c.id} className="border-b border-gray-50">
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-2.5 sticky right-0 bg-white z-10 md:static md:bg-transparent shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.06)] md:shadow-none">
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full" style={{ background: getCarrierColor(c.id) }} />
                           <span className="text-[12px] font-medium text-gray-700">{c.label}</span>
@@ -240,7 +240,7 @@ export default function PositioningPage() {
                     </tr>
                   ))}
                   <tr className="bg-moca-cream/40">
-                    <td className="px-3 py-2.5 text-[11px] font-semibold text-moca-sub">סה"כ</td>
+                    <td className="px-3 py-2.5 text-[11px] font-semibold text-moca-sub sticky right-0 bg-moca-cream/95 backdrop-blur-sm z-10 md:static md:bg-transparent">סה"כ</td>
                     {buckets.map(b => (
                       <td key={b.id} className="px-2 py-2.5 text-center text-[12px] font-bold text-gray-700">
                         {bucketTotals[b.id]}

@@ -990,8 +990,8 @@ export default function DashboardPage() {
       {/* Filter strip — hidden on banners tab which has no plan filters */}
       <div className="mb-4" style={tab === 'banners' || tab === 'history' || tab === 'news' ? {display:'none'} : undefined}>
         {/* Toggle + results count row */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setFiltersOpen(!filtersOpen)}
               className="text-xs text-moca-sub hover:text-moca-bolt flex items-center gap-1.5 transition-colors"
@@ -1046,8 +1046,8 @@ export default function DashboardPage() {
               }}
             />
 
-            {/* Change dot legend */}
-            <div className="flex items-center gap-2 border-r border-moca-border/40 pr-2 mr-1">
+            {/* Change dot legend — hidden on mobile to save horizontal space */}
+            <div className="hidden md:flex items-center gap-2 border-r border-moca-border/40 pr-2 mr-1">
               <span className="flex items-center gap-1 text-[10px] text-moca-sub">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block flex-shrink-0" />
                 חבילה חדשה

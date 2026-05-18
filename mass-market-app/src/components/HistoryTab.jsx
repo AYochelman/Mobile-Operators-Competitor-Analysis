@@ -444,27 +444,29 @@ export default function HistoryTab() {
                   Excel
                 </button>
               </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b-2 border-moca-border">
-                    {['תאריך','חבילה','שינוי','לפני','אחרי','דלתא'].map(h => (
-                      <th key={h} className="text-right pb-2 px-2 text-[11px] font-semibold uppercase text-moca-muted tracking-wide">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {changes.map((c, i) => (
-                    <tr key={i} className="border-b border-moca-bg hover:bg-moca-bg/50">
-                      <td className="py-2 px-2 text-xs text-moca-muted">{c.changed_at?.slice(0, 10)}</td>
-                      <td className="py-2 px-2 font-medium">{c.plan_name}</td>
-                      <td className="py-2 px-2"><Badge change={c} /></td>
-                      <td className="py-2 px-2 text-xs line-through text-moca-muted">{c.old_val ? `₪${c.old_val}` : '—'}</td>
-                      <td className="py-2 px-2 font-semibold">{c.new_val ? `₪${c.new_val}` : '—'}</td>
-                      <td className="py-2 px-2"><Delta change={c} /></td>
+              <div className="-mx-4 px-4 overflow-x-auto md:mx-0 md:px-0">
+                <table className="w-full text-sm min-w-[520px] md:min-w-0">
+                  <thead>
+                    <tr className="border-b-2 border-moca-border">
+                      {['תאריך','חבילה','שינוי','לפני','אחרי','דלתא'].map(h => (
+                        <th key={h} className="text-right pb-2 px-2 text-[11px] font-semibold uppercase text-moca-muted tracking-wide whitespace-nowrap">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {changes.map((c, i) => (
+                      <tr key={i} className="border-b border-moca-bg hover:bg-moca-bg/50">
+                        <td className="py-2 px-2 text-xs text-moca-muted whitespace-nowrap">{c.changed_at?.slice(0, 10)}</td>
+                        <td className="py-2 px-2 font-medium">{c.plan_name}</td>
+                        <td className="py-2 px-2 whitespace-nowrap"><Badge change={c} /></td>
+                        <td className="py-2 px-2 text-xs line-through text-moca-muted whitespace-nowrap">{c.old_val ? `₪${c.old_val}` : '—'}</td>
+                        <td className="py-2 px-2 font-semibold whitespace-nowrap">{c.new_val ? `₪${c.new_val}` : '—'}</td>
+                        <td className="py-2 px-2 whitespace-nowrap"><Delta change={c} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </>
