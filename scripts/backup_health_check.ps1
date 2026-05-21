@@ -8,7 +8,19 @@ $ScriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $ProjectRoot = Split-Path -Parent $ScriptDir
 $LogFile     = Join-Path $ScriptDir "health_check.log"
 $AlertScript = Join-Path $ScriptDir "alert.py"
-$DriveRoot   = "F:\My Drive\MOCA"
+
+# Locate Drive MOCA folder dynamically (mount letter varies by machine)
+$DriveCandidates = @(
+    "F:\My Drive\MOCA",
+    "G:\My Drive\MOCA",
+    "H:\My Drive\MOCA",
+    "I:\My Drive\MOCA",
+    "J:\My Drive\MOCA"
+)
+$DriveRoot = $null
+foreach ($p in $DriveCandidates) { if (Test-Path $p) { $DriveRoot = $p; break } }
+if (-not $DriveRoot) { $DriveRoot = $DriveCandidates[0] }  # fall through for diagnostics
+
 $Issues      = [System.Collections.ArrayList]::new()
 $Info        = [System.Collections.ArrayList]::new()
 

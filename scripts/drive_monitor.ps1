@@ -9,9 +9,23 @@ $ScriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $LogFile     = Join-Path $ScriptDir "drive_monitor.log"
 $StateFile   = Join-Path $ScriptDir "drive_monitor.state"
 $AlertScript = Join-Path $ScriptDir "alert.py"
-$DriveExe    = "C:\Program Files\Google\Drive File Stream\launch.bat"
-$DriveRoot   = "F:\My Drive\MOCA"
-$HeartbeatFile = Join-Path $DriveRoot ".heartbeat"
+
+# Locate Drive mount + MOCA folder dynamically (mount letter and install dir vary by machine)
+$DriveExeCandidates = @(
+    "C:\Program Files\Google\Drive File Stream\launch.bat",
+    "C:\Program Files\Google\Drive\launch.bat",
+    "C:\Program Files (x86)\Google\Drive File Stream\launch.bat"
+)
+$DriveExe = $null
+foreach ($p in $DriveExeCandidates) { if (Test-Path $p) { $DriveExe = $p; break } }
+
+$DriveMountLetter = $null
+foreach ($letter in @('F','G','H','I','J')) {
+    if (Test-Path "${letter}:\My Drive") { $DriveMountLetter = $letter; break }
+}
+$DriveMountRoot = if ($DriveMountLetter) { "${DriveMountLetter}:\My Drive" } else { "F:\My Drive" }
+$DriveRoot      = Join-Path $DriveMountRoot "MOCA"
+$HeartbeatFile  = Join-Path $DriveRoot ".heartbeat"
 
 function Write-Log {
     param([string]$Message)
@@ -43,12 +57,22 @@ function Set-State {
 
 function Find-DriveExe {
     # Find the actual latest version of GoogleDriveFS.exe
-    $base = "C:\Program Files\Google\Drive File Stream"
-    if (-not (Test-Path $base)) { return $null }
-    $versionDirs = Get-ChildItem $base -Directory | Where-Object { $_.Name -match '^\d' } | Sort-Object Name -Descending
-    foreach ($d in $versionDirs) {
-        $exe = Join-Path $d.FullName "GoogleDriveFS.exe"
-        if (Test-Path $exe) { return $exe }
+    # Both old ("Drive File Stream") and new ("Drive for Desktop") install layouts.
+    $bases = @(
+        "C:\Program Files\Google\Drive File Stream",
+        "C:\Program Files\Google\Drive",
+        "C:\Program Files (x86)\Google\Drive File Stream"
+    )
+    foreach ($base in $bases) {
+        if (-not (Test-Path $base)) { continue }
+        $versionDirs = Get-ChildItem $base -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^\d' } | Sort-Object Name -Descending
+        foreach ($d in $versionDirs) {
+            $exe = Join-Path $d.FullName "GoogleDriveFS.exe"
+            if (Test-Path $exe) { return $exe }
+        }
+        # Fall back to top-level exe (newer installs)
+        $topExe = Join-Path $base "GoogleDriveFS.exe"
+        if (Test-Path $topExe) { return $topExe }
     }
     return $null
 }
@@ -92,8 +116,8 @@ if (-not $driveProc) {
 }
 
 # ---- Check 2: Drive mount accessible ----
-if (-not (Test-Path "F:\My Drive")) {
-    [void]$issues.Add("Drive mount point F:\My Drive is not accessible. Drive may be offline or not logged in.")
+if (-not (Test-Path $DriveMountRoot)) {
+    [void]$issues.Add("Drive mount point $DriveMountRoot is not accessible. Drive may be offline or not logged in.")
     Write-Log "Mount check: DOWN"
 } else {
     Write-Log "Mount check: OK"
