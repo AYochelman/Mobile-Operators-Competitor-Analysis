@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Continue"
-$ProjectRoot = "D:\השוואת MASS MARKET"
+$ProjectRoot = Split-Path -Parent $PSScriptRoot
 $WorkDir = Join-Path $ProjectRoot "mass-market-app"
-$LogFile = Join-Path $ProjectRoot "scripts\vite_watchdog.log"
+$LogFile = Join-Path $PSScriptRoot "vite_watchdog.log"
 
 Set-Location $WorkDir
 

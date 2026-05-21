@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Continue"
-$ProjectRoot = "D:\השוואת MASS MARKET"
-$LogFile = Join-Path $ProjectRoot "scripts\flask_watchdog.log"
+$ProjectRoot = Split-Path -Parent $PSScriptRoot
+$LogFile = Join-Path $PSScriptRoot "flask_watchdog.log"
 $App = Join-Path $ProjectRoot "app.py"
 
 Set-Location $ProjectRoot
