@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-set PYTHON="C:\Users\yoche\AppData\Local\Programs\Python\Python313\python.exe"
+set PYTHON=python
 set APP="D:\השוואת MASS MARKET\app.py"
 set WORKDIR=D:\השוואת MASS MARKET
 set LOGFILE="D:\השוואת MASS MARKET\scripts\flask_watchdog.log"
