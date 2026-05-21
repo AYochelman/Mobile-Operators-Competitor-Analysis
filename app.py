@@ -3936,6 +3936,25 @@ if __name__ == "__main__":
             except Exception as ae:
                 logger.error(f"Archive snapshot failed: {ae}", exc_info=True)
 
+            # ── Banners (homepage + e-store screenshots) ──────────────────────
+            # Banners ride along with every scheduled scrape so they refresh at
+            # each schedule_times slot (07:30 / 17:00). The previous standalone
+            # 08:00 job was removed; /api/scrape-all-now still captures banners.
+            try:
+                from scraper import scrape_carrier_banners, scrape_carrier_store_banners
+                banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
+                home_results  = scrape_carrier_banners(banners_dir)
+                store_results = scrape_carrier_store_banners(banners_dir)
+                ok_home  = sum(1 for r in home_results  if r["success"])
+                ok_store = sum(1 for r in store_results if r["success"])
+                logger.info("Banner screenshots: %d/%d homepage, %d/%d e-store",
+                            ok_home, len(home_results), ok_store, len(store_results))
+                arc.archive_all_banners(banners_dir,
+                                        list(CARRIER_DISPLAY.keys()),
+                                        list(CARRIER_STORE_DISPLAY.keys()))
+            except Exception as be:
+                logger.error(f"Banner capture failed in scheduled scrape: {be}", exc_info=True)
+
             # ── Price alerts ───────────────────────────────────────────────────
             try:
                 n_sent = check_price_alerts(new_plans, new_abroad, new_global, config, _db_path())
@@ -3945,32 +3964,6 @@ if __name__ == "__main__":
 
         except Exception as e:
             logger.error(f"Scrape job failed: {e}", exc_info=True)
-
-    def scrape_banners_job():
-        """Daily 08:00 job — screenshot each carrier homepage."""
-        from scraper import scrape_carrier_banners
-        banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
-        logger.info("Starting daily banner screenshot job")
-        try:
-            results = scrape_carrier_banners(banners_dir)
-            ok = sum(1 for r in results if r["success"])
-            logger.info("Banner screenshots: %d/%d succeeded", ok, len(results))
-            arc.archive_all_banners(banners_dir, list(CARRIER_DISPLAY.keys()), [])
-        except Exception as e:
-            logger.error("Banner screenshot job failed: %s", e, exc_info=True)
-
-    def scrape_store_banners_job():
-        """Daily 08:00 job — screenshot each carrier e-store page."""
-        from scraper import scrape_carrier_store_banners
-        banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
-        logger.info("Starting daily store banner screenshot job")
-        try:
-            results = scrape_carrier_store_banners(banners_dir)
-            ok = sum(1 for r in results if r["success"])
-            logger.info("Store banner screenshots: %d/%d succeeded", ok, len(results))
-            arc.archive_all_banners(banners_dir, [], list(CARRIER_STORE_DISPLAY.keys()))
-        except Exception as e:
-            logger.error("Store banner screenshot job failed: %s", e, exc_info=True)
 
     def check_trial_expiry_job():
         """Daily 00:05 — auto-suspend workspaces past their trial end date."""
@@ -4076,8 +4069,6 @@ if __name__ == "__main__":
     report_time = config.get("email_report_time", "09:00")
     rh, rm = map(int, report_time.split(":"))
     scheduler.add_job(run_email_report_job, "cron", hour=rh, minute=rm)
-    scheduler.add_job(scrape_banners_job, "cron", hour=8, minute=0)
-    scheduler.add_job(scrape_store_banners_job, "cron", hour=8, minute=0)
     scheduler.add_job(generate_executive_summary, "cron", hour=8, minute=5, id="executive_summary")
     scheduler.add_job(scrape_news_job, "cron", hour=8, minute=10, id="news_scrape")
     scheduler.add_job(scrape_resellers_job, "cron", hour=8, minute=15, id="resellers_scrape")

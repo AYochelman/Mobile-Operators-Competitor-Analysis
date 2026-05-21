@@ -7873,6 +7873,21 @@ def scrape_carrier_banners(output_dir: str) -> list[dict]:
     results = []
     os.makedirs(output_dir, exist_ok=True)
 
+    # Phase 1: WAF-protected carriers — each stealth helper opens its own
+    # sync_playwright() session, so they MUST run outside the shared session
+    # below (Playwright forbids nested sync contexts in the same thread).
+    stealth_carriers = {
+        "mobile019": _banner_019_stealth,
+        "xphone":    _banner_xphone_stealth,
+    }
+    for carrier, fn in stealth_carriers.items():
+        if carrier not in CARRIER_HOMEPAGE_URLS:
+            continue
+        out_path = os.path.join(output_dir, f"{carrier}.png")
+        scraped_at = datetime.now(timezone.utc).isoformat()
+        results.append(fn(CARRIER_HOMEPAGE_URLS[carrier], out_path, scraped_at))
+
+    # Phase 2: regular carriers — share a single Playwright session.
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -7890,19 +7905,10 @@ def scrape_carrier_banners(output_dir: str) -> list[dict]:
             )
 
             for carrier, url in CARRIER_HOMEPAGE_URLS.items():
+                if carrier in stealth_carriers:
+                    continue  # handled in Phase 1
                 out_path = os.path.join(output_dir, f"{carrier}.png")
                 scraped_at = datetime.now(timezone.utc).isoformat()
-
-                # 019 is behind Imperva WAF — needs a separate stealth session
-                if carrier == "mobile019":
-                    results.append(_banner_019_stealth(url, out_path, scraped_at))
-                    continue
-
-                # XPhone is behind AWS WAF — needs fresh session + Chrome 124 UA
-                if carrier == "xphone":
-                    results.append(_banner_xphone_stealth(url, out_path, scraped_at))
-                    continue
-
                 page = context.new_page()  # fresh page per carrier — avoids cross-navigation pollution
                 try:
                     page.goto(url, timeout=30000, wait_until="domcontentloaded")
