@@ -13,12 +13,25 @@ def _coerce(v):
         return v
 
 
-def detect_changes(old_plans, new_plans):
+def _group_key(plan):
+    """Group key for the per-group removal guard. Uses extras[0] when present
+    (country / region for global+abroad plans), otherwise None.
+    """
+    extras = plan.get("extras") or []
+    return extras[0] if extras else None
+
+
+def detect_changes(old_plans, new_plans, per_group_extras=False):
     """
     Compare two lists of plan dicts.
     Returns list of change dicts:
       {carrier, plan_name, change_type, old_val, new_val}
     change_type: 'price_change' | 'new_plan' | 'removed_plan' | 'extras_change'
+
+    When per_group_extras=True, the removed-plan guard is tightened to the
+    (carrier, extras[0]) tuple so partial scrapes of per-country / per-region
+    providers (e.g. Saily's 199 country pages) don't produce false removals
+    when only a few country pages fail to load.
     """
     old_map = {(p["carrier"], p["plan_name"]): p for p in old_plans}
     new_map = {(p["carrier"], p["plan_name"]): p for p in new_plans}
@@ -86,6 +99,10 @@ def detect_changes(old_plans, new_plans):
 
     # carriers that returned ≥1 plan in the new scrape
     carriers_with_new_data = {p["carrier"] for p in new_plans}
+    groups_with_new_data = (
+        {(p["carrier"], _group_key(p)) for p in new_plans}
+        if per_group_extras else None
+    )
 
     for key in old_map:
         if key not in new_map:
@@ -94,6 +111,14 @@ def detect_changes(old_plans, new_plans):
             # blocks the scraper and it returns an empty list.
             if key[0] not in carriers_with_new_data:
                 continue
+            # Per-group guard for per-country / per-region scrapers: skip
+            # removals whose group (extras[0]) didn't appear in the new scrape
+            # at all, so a single failed country page doesn't claim the
+            # country's plans were removed.
+            if groups_with_new_data is not None:
+                old_group = _group_key(old_map[key])
+                if (key[0], old_group) not in groups_with_new_data:
+                    continue
             changes.append({
                 "carrier": key[0], "plan_name": key[1],
                 "change_type": "removed_plan",

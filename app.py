@@ -1009,7 +1009,7 @@ def api_scrape_global_now():
             save_global_changes(seed, db_path=_db_path())
             changes = seed
         else:
-            changes = detect_changes(old_plans, new_plans)
+            changes = detect_changes(old_plans, new_plans, per_group_extras=True)
             changes = filter_already_notified(changes, 'global_changes', db_path=_db_path())
             if changes:
                 save_global_changes(changes, db_path=_db_path())
@@ -1241,7 +1241,7 @@ def api_scrape_all_now():
             save_global_changes(seed, db_path=_db_path())
             ch_global = seed
         else:
-            ch_global = detect_changes(old_global, new_global)
+            ch_global = detect_changes(old_global, new_global, per_group_extras=True)
             ch_global = filter_already_notified(ch_global, 'global_changes', db_path=_db_path())
             if ch_global:
                 save_global_changes(ch_global, db_path=_db_path())
@@ -4004,7 +4004,7 @@ if __name__ == "__main__":
                 save_global_changes(seed)
                 global_changes = seed
             else:
-                global_changes = detect_changes(old_global, new_global)
+                global_changes = detect_changes(old_global, new_global, per_group_extras=True)
             save_global_plans(new_global)
             fresh_global = filter_already_notified(global_changes, 'global_changes')
             if fresh_global:
