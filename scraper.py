@@ -7710,6 +7710,49 @@ def scrape_all_abroad():
 
 # ── CARRIER HOMEPAGE BANNER SCREENSHOTS ──────────────────────────────────────
 
+# Text fragments that indicate a WAF / bot-challenge / error page rather than
+# the real site. Used by _is_error_page() to skip saving useless screenshots
+# (the previous good banner stays on disk).
+_BANNER_ERROR_INDICATORS = (
+    "confirm you are human",
+    "http error 503",
+    "http error 502",
+    "http error 504",
+    "service unavailable",
+    "access denied",
+    "request blocked",
+    "you have been blocked",
+    "the owner of this website",
+    "cloudflare",
+    "checking your browser",
+    "are you a robot",
+    "התחברות נכשלה",
+)
+
+
+def _is_error_page(page, *, min_body_chars: int = 300) -> tuple[bool, str]:
+    """
+    Detect if the current page is a WAF / bot-challenge / generic error page
+    instead of the real carrier site. Returns (is_error, reason).
+    """
+    try:
+        body = (page.evaluate("document.body.innerText") or "").strip()
+    except Exception as e:
+        return True, f"could not read body: {e}"
+    if len(body) < min_body_chars:
+        return True, f"body too short ({len(body)} chars)"
+    body_lc = body.lower()
+    for marker in _BANNER_ERROR_INDICATORS:
+        if marker in body_lc:
+            return True, f"matched indicator '{marker}'"
+    return False, ""
+
+
+# Minimum acceptable screenshot file size in bytes. Anything smaller is almost
+# always a near-blank error/challenge page rather than a real banner.
+_MIN_BANNER_FILE_BYTES = 50_000
+
+
 # CSS selectors for common popup close buttons (cookie banners, promos, etc.)
 _POPUP_CLOSE_SELECTORS = [
     # Generic close/dismiss buttons by aria-label
@@ -7965,20 +8008,49 @@ def scrape_carrier_store_banners(output_dir: str) -> list[dict]:
             for carrier, url in CARRIER_STORE_URLS.items():
                 out_path = os.path.join(output_dir, f"{carrier}_store.png")
                 scraped_at = datetime.now(timezone.utc).isoformat()
-                page = context.new_page()
-                try:
-                    page.goto(url, timeout=30000, wait_until="domcontentloaded")
-                    # Store pages load marketing popups with a delay — wait longer than homepage scraper
-                    page.wait_for_timeout(4000)
-                    _dismiss_popups(page)
-                    page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
-                    results.append({"carrier": carrier, "scraped_at": scraped_at, "success": True})
-                    logger.info("Store banner screenshot saved: %s", out_path)
-                except Exception as exc:
-                    logger.warning("Store banner screenshot failed for %s: %s", carrier, exc)
-                    results.append({"carrier": carrier, "scraped_at": scraped_at, "success": False})
-                finally:
-                    page.close()
+                # Try up to 2 times — WAF 503 / bot-challenge pages are often
+                # transient on retry with a fresh page/context.
+                success = False
+                last_reason = ""
+                for attempt in (1, 2):
+                    page = context.new_page()
+                    try:
+                        page.goto(url, timeout=30000, wait_until="domcontentloaded")
+                        # Store pages load marketing popups with a delay — wait longer than homepage scraper
+                        page.wait_for_timeout(4000)
+                        is_err, reason = _is_error_page(page)
+                        if is_err:
+                            last_reason = f"attempt {attempt}: {reason}"
+                            logger.warning("Store banner %s: skipping bad page (%s)", carrier, last_reason)
+                            if attempt == 1:
+                                page.wait_for_timeout(3000)  # brief backoff before retry
+                            continue
+                        _dismiss_popups(page)
+                        tmp_path = out_path + ".new.png"
+                        page.screenshot(path=tmp_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
+                        file_size = os.path.getsize(tmp_path) if os.path.exists(tmp_path) else 0
+                        if file_size < _MIN_BANNER_FILE_BYTES:
+                            last_reason = f"attempt {attempt}: screenshot too small ({file_size} bytes)"
+                            logger.warning("Store banner %s: %s", carrier, last_reason)
+                            try:
+                                os.remove(tmp_path)
+                            except Exception:
+                                pass
+                            continue
+                        # Valid — atomically replace the existing banner.
+                        os.replace(tmp_path, out_path)
+                        success = True
+                        logger.info("Store banner screenshot saved: %s (%d bytes)", out_path, file_size)
+                        break
+                    except Exception as exc:
+                        last_reason = f"attempt {attempt}: {exc}"
+                        logger.warning("Store banner attempt %d failed for %s: %s", attempt, carrier, exc)
+                    finally:
+                        page.close()
+                if not success:
+                    logger.warning("Store banner FAILED for %s after retries; previous banner preserved (%s)",
+                                   carrier, last_reason)
+                results.append({"carrier": carrier, "scraped_at": scraped_at, "success": success})
         finally:
             browser.close()
 

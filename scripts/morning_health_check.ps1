@@ -42,7 +42,7 @@ function Restart-Service {
         [string]$Name,
         [int]$Port,
         [scriptblock]$Launcher,
-        [int]$WaitSeconds = 12
+        [int]$WaitSeconds = 30
     )
     if (Test-Port $Port) {
         Write-Log "$Name (port $Port): UP"
@@ -51,10 +51,17 @@ function Restart-Service {
     Write-Log "$Name (port $Port): DOWN -- attempting restart"
     try {
         & $Launcher
-        Start-Sleep -Seconds $WaitSeconds
-        if (Test-Port $Port) {
-            Write-Log "$Name restart: SUCCESS"
-            return @{ status = 'restarted'; name = $Name; port = $Port }
+        # Poll every 2s instead of one big sleep — recover as soon as the port comes up,
+        # and avoid false-failing on a service that's just slow to bind.
+        $deadline = (Get-Date).AddSeconds($WaitSeconds)
+        $elapsed  = 0
+        while ((Get-Date) -lt $deadline) {
+            Start-Sleep -Seconds 2
+            $elapsed += 2
+            if (Test-Port $Port) {
+                Write-Log "$Name restart: SUCCESS (after ${elapsed}s)"
+                return @{ status = 'restarted'; name = $Name; port = $Port }
+            }
         }
         Write-Log "$Name restart: FAILED (port $Port still not listening after ${WaitSeconds}s)"
         return @{ status = 'failed';    name = $Name; port = $Port; reason = "port did not come up after ${WaitSeconds}s" }
@@ -69,19 +76,22 @@ Write-Log "===== Morning health check start ====="
 $results = [System.Collections.ArrayList]::new()
 
 # ---- Flask (5000) ----
-$r = Restart-Service -Name "Flask" -Port 5000 -WaitSeconds 12 -Launcher {
+# Wait window is generous: cold start has to import Playwright + APScheduler + 40 scrapers.
+$r = Restart-Service -Name "Flask" -Port 5000 -WaitSeconds 30 -Launcher {
     Start-Process cmd -ArgumentList "/k `"$FlaskWatchdog`"" -WorkingDirectory $ProjectRoot
 }
 if ($r) { [void]$results.Add($r) }
 
 # ---- ngrok (4040) ----
-$r = Restart-Service -Name "ngrok" -Port 4040 -WaitSeconds 6 -Launcher {
+# 6s was too tight: ngrok has to read config, dial out to ngrok cloud, register
+# the tunnel, and only then open the local 4040 web UI port. Give it 20s.
+$r = Restart-Service -Name "ngrok" -Port 4040 -WaitSeconds 20 -Launcher {
     Start-Process cmd -ArgumentList "/k ngrok http 5000"
 }
 if ($r) { [void]$results.Add($r) }
 
 # ---- Vite (5173) ----
-$r = Restart-Service -Name "Vite" -Port 5173 -WaitSeconds 12 -Launcher {
+$r = Restart-Service -Name "Vite" -Port 5173 -WaitSeconds 30 -Launcher {
     Start-Process cmd -ArgumentList "/k `"$ViteWatchdog`"" -WorkingDirectory $ViteWorkDir
 }
 if ($r) { [void]$results.Add($r) }

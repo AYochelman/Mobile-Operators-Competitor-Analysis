@@ -24,7 +24,8 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                log_affiliate_click, get_affiliate_stats, \
                log_audit, get_audit_log, \
                create_workspace_invite, get_workspace_invite, use_workspace_invite, \
-               get_reseller_plans, save_reseller_plans, filter_undominated_reseller_plans
+               get_reseller_plans, save_reseller_plans, filter_undominated_reseller_plans, \
+               log_claude_usage, get_claude_usage_recent, get_claude_usage_summary
 import archive as arc
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -37,6 +38,65 @@ _PLAN_CACHE: dict = {}           # 'plans'|'abroad_plans'|'global_plans' → (ti
 _PLAN_CACHE_TTL = 300            # 5 minutes — invalidated after every scrape
 
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+
+# Anthropic list pricing in USD per 1M tokens. Used to estimate the local cost
+# of each /api/chat etc. call — Anthropic does not expose a balance endpoint.
+# Update when Anthropic publishes new rates or you swap models. Override via
+# config.json -> "claude_pricing": { "<model-id>": { "input": ..., "output": ..., "cache_read": ..., "cache_write": ... } }.
+CLAUDE_PRICING_DEFAULT = {
+    "claude-sonnet-4-6":          {"input": 3.00, "output": 15.00, "cache_read": 0.30, "cache_write": 3.75},
+    "claude-haiku-4-5-20251001":  {"input": 1.00, "output":  5.00, "cache_read": 0.10, "cache_write": 1.25},
+    "claude-opus-4-7":            {"input": 15.00, "output": 75.00, "cache_read": 1.50, "cache_write": 18.75},
+}
+
+
+def _claude_pricing_for(model):
+    """Return per-MTok pricing for a model, honoring config.json overrides."""
+    try:
+        overrides = (load_config().get("claude_pricing") or {})
+    except Exception:
+        overrides = {}
+    return overrides.get(model) or CLAUDE_PRICING_DEFAULT.get(model) or \
+           CLAUDE_PRICING_DEFAULT["claude-sonnet-4-6"]
+
+
+def _claude_cost_usd(model, usage):
+    """Compute the USD cost of a single API call from its `usage` dict."""
+    if not usage:
+        return 0.0
+    p = _claude_pricing_for(model)
+    inp   = int(usage.get("input_tokens") or 0)
+    out   = int(usage.get("output_tokens") or 0)
+    cread = int(usage.get("cache_read_input_tokens") or 0)
+    cwrite = int(usage.get("cache_creation_input_tokens") or 0)
+    return (
+        inp    * p["input"]      / 1_000_000 +
+        out    * p["output"]     / 1_000_000 +
+        cread  * p["cache_read"] / 1_000_000 +
+        cwrite * p["cache_write"]/ 1_000_000
+    )
+
+
+def _record_claude_call(endpoint, model, response_json, user_email=None, workspace_id=None):
+    """Log token usage + computed USD cost for a single Anthropic call.
+
+    Pass the parsed response JSON (already `resp.json()`). Safe to call inside
+    a try/except — never raises out, just logs and moves on.
+    """
+    try:
+        usage = (response_json or {}).get("usage") or {}
+        cost = _claude_cost_usd(model, usage)
+        log_claude_usage(
+            endpoint=endpoint,
+            model=model,
+            usage=usage,
+            cost_usd=cost,
+            user_email=user_email,
+            workspace_id=workspace_id,
+            db_path=_db_path(),
+        )
+    except Exception as e:
+        logger.warning("claude usage log failed for %s: %s", endpoint, e)
 
 app = Flask(__name__)
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
@@ -310,6 +370,16 @@ def _can_manage_workspace_users(workspace_id):
     if role == 'admin' and str(ctx.get('workspace_id') or '') == str(workspace_id):
         return True
     return False
+
+
+def _caller_email():
+    """Best-effort: return the authenticated user's email, or None."""
+    payload = getattr(g, 'jwt_payload', None)
+    if payload:
+        e = (payload.get('email') or '').strip().lower()
+        if e:
+            return e
+    return None
 
 
 def _hidden_carrier_for_request():
@@ -1606,7 +1676,9 @@ def generate_social_sentiment():
                 timeout=30,
             )
             resp.raise_for_status()
-            raw = resp.json()["content"][0]["text"].strip()
+            _ss_body = resp.json()
+            _record_claude_call('social_sentiment', 'claude-sonnet-4-6', _ss_body)
+            raw = _ss_body["content"][0]["text"].strip()
 
             sentiment = 'neutral'
             counts = {'positive': 0, 'negative': 0, 'neutral': 0}
@@ -1728,7 +1800,9 @@ def generate_executive_summary():
                 timeout=30,
             )
             resp.raise_for_status()
-            raw_narrative = resp.json()["content"][0]["text"].strip()
+            _exec_body = resp.json()
+            _record_claude_call('executive_summary', 'claude-sonnet-4-6', _exec_body)
+            raw_narrative = _exec_body["content"][0]["text"].strip()
             # Strip any markdown artifacts Claude might still produce
             import re as _re
             narrative = _re.sub(r'^#+\s*', '', raw_narrative, flags=_re.MULTILINE)
@@ -2491,6 +2565,7 @@ def api_chat():
             usage.get("cache_creation_input_tokens"),
             usage.get("output_tokens"),
         )
+        _record_claude_call("chat", model, body, user_email=_caller_email())
         answer = body["content"][0]["text"]
         return jsonify({"answer": answer, "model": model})
 
@@ -3692,11 +3767,56 @@ def api_history_analyze():
             timeout=30,
         )
         resp.raise_for_status()
-        answer = resp.json()['content'][0]['text']
+        body = resp.json()
+        _record_claude_call('history_analyze', 'claude-haiku-4-5-20251001', body,
+                            user_email=_caller_email())
+        answer = body['content'][0]['text']
         return jsonify({'analysis': answer})
     except Exception as e:
         logger.error(f'history analyze failed: {e}', exc_info=True)
         return jsonify({'error': 'analysis failed'}), 500
+
+
+# ── Claude API usage tracking ──────────────────────────────────────────────
+
+@app.route('/api/usage/summary')
+@require_api_key
+def api_usage_summary():
+    """Aggregate Anthropic API usage + computed USD cost.
+
+    Query params:
+      days=N  — window in days (default 30, 0 = lifetime totals)
+
+    Anthropic does not expose a balance/credit endpoint, so this is a *local*
+    estimate based on the per-MTok pricing in CLAUDE_PRICING_DEFAULT
+    (overridable via config.json:claude_pricing). Numbers are token-accurate;
+    USD figures match the bill only if the pricing table is current.
+    """
+    try:
+        days = int(request.args.get('days', '30'))
+    except ValueError:
+        days = 30
+    summary = get_claude_usage_summary(days=days, db_path=_db_path())
+    summary['pricing'] = {
+        m: CLAUDE_PRICING_DEFAULT[m] for m in CLAUDE_PRICING_DEFAULT
+    }
+    summary['note'] = (
+        'Estimated locally — Anthropic has no balance API. '
+        'Check console.anthropic.com/settings/billing for the authoritative balance.'
+    )
+    return jsonify(summary)
+
+
+@app.route('/api/usage/recent')
+@require_api_key
+def api_usage_recent():
+    """Return the N most recent Anthropic API calls (default 100, max 500)."""
+    try:
+        limit = max(1, min(500, int(request.args.get('limit', '100'))))
+    except ValueError:
+        limit = 100
+    rows = get_claude_usage_recent(limit=limit, db_path=_db_path())
+    return jsonify({'calls': rows, 'count': len(rows)})
 
 
 # ── Main ───────────────────────────────────────────────────────────────────

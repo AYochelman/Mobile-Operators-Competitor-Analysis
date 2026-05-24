@@ -29,6 +29,7 @@ export const ROUTE_META = [
   { match: '/workspace/settings', kicker: 'ניהול',  title: 'מיתוג Workspace' },
   { match: '/admin/workspaces', kicker: 'ניהול',    title: 'Workspaces' },
   { match: '/admin/audit',     kicker: 'ניהול',     title: 'יומן ביקורת' },
+  { match: '/usage',           kicker: 'ניהול',     title: 'שימוש ב-Claude API' },
 ]
 
 export function resolveRouteMeta(pathname /*, search */) {

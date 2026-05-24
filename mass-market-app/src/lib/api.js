@@ -109,6 +109,12 @@ export const api = {
   getAffiliateStats: (days = 30) =>
     fetchApi(`/api/affiliate/stats?days=${days}`),
 
+  // Claude API usage — admin only. days=0 returns lifetime totals.
+  getClaudeUsageSummary: (days = 30) =>
+    fetchApi(`/api/usage/summary?days=${days}`),
+  getClaudeUsageRecent:  (limit = 100) =>
+    fetchApi(`/api/usage/recent?limit=${limit}`),
+
   // Push — JWT auth
   getVapidKey: () => fetchApi('/api/push/vapid-public-key'),
   subscribe:   (sub) => fetchApi('/api/push/subscribe', { method: 'POST', body: JSON.stringify(sub) }),

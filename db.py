@@ -427,6 +427,25 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_reseller_plans_carrier
                 ON reseller_plans(carrier);
+            -- Tracks every outbound Anthropic API call so the user can monitor
+            -- token usage + computed USD cost locally (Anthropic has no balance API).
+            CREATE TABLE IF NOT EXISTS claude_api_usage (
+                id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+                endpoint              TEXT NOT NULL,
+                model                 TEXT NOT NULL,
+                input_tokens          INTEGER NOT NULL DEFAULT 0,
+                output_tokens         INTEGER NOT NULL DEFAULT 0,
+                cache_read_tokens     INTEGER NOT NULL DEFAULT 0,
+                cache_creation_tokens INTEGER NOT NULL DEFAULT 0,
+                cost_usd              REAL NOT NULL DEFAULT 0,
+                user_email            TEXT,
+                workspace_id          TEXT,
+                called_at             TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_claude_usage_called_at
+                ON claude_api_usage(called_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_claude_usage_endpoint
+                ON claude_api_usage(endpoint);
             -- Speed up the per-carrier filters on the dashboard. UNIQUE(carrier, plan_name)
             -- already covers (carrier) lookups via prefix, but an explicit single-column
             -- index makes the planner's choice predictable across SQLite versions.
@@ -544,6 +563,133 @@ def get_affiliate_stats(days=30, db_path=None):
             (cutoff,)
         ).fetchall()
         return [{"provider": r[0], "date": r[1], "clicks": r[2]} for r in rows]
+    finally:
+        conn.close()
+
+
+def log_claude_usage(endpoint, model, usage, cost_usd,
+                     user_email=None, workspace_id=None, db_path=None):
+    """Record a single Anthropic API call's token usage + computed USD cost.
+
+    `usage` is the raw `usage` dict from the Anthropic API response.
+    Cost is computed by the caller (app.py owns the pricing table).
+    """
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            """INSERT INTO claude_api_usage
+                 (endpoint, model, input_tokens, output_tokens,
+                  cache_read_tokens, cache_creation_tokens,
+                  cost_usd, user_email, workspace_id, called_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                endpoint, model,
+                int(usage.get("input_tokens") or 0),
+                int(usage.get("output_tokens") or 0),
+                int(usage.get("cache_read_input_tokens") or 0),
+                int(usage.get("cache_creation_input_tokens") or 0),
+                float(cost_usd or 0),
+                user_email, workspace_id,
+                datetime.now(timezone.utc).isoformat(),
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_claude_usage_recent(limit=100, db_path=None):
+    """Return the N most recent Anthropic API calls."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            """SELECT endpoint, model, input_tokens, output_tokens,
+                      cache_read_tokens, cache_creation_tokens,
+                      cost_usd, user_email, workspace_id, called_at
+               FROM claude_api_usage
+               ORDER BY called_at DESC
+               LIMIT ?""",
+            (int(limit),),
+        ).fetchall()
+        cols = ['endpoint', 'model', 'input_tokens', 'output_tokens',
+                'cache_read_tokens', 'cache_creation_tokens',
+                'cost_usd', 'user_email', 'workspace_id', 'called_at']
+        return [dict(zip(cols, r)) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_claude_usage_summary(days=30, db_path=None):
+    """Return per-day / per-model / per-endpoint aggregates for the last N days,
+    plus a grand total. `days=0` returns lifetime totals."""
+    conn = _connect(db_path)
+    try:
+        if days and days > 0:
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+            where = "WHERE called_at >= ?"
+            params = (cutoff,)
+        else:
+            where = ""
+            params = ()
+
+        total_row = conn.execute(
+            f"""SELECT COUNT(*),
+                       COALESCE(SUM(input_tokens), 0),
+                       COALESCE(SUM(output_tokens), 0),
+                       COALESCE(SUM(cache_read_tokens), 0),
+                       COALESCE(SUM(cache_creation_tokens), 0),
+                       COALESCE(SUM(cost_usd), 0)
+                  FROM claude_api_usage {where}""",
+            params,
+        ).fetchone()
+
+        by_day = conn.execute(
+            f"""SELECT substr(called_at, 1, 10) AS day,
+                       COUNT(*)             AS calls,
+                       SUM(cost_usd)        AS cost_usd,
+                       SUM(input_tokens + cache_read_tokens + cache_creation_tokens) AS in_tok,
+                       SUM(output_tokens)   AS out_tok
+                  FROM claude_api_usage {where}
+              GROUP BY day
+              ORDER BY day DESC""",
+            params,
+        ).fetchall()
+
+        by_model = conn.execute(
+            f"""SELECT model,
+                       COUNT(*)      AS calls,
+                       SUM(cost_usd) AS cost_usd
+                  FROM claude_api_usage {where}
+              GROUP BY model
+              ORDER BY cost_usd DESC""",
+            params,
+        ).fetchall()
+
+        by_endpoint = conn.execute(
+            f"""SELECT endpoint,
+                       COUNT(*)      AS calls,
+                       SUM(cost_usd) AS cost_usd
+                  FROM claude_api_usage {where}
+              GROUP BY endpoint
+              ORDER BY cost_usd DESC""",
+            params,
+        ).fetchall()
+
+        return {
+            "window_days": days,
+            "total": {
+                "calls":                 total_row[0],
+                "input_tokens":          total_row[1],
+                "output_tokens":         total_row[2],
+                "cache_read_tokens":     total_row[3],
+                "cache_creation_tokens": total_row[4],
+                "cost_usd":              round(total_row[5], 6),
+            },
+            "by_day":      [{"day": r[0], "calls": r[1], "cost_usd": round(r[2] or 0, 6),
+                             "input_tokens": r[3], "output_tokens": r[4]} for r in by_day],
+            "by_model":    [{"model": r[0], "calls": r[1], "cost_usd": round(r[2] or 0, 6)} for r in by_model],
+            "by_endpoint": [{"endpoint": r[0], "calls": r[1], "cost_usd": round(r[2] or 0, 6)} for r in by_endpoint],
+        }
     finally:
         conn.close()
 
