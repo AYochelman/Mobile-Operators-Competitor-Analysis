@@ -159,7 +159,7 @@ function buildHeatmap(changes, carrierIds) {
   for (let i = HEATMAP_DAYS - 1; i >= 0; i--) {
     days.push(isoDay(today.getTime() - i * 24 * 60 * 60 * 1000))
   }
-  const cells = new Map()  // key="carrier|date" → count
+  const cells = new Map()  // key="carrier|date" → change[]
   let maxCount = 0
   for (const c of changes || []) {
     if (!c?.carrier || !c?.changed_at) continue
@@ -168,9 +168,10 @@ function buildHeatmap(changes, carrierIds) {
     const day = isoDay(new Date(c.changed_at).getTime())
     if (!days.includes(day)) continue
     const key = `${c.carrier}|${day}`
-    const next = (cells.get(key) || 0) + 1
-    cells.set(key, next)
-    if (next > maxCount) maxCount = next
+    const bucket = cells.get(key) || []
+    bucket.push(c)
+    cells.set(key, bucket)
+    if (bucket.length > maxCount) maxCount = bucket.length
   }
   return { carriers: carrierIds, days, cells, maxCount }
 }

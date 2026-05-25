@@ -457,7 +457,12 @@ export default function EditorialDashboardPage() {
 
         {/* Heatmap + Watchlist row */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
-          <ChangeHeatmap data={heatmap} />
+          <ChangeHeatmap
+            data={heatmap}
+            onCellClick={(c) => {
+              navigate(`/plans?carrier=${c.carrier}&highlight=${encodeURIComponent(c.plan_name || '')}`)
+            }}
+          />
           <WatchlistSidebar plans={plans} />
         </div>
 
