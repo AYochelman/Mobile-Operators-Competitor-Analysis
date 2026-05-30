@@ -2,6 +2,7 @@
 .superpowers/
 design-handoff/
 data/*.db
+data/backups/
 __pycache__/
 *.pyc
 .env

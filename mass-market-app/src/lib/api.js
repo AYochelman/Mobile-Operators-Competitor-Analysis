@@ -180,6 +180,13 @@ export const api = {
     headers: { 'Content-Type': 'application/json' },
   }),
 
+  // Provider coupons — manually curated discount codes for global eSIM providers
+  getCoupons:       () => fetchApi('/api/coupons'),
+  getAllCoupons:    () => fetchApi('/api/coupons/all'),
+  createCoupon:     (data) => fetchApi('/api/coupons', { method: 'POST', body: JSON.stringify(data) }),
+  updateCoupon:     (id, data) => fetchApi(`/api/coupons/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteCoupon:     (id) => fetchApi(`/api/coupons/${id}`, { method: 'DELETE' }),
+
   // Annotations — workspace-wide team notes on plans
   getAnnotations: (carrier, planName, planType) => {
     const p = new URLSearchParams()

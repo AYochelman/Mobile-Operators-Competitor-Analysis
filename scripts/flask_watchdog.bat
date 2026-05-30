@@ -7,12 +7,15 @@ set "SCRIPTDIR=%~dp0"
 set "WORKDIR=%SCRIPTDIR%.."
 set "APP=%WORKDIR%\app.py"
 set "LOGFILE=%SCRIPTDIR%flask_watchdog.log"
+set "APPLOG=%SCRIPTDIR%flask_app.log"
 set "PYTHON=python"
 
 :loop
 echo [%date% %time%] Flask starting... >> "%LOGFILE%"
+echo [%date% %time%] ===== Flask starting ===== >> "%APPLOG%"
 cd /d "%WORKDIR%"
-%PYTHON% "%APP%"
+%PYTHON% -u "%APP%" >> "%APPLOG%" 2>&1
 echo [%date% %time%] Flask exited (code %errorlevel%). Restarting in 15 seconds... >> "%LOGFILE%"
+echo [%date% %time%] ===== Flask exited (code %errorlevel%) ===== >> "%APPLOG%"
 timeout /t 15 /nobreak > nul
 goto loop

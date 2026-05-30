@@ -5,6 +5,7 @@ import HealthWidget from '../components/HealthWidget'
 import { useAuth } from '../hooks/useAuth'
 import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
+import { refreshCoupons } from '../hooks/useCoupons'
 
 const AFFILIATE_COMMISSION = { airalo: 0.10, holafly: 0.12, saily: 0.10, globalesim: 0.10 }
 const AFFILIATE_AVG_ORDER  = { airalo: 18,   holafly: 20,   saily: 16,   globalesim: 15   }
@@ -49,6 +50,16 @@ export default function SettingsPage() {
   const [affiliateDays, setAffiliateDays]       = useState(30)
   const [affiliateLoading, setAffiliateLoading] = useState(false)
 
+  // Coupons state (manually curated discount codes for global eSIM providers)
+  const COUPON_BLANK = { carrier: '', code: '', discount_label: '', expires_at: '', source_url: '', notes: '', is_active: true, external_offer_url: '', partner_name: '' }
+  const [coupons, setCoupons]               = useState([])
+  const [couponsLoading, setCouponsLoading] = useState(false)
+  const [couponsError, setCouponsError]     = useState(null)
+  const [editingCoupon, setEditingCoupon]   = useState(null)  // null = closed, {} = new, {id,...} = edit
+  const [couponForm, setCouponForm]         = useState(COUPON_BLANK)
+  const [savingCoupon, setSavingCoupon]     = useState(false)
+  const [couponSaveError, setCouponSaveError] = useState(null)
+
   // ── Stable callbacks (defined before useEffect) ──────────────────────────
   const loadUsers = useCallback(async () => {
     setUsersLoading(true)
@@ -71,12 +82,101 @@ export default function SettingsPage() {
     setAffiliateLoading(false)
   }, [affiliateDays])
 
+  const loadCoupons = useCallback(async () => {
+    setCouponsLoading(true)
+    setCouponsError(null)
+    try {
+      const data = await api.getAllCoupons()
+      setCoupons(data || [])
+    } catch (err) {
+      setCouponsError(err.message)
+    }
+    setCouponsLoading(false)
+  }, [])
+
+  const openCouponForm = useCallback((row) => {
+    setCouponSaveError(null)
+    if (row && row.id) {
+      setEditingCoupon(row)
+      setCouponForm({
+        carrier: row.carrier || '',
+        code: row.code || '',
+        discount_label: row.discount_label || '',
+        expires_at: row.expires_at || '',
+        source_url: row.source_url || '',
+        notes: row.notes || '',
+        is_active: !!row.is_active,
+        external_offer_url: row.external_offer_url || '',
+        partner_name: row.partner_name || '',
+      })
+    } else {
+      setEditingCoupon({})
+      setCouponForm(COUPON_BLANK)
+    }
+  }, [])
+
+  const handleSaveCoupon = useCallback(async (e) => {
+    e.preventDefault()
+    setSavingCoupon(true)
+    setCouponSaveError(null)
+    try {
+      const payload = {
+        carrier: couponForm.carrier.trim().toLowerCase(),
+        code: couponForm.code.trim(),
+        discount_label: couponForm.discount_label.trim() || null,
+        expires_at: couponForm.expires_at || null,
+        source_url: couponForm.source_url.trim() || null,
+        notes: couponForm.notes.trim() || null,
+        is_active: !!couponForm.is_active,
+        external_offer_url: couponForm.external_offer_url.trim() || null,
+        partner_name: couponForm.partner_name.trim() || null,
+      }
+      if (editingCoupon?.id) {
+        await api.updateCoupon(editingCoupon.id, payload)
+      } else {
+        await api.createCoupon(payload)
+      }
+      setEditingCoupon(null)
+      setCouponForm(COUPON_BLANK)
+      await loadCoupons()
+      refreshCoupons()  // tell PlanCards to refetch
+    } catch (err) {
+      setCouponSaveError(err.message)
+    }
+    setSavingCoupon(false)
+  }, [couponForm, editingCoupon, loadCoupons])
+
+  const handleDeleteCoupon = useCallback(async (id) => {
+    if (!window.confirm('למחוק את הקופון לצמיתות?')) return
+    try {
+      await api.deleteCoupon(id)
+      await loadCoupons()
+      refreshCoupons()
+    } catch (err) {
+      alert(err.message)
+    }
+  }, [loadCoupons])
+
+  const handleToggleCouponActive = useCallback(async (row) => {
+    try {
+      await api.updateCoupon(row.id, { is_active: !row.is_active })
+      await loadCoupons()
+      refreshCoupons()
+    } catch (err) {
+      alert(err.message)
+    }
+  }, [loadCoupons])
+
   // ── Effects (must be before any conditional return) ──────────────────────
   useEffect(() => { loadUsers() }, [loadUsers])
 
   useEffect(() => {
     if (activeTab === 'affiliate') loadAffiliateStats()
   }, [activeTab, loadAffiliateStats])
+
+  useEffect(() => {
+    if (activeTab === 'coupons') loadCoupons()
+  }, [activeTab, loadCoupons])
 
   // ── Derived data (must be before any conditional return) ─────────────────
   const affiliateSummary = useMemo(() => {
@@ -154,6 +254,7 @@ export default function SettingsPage() {
     { id: 'scrape',    label: 'עדכון נתונים' },
     { id: 'users',     label: 'ניהול משתמשים' },
     { id: 'affiliate', label: 'Affiliate' },
+    { id: 'coupons',   label: 'קופונים' },
   ]
 
   return (
@@ -410,6 +511,177 @@ export default function SettingsPage() {
                 </div>
               )}
             </>
+          )}
+        </div>
+      )}
+
+      {/* === Coupons tab === */}
+      {activeTab === 'coupons' && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold text-sm">קופונים — קודי הנחה לספקים גלובליים</h2>
+            <Button size="sm" onClick={() => openCouponForm(null)} disabled={!!editingCoupon}>
+              הוספת קופון
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500 mb-4">
+            הקופון מוצג כתג קטן על כרטיס התוכנית בכל הספקים תחת מזהה ה-carrier. השדה
+            <span className="font-mono mx-1">carrier</span>
+            הוא ה-id באנגלית (למשל <span className="font-mono">saily</span>, <span className="font-mono">holafly</span>, <span className="font-mono">airalo</span>).
+          </p>
+
+          {editingCoupon && (
+            <form onSubmit={handleSaveCoupon} className="mb-4 p-3 bg-gray-50 rounded-lg space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">carrier (id באנגלית)</label>
+                  <input type="text" required dir="ltr"
+                    value={couponForm.carrier}
+                    onChange={e => setCouponForm({ ...couponForm, carrier: e.target.value })}
+                    placeholder="saily"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">code</label>
+                  <input type="text" required dir="ltr"
+                    value={couponForm.code}
+                    onChange={e => setCouponForm({ ...couponForm, code: e.target.value })}
+                    placeholder="GIZMODO"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">תיאור הנחה (יוצג ליד הקוד)</label>
+                  <input type="text"
+                    value={couponForm.discount_label}
+                    onChange={e => setCouponForm({ ...couponForm, discount_label: e.target.value })}
+                    placeholder="15% הנחה"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">פג תוקף (אופציונלי)</label>
+                  <input type="date" dir="ltr"
+                    value={couponForm.expires_at}
+                    onChange={e => setCouponForm({ ...couponForm, expires_at: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-gray-500 mb-1">מקור (URL לאימות)</label>
+                  <input type="url" dir="ltr"
+                    value={couponForm.source_url}
+                    onChange={e => setCouponForm({ ...couponForm, source_url: e.target.value })}
+                    placeholder="https://..."
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-gray-500 mb-1">הערות (פנימי)</label>
+                  <textarea rows={2}
+                    value={couponForm.notes}
+                    onChange={e => setCouponForm({ ...couponForm, notes: e.target.value })}
+                    placeholder="מותנה בקנייה ראשונה / מקור: cybernews"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div className="sm:col-span-2 pt-2 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 mb-2">
+                    <strong>הצעה חיצונית</strong> — כשהשדות למטה מלאים, התג בכרטיס מתחלף לקישור-יציאה במקום קוד להעתקה
+                    (לדוגמה: <span className="font-mono">https://www.gooday.co.il/.../Airalo</span> שמייצר קוד אישי למשתמש).
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">שם הפרטנר (יוצג ליד ההטבה)</label>
+                  <input type="text"
+                    value={couponForm.partner_name}
+                    onChange={e => setCouponForm({ ...couponForm, partner_name: e.target.value })}
+                    placeholder="גודיי"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">כתובת ההצעה החיצונית</label>
+                  <input type="url" dir="ltr"
+                    value={couponForm.external_offer_url}
+                    onChange={e => setCouponForm({ ...couponForm, external_offer_url: e.target.value })}
+                    placeholder="https://www.gooday.co.il/הטבות/Airalo"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox"
+                  checked={couponForm.is_active}
+                  onChange={e => setCouponForm({ ...couponForm, is_active: e.target.checked })} />
+                <span>פעיל (יוצג למשתמשים)</span>
+              </label>
+              {couponSaveError && <p className="text-red-600 text-xs">{couponSaveError}</p>}
+              <div className="flex gap-2">
+                <Button type="submit" size="sm" disabled={savingCoupon}>
+                  {savingCoupon ? 'שומר...' : (editingCoupon?.id ? 'עדכן' : 'צור')}
+                </Button>
+                <Button type="button" size="sm" variant="ghost"
+                  onClick={() => { setEditingCoupon(null); setCouponSaveError(null) }}>
+                  ביטול
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {couponsLoading ? (
+            <p className="text-sm text-gray-400">טוען...</p>
+          ) : couponsError ? (
+            <div className="text-sm text-red-600">
+              <p>{couponsError}</p>
+              <button onClick={loadCoupons} className="text-blue-600 underline text-xs mt-1">נסה שוב</button>
+            </div>
+          ) : coupons.length === 0 ? (
+            <p className="text-sm text-gray-400">אין קופונים. לחץ "הוספת קופון" כדי להתחיל.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-moca-border text-moca-sub text-xs">
+                    <th className="text-right py-2 pr-1 font-medium">ספק</th>
+                    <th className="text-right py-2 font-medium">קוד</th>
+                    <th className="text-right py-2 font-medium">תיאור</th>
+                    <th className="text-right py-2 font-medium">תוקף</th>
+                    <th className="text-right py-2 font-medium">סטטוס</th>
+                    <th className="py-2 pl-1"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {coupons.map(row => (
+                    <tr key={row.id} className="border-b border-gray-100">
+                      <td className="py-2 pr-1 font-mono text-xs">{row.carrier}</td>
+                      <td className="py-2 font-mono text-xs">
+                        {row.code}
+                        {row.external_offer_url && (
+                          <span className="ml-1 px-1.5 py-0.5 rounded bg-[#fff4d6] text-[#7a5a30] text-[10px] font-sans" title={`קישור חיצוני: ${row.external_offer_url}`}>
+                            ↗ {row.partner_name || 'חיצוני'}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 text-xs">{row.discount_label || '—'}</td>
+                      <td className="py-2 text-xs" dir="ltr">{row.expires_at || '∞'}</td>
+                      <td className="py-2">
+                        <button onClick={() => handleToggleCouponActive(row)}
+                          className={`text-[11px] px-2 py-0.5 rounded-full border ${
+                            row.is_active
+                              ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                              : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
+                          }`}>
+                          {row.is_active ? 'פעיל' : 'מבוטל'}
+                        </button>
+                      </td>
+                      <td className="py-2 pl-1 text-left">
+                        <div className="flex gap-1 justify-end">
+                          <button onClick={() => openCouponForm(row)}
+                            className="text-xs text-blue-600 hover:underline">ערוך</button>
+                          <span className="text-gray-300">·</span>
+                          <button onClick={() => handleDeleteCoupon(row.id)}
+                            className="text-xs text-red-600 hover:underline">מחק</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}

@@ -7,7 +7,7 @@ Israeli cellular plan comparison system branded **MOCA** (Mobile Operators Compe
 - **Legacy dashboard**: Flask-served HTML at localhost:5000 (templates/index.html)
 - **New React app**: Vite + Tailwind + Supabase Auth at localhost:5173 (mass-market-app/)
 
-Both frontends consume the same Flask REST API. The system scrapes 8 domestic carriers + 14 global eSIM providers twice daily, detects price changes, and sends notifications via Telegram/Email/WhatsApp/Web Push.
+Both frontends consume the same Flask REST API. The system scrapes 10 domestic carriers + 27 global eSIM providers twice daily, detects price changes, and sends notifications via Telegram/Email/WhatsApp/Web Push.
 
 ## Commands
 
@@ -79,7 +79,7 @@ python telegram_resellers.py scrape                 # ingest channels listed in 
 
 | File | Purpose |
 |------|---------|
-| app.py | Flask server, API routes, APScheduler, CORS, API key auth. `CARRIER_DISPLAY` (8 carriers, homepage URLs) and `CARRIER_STORE_DISPLAY` (4 carriers with e-stores) drive the banners API. |
+| app.py | Flask server, API routes, APScheduler, CORS, API key auth. `CARRIER_DISPLAY` (10 carriers, homepage URLs) and `CARRIER_STORE_DISPLAY` (4 carriers with e-stores) drive the banners API. |
 | scraper.py | 40+ scrapers (domestic + abroad + global per-country/regional + content) + `scrape_carrier_banners()` / `scrape_carrier_store_banners()` for screenshots + `scrape_carrier_news()` for Google News RSS |
 | db.py | SQLite CRUD — 11 tables with UPSERT logic |
 | change_detector.py | Diff old vs new plans, detect price/extras/details changes |
@@ -192,10 +192,10 @@ Route protection uses `<ProtectedRoute adminOnly>` or `<ProtectedRoute superAdmi
 
 ## Carriers & Providers
 
-**Domestic (8)**: partner, pelephone, hotmobile, cellcom, mobile019, xphone, wecom, neptucom
-**Abroad (8)**: same carriers, per-country roaming plans
+**Domestic (10)**: partner, pelephone, hotmobile, cellcom, mobile019, xphone, wecom, neptucom, golan, rami_levy
+**Abroad**: same carriers, per-country roaming plans (rami_levy_abroad, wecom_abroad, golan_abroad, 019_abroad have dedicated scrapers)
 **E-store carriers (4)**: pelephone, cellcom, partner, hotmobile — screenshots saved as `{carrier}_store.png` in `data/banners/`
-**Global eSIM (15)**: tuki, globalesim, airalo, pelephone_global, esimo, simtlv, world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (183 countries + 10 regions), sparks (143 countries), voye (157 countries + 5 regions + global), orbit (195 countries + 9 zones, REST API at be.orbitmobile.com), travelsim (global + USA + Middle East zones)
+**Global eSIM (27)**: tuki, globalesim, airalo, pelephone_global (GlobalSIM), esimo, simtlv, world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (183 countries + 10 regions), sparks (143 countries), voye (157 countries + 5 regions + global), orbit (195 countries + 9 zones, REST API at be.orbitmobile.com), travelsim (global + USA + Middle East zones), seven_g (7G), gomoworld (GoMoWorld), tasim, maya (Maya Mobile), bcengi, esim70, jetpack, breez (Breeze), bytesim, bestconnect (Best Connect), besim, esimplus (eSIM Plus). Source of truth: `GLOBAL_LABELS` in carrierLabels.js (29 keys — airalo_local/airalo_regional are aliases of airalo) mirrored by `_CARRIER_NAMES` in app.py.
 **Content (5 services × 4 carriers)**: eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי
 **Resellers (משווקים)**: independent shops/social pages selling carrier plans at unique prices not on the carrier's own rate card. Currently tracked: `cellcomshefamr` (Instagram, Cellcom). Data is sparse — Israeli reseller market has minimal social-media pricing presence (verified by scanning 1,400 messages across 7 large Israeli deal Telegram channels — zero plan-pricing matches).
 
@@ -336,7 +336,7 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 ## Schedule
 
 - **08:00** — screenshot all carrier homepages (`scrape_carrier_banners`) + 4 e-store pages (`scrape_carrier_store_banners`), saved as PNG in `data/banners/`
-- **08:10** — scrape Google News RSS for all 8 carriers (`scrape_carrier_news()` → `upsert_news_articles()`), INSERT OR IGNORE by URL
+- **08:10** — scrape Google News RSS for all 10 domestic carriers + Breeze (`scrape_carrier_news()` → `upsert_news_articles()`), INSERT OR IGNORE by URL
 - **09:00** — send daily Excel email report via SendGrid
 - **07:30 + 17:00** — scrape all (domestic + abroad + global + content), detect changes, notify (Telegram + WhatsApp + Web Push). Times come from `config.json:schedule_times`. Notifications are deduplicated against the last 24h of changes — `db.filter_already_notified()` drops any (carrier, plan_name, change_type) already announced, so a sticky removal isn't reported twice.
 - WhatsApp via Green API (config.json: greenapi_url, greenapi_instance, greenapi_token, whatsapp_phone or whatsapp_group_id)

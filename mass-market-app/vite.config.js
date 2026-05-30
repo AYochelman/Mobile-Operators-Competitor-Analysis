@@ -68,7 +68,7 @@ export default defineConfig({
         // a /banners route (Banners tab). Without this bypass, /banners would
         // hit Flask and 404. Only proxy paths that look like image files.
         bypass: (req) => {
-          if (!/^\/banners\/[^/]+\.(png|jpe?g|webp|svg)$/i.test(req.url)) {
+          if (!/^\/banners\/[^/?]+\.(png|jpe?g|webp|svg)(\?.*)?$/i.test(req.url)) {
             return req.url
           }
           return null

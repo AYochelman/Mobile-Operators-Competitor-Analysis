@@ -46,6 +46,32 @@ PLANS = [
         "source_url": "https://www.instagram.com/cellcomshefamr/",
         "seen_at": "2024-06",  # latest post window where this offer appeared
     },
+    {
+        # Zoro (zorro.press) — affiliate page that promotes Partner. Their FB ad
+        # ("מבצע 48 שעות, ללקוחות חדשים בלבד") routes to Partner via Zoro's
+        # affiliate channel. The 2-line discounted price is not advertised on
+        # partner.co.il's standard rate card (which shows Golden 5G 500GB @ 39.90
+        # for single line and Royal 5G 800GB @ 39.90 for 3+ lines).
+        "reseller_id": "zorro",
+        "carrier": "partner",
+        "plan_name": "300GB ב-2 קווים — מבצע משווק",
+        "price": 29.9,
+        "data_gb": 300,
+        "minutes": None,  # 3000 = effectively unlimited
+        "sms": None,  # 3000 = effectively unlimited
+        "extras": [
+            "₪29.90 לקו ב-2 קווים ומעלה (₪39.90 לקו יחיד)",
+            "ללקוחות חדשים בלבד",
+            "5G • שיחות ו-SMS ללא הגבלה",
+            "200 דקות לחו\"ל ל-42 יעדים נבחרים",
+            "מחיר קבוע לשנה, ללא התחייבות",
+            "דמי הקמה חד-פעמיים: ₪9.90",
+            "מקודם עם דחיפות \"48 שעות\" בפייסבוק",
+            "מחיר 2-הקווים לא במחירון הציבורי של פרטנר",
+        ],
+        "source_url": "https://www.facebook.com/ZorroPricesCompare/",
+        "seen_at": "2026-05",
+    },
 ]
 
 

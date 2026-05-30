@@ -446,6 +446,24 @@ def init_db(db_path=None):
                 ON claude_api_usage(called_at DESC);
             CREATE INDEX IF NOT EXISTS idx_claude_usage_endpoint
                 ON claude_api_usage(endpoint);
+            -- Manually-curated discount codes for global eSIM providers (Saily / Holafly / Airalo / etc).
+            -- Surfaced as a small pill on PlanCard so users can copy the code straight from the plan.
+            -- carrier matches the scraper id used in plans tables (e.g. 'saily', 'holafly').
+            CREATE TABLE IF NOT EXISTS provider_coupons (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                carrier         TEXT NOT NULL,
+                code            TEXT NOT NULL,
+                discount_label  TEXT,        -- short human text e.g. "15% הנחה" / "$5 OFF"
+                expires_at      TEXT,        -- ISO date (YYYY-MM-DD) or NULL = no expiry
+                source_url      TEXT,        -- where the code was verified
+                is_active       INTEGER NOT NULL DEFAULT 1,
+                notes           TEXT,        -- admin notes (eligibility, restrictions)
+                created_at      TEXT NOT NULL,
+                updated_at      TEXT,
+                UNIQUE(carrier, code)
+            );
+            CREATE INDEX IF NOT EXISTS idx_provider_coupons_carrier
+                ON provider_coupons(carrier, is_active);
             -- Speed up the per-carrier filters on the dashboard. UNIQUE(carrier, plan_name)
             -- already covers (carrier) lookups via prefix, but an explicit single-column
             -- index makes the planner's choice predictable across SQLite versions.
@@ -490,6 +508,15 @@ def init_db(db_path=None):
         for col, sql in (("promo_price", "REAL"), ("promo_months", "INTEGER")):
             try:
                 conn.execute(f"ALTER TABLE plans ADD COLUMN {col} {sql}")
+                conn.commit()
+            except Exception:
+                pass  # column already exists
+        # Migration: external offer fields on coupons. When external_offer_url is set
+        # the card renders a link-out button instead of a copyable code (e.g. for
+        # third-party benefit aggregators like gooday.co.il that issue per-user codes).
+        for col, sql in (("external_offer_url", "TEXT"), ("partner_name", "TEXT")):
+            try:
+                conn.execute(f"ALTER TABLE provider_coupons ADD COLUMN {col} {sql}")
                 conn.commit()
             except Exception:
                 pass  # column already exists
@@ -2081,6 +2108,138 @@ def update_annotation(annotation_id, workspace_id, user_email, note, db_path=Non
                WHERE id = ? AND workspace_id IS ? AND user_email = ?""",
             (note, now, annotation_id, workspace_id, user_email)
         )
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
+# ── Provider coupons (manually curated discount codes) ───────────────────────
+
+def get_active_coupons(db_path=None):
+    """Public read — returns active coupons whose expiry has not passed.
+
+    Shape matches what PlanCard renders directly. If external_offer_url is set
+    the card renders as a link-out tile (third-party offer); otherwise as a
+    copy-the-code pill.
+    """
+    today = datetime.now(timezone.utc).date().isoformat()
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            """SELECT carrier, code, discount_label, expires_at, source_url,
+                      external_offer_url, partner_name
+               FROM provider_coupons
+               WHERE is_active = 1
+                 AND (expires_at IS NULL OR expires_at = '' OR expires_at >= ?)
+               ORDER BY carrier, code""",
+            (today,)
+        ).fetchall()
+        return [
+            {"carrier": r[0], "code": r[1], "discount_label": r[2],
+             "expires_at": r[3], "source_url": r[4],
+             "external_offer_url": r[5], "partner_name": r[6]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def get_all_coupons(db_path=None):
+    """Admin read — every row, active or not, expired or not."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            """SELECT id, carrier, code, discount_label, expires_at, source_url,
+                      is_active, notes, external_offer_url, partner_name,
+                      created_at, updated_at
+               FROM provider_coupons
+               ORDER BY carrier, code"""
+        ).fetchall()
+        return [
+            {"id": r[0], "carrier": r[1], "code": r[2], "discount_label": r[3],
+             "expires_at": r[4], "source_url": r[5], "is_active": bool(r[6]),
+             "notes": r[7], "external_offer_url": r[8], "partner_name": r[9],
+             "created_at": r[10], "updated_at": r[11]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def upsert_coupon(carrier, code, discount_label=None, expires_at=None,
+                  source_url=None, is_active=True, notes=None,
+                  external_offer_url=None, partner_name=None, db_path=None):
+    """Insert or update a coupon by (carrier, code). Returns rowid of the row."""
+    now = datetime.now(timezone.utc).isoformat()
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            """INSERT INTO provider_coupons
+                 (carrier, code, discount_label, expires_at, source_url,
+                  is_active, notes, external_offer_url, partner_name,
+                  created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT(carrier, code) DO UPDATE SET
+                 discount_label     = excluded.discount_label,
+                 expires_at         = excluded.expires_at,
+                 source_url         = excluded.source_url,
+                 is_active          = excluded.is_active,
+                 notes              = excluded.notes,
+                 external_offer_url = excluded.external_offer_url,
+                 partner_name       = excluded.partner_name,
+                 updated_at         = excluded.updated_at""",
+            (carrier, code, discount_label, expires_at, source_url,
+             1 if is_active else 0, notes, external_offer_url, partner_name,
+             now, now)
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT id FROM provider_coupons WHERE carrier = ? AND code = ?",
+            (carrier, code)
+        ).fetchone()
+        return row[0] if row else None
+    finally:
+        conn.close()
+
+
+def update_coupon(coupon_id, fields, db_path=None):
+    """Partial update by id. `fields` may contain any of the editable columns.
+    Returns number of rows updated (0 = not found)."""
+    allowed = {"carrier", "code", "discount_label", "expires_at",
+               "source_url", "is_active", "notes",
+               "external_offer_url", "partner_name"}
+    set_clauses = []
+    params = []
+    for k, v in (fields or {}).items():
+        if k not in allowed:
+            continue
+        if k == "is_active":
+            v = 1 if v else 0
+        set_clauses.append(f"{k} = ?")
+        params.append(v)
+    if not set_clauses:
+        return 0
+    set_clauses.append("updated_at = ?")
+    params.append(datetime.now(timezone.utc).isoformat())
+    params.append(coupon_id)
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute(
+            f"UPDATE provider_coupons SET {', '.join(set_clauses)} WHERE id = ?",
+            params
+        )
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
+def delete_coupon(coupon_id, db_path=None):
+    """Delete by id. Returns number of rows deleted."""
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute("DELETE FROM provider_coupons WHERE id = ?", (coupon_id,))
         conn.commit()
         return cur.rowcount
     finally:

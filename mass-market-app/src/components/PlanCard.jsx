@@ -13,6 +13,7 @@ import SparklineMini from './SparklineMini'
 import AnnotationsModal from './AnnotationsModal'
 import { useWatchlist } from '../hooks/useWatchlist'
 import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
+import { useCoupons } from '../hooks/useCoupons'
 
 // Lazy — Recharts is ~340KB. Only load when the user actually opens history.
 const PriceHistoryModal = lazy(() => import('./PriceHistoryModal'))
@@ -224,9 +225,11 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   const [showPlanInfo, setShowPlanInfo] = useState(false)
   const [showPriceHistory, setShowPriceHistory] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [couponCopied, setCouponCopied] = useState(false)
   const [showAnnotations, setShowAnnotations] = useState(false)
   const { isWatched, toggle: toggleWatch } = useWatchlist()
   const { countFor } = useAnnotationCounts()
+  const { couponFor } = useCoupons()
   const annotationCount = type !== 'content' && plan.plan_name ? countFor(plan.carrier, type, plan.plan_name) : 0
 
   const handleShare = useCallback((e) => {
@@ -265,6 +268,17 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   // instead of the underlying carrier's homepage. Must be declared AFTER `carrier`.
   const providerUrl = isReseller && plan.source_url ? plan.source_url : CARRIER_HOME_URLS[carrier]
   const providerLabel = isReseller ? 'לפוסט המקור' : 'לאתר הספק'
+  // Manually-curated promo code for the carrier (Saily/Holafly/etc). Resellers
+  // and content services aren't covered — they sell at fixed reseller prices.
+  const coupon = (!isReseller && !isContent) ? couponFor(carrier) : null
+  const copyCoupon = useCallback((e) => {
+    e.stopPropagation()
+    if (!coupon?.code) return
+    navigator.clipboard?.writeText(coupon.code).then(() => {
+      setCouponCopied(true)
+      setTimeout(() => setCouponCopied(false), 2000)
+    }).catch(() => {})
+  }, [coupon])
 
   // Build info line: data + period, dot-separated
   const infoParts = []
@@ -506,6 +520,44 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               <p className="text-center text-[10px] text-[#a08060] mt-1">דרך MOCA</p>
             </div>
           ) : (
+            <>
+            {coupon && coupon.external_offer_url ? (
+              <a
+                href={coupon.external_offer_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                title={coupon.partner_name ? `הצעה חיצונית אצל ${coupon.partner_name}` : 'הצעה חיצונית'}
+                className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-[#5c3317] bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
+              >
+                <span aria-hidden="true">🎟</span>
+                <span>
+                  {coupon.discount_label || 'הטבה'}
+                  {coupon.partner_name && (
+                    <span className="text-[#7a5a30]"> · אצל {coupon.partner_name}</span>
+                  )}
+                </span>
+                <span className="text-[10px] text-[#7a5a30] mr-auto">פתח ↗</span>
+              </a>
+            ) : coupon && (
+              <button
+                type="button"
+                onClick={copyCoupon}
+                title={`לחץ להעתקה — בדקו בקופה של ${providerLabel}`}
+                className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-[#5c3317] bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
+              >
+                <span aria-hidden="true">🎟</span>
+                <span>
+                  קוד הנחה: <span className="font-mono tracking-wide">{coupon.code}</span>
+                  {coupon.discount_label && (
+                    <span className="text-[#7a5a30]"> · {coupon.discount_label}</span>
+                  )}
+                </span>
+                <span className="text-[10px] text-[#7a5a30] mr-auto">
+                  {couponCopied ? '✓ הועתק' : 'העתק'}
+                </span>
+              </button>
+            )}
             <div className="flex gap-2">
               {planInfo ? (
                 <button
@@ -560,6 +612,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                 </a>
               )}
             </div>
+            </>
           )}
         </div>
         )}

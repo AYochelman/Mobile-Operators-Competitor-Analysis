@@ -25,7 +25,8 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                log_audit, get_audit_log, \
                create_workspace_invite, get_workspace_invite, use_workspace_invite, \
                get_reseller_plans, save_reseller_plans, filter_undominated_reseller_plans, \
-               log_claude_usage, get_claude_usage_recent, get_claude_usage_summary
+               log_claude_usage, get_claude_usage_recent, get_claude_usage_summary, \
+               get_active_coupons, get_all_coupons, upsert_coupon, update_coupon, delete_coupon
 import archive as arc
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -1919,16 +1920,18 @@ def api_banners():
     for carrier, meta in CARRIER_DISPLAY.items():
         png_path = os.path.join(banners_dir, f"{carrier}.png")
         scraped_at = None
-        exists = os.path.exists(png_path)
-        if exists:
+        image_url = None
+        if os.path.exists(png_path):
             mtime = os.path.getmtime(png_path)
             scraped_at = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
+            # ?v=<mtime> busts the PWA CacheFirst entry whenever the file changes.
+            image_url = f"/banners/{carrier}.png?v={int(mtime)}"
         result.append({
             "carrier":    carrier,
             "name":       meta["name"],
             "url":        meta["url"],
             "color":      meta["color"],
-            "image_url":  f"/banners/{carrier}.png" if exists else None,
+            "image_url":  image_url,
             "scraped_at": scraped_at,
         })
     return _public_cache(jsonify(_filter_hidden_carrier(result)), 600)
@@ -1943,16 +1946,17 @@ def api_store_banners():
     for carrier, meta in CARRIER_STORE_DISPLAY.items():
         png_path = os.path.join(banners_dir, f"{carrier}_store.png")
         scraped_at = None
-        exists = os.path.exists(png_path)
-        if exists:
+        image_url = None
+        if os.path.exists(png_path):
             mtime = os.path.getmtime(png_path)
             scraped_at = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
+            image_url = f"/banners/{carrier}_store.png?v={int(mtime)}"
         result.append({
             "carrier":    carrier,
             "name":       meta["name"],
             "url":        meta["url"],
             "color":      meta["color"],
-            "image_url":  f"/banners/{carrier}_store.png" if exists else None,
+            "image_url":  image_url,
             "scraped_at": scraped_at,
         })
     return _public_cache(jsonify(_filter_hidden_carrier(result)), 600)
@@ -2346,6 +2350,119 @@ def api_delete_annotation(ann_id):
     deleted = _da(ann_id, ws_id, user_email, db_path=_db_path())
     if deleted == 0:
         return jsonify({"error": "not found or not author"}), 404
+    return jsonify({"status": "deleted"})
+
+
+# ── Provider coupons (manually curated discount codes) ────────────────────
+
+_COUPON_CARRIER_RE = _re_webhook.compile(r'^[a-z0-9_]{2,30}$')
+_COUPON_CODE_RE    = _re_webhook.compile(r'^[A-Za-z0-9_\-]{2,40}$')
+
+
+def _validate_coupon_payload(data, partial=False):
+    """Return (cleaned_dict, error_msg). `partial=True` for PATCH (omit any field)."""
+    out = {}
+    if "carrier" in data or not partial:
+        c = (data.get("carrier") or "").strip().lower()
+        if not _COUPON_CARRIER_RE.match(c):
+            return None, "invalid carrier (lowercase a-z0-9_, 2-30 chars)"
+        out["carrier"] = c
+    if "code" in data or not partial:
+        code = (data.get("code") or "").strip()
+        if not _COUPON_CODE_RE.match(code):
+            return None, "invalid code (A-Z0-9_- only, 2-40 chars)"
+        out["code"] = code
+    if "discount_label" in data:
+        out["discount_label"] = (data.get("discount_label") or "").strip()[:80] or None
+    if "expires_at" in data:
+        v = (data.get("expires_at") or "").strip()
+        if v:
+            try:
+                datetime.strptime(v, "%Y-%m-%d")
+            except ValueError:
+                return None, "expires_at must be YYYY-MM-DD or empty"
+        out["expires_at"] = v or None
+    if "source_url" in data:
+        u = (data.get("source_url") or "").strip()
+        if u and not (u.startswith("http://") or u.startswith("https://")):
+            return None, "source_url must start with http(s)://"
+        out["source_url"] = u[:500] or None
+    if "is_active" in data:
+        out["is_active"] = bool(data.get("is_active"))
+    if "notes" in data:
+        out["notes"] = (data.get("notes") or "").strip()[:500] or None
+    if "external_offer_url" in data:
+        u = (data.get("external_offer_url") or "").strip()
+        if u and not (u.startswith("http://") or u.startswith("https://")):
+            return None, "external_offer_url must start with http(s)://"
+        out["external_offer_url"] = u[:500] or None
+    if "partner_name" in data:
+        out["partner_name"] = (data.get("partner_name") or "").strip()[:80] or None
+    return out, None
+
+
+@app.route("/api/coupons", methods=["GET"])
+@limiter.limit("120 per minute")
+def api_get_coupons():
+    """Public: active, non-expired coupons. Cached for 5 min on the client."""
+    coupons = get_active_coupons(db_path=_db_path())
+    resp = jsonify(coupons)
+    return _public_cache(resp, 300)
+
+
+@app.route("/api/coupons/all", methods=["GET"])
+@require_admin
+def api_get_all_coupons():
+    """Admin: every coupon row including inactive / expired."""
+    return jsonify(get_all_coupons(db_path=_db_path()))
+
+
+@app.route("/api/coupons", methods=["POST"])
+@require_admin
+def api_create_coupon():
+    data = request.get_json(force=True) or {}
+    cleaned, err = _validate_coupon_payload(data, partial=False)
+    if err:
+        return jsonify({"error": err}), 400
+    try:
+        new_id = upsert_coupon(
+            cleaned["carrier"], cleaned["code"],
+            discount_label=cleaned.get("discount_label"),
+            expires_at=cleaned.get("expires_at"),
+            source_url=cleaned.get("source_url"),
+            is_active=cleaned.get("is_active", True),
+            notes=cleaned.get("notes"),
+            external_offer_url=cleaned.get("external_offer_url"),
+            partner_name=cleaned.get("partner_name"),
+            db_path=_db_path(),
+        )
+        return jsonify({"status": "saved", "id": new_id}), 201
+    except Exception as exc:
+        logger.error(f"create coupon failed: {exc}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/coupons/<int:coupon_id>", methods=["PATCH"])
+@require_admin
+def api_update_coupon(coupon_id):
+    data = request.get_json(force=True) or {}
+    cleaned, err = _validate_coupon_payload(data, partial=True)
+    if err:
+        return jsonify({"error": err}), 400
+    if not cleaned:
+        return jsonify({"error": "no editable fields supplied"}), 400
+    updated = update_coupon(coupon_id, cleaned, db_path=_db_path())
+    if updated == 0:
+        return jsonify({"error": "not found"}), 404
+    return jsonify({"status": "updated"})
+
+
+@app.route("/api/coupons/<int:coupon_id>", methods=["DELETE"])
+@require_admin
+def api_delete_coupon(coupon_id):
+    deleted = delete_coupon(coupon_id, db_path=_db_path())
+    if deleted == 0:
+        return jsonify({"error": "not found"}), 404
     return jsonify({"status": "deleted"})
 
 
@@ -4182,16 +4299,20 @@ if __name__ == "__main__":
     _ensure_vapid_keys(CONFIG_PATH)
     init_db()
     config = load_config()
+    # Generous misfire window so APScheduler doesn't silently drop a cron when
+    # the host is briefly throttled (Win11 modern standby, IO storms, etc).
+    # coalesce=True collapses any backlog into a single late run.
+    _job_defaults = {"misfire_grace_time": 3600, "coalesce": True}
     scheduler = BackgroundScheduler()
     for time_str in config.get("schedule_times", ["10:00", "16:00"]):
         hour, minute = map(int, time_str.split(":"))
-        scheduler.add_job(run_scrape_job, "cron", hour=hour, minute=minute)
+        scheduler.add_job(run_scrape_job, "cron", hour=hour, minute=minute, **_job_defaults)
     report_time = config.get("email_report_time", "09:00")
     rh, rm = map(int, report_time.split(":"))
-    scheduler.add_job(run_email_report_job, "cron", hour=rh, minute=rm)
-    scheduler.add_job(generate_executive_summary, "cron", hour=8, minute=5, id="executive_summary")
-    scheduler.add_job(scrape_news_job, "cron", hour=8, minute=10, id="news_scrape")
-    scheduler.add_job(scrape_resellers_job, "cron", hour=8, minute=15, id="resellers_scrape")
+    scheduler.add_job(run_email_report_job, "cron", hour=rh, minute=rm, **_job_defaults)
+    scheduler.add_job(generate_executive_summary, "cron", hour=8, minute=5, id="executive_summary", **_job_defaults)
+    scheduler.add_job(scrape_news_job, "cron", hour=8, minute=10, id="news_scrape", **_job_defaults)
+    scheduler.add_job(scrape_resellers_job, "cron", hour=8, minute=15, id="resellers_scrape", **_job_defaults)
     # Social sentiment: every 3 days at 08:00 — use interval trigger with next 08:00 as start
     from datetime import datetime as _dt, timedelta as _td
     _now = _dt.now()
@@ -4199,10 +4320,10 @@ if __name__ == "__main__":
     if _next_8 <= _now:
         _next_8 += _td(days=1)
     scheduler.add_job(generate_social_sentiment, "interval", days=3,
-                      start_date=_next_8, id="social_sentiment")
+                      start_date=_next_8, id="social_sentiment", **_job_defaults)
     scheduler.add_job(weekly_digest_job, "cron", day_of_week="sun", hour=8, minute=30,
-                      id="weekly_digest")
-    scheduler.add_job(check_trial_expiry_job, "cron", hour=0, minute=5, id="trial_expiry")
+                      id="weekly_digest", **_job_defaults)
+    scheduler.add_job(check_trial_expiry_job, "cron", hour=0, minute=5, id="trial_expiry", **_job_defaults)
     scheduler.start()
     logger.info("Flask starting → http://0.0.0.0:5000")
     try:
