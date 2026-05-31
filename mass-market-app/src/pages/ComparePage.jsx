@@ -592,7 +592,12 @@ export default function ComparePage() {
                         {getLabel(p.carrier)}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-xs text-gray-700" dir="rtl" style={{unicodeBidi: 'plaintext'}}>{p.plan_name}</td>
+                    <td className="px-4 py-2 text-xs text-gray-700" dir="rtl" style={{unicodeBidi: 'plaintext'}}>
+                      {p.plan_name}
+                      {tab === 'domestic' && hasMaxPriority(p) && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 mr-1.5 align-middle text-[9px] font-bold rounded bg-violet-50 text-violet-600 leading-none tracking-wide whitespace-nowrap">5G מתועדף</span>
+                      )}
+                    </td>
                     <td className="px-4 py-2 text-xs font-bold text-gray-900">₪{p.price}</td>
                     <td className="px-4 py-2 text-xs text-gray-600">{p.data_gb === null ? 'ללא הגבלה' : `${p.data_gb}GB`}</td>
                     {showDays && <td className="px-4 py-2 text-xs text-gray-600">{p.days || '—'}</td>}

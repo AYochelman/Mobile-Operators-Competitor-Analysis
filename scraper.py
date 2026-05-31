@@ -1507,8 +1507,38 @@ def scrape_partner(page):
     page.goto("https://www.partner.co.il/n/cellularsale/lobby", timeout=30000, wait_until="networkidle")
     page.wait_for_selector(".plan-wrapper", timeout=15000)
 
-    # Fetch terms PDF URLs from Partner CMS API (in-page fetch to bypass CORS)
+    # Fetch terms PDF URLs from Partner CMS API (in-page fetch to bypass CORS).
+    # The CMS returns a node tree; every plan is a `transverseProductsPlan` node
+    # whose `planTerms` property holds the canonical terms-PDF link. Walking the
+    # tree (instead of a fragile name-prefix proximity search) means renamed
+    # plans still resolve correctly — e.g. "Partner Ace 5G" → "Better Future 5G",
+    # which kept the old partner-ace-5g.pdf filename.
     partner_urls = {}
+    _PARTNER_PDF_RE = re.compile(r'https?://u\.partner\.co\.il/media/[a-z0-9]+/[^\s"\\]+\.pdf')
+
+    def _collect_partner_terms(node):
+        if isinstance(node, dict):
+            if node.get('nodeTypeAlias') == 'transverseProductsPlan':
+                props = node.get('properties') or {}
+                pname = (props.get('planName') or node.get('name') or '').strip()
+                terms = props.get('planTerms')
+                url = None
+                if isinstance(terms, str) and terms.strip():
+                    try:
+                        arr = _json.loads(terms)
+                        if isinstance(arr, list) and arr:
+                            url = arr[0].get('url') or arr[0].get('link')
+                    except Exception:
+                        m = _PARTNER_PDF_RE.search(terms)
+                        url = m.group(0) if m else None
+                if pname and url:
+                    partner_urls[pname] = url
+            for v in node.values():
+                _collect_partner_terms(v)
+        elif isinstance(node, list):
+            for v in node:
+                _collect_partner_terms(v)
+
     try:
         raw = page.evaluate("""async () => {
             const r = await fetch(
@@ -1516,19 +1546,7 @@ def scrape_partner(page):
             );
             return r.text();
         }""")
-        # Build prefix → PDF map: search for each plan prefix near its PDF URL
-        prefixes = ['Partner Prince', 'Partner Queen', 'Partner King', 'Partner Ace', 'Partner Boost']
-        for prefix in prefixes:
-            pos = 0
-            while True:
-                idx = raw.find(prefix, pos)
-                if idx == -1:
-                    break
-                window = raw[max(0, idx - 500):idx + 2000]
-                m = re.search(r'https?://u\.partner\.co\.il/media/[a-z0-9]+/[^\s"\\]+\.pdf', window)
-                if m and prefix not in partner_urls:
-                    partner_urls[prefix] = m.group(0)
-                pos = idx + 1
+        _collect_partner_terms(_json.loads(raw))
     except Exception as exc:
         logger.warning(f"scrape_partner: failed to fetch terms URLs: {exc}")
 
@@ -1559,12 +1577,14 @@ def scrape_partner(page):
             except Exception:
                 price = _parse_price(price_el.inner_text())
         gb    = _parse_gb(gb_el.inner_text())       if gb_el    else None
-        # Match plan name to URL via prefix lookup
-        plan_url = None
-        for prefix, url in partner_urls.items():
-            if name.startswith(prefix):
-                plan_url = url
-                break
+        # Match the storefront plan name to its terms PDF: exact name first,
+        # then a tolerant prefix match for minor title/CMS discrepancies.
+        plan_url = partner_urls.get(name)
+        if not plan_url:
+            for pname, url in partner_urls.items():
+                if name.startswith(pname) or pname.startswith(name):
+                    plan_url = url
+                    break
         if name and name != "לא ידוע":
             plans.append({"carrier": "partner", "plan_name": name, "price": price,
                           "data_gb": gb, "minutes": None, "extras": extras, "url": plan_url})

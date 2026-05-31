@@ -7,7 +7,7 @@ import Modal from './ui/Modal'
 import { getCountriesForPlan } from '../data/globalCountries'
 import { getCountriesForAbroadPlan } from '../data/abroadCountries'
 import { getAppsForPlan } from '../data/abroadApps'
-import { has5G as detect5G } from '../data/networkPriority'
+import { has5G as detect5G, hasMaxPriority } from '../data/networkPriority'
 import AppsModal from './AppsModal'
 import SparklineMini from './SparklineMini'
 import AnnotationsModal from './AnnotationsModal'
@@ -35,6 +35,8 @@ const CARRIER_HOME_URLS = {
   xphone:          'https://www.xphone.co.il',
   wecom:           'https://we-com.co.il',
   neptucom:        'https://www.neptucom.com',
+  golan:           'https://www.golantelecom.co.il',
+  rami_levy:       'https://mobile.rami-levy.co.il',
   tuki:            'https://tuki.co.il',
   globalesim:      'https://globalesim.com',
   airalo:          'https://www.airalo.com',
@@ -59,17 +61,6 @@ const CARRIER_HOME_URLS = {
   seven_g:         'https://7g.app',
   bestconnect:     'https://bestconnect.online',
   esimplus:        'https://esimplus.me',
-}
-
-function slugify(str) {
-  if (!str) return 'plan'
-  return str
-    .toLowerCase()
-    .replace(/[–—]/g, '-')
-    .replace(/\s+/g, '-')
-    .replace(/[^\w-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '') || 'plan'
 }
 
 const CARRIER_COLORS = {
@@ -134,7 +125,6 @@ const CARRIER_LOGOS = {
   tasim:           '/logos/tasim.png',
   maya:            '/logos/maya.png',
   bcengi:         '/logos/bcengi.png',
-  rami_levy:      '/logos/rami_levy.png',
   esim70:         '/logos/esim70.png',
   jetpack:        '/logos/jetpack.png',
   breez:          '/logos/breez.png',
@@ -291,6 +281,19 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   const planInfoMarker = plan.extras ? plan.extras.find(e => typeof e === 'string' && e.startsWith('__info__|')) : null
   const planInfo = planInfoMarker ? planInfoMarker.slice('__info__|'.length) : (plan.plan_info || null)
 
+  // --- Footer button gating ---------------------------------------------
+  // Global affiliate providers keep their dedicated "רכישה דרך MOCA" button.
+  const isGlobalAffiliate = isGlobal && AFFILIATE_PROVIDERS.has(plan.carrier)
+  // "תנאי התוכנית" needs a real target: a terms PDF (plan.url) or an info modal.
+  const hasTerms = !!planInfo || !!plan.url
+  // "לאתר הספק" / "לפוסט המקור" — domestic, roaming (abroad) and resellers.
+  // Decoupled from plan.url so a missing terms PDF no longer hides the homepage
+  // link. Global is intentionally excluded: the eSIM tab runs on the affiliate
+  // model and a direct homepage link would undercut it.
+  const showProviderLink = !!providerUrl && !isGlobal && !isContent
+  // Render the (non-affiliate) footer when there's anything actionable in it.
+  const showStdFooter = !isGlobal && (showProviderLink || hasTerms || !!coupon)
+
   // Extras — filter out app-related text if we have an apps link, and the info marker
   // For Orbit zone plans, extras[1+] are covered countries — hide them (shown in modal)
   const rawExtras = plan.extras ? plan.extras.filter(e => e && !(appsData && /אפליקציות/.test(e)) && !(typeof e === 'string' && e.startsWith('__info__|'))) : []
@@ -309,6 +312,8 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
     detect5G(plan)
   )
   const nameHas5G = plan.plan_name && /\b5G\b/i.test(plan.plan_name)
+  // Prioritized 5G (תעדוף ברשת) — e.g. Partner "Private 5G". Domestic-type plans only.
+  const isPriority5G = !isGlobal && !isAbroad && !isContent && hasMaxPriority(plan)
 
   const hasRoaming = !isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
   const contentUrl = isContent ? (CONTENT_URLS[`${plan.service}_${carrier}`] || null) : null
@@ -374,6 +379,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
         )}
         {isGlobal && plan.esim && <Badge color="green">eSIM</Badge>}
         {(hasRoaming || hasNeptucomRoaming) && <Badge color="blue">חו״ל</Badge>}
+        {isPriority5G && <Badge color="purple">5G מתועדף</Badge>}
       </div>
 
       {/* Spacer so content starts below logo/badge row when logo present */}
@@ -387,7 +393,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               <span key={i}>{i > 0 && <span className="text-gray-300"> - </span>}<bdi>{part}</bdi></span>
             ))
           }</span>
-          {supports5G && !nameHas5G && (
+          {supports5G && !nameHas5G && !isPriority5G && (
             <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold rounded bg-purple-100 text-purple-700 leading-none tracking-wide">5G</span>
           )}
         </h3>
@@ -500,9 +506,9 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
       {/* Bottom section: provider buttons + icon strip */}
       <div className="mt-auto">
         {/* Provider link button */}
-        {(plan.url || (isGlobal && AFFILIATE_PROVIDERS.has(plan.carrier))) && (
+        {(isGlobalAffiliate || showStdFooter) && (
         <div className="pt-3">
-          {isGlobal && AFFILIATE_PROVIDERS.has(plan.carrier) ? (
+          {isGlobalAffiliate ? (
             <div>
               <a
                 href={AFFILIATE_URLS[plan.carrier] || `https://www.${plan.carrier}.com`}
@@ -558,8 +564,9 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                 </span>
               </button>
             )}
+            {(hasTerms || showProviderLink) && (
             <div className="flex gap-2">
-              {planInfo ? (
+              {hasTerms && (planInfo ? (
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setShowPlanInfo(true) }}
@@ -587,8 +594,8 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                 </svg>
                 תנאי התוכנית
               </a>
-              )}
-              {providerUrl && (
+              ))}
+              {showProviderLink && (
                 <a
                   href={providerUrl}
                   target="_blank"
@@ -612,6 +619,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                 </a>
               )}
             </div>
+            )}
             </>
           )}
         </div>

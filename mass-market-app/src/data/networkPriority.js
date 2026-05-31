@@ -11,7 +11,9 @@
  *        Pelephone — "5G Max VIP"
  *        Cellcom   — "5G Pro / Pro Care / Pro Sound / Pro Fly"
  *        Hotmobile — "5G ULTRA / Premium"
- *        Partner   — "Boost"
+ *        Partner   — "Boost" tier + "Private 5G" wording on prioritized plans
+ *                     (e.g. "גלישה ברשת Private 5G"). Plans without that line —
+ *                     such as "Partner Prince" — are plain 5G, not prioritized.
  *        We-Com    — "wecomGlobal 5G ULTRA"
  *
  * Either signal qualifies the plan. Update either list when carriers add new
@@ -26,6 +28,10 @@ const FIVE_G_PATTERN = /\b5G\b|דור\s?5/
 // Hebrew priority words: "תיעדוף" (noun) and "מתועדף" (passive adjective).
 // Same root, used by Pelephone ("תיעדוף בגלישה בדור 5 במצבי עומס") and others.
 const HEB_PRIORITY_PATTERN = /תיעדוף|מתועדף/
+// Partner brands its prioritized network access as "Private 5G" rather than
+// using the Hebrew priority words, so match the phrase directly (haystack is
+// upper-cased). This already implies 5G, so the FIVE_G guard passes too.
+const PRIVATE_5G_PATTERN = /PRIVATE\s*5G/
 
 function planHaystack(plan) {
   return ((plan.plan_name || '') + ' ' + ((plan.extras || []).join(' '))).toUpperCase()
@@ -40,7 +46,7 @@ export function hasMaxPriority(plan) {
   // Network priority requires 5G — guards against false positives like Rami Levy's
   // "MAX Kosher" plan, where MAX refers to kashrut level, not network priority.
   if (!FIVE_G_PATTERN.test(h)) return false
-  return HEB_PRIORITY_PATTERN.test(h) || KW_PATTERNS.some(re => re.test(h))
+  return HEB_PRIORITY_PATTERN.test(h) || PRIVATE_5G_PATTERN.test(h) || KW_PATTERNS.some(re => re.test(h))
 }
 
 /**
@@ -50,6 +56,6 @@ export function classifyPriority(plan) {
   const h = planHaystack(plan)
   const fiveG = FIVE_G_PATTERN.test(h)
   if (!fiveG) return 'none'
-  if (HEB_PRIORITY_PATTERN.test(h) || KW_PATTERNS.some(re => re.test(h))) return 'max'
+  if (HEB_PRIORITY_PATTERN.test(h) || PRIVATE_5G_PATTERN.test(h) || KW_PATTERNS.some(re => re.test(h))) return 'max'
   return 'basic'
 }
