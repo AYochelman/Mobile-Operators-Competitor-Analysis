@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { api } from '../lib/api'
 import Button from '../components/ui/Button'
+import LogoField from '../components/LogoField'
 
 const FIELDS = [
   { key: 'app_title',        label: 'שם האפליקציה',        type: 'text',  placeholder: 'MOCA' },
-  { key: 'logo_url',         label: 'כתובת לוגו (URL)',     type: 'url',   placeholder: 'https://...' },
+  { key: 'logo_url',         label: 'לוגו',                type: 'url',   placeholder: 'https://...' },
   { key: 'primary_color',    label: 'צבע ראשי (hex)',       type: 'color', placeholder: '#5c3317' },
   { key: 'secondary_color',  label: 'צבע משני (hex)',       type: 'color', placeholder: '#5c3317' },
 ]
@@ -81,6 +82,11 @@ export default function WorkspaceBrandingPage() {
                     className="text-xs text-gray-400 hover:text-red-500">נקה</button>
                 )}
               </div>
+            ) : f.key === 'logo_url' ? (
+              <LogoField
+                value={form.logo_url}
+                onChange={v => setForm(p => ({ ...p, logo_url: v }))}
+              />
             ) : (
               <div className="flex items-center gap-2">
                 <input

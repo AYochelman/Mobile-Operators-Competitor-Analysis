@@ -22,9 +22,25 @@ export const CELLCOM_APPS   = [WHATSAPP, INSTAGRAM, FACEBOOK, TIKTOK, GMAPS, WAZ
 export const PELEPHONE_APPS = [FACEBOOK, WAZE, SNAPCHAT, INSTAGRAM, WHATSAPP, GMAPS, TRIPADV, YOUTUBE, NETFLIX, TIKTOK, CHATGPT, GEMINI];
 
 // Golan: per-plan apps list (sourced from each plan's PDF terms — see scraper.py PDF URLs).
-// Currently only the 750GB 5G plan ships with the "גלישה חופשית באפליקציות נבחרות" benefit.
+// The domestic 750GB plan ships "גלישה חופשית באפליקציות נבחרות" but doesn't name the apps
+// on the card, so it's keyed here. Roaming bundles DO name them, parsed via APP_BY_NAME below.
 export const GOLAN_APPS_BY_PLAN = {
-  'גולן 750GB 5G': [SPOTIFY, YOUTUBE, WHATSAPP, FACEBOOK, INSTAGRAM, NETFLIX],
+  'גולן 750GB': [SPOTIFY, YOUTUBE, WHATSAPP, FACEBOOK, INSTAGRAM, NETFLIX],
+};
+
+// Name → icon map (English + Hebrew aliases) for plans that list their free apps by name
+// in extras, e.g. Golan roaming "גלישה חופשית באפליקציות: Waze · WhatsApp · ...".
+const APP_BY_NAME = {
+  waze: WAZE, ווייז: WAZE,
+  whatsapp: WHATSAPP, וואטסאפ: WHATSAPP, ווטסאפ: WHATSAPP,
+  facebook: FACEBOOK, פייסבוק: FACEBOOK,
+  instagram: INSTAGRAM, אינסטגרם: INSTAGRAM,
+  tiktok: TIKTOK, טיקטוק: TIKTOK,
+  youtube: YOUTUBE, יוטיוב: YOUTUBE,
+  spotify: SPOTIFY, ספוטיפיי: SPOTIFY,
+  netflix: NETFLIX, נטפליקס: NETFLIX,
+  snapchat: SNAPCHAT, 'סנאפצ\'אט': SNAPCHAT, סנאפצאט: SNAPCHAT,
+  'google maps': GMAPS, gmaps: GMAPS, 'מפות גוגל': GMAPS,
 };
 
 /**
@@ -45,8 +61,17 @@ export function getAppsForPlan(plan) {
     return { title: 'פלאפון — גלישה חופשית באפליקציות', apps: PELEPHONE_APPS };
   }
   if (carrier === 'golan') {
-    const apps = GOLAN_APPS_BY_PLAN[plan.plan_name];
-    if (apps) return { title: 'גולן — גלישה חופשית באפליקציות', apps };
+    // 1) name-keyed list (domestic 750GB — card only says "אפליקציות נבחרות")
+    const byName = GOLAN_APPS_BY_PLAN[plan.plan_name];
+    if (byName) return { title: 'גולן — גלישה חופשית באפליקציות', apps: byName };
+    // 2) roaming bundles name the apps in extras → parse + map to icons
+    const line = extras.find(e => /גלישה חופשית באפליקציות\s*[:：]/.test(e));
+    if (line) {
+      const apps = line.split(/[:：]/)[1].split(/[·,]/)
+        .map(s => APP_BY_NAME[s.trim().toLowerCase()] || APP_BY_NAME[s.trim()])
+        .filter(Boolean);
+      if (apps.length) return { title: 'גולן — גלישה חופשית באפליקציות', apps };
+    }
   }
   return null;
 }

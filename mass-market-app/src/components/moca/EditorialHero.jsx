@@ -122,8 +122,8 @@ function ComparisonCard({ plan, carrierId, label, accent, oldPrice }) {
         </span>
       </div>
       <div style={{ fontSize: 10.5, color: 'var(--color-moca-muted)', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {plan.data_gb === null ? 'ללא הגבלה' : plan.data_gb >= 1 ? `${plan.data_gb}GB` : `${Math.round(plan.data_gb * 1024)}MB`}
-        {plan.minutes ? ` · ${plan.minutes} דק׳` : ' · ללא הגבלה'}
+        {plan.data_gb === null ? 'ללא הגבלה' : plan.data_gb >= 1 ? `${Number(plan.data_gb).toLocaleString('en-US')}GB` : `${Math.round(plan.data_gb * 1024)}MB`}
+        {plan.minutes ? ` · ${Number(plan.minutes).toLocaleString('en-US')} דק׳` : ' · ללא הגבלה'}
       </div>
     </div>
   )

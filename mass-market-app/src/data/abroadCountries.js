@@ -102,6 +102,13 @@ export const COUNTRIES_GOLAN = [
   'תאילנד',
 ];
 
+// Golan country-specific roaming bundles (from /overseas_offers). Most golan roaming
+// plans cover the full COUNTRIES_GOLAN list; these target a small region and are matched
+// by plan_name before falling back to the worldwide list.
+export const GOLAN_SPECIFIC = [
+  { match: 'מצרים וירדן', countries: ['מצרים', 'ירדן'], title: 'מצרים וירדן' },
+];
+
 // ── Rami Levy ────────────────────────────────────────────────────────
 // Single Bon Voyage country list — covers all abroad plans (~145 countries)
 export const COUNTRIES_RAMI_LEVY = [
@@ -175,6 +182,10 @@ export function getCountriesForAbroadPlan(plan) {
   }
 
   if (carrier === 'golan') {
+    const specific = GOLAN_SPECIFIC.find(r => name.includes(r.match));
+    if (specific) {
+      return { title: `גולן טלקום — ${specific.title}`, countries: specific.countries };
+    }
     return { title: 'גולן טלקום', countries: COUNTRIES_GOLAN };
   }
 

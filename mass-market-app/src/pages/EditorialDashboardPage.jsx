@@ -402,9 +402,9 @@ export default function EditorialDashboardPage() {
   const allDomestic = useMemo(() => Object.keys(DOMESTIC_LABELS), [])
   const visibleCarriers = useVisibleCarriers(allDomestic)
 
-  // For the heatmap we want a stable 8-carrier set — domestic only, visible to this workspace
+  // Heatmap rows — all domestic carriers visible to this workspace (up to 10)
   const heatmapCarriers = useMemo(
-    () => visibleCarriers.slice(0, 8),
+    () => visibleCarriers.slice(0, 10),
     [visibleCarriers],
   )
 

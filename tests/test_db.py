@@ -52,6 +52,27 @@ def test_save_and_get_changes(tmp_db):
     assert len(result) == 1
     assert result[0]["change_type"] == "price_change"
 
+def test_save_changes_honors_provided_changed_at(tmp_db):
+    # A caller backfilling historical data may supply changed_at; it must be
+    # stored verbatim (not overwritten with now()). The price-series timeline
+    # relies on this to order events correctly.
+    save_changes([
+        {"carrier": "partner", "plan_name": "X", "change_type": "price_change",
+         "old_val": "40", "new_val": "45", "changed_at": "2025-06-01T10:00:00"},
+    ], db_path=tmp_db)
+    result = get_changes(db_path=tmp_db)
+    assert result[0]["changed_at"] == "2025-06-01T10:00:00"
+
+def test_save_changes_defaults_changed_at_to_now(tmp_db):
+    # When the caller omits changed_at (the production change_detector path),
+    # it is stamped with the current time — an ISO timestamp, never empty/None.
+    save_changes([
+        {"carrier": "partner", "plan_name": "Y", "change_type": "new_plan",
+         "old_val": None, "new_val": "30"},
+    ], db_path=tmp_db)
+    ts = get_changes(db_path=tmp_db)[0]["changed_at"]
+    assert ts and "T" in ts   # ISO-8601, populated by now()
+
 def test_get_changes_limit(tmp_db):
     changes = [
         {"carrier": "partner", "plan_name": f"plan{i}",

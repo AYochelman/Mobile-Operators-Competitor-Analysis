@@ -83,6 +83,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
     <div ref={triggerRef} className={`relative ${className}`}>
       {/* Trigger button */}
       <button
+        type="button"
         onClick={() => { setOpen(!open); setSearch('') }}
         className={`w-full border rounded-lg text-right flex items-center justify-between ${
           size === 'md' ? 'px-3 py-2 text-sm' : 'px-2 py-1 text-xs'

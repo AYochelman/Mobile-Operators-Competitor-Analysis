@@ -109,7 +109,7 @@ export default function App() {
             <Route path="workspace/settings" element={<ProtectedRoute adminOnly><WorkspaceBrandingPage /></ProtectedRoute>} />
             <Route path="admin/workspaces" element={<ProtectedRoute superAdminOnly><WorkspacesAdminPage /></ProtectedRoute>} />
             <Route path="admin/audit" element={<ProtectedRoute superAdminOnly><AuditLogPage /></ProtectedRoute>} />
-            <Route path="usage" element={<ProtectedRoute adminOnly><UsagePage /></ProtectedRoute>} />
+            <Route path="usage" element={<ProtectedRoute superAdminOnly><UsagePage /></ProtectedRoute>} />
             <Route path="notifications" element={<Navigate to="/alerts?tab=watchlist" replace />} />
             <Route path="ai-insights" element={<AIInsightsPage />} />
           </Route>

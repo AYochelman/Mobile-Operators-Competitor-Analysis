@@ -269,6 +269,7 @@ def init_db(db_path=None):
                 sms        INTEGER,
                 extras     TEXT,
                 scraped_at TEXT,
+                terms_url  TEXT,
                 UNIQUE(carrier, plan_name)
             );
             CREATE TABLE IF NOT EXISTS content_plans (
@@ -520,6 +521,14 @@ def init_db(db_path=None):
                 conn.commit()
             except Exception:
                 pass  # column already exists
+        # Migration: terms_url on abroad_plans — the roaming card's "עיקרי התוכנית"
+        # PDF. Populated per scrape (e.g. Cellcom's policiesEpi from its abroad API),
+        # surfaced by PlanCard's details link with the hardcoded map as a fallback.
+        try:
+            conn.execute("ALTER TABLE abroad_plans ADD COLUMN terms_url TEXT")
+            conn.commit()
+        except Exception:
+            pass  # column already exists
     finally:
         conn.close()
 
@@ -717,6 +726,33 @@ def get_claude_usage_summary(days=30, db_path=None):
             "by_model":    [{"model": r[0], "calls": r[1], "cost_usd": round(r[2] or 0, 6)} for r in by_model],
             "by_endpoint": [{"endpoint": r[0], "calls": r[1], "cost_usd": round(r[2] or 0, 6)} for r in by_endpoint],
         }
+    finally:
+        conn.close()
+
+
+def get_claude_spend(since_iso=None, db_path=None):
+    """Total logged USD spend + call count since `since_iso` (or lifetime when
+    None), plus the earliest call timestamp.
+
+    Used by the budget / remaining-balance estimate. Deliberately independent
+    of the display window so the remaining balance stays stable as the user
+    toggles the 7/30/90-day views — the balance depends on *all* spend since the
+    budget baseline, not on what the chart happens to show."""
+    conn = _connect(db_path)
+    try:
+        if since_iso:
+            row = conn.execute(
+                """SELECT COALESCE(SUM(cost_usd), 0), COUNT(*), MIN(called_at)
+                     FROM claude_api_usage WHERE called_at >= ?""",
+                (since_iso,),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                """SELECT COALESCE(SUM(cost_usd), 0), COUNT(*), MIN(called_at)
+                     FROM claude_api_usage"""
+            ).fetchone()
+        return {"cost_usd": round(row[0] or 0, 6), "calls": row[1] or 0,
+                "first_call_at": row[2]}
     finally:
         conn.close()
 
@@ -924,14 +960,18 @@ def compute_executive_metrics(category, usd_rate=3.7, eur_rate=4.0, db_path=None
             changes_table = 'content_changes'
             changes_carrier_col = 'carrier'
 
+        # 3 decimals (not 2): carriers selling "unlimited" plans at huge fair-use caps
+        # (e.g. We-Com's 10,000GB) land at ~0.003-0.005 ₪/GB, which rounds to a misleading
+        # 0.0 at 2 decimals. 3 decimals keeps those values visible; larger values are
+        # unaffected.
         chart_data = [
-            {'carrier': r[0], 'value': round(float(r[1]), 2)}
+            {'carrier': r[0], 'value': round(float(r[1]), 3)}
             for r in rows if r[1] is not None
         ]
         # For ₪/GB categories the "most worthwhile" card shows the single best deal
         # (best_deal); other categories fall back to the cheapest carrier by chart metric.
         if best_deal is not None and best_deal[1] is not None:
-            cheapest = {'carrier': best_deal[0], 'value': round(float(best_deal[1]), 2)}
+            cheapest = {'carrier': best_deal[0], 'value': round(float(best_deal[1]), 3)}
         else:
             cheapest = chart_data[0] if chart_data else {'carrier': '-', 'value': 0}
 
@@ -1169,7 +1209,7 @@ def save_global_changes(changes, db_path=None):
                 (ch["carrier"], ch["plan_name"], ch["change_type"],
                  str(ch["old_val"]) if ch.get("old_val") is not None else None,
                  str(ch["new_val"]) if ch.get("new_val") is not None else None,
-                 now)
+                 ch.get("changed_at") or now)
             )
         conn.commit()
     finally:
@@ -1200,8 +1240,8 @@ def save_abroad_plans(plans, db_path=None):
         now = datetime.now().isoformat()
         for plan in plans:
             conn.execute("""
-                INSERT INTO abroad_plans (carrier, plan_name, price, days, data_gb, minutes, sms, extras, scraped_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO abroad_plans (carrier, plan_name, price, days, data_gb, minutes, sms, extras, scraped_at, terms_url)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(carrier, plan_name) DO UPDATE SET
                     price      = excluded.price,
                     days       = excluded.days,
@@ -1209,13 +1249,15 @@ def save_abroad_plans(plans, db_path=None):
                     minutes    = excluded.minutes,
                     sms        = excluded.sms,
                     extras     = excluded.extras,
-                    scraped_at = excluded.scraped_at
+                    scraped_at = excluded.scraped_at,
+                    terms_url  = excluded.terms_url
             """, (
                 plan["carrier"], plan["plan_name"], plan.get("price"),
                 plan.get("days"), plan.get("data_gb"), plan.get("minutes"),
                 plan.get("sms"),
                 json.dumps(plan.get("extras", []), ensure_ascii=False),
-                now
+                now,
+                plan.get("terms_url")
             ))
         conn.commit()
     finally:
@@ -1227,13 +1269,13 @@ def get_abroad_plans(carrier=None, db_path=None):
     try:
         if carrier:
             rows = conn.execute(
-                "SELECT carrier, plan_name, price, days, data_gb, minutes, sms, extras, scraped_at "
+                "SELECT carrier, plan_name, price, days, data_gb, minutes, sms, extras, scraped_at, terms_url "
                 "FROM abroad_plans WHERE carrier=? ORDER BY price",
                 (carrier,)
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT carrier, plan_name, price, days, data_gb, minutes, sms, extras, scraped_at "
+                "SELECT carrier, plan_name, price, days, data_gb, minutes, sms, extras, scraped_at, terms_url "
                 "FROM abroad_plans ORDER BY carrier, price"
             ).fetchall()
         return [
@@ -1241,7 +1283,8 @@ def get_abroad_plans(carrier=None, db_path=None):
                 "carrier": r[0], "plan_name": r[1], "price": r[2],
                 "days": r[3], "data_gb": r[4], "minutes": r[5], "sms": r[6],
                 "extras": json.loads(r[7]) if r[7] else [],
-                "scraped_at": r[8]
+                "scraped_at": r[8],
+                "terms_url": r[9],
             }
             for r in rows
         ]
@@ -1260,7 +1303,7 @@ def save_abroad_changes(changes, db_path=None):
                 (ch["carrier"], ch["plan_name"], ch["change_type"],
                  str(ch["old_val"]) if ch.get("old_val") is not None else None,
                  str(ch["new_val"]) if ch.get("new_val") is not None else None,
-                 now)
+                 ch.get("changed_at") or now)
             )
         conn.commit()
     finally:
@@ -1295,7 +1338,7 @@ def save_changes(changes, db_path=None):
                 (ch["carrier"], ch["plan_name"], ch["change_type"],
                  str(ch["old_val"]) if ch.get("old_val") is not None else None,
                  str(ch["new_val"]) if ch.get("new_val") is not None else None,
-                 now)
+                 ch.get("changed_at") or now)
             )
         conn.commit()
     finally:
@@ -1426,7 +1469,7 @@ def save_content_changes(changes, db_path=None):
                 (ch["service"], ch["carrier"], ch["change_type"],
                  str(ch["old_val"]) if ch.get("old_val") is not None else None,
                  str(ch["new_val"]) if ch.get("new_val") is not None else None,
-                 now)
+                 ch.get("changed_at") or now)
             )
         conn.commit()
     finally:
@@ -1808,7 +1851,7 @@ def get_history_changes(carrier, plan_type='domestic', from_date='', to_date='',
         if to_date:
             sql += ' AND changed_at <= ?'
             params.append(to_date + 'T23:59:59')
-        sql += ' ORDER BY changed_at DESC'
+        sql += ' ORDER BY changed_at DESC, id DESC'
         rows = conn.execute(sql, params).fetchall()
     finally:
         conn.close()
@@ -1914,7 +1957,7 @@ def get_history_price_series(carrier, plan_type='domestic', plan_name='', from_d
         if from_date:
             sql += ' AND changed_at >= ?'
             params.append(from_date)
-        sql += ' ORDER BY changed_at ASC'
+        sql += ' ORDER BY changed_at ASC, id ASC'
         rows = conn.execute(sql, params).fetchall()
     finally:
         conn.close()

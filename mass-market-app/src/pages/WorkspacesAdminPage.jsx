@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Button from '../components/ui/Button'
+import SearchableSelect from '../components/ui/SearchableSelect'
+import LogoField from '../components/LogoField'
 import { api } from '../lib/api'
 import { useAuth } from '../hooks/useAuth'
 import { getMvnoColors, isKnownMvnoPrimary } from '../data/mvnoBrandColors'
@@ -72,6 +74,7 @@ function StatusPill({ active }) {
 
 function UsersSection({ workspaceId, onChange }) {
   const [users, setUsers]   = useState([])
+  const [allUsers, setAllUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState(null)
   const [newEmail, setNewEmail] = useState('')
@@ -90,6 +93,30 @@ function UsersSection({ workspaceId, onChange }) {
   }, [workspaceId])
 
   useEffect(() => { load() }, [load])
+
+  // All existing Supabase users — feeds the assignment dropdown so the
+  // super-admin can pick a user instead of typing an email (avoids typos /
+  // 404s, since assignment only works for users that already exist).
+  useEffect(() => {
+    let alive = true
+    api.getUsers()
+      .then(list => { if (alive) setAllUsers(Array.isArray(list) ? list : []) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [])
+
+  // Already-assigned users are marked (and sorted last) but kept selectable so
+  // re-assigning can change an existing member's role.
+  const userOptions = useMemo(() => {
+    const assignedIds = new Set(users.map(u => u.id))
+    return allUsers
+      .map(u => ({
+        value: u.email,
+        label: assignedIds.has(u.id) ? `${u.email} · כבר משויך` : u.email,
+        assigned: assignedIds.has(u.id),
+      }))
+      .sort((a, b) => (a.assigned - b.assigned) || a.value.localeCompare(b.value))
+  }, [allUsers, users])
 
   const assign = async (e) => {
     e.preventDefault()
@@ -157,15 +184,21 @@ function UsersSection({ workspaceId, onChange }) {
       )}
 
       <form onSubmit={assign} className="flex gap-2 items-center flex-wrap">
-        <input type="email" required placeholder="email@example.com" value={newEmail}
-          onChange={e => setNewEmail(e.target.value)}
-          className="px-2 py-1 text-sm border border-moca-border rounded flex-1 min-w-[200px]" />
+        <div className="flex-1 min-w-[200px]">
+          <SearchableSelect
+            value={newEmail || 'all'}
+            onChange={v => setNewEmail(v === 'all' ? '' : v)}
+            options={userOptions}
+            placeholder="בחר משתמש לשיוך…"
+            size="md"
+          />
+        </div>
         <select value={newRole} onChange={e => setNewRole(e.target.value)}
-          className="px-2 py-1 text-sm border border-moca-border rounded">
+          className="px-2 py-1.5 text-sm border border-moca-border rounded">
           <option value="viewer">viewer</option>
           <option value="admin">admin</option>
         </select>
-        <Button type="submit" disabled={assigning} variant="primary" size="sm">
+        <Button type="submit" disabled={assigning || !newEmail} variant="primary" size="sm">
           {assigning ? '…' : 'שייך'}
         </Button>
       </form>
@@ -592,13 +625,11 @@ function WorkspaceRow({ ws, onChange }) {
               placeholder="Partner Intelligence"
               className="w-full px-3 py-1.5 border border-moca-border rounded" />
           </label>
-          <label className="text-sm">
-            <span className="block mb-1 text-gray-700">לוגו URL</span>
-            <input type="url" value={form.logo_url}
-              onChange={e => setForm({...form, logo_url: e.target.value})}
-              placeholder="https://..."
-              className="w-full px-3 py-1.5 border border-moca-border rounded" />
-          </label>
+          <div className="text-sm">
+            <span className="block mb-1 text-gray-700">לוגו</span>
+            <LogoField value={form.logo_url}
+              onChange={v => setForm({...form, logo_url: v})} />
+          </div>
           <label className="text-sm col-span-2">
             <span className="block mb-1 text-gray-700">Slack / Teams Webhook URL</span>
             <input type="url" value={form.slack_webhook_url}
@@ -838,13 +869,11 @@ export default function WorkspacesAdminPage() {
                 placeholder="Partner Intelligence"
                 className="w-full px-3 py-1.5 border border-moca-border rounded" />
             </label>
-            <label className="text-sm">
-              <span className="block mb-1 text-gray-700">לוגו URL</span>
-              <input type="url" value={form.logo_url}
-                onChange={e => setForm({...form, logo_url: e.target.value})}
-                placeholder="https://..."
-                className="w-full px-3 py-1.5 border border-moca-border rounded" />
-            </label>
+            <div className="text-sm">
+              <span className="block mb-1 text-gray-700">לוגו</span>
+              <LogoField value={form.logo_url}
+                onChange={v => setForm({...form, logo_url: v})} />
+            </div>
           </div>
           {createError && <p className="text-sm text-red-600">{createError}</p>}
           <div className="flex gap-2">

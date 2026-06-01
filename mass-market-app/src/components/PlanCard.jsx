@@ -189,6 +189,78 @@ const CONTENT_URLS = {
   'תא קולי_golan':        'https://www.golantelecom.co.il/info_and_support#faq-item-11',
 }
 
+// Manually-curated terms/details PDFs, keyed by carrier → plan_name, surfaced as
+// the "עיקרי התוכנית" link. Roaming (abroad) plans carry no `url` from the scraper
+// (abroad_plans has no url column), so they're wired here. Partner values are the
+// per-plan "תנאי השירות המלאים" links from each plan's "חשוב לדעת" section in the
+// roaming CMS (GetPageContent pageid=75299, property serviceTermsPdf). Several
+// "mix"-family plans share one combined doc — that mirrors Partner's own site.
+// Pelephone values are the "לתנאי החבילה והתוכנית" links from each plan's
+// "מידע נוסף" modal (abroad/more-info/?socId=<id>), pointing at the package's own
+// /abroad/terms/<slug>/ page. The whole "מושלמת" family shares one terms doc
+// (terms-summer2019) — that mirrors Pelephone's own site.
+// Cellcom values are the per-plan "לתנאי חבילה המלאים" PDFs reached via each
+// roaming card's "חשוב לדעת" popup. They are the `policiesEpi` field returned by
+// Cellcom's own abroad API (GetPackagePopular), prefixed with the contentepi CDN
+// host. Covers all 11 חו"ל packages (8 from the lobby API + 3 from Silent Roamers).
+// NOTE: for Cellcom these are now only a FALLBACK — the scraper writes the same
+// policiesEpi into abroad_plans.terms_url every run, which `detailsUrl` prefers
+// (see below). The map still covers the gap before the first re-scrape and any
+// package the API stops returning.
+// Hot Mobile values are the "תנאי החבילה" PDFs reached via each roaming card's
+// "לפרטים נוספים" modal (ShowMoreDetails('<socId>') on hotmobile.co.il/roaming).
+// The PDF filename is always "<socId>.pdf" but the /media/<slug>/ path component is
+// a random per-upload slug that changes when the doc is re-uploaded — so the scraper
+// re-captures it into terms_url every run (see _scrape_hotmobile_abroad enrich step)
+// and this map is only the FALLBACK before the next re-scrape.
+// plan_name must match the DB exactly (rows in abroad_plans).
+const PLAN_DETAILS_PDFS = {
+  partner: {
+    'חו"ל ספיישל': 'https://u.partner.co.il/media/oqkdbzqn/res_reprt1515p_mix.pdf',
+    'חו"ל Connect': 'https://u.partner.co.il/media/1lff4yyl/res_reprt1519p_surf.pdf',
+    'חו"ל בסטייל': 'https://u.partner.co.il/media/oqkdbzqn/res_reprt1515p_mix.pdf',
+    'חו"ל מושלמת': 'https://u.partner.co.il/media/oqkdbzqn/res_reprt1515p_mix.pdf',
+    'חופשה משפחתית': 'https://u.partner.co.il/media/oqkdbzqn/res_reprt1515p_mix.pdf',
+    'חו"ל בגדול': 'https://u.partner.co.il/media/0p1d25om/res_reprt1529p.pdf',
+    'חופשה משפחתית בגדול': 'https://u.partner.co.il/media/oqkdbzqn/res_reprt1515p_mix.pdf',
+  },
+  pelephone: {
+    'חבילת חו"ל קטנה': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/hulsmall/',
+    'שומרים על קשר': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms-pesach/terms-keepin/',
+    'חבילת חו"ל למצרים (טאבה, נואיבה, דאהב, שארם א-שייח)': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/egypt14new/',
+    'חבילת special גלישה ב-MB': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/special/',
+    'חבילת special+ גלישה ב-MB': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/specialplus/',
+    'מושלמת': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms-pesach/terms-summer2019/',
+    'חו"ל מושלמת L': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms-pesach/terms-summer2019/',
+    'ביג אמריקה לארה"ב (כולל קנדה)': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/big-usa/',
+    'חו"ל משפחתית': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/Family-Travel-Package/',
+    'חו"ל מושלמת XL': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms-pesach/terms-summer2019/',
+    'חו"ל מושלמת 45 יום': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms-pesach/terms-summer2019/',
+    'חו"ל מושלמת 60 יום': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms-pesach/terms-summer2019/',
+  },
+  cellcom: {
+    'סופ"ש בקטנה': 'https://contentepi.cellcom.co.il/globalassets/pdf/abraod/30126.pdf',
+    'בטן גב בתאילנד': 'https://contentepi.cellcom.co.il/globalassets/pdf/abraod/30106.pdf',
+    'טסים לגלוש': 'https://contentepi.cellcom.co.il/globalassets/pdf/abraod/30077.pdf',
+    'גלישה בקטנה': 'https://contentepi.cellcom.co.il/globalassets/pdf/30027-0623-01-hul4539--hul4540.pdf',
+    'גולשים בסטייל': 'https://contentepi.cellcom.co.il/globalassets/pdf/abraod/05.22/17463-0923-10-hul4209--hul4210.pdf',
+    'גולשים ומדברים': 'https://contentepi.cellcom.co.il/globalassets/pdf/abraod/30108.pdf',
+    'המושלמת לחו"ל': 'https://contentepi.cellcom.co.il/globalassets/pdf/abraod/04.22/30110.pdf',
+    'גולשים בגדול': 'https://contentepi.cellcom.co.il/globalassets/pdf/abraod/31.10.24/30086.pdf',
+    'כל מה שצריך לחודש': 'https://contentepi.cellcom.co.il/globalassets/pdf/abraod/30009.pdf',
+    'בלי לבדוק כל רגע': 'https://contentepi.cellcom.co.il/globalassets/pdf/abraod/--/30125.pdf',
+    'כל מה שצריך לחודשיים': 'https://contentepi.cellcom.co.il/globalassets/pdf/abraod/30087.pdf',
+  },
+  hotmobile: {
+    'מדברים כדורגל': 'https://www.hotmobile.co.il/media/kj4k3urr/51011067.pdf',
+    'Perfect Fly 1GB - חבילה יומית': 'https://www.hotmobile.co.il/media/vsmnwfmh/51010208.pdf',
+    'Perfect fly 5GB +50 minutes': 'https://www.hotmobile.co.il/media/vrwk2emi/51011033.pdf',
+    'Fly 15GB - גולשים ומדברים': 'https://www.hotmobile.co.il/media/jmlptj43/51009994.pdf',
+    '50GB - גולשים ומדברים': 'https://www.hotmobile.co.il/media/p4dkml4k/51011027.pdf',
+    '100GB - גולשים ומדברים': 'https://www.hotmobile.co.il/media/opodkoro/51011029.pdf',
+  },
+}
+
 const CHANGE_DOT = {
   new_plan: 'bg-emerald-400',
   price_change: 'bg-amber-400',
@@ -198,7 +270,7 @@ const CHANGE_DOT = {
 function formatGB(gb) {
   if (gb === null || gb === undefined) return 'ללא הגבלה'
   if (gb < 1) return `${Math.round(gb * 1024)}MB`
-  return `${gb}GB`
+  return `${Number(gb).toLocaleString('en-US')}GB`
 }
 
 function formatDays(days) {
@@ -258,6 +330,12 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   // instead of the underlying carrier's homepage. Must be declared AFTER `carrier`.
   const providerUrl = isReseller && plan.source_url ? plan.source_url : CARRIER_HOME_URLS[carrier]
   const providerLabel = isReseller ? 'לפוסט המקור' : 'לאתר הספק'
+  // "עיקרי התוכנית" — direct link to a terms/details PDF, rendered next to the
+  // provider link. Prefers the scraped `terms_url` (e.g. Cellcom roaming — captured
+  // from the abroad API's policiesEpi on every scrape, so it never goes stale), then
+  // falls back to the hardcoded PLAN_DETAILS_PDFS map (Partner/Pelephone, and Cellcom
+  // until the next scrape populates terms_url). null when neither is available.
+  const detailsUrl = plan.terms_url || (PLAN_DETAILS_PDFS[carrier] && PLAN_DETAILS_PDFS[carrier][plan.plan_name]) || null
   // Manually-curated promo code for the carrier (Saily/Holafly/etc). Resellers
   // and content services aren't covered — they sell at fixed reseller prices.
   const coupon = (!isReseller && !isContent) ? couponFor(carrier) : null
@@ -274,7 +352,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   const infoParts = []
   if (!isContent) infoParts.push(formatGB(plan.data_gb))
   if ((isAbroad || isGlobal) && plan.days) infoParts.push(formatDays(plan.days))
-  if (plan.minutes) infoParts.push(`${plan.minutes} דקות`)
+  if (plan.minutes) infoParts.push(`${Number(plan.minutes).toLocaleString('en-US')} דקות`)
   if (plan.sms) infoParts.push(`${plan.sms} SMS`)
 
   // Extract plan_info marker (stored inside extras as "__info__|<text>")
@@ -292,7 +370,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   // model and a direct homepage link would undercut it.
   const showProviderLink = !!providerUrl && !isGlobal && !isContent
   // Render the (non-affiliate) footer when there's anything actionable in it.
-  const showStdFooter = !isGlobal && (showProviderLink || hasTerms || !!coupon)
+  const showStdFooter = !isGlobal && (showProviderLink || hasTerms || !!coupon || !!detailsUrl)
 
   // Extras — filter out app-related text if we have an apps link, and the info marker
   // For Orbit zone plans, extras[1+] are covered countries — hide them (shown in modal)
@@ -315,7 +393,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   // Prioritized 5G (תעדוף ברשת) — e.g. Partner "Private 5G". Domestic-type plans only.
   const isPriority5G = !isGlobal && !isAbroad && !isContent && hasMaxPriority(plan)
 
-  const hasRoaming = !isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
+  const hasRoaming = !isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => typeof e === 'string' && !e.startsWith('__info__|') && /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
   const contentUrl = isContent ? (CONTENT_URLS[`${plan.service}_${carrier}`] || null) : null
 
   // For reseller cards: click anywhere outside an interactive element opens the source.
@@ -564,7 +642,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                 </span>
               </button>
             )}
-            {(hasTerms || showProviderLink) && (
+            {(hasTerms || showProviderLink || detailsUrl) && (
             <div className="flex gap-2">
               {hasTerms && (planInfo ? (
                 <button
@@ -595,6 +673,21 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                 תנאי התוכנית
               </a>
               ))}
+              {detailsUrl && (
+                <a
+                  href={detailsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 flex-1 text-xs text-moca-sub hover:text-moca-bolt border border-moca-border/40 rounded-lg py-1.5 transition-colors hover:bg-moca-cream"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  עיקרי התוכנית
+                </a>
+              )}
               {showProviderLink && (
                 <a
                   href={providerUrl}
@@ -764,12 +857,26 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
       {planInfo && (
         <Modal open={showPlanInfo} onClose={() => setShowPlanInfo(false)} title="מידע נוסף על התוכנית" maxWidth="max-w-md">
           <div className="space-y-2 text-sm text-gray-700 leading-relaxed text-right">
-            {planInfo.split('\n').map(l => l.trim()).filter(Boolean).map((line, i) => (
-              <p key={i} className="flex items-start gap-2">
-                <span className="text-moca-bolt mt-1 shrink-0">&#10094;</span>
-                <span>{line}</span>
-              </p>
-            ))}
+            {planInfo.split('\n').map(l => l.trim()).filter(Boolean).map((line, i) => {
+              // "label|https://..." lines render as a clickable link (e.g. terms PDF)
+              const sep = line.indexOf('|')
+              const url = sep > -1 ? line.slice(sep + 1).trim() : ''
+              const isLink = /^https?:\/\//.test(url)
+              return (
+                <p key={i} className="flex items-start gap-2">
+                  <span className="text-moca-bolt mt-1 shrink-0">&#10094;</span>
+                  {isLink ? (
+                    <a href={url} target="_blank" rel="noopener noreferrer"
+                       className="text-moca-bolt underline hover:text-moca-dark break-all"
+                       onClick={(e) => e.stopPropagation()}>
+                      {line.slice(0, sep).trim() || url}
+                    </a>
+                  ) : (
+                    <span>{line}</span>
+                  )}
+                </p>
+              )
+            })}
           </div>
         </Modal>
       )}

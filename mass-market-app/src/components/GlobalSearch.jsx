@@ -303,7 +303,7 @@ export default function GlobalSearch() {
                           {CARRIER_LABELS[p.carrier] || p.carrier}
                           <span className="mx-1.5 text-gray-300">·</span>
                           {TYPE_LABELS[p.plan_type] || p.plan_type}
-                          {p.data_gb ? <><span className="mx-1.5 text-gray-300">·</span>{p.data_gb}GB</> : null}
+                          {p.data_gb ? <><span className="mx-1.5 text-gray-300">·</span>{Number(p.data_gb).toLocaleString('en-US')}GB</> : null}
                         </p>
                       </div>
                       <span className="text-sm font-bold text-moca-espresso flex-shrink-0" dir="ltr">₪{p.price}</span>

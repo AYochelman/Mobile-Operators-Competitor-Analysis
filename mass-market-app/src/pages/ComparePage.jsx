@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import Spinner from '../components/ui/Spinner'
 import FilterTag from '../components/ui/FilterTag'
@@ -7,6 +8,7 @@ import { PageHeader } from '../components/moca'
 import { getCarrierColor } from '../components/moca/carrierMeta'
 import { MVNO_BRAND_COLORS } from '../data/mvnoBrandColors'
 import { has5G as detect5G, hasMaxPriority } from '../data/networkPriority'
+import { getAppsForPlan } from '../data/abroadApps'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import {
   AIRALO_DISCOVER, AIRALO_REGION_MAP, GLOBALESIM_COUNTRIES, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
@@ -130,6 +132,7 @@ function normalizeRegionLabel(region) {
 }
 
 export default function ComparePage() {
+  const navigate = useNavigate()
   const [tab, setTab] = useState('domestic')
   const [selectedCarriers, setSelectedCarriers] = useState([])
   const [gbFilter, setGbFilter] = useState('all')
@@ -140,6 +143,7 @@ export default function ComparePage() {
   const [sortBy, setSortBy] = useState('price_asc')
   const [roamingFilter, setRoamingFilter] = useState('all')
   const [genFilter, setGenFilter] = useState('all')
+  const [appsFilter, setAppsFilter] = useState('all')
   const [allData, setAllData] = useState({ domestic: [], abroad: [], global: [] })
   const [loading, setLoading] = useState(true)
   const [tableVisibleCount, setTableVisibleCount] = useState(50)
@@ -162,7 +166,7 @@ export default function ComparePage() {
   // Reset table pagination when filters change
   useEffect(() => {
     setTableVisibleCount(50)
-  }, [selectedCarriers, gbFilter, daysFilter, regionFilter, destinationFilter, sortBy, genFilter])
+  }, [selectedCarriers, gbFilter, daysFilter, regionFilter, destinationFilter, sortBy, genFilter, appsFilter])
 
   const resetFilters = () => {
     setSelectedCarriers([])
@@ -174,6 +178,7 @@ export default function ComparePage() {
     setSortBy('price_asc')
     setRoamingFilter('all')
     setGenFilter('all')
+    setAppsFilter('all')
     setTableVisibleCount(50)
   }
 
@@ -194,6 +199,13 @@ export default function ComparePage() {
   const getColor = (id) => {
     if (MVNO_BRAND_COLORS[id]) return getCarrierColor(id)
     return carrierOptions.find(x => x.id === id)?.color || '#888'
+  }
+
+  // Clicking a result row deep-links to that plan on the dashboard: matching tab
+  // (domestic/abroad/global), carrier filter applied, and the plan highlighted.
+  // Same param shape DashboardPage consumes from GlobalSearch / ChatPanel.
+  const goToPlan = (p) => {
+    navigate(`/?${new URLSearchParams({ tab, carrier: p.carrier, highlight: p.plan_name })}`)
   }
 
   // Static country lists for carriers that don't store country in extras
@@ -329,13 +341,20 @@ export default function ComparePage() {
       result = result.filter(p => !detect5G(p))
     }
 
+    // גלישה חופשית באפליקציות נבחרות — getAppsForPlan() returns null for plans
+    // without the free-apps benefit (and for all global providers, hence hidden there).
+    if (tab !== 'global' && appsFilter !== 'all') {
+      const wantApps = appsFilter === 'yes'
+      result = result.filter(p => (getAppsForPlan(p) !== null) === wantApps)
+    }
+
     if (sortBy === 'price_asc') result = [...result].sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999))
     else if (sortBy === 'price_desc') result = [...result].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
     else if (sortBy === 'gb_asc') result = [...result].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
     else if (sortBy === 'gb_desc') result = [...result].sort((a, b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999))
 
     return result
-  }, [plans, selectedCarriers, gbFilter, daysFilter, sortBy, showDays, roamingFilter, genFilter, tab])
+  }, [plans, selectedCarriers, gbFilter, daysFilter, sortBy, showDays, roamingFilter, genFilter, appsFilter, tab])
 
   // Chart: average price per carrier
   const chartData = useMemo(() => {
@@ -362,6 +381,7 @@ export default function ComparePage() {
     + (destinationFilter !== 'all' ? 1 : 0)
     + (roamingFilter !== 'all' ? 1 : 0)
     + (genFilter !== 'all' ? 1 : 0)
+    + (appsFilter !== 'all' ? 1 : 0)
 
   const GB_OPTIONS = tab === 'domestic'
     ? [['all', 'הכל'], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['100+', '100+GB'], ['unlimited', 'ללא הגבלה']]
@@ -485,6 +505,16 @@ export default function ComparePage() {
               </div>
             </div>
           )}
+          {tab !== 'global' && (
+            <div>
+              <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה חופשית באפליקציות</p>
+              <div className="flex flex-wrap gap-1">
+                <FilterTag label="הכל" active={appsFilter === 'all'} onClick={() => setAppsFilter('all')} />
+                <FilterTag label="כן" active={appsFilter === 'yes'} onClick={() => setAppsFilter('yes')} />
+                <FilterTag label="לא" active={appsFilter === 'no'} onClick={() => setAppsFilter('no')} />
+              </div>
+            </div>
+          )}
           </div>
 
           <div>
@@ -572,6 +602,12 @@ export default function ComparePage() {
       {/* Comparison table */}
       {filteredPlans.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-2 border-b border-gray-100">
+            <p className="text-[11px] text-moca-sub flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+              לחצו על שורה למעבר לחבילה בלשונית הרלוונטית
+            </p>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm" dir="rtl">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -586,7 +622,14 @@ export default function ComparePage() {
               </thead>
               <tbody>
                 {filteredPlans.slice(0, tableVisibleCount).map((p, i) => (
-                  <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50">
+                  <tr
+                    key={i}
+                    onClick={() => goToPlan(p)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToPlan(p) } }}
+                    tabIndex={0}
+                    role="link"
+                    title={`מעבר לחבילה "${p.plan_name}" בלשונית הרלוונטית`}
+                    className="border-b border-gray-50 hover:bg-moca-cream/60 focus:bg-moca-cream focus:outline-none cursor-pointer transition-colors">
                     <td className="px-4 py-2 text-xs">
                       <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium text-white" style={{ backgroundColor: getColor(p.carrier) }}>
                         {getLabel(p.carrier)}
@@ -599,9 +642,9 @@ export default function ComparePage() {
                       )}
                     </td>
                     <td className="px-4 py-2 text-xs font-bold text-gray-900">₪{p.price}</td>
-                    <td className="px-4 py-2 text-xs text-gray-600">{p.data_gb === null ? 'ללא הגבלה' : `${p.data_gb}GB`}</td>
+                    <td className="px-4 py-2 text-xs text-gray-600">{p.data_gb === null ? 'ללא הגבלה' : `${Number(p.data_gb).toLocaleString('en-US')}GB`}</td>
                     {showDays && <td className="px-4 py-2 text-xs text-gray-600">{p.days || '—'}</td>}
-                    <td className="px-4 py-2 text-xs text-gray-600">{p.minutes || '—'}</td>
+                    <td className="px-4 py-2 text-xs text-gray-600">{p.minutes ? Number(p.minutes).toLocaleString('en-US') : '—'}</td>
                   </tr>
                 ))}
               </tbody>

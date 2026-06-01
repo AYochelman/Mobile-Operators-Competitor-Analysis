@@ -22,6 +22,9 @@ const WINDOWS = [
   { label: 'הכל',      days: 0 },
 ]
 
+const RECENT_PREVIEW = 20   // rows shown by default
+const RECENT_FETCH   = 100  // rows fetched for the expanded "comprehensive" view
+
 function fmtUSD(v) {
   if (v == null) return '$0'
   if (v < 0.01)  return `$${v.toFixed(6)}`
@@ -34,6 +37,26 @@ function fmtTok(n) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`
   if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`
   return String(n)
+}
+
+function fmtDays(n) {
+  if (n == null) return '—'
+  if (n <= 0)    return 'נוצל'
+  if (n < 1)     return 'פחות מיום'
+  if (n >= 365)  return `~${(n / 365).toFixed(1)} שנים`
+  if (n >= 60)   return `~${Math.round(n / 30)} חודשים`
+  return `~${Math.round(n)} ימים`
+}
+
+function fmtDateHe(iso) {
+  if (!iso) return ''
+  try {
+    return new Date(`${iso}T00:00:00`).toLocaleDateString('he-IL', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    })
+  } catch {
+    return iso
+  }
 }
 
 function StatCard({ label, value, sub }) {
@@ -92,22 +115,224 @@ function BreakdownTable({ title, rows, labelKey, labelMap }) {
   )
 }
 
+function OfficialSpend({ official, windowDays }) {
+  if (!official) return null
+  const windowLbl = windowDays === 0 ? 'כל התקופה' : `${windowDays || 30} הימים האחרונים`
+
+  if (!official.configured) {
+    return (
+      <div className="mb-4 rounded-lg p-3 text-xs leading-relaxed" style={{ background: 'var(--color-moca-mist)', color: 'var(--color-moca-sub)' }}>
+        💡 להצגת <span className="font-semibold">הוצאה רשמית מ-Anthropic</span>: הוסף ל-config.json את{' '}
+        <code className="font-mono">anthropic_admin_key</code> (מפתח Admin של ארגון, <code className="font-mono">sk-ant-admin…</code> — לא זמין לחשבון יחיד) והפעל מחדש את Flask. זו הוצאה, לא יתרה.
+      </div>
+    )
+  }
+  if (official.error || official.total_usd == null) {
+    const auth = official.status === 401 || official.status === 403
+    return (
+      <div className="mb-4 rounded-lg p-3 text-xs leading-relaxed" style={{ background: 'var(--color-moca-mist)', color: 'var(--color-moca-up)' }}>
+        ⚠️ לא ניתן למשוך הוצאה רשמית מ-Anthropic ({official.error || 'שגיאה'}).
+        {auth && ' המפתח אינו תקין או שאין הרשאת ארגון — חשבונות יחיד לא תומכים ב-Admin API.'}
+      </div>
+    )
+  }
+  return (
+    <div className="mb-4 rounded-lg p-3 flex items-center justify-between gap-3" style={{ background: 'var(--color-moca-mist)' }}>
+      <div className="text-right">
+        <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-moca-muted)' }}>
+          הוצאה רשמית · Anthropic
+        </div>
+        <div className="text-xs mt-0.5" style={{ color: 'var(--color-moca-sub)' }}>{windowLbl}</div>
+      </div>
+      <div className="text-2xl font-bold tnum" style={{ color: 'var(--color-moca-dark)' }}>
+        {fmtUSD(official.total_usd)}
+      </div>
+    </div>
+  )
+}
+
+function BudgetPanel({ budget, official, windowDays, onSave }) {
+  const configured = !!budget?.configured
+  const [editing, setEditing] = useState(!configured)
+  const [total, setTotal]     = useState(budget?.total_usd ?? '')
+  const [asOf, setAsOf]       = useState(budget?.as_of ?? '')
+  const [busy, setBusy]       = useState(false)
+  const [err, setErr]         = useState(null)
+
+  // Keep inputs synced with the saved budget when it changes (e.g. after save).
+  useEffect(() => {
+    setTotal(budget?.total_usd ?? '')
+    setAsOf(budget?.as_of ?? '')
+  }, [budget?.total_usd, budget?.as_of])
+
+  const submit = async (clear = false) => {
+    setBusy(true); setErr(null)
+    try {
+      await onSave(clear ? null : Number(total), clear ? null : (asOf || null))
+      setEditing(clear)  // after a clear, reopen the setup form; after save, close it
+    } catch (e) {
+      setErr(e?.message || 'שגיאה בשמירה')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const fc        = budget?.forecast || {}
+  const pct       = budget?.pct_used ?? 0
+  const barColor  = pct >= 85 ? 'var(--color-moca-up)'
+                  : pct >= 60 ? 'var(--color-moca-hot)'
+                  :             'var(--color-moca-down)'
+  const windowLbl = fc.window_days === 0 ? 'כל התקופה' : `${fc.window_days || 30} הימים האחרונים`
+
+  // ── setup / edit form ──
+  if (editing) {
+    return (
+      <div className="rounded-xl border border-moca-border bg-white p-5">
+        <OfficialSpend official={official} windowDays={windowDays} />
+        <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--color-moca-dark)' }}>
+          {configured ? 'עריכת תקציב' : 'הגדרת תקציב Claude'}
+        </h3>
+        <p className="text-xs mb-4" style={{ color: 'var(--color-moca-sub)' }}>
+          הזן את סכום הקרדיט שטענת ב-Anthropic (USD). היתרה תחושב אוטומטית בהפחתת כל השימוש שתועד מקומית.
+        </p>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="block text-right">
+            <span className="block text-xs font-semibold mb-1" style={{ color: 'var(--color-moca-muted)' }}>תקציב כולל ($)</span>
+            <input
+              type="number" min="0" step="0.01" value={total}
+              onChange={(e) => setTotal(e.target.value)}
+              placeholder="לדוגמה: 50"
+              className="w-36 rounded-lg border border-moca-border px-3 py-2 text-sm tnum"
+              style={{ background: 'var(--color-moca-mist)', color: 'var(--color-moca-dark)' }}
+            />
+          </label>
+          <label className="block text-right">
+            <span className="block text-xs font-semibold mb-1" style={{ color: 'var(--color-moca-muted)' }}>ספירה מתאריך (אופציונלי)</span>
+            <input
+              type="date" value={asOf || ''}
+              onChange={(e) => setAsOf(e.target.value)}
+              className="rounded-lg border border-moca-border px-3 py-2 text-sm tnum"
+              style={{ background: 'var(--color-moca-mist)', color: 'var(--color-moca-dark)' }}
+            />
+          </label>
+          <button
+            onClick={() => submit(false)}
+            disabled={busy || !total || Number(total) <= 0}
+            className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
+            style={{ background: 'var(--color-moca-bolt)', color: '#fff' }}
+          >
+            {busy ? 'שומר…' : 'שמירה'}
+          </button>
+          {configured && (
+            <>
+              <button
+                onClick={() => setEditing(false)} disabled={busy}
+                className="px-3 py-2 rounded-lg text-sm font-semibold border border-moca-border"
+                style={{ color: 'var(--color-moca-sub)', background: 'var(--color-moca-mist)' }}
+              >
+                ביטול
+              </button>
+              <button
+                onClick={() => submit(true)} disabled={busy}
+                className="px-3 py-2 rounded-lg text-sm font-semibold"
+                style={{ color: 'var(--color-moca-up)' }}
+              >
+                נקה תקציב
+              </button>
+            </>
+          )}
+        </div>
+        <p className="text-[11px] mt-3" style={{ color: 'var(--color-moca-muted)' }}>
+          תאריך הספירה שימושי אחרי טעינת קרדיט מחדש — השימוש נספר רק ממנו והלאה. ל-Anthropic אין API ליתרה; הסכום הרשמי ב-console.anthropic.com/settings/billing.
+        </p>
+        {err && <p className="text-xs mt-2 text-red-600">{err}</p>}
+      </div>
+    )
+  }
+
+  // ── summary view ──
+  const noForecast = fc.days_left == null
+  return (
+    <div className="rounded-xl border border-moca-border bg-white p-5">
+      <OfficialSpend official={official} windowDays={windowDays} />
+      <div className="flex items-start justify-between gap-3">
+        <div className="text-right">
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-moca-muted)' }}>
+            יתרת תקציב
+          </div>
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="text-3xl font-bold tnum" style={{ color: 'var(--color-moca-dark)' }}>
+              {fmtUSD(budget.remaining_usd)}
+            </span>
+            <span className="text-sm" style={{ color: 'var(--color-moca-sub)' }}>
+              מתוך {fmtUSD(budget.total_usd)}
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={() => setEditing(true)}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-moca-border shrink-0"
+          style={{ color: 'var(--color-moca-sub)', background: 'var(--color-moca-mist)' }}
+        >
+          ערוך
+        </button>
+      </div>
+
+      {/* usage progress */}
+      <div className="mt-3 h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--color-moca-cream)' }}>
+        <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, background: barColor }} />
+      </div>
+      <div className="mt-1.5 flex items-center justify-between text-xs" style={{ color: 'var(--color-moca-sub)' }}>
+        <span className="tnum">נוצל {fmtUSD(budget.spent_usd)} ({pct}%)</span>
+        {budget.as_of && <span>נספר מ-{fmtDateHe(budget.as_of)}</span>}
+      </div>
+
+      {/* depletion forecast */}
+      <div className="mt-4 pt-4 border-t border-moca-border flex flex-wrap items-baseline gap-x-6 gap-y-1.5">
+        <div className="text-right">
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-moca-muted)' }}>
+            זמן לסיום היתרה
+          </div>
+          <div
+            className="mt-0.5 text-xl font-bold"
+            style={{ color: noForecast ? 'var(--color-moca-muted)' : (fc.days_left <= 14 ? 'var(--color-moca-up)' : 'var(--color-moca-dark)') }}
+          >
+            {noForecast ? 'אין מספיק נתונים' : fmtDays(fc.days_left)}
+          </div>
+        </div>
+        {!noForecast && (
+          <div className="text-xs" style={{ color: 'var(--color-moca-sub)' }}>
+            בקצב {windowLbl} (~{fmtUSD(fc.daily_burn_usd)} ליום)
+            {fc.depletion_date && fc.days_left > 0 && (
+              <> · צפי לסיום בתאריך <span className="font-semibold" style={{ color: 'var(--color-moca-text)' }}>{fmtDateHe(fc.depletion_date)}</span></>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function UsagePage() {
   const [days, setDays]       = useState(30)
   const [summary, setSummary] = useState(null)
   const [recent, setRecent]   = useState([])
+  const [showAllRecent, setShowAllRecent] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
+  const [official, setOfficial] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      const [s, r] = await Promise.all([
+      const [s, r, oc] = await Promise.all([
         api.getClaudeUsageSummary(days),
-        api.getClaudeUsageRecent(50),
+        api.getClaudeUsageRecent(RECENT_FETCH),
+        api.getOfficialCost(days).catch(() => null),  // resilient: never breaks the page
       ])
       setSummary(s)
       setRecent(r.calls || [])
+      setOfficial(oc)
     } catch (e) {
       setError(e.message || 'שגיאה')
     } finally {
@@ -116,6 +341,11 @@ export default function UsagePage() {
   }, [days])
 
   useEffect(() => { load() }, [load])
+
+  const saveBudget = useCallback(async (total, asOf) => {
+    await api.setClaudeUsageBudget(total, asOf)
+    await load()
+  }, [load])
 
   if (loading) {
     return <div className="p-6 text-sm" style={{ color: 'var(--color-moca-muted)' }}>טוען…</div>
@@ -131,6 +361,9 @@ export default function UsagePage() {
     .slice()
     .reverse()
     .map((d) => ({ day: d.day.slice(5), cost: Number((d.cost_usd || 0).toFixed(4)), calls: d.calls }))
+
+  const shownRecent = showAllRecent ? recent : recent.slice(0, RECENT_PREVIEW)
+  const hasMoreRecent = recent.length > RECENT_PREVIEW
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -166,6 +399,9 @@ export default function UsagePage() {
           </button>
         </div>
       </div>
+
+      {/* Budget: remaining balance + depletion forecast */}
+      <BudgetPanel budget={summary?.budget} official={official} windowDays={summary?.window_days} onSave={saveBudget} />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -241,12 +477,15 @@ export default function UsagePage() {
       <div className="rounded-xl border border-moca-border bg-white overflow-hidden">
         <div className="px-4 py-3 border-b border-moca-border">
           <h3 className="text-sm font-bold" style={{ color: 'var(--color-moca-dark)' }}>
-            קריאות אחרונות ({recent.length})
+            קריאות אחרונות {hasMoreRecent && !showAllRecent
+              ? `(${shownRecent.length} מתוך ${recent.length})`
+              : `(${recent.length})`}
           </h3>
         </div>
         {recent.length === 0 ? (
           <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>אין קריאות בטווח הזה</p>
         ) : (
+          <>
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[720px]">
               <thead style={{ background: 'var(--color-moca-mist)' }}>
@@ -262,7 +501,7 @@ export default function UsagePage() {
                 </tr>
               </thead>
               <tbody>
-                {recent.map((r, i) => (
+                {shownRecent.map((r, i) => (
                   <tr key={i} className="border-t border-moca-border">
                     <td className="px-3 py-2 text-xs tnum" style={{ color: 'var(--color-moca-sub)' }}>
                       {new Date(r.called_at).toLocaleString('he-IL', {
@@ -288,6 +527,18 @@ export default function UsagePage() {
               </tbody>
             </table>
           </div>
+          {hasMoreRecent && (
+            <div className="px-4 py-3 border-t border-moca-border text-center">
+              <button
+                onClick={() => setShowAllRecent((v) => !v)}
+                className="text-xs font-semibold px-4 py-1.5 rounded-lg border border-moca-border transition-colors"
+                style={{ color: 'var(--color-moca-bolt)', background: 'var(--color-moca-mist)' }}
+              >
+                {showAllRecent ? 'הצג פחות' : `הצג את כל ${recent.length} הקריאות`}
+              </button>
+            </div>
+          )}
+          </>
         )}
       </div>
 

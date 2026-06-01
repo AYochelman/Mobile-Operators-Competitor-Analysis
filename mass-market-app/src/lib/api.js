@@ -114,6 +114,17 @@ export const api = {
     fetchApi(`/api/usage/summary?days=${days}`),
   getClaudeUsageRecent:  (limit = 100) =>
     fetchApi(`/api/usage/recent?limit=${limit}`),
+  // Set / clear the budget driving the remaining-balance + depletion estimate.
+  // total=null clears it. asOf (YYYY-MM-DD, optional) counts spend from that date.
+  setClaudeUsageBudget:  (total, asOf = null) =>
+    fetchApi('/api/usage/budget', {
+      method: 'POST',
+      body: JSON.stringify({ total_usd: total, as_of: asOf }),
+    }),
+  // Authoritative org-wide spend from Anthropic's Admin Cost API (needs
+  // config.json:anthropic_admin_key). Returns spend in USD, not balance.
+  getOfficialCost:       (days = 30) =>
+    fetchApi(`/api/usage/official-cost?days=${days}`),
 
   // Push — JWT auth
   getVapidKey: () => fetchApi('/api/push/vapid-public-key'),

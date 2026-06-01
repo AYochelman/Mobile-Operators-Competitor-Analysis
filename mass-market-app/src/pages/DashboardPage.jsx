@@ -1614,7 +1614,7 @@ ${[...compareMap.values()].map(({ plan, planType }) => {
   <div class="carrier">${esc(CARRIER_HEB[plan.carrier] || plan.carrier)} · ${planType === 'domestic' ? 'סלולר' : planType === 'abroad' ? 'חו"ל' : 'גלובלי'}</div>
   <div class="name">${esc(plan.plan_name || plan.service || '')}</div>
   <div class="price">₪${esc(plan.price)}</div>
-  <div class="info">${plan.data_gb === null ? 'ללא הגבלה' : esc(plan.data_gb || '') + 'GB'}${plan.days ? ' · ' + esc(plan.days) + ' ימים' : ''}${plan.minutes ? ' · ' + esc(plan.minutes) + ' דקות' : ''}${plan.sms ? ' · ' + esc(plan.sms) + ' SMS' : ''}</div>
+  <div class="info">${plan.data_gb === null ? 'ללא הגבלה' : esc(plan.data_gb ? Number(plan.data_gb).toLocaleString('en-US') : '') + 'GB'}${plan.days ? ' · ' + esc(plan.days) + ' ימים' : ''}${plan.minutes ? ' · ' + esc(Number(plan.minutes).toLocaleString('en-US')) + ' דקות' : ''}${plan.sms ? ' · ' + esc(plan.sms) + ' SMS' : ''}</div>
   ${extras.length > 0 ? `<ul class="extras">${extras.map(e => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}
   ${planInfo ? `<div class="plan-info"><div class="plan-info-title">תנאי התוכנית</div>${esc(planInfo)}</div>` : ''}
 </div>`

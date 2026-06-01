@@ -104,7 +104,7 @@ const GLOBAL_COLORS = {
 function formatGB(gb) {
   if (gb === null || gb === undefined) return 'ללא הגבלה'
   if (gb < 1) return `${Math.round(gb * 1024)}MB`
-  return `${gb}GB`
+  return `${Number(gb).toLocaleString('en-US')}GB`
 }
 
 function getPillLabel(plan) {
@@ -281,7 +281,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
         <span className="mx-1.5 text-gray-300">·</span>
         <bdi>{formatDays(selectedPlan.days)}</bdi>
         {selectedPlan.minutes ? (
-          <><span className="mx-1.5 text-gray-300">·</span><bdi>{selectedPlan.minutes} דקות</bdi></>
+          <><span className="mx-1.5 text-gray-300">·</span><bdi>{Number(selectedPlan.minutes).toLocaleString('en-US')} דקות</bdi></>
         ) : null}
         {selectedPlan.sms ? (
           <><span className="mx-1.5 text-gray-300">·</span><bdi>{selectedPlan.sms} SMS</bdi></>
@@ -421,7 +421,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
           carrier={carrier}
           planName={selectedPlan.plan_name}
           planType="global"
-          planLabel={`${destination} · ${selectedPlan.data_gb === null ? 'ללא הגבלה' : selectedPlan.data_gb + 'GB'}`}
+          planLabel={`${destination} · ${selectedPlan.data_gb === null ? 'ללא הגבלה' : Number(selectedPlan.data_gb).toLocaleString('en-US') + 'GB'}`}
         />
       )}
     </div>

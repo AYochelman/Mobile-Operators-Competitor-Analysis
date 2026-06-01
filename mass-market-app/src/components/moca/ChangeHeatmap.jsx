@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { getCarrierColor, getCarrierName } from './carrierMeta'
 
 /**
- * 8-carrier × 14-day heatmap. Cell intensity = number of changes that
- * (carrier, day). Color comes from the carrier's brand color (mvnoBrandColors).
+ * Domestic-carrier × 14-day heatmap (up to 10 rows). Cell intensity = number
+ * of changes that (carrier, day). Color comes from the carrier's brand color (mvnoBrandColors).
  *
  * Pure presentational — pass `data` from useDashboardData.heatmap.
  * Pass `onCellClick(change)` to navigate when a cell is clicked. Cells with

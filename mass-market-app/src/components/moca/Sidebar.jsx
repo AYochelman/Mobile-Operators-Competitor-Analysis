@@ -351,7 +351,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
             onAfterNav={afterNav}
           />
         )}
-        {(isAdmin || isSuperAdmin) && (
+        {isSuperAdmin && (
           <NavItem
             to="/usage"
             icon={Icons.usage}

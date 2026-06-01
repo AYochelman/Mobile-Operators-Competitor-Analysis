@@ -51,10 +51,10 @@ function PlanRow({ plan, isContent }) {
         {!isContent && (plan.data_gb != null || plan.minutes || plan.days) && (
           <div style={{ fontSize: 11, color: 'var(--color-moca-muted)', marginTop: 2 }}>
             {plan.data_gb === null && 'ללא הגבלה'}
-            {plan.data_gb != null && plan.data_gb >= 1 && `${plan.data_gb}GB`}
+            {plan.data_gb != null && plan.data_gb >= 1 && `${Number(plan.data_gb).toLocaleString('en-US')}GB`}
             {plan.data_gb != null && plan.data_gb < 1 && `${Math.round(plan.data_gb * 1024)}MB`}
             {plan.days ? ` · ${plan.days} ימים` : ''}
-            {plan.minutes ? ` · ${plan.minutes} דק׳` : ''}
+            {plan.minutes ? ` · ${Number(plan.minutes).toLocaleString('en-US')} דק׳` : ''}
           </div>
         )}
       </div>

@@ -28,13 +28,20 @@ npm run lint                     # ESLint
 ```
 
 ### After Code Changes
+Python does NOT hot-reload — changes to `db.py` / `app.py` take effect only after Flask
+restarts. Flask runs **elevated** (Task Scheduler `CellularComparison` → `flask_watchdog.bat`),
+so `taskkill` / `wmic delete` / `Stop-Process` from a normal shell fail with "Access is
+denied". Restart it **as administrator**:
 ```bash
-# Kill Flask (Windows — taskkill /F fails with Hebrew paths, use wmic):
-wmic process where "name='python.exe'" get processid,commandline
-wmic process where processid=<PID> delete
-python app.py                    # Restart
+# Right-click scripts/restart_flask.bat → "Run as administrator"
+#   → kills the PID listening on :5000; the watchdog relaunches `python app.py` (new code) in ~15s.
+# Elevated PowerShell one-liner equivalent:
+#   Stop-Process -Id (Get-NetTCPConnection -LocalPort 5000 -State Listen).OwningProcess -Force
 # Then hard refresh: Ctrl+Shift+R
 ```
+Stopgap without restarting: regenerate DB-cached data from a FRESH process (loads new code),
+e.g. `python -c "import app; app.generate_executive_summary()"` — the server serves the SQLite
+cache per request, so the fix shows immediately but reverts on the next server-side regen.
 
 ### Manual Scrape (requires API key from config.json)
 ```
@@ -100,15 +107,16 @@ python telegram_resellers.py scrape                 # ingest channels listed in 
 | pages/ComparePage.jsx | Price comparison charts (Recharts) |
 | pages/AlertsPage.jsx | Personal price alerts with DB persistence |
 | pages/SettingsPage.jsx | Admin panel — scrape triggers, user management (adminOnly) |
-| pages/ExecutiveSummaryPage.jsx | Summary stats + MarketMoversWidget + SparklineMini charts |
+| pages/ExecutiveSummaryPage.jsx | Per-category cards + ₪/GB bar chart + AI narrative, from cached `executive_summaries` (regen 08:05 / `POST /api/executive-summary/refresh`). Metrics from `compute_executive_metrics` (db.py): ₪/GB chart is GB-**weighted** `SUM(price)/SUM(GB)` — a naive `AVG(price/data_gb)` lets a tiny-data plan (e.g. 019's 100MB "חבילת עשר", ~102 ₪/GB) dominate the mean; "המשתלם ביותר" card = `MIN(price/GB)` (best single deal); "האגרסיבי ביותר" shows `—` when there are 0 price drops (no false aggressor) |
 | pages/PositioningPage.jsx | Competitive positioning matrix |
 | pages/ArchivePage.jsx | Historical plan snapshots (content-hash based, via archive.py) |
 | pages/PreferencesPage.jsx | Per-user display preferences |
 | pages/NotificationsPage.jsx | Web Push / notification settings |
 | pages/WorkspaceUsersPage.jsx | Manage users in current workspace (adminOnly) |
-| pages/WorkspaceBrandingPage.jsx | Workspace logo, colors, MVNO theme (adminOnly) |
+| pages/WorkspaceBrandingPage.jsx | Workspace logo, colors, MVNO theme (adminOnly). Logo accepts a hosted **URL** *or* a **file upload** via the shared `<LogoField>` (`components/LogoField.jsx`, also used by `WorkspacesAdminPage`): the picked file is resized client-side to a 480×160 bounding box and stored **inline as a `data:` URI** in `brand_config.logo_url` (SVGs kept verbatim). No upload endpoint / file-serving — `PATCH /api/workspace/branding` (and the workspace POST/PATCH) store the string as-is, CSP already allows `img-src data:`, and every consumer (`Logo`/`Sidebar`/`Navbar`/preview) is a plain `<img src>`. Keeps the logo in the cloud workspace row (no dependence on local Flask/ngrok). |
 | pages/WorkspacesAdminPage.jsx | Global workspace CRUD (superAdminOnly) |
 | pages/AuditLogPage.jsx | Action audit trail (superAdminOnly) |
+| pages/UsagePage.jsx | Claude API usage analytics (**superAdminOnly**, `/usage` — hidden from client-workspace admins since it reports the owner's global Anthropic spend) — cost/tokens by day/model/endpoint from the `claude_api_usage` table. **Budget panel** (`BudgetPanel`): remaining balance + depletion forecast. Anthropic exposes no balance API, so the budget is user-entered in config.json (`claude_budget_usd`, optional `claude_budget_as_of` baseline — set it after a top-up so old spend doesn't count). `remaining = budget − logged spend` (lifetime, or since `as_of`); burn rate = the selected 7/30/90-day window's daily pace over its *active span* (so a partly-filled window isn't understated). Set/cleared via `POST /api/usage/budget` (`@require_api_key`); the `GET /api/usage/summary` response carries a `budget` block built by `_claude_budget_block()` in app.py. **Official spend** (`OfficialSpend` row): authoritative org-wide spend from Anthropic's **Admin Cost API** (`/v1/organizations/cost_report`), via `GET /api/usage/official-cost?days=N` → `_fetch_anthropic_cost_usd()` (10-min TTL cache, paginated). Needs config.json `anthropic_admin_key` (org Admin key `sk-ant-admin…`; **not available for individual accounts**). GOTCHA: the API's `amount` is in **cents** (lowest currency unit) as a decimal string → divide by 100. This is SPEND, not balance — Anthropic still has no remaining-credit endpoint, so "remaining" always needs the user-set total. |
 
 ### Components
 
@@ -291,6 +299,7 @@ PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` pro
 - Slug-to-Hebrew dictionaries (SAILY_SLUG_TO_HEBREW, ESIMIO_SLUG_TO_HEBREW, HOLAFLY_SLUG_TO_HEBREW, ORBIT_NAME_TO_HEBREW) for per-country scrapers
 - Orbit uses REST API (no Playwright): ORBIT_NAME_TO_HEBREW maps English→Hebrew, ORBIT_ZONE_TO_HEBREW maps zone IDs→Hebrew
 - Tuki scraper has `_tuki_name_fix` dict to normalize country names from their API (e.g. "שוודיה"→"שבדיה")
+- Golan uses **two distinct source pages**: `scrape_golan` reads `golantelecom.co.il/offers` (domestic Mass-Market plans — `.offer` cards with `data-gtm-price` + `.properties.israel`/`.properties.roaming` benefit tabs + `.important_info` "פרטי המבצע" bullets; plans whose בחו"ל tab includes browsing get a `NNGB גלישה בחו"ל` extra so PlanCard shows the חו"ל badge). `scrape_golan_abroad` reads `golantelecom.co.il/overseas_offers` (genuine roaming bundles, stored as `abroad_plans`). Do NOT point the abroad scraper at `/offers` — that re-lists the domestic plans as fake roaming. Per-package country lists come from `getCountriesForAbroadPlan` (carrier `golan` → `COUNTRIES_GOLAN`; the מצרים וירדן bundle is matched by `GOLAN_SPECIFIC` to show only those 2 countries). **Visibility differs by page**: `/offers` keeps hidden/legacy `.offer` cards in the DOM (e.g. a discontinued "זוגית") so `scrape_golan` filters to VISIBLE cards only (`offsetParent && height>0`); `/overseas_offers` features 3 cards and parks the other 9 real bundles in `d-none`, so `scrape_golan_abroad` deliberately keeps ALL cards. Both scrapers expand "פרטי המבצע"/"פרטי החבילה" and emit a filtered `__info__|<lines>` extra that PlanCard renders as the "תנאי התוכנית" popup (abroad has no url column, so the popup is its only terms affordance); free-data apps are surfaced as icons via `getAppsForPlan` (`GOLAN_APPS_BY_PLAN` by name for 750GB, else parsed from the "גלישה חופשית באפליקציות: …" extra).
 
 ### Country Name Normalization
 
@@ -350,6 +359,7 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 | File | Purpose |
 |------|---------|
 | flask_watchdog.bat | Keeps Flask alive — loops `python app.py`, restarts after 15s on any exit |
+| restart_flask.bat | Restarts the **elevated** Flask so it reloads backend code — kills the PID on :5000 (watchdog relaunches with new code in ~15s). **Run as administrator.** |
 | vite_watchdog.bat | Keeps Vite alive — loops `npm run dev` via cmd (not PowerShell — execution policy blocks npm.ps1) |
 | backup_to_drive.ps1 | Daily backup of config.json + plans.db + banner PNGs to Google Drive. Auto-restarts GoogleDriveFS if not mounted. |
 | backup_health_check.ps1 | Monthly integrity check: file presence, SQLite PRAGMA integrity_check, row counts per table, Task Scheduler state. Sends email via SendGrid. |

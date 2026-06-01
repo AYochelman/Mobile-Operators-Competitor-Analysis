@@ -375,6 +375,17 @@ def scrape_xphone_abroad(_page=None):
 
 _WECOM_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
+# We-Com markets its "גלישה חופשית" plans as unlimited, but every plan carries a
+# fair-use GB cap in its terms PDF. The capped plan (wecomBasic) prints "150GB
+# גלישה בארץ" on the card; the unlimited-marketed plans (Family / Free 5G / Global 5G)
+# print only "גלישה חופשית" on the card and bury a 10,000GB/month fair-use ceiling in
+# the PDF. We store that ceiling so We-Com isn't dropped from the ₪/GB executive-summary
+# chart (which filters `data_gb > 0`). Competitor "unlimited" plans are likewise stored
+# at their fair-use cap (Pelephone 4000GB, Hot Mobile 3000GB, …).
+# Verified June 2026 against wecomBasic-V3 / wecomFREE-Family-V3 / wecomFree-5G-Up-V2 /
+# wecomGlobal-5G-V2 terms PDFs.
+_WECOM_FAIR_USE_GB = 10000
+
 
 def _scrape_wecom_page(page, url, name_prefix, already_navigated=False):
     """Helper: navigate to url (unless already_navigated), find headings starting with name_prefix, parse cards."""
@@ -452,8 +463,18 @@ def _scrape_wecom_page(page, url, name_prefix, already_navigated=False):
                           "days": days, "data_gb": gb, "minutes": None, "sms": None,
                           "extras": clean_extras, "url": plan_url})
         else:
-            # Domestic plans: all have unlimited domestic data → gb = None always
-            gb = None
+            # Domestic GB. See _WECOM_FAIR_USE_GB above for the data model.
+            #  1) explicit cap printed on the card, e.g. "150GB גלישה בארץ". Anchor on
+            #     בארץ so we never grab a roaming figure (Global 5G's "5GB גלישה בחו״ל").
+            #  2) otherwise, an unlimited-marketed "גלישה חופשית" plan → fair-use ceiling.
+            #  3) otherwise unknown → None.
+            gb_m = re.search(r'(\d[\d,]*)\s*GB[^\n]*?בארץ', block_text)
+            if gb_m:
+                gb = int(gb_m.group(1).replace(',', ''))
+            elif 'חופשית' in block_text:
+                gb = _WECOM_FAIR_USE_GB
+            else:
+                gb = None
 
             # Parse minutes from "X,000 דקות" line
             minutes_m = re.search(r'([\d,]+)\s*דקות', block_text)
@@ -657,530 +678,375 @@ def scrape_neptucom(_page=None):
     return plans
 
 
-def _golan_match_pdf(pdf_cards, gb_val, gb_line, price):
-    """Pick the card-dict whose snippet matches this plan's GB+price.
-    pdf_cards: list of {href, snippet, abroadItems} dicts from DOM.
-    Returns the matched dict (so callers can use both `href` and `abroadItems`),
-    or None if no match.
+def _golan_num(s):
+    """First number in a string as float, or None."""
+    m = re.search(r'(\d+(?:\.\d+)?)', s or '')
+    return float(m.group(1)) if m else None
 
-    Match priority: (1) snippet contains the gb_val "GB" AND the price,
-    (2) snippet contains gb_val "GB", (3) DATA ONLY / משפחתית label match.
-    """
-    if not pdf_cards:
+
+def _golan_gb_from_text(s):
+    """'300GB' -> 300.0 ; '0.5GB' -> 0.5 ; no GB -> None."""
+    m = re.search(r'(\d+(?:\.\d+)?)\s*GB', s or '', re.I)
+    return float(m.group(1)) if m else None
+
+
+def _golan_gb_label(v):
+    if v is None:
         return None
-    gb_str = f"{gb_val}GB" if gb_val else (gb_line or "")
-    price_str_int = f"{int(price)}" if price and price == int(price) else None
-    candidates = []
-    for c in pdf_cards:
-        snip = c.get("snippet", "")
-        if not snip:
-            continue
-        if gb_val and gb_str in snip:
-            score = 2
-            if price_str_int and (f"\n{price_str_int}\n" in f"\n{snip}\n" or f"| {price_str_int} |" in snip):
-                score = 4
-            candidates.append((score, c))
-        elif gb_line and gb_line in ("DATA ONLY", "משפחתית") and gb_line in snip:
-            candidates.append((1, c))
-    if not candidates:
+    return f"{int(v)}GB" if v == int(v) else f"{v}GB"
+
+
+def _golan_period_to_days(text):
+    """Parse the roaming price line: '299 ש"ח ל-30 יום' -> 30 ; 'ליום' -> 1 ; 'לשנה' -> 365."""
+    if not text:
         return None
-    candidates.sort(key=lambda x: -x[0])
-    return candidates[0][1]
+    if 'לשנה' in text:                 # לשנה
+        return 365
+    m = re.search(r'ל[\-\s]?(\d+)\s*יום', text)  # ל-NN יום
+    if m:
+        return int(m.group(1))
+    if 'ליום' in text:                 # ליום
+        return 1
+    return None
 
 
-def _golan_format_abroad_items(abroad_items):
-    """Convert raw .properties.roaming items into clean extras strings.
-    Skips meta-items like "תוקף מבצע" (not really an abroad benefit) and dedupes.
-    Returns a list of strings.
+# JS extractor for golantelecom.co.il/offers (domestic Mass-Market plans).
+# Each .offer card carries data-gtm-price (exact price) and two benefit panels:
+# .properties.israel (the "בישראל" tab) and .properties.roaming (the "בחול" tab).
+# .important_info is the "פרטי המבצע" expandable bullet list.
+_GOLAN_DOMESTIC_JS = r"""() => {
+    const txt = el => (el ? (el.textContent||'').replace(/\s+/g,' ').trim() : '');
+    // Only VISIBLE cards: the page keeps hidden/legacy .offer cards in the DOM (0x0,
+    // offsetParent null, no `show-first` ancestor) — e.g. "זוגית" / a discontinued 550GB.
+    const visible = c => c.offsetParent !== null && c.getBoundingClientRect().height > 0;
+    return Array.from(document.querySelectorAll('.offer')).filter(visible).map(card => {
+        const israel = card.querySelector('.properties.israel');
+        const roaming = card.querySelector('.properties.roaming');
+        const itemBy = (panel, label) => {
+            if (!panel) return '';
+            for (const it of panel.querySelectorAll('.item')) {
+                if (txt(it.querySelector('.right')) === label)
+                    return it.querySelector('.left img') ? '[check]' : txt(it.querySelector('.left'));
+            }
+            return '';
+        };
+        // בחול tab benefits — keep real items, drop the "תוקף מבצע" validity meta only
+        const roamingItems = roaming ? Array.from(roaming.querySelectorAll('.item'))
+            .filter(it => !it.classList.contains('sale_validity'))
+            .map(it => ({
+                right: txt(it.querySelector('.right')),
+                left:  it.querySelector('.left img') ? '[check]' : txt(it.querySelector('.left')),
+                all:   txt(it),
+            }))
+            .filter(it => it.all && !/^תוקף מבצע/.test(it.all)) : [];
+        // פרטי המבצע — the .important_info bullet list
+        const info = card.querySelector('.important_info');
+        const importantInfo = info ? Array.from(info.querySelectorAll('li')).map(li => txt(li)).filter(Boolean) : [];
+        const titleEl = card.querySelector('.upper h2.title .offer-content') || card.querySelector('.upper h2.title');
+        const promoEl = Array.from(card.querySelectorAll('div,span,p')).find(e => {
+            const t = e.textContent||''; return /חודש(?:ים|יים)\s*ראשונים/.test(t) && t.length < 120;
+        });
+        const pdf = card.querySelector('a[href*=".pdf"]');
+        return {
+            cls: card.className,
+            gtmId: card.getAttribute('data-gtm-id'),
+            gtmPrice: card.getAttribute('data-gtm-price'),
+            gtmTitle: (card.getAttribute('data-gtm-title')||'').replace(/\s+/g,' ').trim(),
+            titleText: txt(titleEl),
+            promoText: txt(promoEl),
+            gbText: itemBy(israel, 'גלישה'),
+            callsText: itemBy(israel, 'שיחות'),
+            intlMinutes: itemBy(israel, 'שיחות בינלאומיות'),
+            subtitle: txt(card.querySelector('.upper .subtitle')),
+            roamingItems, importantInfo,
+            pdfHref: pdf ? pdf.href : '',
+        };
+    });
+}"""
+
+# JS extractor for golantelecom.co.il/overseas_offers (genuine roaming bundles).
+# Each .offer card: .upper .title = "299 ש"ח ל-30 יום" (price + validity); .bottom .title =
+# "50GB גלישה + 200 דקות"; two coloured .auto-fit-text lines = superlative (red) + bonus (grey);
+# .pcrf-roaming-1 img = free apps; button.country_list[title] = full country list (HTML).
+_GOLAN_OVERSEAS_JS = r"""() => {
+    const txt = el => (el ? (el.textContent||'').replace(/\s+/g,' ').trim() : '');
+    const decode = html => { const d = document.createElement('div'); d.innerHTML = html||''; return d; };
+    const RED = ['rgb(237, 27, 47)', '#ed1b2f', 'rgb(237,27,47)'];
+    const GRAY = ['rgb(104, 104, 117)', '#686875', 'rgb(104,104,117)'];
+    // NB: unlike /offers we keep ALL .offer cards. The page features only 3 (30-day) plans;
+    // the rest sit in d-none containers but are the real catalog behind "לכל חבילות חו\"ל"
+    // (7/14-day, daily, yearly, מצרים וירדן). Dropping them would lose 9 genuine bundles.
+    return Array.from(document.querySelectorAll('.offer')).map(card => {
+        const autofit = Array.from(card.querySelectorAll('.bottom .auto-fit-text')).map(el => ({
+            text: txt(el),
+            color: (el.getAttribute('style')||'').match(/color:\s*([^;]+)/)?.[1]?.trim() || '',
+        }));
+        const superl = autofit.find(a => RED.includes(a.color))?.text || '';
+        const bonus  = autofit.find(a => GRAY.includes(a.color))?.text || '';
+        const apps = Array.from(card.querySelectorAll('.pcrf-roaming-1 img, [class*="pcrf"] img'))
+            .map(i => (i.getAttribute('alt')||'').replace(/\s*Icon\s*$/i,'').trim()).filter(Boolean);
+        let countries = [];
+        const btn = card.querySelector('button.country_list, .country_list');
+        if (btn) decode(btn.getAttribute('title')).querySelectorAll('.row-value').forEach(rv =>
+            (rv.textContent||'').split(',').forEach(c => { const s=c.trim(); if(s) countries.push(s); }));
+        // פרטי החבילה — services list (.important_info li, else its paragraph lines)
+        const info = card.querySelector('.important_info');
+        let services = [];
+        if (info) {
+            services = Array.from(info.querySelectorAll('li')).map(li => txt(li)).filter(Boolean);
+            if (!services.length)
+                services = (info.innerText||'').split('\n').map(s=>s.trim())
+                    .filter(s => s && !/פרטי החבילה|השירותים הכלולים|לרכישה/.test(s));
+        }
+        return {
+            cls: card.className,
+            gtmId: card.getAttribute('data-gtm-id'),
+            gtmPrice: card.getAttribute('data-gtm-price'),
+            gtmTitle: (card.getAttribute('data-gtm-title')||'').replace(/\s+/g,' ').trim(),
+            upperTitle: txt(card.querySelector('.upper .title')),
+            mainTitle: txt(card.querySelector('.bottom > .title')),
+            subtitle: txt(card.querySelector('.bottom > .subtitle')),
+            superlative: superl, bonus, apps, countries, services,
+        };
+    });
+}"""
+
+
+def _build_golan_domestic(cards):
+    """Turn raw .offer card dicts (from _GOLAN_DOMESTIC_JS) into domestic plan dicts.
+    Merges the בישראל + בחול tabs and the פרטי המבצע bullets into extras; plans whose
+    בחול tab includes browsing get a "NNGB גלישה בחול" extra so the UI shows the חול badge.
     """
-    if not abroad_items:
-        return []
-    out = []
-    for it in abroad_items:
-        right = (it.get("right") or "").strip()
-        left = (it.get("left") or "").strip()
-        all_text = (it.get("all") or "").strip()
-        if not all_text:
-            continue
-        # Skip non-roaming meta entries
-        if "תוקף מבצע" in all_text or "מחזור חיוב" in all_text:
-            continue
-        # If we have a (label, value) pair, render as "<value> <label>" so the data
-        # leads (matches how the user reads "12GB גלישה בחו\"ל"). Otherwise keep
-        # the qualitative line as-is.
-        if right and left and right != left:
-            # right is the label (e.g. "גלישה בחו\"ל"), left is the value (e.g. "12GB")
-            line = f"{left} {right}".strip()
-        else:
-            line = all_text
-        # Collapse repeated whitespace (DOM whitespace can leak through)
-        line = re.sub(r"\s+", " ", line)
-        if line and line not in out:
-            out.append(line)
-    return out
-
-
-def _parse_golan_body(body_text, pdf_cards):
-    """Parse Golan domestic plan blocks from body text.
-    Blocks are delimited by 'לתנאי התוכנית'. Categories: חו"ל כלול / מתגלגלת / דור 5 / משפחתית.
-    pdf_cards is a list of {href, snippet} dicts — one per visible PDF link, with the
-    snippet being the surrounding plan-card text used to match PDFs to plans by GB+price.
-    """
-    CATEGORIES_5G   = {'דור 5'}
-    CATEGORIES_INTL = {'חו"ל כלול'}
-    SKIP = {
-        'בישראל', 'בחו"ל', 'שיחות', 'הודעות SMS', 'גלישה',
-        'שיחות בינלאומיות', 'תוקף מבצע', '₪', 'לחודש', 'להצטרפות',
-        'לתנאי התוכנית', 'pdf קישור למסמך', 'פרטי המבצע',
-        'בישראל\tבחו"ל', 'Offers page', 'Breadcrumb',
-        'דף הבית', 'החבילות שלנו', 'בוא למצוא את החבילה שמתאימה לך',
-    }
-    lines = [l.strip() for l in body_text.split('\n')]
-
-    # Trim header navigation — skip past intro text, stop just before first category
-    CATEGORIES_ALL = {'חו"ל כלול', 'מתגלגלת', 'דור 5', 'DATA ONLY', 'משפחתית'}
-    for i, l in enumerate(lines):
-        if l in CATEGORIES_ALL:
-            lines = lines[i:]
-            break
-
-    # Split into blocks by 'לתנאי התוכנית'
-    blocks, cur = [], []
-    for l in lines:
-        if 'לתנאי התוכנית' in l:
-            blocks.append(cur)
-            cur = []
-        elif 'pdf קישור למסמך' not in l and 'פרטי המבצע' not in l:
-            cur.append(l)
-
-    plans = []
-    seen = set()
-    for idx, block in enumerate(blocks):
-        non_empty = [l for l in block if l]
-        if len(non_empty) < 3:
-            continue
-
-        # Category: first meaningful line (חו"ל כלול / מתגלגלת / דור 5 / משפחתית)
-        category = non_empty[0] if non_empty[0] not in SKIP else ''
-
-        # GB / descriptor: first line matching NNNgb or known keywords
-        gb_line = None
-        for l in non_empty[:6]:
-            if re.match(r'^\d+GB$', l, re.I) or l in ('DATA ONLY', 'משפחתית'):
-                gb_line = l
-                break
-        if not gb_line:
-            continue
-
-        # Price: number on the line immediately before '₪'
-        # Handle split decimal: "90.\n34\n₪" → 34.90 (decimal part rendered before integer)
-        price = None
-        for i, l in enumerate(block):
-            if l == '₪' and i > 0:
-                prev = block[i - 1].strip()
-                m_int = re.match(r'^(\d+)$', prev)
-                if m_int and i >= 2:
-                    prev2 = block[i - 2].strip()
-                    m_dec = re.match(r'^(\d+)\.$', prev2)
-                    if m_dec:
-                        price = float(f"{m_int.group(1)}.{m_dec.group(1)}")
-                        break
-                m = re.match(r'^(\d+\.?\d*)\.?$', prev)
-                if m:
-                    try:
-                        price = float(m.group(1))
-                    except ValueError:
-                        pass
-                    break
+    plans, seen = [], set()
+    for c in cards:
+        price = _golan_num(c.get('gtmPrice'))
         if price is None:
-            # fallback: find standalone number before ₪
-            for l in block:
-                m = re.match(r'^(\d+\.?\d*)\.?$', l)
-                if m:
-                    try:
-                        candidate = float(m.group(1))
-                        if 10 <= candidate <= 500:
-                            price = candidate
-                    except ValueError:
-                        pass
+            continue
+        title = c.get('titleText') or ''
+        gtm = c.get('gtmTitle') or ''
+        subtitle = c.get('subtitle') or ''
 
-        # GB value
-        gb_val = None
-        if gb_line and gb_line not in ('DATA ONLY', 'משפחתית'):
-            m = re.match(r'^(\d+)GB$', gb_line, re.I)
-            if m:
-                gb_val = int(m.group(1))
-        if gb_val is None:
-            # Use exact match to avoid grabbing GB from taglines like "3 קווים עם 1500GB"
-            for l in block:
-                m = re.match(r'^(\d+)GB$', l, re.I)
-                if m and int(m.group(1)) >= 5:
-                    gb_val = int(m.group(1))
-                    break
+        # Headline label — DATA ONLY / זוגית / משפחתית / NNNGB (regex skips injected Adoric junk)
+        m = re.search(r'(DATA ONLY|זוגית|משפחתית|\d+GB)', f"{title} {gtm}", re.I)
+        label = m.group(1) if m else (gtm.split()[0] if gtm else 'חבילה')
 
-        # Plan name
-        is_5g = category in CATEGORIES_5G
-        is_intl = category in CATEGORIES_INTL
+        data_gb = _golan_gb_from_text(c.get('gbText'))
+        if data_gb is None:
+            data_gb = _golan_gb_from_text(subtitle)        # DATA ONLY -> "500GB דור 5"
 
-        if gb_line == 'משפחתית':
-            plan_name = 'גולן משפחתית'
-        elif gb_line == 'DATA ONLY':
-            plan_name = 'גולן DATA ONLY 5G'
-        else:
-            plan_name = f'גולן {gb_line}'
-            if is_5g:
-                plan_name += ' 5G'
-            elif category == 'מתגלגלת':
-                plan_name += ' מתגלגלת'
-            elif is_intl:
-                plan_name += ' \u2013 חו"ל כלול'
+        name = f"גולן {label}"
+        if 'החו"ל כלול' in subtitle or 'החו״ל כלול' in subtitle:
+            name += ' – חו"ל כלול'
+        if name in seen:
+            name += f" ({c.get('gtmId')})"
+        seen.add(name)
 
-        if plan_name in seen:
-            plan_name += f' ({idx})'
-        seen.add(plan_name)
+        # minutes: check-mark = unlimited (None); explicit number (DATA ONLY "50 דקות") = limited
+        minutes = None
+        calls = c.get('callsText') or ''
+        if calls and '[check]' not in calls and _golan_num(calls):
+            minutes = int(_golan_num(calls))
 
-        # Extras: description, international features
         extras = []
-        for l in block:
-            if not l or l in SKIP or l == gb_line or l == category:
+        # 1) בחול tab benefits FIRST -> drives the חול badge + shows up top
+        for it in c.get('roamingItems', []):
+            right, left, allt = it.get('right', ''), it.get('left', ''), it.get('all', '')
+            if left and left != '[check]' and right:
+                line = f"{left} {right}"                    # "12GB גלישה בחול"
+            elif left == '[check]' and right:
+                line = right                                # "שיחות מחול לישראל"
+            else:
+                line = allt
+            line = re.sub(r'\s+', ' ', line).strip()
+            if line and line not in extras:
+                extras.append(line)
+        # 2) intl calling minutes (שיחות בינלאומיות)
+        if c.get('intlMinutes') and _golan_num(c['intlMinutes']):
+            extras.append(f"{int(_golan_num(c['intlMinutes']))} דקות לחו\"ל")
+        # 3) פרטי המבצע bullets — drop redundant "גלישה בנפח NNNGB" / CTA noise / dup roaming
+        have_intl_gb = any('גלישה בחו' in e for e in extras)
+        for s in c.get('importantInfo', []):
+            s = re.sub(r'\s+', ' ', s).strip().rstrip('*').strip()
+            if not s or len(s) <= 2 or s == 'SMS':
                 continue
-            if re.match(r'^(\d+\.?\d*)\.?$', l):
+            if re.match(r'^גלישה בנפח', s):
                 continue
-            if 'לחודש' in l or 'להצטרפות' in l or 'לתנאי' in l:
+            if re.search(r'לתקנון|לחצו כאן|>>', s):
                 continue
-            # Keep useful lines: descriptions, promo notes, international minutes
-            if (len(l) > 3
-                    and not re.match(r'^\d+GB$', l, re.I)
-                    and l not in ('₪', 'לחודש')):
-                extras.append(l)
-        extras = list(dict.fromkeys(extras))[:6]
+            if have_intl_gb and 'גלישה בחו' in s:
+                continue
+            if s not in extras:
+                extras.append(s)
+        # 4) descriptor (דור 5 / שירות תיקונים / 2 קווים) when it adds something new
+        if subtitle and not re.search(r'דק[א-ת\']*\s*לחו|גלישה בחו|הנחה|החו"ל כלול', subtitle):
+            if subtitle not in extras:
+                extras.append(subtitle)
+        full = list(dict.fromkeys(extras))
+        extras = full[:7]
 
-        # Match this plan to its DOM card by GB+price (more reliable than DOM-order
-        # indexing, since the page contains hidden/legacy PDFs interleaved with visible
-        # cards). The matched card also carries the abroad-tab benefits.
-        matched_card = _golan_match_pdf(pdf_cards, gb_val, gb_line, price)
-        pdf_url = (matched_card or {}).get("href") or \
-            'https://www.golantelecom.co.il/index.php/terms'
+        # promo ("3 חודשים ראשונים ב-39 ש״ח" / "חודשיים ראשונים ב-49 ש״ח")
+        promo_price = promo_months = None
+        for raw in [c.get('promoText'), subtitle] + c.get('importantInfo', []):
+            mm = re.search(r'(\d+)\s*חודשים\s*ראשונים\s*ב[\-\s]?(\d+(?:\.\d+)?)', raw or '')
+            if mm:
+                promo_months, promo_price = int(mm.group(1)), float(mm.group(2)); break
+            mm = re.search(r'חודשיים\s*ראשונים\s*ב[\-\s]?(\d+(?:\.\d+)?)', raw or '')
+            if mm:
+                promo_months, promo_price = 2, float(mm.group(1)); break
 
-        # Roaming marker + abroad benefits.
-        # Source priority: structured items from the "בחו"ל" tab DOM panel; fall
-        # back to scanning the block text for a "חו"ל כלול"-style tag.
-        block_text = '\n'.join(block)
-        abroad_lines = _golan_format_abroad_items((matched_card or {}).get("abroadItems"))
-        has_intl_tag = bool(re.search(r'(?:ה?חו"?ל כלול|גלישה בחו"?ל)', block_text))
-        if abroad_lines:
-            # Prepend abroad benefits so they show first in the card UI
-            for line in reversed(abroad_lines):
-                if line not in extras:
-                    extras = [line] + extras
-        elif is_intl or has_intl_tag:
-            intl_line = next((l for l in block if 'גלישה בחו' in l), None)
-            roaming_tag = intl_line if intl_line else 'גלישה בחו"ל כלולה'
-            if roaming_tag not in extras:
-                extras = [roaming_tag] + extras
-
-        # Promo detection: "3 חודשים ראשונים ב-39 ₪" or "חודשיים ראשונים ב-49 ₪".
-        # Re-scans the raw block because the 'לחודש' skip rule above strips these
-        # from `extras` — we want them stored as structured fields, not bullet text.
-        promo_price = None
-        promo_months = None
-        _PROMO_PATTERNS = (
-            (re.compile(r'(\d+)\s*חודשים\s*ראשונים\s*ב[\-\s]?(\d+(?:\.\d+)?)\s*(?:₪|ש"ח)'), 'months_first'),
-            (re.compile(r'חודשיים\s*ראשונים\s*ב[\-\s]?(\d+(?:\.\d+)?)\s*(?:₪|ש"ח)'),         'two_months'),
-            (re.compile(r'(\d+(?:\.\d+)?)\s*(?:₪|ש"ח)\s*לחודש\s*לתקופה\s*של\s*(\d+)\s*חודשים'), 'price_first'),
-        )
-        for raw in block:
-            txt = (raw or '').strip()
-            if not txt:
-                continue
-            for pat, kind in _PROMO_PATTERNS:
-                m = pat.search(txt)
-                if not m:
-                    continue
-                if kind == 'months_first':
-                    promo_months = int(m.group(1)); promo_price = float(m.group(2))
-                elif kind == 'two_months':
-                    promo_months = 2; promo_price = float(m.group(1))
-                elif kind == 'price_first':
-                    promo_price = float(m.group(1)); promo_months = int(m.group(2))
-                break
-            if promo_price is not None:
-                break
+        # planInfo popup ("תנאי התוכנית") — full benefit detail + a clickable link to the
+        # official terms PDF. Stored as a filtered "__info__|" extra (hidden from bullets).
+        pdf = c.get('pdfHref')
+        info_lines = list(full)
+        if pdf:
+            info_lines.append(f'התקנון המלא (PDF)|{pdf}')
+        if info_lines:
+            extras = extras + ['__info__|' + '\n'.join(info_lines)]
 
         plans.append({
-            'carrier': 'golan', 'plan_name': plan_name, 'price': price,
-            'data_gb': gb_val, 'minutes': None, 'extras': extras, 'url': pdf_url,
+            'carrier': 'golan', 'plan_name': name, 'price': price,
+            'data_gb': data_gb, 'minutes': minutes, 'extras': extras,
+            'url': pdf or _GOLAN_OFFERS_URL,
             'promo_price': promo_price, 'promo_months': promo_months,
         })
-
     return plans
 
 
-def _parse_golan_abroad_plans(body_text, pdf_cards):
-    """Parse Golan plans from /index.php/offers as abroad records (extracts intl. minutes).
-    Golan's overseas page shows these monthly plans; stored as abroad_plans for the abroad tab.
-    pdf_cards: list of {href, snippet} dicts — PDFs matched by GB+price (see _golan_match_pdf).
+_GOLAN_GENERIC_SUPERL = re.compile(r'מושלמת|הכי|בגדול|בסטייל|לקצב')  # מושלמת/הכי/בגדול/בסטייל/לקצב
+
+
+def _build_golan_abroad(cards):
+    """Turn raw .offer card dicts (from _GOLAN_OVERSEAS_JS) into abroad plan dicts.
+    extras[0] is the destination marker ('כלל העולם' for the ~126-country bundles, the
+    region name for a country-specific bundle e.g. 'מצרים וירדן'); the per-package country
+    list is rendered by getCountriesForAbroadPlan() in the React app.
     """
-    SKIP = {
-        '\u05d1\u05d9\u05e9\u05e8\u05d0\u05dc', '\u05d1\u05d7\u05d5"\u05dc',
-        '\u05e9\u05d9\u05d7\u05d5\u05ea', '\u05d4\u05d5\u05d3\u05e2\u05d5\u05ea SMS',
-        '\u05d2\u05dc\u05d9\u05e9\u05d4', '\u05e9\u05d9\u05d7\u05d5\u05ea \u05d1\u05d9\u05e0\u05dc\u05d0\u05d5\u05de\u05d9\u05d5\u05ea',
-        '\u05ea\u05d5\u05e7\u05e3 \u05de\u05d1\u05e6\u05e2', '\u20aa', '\u05dc\u05d7\u05d5\u05d3\u05e9',
-        '\u05dc\u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea',
-    }
-    CATEGORIES_ALL = {'\u05d7\u05d5"\u05dc \u05db\u05dc\u05d5\u05dc', '\u05de\u05ea\u05d2\u05dc\u05d2\u05dc\u05ea',
-                      '\u05d3\u05d5\u05e8 5', 'DATA ONLY', '\u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea'}
-
-    lines = [l.strip() for l in body_text.split('\n')]
-    for i, l in enumerate(lines):
-        if l in CATEGORIES_ALL:
-            lines = lines[i:]
-            break
-
-    blocks, cur = [], []
-    for l in lines:
-        if '\u05dc\u05ea\u05e0\u05d0\u05d9 \u05d4\u05ea\u05d5\u05db\u05e0\u05d9\u05ea' in l:
-            blocks.append(cur)
-            cur = []
-        elif 'pdf' not in l and '\u05e4\u05e8\u05d8\u05d9 \u05d4\u05de\u05d1\u05e6\u05e2' not in l:
-            cur.append(l)
-
-    plans = []
-    seen = set()
-    for idx, block in enumerate(blocks):
-        non_empty = [l for l in block if l]
-        if len(non_empty) < 3:
-            continue
-        category = non_empty[0]
-        if category not in CATEGORIES_ALL:
-            continue
-
-        gb_line = None
-        for l in non_empty[:6]:
-            if re.match(r'^\d+GB$', l, re.I) or l in ('DATA ONLY', '\u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea'):
-                gb_line = l
-                break
-        if not gb_line:
-            continue
-
-        # Price: handle split decimal "90.\n34\n₪" → 34.90
-        price = None
-        for i, l in enumerate(block):
-            if l == '\u20aa' and i > 0:
-                prev = block[i - 1].strip()
-                m_int = re.match(r'^(\d+)$', prev)
-                if m_int and i >= 2:
-                    prev2 = block[i - 2].strip()
-                    m_dec = re.match(r'^(\d+)\.$', prev2)
-                    if m_dec:
-                        price = float(f"{m_int.group(1)}.{m_dec.group(1)}")
-                        break
-                m = re.match(r'^(\d+\.?\d*)\.?$', prev)
-                if m:
-                    try:
-                        price = float(m.group(1))
-                    except ValueError:
-                        pass
-                    break
+    plans, seen = [], set()
+    for c in cards:
+        price = _golan_num(c.get('gtmPrice'))
         if price is None:
             continue
+        main = c.get('mainTitle') or c.get('gtmTitle') or ''
+        data_gb = _golan_gb_from_text(main)
+        mm = re.search(r'\+\s*(\d+)\s*דקות', main)
+        minutes = int(mm.group(1)) if mm else None
+        days = _golan_period_to_days(c.get('upperTitle') or '')
+        countries = c.get('countries') or []
+        superl = (c.get('superlative') or '').strip()
+        is_world = len(countries) >= 40
 
-        # GB value
-        gb_val = None
-        if gb_line not in ('DATA ONLY', '\u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea'):
-            m = re.match(r'^(\d+)GB$', gb_line, re.I)
-            if m:
-                gb_val = int(m.group(1))
-        if gb_val is None:
-            for l in block:
-                m = re.match(r'^(\d+)GB$', l, re.I)
-                if m and int(m.group(1)) >= 5:
-                    gb_val = int(m.group(1))
-                    break
+        period = ('שנתי' if days == 365 else 'יומי' if days == 1
+                  else f"{days} יום" if days else '')
+        gbl = _golan_gb_label(data_gb) or ''
+        # BiDi-safe name: GB / minutes / period each become a separate " – " segment, which
+        # PlanCard wraps in its own <bdi>. Joining them in one string (e.g. "80GB + 300 דק'")
+        # lets the Latin "GB" reorder the numbers visually ("300 + 80GB דק'").
+        segs = [s for s in [gbl, (f"{minutes} דק'" if minutes else ''), period] if s]
+        name = 'גולן חו"ל ' + (' – '.join(segs) if segs else (main or 'חבילה'))
+        # destination marker (extras[0]) + name disambiguation for country-specific bundles
+        dest = ('כלל העולם' if is_world else
+                (superl if superl and not _GOLAN_GENERIC_SUPERL.search(superl) else ' ו'.join(countries)))
+        if not is_world and dest and dest not in name:
+            name += f" ({dest})"
+        if name in seen:
+            name += f" ({c.get('gtmId')})"
+        seen.add(name)
 
-        # International minutes: line after "שיחות בינלאומיות"
-        # DATA ONLY: "שיחות" followed directly by "NN דקות"
-        int_minutes = None
-        for i, l in enumerate(block):
-            if l == '\u05e9\u05d9\u05d7\u05d5\u05ea \u05d1\u05d9\u05e0\u05dc\u05d0\u05d5\u05de\u05d9\u05d5\u05ea' and i + 1 < len(block):
-                mm = re.match(r'^(\d+)\s*\u05d3\u05e7\u05d5\u05ea$', block[i + 1].strip())
-                if mm:
-                    int_minutes = int(mm.group(1))
-                break
-        if int_minutes is None:
-            for i, l in enumerate(block):
-                if l == '\u05e9\u05d9\u05d7\u05d5\u05ea' and i + 1 < len(block):
-                    mm = re.match(r'^(\d+)\s*\u05d3\u05e7\u05d5\u05ea$', block[i + 1].strip())
-                    if mm:
-                        int_minutes = int(mm.group(1))
-                    break
-
-        # Plan name (same convention as domestic scraper)
-        is_5g = category == '\u05d3\u05d5\u05e8 5'
-        is_intl = category == '\u05d7\u05d5"\u05dc \u05db\u05dc\u05d5\u05dc'
-        if gb_line == '\u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea':
-            plan_name = '\u05d2\u05d5\u05dc\u05df \u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea'
-        elif gb_line == 'DATA ONLY':
-            plan_name = '\u05d2\u05d5\u05dc\u05df DATA ONLY 5G'
-        else:
-            plan_name = f'\u05d2\u05d5\u05dc\u05df {gb_line}'
-            if is_5g:
-                plan_name += ' 5G'
-            elif category == '\u05de\u05ea\u05d2\u05dc\u05d2\u05dc\u05ea':
-                plan_name += ' \u05de\u05ea\u05d2\u05dc\u05d2\u05dc\u05ea'
-            elif is_intl:
-                plan_name += ' \u2013 \u05d7\u05d5"\u05dc \u05db\u05dc\u05d5\u05dc'
-
-        if plan_name in seen:
-            plan_name += f' ({idx})'
-        seen.add(plan_name)
-
-        # Extras: "כלל העולם" as destination, plus notable features
-        extras = ['\u05db\u05dc\u05dc \u05d4\u05e2\u05d5\u05dc\u05dd']
-        for l in block:
-            if (not l or l in SKIP or l == gb_line or l == category
-                    or re.match(r'^(\d+\.?\d*)\.?$', l)
-                    or '\u05dc\u05d7\u05d5\u05d3\u05e9' in l
-                    or '\u05dc\u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea' in l
-                    or re.match(r'^\d+GB$', l, re.I)
-                    or l in ('\u20aa',)):
+        extras = [dest]
+        if superl and superl != dest:
+            extras.append(superl)                          # superlative (e.g. "הכי נמכרת")
+        if c.get('bonus'):
+            extras.append(c['bonus'])                      # "חבילה שנייה 20GB ..."
+        has_apps = bool(c.get('apps'))
+        if has_apps:
+            extras.append('גלישה חופשית באפליקציות: ' + ' · '.join(c['apps']))
+        for s in c.get('services', []):
+            s = re.sub(r'\s+', ' ', s).strip().lstrip('•').strip().rstrip('*').strip()
+            if not s or len(s) <= 2 or s.startswith('*'):
                 continue
-            if len(l) > 3:
-                extras.append(l)
-        extras = list(dict.fromkeys(extras))[:6]
+            if re.match(r'^\d+(?:\.\d+)?\s*GB גלישה', s):     # duplicates data_gb
+                continue
+            if re.search(r'תוקף החבילה', s):                    # duplicates days
+                continue
+            if re.search(r'לתקנון|לחצו כאן|>>', s):              # CTA noise
+                continue
+            if has_apps and 'גלישה חופשית באפליקציות' in s:
+                continue
+            if s not in extras:
+                extras.append(s)
+        full = list(dict.fromkeys([e for e in extras if e]))
+        extras = full[:8]
 
-        matched_card = _golan_match_pdf(pdf_cards, gb_val, gb_line, price)
-        pdf_url = (matched_card or {}).get("href") or \
-            'https://www.golantelecom.co.il/index.php/terms'
+        # planInfo popup ("תנאי התוכנית") — abroad_plans store no url column, so the terms
+        # affordance is driven entirely by this "__info__|" extra (full detail + tariff link).
+        info_lines = [e for e in full if e != dest]
+        info_lines.append('תעריפון חו"ל (PDF)|https://golant.co/roaming_tariffs')
+        extras = extras + ['__info__|' + '\n'.join(info_lines)]
 
         plans.append({
-            'carrier': 'golan', 'plan_name': plan_name, 'price': price,
-            'days': None, 'data_gb': gb_val, 'minutes': int_minutes,
-            'sms': None, 'extras': extras, 'url': pdf_url,
+            'carrier': 'golan', 'plan_name': name, 'price': price,
+            'days': days, 'data_gb': data_gb, 'minutes': minutes, 'sms': None,
+            'extras': extras,
+            'url': f"{_GOLAN_OVERSEAS_URL.rsplit('/',1)[0]}/userGuide/step3?packageidChange={c.get('gtmId')}&process=roamingflights",
         })
-
     return plans
+
+
+def _golan_open(page, url):
+    """Navigate to a Golan offers page, dismiss popups, and expand every
+    'פרטי המבצע' / 'פרטי החבילה' toggle so .important_info is in the DOM."""
+    page.goto(url, timeout=40000, wait_until="domcontentloaded")
+    page.wait_for_timeout(3000)
+    _dismiss_popups(page)
+    try:
+        page.evaluate(r"""() => document.querySelectorAll('.info-text,[class*="info-text"],button,a,span')
+            .forEach(e => { const t=(e.textContent||'').trim();
+                if (t==='פרטי המבצע' || t==='פרטי החבילה') { try{e.click()}catch(x){} } })""")
+        page.wait_for_timeout(900)
+    except Exception:
+        pass
+
+
+_GOLAN_OFFERS_URL = "https://www.golantelecom.co.il/offers"
+_GOLAN_OVERSEAS_URL = "https://www.golantelecom.co.il/overseas_offers"
+_GOLAN_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
 
 def scrape_golan(_page=None):
-    """Scrape Golan Telecom domestic plans from golantelecom.co.il/index.php/offers."""
+    """Scrape Golan Telecom domestic plans from golantelecom.co.il/offers.
+    DOM-based: each .offer card carries data-gtm-price plus structured בישראל / בחול
+    benefit panels and a פרטי המבצע bullet list — see _GOLAN_DOMESTIC_JS / _build_golan_domestic.
+    """
     from playwright.sync_api import sync_playwright as _sp
-    _UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-           "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-    _OFFERS_URL = "https://www.golantelecom.co.il/index.php/offers"
-
     with _sp() as pw:
         browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-        page = browser.new_page(user_agent=_UA)
+        page = browser.new_page(user_agent=_GOLAN_UA)
         try:
-            page.goto(_OFFERS_URL, timeout=40000, wait_until="domcontentloaded")
-            page.wait_for_timeout(3000)
-            _dismiss_popups(page)
-
-            body = page.inner_text("body")
-
-            # For each visible plan card, capture: PDF href, snippet (for matching),
-            # and the abroad-tab benefits (.properties.roaming). Golan's premium 5G
-            # plans have a separate "\u05d1\u05d7\u05d5"\u05dc" tab with structured (label, value) items
-            # like "\u05d2\u05dc\u05d9\u05e9\u05d4 \u05d1\u05d7\u05d5"\u05dc / 12GB" and "\u05d9\u05de\u05d9\u05dd \u05d1\u05d7\u05d5"\u05dc \u05d1\u05e9\u05e0\u05d4 \u05e7\u05dc\u05e0\u05d3\u05e8\u05d9\u05ea / 45" \u2014 those
-            # belong on the dashboard so users see the actual abroad allowance, not
-            # just a generic "\u05d4\u05d7\u05d5"\u05dc \u05db\u05dc\u05d5\u05dc" tag.
-            pdf_cards = page.evaluate(r"""() => {
-                const links = Array.from(document.querySelectorAll('a[href*=".pdf"]'))
-                    .filter(a => (a.innerText || '').includes('\u05dc\u05ea\u05e0\u05d0\u05d9'));
-                return links.map(a => {
-                    let card = a.parentElement;
-                    // Walk up to the .offer wrapper, falling back to the nearest
-                    // ancestor that contains GB/category text (older card layouts).
-                    for (let d = 0; d < 12 && card; d++) {
-                        if (card.classList?.contains('offer')) break;
-                        card = card.parentElement;
-                    }
-                    if (!card || !card.classList?.contains('offer')) {
-                        let el = a.parentElement;
-                        for (let d = 0; d < 10 && el; d++) {
-                            const t = el.innerText || '';
-                            if ((/\d+GB|DATA ONLY|\u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea/.test(t)) && t.length < 800) {
-                                card = el; break;
-                            }
-                            el = el.parentElement;
-                        }
-                    }
-                    const snippet = card ? (card.innerText || card.textContent || '') : '';
-                    // Collect abroad benefits \u2014 items inside .properties.roaming
-                    const roaming = card?.querySelector('.properties.roaming');
-                    const abroadItems = roaming ? [...roaming.querySelectorAll('.item')].map(it => {
-                        const right = (it.querySelector('.right')?.textContent || '').replace(/\s+/g, ' ').trim();
-                        const left = (it.querySelector('.left')?.textContent || '').replace(/\s+/g, ' ').trim();
-                        const all = (it.textContent || '').replace(/\s+/g, ' ').trim();
-                        return { right, left, all };
-                    }).filter(it => it.all) : [];
-                    return { href: a.href, snippet, abroadItems };
-                });
-            }""")
-
-            plans = _parse_golan_body(body, pdf_cards)
+            _golan_open(page, _GOLAN_OFFERS_URL)
+            plans = _build_golan_domestic(page.evaluate(_GOLAN_DOMESTIC_JS))
             if not plans:
-                logger.warning("scrape_golan: 0 plans extracted from golantelecom.co.il/index.php/offers")
+                logger.warning("scrape_golan: 0 plans extracted from golantelecom.co.il/offers")
             return plans
         finally:
             browser.close()
 
 
 def scrape_golan_abroad(_page=None):
-    """Scrape Golan Telecom abroad plans from golantelecom.co.il/index.php/offers.
-    Golan's overseas page shows their domestic lineup with international minutes;
-    stored as abroad_plans so they appear in the abroad tab with the correct details.
+    """Scrape Golan Telecom roaming bundles from golantelecom.co.il/overseas_offers.
+    These are genuine overseas packages (e.g. 6GB+100דק' for 14 days, ~126 countries),
+    NOT the domestic line-up — stored as abroad_plans so they populate the חול tab with
+    real prices, validity, included countries and superlatives. See _build_golan_abroad.
     """
     from playwright.sync_api import sync_playwright as _sp
-    _UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-           "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-    _OFFERS_URL = "https://www.golantelecom.co.il/index.php/offers"
-
     with _sp() as pw:
         browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-        page = browser.new_page(user_agent=_UA)
+        page = browser.new_page(user_agent=_GOLAN_UA)
         try:
-            page.goto(_OFFERS_URL, timeout=40000, wait_until="domcontentloaded")
-            page.wait_for_timeout(3000)
-            _dismiss_popups(page)
-
-            body = page.inner_text("body")
-            # Same DOM structure as scrape_golan \u2014 capture PDF + abroad-tab benefits.
-            pdf_cards = page.evaluate(r"""() => {
-                const links = Array.from(document.querySelectorAll('a[href*=".pdf"]'))
-                    .filter(a => (a.innerText || '').includes('\u05dc\u05ea\u05e0\u05d0\u05d9'));
-                return links.map(a => {
-                    let card = a.parentElement;
-                    for (let d = 0; d < 12 && card; d++) {
-                        if (card.classList?.contains('offer')) break;
-                        card = card.parentElement;
-                    }
-                    if (!card || !card.classList?.contains('offer')) {
-                        let el = a.parentElement;
-                        for (let d = 0; d < 10 && el; d++) {
-                            const t = el.innerText || '';
-                            if ((/\d+GB|DATA ONLY|\u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea/.test(t)) && t.length < 800) {
-                                card = el; break;
-                            }
-                            el = el.parentElement;
-                        }
-                    }
-                    const snippet = card ? (card.innerText || card.textContent || '') : '';
-                    const roaming = card?.querySelector('.properties.roaming');
-                    const abroadItems = roaming ? [...roaming.querySelectorAll('.item')].map(it => {
-                        const right = (it.querySelector('.right')?.textContent || '').replace(/\s+/g, ' ').trim();
-                        const left = (it.querySelector('.left')?.textContent || '').replace(/\s+/g, ' ').trim();
-                        const all = (it.textContent || '').replace(/\s+/g, ' ').trim();
-                        return { right, left, all };
-                    }).filter(it => it.all) : [];
-                    return { href: a.href, snippet, abroadItems };
-                });
-            }""")
-
-            plans = _parse_golan_abroad_plans(body, pdf_cards)
+            _golan_open(page, _GOLAN_OVERSEAS_URL)
+            plans = _build_golan_abroad(page.evaluate(_GOLAN_OVERSEAS_JS))
             if not plans:
-                logger.warning("scrape_golan_abroad: 0 plans from golantelecom.co.il/index.php/offers")
+                logger.warning("scrape_golan_abroad: 0 plans from golantelecom.co.il/overseas_offers")
             return plans
         finally:
             browser.close()
@@ -1964,6 +1830,37 @@ def scrape_pelephone_abroad(page):
     return plans
 
 
+def _cellcom_fetch_abroad_policies(soc_ids, block_id):
+    """Return {titleEpi: full terms-PDF URL} for one Cellcom abroad GetPackagePopular
+       block. The PDF is each package's `policiesEpi` — the same doc the roaming card
+       surfaces via 'חשוב לדעת' → 'לתנאי חבילה המלאים' — served from the contentepi CDN.
+       Used to populate `terms_url` (the 'עיקרי התוכנית' link) on each plan."""
+    import urllib.request, json as _json
+    out = {}
+    try:
+        payload = _json.dumps({"SocIdList": soc_ids, "BlockId": block_id}).encode()
+        req = urllib.request.Request(
+            "https://digital-api.cellcom.co.il/api/abroad/GetPackagePopular",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Origin": "https://cellcom.co.il",
+                "Referer": "https://cellcom.co.il/AbroadMain/lobby/",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = _json.loads(resp.read())
+        for pkg in data.get("Body", []):
+            name = (pkg.get("titleEpi") or "").strip()
+            pol  = pkg.get("policiesEpi")
+            if name and pol:
+                out[name] = pol if pol.startswith("http") else "https://contentepi.cellcom.co.il" + pol
+    except Exception as e:
+        logger.error(f"Cellcom abroad policies (block {block_id}) failed: {e}")
+    return out
+
+
 def scrape_cellcom_abroad(page):
     """Scrape Cellcom abroad packages via their internal API (returns all 8+ plans)
        plus the Silent Roamers page for additional packages."""
@@ -2050,6 +1947,17 @@ def scrape_cellcom_abroad(page):
     except Exception as e:
         logger.error(f"Cellcom silent roamers scrape failed: {e}")
 
+    # ── Enrich with terms PDFs (policiesEpi) — the "עיקרי התוכנית" link ────
+    # Keyed by plan title across both abroad blocks: lobby (BlockId 20557, same
+    # SOC list as Source 1) + silent roamers (BlockId 60988). A miss leaves
+    # terms_url=None and PlanCard falls back to its hardcoded map.
+    terms = {}
+    terms.update(_cellcom_fetch_abroad_policies(SOC_IDS, 20557))
+    terms.update(_cellcom_fetch_abroad_policies(
+        ["FMWH990", "FMWH0065", "HUL4710", "FMWH627", "FMWH947", "FMWH946"], 60988))
+    for pl in plans:
+        pl["terms_url"] = terms.get(pl["plan_name"])
+
     return plans
 
 
@@ -2122,6 +2030,15 @@ def scrape_hotmobile_abroad(page):
         if price_el:
             price = _parse_price(price_el.inner_text().replace("₪", "").strip())
         days = _parse_days(duration_el.inner_text() if duration_el else "")
+        # Catalog id from the card's onclick handlers (Order/ShowMoreDetails/ShowCountries),
+        # e.g. onclick="ShowMoreDetails('51011067');" → used below to open the details
+        # modal and capture the "תנאי החבילה" PDF into terms_url.
+        soc_id = None
+        id_el = card.query_selector("a[onclick*='ShowMoreDetails'], a[onclick*='Order']")
+        if id_el:
+            m = re.search(r"'(\d+)'", id_el.get_attribute("onclick") or "")
+            if m:
+                soc_id = m.group(1)
         gb = None
         extras = []
         for i, li in enumerate(detail_lis):
@@ -2140,7 +2057,41 @@ def scrape_hotmobile_abroad(page):
         if name and name != "לא ידוע":
             plans.append({"carrier": "hotmobile", "plan_name": name, "price": price,
                           "days": days, "data_gb": gb, "minutes": None,
-                          "sms": None, "extras": extras})
+                          "sms": None, "extras": extras, "_socid": soc_id})
+
+    # ── Enrich with the per-plan "תנאי החבילה" terms PDF — the "עיקרי התוכנית" link ──
+    # Each roaming card's "לפרטים נוספים" opens a modal (ShowMoreDetails('<socId>'))
+    # containing a "תנאי החבילה" link → https://www.hotmobile.co.il/media/<slug>/<socId>.pdf.
+    # The <slug> is a random per-upload path that changes on re-upload, so we re-capture
+    # it every run rather than hardcoding. A miss leaves terms_url=None and PlanCard
+    # falls back to its hardcoded PLAN_DETAILS_PDFS map.
+    for pl in plans:
+        pl["terms_url"] = None
+        soc_id = pl.pop("_socid", None)
+        if not soc_id:
+            continue
+        try:
+            page.evaluate(f"ShowMoreDetails('{soc_id}')")
+            page.wait_for_timeout(1200)
+            pl["terms_url"] = page.eval_on_selector_all(
+                "a",
+                """els => {
+                    const hit = els.find(e => {
+                        const h = (e.href || '').toLowerCase();
+                        const t = (e.innerText || '').replace(/\\s+/g, '');
+                        return h.includes('.pdf') && h.includes('/media/') && t.includes('תנאיהחבילה');
+                    });
+                    return hit ? hit.href : null;
+                }""",
+            )
+        except Exception as e:
+            logger.warning(f"scrape_hotmobile_abroad: terms PDF for {pl['plan_name']!r} failed: {e}")
+        finally:
+            try:
+                page.keyboard.press("Escape")
+                page.wait_for_timeout(400)
+            except Exception:
+                pass
     return plans
 
 
