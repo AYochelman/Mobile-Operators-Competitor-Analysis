@@ -7791,6 +7791,35 @@ _POPUP_CLOSE_SELECTORS = [
     ".closeLightboxButton", ".adoric_element.closeLightboxButton",
 ]
 
+# Marketing-popup containers to force-hide before a screenshot. These are vendor /
+# site-specific wrappers that the click-to-close step can miss when a page stacks
+# 2-3 popups (e.g. Partner's homepage shows a native #popup1 promo AND an Adoric
+# lightbox; Partner's store stacks several Adoric smartboxes). Removing the wrappers
+# is safe — they are dedicated overlay containers, not page content — and far more
+# reliable than clicking, which can be intercepted by a full-page Adoric backdrop.
+# We deliberately do NOT blind-click every generic close selector: on SPA stores a
+# stray force-click can hit a router link and navigate to a blank/loading page.
+_POPUP_HIDE_JS = r"""
+() => {
+  let n = 0;
+  const sels = [
+    'div[class*="__ADORIC__"]',   // Adoric marketing popups + their full-page backdrop
+    '[id^="adoric_smartbox"]',    // individual Adoric smartbox lightboxes
+    '#popup1',                    // Partner homepage native promo ("ALL IN +")
+  ];
+  for (const s of sels) {
+    for (const el of document.querySelectorAll(s)) {
+      el.style.setProperty('display', 'none', 'important');
+      n++;
+    }
+  }
+  // Popups commonly lock body scroll — restore it so the hero renders normally.
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+  return n;
+}
+"""
+
 def _dismiss_popups(page) -> None:
     """Try to close any popups or overlays before taking a screenshot."""
     # 1. Press Escape — closes most modal overlays
@@ -7812,7 +7841,17 @@ def _dismiss_popups(page) -> None:
         except Exception:
             continue
 
-    # 3. Final short wait to let any closing animation finish
+    # 3. Safety net: force-hide any leftover marketing overlay (Adoric / Partner
+    #    #popup1) that the single click missed. Guarantees a clean screenshot even
+    #    when a page stacks multiple popups or a backdrop intercepts the close click.
+    try:
+        hidden = page.evaluate(_POPUP_HIDE_JS)
+        if hidden:
+            logger.info("Force-hid %d leftover popup container(s) before screenshot", hidden)
+    except Exception:
+        pass
+
+    # 4. Final short wait to let any closing animation finish
     page.wait_for_timeout(500)
 
 
