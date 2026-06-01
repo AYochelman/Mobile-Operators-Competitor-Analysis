@@ -820,14 +820,28 @@ def compute_executive_metrics(category, usd_rate=3.7, eur_rate=4.0, db_path=None
 
     conn = _connect(db_path)
     try:
+        best_deal = None  # (carrier, value) of the single best per-unit deal; overrides `cheapest`
         if category == 'domestic':
+            # Weighted blended price-per-GB (SUM(price)/SUM(GB)) per carrier. A naive
+            # AVG(price/data_gb) is an average-of-ratios: a tiny-data plan (e.g. 019's
+            # 100MB plan at ~102 ILS/GB) dominates the mean and falsely ranks a budget
+            # carrier as the most expensive. Weighting by GB lets large plans count
+            # proportionally, which is the intuitively correct blended rate.
             rows = conn.execute("""
-                SELECT carrier, AVG(price * 1.0 / data_gb) AS v
+                SELECT carrier, SUM(price) * 1.0 / SUM(data_gb) AS v
                 FROM plans
                 WHERE data_gb > 0 AND price IS NOT NULL
                 GROUP BY carrier ORDER BY v ASC
             """).fetchall()
             unit = '\u20aa/GB'
+            # "Most worthwhile" card = the single best price-per-GB deal on the market.
+            # With exactly one MIN() aggregate, SQLite draws the bare `carrier` column
+            # from the row that holds the minimum value.
+            best_deal = conn.execute("""
+                SELECT carrier, MIN(price * 1.0 / data_gb) AS v
+                FROM plans
+                WHERE data_gb > 0 AND price IS NOT NULL
+            """).fetchone()
             top_rows = conn.execute("""
                 SELECT carrier, plan_name, price, data_gb FROM plans
                 WHERE price IS NOT NULL ORDER BY price ASC LIMIT 10
@@ -914,7 +928,12 @@ def compute_executive_metrics(category, usd_rate=3.7, eur_rate=4.0, db_path=None
             {'carrier': r[0], 'value': round(float(r[1]), 2)}
             for r in rows if r[1] is not None
         ]
-        cheapest = chart_data[0] if chart_data else {'carrier': '-', 'value': 0}
+        # For ₪/GB categories the "most worthwhile" card shows the single best deal
+        # (best_deal); other categories fall back to the cheapest carrier by chart metric.
+        if best_deal is not None and best_deal[1] is not None:
+            cheapest = {'carrier': best_deal[0], 'value': round(float(best_deal[1]), 2)}
+        else:
+            cheapest = chart_data[0] if chart_data else {'carrier': '-', 'value': 0}
 
         if category == 'content':
             drop_rows = conn.execute(f"""
@@ -945,10 +964,16 @@ def compute_executive_metrics(category, usd_rate=3.7, eur_rate=4.0, db_path=None
 
         total_drops = sum(r[1] for r in drop_rows)
         total_rises = sum(r[1] for r in rise_rows)
-        most_aggressive_carrier = drop_rows[0][0] if drop_rows else (
-            chart_data[-1]['carrier'] if chart_data else '-'
-        )
-        most_aggressive_count = drop_rows[0][1] if drop_rows else 0
+        # "Most aggressive" = the carrier with the most price DROPS in the last 7 days.
+        # When nobody cut prices there is no aggressor — return '-' / 0 rather than
+        # falling back to the most-expensive carrier (chart_data[-1]), which would
+        # mislabel a passive, pricey carrier as "aggressive" with 0 drops.
+        if drop_rows:
+            most_aggressive_carrier = drop_rows[0][0]
+            most_aggressive_count = drop_rows[0][1]
+        else:
+            most_aggressive_carrier = '-'
+            most_aggressive_count = 0
 
         return {
             'cheapest':        {'carrier': cheapest['carrier'], 'value': cheapest['value'], 'unit': unit},

@@ -288,9 +288,15 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
             </svg>
           </div>
           <div className="text-[10px] opacity-80 mb-1">האגרסיבי ביותר</div>
-          <div className="text-sm font-bold">{carrierName(metrics.most_aggressive?.carrier)}</div>
+          <div className="text-sm font-bold">
+            {metrics.most_aggressive?.changes > 0
+              ? carrierName(metrics.most_aggressive?.carrier)
+              : '—'}
+          </div>
           <div className="text-[10px] opacity-70 mt-1">
-            {metrics.most_aggressive?.changes} הורדות מחיר
+            {metrics.most_aggressive?.changes > 0
+              ? `${metrics.most_aggressive.changes} הורדות מחיר`
+              : 'אין הורדות מחיר'}
           </div>
         </div>
         <div className="rounded-xl p-3 text-center text-white" style={{ background: '#c47a3a' }}>
