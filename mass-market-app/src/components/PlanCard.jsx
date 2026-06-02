@@ -358,6 +358,10 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   // Extract plan_info marker (stored inside extras as "__info__|<text>")
   const planInfoMarker = plan.extras ? plan.extras.find(e => typeof e === 'string' && e.startsWith('__info__|')) : null
   const planInfo = planInfoMarker ? planInfoMarker.slice('__info__|'.length) : (plan.plan_info || null)
+  // 019 roaming ships its terms inline (no PDF), so its key-terms affordance is the in-app
+  // __info__| modal, not a link-out. Label it "עיקרי התוכנית" — matching the PDF-backed
+  // roaming carriers on the same tab — instead of the generic modal label "תנאי התוכנית".
+  const planInfoLabel = (isAbroad && carrier === 'mobile019') ? 'עיקרי התוכנית' : 'תנאי התוכנית'
 
   // --- Footer button gating ---------------------------------------------
   // Global affiliate providers keep their dedicated "רכישה דרך MOCA" button.
@@ -655,7 +659,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                     <line x1="12" y1="16" x2="12" y2="12"/>
                     <line x1="12" y1="8" x2="12.01" y2="8"/>
                   </svg>
-                  תנאי התוכנית
+                  {planInfoLabel}
                 </button>
               ) : (
               <a
@@ -855,7 +859,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
         </Suspense>
       )}
       {planInfo && (
-        <Modal open={showPlanInfo} onClose={() => setShowPlanInfo(false)} title="מידע נוסף על התוכנית" maxWidth="max-w-md">
+        <Modal open={showPlanInfo} onClose={() => setShowPlanInfo(false)} title={planInfoLabel === 'עיקרי התוכנית' ? 'עיקרי התוכנית' : 'מידע נוסף על התוכנית'} maxWidth="max-w-md">
           <div className="space-y-2 text-sm text-gray-700 leading-relaxed text-right">
             {planInfo.split('\n').map(l => l.trim()).filter(Boolean).map((line, i) => {
               // "label|https://..." lines render as a clickable link (e.g. terms PDF)

@@ -386,6 +386,72 @@ _WECOM_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML
 # wecomGlobal-5G-V2 terms PDFs.
 _WECOM_FAIR_USE_GB = 10000
 
+# Canonical landing page for the wefly roaming call-rates ("מחירון שיחות והודעות בחו\"ל").
+# Used as the link target when surfacing the "פרטי החבילה" popup (and as a fallback if the
+# popup markup ever stops carrying its own href).
+_WECOM_OVERSEAS_RATES_URL = "https://we-com.co.il/price-list-for-overseas-customers/"
+
+
+def _wecom_wefly_popup_info(page, post_id, listing_id=None):
+    """Return the wefly package's "פרטי החבילה" details as a cleaned
+    "__info__|<lines>" extra (or None on failure).
+
+    We-Com's roaming cards all open ONE JetEngine-dynamic JetPopup (jet-popup-14068)
+    whose body is rendered per the clicked card's postId. Rather than drive the JS popup
+    (which is blocked by a page-load marketing overlay), we replay its admin-ajax call
+    (action=jet_popup_get_content) directly with that postId. PlanCard renders the result
+    as the in-card "תנאי התוכנית" modal; the call-rates line becomes a clickable
+    "label|url" link.
+    """
+    import html as _html
+    try:
+        resp = page.request.post(
+            "https://we-com.co.il/wp-admin/admin-ajax.php",
+            form={
+                "action": "jet_popup_get_content",
+                "data[forceLoad]": "true",
+                "data[customContent]": "",
+                "data[popupId]": "jet-popup-14068",
+                "data[isJetEngine]": "true",
+                "data[listingSource]": "posts",
+                "data[listingId]": listing_id or "27979",
+                "data[queryId]": "",
+                "data[postId]": str(post_id),
+                "data[popup_id]": "14068",
+                "data[page_url]": "https://we-com.co.il/roaming/",
+            },
+        )
+        html_body = ((resp.json().get("content") or {}).get("content")) or ""
+    except Exception as e:
+        logging.warning("wecom wefly popup fetch failed (post %s): %s", post_id, e)
+        return None
+    if not html_body:
+        return None
+    # Capture the overseas call-rates link before stripping tags.
+    rate_url = _WECOM_OVERSEAS_RATES_URL
+    m = re.search(r'href="([^"]*price-list[^"]*)"', html_body)
+    if m:
+        rate_url = m.group(1)
+    text = re.sub(r'(?is)<(script|style)[^>]*>.*?</\1>', '', html_body)
+    text = re.sub(r'(?i)<br\s*/?>', '\n', text)
+    text = re.sub(r'(?i)</(p|div|li|h[1-6]|tr)>', '\n', text)
+    text = re.sub(r'(?s)<[^>]+>', '', text)
+    text = _html.unescape(text)
+    lines, seen = [], set()
+    for raw in text.split('\n'):
+        ln = raw.strip()
+        if not ln or ln in seen:
+            continue
+        seen.add(ln)
+        if ln.lower().startswith('wefly'):        # bare plan-name heading — the card already shows it
+            continue
+        if 'מחירון' in ln and ln.endswith(':'):  # the "...ללקוחות wecom בחו\"ל:" intro
+            continue
+        if 'מחירון' in ln:                       # call-rates label -> clickable link
+            ln = ln + '|' + rate_url
+        lines.append(ln)
+    return ('__info__|' + '\n'.join(lines)) if lines else None
+
 
 def _scrape_wecom_page(page, url, name_prefix, already_navigated=False):
     """Helper: navigate to url (unless already_navigated), find headings starting with name_prefix, parse cards."""
@@ -458,6 +524,22 @@ def _scrape_wecom_page(page, url, name_prefix, already_navigated=False):
                 if e not in seen_e and len(e) > 2:
                     seen_e.add(e); clean_extras.append(e)
                 if len(clean_extras) >= 4: break
+
+            # "פרטי החבילה" details — read this card's JetEngine postId and fetch the
+            # popup body (see _wecom_wefly_popup_info), surfaced as the "תנאי התוכנית" modal.
+            ids = h_el.evaluate(r"""el => {
+                let p = el, postId = null, listingId = null;
+                for (let i = 0; i < 16 && p; i++) {
+                    p = p.parentElement; if (!p) break;
+                    if (!postId && p.dataset && p.dataset.postId) postId = p.dataset.postId;
+                    if (!listingId && p.getAttribute && p.getAttribute('data-listing-id')) listingId = p.getAttribute('data-listing-id');
+                }
+                return { postId: postId, listingId: listingId };
+            }""")
+            if ids and ids.get("postId"):
+                info = _wecom_wefly_popup_info(page, ids["postId"], ids.get("listingId"))
+                if info:
+                    clean_extras.append(info)
 
             plans.append({"carrier": "wecom", "plan_name": name, "price": price,
                           "days": days, "data_gb": gb, "minutes": None, "sms": None,
@@ -1242,6 +1324,67 @@ def _parse_rami_levy_abroad_body(body_text):
     return plans
 
 
+def _enrich_rami_levy_abroad_info(page, plans):
+    """Attach each plan's "למידע נוסף" modal text as a `__info__|` extra — the per-plan
+    terms popup PlanCard renders as the "תנאי התוכנית" button. Mirrors the domestic
+    scrape_rami_levy enrichment. The roaming page renders every card twice (a visible
+    card + a hidden responsive twin), so only the visible `a.more` is clickable; modal
+    is matched back to its plan by PRICE, which is unique per plan."""
+    # Modal chrome lines to drop: title, close glyphs, "סגור" button.
+    _CHROME = {
+        "מידע נוסף על התוכנית",  # מידע נוסף על התוכנית (modal title)
+        "✕", "✖", "×", "X", "x",                                                                  # close glyphs
+        "סגור",                                                                              # סגור
+    }
+    try:
+        price_to_info = {}
+        more = page.locator("a.more")
+        for i in range(more.count()):
+            link = more.nth(i)
+            # Card price = the numeric line immediately before the ₪ line (same rule
+            # the body parser uses). Hidden twins (offsetParent === null) return null.
+            price = link.evaluate("""el => {
+                if (el.offsetParent === null) return null;
+                let p = el;
+                for (let k=0;k<6 && p;k++){ p=p.parentElement; if (p && p.innerText && p.innerText.length>40) break; }
+                const lines = (p ? p.innerText : '').split('\\n').map(s=>s.trim()).filter(Boolean);
+                const idx = lines.indexOf('₪');
+                if (idx > 0) { const v = parseFloat(lines[idx-1].replace(/,/g,'')); return isNaN(v)?null:v; }
+                return null;
+            }""")
+            if price is None:
+                continue
+            try:
+                link.scroll_into_view_if_needed(timeout=4000)
+                page.wait_for_timeout(150)
+                link.click(timeout=4000)
+                page.wait_for_timeout(700)
+                raw = page.evaluate("""() => {
+                    const cands = document.querySelectorAll('.modal-body, .modal, [role="dialog"], [class*="modal" i]');
+                    for (const m of cands){ if (m.offsetParent !== null && m.innerText && m.innerText.trim().length > 20) return m.innerText; }
+                    return null;
+                }""")
+                if raw:
+                    info = "\n".join(
+                        l.strip() for l in raw.split("\n")
+                        if l.strip() and l.strip() not in _CHROME
+                    )
+                    if info:
+                        price_to_info[round(price, 2)] = info
+                page.keyboard.press("Escape")
+                page.wait_for_timeout(250)
+            except Exception as exc:
+                logger.warning(f"_enrich_rami_levy_abroad_info: modal capture failed @ {price}: {exc}")
+        for pl in plans:
+            pr = pl.get("price")
+            info = price_to_info.get(round(pr, 2)) if pr is not None else None
+            if info:
+                pl["plan_info"] = info
+                pl["extras"] = list(pl.get("extras", [])) + [f"__info__|{info}"]
+    except Exception as exc:
+        logger.warning(f"_enrich_rami_levy_abroad_info: skipped ({exc})")
+
+
 def scrape_rami_levy_abroad(_page=None):
     """Scrape Rami Levy abroad plans. Single plan covers 145 countries."""
     _UA = (
@@ -1264,7 +1407,9 @@ def scrape_rami_levy_abroad(_page=None):
             page.wait_for_timeout(3000)
             _dismiss_popups(page)
             body = page.inner_text("body")
-            return _parse_rami_levy_abroad_body(body)
+            plans = _parse_rami_levy_abroad_body(body)
+            _enrich_rami_levy_abroad_info(page, plans)
+            return plans
         finally:
             browser.close()
 
@@ -2095,6 +2240,15 @@ def scrape_hotmobile_abroad(page):
     return plans
 
 
+# Site-wide VoLTE notice 019 shows on its roaming lobby (the "שימו לב!" popup). It applies
+# to every 019 חו"ל package, so it's appended to each plan's "עיקרי התוכנית" modal lines.
+_MOBILE019_VOLTE_NOTE = (
+    "שימו לב: ביעדים ארצות הברית, קנדה, סינגפור, טייוואן, אוסטריה ויפן תתאפשר קבלת "
+    "והוצאת שיחות רק במכשיר התומך בשיחות בדור 4 (VoLTE). ללא מכשיר תומך VoLTE לא "
+    "תתאפשר קבלה והוצאת שיחות למרות רכישת החבילה."
+)
+
+
 def scrape_019_abroad(_page=None):
     """019 abroad is behind Incapsula — uses same Stealth session as scrape_019."""
     from playwright_stealth import Stealth
@@ -2134,10 +2288,12 @@ def scrape_019_abroad(_page=None):
                 gb = _parse_gb(gb_el.inner_text()) if gb_el else None
                 days, minutes = None, None
                 extras = []
+                info_lines = []          # full card text for the "עיקרי התוכנית" modal
                 for li_el in blist_els:
-                    text = li_el.inner_text().strip()
+                    text = re.sub(r"\s+", " ", li_el.inner_text()).strip()
                     if not text:
                         continue
+                    info_lines.append(text)
                     if "למשך" in text and "ימים" in text:
                         days = _parse_days(text)
                     elif "דק" in text:
@@ -2146,6 +2302,11 @@ def scrape_019_abroad(_page=None):
                     else:
                         extras.append(text)
                 if name and name != "לא ידוע":
+                    # "עיקרי התוכנית" popup: 019 roaming has no terms PDF, so the card's own
+                    # bullets + the site-wide VoLTE notice are reproduced in-app as a filtered
+                    # "__info__|" extra (PlanCard renders it as a modal beside "לאתר הספק").
+                    info_lines.append(_MOBILE019_VOLTE_NOTE)
+                    extras = extras + ["__info__|" + "\n".join(info_lines)]
                     plans.append({"carrier": "mobile019", "plan_name": name, "price": price,
                                   "days": days, "data_gb": gb, "minutes": minutes,
                                   "sms": None, "extras": extras})

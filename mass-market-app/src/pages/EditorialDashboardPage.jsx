@@ -36,17 +36,13 @@ const TAB_TO_PATH = {
 }
 
 const FILTERS = [
-  { id: 'all',     label: 'הכל',           predicate: () => true },
-  { id: 'down',    label: 'הזולות',         predicate: (c) => isPriceDown(c) },
-  { id: 'new',     label: 'חדשים',          predicate: (c) => c.change_type === 'new_plan' },
-  { id: 'up',      label: 'עליות',           predicate: (c) => isPriceUp(c) },
-  { id: 'high',    label: 'השפעה גבוה',     predicate: (c) => priceImpact(c) >= 10 },
+  { id: 'new',     label: 'חבילות חדשות',    predicate: (c) => c.change_type === 'new_plan' },
+  { id: 'price',   label: 'שינויי מחיר',      predicate: (c) => c.change_type === 'price_change' },
+  { id: 'extras',  label: 'שינויים בהטבות',   predicate: (c) => c.change_type === 'extras_change' },
+  { id: 'removed', label: 'חבילות שהוסרו',    predicate: (c) => c.change_type === 'removed_plan' },
+  { id: 'all',     label: 'הכל',             predicate: () => true },
 ]
 
-function isPriceDown(c) {
-  if (c?.change_type !== 'price_change') return false
-  return Number(c.new_val) < Number(c.old_val)
-}
 function isPriceUp(c) {
   if (c?.change_type !== 'price_change') return false
   return Number(c.new_val) > Number(c.old_val)
@@ -71,7 +67,7 @@ function fmtAgo(iso) {
 
 /** Recent-changes feed with filter pills. */
 function ChangeFeed({ changes, onItemClick }) {
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState('new')
   const filtered = useMemo(() => {
     const pred = FILTERS.find((f) => f.id === filter)?.predicate || (() => true)
     return changes.filter(pred).slice(0, 12)

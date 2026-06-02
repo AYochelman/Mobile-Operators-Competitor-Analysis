@@ -180,6 +180,8 @@ const RESELLERS = [
     source_url: 'https://www.instagram.com/cellcomshefamr/' },
   { id: 'zorro',          label: '\u05d6\u05d5\u05e8\u05d5 \u2014 \u05d4\u05e9\u05d5\u05d5\u05d0\u05d4 \u05d5\u05d4\u05d5\u05d6\u05dc\u05d4 \u05e9\u05dc \u05d7\u05d1\u05d9\u05dc\u05d5\u05ea \u05ea\u05e7\u05e9\u05d5\u05e8\u05ea', underlying: 'partner',
     source_url: 'https://www.facebook.com/ZorroPricesCompare/' },
+  { id: 'rami_levy_landing', label: '\u05e8\u05de\u05d9 \u05dc\u05d5\u05d9 \u05ea\u05e7\u05e9\u05d5\u05e8\u05ea \u2014 \u05d3\u05e3 \u05e0\u05d7\u05d9\u05ea\u05d4', underlying: 'rami_levy',
+    source_url: 'https://landing-mobile.rami-levy.co.il/landing/' },
 ]
 
 const KNOWN_REGIONS = new Set([

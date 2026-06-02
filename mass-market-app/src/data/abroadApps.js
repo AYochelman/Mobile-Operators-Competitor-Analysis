@@ -4,6 +4,8 @@
  * that exempt specific apps from the data quota (Golan 750GB).
  */
 
+import { carrierLabel } from './carrierLabels'
+
 const WHATSAPP   = { name: 'WhatsApp',    logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg' };
 const INSTAGRAM  = { name: 'Instagram',   logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg' };
 const FACEBOOK   = { name: 'Facebook',    logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg' };
@@ -41,6 +43,7 @@ const APP_BY_NAME = {
   netflix: NETFLIX, נטפליקס: NETFLIX,
   snapchat: SNAPCHAT, 'סנאפצ\'אט': SNAPCHAT, סנאפצאט: SNAPCHAT,
   'google maps': GMAPS, gmaps: GMAPS, 'מפות גוגל': GMAPS,
+  tripadvisor: TRIPADV, 'טריפאדוייזר': TRIPADV,
 };
 
 /**
@@ -71,6 +74,21 @@ export function getAppsForPlan(plan) {
         .map(s => APP_BY_NAME[s.trim().toLowerCase()] || APP_BY_NAME[s.trim()])
         .filter(Boolean);
       if (apps.length) return { title: 'גולן — גלישה חופשית באפליקציות', apps };
+    }
+  }
+
+  // Generic: any plan that NAMES its free apps anywhere in extras — including inside the
+  // "__info__|" plan-terms blob — e.g. Rami Levy roaming "גלישה חופשית באפליקציות
+  // Facebook, Waze, Snapchat, Whatsapp, Google Maps, Tripadvisor." Map each named app →
+  // icon and show the link only when at least one name resolves (so an unnamed
+  // "אפליקציות נבחרות" stays hidden). Carriers handled above return before reaching here.
+  if (hasApps) {
+    const m = extras.join('\n').match(/גלישה חופשית באפליקציות\s*[:：]?\s*([^\n.]+)/);
+    if (m) {
+      const apps = m[1].split(/[·,]/)
+        .map(s => APP_BY_NAME[s.trim().toLowerCase()] || APP_BY_NAME[s.trim()])
+        .filter(Boolean);
+      if (apps.length) return { title: `${carrierLabel(carrier)} — גלישה חופשית באפליקציות`, apps };
     }
   }
   return null;

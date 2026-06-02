@@ -2347,6 +2347,14 @@ def save_reseller_plans(plans, db_path=None):
         conn.close()
 
 
+# Reseller sources always shown regardless of carrier dominance — tracked by
+# explicit user request even when the underlying carrier publishes an equal-or-
+# better plan (e.g. a carrier's OWN lead-gen landing page). rami_levy also needs
+# this because its kosher ₪14.9 plan stores data_gb=None (≡ ∞ here), which would
+# otherwise dominate every priced rami_levy reseller plan.
+ALWAYS_SHOW_RESELLER_IDS = {"rami_levy_landing"}
+
+
 def filter_undominated_reseller_plans(reseller_plans, db_path=None):
     """Remove reseller plans that are dominated by the official carrier's own plans.
 
@@ -2367,6 +2375,9 @@ def filter_undominated_reseller_plans(reseller_plans, db_path=None):
 
     kept = []
     for rp in reseller_plans:
+        if rp.get("reseller_id") in ALWAYS_SHOW_RESELLER_IDS:
+            kept.append(rp)
+            continue
         r_price = rp.get("price")
         if r_price is None:
             kept.append(rp)

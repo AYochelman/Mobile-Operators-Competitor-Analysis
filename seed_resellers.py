@@ -72,6 +72,72 @@ PLANS = [
         "source_url": "https://www.facebook.com/ZorroPricesCompare/",
         "seen_at": "2026-05",
     },
+    # ─────────────────────────────────────────────────────────────────────
+    # Rami Levy Communications — dedicated lead-gen landing page (3 packages)
+    #   https://landing-mobile.rami-levy.co.il/landing/
+    # Added 2026-06 per explicit user request: track this landing page as a
+    # "reseller" source even though it is Rami Levy's OWN page and the offers
+    # overlap the official rate card (the Xtreme package is identical to the
+    # public "1000GB Xtreme" @ ₪55). Because of that overlap — and because the
+    # kosher ₪14.9 plan stores data_gb=None (treated as ∞ by the dominance
+    # filter, which would then dominate every priced rami_levy reseller plan) —
+    # reseller_id "rami_levy_landing" is whitelisted in
+    # db.ALWAYS_SHOW_RESELLER_IDS so all 3 stay visible in the משווקים tab.
+    # Prices are the headline totals the page advertises (the package names
+    # encode them: "2 ב-40", "3 ב-80").
+    # ─────────────────────────────────────────────────────────────────────
+    {
+        "reseller_id": "rami_levy_landing",
+        "carrier": "rami_levy",
+        "plan_name": "זוגות 2 ב-40",
+        "price": 40.0,
+        "data_gb": 200,
+        "minutes": 2500,
+        "sms": 2500,
+        "extras": [
+            "מבצע זוגות — 2 קווים, רשת 5G",
+            "₪40 לשני הקווים (₪20 לקו)",
+            "חודש במתנה למצטרפים חדשים",
+            "תוקף: 12 חודשים",
+            "בכפוף לתקנון המבצע והסכם ההתקשרות (ט.ל.ח)",
+        ],
+        "source_url": "https://landing-mobile.rami-levy.co.il/landing/",
+        "seen_at": "2026-06",
+    },
+    {
+        "reseller_id": "rami_levy_landing",
+        "carrier": "rami_levy",
+        "plan_name": "טריפל 3 ב-80",
+        "price": 80.0,
+        "data_gb": 600,
+        "minutes": 5000,
+        "sms": 5000,
+        "extras": [
+            "מבצע טריפל — 3 קווים, רשת 5G",
+            "₪80 לשלושת הקווים (₪26.7 לקו)",
+            "תוקף: 24 חודשים",
+            "בכפוף לתקנון המבצע והסכם ההתקשרות (ט.ל.ח)",
+        ],
+        "source_url": "https://landing-mobile.rami-levy.co.il/landing/",
+        "seen_at": "2026-06",
+    },
+    {
+        "reseller_id": "rami_levy_landing",
+        "carrier": "rami_levy",
+        "plan_name": "Xtreme – 1000GB",
+        "price": 55.0,
+        "data_gb": 1000,
+        "minutes": 2500,
+        "sms": 2500,
+        "extras": [
+            "חבילת Xtreme — קו יחיד, רשת 5G",
+            "תוקף: 24 חודשים",
+            "זהה לחבילת 1000GB Xtreme שבמחירון הרשמי (₪55)",
+            "בכפוף לתקנון המבצע והסכם ההתקשרות (ט.ל.ח)",
+        ],
+        "source_url": "https://landing-mobile.rami-levy.co.il/landing/",
+        "seen_at": "2026-06",
+    },
 ]
 
 
