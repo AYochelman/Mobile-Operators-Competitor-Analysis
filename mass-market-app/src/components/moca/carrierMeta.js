@@ -40,3 +40,56 @@ export function getCarrierLetter(id) {
 export function getCarrierName(id) {
   return ALL_CARRIER_LABELS[id] || id
 }
+
+/**
+ * Carrier id → brand logo path (served from `public/logos/`).
+ * Single source of truth — consumed by <PlanCard> and by <CarrierChip logo />.
+ * Keep mobile019→019.png and xphone→xphone_global.png mappings (no dedicated files).
+ */
+export const CARRIER_LOGOS = {
+  // Domestic
+  neptucom:         '/logos/neptucom.png',
+  partner:          '/logos/partner.png',
+  pelephone:        '/logos/pelephone.png',
+  hotmobile:        '/logos/hotmobile.png',
+  cellcom:          '/logos/cellcom.png',
+  mobile019:        '/logos/019.png',
+  xphone:           '/logos/xphone_global.png',
+  wecom:            '/logos/wecom.png',
+  golan:            '/logos/golan.png',
+  rami_levy:        '/logos/rami_levy.png',
+  // Global eSIM
+  tuki:             '/logos/tuki.png',
+  globalesim:       '/logos/globalesim.png',
+  airalo:           '/logos/airalo.png',
+  airalo_local:     '/logos/airalo.png',
+  airalo_regional:  '/logos/airalo.png',
+  pelephone_global: '/logos/pelephone_global.png',
+  esimo:            '/logos/esimo.png',
+  simtlv:           '/logos/simtlv.png',
+  world8:           '/logos/world8.png',
+  xphone_global:    '/logos/xphone_global.png',
+  saily:            '/logos/saily.png',
+  holafly:          '/logos/holafly.png',
+  esimio:           '/logos/esimio.png',
+  sparks:           '/logos/sparks.png',
+  voye:             '/logos/voye.png',
+  orbit:            '/logos/orbit.png',
+  travelsim:        '/logos/travelsim.png',
+  gomoworld:        '/logos/gomoworld.png',
+  tasim:            '/logos/tasim.png',
+  maya:             '/logos/maya.png',
+  bcengi:           '/logos/bcengi.png',
+  esim70:           '/logos/esim70.png',
+  jetpack:          '/logos/jetpack.png',
+  breez:            '/logos/breez.png',
+  bytesim:          '/logos/bytesim.png',
+  besim:            '/logos/besim.png',
+  seven_g:          '/logos/seven_g.png',
+  bestconnect:      '/logos/bestconnect.png',
+  esimplus:         '/logos/esimplus.png',
+}
+
+export function getCarrierLogo(id) {
+  return CARRIER_LOGOS[id] || null
+}

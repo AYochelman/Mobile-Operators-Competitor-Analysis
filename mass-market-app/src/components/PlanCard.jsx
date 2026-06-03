@@ -1,7 +1,7 @@
 import { useState, useCallback, lazy, Suspense, memo } from 'react'
 import Badge from './ui/Badge'
 import Delta from './moca/Delta'
-import { getCarrierColor } from './moca/carrierMeta'
+import { getCarrierColor, CARRIER_LOGOS } from './moca/carrierMeta'
 import CountryModal from './CountryModal'
 import Modal from './ui/Modal'
 import { getCountriesForPlan } from '../data/globalCountries'
@@ -93,47 +93,7 @@ const GLOBAL_COLORS = {
   seven_g: 'violet', bestconnect: 'blue', esimplus: 'blue',
 }
 
-const CARRIER_LOGOS = {
-  // Domestic
-  neptucom:        '/logos/neptucom.png',
-  partner:         '/logos/partner.png',
-  pelephone:       '/logos/pelephone.png',
-  hotmobile:       '/logos/hotmobile.png',
-  cellcom:         '/logos/cellcom.png',
-  mobile019:       '/logos/019.png',
-  xphone:          '/logos/xphone_global.png',
-  wecom:           '/logos/wecom.png',
-  golan:           '/logos/golan.png',
-  rami_levy:       '/logos/rami_levy.png',
-  // Global eSIM
-  tuki:            '/logos/tuki.png',
-  globalesim:      '/logos/globalesim.png',
-  airalo:          '/logos/airalo.png',
-  pelephone_global:'/logos/pelephone_global.png',
-  esimo:           '/logos/esimo.png',
-  simtlv:          '/logos/simtlv.png',
-  world8:          '/logos/world8.png',
-  xphone_global:   '/logos/xphone_global.png',
-  saily:           '/logos/saily.png',
-  holafly:         '/logos/holafly.png',
-  esimio:          '/logos/esimio.png',
-  sparks:          '/logos/sparks.png',
-  voye:            '/logos/voye.png',
-  orbit:           '/logos/orbit.png',
-  travelsim:       '/logos/travelsim.png',
-  gomoworld:       '/logos/gomoworld.png',
-  tasim:           '/logos/tasim.png',
-  maya:            '/logos/maya.png',
-  bcengi:         '/logos/bcengi.png',
-  esim70:         '/logos/esim70.png',
-  jetpack:        '/logos/jetpack.png',
-  breez:          '/logos/breez.png',
-  bytesim:        '/logos/bytesim.png',
-  besim:          '/logos/besim.png',
-  seven_g:        '/logos/seven_g.png',
-  bestconnect:    '/logos/bestconnect.png',
-  esimplus:       '/logos/esimplus.png',
-}
+// CARRIER_LOGOS now lives in moca/carrierMeta.js (shared with <CarrierChip logo />)
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
 const LOGO_SIZES = {
