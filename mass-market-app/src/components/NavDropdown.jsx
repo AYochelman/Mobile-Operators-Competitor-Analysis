@@ -53,7 +53,7 @@ export default function NavDropdown({ label, isActive = false, children }) {
       {open && (
         <div
           role="menu"
-          className="absolute top-full mt-1 right-0 min-w-[180px] bg-white border border-moca-border/60 rounded-lg shadow-lg py-1 z-50"
+          className="absolute top-full mt-1 right-0 min-w-[180px] bg-white border border-moca-border/60 rounded-lg shadow-popover py-1 z-50"
         >
           {children}
         </div>

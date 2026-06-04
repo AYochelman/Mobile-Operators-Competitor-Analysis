@@ -47,7 +47,7 @@ export default function InvitePage() {
         <Logo size="md" showSubtext={false} />
       </div>
 
-      <div className="bg-white rounded-2xl border border-moca-border shadow-sm p-8 w-full max-w-md text-center">
+      <div className="bg-white rounded-2xl border border-moca-border shadow-card p-8 w-full max-w-md text-center">
         {authLoading || (!invite && !loadErr) ? (
           <p className="text-gray-500 text-sm">טוען…</p>
 

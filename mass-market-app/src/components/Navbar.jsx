@@ -74,7 +74,7 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut }) {
         {initial}
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 min-w-[200px] bg-white rounded-xl shadow-xl border border-moca-border/40 p-1.5 z-50 animate-fade-in">
+        <div className="absolute left-0 top-full mt-1 min-w-[200px] bg-white rounded-xl shadow-popover border border-moca-border/40 p-1.5 z-50 animate-fade-in">
           <div className="px-3 py-2 text-[10px] text-moca-sub border-b border-moca-border/30 mb-1 truncate" dir="ltr">{user?.email}</div>
           <button onClick={() => go('/preferences')} className={itemCls}>העדפות</button>
           <button onClick={() => go('/alerts?tab=watchlist')} className={itemCls}>הגדרות התראות</button>
@@ -147,7 +147,7 @@ export default function Navbar({ onMobileMenuOpen }) {
       key: 'history',
       label: 'היסטוריה',
       items: [
-        { to: '/archive',      label: 'ארכיב snapshots', visible: visible('/archive') },
+        { to: '/archive',      label: 'מכונת זמן', visible: visible('/archive') },
         { to: '/history', label: 'שינויי היסטוריה', visible: true },
       ],
     },

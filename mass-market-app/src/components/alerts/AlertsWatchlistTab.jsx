@@ -68,7 +68,7 @@ export default function AlertsWatchlistTab() {
       {!loading && loaded && watchedChanges.length > 0 && (
         <div className="space-y-2">
           {watchedChanges.map((c, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-right hover-lift">
+            <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-card p-4 text-right hover-lift">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1.5">

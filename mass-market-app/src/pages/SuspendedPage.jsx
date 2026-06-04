@@ -38,7 +38,7 @@ export default function SuspendedPage() {
           <Logo size="md" showSubtext={false} />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-moca-border p-8 space-y-4">
+        <div className="bg-white rounded-2xl shadow-card border border-moca-border p-8 space-y-4">
           <div className="w-14 h-14 mx-auto rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b45309"
               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

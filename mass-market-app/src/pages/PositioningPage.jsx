@@ -5,6 +5,7 @@ import Spinner from '../components/ui/Spinner'
 import { useVisibleCarriers } from '../hooks/useHiddenCarrier'
 import { classifyPriority } from '../data/networkPriority'
 import { getCarrierColor } from '../components/moca/carrierMeta'
+import { getAppsForPlan } from '../data/abroadApps'
 
 const CARRIERS = [
   { id: 'partner',   label: 'פרטנר' },
@@ -19,20 +20,39 @@ const CARRIERS = [
   { id: 'rami_levy', label: 'רמי לוי' },
 ]
 
+// Roaming (חו"ל) plans exist only for these 8 carriers — XPhone + Neptucom have
+// no abroad packages (mirrors the exclusion in DashboardPage's abroad carrier list).
+const ABROAD_CARRIERS = CARRIERS.filter(c => c.id !== 'xphone' && c.id !== 'neptucom')
+
+// ---- Domestic axes ----
+// Half-open intervals [min, max): a price equal to max falls into the NEXT
+// bucket, so maxes are the next integer label + 1 (e.g. "26-38" → max 39) to
+// keep decimal prices like 38.9 inside "26-38" and avoid gaps between buckets.
 const PRICE_BUCKETS = [
-  { id: '0-25',   label: '₪0-25',   min: 0,   max: 25 },
-  { id: '25-50',  label: '₪25-50',  min: 25,  max: 50 },
-  { id: '50-80',  label: '₪50-80',  min: 50,  max: 80 },
-  { id: '80-120', label: '₪80-120', min: 80,  max: 120 },
-  { id: '120+',   label: '₪120+',   min: 120, max: Infinity },
+  { id: '0-25',  label: '₪0-25',  min: 0,   max: 26 },
+  { id: '26-38', label: '₪26-38', min: 26,  max: 39 },
+  { id: '39-49', label: '₪39-49', min: 39,  max: 50 },
+  { id: '50-79', label: '₪50-79', min: 50,  max: 80 },
+  { id: '80-99', label: '₪80-99', min: 80,  max: 100 },
+  { id: '100+',  label: '₪100+',  min: 100, max: Infinity },
 ]
 
+// Domestic GB scale — fine-grained in the high range where Israeli plans cluster
+// (most are "unlimited-ish" high fair-use caps: 500/1000/2000/5000GB+). Same
+// half-open [min, max) convention as PRICE_BUCKETS: each bucket's max equals the
+// next bucket's min, so the inclusive upper label (e.g. 200 in "51-200", 5000 in
+// "3001-5000") lands here and the partition has no gaps. `unlim` (min/max -1) is
+// the null-data_gb sentinel, kept separate so genuinely unlimited plans still show.
 const GB_BUCKETS = [
-  { id: '0-5',     label: '0-5GB',     min: 0,   max: 5 },
-  { id: '5-15',    label: '5-15GB',    min: 5,   max: 15 },
-  { id: '15-100',  label: '15-100GB',  min: 15,  max: 100 },
-  { id: '100+',    label: '100+GB',    min: 100, max: Infinity },
-  { id: 'unlim',   label: 'ללא הגבלה', min: -1,  max: -1 },
+  { id: '0-50',      label: 'פחות מ-50GB', min: 0,    max: 51 },
+  { id: '51-200',    label: '51-200GB',    min: 51,   max: 201 },
+  { id: '201-500',   label: '201-500GB',   min: 201,  max: 501 },
+  { id: '501-999',   label: '501-999GB',   min: 501,  max: 1000 },
+  { id: '1000-2000', label: '1000-2000GB', min: 1000, max: 2001 },
+  { id: '2001-3000', label: '2001-3000GB', min: 2001, max: 3001 },
+  { id: '3001-5000', label: '3001-5000GB', min: 3001, max: 5001 },
+  { id: '5000+',     label: 'מעל 5000GB',  min: 5001, max: Infinity },
+  { id: 'unlim',     label: 'ללא הגבלה',   min: -1,   max: -1 },
 ]
 
 const PRIORITY_BUCKETS = [
@@ -40,6 +60,89 @@ const PRIORITY_BUCKETS = [
   { id: 'basic',   label: '5G בסיסי' },
   { id: 'max',     label: 'תעדוף מקסימלי' },
 ]
+
+// ---- Roaming axes ----
+// Roaming data volumes cluster lower than domestic (most packages 1-50GB), so
+// the GB axis uses tighter buckets than the domestic GB_BUCKETS.
+const ROAMING_GB_BUCKETS = [
+  { id: '0-1',     label: 'עד 1GB',    min: 0,   max: 1 },
+  { id: '1-5',     label: '1-5GB',     min: 1,   max: 5 },
+  { id: '5-15',    label: '5-15GB',    min: 5,   max: 15 },
+  { id: '15-50',   label: '15-50GB',   min: 15,  max: 50 },
+  { id: '50+',     label: '50GB+',     min: 50,  max: Infinity },
+  { id: 'unlim',   label: 'ללא הגבלה', min: -1,  max: -1 },
+]
+
+// Same day-window cuts as DashboardPage's roaming "days" filter, for consistency.
+const ROAMING_DAYS_BUCKETS = [
+  { id: '1-7',   label: 'עד 7 ימים',  min: 1,  max: 8 },
+  { id: '8-14',  label: '8-14 ימים',  min: 8,  max: 15 },
+  { id: '15-30', label: '15-30 ימים', min: 15, max: 31 },
+  { id: '30+',   label: '30+ ימים',   min: 31, max: Infinity },
+]
+
+// Roaming price scale — finer high-end buckets (₪50 steps from 100 up to 350) per
+// the requested layout. Half-open [min, max): a price equal to a boundary falls
+// into the upper bucket (₪100 → "₪101-149", ₪350 → "מעל ₪350"), so the partition is
+// contiguous with no gaps. ₪ prefixes each value (matches the domestic PRICE_BUCKETS
+// and cell labels); worded endpoints mirror the GB scales ('פחות מ-' / 'מעל').
+const ROAMING_PRICE_BUCKETS = [
+  { id: '0-100',   label: 'פחות מ-₪100', min: 0,   max: 100 },
+  { id: '100-149', label: '₪101-149',    min: 100, max: 150 },
+  { id: '150-199', label: '₪150-199',    min: 150, max: 200 },
+  { id: '200-249', label: '₪200-249',    min: 200, max: 250 },
+  { id: '250-299', label: '₪250-299',    min: 250, max: 300 },
+  { id: '300-349', label: '₪300-349',    min: 300, max: 350 },
+  { id: '350+',    label: 'מעל ₪350',    min: 350, max: Infinity },
+]
+
+const DOMESTIC_AXES = [
+  { id: 'price',    label: 'לפי מחיר' },
+  { id: 'gb',       label: 'לפי גלישה' },
+  { id: 'priority', label: 'לפי תעדוף' },
+]
+
+const ABROAD_AXES = [
+  { id: 'gb',    label: 'לפי גלישה' },
+  { id: 'days',  label: 'לפי ימים' },
+  { id: 'price', label: 'לפי מחיר' },
+]
+
+function getBuckets(domain, axis) {
+  if (domain === 'abroad') {
+    if (axis === 'days')  return ROAMING_DAYS_BUCKETS
+    if (axis === 'price') return ROAMING_PRICE_BUCKETS
+    return ROAMING_GB_BUCKETS
+  }
+  if (axis === 'gb')       return GB_BUCKETS
+  if (axis === 'priority') return PRIORITY_BUCKETS
+  return PRICE_BUCKETS
+}
+
+// Map a single plan to a bucket id for the active axis. `buckets` carries the
+// active domain's ranges, so GB/price share one classifier across domains.
+function classifyPlan(p, axis, buckets) {
+  if (axis === 'priority') return classifyPriority(p)
+  if (axis === 'days') {
+    const d = Number(p.days)
+    if (!d) return null
+    for (const b of buckets) if (d >= b.min && d < b.max) return b.id
+    return null
+  }
+  if (axis === 'gb') {
+    const gb = p.data_gb
+    if (gb === null || gb === undefined) return 'unlim'
+    for (const b of buckets) {
+      if (b.id === 'unlim') continue
+      if (gb >= b.min && gb < b.max) return b.id
+    }
+    return null
+  }
+  // price
+  const price = Number(p.price)
+  for (const b of buckets) if (price >= b.min && price < b.max) return b.id
+  return null
+}
 
 // classifyPriority + MAX_PRIORITY_KEYWORDS imported from data/networkPriority.js
 
@@ -54,24 +157,41 @@ function heatColor(v, max) {
 
 export default function PositioningPage() {
   const navigate = useNavigate()
-  const [plans, setPlans] = useState([])
+  const [domesticPlans, setDomesticPlans] = useState([])
+  const [abroadPlans, setAbroadPlans] = useState([])
   const [loading, setLoading] = useState(true)
-  const [axis, setAxis] = useState('price') // 'price' | 'gb' | 'priority'
+  const [domain, setDomain] = useState('domestic') // 'domestic' | 'abroad'
+  const [axis, setAxis] = useState('price')         // axis id within the active domain
   const visibleCarrierIds = useVisibleCarriers(CARRIERS.map(c => c.id))
 
   useEffect(() => {
-    api.getPlans()
-      .then(p => setPlans(p || []))
-      .catch(() => {})
+    Promise.all([
+      api.getPlans().catch(() => []),
+      api.getAbroadPlans().catch(() => []),
+    ])
+      .then(([dom, abr]) => {
+        setDomesticPlans(dom || [])
+        setAbroadPlans(abr || [])
+      })
       .finally(() => setLoading(false))
   }, [])
 
-  const visibleCarriers = useMemo(
-    () => CARRIERS.filter(c => visibleCarrierIds.includes(c.id)),
-    [visibleCarrierIds]
-  )
+  // Switching domain resets the axis to that domain's default (GB for roaming —
+  // the requested view; price for domestic) so axis/bucket combos stay valid.
+  const handleDomain = (d) => {
+    setDomain(d)
+    setAxis(d === 'abroad' ? 'gb' : 'price')
+  }
 
-  const buckets = axis === 'price' ? PRICE_BUCKETS : axis === 'gb' ? GB_BUCKETS : PRIORITY_BUCKETS
+  const sourcePlans = domain === 'abroad' ? abroadPlans : domesticPlans
+  const axes = domain === 'abroad' ? ABROAD_AXES : DOMESTIC_AXES
+
+  const visibleCarriers = useMemo(() => {
+    const base = domain === 'abroad' ? ABROAD_CARRIERS : CARRIERS
+    return base.filter(c => visibleCarrierIds.includes(c.id))
+  }, [visibleCarrierIds, domain])
+
+  const buckets = useMemo(() => getBuckets(domain, axis), [domain, axis])
 
   // matrix[carrierId][bucketId] = { count, minPrice, plans }
   const matrix = useMemo(() => {
@@ -80,32 +200,18 @@ export default function PositioningPage() {
       m[c.id] = {}
       for (const b of buckets) m[c.id][b.id] = { count: 0, minPrice: Infinity, plans: [] }
     }
-    for (const p of plans) {
+    for (const p of sourcePlans) {
       if (!m[p.carrier]) continue
-      const price = Number(p.price)
-      const gb = p.data_gb
-      let bucketId = null
-      if (axis === 'price') {
-        for (const b of PRICE_BUCKETS) {
-          if (price >= b.min && price < b.max) { bucketId = b.id; break }
-        }
-      } else if (axis === 'gb') {
-        if (gb === null || gb === undefined) bucketId = 'unlim'
-        else for (const b of GB_BUCKETS) {
-          if (b.id === 'unlim') continue
-          if (gb >= b.min && gb < b.max) { bucketId = b.id; break }
-        }
-      } else {
-        bucketId = classifyPriority(p)
-      }
-      if (!bucketId) continue
+      const bucketId = classifyPlan(p, axis, buckets)
+      if (!bucketId || !m[p.carrier][bucketId]) continue
       const cell = m[p.carrier][bucketId]
       cell.count++
       cell.plans.push(p)
+      const price = Number(p.price)
       if (price > 0 && price < cell.minPrice) cell.minPrice = price
     }
     return m
-  }, [plans, visibleCarriers, axis, buckets])
+  }, [sourcePlans, visibleCarriers, axis, buckets])
 
   const maxCount = useMemo(() => {
     let max = 0
@@ -148,44 +254,75 @@ export default function PositioningPage() {
     return empty
   }, [matrix, visibleCarriers, buckets])
 
-  const handleCellClick = (carrierId, _bucket) => {
-    navigate(`/plans?carrier=${carrierId}`)
+  // Free-in-app browsing per carrier (roaming only). Same source of truth as the
+  // plan cards — getAppsForPlan resolves each plan's free-app list (Cellcom 6,
+  // Pelephone 12, Golan/Rami Levy parsed from extras). maxApps = how many apps
+  // are supported; planCount = on how many of the carrier's roaming bundles.
+  const carrierApps = useMemo(() => {
+    if (domain !== 'abroad') return {}
+    const m = {}
+    for (const p of abroadPlans) {
+      const info = getAppsForPlan(p)
+      if (!info || !info.apps?.length) continue
+      const cur = m[p.carrier] || { planCount: 0, maxApps: 0, names: [] }
+      cur.planCount++
+      if (info.apps.length > cur.maxApps) {
+        cur.maxApps = info.apps.length
+        cur.names = info.apps.map(a => a.name)
+      }
+      m[p.carrier] = cur
+    }
+    return m
+  }, [abroadPlans, domain])
+
+  const handleCellClick = (carrierId) => {
+    const path = domain === 'abroad' ? '/roaming' : '/plans'
+    navigate(`${path}?carrier=${carrierId}`)
   }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
       {/* Page identity is owned by the Topbar — only the helper subtitle stays. */}
-      <p className="text-xs text-gray-400 mb-6 text-right">
-        פיזור חבילות סלולר לפי ספק וקטגוריה — אתר את ה-white space
+      <p className="text-xs text-gray-400 mb-5 text-right">
+        {domain === 'abroad'
+          ? 'פיזור חבילות חו"ל לפי ספק ונפח גלישה — אתר את ה-white space'
+          : 'פיזור חבילות סלולר לפי ספק וקטגוריה — אתר את ה-white space'}
       </p>
+
+      {/* Domain tabs — בארץ / חו"ל */}
+      <div className="mb-5 flex items-center gap-1 border-b border-moca-border/40">
+        {[
+          { id: 'domestic', label: 'חבילות בארץ' },
+          { id: 'abroad',   label: 'חבילות חו"ל' },
+        ].map(d => (
+          <button
+            key={d.id}
+            onClick={() => handleDomain(d.id)}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+              domain === d.id
+                ? 'border-moca-bolt text-moca-bolt'
+                : 'border-transparent text-moca-sub hover:text-moca-dark'
+            }`}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
 
       {/* Axis toggle */}
       <div className="mb-6 flex items-center gap-2">
         <span className="text-xs text-moca-sub">צירים:</span>
-        <button
-          onClick={() => setAxis('price')}
-          className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-            axis === 'price' ? 'bg-moca-bolt text-white' : 'bg-white border border-moca-border/50 text-moca-sub hover:bg-moca-cream'
-          }`}
-        >
-          לפי מחיר
-        </button>
-        <button
-          onClick={() => setAxis('gb')}
-          className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-            axis === 'gb' ? 'bg-moca-bolt text-white' : 'bg-white border border-moca-border/50 text-moca-sub hover:bg-moca-cream'
-          }`}
-        >
-          לפי גלישה
-        </button>
-        <button
-          onClick={() => setAxis('priority')}
-          className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-            axis === 'priority' ? 'bg-moca-bolt text-white' : 'bg-white border border-moca-border/50 text-moca-sub hover:bg-moca-cream'
-          }`}
-        >
-          לפי תעדוף
-        </button>
+        {axes.map(a => (
+          <button
+            key={a.id}
+            onClick={() => setAxis(a.id)}
+            className={`text-xs px-3 py-1 rounded-lg transition-colors ${
+              axis === a.id ? 'bg-moca-bolt text-white' : 'bg-white border border-moca-border/50 text-moca-sub hover:bg-moca-cream'
+            }`}
+          >
+            {a.label}
+          </button>
+        ))}
         <span className="mr-auto text-xs text-gray-400">{totalPlans} חבילות סך הכל</span>
       </div>
 
@@ -194,7 +331,7 @@ export default function PositioningPage() {
       {!loading && (
         <>
           {/* Matrix */}
-          <div className="bg-white rounded-2xl border border-moca-border/40 overflow-hidden shadow-sm">
+          <div className="bg-white rounded-2xl border border-moca-border/40 overflow-hidden shadow-card">
             <div className="overflow-x-auto">
               <table className="w-full text-right" dir="rtl">
                 <thead>
@@ -215,6 +352,18 @@ export default function PositioningPage() {
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full" style={{ background: getCarrierColor(c.id) }} />
                           <span className="text-[12px] font-medium text-gray-700">{c.label}</span>
+                          {domain === 'abroad' && carrierApps[c.id] && (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-moca-cream border border-moca-sand text-moca-bolt text-[10px] font-bold leading-none whitespace-nowrap"
+                              title={`גלישה חופשית ב-${carrierApps[c.id].maxApps} אפליקציות · ${carrierApps[c.id].planCount} מסלולי חו"ל\n${carrierApps[c.id].names.join(' · ')}`}
+                            >
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
+                                <rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
+                              </svg>
+                              {carrierApps[c.id].maxApps}
+                            </span>
+                          )}
                         </div>
                       </td>
                       {buckets.map(b => {
@@ -222,7 +371,7 @@ export default function PositioningPage() {
                         return (
                           <td
                             key={b.id}
-                            onClick={() => cell.count > 0 && handleCellClick(c.id, b)}
+                            onClick={() => cell.count > 0 && handleCellClick(c.id)}
                             className={`px-2 py-2.5 text-center transition-all ${heatColor(cell.count, maxCount)} ${
                               cell.count > 0 ? 'cursor-pointer hover:opacity-80' : ''
                             }`}
@@ -277,6 +426,7 @@ export default function PositioningPage() {
 
           <p className="text-[11px] text-gray-400 mt-4 text-right">
             לחץ על תא כדי לראות את החבילות בדשבורד · צבע ירוק כהה = ריבוי חבילות בקטגוריה
+            {domain === 'abroad' && ' · התג ▦ ליד שם הספק = גלישה חופשית באפליקציות (המספר = כמה אפליקציות)'}
           </p>
         </>
       )}

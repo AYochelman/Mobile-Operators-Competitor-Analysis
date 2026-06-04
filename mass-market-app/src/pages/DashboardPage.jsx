@@ -1545,7 +1545,7 @@ export default function DashboardPage() {
             <span className="text-sm font-semibold text-gray-700">{compareMap.size} חבילות נבחרו</span>
             <button
               onClick={() => setShowCompareDrawer(true)}
-              className="bg-[#5c3317] hover:bg-[#7a4520] text-white text-sm font-medium px-4 py-1.5 rounded-xl transition-colors"
+              className="bg-moca-bolt hover:bg-[#7a4520] text-white text-sm font-medium px-4 py-1.5 rounded-xl transition-colors"
             >
               השווה
             </button>

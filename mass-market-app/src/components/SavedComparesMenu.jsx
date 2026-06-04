@@ -104,7 +104,7 @@ export default function SavedComparesMenu({ comparePlans, onApply, onSaved }) {
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-moca-border rounded-xl shadow-lg z-[9999] p-3 animate-fade-in-up text-right" dir="rtl">
+        <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-moca-border rounded-xl shadow-popover z-[9999] p-3 animate-fade-in-up text-right" dir="rtl">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold text-gray-700">סטים שמורים</p>
             {!naming && comparePlans.length > 0 && (

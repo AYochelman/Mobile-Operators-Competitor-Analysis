@@ -268,8 +268,8 @@ export default function SettingsPage() {
             onClick={() => setActiveTab(t.id)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors
               ${activeTab === t.id
-                ? 'bg-[#5c3317] text-white border-[#5c3317]'
-                : 'bg-white text-[#5c3317] border-[#d4bfa8] hover:bg-[#f5ede0]'}`}
+                ? 'bg-moca-bolt text-white border-moca-bolt'
+                : 'bg-white text-moca-bolt border-[#d4bfa8] hover:bg-moca-cream'}`}
           >
             {t.label}
           </button>
@@ -403,7 +403,7 @@ export default function SettingsPage() {
                   {users.map(u => (
                     <tr key={u.id} className="border-b border-moca-border/50 last:border-0 hover:bg-moca-mist transition-colors">
                       <td className="py-2.5 pr-1 text-right">
-                        <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${u.role === 'admin' ? 'bg-[#f5ede0] text-[#5c3317]' : 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${u.role === 'admin' ? 'bg-moca-cream text-moca-bolt' : 'bg-gray-100 text-gray-500'}`}>
                           {u.role === 'admin' ? 'מנהל' : 'צופה'}
                         </span>
                       </td>
@@ -421,7 +421,7 @@ export default function SettingsPage() {
                           {!isSelf(u) && (
                             <>
                               <button onClick={() => handleToggleRole(u)} disabled={togglingId === u.id}
-                                className="text-xs px-2.5 py-1.5 rounded-lg border border-[#5c3317]/30 text-[#5c3317] hover:bg-[#f5ede0] disabled:opacity-40 transition-colors whitespace-nowrap"
+                                className="text-xs px-2.5 py-1.5 rounded-lg border border-moca-bolt/30 text-moca-bolt hover:bg-moca-cream disabled:opacity-40 transition-colors whitespace-nowrap"
                                 title={u.role === 'admin' ? 'הורד לצופה' : 'הפוך למנהל'}>
                                 {togglingId === u.id ? '...' : u.role === 'admin' ? 'הורד לצופה' : 'הפוך למנהל'}
                               </button>
@@ -432,7 +432,7 @@ export default function SettingsPage() {
                                     {deletingId === u.id ? '...' : 'אשר מחיקה'}
                                   </button>
                                   <button onClick={() => setConfirmDeleteId(null)}
-                                    className="text-xs px-2.5 py-1.5 rounded-lg border border-[#5c3317]/30 text-[#5c3317] hover:bg-[#f5ede0] transition-colors">
+                                    className="text-xs px-2.5 py-1.5 rounded-lg border border-moca-bolt/30 text-moca-bolt hover:bg-moca-cream transition-colors">
                                     בטל
                                   </button>
                                 </>
@@ -465,7 +465,7 @@ export default function SettingsPage() {
             {[7, 30, 90].map(d => (
               <button key={d} onClick={() => setAffiliateDays(d)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors
-                  ${affiliateDays === d ? 'bg-[#5c3317] text-white border-[#5c3317]' : 'bg-white text-[#5c3317] border-[#d4bfa8] hover:bg-[#f5ede0]'}`}>
+                  ${affiliateDays === d ? 'bg-moca-bolt text-white border-moca-bolt' : 'bg-white text-moca-bolt border-[#d4bfa8] hover:bg-moca-cream'}`}>
                 {d} ימים
               </button>
             ))}
@@ -499,7 +499,7 @@ export default function SettingsPage() {
 
               {affiliateChartData.length > 0 && (
                 <div>
-                  <p className="text-sm font-medium text-[#5c3317] mb-3">קליקים לפי יום</p>
+                  <p className="text-sm font-medium text-moca-bolt mb-3">קליקים לפי יום</p>
                   <ResponsiveContainer width="100%" height={180}>
                     <LineChart data={affiliateChartData}>
                       <XAxis dataKey="date" tick={{ fontSize: 10 }} />

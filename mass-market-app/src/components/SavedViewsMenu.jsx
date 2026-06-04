@@ -91,7 +91,7 @@ export default function SavedViewsMenu({ tab, filters, onApply }) {
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-1 w-72 bg-white border border-moca-border rounded-xl shadow-lg z-50 p-3 animate-fade-in-up">
+        <div className="absolute top-full right-0 mt-1 w-72 bg-white border border-moca-border rounded-xl shadow-popover z-50 p-3 animate-fade-in-up">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold text-gray-700">תצוגות שמורות</p>
             {!naming && (

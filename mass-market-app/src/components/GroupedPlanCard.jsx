@@ -194,7 +194,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
   }, [carrier, selectedPlan.plan_name])
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up flex flex-col">
+    <div className="bg-white rounded-2xl p-5 shadow-card relative group text-right hover-lift animate-fade-in-up flex flex-col">
       {/* Carrier logo — absolute top-left */}
       {CARRIER_LOGOS[carrier] && (
         <img
@@ -308,7 +308,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
               href={AFFILIATE_URLS[carrier] || `https://www.${carrier}.com`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 w-full text-xs text-white bg-[#5c3317] rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
+              className="flex items-center justify-center gap-1.5 w-full text-xs text-white bg-moca-bolt rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
               onClick={(e) => e.stopPropagation()}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

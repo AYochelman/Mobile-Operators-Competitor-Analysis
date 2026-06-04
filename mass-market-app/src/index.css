@@ -140,7 +140,7 @@
 }
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--sh-card-hover);
 }
 
 /* Interactive hover — buttons */
@@ -171,9 +171,11 @@
   transform: scaleX(1);
 }
 
-/* ── MOCA design-system shadows + radii ─────────────────────────
-   Shared box shadows for cards/modals/drawers per design handoff.
-   Use as inline style: `boxShadow: 'var(--sh-card)'`. */
+/* ── MOCA design-system elevation ────────────────────────────────
+   Canonical shadow values + matching Tailwind v4 utilities.
+   Inline call sites use `boxShadow: 'var(--sh-card)'`; JSX uses the
+   `shadow-card` / `shadow-card-hover` / `shadow-modal` / `shadow-popover`
+   / `shadow-drawer` utilities defined below. One source of truth. */
 :root {
   --sh-card:        0 1px 0 var(--color-moca-border), 0 8px 22px -16px rgba(60,40,20,0.25);
   --sh-card-hover:  0 1px 0 var(--color-moca-border), 0 14px 28px -16px rgba(60,40,20,0.4);
@@ -181,6 +183,12 @@
   --sh-drawer:      4px 0 32px rgba(40,30,15,0.18);
   --sh-popover:     0 12px 40px rgba(60,40,20,0.18);
 }
+
+@utility shadow-card        { box-shadow: var(--sh-card); }
+@utility shadow-card-hover  { box-shadow: var(--sh-card-hover); }
+@utility shadow-modal       { box-shadow: var(--sh-modal); }
+@utility shadow-popover     { box-shadow: var(--sh-popover); }
+@utility shadow-drawer      { box-shadow: var(--sh-drawer); }
 
 /* Reduced motion — respect accessibility */
 @media (prefers-reduced-motion: reduce) {

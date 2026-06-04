@@ -370,7 +370,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
     : undefined
 
   return (
-    <div style={{ contain: 'layout style' }} className={`bg-white rounded-2xl p-5 shadow-sm relative group text-right hover-lift animate-fade-in-up flex flex-col ${highlighted ? 'ring-2 ring-amber-400 shadow-amber-100 shadow-lg animate-pulse-highlight' : ''} ${isReseller ? 'cursor-pointer' : ''}`}
+    <div style={{ contain: 'layout style' }} className={`bg-white rounded-2xl p-5 shadow-card relative group text-right hover-lift animate-fade-in-up flex flex-col ${highlighted ? 'ring-2 ring-amber-400 shadow-amber-100 shadow-lg animate-pulse-highlight' : ''} ${isReseller ? 'cursor-pointer' : ''}`}
       ref={highlighted ? (el) => { if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }) } : undefined}
       onClick={onCardClick}
       role={isReseller ? 'link' : undefined}
@@ -556,7 +556,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                 href={AFFILIATE_URLS[plan.carrier] || `https://www.${plan.carrier}.com`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 w-full text-xs text-white bg-[#5c3317] rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
+                className="flex items-center justify-center gap-1.5 w-full text-xs text-white bg-moca-bolt rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
                 onClick={(e) => e.stopPropagation()}
               >
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -576,7 +576,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 title={coupon.partner_name ? `הצעה חיצונית אצל ${coupon.partner_name}` : 'הצעה חיצונית'}
-                className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-[#5c3317] bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
+                className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
               >
                 <span aria-hidden="true">🎟</span>
                 <span>
@@ -592,7 +592,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                 type="button"
                 onClick={copyCoupon}
                 title={`לחץ להעתקה — בדקו בקופה של ${providerLabel}`}
-                className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-[#5c3317] bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
+                className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
               >
                 <span aria-hidden="true">🎟</span>
                 <span>
@@ -657,7 +657,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                   href={providerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 flex-1 text-xs text-white bg-[#5c3317] rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
+                  className="flex items-center justify-center gap-1.5 flex-1 text-xs text-white bg-moca-bolt rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {isReseller ? (

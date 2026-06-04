@@ -131,7 +131,7 @@ function UsersIcon() {
 function SocialSection({ rows, loading, isAdmin, onRefresh, refreshing }) {
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-moca-border/40 p-5 mb-5 animate-pulse">
+      <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5 mb-5 animate-pulse">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-5 h-5 bg-gray-200 rounded" />
           <div className="h-4 bg-gray-200 rounded w-44" />
@@ -146,7 +146,7 @@ function SocialSection({ rows, loading, isAdmin, onRefresh, refreshing }) {
   if (!rows || rows.length === 0) return null
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-moca-border/40 p-5 mb-5">
+    <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5 mb-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -182,7 +182,7 @@ function SocialSection({ rows, loading, isAdmin, onRefresh, refreshing }) {
           const counts    = row.platform_data?._counts || null
           const totalPosts = platforms.reduce((sum, p) => sum + (row.platform_data[p]?.length || 0), 0)
           return (
-            <div key={row.carrier} className="bg-[#f9f4ee] rounded-xl p-3">
+            <div key={row.carrier} className="bg-moca-bg rounded-xl p-3">
               <div className="flex items-center justify-between mb-1.5">
                 <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${badgeCls}`}>
                   {label}
@@ -198,7 +198,7 @@ function SocialSection({ rows, loading, isAdmin, onRefresh, refreshing }) {
                 {/* Platform badges */}
                 <div className="flex items-center gap-1 flex-wrap">
                   {platforms.map(p => (
-                    <span key={p} className="text-[9px] text-moca-sub bg-white px-1 py-0.5 rounded border border-moca-border/40">
+                    <span key={p} className="text-[10px] text-moca-sub bg-white px-1 py-0.5 rounded border border-moca-border/40">
                       {PLATFORM_SHORT[p] || p} {row.platform_data[p]?.length || 0}
                     </span>
                   ))}
@@ -206,20 +206,20 @@ function SocialSection({ rows, loading, isAdmin, onRefresh, refreshing }) {
 
                 {/* Post count + sentiment breakdown */}
                 <div className="text-right">
-                  <div className="text-[9px] text-moca-sub mb-0.5">
+                  <div className="text-[10px] text-moca-sub mb-0.5">
                     {totalPosts} תגובות נותחו
                   </div>
                   {totalPosts > 0 && (
                     <div className="flex items-center gap-1 justify-end">
-                      <span className="inline-flex items-center gap-0.5 text-[9px] text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded" title="חיוביות">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded" title="חיוביות">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
                         {counts?.positive ?? 0}
                       </span>
-                      <span className="inline-flex items-center gap-0.5 text-[9px] text-red-600 bg-red-50 px-1 py-0.5 rounded" title="שליליות">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-red-600 bg-red-50 px-1 py-0.5 rounded" title="שליליות">
                         <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
                         {counts?.negative ?? 0}
                       </span>
-                      <span className="inline-flex items-center gap-0.5 text-[9px] text-gray-500 bg-gray-100 px-1 py-0.5 rounded" title="ניטרליות">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-500 bg-gray-100 px-1 py-0.5 rounded" title="ניטרליות">
                         <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
                         {counts?.neutral ?? 0}
                       </span>
@@ -243,14 +243,14 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
   const icon = CATEGORY_ICONS[category] || null
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-moca-border/40 p-5 mb-5">
+    <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5 mb-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           {icon && (
             <span className="text-moca-text">{icon}</span>
           )}
-          <h2 className="text-lg font-semibold text-moca-text">{meta.label}</h2>
+          <h2 className="text-lg font-display font-semibold text-moca-text">{meta.label}</h2>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[11px] text-moca-sub">עודכן: {formatDate(generated_at)}</span>
@@ -317,7 +317,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
 
       {/* Bar chart */}
       {metrics.chart_data?.length > 0 && (
-        <div className="bg-[#f9f4ee] rounded-xl p-4 mb-4">
+        <div className="bg-moca-bg rounded-xl p-4 mb-4">
           <div className="text-[11px] text-moca-sub font-semibold mb-3 text-right">
             {metrics.cheapest?.unit} לפי ספק
           </div>
@@ -355,7 +355,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
       )}
 
       {/* AI narrative */}
-      <div className="bg-white rounded-xl p-4 border-r-4 border-[#5c3317] shadow-sm">
+      <div className="bg-white rounded-xl p-4 border-r-4 border-moca-bolt shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-moca-sub"><SparkleIcon /></span>
           <span className="text-[11px] text-moca-sub font-semibold">ניתוח AI</span>
@@ -368,7 +368,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
 
 function SkeletonSection() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-moca-border/40 p-5 mb-5 animate-pulse">
+    <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5 mb-5 animate-pulse">
       <div className="flex items-center gap-2 mb-4">
         <div className="w-7 h-7 bg-gray-200 rounded" />
         <div className="h-4 bg-gray-200 rounded w-32" />
@@ -463,7 +463,7 @@ export default function ExecutiveSummaryPage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="mt-4 px-4 py-2 rounded-lg bg-[#5c3317] text-white text-sm hover:bg-[#7a4a28] transition-colors disabled:opacity-50"
+              className="mt-4 px-4 py-2 rounded-lg bg-moca-bolt text-white text-sm hover:bg-[#7a4a28] transition-colors disabled:opacity-50"
             >
               {refreshing ? 'מייצר ניתוח...' : 'צור עכשיו'}
             </button>
@@ -475,7 +475,7 @@ export default function ExecutiveSummaryPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
-      <h1 className="text-xl font-bold text-moca-text mb-6 text-right">תקציר מנהלים</h1>
+      <h1 className="text-2xl font-display font-bold text-moca-text mb-6 text-right">תקציר מנהלים</h1>
 
       {/* Category summaries */}
       {summaries.map(s => (

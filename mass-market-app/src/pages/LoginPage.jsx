@@ -61,7 +61,7 @@ export default function LoginPage() {
         </div>
 
         {/* Login card */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-moca-border p-7 space-y-5">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-card border border-moca-border p-7 space-y-5">
           <div>
             <label className="block text-xs font-medium text-moca-text mb-1.5">אימייל</label>
             <input

@@ -133,8 +133,8 @@ export default function NewsTab() {
     <div>
       {/* Header */}
       <div className="flex items-center gap-2 mb-1">
-        <Newspaper size={20} className="text-[#5c3317]" />
-        <h2 className="text-xl font-bold text-[#5c3317]">בחדשות</h2>
+        <Newspaper size={20} className="text-moca-bolt" />
+        <h2 className="text-xl font-bold text-moca-bolt">בחדשות</h2>
       </div>
       <p className="text-sm text-[#8b6b52] mb-4">
         אזכורי חברות הסלולר בעיתונות הישראלית
@@ -151,8 +151,8 @@ export default function NewsTab() {
             onClick={() => setCarrierFilter(c.id)}
             className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors
               ${carrierFilter === c.id
-                ? 'bg-[#5c3317] text-white border-[#5c3317]'
-                : 'bg-white text-[#5c3317] border-[#d4bfa8] hover:bg-[#f5ede0]'
+                ? 'bg-moca-bolt text-white border-moca-bolt'
+                : 'bg-white text-moca-bolt border-[#d4bfa8] hover:bg-moca-cream'
               }`}
           >
             {c.label}
@@ -171,8 +171,8 @@ export default function NewsTab() {
             onClick={() => setDateFilter(f.id)}
             className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors
               ${dateFilter === f.id
-                ? 'bg-[#5c3317] text-white border-[#5c3317]'
-                : 'bg-white text-[#5c3317] border-[#d4bfa8] hover:bg-[#f5ede0]'
+                ? 'bg-moca-bolt text-white border-moca-bolt'
+                : 'bg-white text-moca-bolt border-[#d4bfa8] hover:bg-moca-cream'
               }`}
           >
             {f.label}
@@ -204,11 +204,11 @@ export default function NewsTab() {
             href={article.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white rounded-xl border border-[#e8d9c8] p-4 hover:shadow-md hover:border-[#c4a882] transition-all block"
+            className="bg-white rounded-xl border border-[#e8d9c8] p-4 hover:shadow-card-hover hover:border-[#c4a882] transition-all block"
           >
             {/* Source + date */}
             <div className="flex justify-between items-start mb-2 gap-2">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#f5ede0] text-[#5c3317]">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-moca-cream text-moca-bolt">
                 {article.source || '\u05d7\u05d3\u05e9\u05d5\u05ea'}
               </span>
               <span className="text-xs text-[#a08060] flex items-center gap-1 whitespace-nowrap">
