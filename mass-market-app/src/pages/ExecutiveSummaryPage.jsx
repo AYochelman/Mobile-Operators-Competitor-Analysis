@@ -146,7 +146,7 @@ function SocialSection({ rows, loading, isAdmin, onRefresh, refreshing }) {
   if (!rows || rows.length === 0) return null
 
   return (
-    <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5 mb-5">
+    <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -243,7 +243,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
   const icon = CATEGORY_ICONS[category] || null
 
   return (
-    <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5 mb-5">
+    <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -368,7 +368,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
 
 function SkeletonSection() {
   return (
-    <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5 mb-5 animate-pulse">
+    <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5 animate-pulse">
       <div className="flex items-center gap-2 mb-4">
         <div className="w-7 h-7 bg-gray-200 rounded" />
         <div className="h-4 bg-gray-200 rounded w-32" />
@@ -447,8 +447,10 @@ export default function ExecutiveSummaryPage() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-6">
-        {[0, 1, 2, 3].map(i => <SkeletonSection key={i} />)}
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="grid lg:grid-cols-2 gap-5 items-start">
+          {[0, 1, 2, 3].map(i => <SkeletonSection key={i} />)}
+        </div>
       </div>
     )
   }
@@ -474,19 +476,21 @@ export default function ExecutiveSummaryPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
+    <div className="max-w-6xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-display font-bold text-moca-text mb-6 text-right">תקציר מנהלים</h1>
 
-      {/* Category summaries */}
-      {summaries.map(s => (
-        <SummarySection
-          key={s.category}
-          data={s}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
-          isAdmin={isAdmin}
-        />
-      ))}
+      {/* Category summaries — 2-up grid on desktop to use the full width */}
+      <div className="grid lg:grid-cols-2 gap-5 items-start mb-5">
+        {summaries.map(s => (
+          <SummarySection
+            key={s.category}
+            data={s}
+            onRefresh={handleRefresh}
+            refreshing={refreshing}
+            isAdmin={isAdmin}
+          />
+        ))}
+      </div>
 
       {/* Social sentiment — single section at the bottom, below all categories */}
       <SocialSection
