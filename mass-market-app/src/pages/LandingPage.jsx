@@ -127,7 +127,7 @@ export default function LandingPage() {
           <h2 className="font-display text-3xl md:text-4xl text-moca-dark mb-2">
             מודיעין תחרותי שמתבסס על עבודה ידנית — איטי, חלקי ויקר
           </h2>
-          <p className="text-moca-sub text-lg max-w-[640px] mb-9">
+          <p className="text-moca-sub text-lg text-balance mb-9">
             בשוק שבו מלחמת מחירים רצה בזמן אמת, ההחלטות מתקבלות על תמונה של אתמול.
           </p>
           <div className="grid md:grid-cols-2 gap-5">
