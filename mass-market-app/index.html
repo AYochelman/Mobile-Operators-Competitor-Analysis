@@ -12,9 +12,24 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=optional" rel="stylesheet" />
-    <title>Mobile Operators Competitor Analysis</title>
+    <!-- Fonts loaded non-render-blocking (media=print → onload swap) so they don't
+         delay FCP/LCP (~1.45s of render-blocking on mobile). display=optional means
+         no late swap → no layout shift (the hero stats row was shifting on font swap). -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=optional" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=optional" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=optional" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=optional" />
+    </noscript>
+    <title>MOCA — מודיעין תחרותי לשוק הסלולר</title>
+    <meta name="description" content="MOCA — מערכת מודיעין תחרותי שעוקבת אוטומטית אחרי כל שוק הסלולר הישראלי פעמיים ביום: מחירים, קמפיינים, eSIM גלובלי ונדידה — ושולחת התראה ברגע שמתחרה זז." />
+    <link rel="canonical" href="https://mocaintel.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="MOCA — מודיעין תחרותי לשוק הסלולר" />
+    <meta property="og:description" content="עוקב אוטומטית אחרי כל השוק — 10 מפעילים + 20 ספקי eSIM, פעמיים ביום — ושולח התראה ברגע שמתחרה מזיז מחיר או משיק קמפיין." />
+    <meta property="og:url" content="https://mocaintel.com/" />
+    <meta property="og:image" content="https://mocaintel.com/icons/icon-512.png" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>

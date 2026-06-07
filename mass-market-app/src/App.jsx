@@ -1,10 +1,13 @@
 import { useEffect, lazy, Suspense } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { ScrapeProvider } from './hooks/useScrape'
 import { getMvnoColors } from './data/mvnoBrandColors'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
+// LandingPage is the public "/" entry for anonymous visitors — eager-import it
+// (not lazy) so the marketing page paints without a second chunk round-trip.
+import LandingPage from './pages/LandingPage'
 import OfflineBanner from './components/OfflineBanner'
 import GlobalSearch from './components/GlobalSearch'
 import Spinner from './components/ui/Spinner'
@@ -33,6 +36,7 @@ const AIInsightsPage        = lazy(() => import('./pages/AIInsightsPage'))
 const InvitePage            = lazy(() => import('./pages/InvitePage'))
 const SuspendedPage         = lazy(() => import('./pages/SuspendedPage'))
 const NotFoundPage          = lazy(() => import('./pages/NotFoundPage'))
+const SocialPage            = lazy(() => import('./pages/SocialPage'))
 
 function PageFallback() {
   return <div className="flex justify-center py-20"><Spinner /></div>
@@ -73,6 +77,28 @@ function ProtectedRoute({ children, adminOnly = false, superAdminOnly = false })
   return children
 }
 
+/* "/" gate: public marketing landing for logged-out visitors, the full app
+   (Layout + Outlet → dashboard) for authenticated users. Deep routes under "/"
+   still require login. Keeps the dashboard at "/" for authed users so all
+   existing links/redirects stay valid. */
+function AppShell() {
+  const { user, loading, isSuperAdmin, workspace } = useAuth()
+  const location = useLocation()
+  if (loading) {
+    // Anonymous visitors (no stored session token) get the public landing page
+    // immediately — don't gate the marketing page on the Supabase getSession()
+    // round-trip (it was delaying the H1, which is the LCP element). Logged-in
+    // users (token present) still see the spinner so landing doesn't flash.
+    if (location.pathname === '/' && !localStorage.getItem('auth_token')) return <LandingPage />
+    return <div className="flex items-center justify-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>
+  }
+  if (!user) return location.pathname === '/' ? <LandingPage /> : <Navigate to="/login" replace />
+  if (!isSuperAdmin && workspace && workspace.active === false) {
+    return <Suspense fallback={<PageFallback />}><SuspendedPage /></Suspense>
+  }
+  return <Layout />
+}
+
 export default function App() {
   return (
     <ScrapeProvider>
@@ -83,12 +109,16 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/invite/:token" element={<InvitePage />} />
-          <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route path="/" element={<AppShell />}>
             {/* Phase 19 — / is the Editorial Deep dashboard (executive view).
                 Plan cards UI lives at /plans (and other tab views at /roaming
                 /esim /banners /history). Legacy /?tab=X URLs are redirected
                 inside EditorialDashboardPage on mount. */}
             <Route index element={<EditorialDashboardPage />} />
+            {/* "/" is the static marketing page (Netlify serves dist/landing.html);
+                /home is the SPA dashboard home — the post-login + "logged-in hit /"
+                redirect target. Same component as the index route. */}
+            <Route path="home" element={<EditorialDashboardPage />} />
             {/* Phase 9 — clean URLs for tab views; DashboardPage detects pathname */}
             <Route path="plans"     element={<DashboardPage />} />
             <Route path="roaming"   element={<DashboardPage />} />
@@ -112,6 +142,7 @@ export default function App() {
             <Route path="usage" element={<ProtectedRoute superAdminOnly><UsagePage /></ProtectedRoute>} />
             <Route path="notifications" element={<Navigate to="/alerts?tab=watchlist" replace />} />
             <Route path="ai-insights" element={<AIInsightsPage />} />
+            <Route path="social" element={<SocialPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

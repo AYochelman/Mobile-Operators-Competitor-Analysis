@@ -1,3 +1,11 @@
+# "/" serves the pure-static prerendered marketing page (dist/landing.html) so it
+# paints instantly with no SPA boot. Everything else falls through to the SPA.
+[[redirects]]
+  from = "/"
+  to = "/landing.html"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
