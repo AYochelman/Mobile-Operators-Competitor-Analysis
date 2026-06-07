@@ -10,6 +10,16 @@ Three endpoints could trigger it; each now refuses with HTTP 409:
   - POST /api/users/<id>/role                 (change a user's role)
   - POST /api/invite/<token>/accept           (accept a workspace invite)
 
+This module also covers TENANT ISOLATION on the bare /api/users* endpoints — a
+separate concern from super_admin-demotion (a workspace `admin` reaching across
+workspaces):
+  - GET  /api/users          — a workspace admin sees only their own workspace's
+                               users; super_admin gets the full list   (Guard D)
+  - POST /api/users,
+    DELETE /api/users/<id>,
+    POST /api/users/<id>/role — create/delete/re-role are super_admin-only; a
+                               workspace admin is denied 401            (Guard E)
+
 These tests fake the Supabase connection (a substring-routed cursor) and the
 api-key / server-admin-key helpers, so they run without a live DB or JWT.
 """
@@ -170,3 +180,127 @@ def test_super_admin_accepting_invite_is_blocked(client, auth, monkeypatch):
     resp = client.post("/api/invite/sometoken/accept", headers=auth)
     assert resp.status_code == 409
     assert "super_admin" in json.loads(resp.data)["error"]
+
+
+# ── Guard D: GET /api/users is workspace-scoped (cross-tenant read leak) ──────
+# Different guard family: not super_admin-demotion but tenant isolation. The
+# endpoint is @require_admin, so a workspace `admin` (e.g. a Partner admin)
+# reaches it via the Settings page. It must return only THEIR workspace's users;
+# only super_admin (or the trusted server-admin key) gets the cross-workspace
+# list. These drive the JWT path (no X-Server-Admin-Key) and mock
+# _get_user_context (its query shares the "WHERE LOWER(u.email)" substring with
+# require_admin's inline role check, so substring routing can't tell them apart).
+def _jwt_user(monkeypatch, role, workspace_id):
+    monkeypatch.setattr(appmod, "_verify_supabase_jwt", lambda tok: {"email": "u@example.com"})
+    monkeypatch.setattr(appmod, "_get_user_context",
+                        lambda email: {"role": role, "workspace_id": workspace_id, "workspace": None})
+
+
+def test_get_users_scoped_for_workspace_admin(client, monkeypatch):
+    _jwt_user(monkeypatch, "admin", WS)
+    cur = fake_db(monkeypatch, [
+        ("WHERE LOWER(u.email)", ("admin",)),  # require_admin's inline role check
+        ("last_sign_in_at", [(UID, "peer@partner.com", "2026-01-01", "admin", None)]),
+    ])
+    resp = client.get("/api/users", headers={"Authorization": "Bearer faketoken"})
+    assert resp.status_code == 200
+    main = [(s, p) for (s, p) in cur.executed if "last_sign_in_at" in s]
+    assert main, "user-listing query did not run"
+    sql, params = main[-1]
+    assert "WHERE r.workspace_id = %s" in sql   # scoped to the caller's workspace
+    assert params == (WS,)
+
+
+def test_get_users_full_list_for_super_admin(client, monkeypatch):
+    _jwt_user(monkeypatch, "super_admin", None)
+    cur = fake_db(monkeypatch, [
+        ("WHERE LOWER(u.email)", ("super_admin",)),
+        ("last_sign_in_at", [(UID, "boss@example.com", "2026-01-01", "super_admin", None)]),
+    ])
+    resp = client.get("/api/users", headers={"Authorization": "Bearer faketoken"})
+    assert resp.status_code == 200
+    main = [(s, p) for (s, p) in cur.executed if "last_sign_in_at" in s]
+    assert main, "user-listing query did not run"
+    sql, params = main[-1]
+    assert "WHERE r.workspace_id" not in sql    # cross-workspace list, unscoped
+    assert params is None
+
+
+def test_get_users_admin_without_workspace_returns_empty(client, monkeypatch):
+    # An admin with no workspace assigned must get nothing — never the global list.
+    _jwt_user(monkeypatch, "admin", None)
+    cur = fake_db(monkeypatch, [
+        ("WHERE LOWER(u.email)", ("admin",)),
+    ])
+    resp = client.get("/api/users", headers={"Authorization": "Bearer faketoken"})
+    assert resp.status_code == 200
+    assert json.loads(resp.data) == []
+    assert not [s for (s, p) in cur.executed if "last_sign_in_at" in s]  # no query leaked
+
+
+# ── Guard E: bare /api/users* WRITES are super_admin-only (cross-tenant write) ─
+# Sibling of Guard D. POST /api/users (create), DELETE /api/users/<id> (delete),
+# and POST /api/users/<id>/role (re-role) all operate on an arbitrary target
+# with NO workspace-ownership check, so they were tightened from @require_admin
+# to @require_super_admin: a workspace `admin` (e.g. a Partner admin) must not be
+# able to create/delete/re-role users belonging to other tenants. Workspace-
+# scoped management lives at /api/workspaces/<id>/users (Guard via
+# _can_manage_workspace_users). @require_role denies a non-super_admin JWT with
+# 401 BEFORE the body runs; super_admin — and the trusted X-Server-Admin-Key
+# (covered by Guard B's role tests) — still pass.
+def test_create_user_forbidden_for_workspace_admin(client, monkeypatch):
+    _jwt_user(monkeypatch, "admin", WS)
+    cur = fake_db(monkeypatch, [
+        ("WHERE LOWER(u.email)", ("admin",)),  # @require_role's inline role check
+    ])
+    resp = client.post("/api/users", headers={"Authorization": "Bearer faketoken"},
+                       json={"email": "x@partner.com", "password": "secret123", "role": "admin"})
+    assert resp.status_code == 401
+    # body never ran — no auth account / role row was created
+    assert not [s for (s, p) in cur.executed if "INSERT INTO public.user_roles" in s]
+
+
+def test_delete_user_forbidden_for_workspace_admin(client, monkeypatch):
+    _jwt_user(monkeypatch, "admin", WS)
+    cur = fake_db(monkeypatch, [
+        ("WHERE LOWER(u.email)", ("admin",)),
+    ])
+    resp = client.delete(f"/api/users/{UID}", headers={"Authorization": "Bearer faketoken"})
+    assert resp.status_code == 401
+    assert not [s for (s, p) in cur.executed if "DELETE FROM auth.users" in s]  # no deletion leaked
+
+
+def test_update_role_forbidden_for_workspace_admin(client, monkeypatch):
+    _jwt_user(monkeypatch, "admin", WS)
+    cur = fake_db(monkeypatch, [
+        ("WHERE LOWER(u.email)", ("admin",)),
+    ])
+    resp = client.post(f"/api/users/{UID}/role", headers={"Authorization": "Bearer faketoken"},
+                       json={"role": "admin"})
+    assert resp.status_code == 401
+    assert not [s for (s, p) in cur.executed if "INSERT INTO public.user_roles" in s]  # no role write leaked
+
+
+# Not over-restricted: super_admin (via JWT) still passes the decorator and the
+# body runs. (The X-Server-Admin-Key operator path is exercised by Guard B.)
+def test_delete_user_allowed_for_super_admin(client, monkeypatch):
+    _jwt_user(monkeypatch, "super_admin", None)
+    cur = fake_db(monkeypatch, [
+        ("WHERE LOWER(u.email)", ("super_admin",)),  # decorator: caller is super_admin
+    ])
+    resp = client.delete(f"/api/users/{UID}", headers={"Authorization": "Bearer faketoken"})
+    assert resp.status_code == 200
+    assert json.loads(resp.data)["status"] == "deleted"
+    assert [s for (s, p) in cur.executed if "DELETE FROM auth.users" in s]  # body ran
+
+
+def test_update_role_allowed_for_super_admin(client, monkeypatch):
+    _jwt_user(monkeypatch, "super_admin", None)
+    cur = fake_db(monkeypatch, [
+        ("WHERE LOWER(u.email)", ("super_admin",)),                    # decorator: super_admin
+        ("SELECT role FROM public.user_roles WHERE user_id", ("viewer",)),  # target is a viewer
+    ])
+    resp = client.post(f"/api/users/{UID}/role", headers={"Authorization": "Bearer faketoken"},
+                       json={"role": "admin"})
+    assert resp.status_code == 200
+    assert json.loads(resp.data)["role"] == "admin"

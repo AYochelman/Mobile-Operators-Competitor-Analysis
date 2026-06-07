@@ -120,8 +120,9 @@ def _public_cache(resp, max_age):
 ALLOWED_ORIGINS = [
     "http://localhost:5000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175",
     "http://127.0.0.1:5000", "http://127.0.0.1:5173",
-    "https://lucent-kulfi-f037ad.netlify.app",
-    # ngrok URLs added dynamically via ALLOWED_ORIGINS env var
+    "https://www.mocaintel.com", "https://mocaintel.com",
+    "https://lucent-kulfi-f037ad.netlify.app",  # legacy Netlify subdomain — kept as fallback
+    # extra origins added dynamically via ALLOWED_ORIGINS env var
 ]
 # Add ngrok/netlify URLs from environment if set
 _extra_origins = os.environ.get("ALLOWED_ORIGINS", "")
@@ -972,7 +973,7 @@ def affiliate_redirect(provider, plan_id=None):
     if affiliate:
         return redirect(affiliate["base_url"], 302)
 
-    fallback = _AFFILIATE_FALLBACK_URLS.get(provider, "https://lucent-kulfi-f037ad.netlify.app")
+    fallback = _AFFILIATE_FALLBACK_URLS.get(provider, "https://mocaintel.com")
     return redirect(fallback, 302)
 
 
@@ -1025,6 +1026,11 @@ def api_scrape_global_now():
             changes = seed
         else:
             changes = detect_changes(old_plans, new_plans, per_group_extras=True)
+            # Global providers scrape hundreds of per-country pages; partial failures make
+            # plans flap new/removed every run (~6,700 phantom rows/day). Keep only the
+            # meaningful signal (price/extras/details) for global — price_change still
+            # powers the history charts. Domestic/abroad are unaffected.
+            changes = [c for c in changes if c["change_type"] not in ("new_plan", "removed_plan")]
             changes = filter_already_notified(changes, 'global_changes', db_path=_db_path())
             if changes:
                 save_global_changes(changes, db_path=_db_path())
@@ -1257,6 +1263,8 @@ def api_scrape_all_now():
             ch_global = seed
         else:
             ch_global = detect_changes(old_global, new_global, per_group_extras=True)
+            # Drop global new/removed churn (per-country scrape flapping); keep price/extras/details.
+            ch_global = [c for c in ch_global if c["change_type"] not in ("new_plan", "removed_plan")]
             ch_global = filter_already_notified(ch_global, 'global_changes', db_path=_db_path())
             if ch_global:
                 save_global_changes(ch_global, db_path=_db_path())
@@ -2926,16 +2934,45 @@ def api_contact():
 @require_admin
 @limiter.limit("20 per minute")
 def api_get_users():
-    """List all users from Supabase via direct DB connection."""
+    """List users from Supabase via direct DB connection.
+
+    Cross-tenant scoping: a workspace `admin` sees only users assigned to their
+    OWN workspace; super_admin (and the trusted server-admin key) get the full
+    cross-workspace list. Without this scope, any workspace admin could read
+    every user's email + role across all carrier workspaces — a cross-tenant
+    info leak. Mirrors the ownership pattern in _can_manage_workspace_users.
+    """
     try:
+        # Decide scope from the caller's role. The dedicated server-admin key
+        # (_is_server_admin_request) is the trusted MOCA operator → full list,
+        # same as super_admin. scope_ws_id is None when the full list is allowed.
+        scope_ws_id = None
+        if not _is_server_admin_request():
+            ctx = _get_user_context(_current_user_email())
+            if ctx.get('role') != 'super_admin':
+                scope_ws_id = ctx.get('workspace_id')
+                if not scope_ws_id:
+                    # Workspace admin with no workspace assigned: show nothing
+                    # rather than leaking the global user list.
+                    return jsonify([])
+
         conn = _supabase_conn()
         cur = conn.cursor()
-        cur.execute("""
-            SELECT u.id, u.email, u.created_at, COALESCE(r.role, 'viewer') as role, u.last_sign_in_at
-            FROM auth.users u
-            LEFT JOIN public.user_roles r ON u.id = r.user_id
-            ORDER BY u.created_at DESC
-        """)
+        if scope_ws_id is None:
+            cur.execute("""
+                SELECT u.id, u.email, u.created_at, COALESCE(r.role, 'viewer') as role, u.last_sign_in_at
+                FROM auth.users u
+                LEFT JOIN public.user_roles r ON u.id = r.user_id
+                ORDER BY u.created_at DESC
+            """)
+        else:
+            cur.execute("""
+                SELECT u.id, u.email, u.created_at, COALESCE(r.role, 'viewer') as role, u.last_sign_in_at
+                FROM public.user_roles r
+                JOIN auth.users u ON u.id = r.user_id
+                WHERE r.workspace_id = %s
+                ORDER BY u.created_at DESC
+            """, (scope_ws_id,))
         users = [{'id': str(row[0]), 'email': row[1], 'created_at': str(row[2]), 'role': row[3], 'last_sign_in_at': str(row[4]) if row[4] else None} for row in cur.fetchall()]
         conn.close()
         return jsonify(users)
@@ -2944,10 +2981,18 @@ def api_get_users():
         return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/api/users", methods=["POST"])
-@require_admin
+@require_super_admin
 @limiter.limit("10 per minute")
 def api_create_user():
-    """Create a new user in Supabase."""
+    """Create a new user in Supabase. super_admin / server-admin-key ONLY.
+
+    Provisions a brand-new auth identity, so it's restricted to the MOCA
+    operator — a workspace `admin` must never mint accounts (the role row here
+    has no workspace_id, i.e. a global/workspace-less role, and there's no
+    cross-tenant ownership check). Workspace admins add people to their OWN
+    workspace via POST /api/workspaces/<id>/users (assign an existing user) or
+    an invite link — both gated by _can_manage_workspace_users.
+    """
     import urllib.request
     data = request.get_json(force=True)
     email = data.get('email', '')
@@ -2992,10 +3037,17 @@ def api_create_user():
         return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/api/users/<user_id>", methods=["DELETE"])
-@require_admin
+@require_super_admin
 @limiter.limit("10 per minute")
 def api_delete_user(user_id):
-    """Delete a user from Supabase."""
+    """Delete a user from Supabase. super_admin / server-admin-key ONLY.
+
+    Operates on an arbitrary user id with no workspace-ownership check, so a
+    workspace `admin` must not reach it — otherwise a Partner admin could delete
+    a Cellcom user (cross-tenant). Workspace admins remove members from their own
+    workspace via DELETE /api/workspaces/<id>/users/<uid> (gated by
+    _can_manage_workspace_users), which only un-assigns within that workspace.
+    """
     try:
         conn = _supabase_conn()
         conn.autocommit = True
@@ -3010,10 +3062,17 @@ def api_delete_user(user_id):
         return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/api/users/<user_id>/role", methods=["POST"])
-@require_admin
+@require_super_admin
 @limiter.limit("20 per minute")
 def api_update_user_role(user_id):
-    """Update a user's role."""
+    """Update a user's role. super_admin / server-admin-key ONLY.
+
+    Re-roles an arbitrary user id with no workspace-ownership check, so a
+    workspace `admin` must not reach it (cross-tenant: a Partner admin could
+    promote/demote a Cellcom user). Workspace admins set a member's role within
+    their own workspace via POST /api/workspaces/<id>/users (gated by
+    _can_manage_workspace_users). The last-super_admin guard below still applies.
+    """
     data = request.get_json(force=True)
     role = data.get('role', 'viewer')
     if role not in ('admin', 'viewer'):
@@ -3719,6 +3778,20 @@ def api_history_changes():
     return jsonify({'changes': changes, 'summary': summary})
 
 
+@app.route('/api/ping')
+@limiter.exempt
+def api_ping():
+    """Public, unauthenticated liveness probe for EXTERNAL uptime monitors
+    (UptimeRobot / Better Stack / healthchecks.io). Returns 200 + minimal JSON
+    with no DB hit and no auth, so it stays green exactly as long as Flask itself
+    is serving requests through the tunnel. Rate-limit exempt so frequent polling
+    never trips the global 200/min cap.
+
+    NOTE for the monitor config: send header 'ngrok-skip-browser-warning: true'
+    so ngrok's free-tier interstitial page doesn't mask the real response."""
+    return jsonify({'ok': True, 'service': 'moca-api'}), 200
+
+
 @app.route('/api/health')
 @require_super_admin
 @limiter.limit('30 per minute')
@@ -4379,6 +4452,8 @@ if __name__ == "__main__":
                 global_changes = seed
             else:
                 global_changes = detect_changes(old_global, new_global, per_group_extras=True)
+                # Drop global new/removed churn (per-country scrape flapping); keep price/extras/details.
+                global_changes = [c for c in global_changes if c["change_type"] not in ("new_plan", "removed_plan")]
             save_global_plans(new_global)
             fresh_global = filter_already_notified(global_changes, 'global_changes')
             if fresh_global:
@@ -4581,6 +4656,15 @@ if __name__ == "__main__":
     scheduler.add_job(weekly_digest_job, "cron", day_of_week="sun", hour=8, minute=30,
                       id="weekly_digest", **_job_defaults)
     scheduler.add_job(check_trial_expiry_job, "cron", hour=0, minute=5, id="trial_expiry", **_job_defaults)
+    if config.get("booking_ical_url"):
+        try:
+            from booking_notifier import check_new_bookings
+            _bk_min = int(config.get("booking_check_minutes", 5))
+            scheduler.add_job(check_new_bookings, "interval", minutes=_bk_min,
+                              id="booking_whatsapp", **_job_defaults)
+            logger.info(f"Booking notifier: polling calendar iCal every {_bk_min} min")
+        except Exception as _be:
+            logger.warning(f"Booking notifier not started: {_be}")
     scheduler.start()
     logger.info("Flask starting → http://0.0.0.0:5000")
     try:
