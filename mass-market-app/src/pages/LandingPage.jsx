@@ -91,7 +91,7 @@ export default function LandingPage() {
              className="absolute -right-32 -top-32 w-[380px] h-[380px] rounded-full pointer-events-none"
              style={{ background: 'radial-gradient(circle,rgba(201,98,47,.35),transparent 70%)' }} />
         <div className="relative max-w-6xl mx-auto px-6">
-          <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-6 items-center">
+          <div className="grid lg:grid-cols-[1.18fr_0.82fr] gap-10 lg:gap-6 items-center">
           <div>
           <div className="text-[13px] font-semibold tracking-[3px] uppercase text-[#e8d5bc]/90 mb-3.5">
             Mobile Operators · Competitor Analysis
@@ -104,11 +104,11 @@ export default function LandingPage() {
             מערכת מודיעין תחרותי שעוקבת אוטומטית אחרי כל השוק — פעמיים ביום — ושולחת התראה ברגע שמתחרה
             מזיז מחיר, מחליף קמפיין או משיק חבילה.
           </p>
-          <div className="mt-9 flex flex-wrap gap-8">
+          <div className="mt-9 flex flex-wrap lg:flex-nowrap gap-x-6 gap-y-4">
             {HERO_STATS.map((s) => (
               <div key={s.l}>
                 <div className="font-display font-black text-3xl md:text-[40px]" style={{ color: HILITE }}>{s.n}</div>
-                <div className="text-sm text-[#e8d5bc]/85">{s.l}</div>
+                <div className="text-sm text-[#e8d5bc]/85 whitespace-nowrap">{s.l}</div>
               </div>
             ))}
           </div>

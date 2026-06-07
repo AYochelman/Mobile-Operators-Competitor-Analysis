@@ -47,7 +47,7 @@ export default function LandingHeroShot() {
 const CSS = `
 .lhs-stage{ perspective:1600px; display:inline-block; max-width:100%; }
 .lhs-frame{ transform-style:preserve-3d; transition:transform .25s ease; will-change:transform; }
-.lhs-shot{ position:relative; width:min(540px,86vw); border-radius:14px; overflow:hidden;
+.lhs-shot{ position:relative; width:min(490px,86vw); border-radius:14px; overflow:hidden;
   border:1px solid rgba(255,255,255,.12);
   box-shadow:0 34px 64px -28px rgba(0,0,0,.62), 0 14px 26px -18px rgba(0,0,0,.5); }
 .lhs-shot img{ display:block; width:100%; height:auto; aspect-ratio:1100/957; }
