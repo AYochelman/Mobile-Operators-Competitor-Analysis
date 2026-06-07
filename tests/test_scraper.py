@@ -70,11 +70,11 @@ def test_cellcom_returns_plans():
 @pytest.mark.integration
 def test_019_returns_plans():
     from scraper import scrape_019
-    p, browser, page = _browser_page()
-    try:
-        plans = scrape_019(page)
-    finally:
-        browser.close(); p.stop()
+    # scrape_019 ignores any passed page and starts its OWN stealth Playwright
+    # session (019 sits behind Incapsula). Opening a sync_playwright here as well
+    # would put a second concurrent sync session in the same thread, which raises
+    # "Sync API inside the asyncio loop" — so call it with no browser of our own.
+    plans = scrape_019()
     assert len(plans) >= 2
     assert all(pl["carrier"] == "mobile019" for pl in plans)
     assert any(pl["price"] is not None for pl in plans)
@@ -120,33 +120,34 @@ def test_run_parallel_scraper_empty():
 
 
 def test_scrape_all_global_merges_parallel_and_sequential(monkeypatch):
-    """scrape_all_global merges results from both sequential and parallel groups."""
+    """scrape_all_global merges results from both the sequential (shared-page)
+    and parallel (self-contained) scraper groups.
+
+    Hermetic by construction: every provider scraper (scrape_*) is stubbed by
+    name-pattern — NOT a hardcoded list — so the test never touches the network
+    and stays correct as the provider roster grows or shrinks. Each stub returns
+    one plan tagged with its own function name, so we can assert that a
+    representative of BOTH groups was merged into the final list.
+    """
     import scraper
 
-    seq_plan = {"carrier": "tuki", "plan_name": "T", "price": 10,
-                "data_gb": 1, "days": 7, "extras": []}
-    par_plan = {"carrier": "saily", "plan_name": "S", "price": 20,
-                "data_gb": 2, "days": 30, "extras": []}
+    # Stub every provider scraper to return a single plan tagged with its name.
+    # Excludes the orchestrators themselves (scrape_all / scrape_all_global).
+    for attr in dir(scraper):
+        if not attr.startswith("scrape_") or attr in ("scrape_all", "scrape_all_global"):
+            continue
+        if not callable(getattr(scraper, attr)):
+            continue
+        monkeypatch.setattr(
+            scraper, attr,
+            lambda *a, _n=attr, **k: [{
+                "carrier": _n, "plan_name": _n, "price": 1,
+                "data_gb": 1, "days": 7, "extras": [],
+            }],
+        )
 
-    def _fake_seq(page, *a, **kw):
-        return [seq_plan]
-
-    def _fake_par(*a, **kw):
-        return [par_plan]
-
-    for fn in ["scrape_tuki_global", "scrape_tuki_regions", "scrape_tuki_local",
-               "scrape_globalesim_global", "scrape_globalesim_regions",
-               "scrape_airalo_global", "scrape_pelephone_globalsim",
-               "scrape_esimo_global", "scrape_simtlv_global", "scrape_world8_global"]:
-        monkeypatch.setattr(scraper, fn, _fake_seq)
-
-    for fn in ["scrape_xphone_global", "scrape_saily_global", "scrape_saily_regions",
-               "scrape_esimio_destinations", "scrape_esimio_regions",
-               "scrape_holafly_global", "scrape_holafly_regions",
-               "scrape_sparks_global", "scrape_voye_global",
-               "scrape_orbit_global", "scrape_travelsim"]:
-        monkeypatch.setattr(scraper, fn, _fake_par)
-
+    # Fake Playwright so no real browser launches, and stub all FX lookups so no
+    # live currency calls happen (the sequential group shares this fake page).
     class _FakePage:
         pass
     class _FakeBrowser:
@@ -160,11 +161,14 @@ def test_scrape_all_global_merges_parallel_and_sequential(monkeypatch):
     monkeypatch.setattr(scraper, "sync_playwright", lambda: _FakePW())
     monkeypatch.setattr(scraper, "_get_usd_to_ils", lambda: 3.7)
     monkeypatch.setattr(scraper, "_get_eur_to_ils", lambda: 4.0)
+    monkeypatch.setattr(scraper, "_get_gbp_to_ils", lambda: 4.7)
 
     plans = scraper.scrape_all_global()
-
-    # 10 sequential × 1 plan + 11 parallel × 1 plan = 21 plans
-    assert len(plans) == 21
     carriers = {p["carrier"] for p in plans}
-    assert "tuki" in carriers
-    assert "saily" in carriers
+
+    # A representative of each group must be present → both groups were merged.
+    assert "scrape_tuki_global" in carriers    # sequential (shared-page) job
+    assert "scrape_saily_global" in carriers   # parallel (self-contained) job
+    # Both groups together contribute many jobs; the exact count tracks the live
+    # roster, so assert a robust lower bound instead of a brittle equality.
+    assert len(plans) >= 20
