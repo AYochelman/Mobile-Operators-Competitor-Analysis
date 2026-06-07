@@ -74,17 +74,20 @@ const Icons = {
   news: (
     <svg {...ICON_PROPS}><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8V6Z"/></svg>
   ),
+  social: (
+    <svg {...ICON_PROPS}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+  ),
   compare: (
     <svg {...ICON_PROPS}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
   ),
   search: (
     <svg {...ICON_PROPS}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
   ),
-  workspace: (
-    <svg {...ICON_PROPS}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V10a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-  ),
   usage: (
     <svg {...ICON_PROPS}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="3"/></svg>
+  ),
+  userActivity: (
+    <svg {...ICON_PROPS}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6M22 15h-6"/></svg>
   ),
 }
 
@@ -98,7 +101,7 @@ function NavItem({ to, icon, label, badge, badgeColor, end, onClick, isActive, o
         display: 'flex',
         alignItems: 'center',
         gap: 10,
-        padding: '8px 12px',
+        padding: '6px 12px',
         borderRadius: 10,
         background: active ? 'var(--color-moca-bolt)' : 'transparent',
         color: active ? '#fff' : 'var(--color-moca-text)',
@@ -187,7 +190,7 @@ function GroupLabel({ children }) {
         fontWeight: 800,
         letterSpacing: 0.8,
         textTransform: 'uppercase',
-        padding: '14px 14px 6px',
+        padding: '10px 14px 4px',
       }}
     >
       {children}
@@ -203,7 +206,7 @@ function GroupLabel({ children }) {
  * Mobile:   <Sidebar mobile open onClose={...} /> — portal drawer
  */
 export default function Sidebar({ className = '', mobile = false, open = false, onClose }) {
-  const { isAdmin, isSuperAdmin, workspace } = useAuth()
+  const { isSuperAdmin, workspace } = useAuth()
   const flags = useFeatureFlags()
   const { changesCount } = useWatchlist()
   const location = useLocation()
@@ -254,7 +257,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
   const body = (
     <>
       {/* Logo block */}
-      <div style={{ padding: '18px 14px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+      <div style={{ padding: '12px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <NavLink
           to="/"
           onClick={() => { afterNav && afterNav() }}
@@ -289,7 +292,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         )}
       </div>
 
-      <nav style={{ padding: '8px 8px 16px', display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <nav style={{ padding: '4px 8px 10px', display: 'flex', flexDirection: 'column', gap: 1 }}>
         {/* ─── ניטור ─── */}
         <GroupLabel>ניטור</GroupLabel>
         <NavItem to="/" end icon={Icons.dashboard} label="דשבורד" isActive={isPath('/')} onAfterNav={afterNav} />
@@ -318,9 +321,10 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
           <NavItem to="/ai-insights" icon={Icons.ai} label="AI Insights" isActive={isPath('/ai-insights')} onAfterNav={afterNav} />
         )}
         <NavItem to="/news" icon={Icons.news} label="בחדשות" isActive={isPath('/news')} onAfterNav={afterNav} />
+        <NavItem to="/social" icon={Icons.social} label="ברשתות החברתיות" isActive={isPath('/social')} onAfterNav={afterNav} />
         <NavItem to="/banners" icon={Icons.banners} label="באנרים" isActive={isPath('/banners')} onAfterNav={afterNav} />
         {visible('/archive') && (
-          <NavItem to="/archive" icon={Icons.archive} label="ארכיב Snapshots" isActive={isPath('/archive')} onAfterNav={afterNav} />
+          <NavItem to="/archive" icon={Icons.archive} label="מכונת זמן" isActive={isPath('/archive')} onAfterNav={afterNav} />
         )}
 
         {/* ─── מסלולים ─── */}
@@ -342,21 +346,21 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
           onClick={openSearch}
           onAfterNav={afterNav}
         />
-        {(isAdmin || isSuperAdmin) && (
-          <NavItem
-            to={isSuperAdmin ? '/admin/workspaces' : '/workspace/users'}
-            icon={Icons.workspace}
-            label="Workspace"
-            isActive={location.pathname.startsWith('/workspace') || location.pathname.startsWith('/admin')}
-            onAfterNav={afterNav}
-          />
-        )}
         {isSuperAdmin && (
           <NavItem
             to="/usage"
             icon={Icons.usage}
             label="שימוש ב-Claude"
             isActive={isPath('/usage')}
+            onAfterNav={afterNav}
+          />
+        )}
+        {isSuperAdmin && (
+          <NavItem
+            to="/admin/user-activity"
+            icon={Icons.userActivity}
+            label="פעילות משתמשים"
+            isActive={isPath('/admin/user-activity')}
             onAfterNav={afterNav}
           />
         )}

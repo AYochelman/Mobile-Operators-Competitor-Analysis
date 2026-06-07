@@ -31,6 +31,7 @@ const WorkspaceUsersPage    = lazy(() => import('./pages/WorkspaceUsersPage'))
 const WorkspaceBrandingPage = lazy(() => import('./pages/WorkspaceBrandingPage'))
 const AuditLogPage          = lazy(() => import('./pages/AuditLogPage'))
 const UsagePage             = lazy(() => import('./pages/UsagePage'))
+const UserActivityPage      = lazy(() => import('./pages/UserActivityPage'))
 const PositioningPage       = lazy(() => import('./pages/PositioningPage'))
 const AIInsightsPage        = lazy(() => import('./pages/AIInsightsPage'))
 const InvitePage            = lazy(() => import('./pages/InvitePage'))
@@ -140,6 +141,7 @@ export default function App() {
             <Route path="admin/workspaces" element={<ProtectedRoute superAdminOnly><WorkspacesAdminPage /></ProtectedRoute>} />
             <Route path="admin/audit" element={<ProtectedRoute superAdminOnly><AuditLogPage /></ProtectedRoute>} />
             <Route path="usage" element={<ProtectedRoute superAdminOnly><UsagePage /></ProtectedRoute>} />
+            <Route path="admin/user-activity" element={<ProtectedRoute superAdminOnly><UserActivityPage /></ProtectedRoute>} />
             <Route path="notifications" element={<Navigate to="/alerts?tab=watchlist" replace />} />
             <Route path="ai-insights" element={<AIInsightsPage />} />
             <Route path="social" element={<SocialPage />} />

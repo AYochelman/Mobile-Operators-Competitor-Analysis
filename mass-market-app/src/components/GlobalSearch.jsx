@@ -15,7 +15,7 @@ const ALL_PAGES = [
   { path: '/positioning',        label: 'מיצוב תחרותי',   keywords: 'positioning matrix white space competition מטריצה' },
   { path: '/alerts',             label: 'התראות מחיר',    keywords: 'alerts price התראות' },
   { path: '/executive-summary',  label: 'תקציר מנהלים',   keywords: 'executive summary report דוח' },
-  { path: '/archive',            label: 'ארכיב',            keywords: 'archive history snapshots ארכיון היסטוריה' },
+  { path: '/archive',            label: 'מכונת זמן',       keywords: 'archive history snapshots ארכיון היסטוריה ארכיב מכונת זמן time machine' },
   { path: '/preferences',        label: 'העדפות',          keywords: 'preferences settings profile' },
   { path: '/notifications',      label: 'הגדרות התראות',  keywords: 'notifications push web' },
   { path: '/settings',           label: 'הגדרות מערכת',   keywords: 'settings admin scrape', adminOnly: true },
@@ -188,6 +188,7 @@ export default function GlobalSearch() {
 
   const goTo = (r) => {
     setOpen(false)
+    api.trackActivity('search', null, JSON.stringify({ q: q.trim().slice(0, 80), kind: r.kind })).catch(() => {})
     if (r.kind === 'page') {
       navigate(r.item.path)
       return

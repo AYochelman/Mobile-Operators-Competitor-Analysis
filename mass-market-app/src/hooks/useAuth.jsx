@@ -107,12 +107,26 @@ export function AuthProvider({ children }) {
         if (session?.user) {
           sessionStorage.removeItem('dev_logged_out')
           applyContext(session)
+          // Best-effort login beacon — only on a real sign-in (not token refresh
+          // / session restore), deduped per browser session so opening tabs or
+          // refreshing doesn't inflate the count. Super-admin logins are dropped
+          // server-side. (RouteTracker records page views separately.)
+          if (event === 'SIGNED_IN') {
+            try {
+              const uid = session.user.id
+              if (sessionStorage.getItem('moca_login_beaconed') !== uid) {
+                sessionStorage.setItem('moca_login_beaconed', uid)
+                api.trackActivity('login').catch(() => {})
+              }
+            } catch { /* ignore */ }
+          }
         } else {
           setUser(null)
           setRole(null)
           setWorkspace(null)
           setWorkspaceId(null)
           localStorage.removeItem('auth_token')
+          try { sessionStorage.removeItem('moca_login_beaconed') } catch { /* ignore */ }
           api.clearSessionCookie().catch(() => {})
         }
         setLoading(false)
@@ -158,6 +172,7 @@ export function AuthProvider({ children }) {
     setWorkspace(null)
     setViewAs(null)
     try { sessionStorage.removeItem(VIEW_AS_STORAGE_KEY) } catch {}
+    try { sessionStorage.removeItem('moca_login_beaconed') } catch {}
     localStorage.removeItem('auth_token')
     // Remember explicit logout for the tab session so DEV_MODE doesn't auto-re-login.
     sessionStorage.setItem('dev_logged_out', '1')

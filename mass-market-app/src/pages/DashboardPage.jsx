@@ -890,6 +890,7 @@ export default function DashboardPage() {
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, TAB_NAMES[tab] || tab)
     XLSX.writeFile(wb, `mass-market-${tab}-${new Date().toISOString().slice(0, 10)}.xlsx`)
+    api.trackActivity('export', null, JSON.stringify({ tab, count: filteredPlans.length })).catch(() => {})
   }, [filteredPlans, tab, filters])
 
   return (

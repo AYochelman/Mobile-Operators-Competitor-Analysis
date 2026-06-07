@@ -14,6 +14,7 @@ export const ROUTE_META = [
   { match: '/resellers',       kicker: 'מסלולים',   title: 'משווקים' },
   { match: '/content',         kicker: 'מסלולים',   title: 'שירותי תוכן' },
   { match: '/news',            kicker: 'תובנות',    title: 'בחדשות' },
+  { match: '/social',          kicker: 'תובנות',    title: 'ברשתות החברתיות' },
   { match: '/banners',         kicker: 'תובנות',    title: 'באנרים פעילים' },
   { match: '/history',         kicker: 'ניטור',     title: 'היסטוריית שינויים' },
   { match: '/compare',         kicker: 'מסלולים',   title: 'השוואת מחירים · גרפים' },
@@ -21,7 +22,7 @@ export const ROUTE_META = [
   { match: '/alerts',          kicker: 'ניטור',     title: 'התראות' },
   { match: '/executive-summary', kicker: 'ניטור',   title: 'דוח מנהלים שבועי' },
   { match: '/ai-insights',     kicker: 'תובנות',    title: 'AI Insights' },
-  { match: '/archive',         kicker: 'תובנות',    title: 'ארכיב Snapshots' },
+  { match: '/archive',         kicker: 'תובנות',    title: 'מכונת זמן' },
   { match: '/preferences',     kicker: 'כלים',      title: 'העדפות' },
   { match: '/notifications',   kicker: 'כלים',      title: 'הגדרות התראות' },
   { match: '/settings',        kicker: 'ניהול',     title: 'הגדרות מערכת' },
@@ -30,6 +31,7 @@ export const ROUTE_META = [
   { match: '/admin/workspaces', kicker: 'ניהול',    title: 'Workspaces' },
   { match: '/admin/audit',     kicker: 'ניהול',     title: 'יומן ביקורת' },
   { match: '/usage',           kicker: 'ניהול',     title: 'שימוש ב-Claude API' },
+  { match: '/admin/user-activity', kicker: 'ניהול', title: 'פעילות משתמשים' },
 ]
 
 export function resolveRouteMeta(pathname /*, search */) {

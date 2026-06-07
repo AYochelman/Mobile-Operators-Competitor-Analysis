@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import Button from '../components/ui/Button'
 import HealthWidget from '../components/HealthWidget'
@@ -28,8 +29,10 @@ export default function SettingsPage() {
     prevScrapingRef.current = scraping
   }, [scraping])
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState('scrape')
+  // Tab state — honour ?tab=<id> so other pages can deep-link (e.g. the user
+  // activity dashboard's "ניהול משתמשים" button → /settings?tab=users).
+  const [searchParams] = useSearchParams()
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'scrape')
 
   // User management state
   const [users, setUsers]                   = useState([])
@@ -168,7 +171,11 @@ export default function SettingsPage() {
   }, [loadCoupons])
 
   // ── Effects (must be before any conditional return) ──────────────────────
-  useEffect(() => { loadUsers() }, [loadUsers])
+  // The "ניהול משתמשים" tab drives the global /api/users* endpoints, which are
+  // now super_admin-only (cross-tenant writes locked server-side). Workspace
+  // admins manage their own team via /workspace/users, so only load here for
+  // super_admins — avoids a pointless fetch + a list they can't act on.
+  useEffect(() => { if (isSuperAdmin) loadUsers() }, [loadUsers, isSuperAdmin])
 
   useEffect(() => {
     if (activeTab === 'affiliate') loadAffiliateStats()
@@ -252,7 +259,10 @@ export default function SettingsPage() {
 
   const TABS = [
     { id: 'scrape',    label: 'עדכון נתונים' },
-    { id: 'users',     label: 'ניהול משתמשים' },
+    // Global user management (create/delete/re-role across all workspaces) is
+    // super_admin-only. Workspace admins use "הצוות" (/workspace/users) for
+    // their own, workspace-scoped team.
+    ...(isSuperAdmin ? [{ id: 'users', label: 'ניהול משתמשים' }] : []),
     { id: 'affiliate', label: 'Affiliate' },
     { id: 'coupons',   label: 'קופונים' },
   ]
@@ -322,8 +332,8 @@ export default function SettingsPage() {
         </>
       )}
 
-      {/* === Users tab === */}
-      {activeTab === 'users' && (
+      {/* === Users tab (super_admin only — global user management) === */}
+      {activeTab === 'users' && isSuperAdmin && (
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-sm">ניהול משתמשים</h2>

@@ -1,6 +1,7 @@
 import sqlite3
 import json
 import os
+import zlib
 from datetime import datetime, timezone, timedelta
 
 # Canonical Hebrew country/destination names — applied before every global plan save
@@ -398,6 +399,25 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_audit_log_at
                 ON audit_log(created_at);
+            -- Per-user activity tracking (logins, page views, key actions)
+            -- powering the super-admin "user activity" dashboard. Super-admins
+            -- are deliberately NOT recorded (gated at the API layer in app.py).
+            CREATE TABLE IF NOT EXISTS user_activity (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_email   TEXT NOT NULL,
+                workspace_id TEXT,
+                event_type   TEXT NOT NULL,
+                path         TEXT,
+                details      TEXT,
+                user_agent   TEXT,
+                created_at   TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_user_activity_email_at
+                ON user_activity(user_email, created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_user_activity_at
+                ON user_activity(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_user_activity_event
+                ON user_activity(event_type);
             CREATE TABLE IF NOT EXISTS plan_annotations (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 workspace_id TEXT,
@@ -1717,6 +1737,25 @@ def has_archive_snapshot_today(carrier, plan_type, today, db_path=None):
         conn.close()
 
 
+def _archive_encode(plans_json):
+    """Compress a plans_json snapshot for storage. Archive snapshots are large,
+    highly-repetitive JSON (full plan lists) — zlib shrinks them ~8-12x. Returns
+    bytes, stored as a BLOB in the (TEXT-affinity) plans_json column."""
+    return zlib.compress(plans_json.encode("utf-8"), 6)
+
+
+def _archive_decode(blob):
+    """Inverse of _archive_encode, tolerant of legacy uncompressed rows.
+    Compressed rows come back from SQLite as bytes; legacy rows as a str
+    (raw JSON) and are returned unchanged."""
+    if isinstance(blob, (bytes, bytearray)):
+        try:
+            return zlib.decompress(blob).decode("utf-8")
+        except zlib.error:
+            return bytes(blob).decode("utf-8", "replace")
+    return blob
+
+
 def insert_archive_snapshot(carrier, plan_type, snapshot_date, plans_json, content_hash, db_path=None):
     """Insert a new plan snapshot row."""
     conn = _connect(db_path)
@@ -1724,7 +1763,7 @@ def insert_archive_snapshot(carrier, plan_type, snapshot_date, plans_json, conte
         conn.execute(
             """INSERT INTO archive_snapshots (carrier, plan_type, snapshot_date, plans_json, content_hash)
                VALUES (?, ?, ?, ?, ?)""",
-            (carrier, plan_type, snapshot_date, plans_json, content_hash)
+            (carrier, plan_type, snapshot_date, _archive_encode(plans_json), content_hash)
         )
         conn.commit()
     finally:
@@ -1772,7 +1811,7 @@ def get_archive_plans(carrier, date_str, db_path=None):
                HAVING snapshot_date = MAX(snapshot_date)""",
             (carrier, date_str)
         ).fetchall()
-        return [{"plan_type": r[0], "plans": json.loads(r[1]), "snapshot_date": r[2]} for r in rows]
+        return [{"plan_type": r[0], "plans": json.loads(_archive_decode(r[1])), "snapshot_date": r[2]} for r in rows]
     finally:
         conn.close()
 
@@ -2085,6 +2124,192 @@ def get_audit_log(limit=200, workspace_id=None, db_path=None):
              "workspace_id": r[4], "details": r[5], "created_at": r[6]}
             for r in rows
         ]
+    finally:
+        conn.close()
+
+
+# ── User activity tracking (super-admin dashboard) ─────────────────────────
+def log_user_activity(user_email, event_type, workspace_id=None, path=None,
+                      details=None, user_agent=None, db_path=None):
+    """Best-effort per-user activity log (logins, page views, key actions).
+
+    NEVER raises into the caller — a logging failure must not break the user
+    action it is attached to. Super-admins are excluded by the API layer
+    (app.py), not here. Powers the super-admin user-activity dashboard.
+    """
+    if not user_email or not event_type:
+        return
+    try:
+        conn = _connect(db_path)
+        try:
+            conn.execute(
+                "INSERT INTO user_activity "
+                "(user_email, workspace_id, event_type, path, details, user_agent, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (user_email.strip().lower(),
+                 str(workspace_id) if workspace_id else None,
+                 event_type, path, details,
+                 (user_agent or "")[:400] or None,
+                 datetime.now(timezone.utc).isoformat())
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        pass
+
+
+def get_user_activity_overview(days=30, db_path=None):
+    """Per-user activity aggregation over the last N days (0 = lifetime).
+
+    Returns a list of dicts (one per user_email with any activity) with
+    per-event-type counts, distinct active days, and first/last seen. The
+    event_type strings here MUST match those written by the action hooks in
+    app.py and the client beacon (login / page_view / alert_created /
+    watchlist_added / watchlist_removed / comparison_saved).
+    """
+    from datetime import datetime, timezone, timedelta
+    conn = _connect(db_path)
+    try:
+        if days and days > 0:
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+            where, params = "WHERE created_at >= ?", (cutoff,)
+        else:
+            where, params = "", ()
+        rows = conn.execute(
+            f"""SELECT user_email,
+                       SUM(CASE WHEN event_type='login'             THEN 1 ELSE 0 END) AS logins,
+                       SUM(CASE WHEN event_type='page_view'         THEN 1 ELSE 0 END) AS page_views,
+                       SUM(CASE WHEN event_type='alert_created'     THEN 1 ELSE 0 END) AS alerts_created,
+                       SUM(CASE WHEN event_type='watchlist_added'   THEN 1 ELSE 0 END) AS watchlist_added,
+                       SUM(CASE WHEN event_type='watchlist_removed' THEN 1 ELSE 0 END) AS watchlist_removed,
+                       SUM(CASE WHEN event_type='comparison_saved'  THEN 1 ELSE 0 END) AS comparisons_saved,
+                       SUM(CASE WHEN event_type='chat_used'         THEN 1 ELSE 0 END) AS chat_used,
+                       COUNT(DISTINCT substr(created_at,1,10)) AS active_days,
+                       MIN(created_at) AS first_seen,
+                       MAX(created_at) AS last_seen
+                  FROM user_activity {where}
+              GROUP BY user_email""",
+            params,
+        ).fetchall()
+        cols = ['user_email', 'logins', 'page_views', 'alerts_created',
+                'watchlist_added', 'watchlist_removed', 'comparisons_saved',
+                'chat_used', 'active_days', 'first_seen', 'last_seen']
+        return [dict(zip(cols, r)) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_user_activity_summary(days=30, db_path=None):
+    """Aggregate activity for charts: totals, per-day series, and top pages.
+
+    Mirrors the shape of get_claude_usage_summary so the dashboard can reuse
+    the same chart code.
+    """
+    from datetime import datetime, timezone, timedelta
+    conn = _connect(db_path)
+    try:
+        if days and days > 0:
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+            where, params = "WHERE created_at >= ?", (cutoff,)
+        else:
+            where, params = "", ()
+
+        total = conn.execute(
+            f"""SELECT COUNT(*),
+                       COUNT(DISTINCT user_email),
+                       SUM(CASE WHEN event_type='login'     THEN 1 ELSE 0 END),
+                       SUM(CASE WHEN event_type='page_view' THEN 1 ELSE 0 END)
+                  FROM user_activity {where}""",
+            params,
+        ).fetchone()
+
+        by_day = conn.execute(
+            f"""SELECT substr(created_at,1,10) AS day,
+                       COUNT(*) AS events,
+                       COUNT(DISTINCT user_email) AS users
+                  FROM user_activity {where}
+              GROUP BY day ORDER BY day""",
+            params,
+        ).fetchall()
+
+        if days and days > 0:
+            pages_where = "WHERE created_at >= ? AND event_type='page_view' AND path IS NOT NULL"
+            pages_params = (cutoff,)
+        else:
+            pages_where = "WHERE event_type='page_view' AND path IS NOT NULL"
+            pages_params = ()
+        top_pages = conn.execute(
+            f"""SELECT path, COUNT(*) AS views
+                  FROM user_activity {pages_where}
+              GROUP BY path ORDER BY views DESC LIMIT 15""",
+            pages_params,
+        ).fetchall()
+
+        by_event = conn.execute(
+            f"""SELECT event_type, COUNT(*) AS count
+                  FROM user_activity {where}
+              GROUP BY event_type ORDER BY count DESC""",
+            params,
+        ).fetchall()
+
+        return {
+            "window_days": days,
+            "total": {"events": total[0] or 0, "active_users": total[1] or 0,
+                      "logins": total[2] or 0, "page_views": total[3] or 0},
+            "by_day": [{"day": r[0], "events": r[1], "users": r[2]} for r in by_day],
+            "top_pages": [{"path": r[0], "views": r[1]} for r in top_pages],
+            "by_event_type": [{"event_type": r[0], "count": r[1]} for r in by_event],
+        }
+    finally:
+        conn.close()
+
+
+def get_user_activity_events(email=None, event_type=None, days=30, limit=100, db_path=None):
+    """Raw activity feed (newest first) for the dashboard drill-down — for a
+    single user (email) or all. limit is clamped to 1..500."""
+    from datetime import datetime, timezone, timedelta
+    conn = _connect(db_path)
+    try:
+        clauses, params = [], []
+        if email:
+            clauses.append("user_email = ?")
+            params.append(email.strip().lower())
+        if event_type:
+            clauses.append("event_type = ?")
+            params.append(event_type)
+        if days and days > 0:
+            clauses.append("created_at >= ?")
+            params.append((datetime.now(timezone.utc) - timedelta(days=days)).isoformat())
+        where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        try:
+            limit = max(1, min(500, int(limit)))
+        except (TypeError, ValueError):
+            limit = 100
+        params.append(limit)
+        rows = conn.execute(
+            f"""SELECT id, user_email, workspace_id, event_type, path, details, user_agent, created_at
+                  FROM user_activity {where}
+              ORDER BY created_at DESC LIMIT ?""",
+            params,
+        ).fetchall()
+        cols = ['id', 'user_email', 'workspace_id', 'event_type', 'path',
+                'details', 'user_agent', 'created_at']
+        return [dict(zip(cols, r)) for r in rows]
+    finally:
+        conn.close()
+
+
+def prune_user_activity(keep_days=180, db_path=None):
+    """Delete activity rows older than keep_days. DELETE only (no VACUUM) — the
+    shared plans.db is served per-request by the elevated Flask. Returns rows deleted."""
+    from datetime import datetime, timezone, timedelta
+    conn = _connect(db_path)
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=keep_days)).isoformat()
+        cur = conn.execute("DELETE FROM user_activity WHERE created_at < ?", (cutoff,))
+        conn.commit()
+        return cur.rowcount
     finally:
         conn.close()
 

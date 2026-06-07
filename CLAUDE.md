@@ -88,7 +88,7 @@ python telegram_resellers.py scrape                 # ingest channels listed in 
 |------|---------|
 | app.py | Flask server, API routes, APScheduler, CORS, API key auth. `CARRIER_DISPLAY` (10 carriers, homepage URLs) and `CARRIER_STORE_DISPLAY` (4 carriers with e-stores) drive the banners API. |
 | scraper.py | 40+ scrapers (domestic + abroad + global per-country/regional + content) + `scrape_carrier_banners()` / `scrape_carrier_store_banners()` for screenshots + `scrape_carrier_news()` for Google News RSS |
-| db.py | SQLite CRUD — 11 tables with UPSERT logic |
+| db.py | SQLite CRUD — 25 tables with UPSERT logic |
 | change_detector.py | Diff old vs new plans, detect price/extras/details changes |
 | notifier.py | Format + send notifications (Telegram, Email, WhatsApp, Web Push) |
 | excel_report.py | Daily Excel report (openpyxl, RTL, yellow=changed) |
@@ -117,6 +117,7 @@ python telegram_resellers.py scrape                 # ingest channels listed in 
 | pages/WorkspacesAdminPage.jsx | Global workspace CRUD (superAdminOnly) |
 | pages/AuditLogPage.jsx | Action audit trail (superAdminOnly) |
 | pages/UsagePage.jsx | Claude API usage analytics (**superAdminOnly**, `/usage` — hidden from client-workspace admins since it reports the owner's global Anthropic spend) — cost/tokens by day/model/endpoint from the `claude_api_usage` table. **Budget panel** (`BudgetPanel`): remaining balance + depletion forecast. Anthropic exposes no balance API, so the budget is user-entered in config.json (`claude_budget_usd`, optional `claude_budget_as_of` baseline — set it after a top-up so old spend doesn't count). `remaining = budget − logged spend` (lifetime, or since `as_of`); burn rate = the selected 7/30/90-day window's daily pace over its *active span* (so a partly-filled window isn't understated). Set/cleared via `POST /api/usage/budget` (`@require_api_key`); the `GET /api/usage/summary` response carries a `budget` block built by `_claude_budget_block()` in app.py. **Official spend** (`OfficialSpend` row): authoritative org-wide spend from Anthropic's **Admin Cost API** (`/v1/organizations/cost_report`), via `GET /api/usage/official-cost?days=N` → `_fetch_anthropic_cost_usd()` (10-min TTL cache, paginated). Needs config.json `anthropic_admin_key` (org Admin key `sk-ant-admin…`; **not available for individual accounts**). GOTCHA: the API's `amount` is in **cents** (lowest currency unit) as a decimal string → divide by 100. This is SPEND, not balance — Anthropic still has no remaining-credit endpoint, so "remaining" always needs the user-set total. |
+| pages/UserActivityPage.jsx | **Super-admin user-activity dashboard** (`/admin/user-activity`, superAdminOnly). Per-client-user login times, pages visited, and actions (alerts / watchlist / saved comparisons), merged from Supabase `auth.users` + the `user_activity` table. **Super-admins are excluded** everywhere (operator's own activity is never recorded or shown). Mirrors `UsagePage` (StatCards + Recharts daily chart + sortable table with row-click drill-down) and links to existing user management (`/settings?tab=users`). Activity is recorded via a best-effort beacon — `POST /api/activity` (`components/RouteTracker.jsx` fires `page_view` on each authed route change; `useAuth` fires `login` on real sign-in, deduped per browser session) — plus server-side hooks in the alert/watchlist/saved-view handlers (`_track_user_action` in app.py). Read endpoints `GET /api/activity/overview` + `GET /api/activity/events` are `@require_api_key_or_super_admin` (so they work with the dev API key locally, like the usage endpoints). |
 
 ### Components
 
@@ -209,7 +210,7 @@ Route protection uses `<ProtectedRoute adminOnly>` or `<ProtectedRoute superAdmi
 
 ## Database Schema (SQLite — data/plans.db)
 
-11 tables. Key constraints: UNIQUE(carrier, plan_name) for plans, UNIQUE(service, carrier) for content, UNIQUE(url) for news, UNIQUE(reseller_id, carrier, plan_name) for resellers.
+25 tables. Key constraints: UNIQUE(carrier, plan_name) for plans, UNIQUE(service, carrier) for content, UNIQUE(url) for news, UNIQUE(reseller_id, carrier, plan_name) for resellers.
 
 | Table | Key Fields |
 |-------|-----------|
@@ -221,6 +222,7 @@ Route protection uses `<ProtectedRoute adminOnly>` or `<ProtectedRoute superAdmi
 | reseller_plans | reseller_id, carrier (underlying), plan_name, price, data_gb, minutes, sms, extras (JSON), source_url, seen_at |
 | push_subscriptions | endpoint, p256dh, auth |
 | news_articles | carrier, headline, url (UNIQUE), source, published_at (ISO 8601), fetched_at |
+| user_activity | user_email, workspace_id, event_type (login/page_view/alert_created/watchlist_added/watchlist_removed/comparison_saved), path, details (JSON), user_agent, created_at — powers the super-admin user-activity dashboard; super-admins are never recorded |
 
 ## Change Detection
 
@@ -230,7 +232,7 @@ change_detector.py compares old vs new plan lists by (carrier, plan_name) key:
 - `extras_change` / `details_change` — array/field diffs
 - `_coerce()` normalizes '7000' vs 7000 vs 7000.0
 
-`save_plans` and `save_abroad_plans` call `db._delete_stale_carrier_rows()` before the upsert — for any carrier that returned ≥1 plan, rows whose `plan_name` is no longer in the scrape are deleted. This prevents the "stuck removal" loop where a discontinued plan stays in the DB and triggers the same `removed_plan` event on every scrape. `save_global_plans` deliberately skips this guard because some global scrapers are per-country and partial failures are common — global notification dedup is handled by `filter_already_notified()` instead.
+`save_plans` and `save_abroad_plans` call `db._delete_stale_carrier_rows()` before the upsert — for any carrier that returned ≥1 plan, rows whose `plan_name` is no longer in the scrape are deleted. This prevents the "stuck removal" loop where a discontinued plan stays in the DB and triggers the same `removed_plan` event on every scrape. `save_global_plans` deliberately skips this guard because some global scrapers are per-country and partial failures are common — global notification dedup is handled by `filter_already_notified()` instead. **(2026-06-04)** That accumulation made partial scrapes flap `removed_plan`/`new_plan` (286K phantom rows in 2 months, bloating the DB), so the **3 global scrape paths in app.py now drop `new_plan`/`removed_plan` right after `detect_changes(...)`** — only `price_change`/`extras_change`/`details_change` are persisted for global (`price_change` still powers the history charts). Domestic/abroad are unaffected.
 
 `db.filter_already_notified(changes, table_name, key_field='carrier', within_hours=24)` reads the corresponding `*_changes` table and drops any change whose (key_field, plan_name, change_type) already appeared in the last N hours. Wired into every scrape path (scheduled job + `/api/scrape-*-now` endpoints) so Telegram / WhatsApp / Web Push / Slack only fire on genuinely new events. Use `key_field='service'` for `content_changes`.
 
@@ -241,7 +243,7 @@ change_detector.py compares old vs new plan lists by (carrier, plan_name) key:
 - XSS: `escHtml()` sanitizes all scraped data before innerHTML in legacy dashboard
 - React app: dev mode auth requires explicit `VITE_DEV_AUTH=true` in .env
 - Production auth: Supabase with user_roles table (viewer/admin/super_admin)
-- Flask binds to 127.0.0.1 by default (set FLASK_HOST=0.0.0.0 for ngrok)
+- Flask binds to 127.0.0.1 by default (fine for the Cloudflare Tunnel — cloudflared connects to localhost:5000 on the same host; set FLASK_HOST=0.0.0.0 only for direct LAN access)
 
 ## Brand & UI
 
@@ -282,7 +284,7 @@ The React app uses the **MOCA mocha-latte** design system (per Claude Design han
 **Routing — clean URLs** (added phase 9):
 - `/` — Dashboard (CompetitorBoard widget + tab navigation)
 - `/plans` `/roaming` `/esim` `/banners` `/history` — all mount `DashboardPage` with a `lockedTab` derived from pathname; tab nav is hidden on these routes. Legacy `?tab=X` URLs still resolve via the searchParams fallback in DashboardPage
-- Other routes: `/compare`, `/positioning`, `/alerts`, `/executive-summary`, `/archive`, `/ai-insights`, `/preferences`, `/notifications`, `/settings`, `/workspace/users`, `/workspace/settings`, `/admin/workspaces`, `/admin/audit`
+- Other routes: `/compare`, `/positioning`, `/alerts`, `/executive-summary`, `/archive`, `/ai-insights`, `/preferences`, `/notifications`, `/settings`, `/workspace/users`, `/workspace/settings`, `/admin/workspaces`, `/admin/audit`, `/usage`, `/admin/user-activity`
 
 PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` prop (xs/sm/md) and `showSubtext` prop (default true, set false on login page).
 
@@ -349,10 +351,15 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 - **09:00** — send daily Excel email report via SendGrid
 - **07:30 + 17:00** — scrape all (domestic + abroad + global + content), detect changes, notify (Telegram + WhatsApp + Web Push). Times come from `config.json:schedule_times`. Notifications are deduplicated against the last 24h of changes — `db.filter_already_notified()` drops any (carrier, plan_name, change_type) already announced, so a sticky removal isn't reported twice.
 - WhatsApp via Green API (config.json: greenapi_url, greenapi_instance, greenapi_token, whatsapp_phone or whatsapp_group_id)
-- **Windows Task Scheduler**: two tasks at logon:
-  - `CellularComparison` → runs `scripts/flask_watchdog.bat` (infinite loop, restarts Flask on crash, 15s delay)
-  - `MOCA-Vite` → runs `scripts/vite_watchdog.bat` (infinite loop, restarts Vite on crash, 10s delay)
-  - Both log restart events to `scripts/flask_watchdog.log` / `scripts/vite_watchdog.log`
+- **Autologon ENABLED** (Sysinternals) — the box auto-logs-in as `Alon` at boot, so the at-logon tasks below start **without a manual login** (survives Windows Update / power-blip reboots).
+- **Windows Task Scheduler** (RunLevel=Highest unless noted):
+  - `CellularComparison` → `scripts/flask_watchdog.ps1` — at logon, loops `python app.py`, restarts Flask 15s after any exit
+  - `MOCA-Cloudflared` → `scripts/cloudflared_watchdog.ps1` — at logon, runs the Cloudflare Tunnel `moca` (api.mocaintel.com → :5000), restarts 10s after exit
+  - `MOCA-Vite` → `scripts/vite_watchdog.ps1` — at logon, loops `npm run dev`, restarts 10s after exit
+  - `MOCA-Ngrok` → **DISABLED 2026-06-04** (ngrok retired; kept as a re-enable-able fallback)
+  - `MOCA Morning Health Check` → `scripts/morning_health_check.ps1` — **every 10 min**, checks Flask:5000 / cloudflared(process) / Vite:5173, restarts whatever is down, alerts via Telegram+email
+  - `MOCA Daily Backup` → `scripts/backup_to_drive.ps1` — **02:30 + every 4h**
+  - Watchdogs log restart events to `scripts/*_watchdog.log`
 
 ## Automation Scripts (scripts/)
 
@@ -361,17 +368,21 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 | flask_watchdog.bat | Keeps Flask alive — loops `python app.py`, restarts after 15s on any exit |
 | restart_flask.bat | Restarts the **elevated** Flask so it reloads backend code — kills the PID on :5000 (watchdog relaunches with new code in ~15s). **Run as administrator.** |
 | vite_watchdog.bat | Keeps Vite alive — loops `npm run dev` via cmd (not PowerShell — execution policy blocks npm.ps1) |
-| backup_to_drive.ps1 | Daily backup of config.json + plans.db + banner PNGs to Google Drive. Auto-restarts GoogleDriveFS if not mounted. |
+| backup_to_drive.ps1 | Backup of config.json + plans.db + banner PNGs to Google Drive — **02:30 + every 4h** (RPO ~4h). Auto-restarts GoogleDriveFS if not mounted. |
 | backup_health_check.ps1 | Monthly integrity check: file presence, SQLite PRAGMA integrity_check, row counts per table, Task Scheduler state. Sends email via SendGrid. |
 | drive_monitor.ps1 | Runs 2×/day, monitors Drive mount health, tracks consecutive failures to avoid alert spam. |
 | alert.py | Multi-channel alert sender (SendGrid + Telegram) used by the PS1 scripts. |
+| morning_health_check.ps1 | Runs **every 10 min** — checks Flask:5000 / cloudflared(process) / Vite:5173, restarts any that are down, alerts via Telegram+email. |
+| cloudflared.exe + cloudflared_watchdog.ps1 | **Cloudflare Tunnel** binary + watchdog: loops `cloudflared tunnel run moca` (config `~/.cloudflared/config.yml`: api.mocaintel.com → localhost:5000). The public ingress — replaced ngrok 2026-06-04. |
+| ngrok_watchdog.ps1 | (Task DISABLED 2026-06-04) loops `ngrok http 5000 --domain=…` — kept as a re-enable-able fallback. |
+| db_compress_and_prune.py | One-time DB maintenance: snapshot → zlib-compress archive_snapshots → delete global_changes flap noise → VACUUM (shrank DB 421→43MB). |
 
 ## Archive System
 
-`archive.py` stores historical plan snapshots using content hashing:
-- After each scrape, compares SHA-256 of scraped data against last archived snapshot
-- Only writes a new snapshot file when content actually changed (storage-efficient)
-- Snapshots live in `data/archive/` — browsable via `ArchivePage.jsx`
+`archive.py` stores historical plan snapshots (table `archive_snapshots`, browsable via `ArchivePage.jsx` / Time Machine):
+- One snapshot per (carrier, plan_type) per day (`save_plan_snapshot` skips if today's already exists); a `content_hash` is also stored
+- **`plans_json` is zlib-compressed (2026-06-04)** via `_archive_encode`/`_archive_decode` in db.py — written compressed in `insert_archive_snapshot`, decompressed in `get_archive_plans`. Backward-compatible (bytes=compressed, str=legacy). Shrank this table ~19× (was 305MB of raw JSON — the bulk of a 421MB DB → now ~18MB). Lossless; all history kept
+- Banner snapshots (PNGs) live in `data/archive/banners/`
 
 ## Environment Variables
 
@@ -387,7 +398,7 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 ### React (mass-market-app/.env)
 - `VITE_SUPABASE_URL` — Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` — Supabase anon key
-- `VITE_API_URL` — Flask API base URL (empty = proxy via Vite, fallback hardcoded to ngrok URL)
+- `VITE_API_URL` — Flask API base URL (empty = proxy via Vite; production build = https://api.mocaintel.com via .env.production). Code fallback is `''` (no hardcoded URL)
 - `VITE_API_KEY` — Flask API key for protected endpoints (fallback hardcoded)
 - `VITE_DEV_AUTH` — set to "true" for auto-login as admin in dev (`.env` only, never in production)
 
@@ -396,14 +407,14 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 
 ## Deployment
 
-- **Frontend**: Netlify (https://lucent-kulfi-f037ad.netlify.app) — drag `mass-market-app/dist` manually
-- **Backend**: Local Flask + ngrok tunnel (https://terra-nonrestrained-overpiteously.ngrok-free.dev)
+- **Frontend**: Netlify, served at **https://mocaintel.com** (canonical; `www.mocaintel.com` 301-redirects to it; custom domain via Cloudflare DNS — the `lucent-kulfi-f037ad.netlify.app` subdomain still resolves) — drag `mass-market-app/dist` manually
+- **Backend**: Local Flask, exposed via **Cloudflare Tunnel** → https://api.mocaintel.com (cloudflared tunnel "moca", run by the **MOCA-Cloudflared** task / `scripts/cloudflared_watchdog.ps1`). ngrok retired 2026-06-04 (MOCA-Ngrok task disabled + kept as fallback; reserved domain still on the account)
 - **Auth**: Supabase (https://gmfefvjdmgzluwffzrzj.supabase.co)
 - **Code**: GitHub (https://github.com/AYochelman/Mobile-Operators-Competitor-Analysis)
 - **Build command**: `cd mass-market-app && npm install && npm run build`
 - **Publish directory**: `mass-market-app/dist`
 - Netlify env vars must include: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL, VITE_API_KEY (NOT VITE_DEV_AUTH)
-- All API requests include `ngrok-skip-browser-warning: true` header
+- All API requests include `ngrok-skip-browser-warning: true` header (legacy from ngrok; harmless/ignored now that ingress is Cloudflare)
 
 ## Key UI Components
 

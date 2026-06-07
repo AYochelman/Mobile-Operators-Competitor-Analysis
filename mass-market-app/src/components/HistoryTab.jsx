@@ -256,6 +256,7 @@ export default function HistoryTab() {
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'היסטוריה')
     XLSX.writeFile(wb, `history-${carrier}-${planType}.xlsx`)
+    api.trackActivity('export', null, JSON.stringify({ tab: 'history', carrier, count: changes.length })).catch(() => {})
   }
 
   const carriers = CARRIERS_BY_TYPE[planType] || DOMESTIC_CARRIERS

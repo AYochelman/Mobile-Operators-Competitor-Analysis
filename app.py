@@ -23,6 +23,8 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                upsert_news_articles, get_news_articles, \
                log_affiliate_click, get_affiliate_stats, \
                log_audit, get_audit_log, \
+               log_user_activity, get_user_activity_overview, get_user_activity_summary, \
+               get_user_activity_events, prune_user_activity, \
                create_workspace_invite, get_workspace_invite, use_workspace_invite, \
                get_reseller_plans, save_reseller_plans, filter_undominated_reseller_plans, \
                log_claude_usage, get_claude_usage_recent, get_claude_usage_summary, get_claude_spend, \
@@ -2201,6 +2203,11 @@ def api_create_alert():
             threshold=float(data.get("threshold", 0)),
             db_path=_db_path()
         )
+        _track_user_action(user_email, 'alert_created', {
+            "carrier": data.get("carrier", ""),
+            "plan_pattern": data.get("plan_pattern", ""),
+            "threshold": data.get("threshold"),
+        })
         return jsonify({"status": "created"}), 201
     except Exception as e:
         logger.error(f"create alert failed: {e}", exc_info=True)
@@ -2255,6 +2262,9 @@ def api_add_to_watchlist():
         return jsonify({"error": "plan_type must be domestic/abroad/global/content"}), 400
     try:
         _awl(user_email, carrier, plan_name, plan_type, db_path=_db_path())
+        _track_user_action(user_email, 'watchlist_added', {
+            "carrier": carrier, "plan_name": plan_name, "plan_type": plan_type,
+        })
         return jsonify({"status": "added"}), 201
     except Exception as e:
         logger.error(f"add watchlist failed: {e}", exc_info=True)
@@ -2271,6 +2281,10 @@ def api_remove_from_watchlist():
     data = request.get_json(force=True) or {}
     deleted = _rwl(user_email, data.get('carrier', ''), data.get('plan_name', ''),
                    data.get('plan_type', ''), db_path=_db_path())
+    if deleted:
+        _track_user_action(user_email, 'watchlist_removed', {
+            "carrier": data.get('carrier', ''), "plan_name": data.get('plan_name', ''),
+        })
     return jsonify({"status": "deleted", "rows": deleted})
 
 
@@ -2304,6 +2318,10 @@ def api_create_saved_view():
         return jsonify({"error": "filters must be an object"}), 400
     try:
         view_id = _sv(user_email, name, json.dumps(filters, ensure_ascii=False), db_path=_db_path())
+        if filters.get('kind') == 'compare':
+            _track_user_action(user_email, 'comparison_saved', {
+                "name": name, "count": len(filters.get('plans') or []),
+            })
         return jsonify({"status": "saved", "id": view_id}), 201
     except Exception as e:
         logger.error(f"save view failed: {e}", exc_info=True)
@@ -2321,6 +2339,68 @@ def api_delete_saved_view(view_id):
     if deleted == 0:
         return jsonify({"error": "not found"}), 404
     return jsonify({"status": "deleted"})
+
+
+# ── User activity tracking (super-admin dashboard) ─────────────────────────
+
+_ACTIVITY_CLIENT_EVENTS = {'login', 'page_view', 'search', 'export'}
+
+
+def _track_user_action(user_email, event_type, details=None):
+    """Best-effort server-side activity log for a user action (alert / watchlist
+    / comparison). Skips super-admins (operator's own activity is never
+    recorded) and never raises into the calling request handler."""
+    if not user_email:
+        return
+    try:
+        ctx = _get_user_context(user_email)
+        if ctx.get('role') == 'super_admin':
+            return
+        log_user_activity(
+            user_email=user_email,
+            event_type=event_type,
+            workspace_id=ctx.get('workspace_id'),
+            details=json.dumps(details, ensure_ascii=False) if details else None,
+            user_agent=request.headers.get('User-Agent'),
+            db_path=_db_path(),
+        )
+    except Exception:
+        pass
+
+
+@app.route("/api/activity", methods=["POST"])
+@require_auth
+@limiter.limit("240 per minute")
+def api_track_activity():
+    """Best-effort client activity beacon (login / page_view). Identity is
+    ALWAYS derived server-side from the JWT — any client-supplied identity is
+    ignored. Super-admins are intentionally NOT recorded. Action events
+    (alerts/watchlist/comparisons) are logged server-side in their own
+    handlers, not here. Returns 204 and never hard-errors."""
+    user_email = _current_user_email()
+    if not user_email:
+        return ("", 204)  # API-key-only caller without a JWT — nothing to attribute
+    ctx = _get_user_context(user_email)
+    if ctx.get('role') == 'super_admin':
+        return ("", 204)  # exclude super-admins (operator's own activity)
+    data = request.get_json(silent=True) or {}
+    event_type = (data.get('event_type') or '').strip()
+    if event_type not in _ACTIVITY_CLIENT_EVENTS:
+        return ("", 204)  # silently ignore unknown / non-beacon event types
+    path = (data.get('path') or '')[:300] or None
+    details = data.get('details')
+    if details is not None:
+        details = str(details)[:500] or None
+    log_user_activity(
+        user_email=user_email,
+        event_type=event_type,
+        workspace_id=ctx.get('workspace_id'),
+        path=path,
+        details=details,
+        user_agent=request.headers.get('User-Agent'),
+        db_path=_db_path(),
+    )
+    return ("", 204)
 
 
 # ── Plan annotations (team notes) ──────────────────────────────────────────
@@ -2373,6 +2453,7 @@ def api_add_annotation():
         return jsonify({"error": "note required (max 1000 chars)"}), 400
     try:
         new_id = _aa(ws_id, user_email, carrier, plan_name, plan_type, note, db_path=_db_path())
+        _track_user_action(user_email, 'annotation_added', {"carrier": carrier, "plan_name": plan_name})
         return jsonify({"status": "added", "id": new_id}), 201
     except Exception as exc:
         logger.error(f"add annotation failed: {exc}", exc_info=True)
@@ -2762,6 +2843,7 @@ def api_chat():
         )
         _record_claude_call("chat", model, body, user_email=_caller_email())
         answer = body["content"][0]["text"]
+        _track_user_action(_current_user_email(), 'chat_used', {"model": model})
         return jsonify({"answer": answer, "model": model})
 
     except Exception as e:
@@ -4242,6 +4324,111 @@ def api_usage_recent():
         limit = 100
     rows = get_claude_usage_recent(limit=limit, db_path=_db_path())
     return jsonify({'calls': rows, 'count': len(rows)})
+
+
+@app.route('/api/activity/overview')
+@require_api_key_or_super_admin
+def api_activity_overview():
+    """Per-user activity overview for the super-admin user dashboard.
+
+    Merges the cross-workspace user list (auth.users + user_roles) with
+    per-user activity aggregates. Super-admins are omitted from the table
+    (their activity is never recorded). days=0 = lifetime. super_admin /
+    dev-api-key only.
+    """
+    try:
+        try:
+            days = int(request.args.get('days', '30'))
+        except ValueError:
+            days = 30
+
+        # 1. Cross-workspace user list + each user's workspace_id (one query),
+        #    plus workspace id->name (one query — avoids N+1).
+        conn = _supabase_conn()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT u.id, u.email, u.created_at,
+                   COALESCE(r.role, 'viewer') AS role,
+                   u.last_sign_in_at, r.workspace_id
+            FROM auth.users u
+            LEFT JOIN public.user_roles r ON u.id = r.user_id
+            ORDER BY u.created_at DESC
+        """)
+        user_rows = cur.fetchall()
+        cur.execute("SELECT id, name FROM public.workspaces")
+        ws_names = {str(i): n for i, n in cur.fetchall()}
+        conn.close()
+
+        # 2. Activity aggregates keyed by lowercased email.
+        overview = {o['user_email']: o
+                    for o in get_user_activity_overview(days=days, db_path=_db_path())}
+
+        users = []
+        for uid, email, created_at, role, last_sign_in, ws_id in user_rows:
+            if role == 'super_admin':
+                continue  # exclude super-admins (operator) from the dashboard
+            act = overview.get((email or '').strip().lower(), {})
+            users.append({
+                "id": str(uid), "email": email, "role": role,
+                "created_at": str(created_at) if created_at else None,
+                "last_sign_in_at": str(last_sign_in) if last_sign_in else None,
+                "workspace_id": str(ws_id) if ws_id else None,
+                "workspace_name": ws_names.get(str(ws_id)) if ws_id else None,
+                "logins": act.get('logins', 0),
+                "page_views": act.get('page_views', 0),
+                "alerts_created": act.get('alerts_created', 0),
+                "watchlist_added": act.get('watchlist_added', 0),
+                "watchlist_removed": act.get('watchlist_removed', 0),
+                "comparisons_saved": act.get('comparisons_saved', 0),
+                "chat_used": act.get('chat_used', 0),
+                "active_days": act.get('active_days', 0),
+                "first_seen": act.get('first_seen'),
+                "last_seen": act.get('last_seen'),
+            })
+
+        summary = get_user_activity_summary(days=days, db_path=_db_path())
+        summary['total_users'] = len(users)
+        summary['active_today'] = len(get_user_activity_overview(days=1, db_path=_db_path()))
+        summary['active_this_week'] = len(get_user_activity_overview(days=7, db_path=_db_path()))
+        summary['active_this_month'] = len(get_user_activity_overview(days=30, db_path=_db_path()))
+
+        # Opportunistic retention prune (rare; DELETE only — keep the table bounded
+        # without a cron). 180-day retention.
+        import random as _rnd
+        if _rnd.random() < 0.02:
+            try:
+                prune_user_activity(db_path=_db_path())
+            except Exception:
+                pass
+
+        return jsonify({"users": users, "summary": summary})
+    except Exception as e:
+        logger.error(f"activity overview failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route('/api/activity/events')
+@require_api_key_or_super_admin
+def api_activity_events():
+    """Raw per-user activity feed for the dashboard drill-down (newest first).
+    super_admin / dev-api-key only."""
+    try:
+        email = (request.args.get('email') or '').strip().lower() or None
+        event_type = (request.args.get('event_type') or '').strip() or None
+        try:
+            days = int(request.args.get('days', '30'))
+        except ValueError:
+            days = 30
+        try:
+            limit = int(request.args.get('limit', '100'))
+        except ValueError:
+            limit = 100
+        rows = get_user_activity_events(email=email, event_type=event_type,
+                                        days=days, limit=limit, db_path=_db_path())
+        return jsonify({"events": rows, "count": len(rows)})
+    except Exception as e:
+        logger.error(f"activity events failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route('/api/usage/budget', methods=['POST'])

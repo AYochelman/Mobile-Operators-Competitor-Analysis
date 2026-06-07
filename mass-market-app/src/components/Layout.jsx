@@ -8,6 +8,7 @@ import ErrorBoundary from './ErrorBoundary'
 import Sidebar from './moca/Sidebar'
 import Topbar from './moca/Topbar'
 import TimeMachineModal from './moca/TimeMachineModal'
+import RouteTracker from './RouteTracker'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
 
 export default function Layout() {
@@ -20,6 +21,8 @@ export default function Layout() {
     <div className="min-h-screen flex flex-col bg-moca-bg">
       {/* Super-admin "viewing as workspace X" banner — stacks above shell */}
       <ViewAsBanner />
+      {/* Records per-user page views (authed, non-super-admin) for the activity dashboard */}
+      <RouteTracker />
 
       <div className="flex-1 flex flex-col md:flex-row min-h-0">
         {/* Desktop sidebar (RTL: renders on the physical right as first flex-row child) */}

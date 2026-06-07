@@ -153,6 +153,34 @@ export const api = {
   // Audit log — super_admin only
   getAuditLog: (queryString = '') => fetchApi(`/api/audit-log${queryString}`),
 
+  // User activity (super_admin operator dashboard).
+  // trackActivity bypasses fetchApi: the beacon returns 204 (no JSON body, which
+  // fetchApi would choke on) and we want a fire-and-forget POST with keepalive
+  // so a page_view survives an immediate navigation/unload.
+  trackActivity: (event_type, path = null, details = null) => {
+    try {
+      const token = localStorage.getItem('auth_token')
+      const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      if (DEV_API_KEY) headers['X-API-Key'] = DEV_API_KEY
+      return fetch(`${API_BASE}/api/activity`, {
+        method: 'POST', headers, credentials: 'include', keepalive: true,
+        body: JSON.stringify({ event_type, path, details }),
+      })
+    } catch {
+      return Promise.resolve()
+    }
+  },
+  getActivityOverview: (days = 30) => fetchApi(`/api/activity/overview?days=${days}`),
+  getActivityEvents: (params = {}) => {
+    const p = new URLSearchParams()
+    if (params.email)      p.append('email', params.email)
+    if (params.event_type) p.append('event_type', params.event_type)
+    if (params.days != null)  p.append('days', String(params.days))
+    if (params.limit != null) p.append('limit', String(params.limit))
+    return fetchApi(`/api/activity/events${p.toString() ? '?' + p : ''}`)
+  },
+
   // Invite links
   createInvite:     (workspaceId, role) => fetchApi(`/api/workspaces/${workspaceId}/invite`, { method: 'POST', body: JSON.stringify({ role }) }),
   createInviteBulk: (workspaceId, emails, role) => fetchApi(`/api/workspaces/${workspaceId}/invite-bulk`, { method: 'POST', body: JSON.stringify({ emails, role }) }),
