@@ -752,8 +752,8 @@ def scrape_neptucom(_page=None):
             ],
         },
     ]
-    from datetime import datetime
-    ts = datetime.utcnow().isoformat()
+    from datetime import datetime, timezone
+    ts = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
     for p in plans:
         p.setdefault("scraped_at", ts)
         p.setdefault("url", _NEPTUCOM_PDF.format(p["plan_name"]))

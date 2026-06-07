@@ -294,6 +294,44 @@ require_admin = _require_role({'admin', 'super_admin'}, 'Unauthorized — admin 
 require_super_admin = _require_role({'super_admin'}, 'Unauthorized — super_admin required')
 
 
+def require_api_key_or_super_admin(f):
+    """Accept the regular API key (server-to-server / dev frontend), the
+    dedicated server-admin key, OR a verified super_admin JWT — nothing else.
+
+    Used for the Claude usage / billing endpoints: the MOCA operator
+    (super_admin) can view spend from the PRODUCTION web app via their JWT,
+    while workspace admins and viewers are refused — they never hold
+    super_admin, and the api_key is not shipped in the production bundle. Sets
+    g.jwt_payload when a JWT authenticated the request."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # 1. Regular API key (dev frontend via VITE_DEV_API_KEY, server jobs)
+        provided = request.headers.get("X-API-Key")
+        if provided and hmac.compare_digest(provided, _get_api_key()):
+            g.jwt_payload = None
+            return f(*args, **kwargs)
+        # 2. Dedicated server-admin key
+        if _is_server_admin_request():
+            g.jwt_payload = None
+            return f(*args, **kwargs)
+        # 3. super_admin JWT (Authorization header or auth_token cookie)
+        token = None
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+        if not token:
+            token = request.cookies.get("auth_token")
+        if token:
+            payload = _verify_supabase_jwt(token)
+            if payload:
+                email = (payload.get('email') or '').strip().lower()
+                if _get_user_context(email).get('role') == 'super_admin':
+                    g.jwt_payload = payload
+                    return f(*args, **kwargs)
+        return jsonify({"error": "Unauthorized — super_admin required"}), 401
+    return decorated
+
+
 # Slack / Teams incoming-webhook allowlist — used everywhere a webhook URL is
 # accepted from a request body. Prevents SSRF to internal services / cloud
 # metadata endpoints.
@@ -1597,7 +1635,7 @@ def generate_social_sentiment():
         'twitter':   'Twitter / X',
         'tiktok':    'TikTok',
     }
-    since_date = (datetime.utcnow() - timedelta(days=7)).strftime('%Y-%m-%d')
+    since_date = (datetime.now(timezone.utc) - timedelta(days=7)).strftime('%Y-%m-%d')
 
     from urllib.parse import quote as _url_quote
 
@@ -2490,9 +2528,27 @@ def api_delete_coupon(coupon_id):
 
 # ── Push Notification Routes ───────────────────────────────────────────────
 
+def _chat_user_key():
+    """Rate-limit key for /api/chat — per authenticated user (falls back to IP)."""
+    return _current_user_email() or get_remote_address()
+
+
+def _chat_daily_limit():
+    """Per-user daily cap on AI chat, to bound Anthropic spend by any single
+    user (e.g. a client-workspace viewer). Tunable via
+    config.json:chat_daily_limit_per_user (default 100, min 1). Counter is
+    in-memory (storage_uri='memory://'), so it resets on a Flask restart."""
+    try:
+        n = int(load_config().get("chat_daily_limit_per_user", 100))
+    except (TypeError, ValueError):
+        n = 100
+    return f"{max(1, n)} per day"
+
+
 @app.route("/api/chat", methods=["POST"])
 @require_auth
 @limiter.limit("10 per minute")
+@limiter.limit(_chat_daily_limit, key_func=_chat_user_key)
 def api_chat():
     """AI chat over the plans data using Claude API."""
     data = request.get_json(force=True)
@@ -4148,7 +4204,7 @@ def _fetch_anthropic_cost_usd(starting_at, ending_at=None, force=False):
 
 
 @app.route('/api/usage/summary')
-@require_api_key
+@require_api_key_or_super_admin
 def api_usage_summary():
     """Aggregate Anthropic API usage + computed USD cost.
 
@@ -4177,7 +4233,7 @@ def api_usage_summary():
 
 
 @app.route('/api/usage/recent')
-@require_api_key
+@require_api_key_or_super_admin
 def api_usage_recent():
     """Return the N most recent Anthropic API calls (default 100, max 500)."""
     try:
@@ -4189,7 +4245,7 @@ def api_usage_recent():
 
 
 @app.route('/api/usage/budget', methods=['POST'])
-@require_api_key
+@require_api_key_or_super_admin
 def api_usage_set_budget():
     """Persist the Claude budget (total prepaid credit) used for the
     remaining-balance + depletion estimate.
@@ -4248,7 +4304,7 @@ def api_usage_set_budget():
 
 
 @app.route('/api/usage/official-cost')
-@require_api_key
+@require_api_key_or_super_admin
 def api_usage_official_cost():
     """Authoritative org-wide spend (USD) from Anthropic's Admin Cost API for
     the last N days (days=0 → ~13-month lookback as a 'lifetime' proxy).
