@@ -81,6 +81,7 @@ export const api = {
   createUser:     (data) => fetchApi('/api/users', { method: 'POST', body: JSON.stringify(data) }),
   deleteUser:     (id) => fetchApi(`/api/users/${id}`, { method: 'DELETE' }),
   updateUserRole: (id, role) => fetchApi(`/api/users/${id}/role`, { method: 'POST', body: JSON.stringify({ role }) }),
+  adminSetPassword: (id, password) => fetchApi(`/api/users/${id}/password`, { method: 'POST', body: JSON.stringify({ password }) }),
 
   // Chat — JWT auth. model: 'sonnet' (default, better Hebrew) | 'haiku' (faster/cheaper)
   chat: (question, model) => fetchApi('/api/chat', {

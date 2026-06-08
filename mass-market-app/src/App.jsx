@@ -38,6 +38,7 @@ const InvitePage            = lazy(() => import('./pages/InvitePage'))
 const SuspendedPage         = lazy(() => import('./pages/SuspendedPage'))
 const NotFoundPage          = lazy(() => import('./pages/NotFoundPage'))
 const SocialPage            = lazy(() => import('./pages/SocialPage'))
+const ResetPasswordPage     = lazy(() => import('./pages/ResetPasswordPage'))
 
 function PageFallback() {
   return <div className="flex justify-center py-20"><Spinner /></div>
@@ -109,6 +110,7 @@ export default function App() {
       <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/invite/:token" element={<InvitePage />} />
           <Route path="/" element={<AppShell />}>
             {/* Phase 19 — / is the Editorial Deep dashboard (executive view).

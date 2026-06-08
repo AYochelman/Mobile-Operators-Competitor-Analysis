@@ -3122,55 +3122,92 @@ def api_get_users():
 @require_super_admin
 @limiter.limit("10 per minute")
 def api_create_user():
-    """Create a new user in Supabase. super_admin / server-admin-key ONLY.
+    """Create a new user directly in Supabase Postgres. super_admin / server-admin-key ONLY.
 
-    Provisions a brand-new auth identity, so it's restricted to the MOCA
-    operator — a workspace `admin` must never mint accounts (the role row here
-    has no workspace_id, i.e. a global/workspace-less role, and there's no
-    cross-tenant ownership check). Workspace admins add people to their OWN
-    workspace via POST /api/workspaces/<id>/users (assign an existing user) or
-    an invite link — both gated by _can_manage_workspace_users.
+    Provisions the auth identity by writing auth.users + auth.identities + a
+    (workspace-less) public.user_roles row in one transaction — the same thing
+    GoTrue's admin API does internally, with the email pre-confirmed.
+
+    We deliberately do NOT use the public /auth/v1/signup flow anymore: it sends
+    a confirmation email on every create (which we then redundantly force-
+    confirmed anyway), and Supabase's shared email sender rate-limits those to a
+    few per hour — so onboarding more than ~2 users in a row failed with
+    "email rate limit exceeded" (HTTP 429 -> generic "Failed to create user").
+    Direct provisioning sends NO email; onboarding mail is our own Welcome email,
+    fired by the workspace-assign step (send_welcome_email).
+
+    Restricted to the MOCA operator — a workspace `admin` must never mint
+    accounts (the role row here has no workspace_id, i.e. a global/workspace-less
+    role, and there's no cross-tenant ownership check). Workspace admins add
+    people to their OWN workspace via POST /api/workspaces/<id>/users (assign an
+    existing user) or an invite link — both gated by _can_manage_workspace_users.
     """
-    import urllib.request
     data = request.get_json(force=True)
-    email = data.get('email', '')
-    password = data.get('password', '')
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
     role = data.get('role', 'viewer')
     if not email or not password:
         return jsonify({"error": "email and password required"}), 400
+    if role not in ('admin', 'viewer'):
+        # Never allow minting a super_admin via the API — that role is DB-only.
+        return jsonify({"error": "role must be 'admin' or 'viewer'"}), 400
+    if len(password) < 6:
+        return jsonify({"error": "password must be at least 6 characters"}), 400
+    conn = None
     try:
-        cfg = load_config()
-        anon_key = cfg.get('supabase_anon_key') or os.environ.get('SUPABASE_ANON_KEY', '')
-        supabase_url = cfg.get('supabase_url') or os.environ.get('SUPABASE_URL', 'https://gmfefvjdmgzluwffzrzj.supabase.co')
-        if not anon_key:
-            logger.error("api_create_user: supabase_anon_key not configured")
-            return jsonify({"error": "Server misconfiguration"}), 500
-
-        # Create user via Supabase Auth API
-        url = f'{supabase_url}/auth/v1/signup'
-        payload = json.dumps({'email': email, 'password': password}).encode()
-        req = urllib.request.Request(url, payload, method='POST')
-        req.add_header('apikey', anon_key)
-        req.add_header('Content-Type', 'application/json')
-        resp = urllib.request.urlopen(req, timeout=10)
-        result = json.loads(resp.read())
-        user_id = result.get('id') or result.get('user', {}).get('id')
-
-        # Confirm email + set role
+        import uuid as _uuid
+        user_id = str(_uuid.uuid4())
         conn = _supabase_conn()
-        conn.autocommit = True
         cur = conn.cursor()
-        cur.execute('UPDATE auth.users SET email_confirmed_at = now() WHERE id = %s', (user_id,))
-        cur.execute("INSERT INTO public.user_roles (user_id, role) VALUES (%s, %s) ON CONFLICT (user_id) DO UPDATE SET role = %s", (user_id, role, role))
+        # Reject duplicates up front (mirrors GoTrue's 422 with a clear message).
+        cur.execute("SELECT 1 FROM auth.users WHERE LOWER(email) = %s", (email,))
+        if cur.fetchone():
+            conn.close()
+            return jsonify({"error": f"user {email} already exists"}), 409
+        # 1) auth.users — email pre-confirmed; confirmed_at is a GENERATED column
+        #    (omit it); password hashed with bcrypt (cost 10) via pgcrypto.
+        cur.execute("""
+            INSERT INTO auth.users (
+                instance_id, id, aud, role, email, encrypted_password,
+                email_confirmed_at, confirmation_token, recovery_token,
+                email_change_token_new, email_change, email_change_token_current,
+                phone_change, phone_change_token, reauthentication_token,
+                raw_app_meta_data, raw_user_meta_data,
+                created_at, updated_at, email_change_confirm_status,
+                is_sso_user, is_anonymous
+            ) VALUES (
+                '00000000-0000-0000-0000-000000000000', %s,
+                'authenticated', 'authenticated', %s, crypt(%s, gen_salt('bf', 10)),
+                now(), '', '', '', '', '', '', '', '',
+                '{"provider":"email","providers":["email"]}'::jsonb,
+                jsonb_build_object('sub', %s, 'email', %s, 'email_verified', true, 'phone_verified', false),
+                now(), now(), 0, false, false
+            )
+        """, (user_id, email, password, user_id, email))
+        # 2) auth.identities — the `email` column is GENERATED (omit it).
+        cur.execute("""
+            INSERT INTO auth.identities (
+                id, provider_id, user_id, identity_data, provider,
+                last_sign_in_at, created_at, updated_at
+            ) VALUES (
+                gen_random_uuid(), %s, %s,
+                jsonb_build_object('sub', %s, 'email', %s, 'email_verified', true, 'phone_verified', false),
+                'email', now(), now(), now()
+            )
+        """, (user_id, user_id, user_id, email))
+        # 3) global (workspace-less) role row — workspace assignment happens later.
+        cur.execute("INSERT INTO public.user_roles (user_id, role) VALUES (%s, %s) ON CONFLICT (user_id) DO UPDATE SET role = EXCLUDED.role", (user_id, role))
+        conn.commit()
         conn.close()
-
         logger.info(f"AUDIT create_user: email={email!r} role={role!r} new_user_id={user_id!r} by_ip={request.remote_addr}")
         return jsonify({"status": "created", "user_id": user_id}), 201
-    except urllib.error.HTTPError as e:
-        body = e.read().decode()
-        logger.error(f"create user failed: {body}")
-        return jsonify({"error": "Failed to create user"}), 500
     except Exception as e:
+        try:
+            if conn:
+                conn.rollback()
+                conn.close()
+        except Exception:
+            pass
         logger.error(f"create user failed: {e}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
 
@@ -3233,6 +3270,45 @@ def api_update_user_role(user_id):
         return jsonify({"status": "updated", "role": role})
     except Exception as e:
         logger.error(f"update role failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/api/users/<user_id>/password", methods=["POST"])
+@require_super_admin
+@limiter.limit("20 per minute")
+def api_set_user_password(user_id):
+    """Set a user's password directly. super_admin / server-admin-key ONLY.
+
+    Admin-driven reset for a user who's locked out — writes the bcrypt hash
+    straight to auth.users (same mechanism as api_create_user), so it sends NO
+    email and isn't subject to Supabase's email rate limit. The user can sign in
+    with the new password immediately. No workspace-ownership check (mirrors the
+    other bare /api/users* writes), so it's operator-only; workspace admins
+    manage their own team via the workspace endpoints.
+    """
+    data = request.get_json(force=True) or {}
+    password = data.get('password') or ''
+    if len(password) < 6:
+        return jsonify({"error": "password must be at least 6 characters"}), 400
+    conn = None
+    try:
+        conn = _supabase_conn()
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute("UPDATE auth.users SET encrypted_password = crypt(%s, gen_salt('bf', 10)), updated_at = now() WHERE id = %s", (password, user_id))
+        updated = cur.rowcount
+        conn.close()
+        if not updated:
+            return jsonify({"error": "user not found"}), 404
+        logger.info(f"AUDIT set_user_password: user_id={user_id!r} by_ip={request.remote_addr}")
+        return jsonify({"status": "updated"})
+    except Exception as e:
+        try:
+            if conn:
+                conn.close()
+        except Exception:
+            pass
+        logger.error(f"set user password failed: {e}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
 
 

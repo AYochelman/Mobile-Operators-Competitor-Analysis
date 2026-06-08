@@ -179,6 +179,30 @@ export function AuthProvider({ children }) {
     api.clearSessionCookie().catch(() => {})
   }
 
+  // Self-service password change for the logged-in user. Verifies the current
+  // password first (re-auth) so an unattended logged-in browser can't have its
+  // password silently changed, then updates via Supabase (no email).
+  const changePassword = async (currentPassword, newPassword) => {
+    if (!supabase) throw new Error('Supabase לא מוגדר')
+    const email = user?.email
+    if (!email) throw new Error('לא מחובר')
+    const { error: verifyErr } = await supabase.auth.signInWithPassword({ email, password: currentPassword })
+    if (verifyErr) throw new Error('הסיסמה הנוכחית שגויה')
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw error
+  }
+
+  // "Forgot password": email the user a recovery link that lands on
+  // /reset-password (where they set a new password). The only Supabase email
+  // in the user lifecycle — user-initiated, unlike the confirmation email we
+  // dropped from user creation.
+  const sendPasswordReset = async (email) => {
+    if (!supabase) throw new Error('Supabase לא מוגדר')
+    const redirectTo = `${window.location.origin}/reset-password`
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+    if (error) throw error
+  }
+
   // View-as: super_admin may impersonate a workspace's visual context
   // (brand, feature_flags, visible_carriers). Role stays super_admin so they
   // can still navigate admin pages and exit view-as at any time.
@@ -186,7 +210,7 @@ export function AuthProvider({ children }) {
   const effectiveWorkspace = (isSuperAdmin && viewAs) ? viewAs : workspace
 
   const value = {
-    user, role, workspaceId, loading, signIn, signOut,
+    user, role, workspaceId, loading, signIn, signOut, changePassword, sendPasswordReset,
     workspace: effectiveWorkspace,
     realWorkspace: workspace,
     viewAs: (isSuperAdmin ? viewAs : null),

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import Button from '../components/ui/Button'
 import HealthWidget from '../components/HealthWidget'
+import AdminResetPasswordModal from '../components/AdminResetPasswordModal'
 import { useAuth } from '../hooks/useAuth'
 import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
@@ -47,6 +48,7 @@ export default function SettingsPage() {
   const [deletingId, setDeletingId]         = useState(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [togglingId, setTogglingId]         = useState(null)
+  const [resetPwUser, setResetPwUser]       = useState(null)
 
   // Affiliate state
   const [affiliateStats, setAffiliateStats]     = useState([])
@@ -435,6 +437,11 @@ export default function SettingsPage() {
                                 title={u.role === 'admin' ? 'הורד לצופה' : 'הפוך למנהל'}>
                                 {togglingId === u.id ? '...' : u.role === 'admin' ? 'הורד לצופה' : 'הפוך למנהל'}
                               </button>
+                              <button onClick={() => setResetPwUser(u)}
+                                className="text-xs px-2.5 py-1.5 rounded-lg border border-moca-bolt/30 text-moca-bolt hover:bg-moca-cream transition-colors whitespace-nowrap"
+                                title="אפס סיסמה">
+                                אפס סיסמה
+                              </button>
                               {confirmDeleteId === u.id ? (
                                 <>
                                   <button onClick={() => handleDelete(u.id)} disabled={deletingId === u.id}
@@ -462,6 +469,7 @@ export default function SettingsPage() {
               </table>
             </div>
           )}
+          <AdminResetPasswordModal user={resetPwUser} onClose={() => setResetPwUser(null)} />
         </div>
       )}
 

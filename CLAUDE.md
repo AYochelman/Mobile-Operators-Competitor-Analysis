@@ -106,12 +106,13 @@ python telegram_resellers.py scrape                 # ingest channels listed in 
 | pages/DashboardPage.jsx | Main 8-tab view (domestic/abroad/global/**resellers**/content/banners/history/news) with filters. **Lazy-loaded** since phase 15. `RESELLERS` const lists reseller IDs+labels mapped to underlying carriers. Reads `lockedTab` from `useLocation().pathname` — when on a clean URL like `/plans` or `/banners` the tab navigation hides and `setTab` navigates instead of mutating state. |
 | pages/ComparePage.jsx | Price comparison charts (Recharts) |
 | pages/AlertsPage.jsx | Personal price alerts with DB persistence |
-| pages/SettingsPage.jsx | Admin panel — scrape triggers, user management (adminOnly) |
+| pages/SettingsPage.jsx | Admin panel — scrape triggers, user management (adminOnly). "ניהול משתמשים" tab (super_admin) creates users via direct-DB provisioning (`POST /api/users`, no email — see Security) and resets a user's password via `<AdminResetPasswordModal>` → `POST /api/users/<id>/password`. |
 | pages/ExecutiveSummaryPage.jsx | Per-category cards + ₪/GB bar chart + AI narrative, from cached `executive_summaries` (regen 08:05 / `POST /api/executive-summary/refresh`). Metrics from `compute_executive_metrics` (db.py): ₪/GB chart is GB-**weighted** `SUM(price)/SUM(GB)` — a naive `AVG(price/data_gb)` lets a tiny-data plan (e.g. 019's 100MB "חבילת עשר", ~102 ₪/GB) dominate the mean; "המשתלם ביותר" card = `MIN(price/GB)` (best single deal); "האגרסיבי ביותר" shows `—` when there are 0 price drops (no false aggressor) |
 | pages/PositioningPage.jsx | Competitive positioning matrix |
 | pages/ArchivePage.jsx | Historical plan snapshots (content-hash based, via archive.py) |
 | pages/PreferencesPage.jsx | Per-user display preferences |
 | pages/NotificationsPage.jsx | Web Push / notification settings |
+| pages/ResetPasswordPage.jsx | **Public** route `/reset-password` (outside the AppShell auth gate) — the Supabase recovery-link target. Waits for the `PASSWORD_RECOVERY` session, then sets the new password via `supabase.auth.updateUser`. Paired with the "שכחתי סיסמה" flow on LoginPage (`sendPasswordReset` → `resetPasswordForEmail`, redirectTo `/reset-password`). |
 | pages/WorkspaceUsersPage.jsx | Manage users in current workspace (adminOnly) |
 | pages/WorkspaceBrandingPage.jsx | Workspace logo, colors, MVNO theme (adminOnly). Logo accepts a hosted **URL** *or* a **file upload** via the shared `<LogoField>` (`components/LogoField.jsx`, also used by `WorkspacesAdminPage`): the picked file is resized client-side to a 480×160 bounding box and stored **inline as a `data:` URI** in `brand_config.logo_url` (SVGs kept verbatim). No upload endpoint / file-serving — `PATCH /api/workspace/branding` (and the workspace POST/PATCH) store the string as-is, CSP already allows `img-src data:`, and every consumer (`Logo`/`Sidebar`/`Navbar`/preview) is a plain `<img src>`. Keeps the logo in the cloud workspace row (no dependence on local Flask/ngrok). |
 | pages/WorkspacesAdminPage.jsx | Global workspace CRUD (superAdminOnly) |
@@ -138,6 +139,8 @@ python telegram_resellers.py scrape                 # ingest channels listed in 
 | components/SavedViewsMenu.jsx | Save/load named dashboard filter states |
 | components/PriceHistoryModal.jsx | Full price history chart for a single plan |
 | components/OfflineBanner.jsx | Offline detection banner (useOnlineStatus) |
+| components/ChangePasswordModal.jsx | Self-service password change for the logged-in user (profile menu → "שינוי סיסמה"). Verifies the current password (re-auth), then `supabase.auth.updateUser` — no email. Exposed via `changePassword` in useAuth |
+| components/AdminResetPasswordModal.jsx | super_admin sets a new password for any user from SettingsPage "ניהול משתמשים" → `api.adminSetPassword` → `POST /api/users/<id>/password` (direct DB, no email). Generates an unambiguous temp password to hand over |
 
 ### MOCA Design System (`components/moca/`)
 
@@ -244,6 +247,8 @@ change_detector.py compares old vs new plan lists by (carrier, plan_name) key:
 - React app: dev mode auth requires explicit `VITE_DEV_AUTH=true` in .env
 - Production auth: Supabase with user_roles table (viewer/admin/super_admin)
 - Flask binds to 127.0.0.1 by default (fine for the Cloudflare Tunnel — cloudflared connects to localhost:5000 on the same host; set FLASK_HOST=0.0.0.0 only for direct LAN access)
+- **User provisioning is direct-DB, NOT GoTrue signup**: `POST /api/users` (super_admin) writes `auth.users` + `auth.identities` + a workspace-less `user_roles` row in one transaction, email pre-confirmed, password hashed with `crypt(pw, gen_salt('bf', 10))` (pgcrypto). It deliberately does **not** call `/auth/v1/signup` — signup sends a confirmation email on every create (which we then force-confirm anyway), and Supabase's shared email sender rate-limits those to a few/hour, so onboarding >2 users in a row failed with `over_email_send_rate_limit` → the generic "Failed to create user". Direct provisioning sends no email; onboarding mail is our own Welcome email (fired by the workspace-assign step). Mirror a known-good `auth.users`/`auth.identities` row when changing columns — `auth.users.confirmed_at` and `auth.identities.email` are GENERATED (never insert them).
+- **Password management** — three flows, no Supabase email except recovery: self-service change (`changePassword` in useAuth → `supabase.auth.updateUser`, profile menu), admin reset (`POST /api/users/<id>/password`, direct-DB bcrypt, super_admin only), and "forgot password" (`resetPasswordForEmail` → `/reset-password` page → `updateUser`). The recovery email is the **only** Supabase email in the user lifecycle; its redirect target `https://mocaintel.com/reset-password` (and `http://localhost:5173/reset-password` for dev) must stay in Supabase → Auth → URL Configuration → Redirect URLs, and the SPA `_redirects` `/*  /index.html  200` rule must serve that path.
 
 ## Brand & UI
 
@@ -285,6 +290,7 @@ The React app uses the **MOCA mocha-latte** design system (per Claude Design han
 - `/` — Dashboard (CompetitorBoard widget + tab navigation)
 - `/plans` `/roaming` `/esim` `/banners` `/history` — all mount `DashboardPage` with a `lockedTab` derived from pathname; tab nav is hidden on these routes. Legacy `?tab=X` URLs still resolve via the searchParams fallback in DashboardPage
 - Other routes: `/compare`, `/positioning`, `/alerts`, `/executive-summary`, `/archive`, `/ai-insights`, `/preferences`, `/notifications`, `/settings`, `/workspace/users`, `/workspace/settings`, `/admin/workspaces`, `/admin/audit`, `/usage`, `/admin/user-activity`
+- **Public routes** (siblings of `/`, outside the AppShell auth gate): `/login`, `/reset-password` (Supabase password-recovery target), `/invite/:token`
 
 PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` prop (xs/sm/md) and `showSubtext` prop (default true, set false on login page).
 

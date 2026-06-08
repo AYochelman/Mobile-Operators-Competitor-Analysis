@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useWatchlist } from '../../hooks/useWatchlist'
 import { resolveRouteMeta } from './routeMeta'
+import ChangePasswordModal from '../ChangePasswordModal'
 
 /**
  * Top bar (desktop only) per MOCA design handoff.
@@ -77,6 +78,7 @@ function IconButton({ title, onClick, children }) {
 
 function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
   const [open, setOpen] = useState(false)
+  const [showChangePw, setShowChangePw] = useState(false)
   const navigate = useNavigate()
   const ref = useRef(null)
 
@@ -100,6 +102,7 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
     encodeURIComponent('פנייה לתמיכה' + (workspace?.name ? ` – ${workspace.name}` : ''))
 
   return (
+    <>
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
@@ -127,6 +130,7 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
         <div className="absolute left-0 top-full mt-1 min-w-[200px] bg-white rounded-xl shadow-popover border border-moca-border/40 p-1.5 z-50 animate-fade-in">
           <button onClick={() => go('/preferences')} className={itemCls}>העדפות</button>
           <button onClick={() => go('/alerts?tab=watchlist')} className={itemCls}>הגדרות התראות</button>
+          <button onClick={() => { setOpen(false); setShowChangePw(true) }} className={itemCls}>שינוי סיסמה</button>
           {isAdmin && !isSuperAdmin && (
             <>
               <div className="h-px bg-moca-border/30 my-1" />
@@ -150,6 +154,8 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
         </div>
       )}
     </div>
+      <ChangePasswordModal open={showChangePw} onClose={() => setShowChangePw(false)} />
+    </>
   )
 }
 

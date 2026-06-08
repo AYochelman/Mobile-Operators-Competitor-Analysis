@@ -8,7 +8,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const { signIn, user, loading } = useAuth()
+  const [mode, setMode] = useState('login')         // 'login' | 'forgot'
+  const [resetSent, setResetSent] = useState(false)
+  const [resetBusy, setResetBusy] = useState(false)
+  const { signIn, sendPasswordReset, user, loading } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -39,6 +42,20 @@ export default function LoginPage() {
     }
   }
 
+  const handleForgot = async (e) => {
+    e.preventDefault()
+    setError('')
+    setResetBusy(true)
+    try {
+      await sendPasswordReset(email)
+    } catch {
+      // Swallow — never reveal whether the email exists (enumeration safety).
+    } finally {
+      setResetSent(true)
+      setResetBusy(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-moca-bg">
@@ -63,37 +80,84 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Login card */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-card border border-moca-border p-7 space-y-5">
-          <div>
-            <label className="block text-xs font-medium text-moca-text mb-1.5">אימייל</label>
-            <input
-              type="email" value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:ring-2 focus:ring-moca-bolt/30 focus:border-moca-bolt outline-none transition-all"
-              placeholder="name@example.com" required dir="ltr"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-moca-text mb-1.5">סיסמה</label>
-            <input
-              type="password" value={password} onChange={e => setPassword(e.target.value)}
-              className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:ring-2 focus:ring-moca-bolt/30 focus:border-moca-bolt outline-none transition-all"
-              placeholder="••••••••" required dir="ltr"
-            />
-          </div>
+        {/* Login / forgot-password card */}
+        {mode === 'login' ? (
+          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-card border border-moca-border p-7 space-y-5">
+            <div>
+              <label className="block text-xs font-medium text-moca-text mb-1.5">אימייל</label>
+              <input
+                type="email" value={email} onChange={e => setEmail(e.target.value)}
+                className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:ring-2 focus:ring-moca-bolt/30 focus:border-moca-bolt outline-none transition-all"
+                placeholder="name@example.com" required dir="ltr"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-moca-text mb-1.5">סיסמה</label>
+              <input
+                type="password" value={password} onChange={e => setPassword(e.target.value)}
+                className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:ring-2 focus:ring-moca-bolt/30 focus:border-moca-bolt outline-none transition-all"
+                placeholder="••••••••" required dir="ltr"
+              />
+            </div>
 
-          {error && (
-            <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
-          )}
+            {error && (
+              <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full bg-moca-bolt text-white font-medium py-2.5 rounded-xl hover:bg-moca-dark disabled:opacity-50 transition-colors hover-press"
-          >
-            {submitting ? '⏳ מתחבר...' : 'כניסה'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full bg-moca-bolt text-white font-medium py-2.5 rounded-xl hover:bg-moca-dark disabled:opacity-50 transition-colors hover-press"
+            >
+              {submitting ? '⏳ מתחבר...' : 'כניסה'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setMode('forgot'); setError(''); setResetSent(false) }}
+              className="w-full text-center text-xs text-moca-sub hover:text-moca-bolt transition-colors"
+            >
+              שכחתי סיסמה
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleForgot} className="bg-white rounded-2xl shadow-card border border-moca-border p-7 space-y-5">
+            <div className="text-center">
+              <h1 className="text-base font-bold text-moca-dark mb-1">איפוס סיסמה</h1>
+              <p className="text-xs text-moca-sub">נשלח אליך קישור לאיפוס הסיסמה למייל.</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-moca-text mb-1.5">אימייל</label>
+              <input
+                type="email" value={email} onChange={e => setEmail(e.target.value)}
+                className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:ring-2 focus:ring-moca-bolt/30 focus:border-moca-bolt outline-none transition-all"
+                placeholder="name@example.com" required dir="ltr"
+              />
+            </div>
+
+            {resetSent && (
+              <p className="text-xs text-moca-down bg-green-50 rounded-lg px-3 py-2 text-center">
+                אם המייל קיים במערכת, נשלח אליו קישור לאיפוס.
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={resetBusy || resetSent}
+              className="w-full bg-moca-bolt text-white font-medium py-2.5 rounded-xl hover:bg-moca-dark disabled:opacity-50 transition-colors hover-press"
+            >
+              {resetBusy ? '⏳ שולח...' : 'שלח קישור לאיפוס'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setMode('login'); setError(''); setResetSent(false) }}
+              className="w-full text-center text-xs text-moca-sub hover:text-moca-bolt transition-colors"
+            >
+              חזרה להתחברות
+            </button>
+          </form>
+        )}
 
         <p className="text-center text-[10px] text-moca-muted mt-6 mx-auto">
           Made by Alon Yochelman
