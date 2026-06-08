@@ -18,7 +18,10 @@ export default function LoginPage() {
         sessionStorage.removeItem('pending_invite')
         navigate(`/invite/${pendingInvite}`, { replace: true })
       } else {
-        navigate('/', { replace: true })
+        // "/" is the static marketing page (served by Netlify); the SPA dashboard
+        // home lives at /home so a post-login refresh lands on the app, not the
+        // landing.
+        navigate('/home', { replace: true })
       }
     }
   }, [user, loading, navigate])

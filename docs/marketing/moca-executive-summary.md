@@ -94,8 +94,8 @@ Frontend (React + Vite + Tailwind)  ←→  Flask API (Python)
 ## סטטוס נוכחי
 
 המוצר פעיל בסביבת ייצור:
-- **Frontend:** Netlify — https://lucent-kulfi-f037ad.netlify.app
-- **Backend:** Flask מקומי + ngrok tunnel
+- **Frontend:** Netlify — https://mocaintel.com (www redirects to it)
+- **Backend:** Flask מקומי + Cloudflare Tunnel (api.mocaintel.com)
 - **Auth:** Supabase
 - **Scheduling:** Windows Task Scheduler + APScheduler
 - **Reporting:** דוח Excel יומי אוטומטי בדוא"ל (09:00 כל יום)

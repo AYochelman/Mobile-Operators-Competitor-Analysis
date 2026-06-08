@@ -75,7 +75,7 @@ function IconButton({ title, onClick, children }) {
   )
 }
 
-function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut }) {
+function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const ref = useRef(null)
@@ -95,6 +95,9 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut }) {
   const go = (path) => { setOpen(false); navigate(path) }
   const initial = (user?.email || '?')[0]?.toUpperCase()
   const itemCls = 'w-full text-right px-3 py-2 text-[12px] text-moca-text hover:bg-moca-cream rounded-md transition-colors flex items-center justify-between'
+  const supportHref =
+    'mailto:Helpdesk@mocaintel.com?subject=' +
+    encodeURIComponent('פנייה לתמיכה' + (workspace?.name ? ` – ${workspace.name}` : ''))
 
   return (
     <div className="relative" ref={ref}>
@@ -122,7 +125,6 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut }) {
       </button>
       {open && (
         <div className="absolute left-0 top-full mt-1 min-w-[200px] bg-white rounded-xl shadow-popover border border-moca-border/40 p-1.5 z-50 animate-fade-in">
-          <div className="px-3 py-2 text-[10px] text-moca-sub border-b border-moca-border/30 mb-1 truncate" dir="ltr">{user?.email}</div>
           <button onClick={() => go('/preferences')} className={itemCls}>העדפות</button>
           <button onClick={() => go('/alerts?tab=watchlist')} className={itemCls}>הגדרות התראות</button>
           {isAdmin && !isSuperAdmin && (
@@ -143,6 +145,7 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut }) {
             </>
           )}
           <div className="h-px bg-moca-border/30 my-1" />
+          <a href={supportHref} onClick={() => setOpen(false)} className={itemCls}>פנייה לתמיכה</a>
           <button onClick={() => { setOpen(false); signOut() }} className={`${itemCls} text-red-600 hover:bg-red-50`}>יציאה</button>
         </div>
       )}
@@ -160,7 +163,7 @@ function openGlobalSearch() {
 }
 
 export default function Topbar({ onTimeMachine }) {
-  const { user, isAdmin, isSuperAdmin, signOut } = useAuth()
+  const { user, isAdmin, isSuperAdmin, signOut, workspace } = useAuth()
   const { changesCount } = useWatchlist()
   const location = useLocation()
   const meta = resolveRouteMeta(location.pathname, location.search)
@@ -312,7 +315,7 @@ export default function Topbar({ onTimeMachine }) {
         </NavLink>
 
         {/* User menu */}
-        <ProfileMenu user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} signOut={signOut} />
+        <ProfileMenu user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} signOut={signOut} workspace={workspace} />
       </div>
     </header>
   )

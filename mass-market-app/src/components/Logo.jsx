@@ -16,9 +16,16 @@ export default function Logo({ size = 'md', showSubtext = true, appTitle = null,
         <img src={logoUrl} alt={appTitle || 'Logo'}
           style={{ height: Math.round(boltH * 1.7), width: 'auto', maxWidth: Math.round(boltH * 7), objectFit: 'contain' }} />
       ) : (
-        <svg width={boltW} height={boltH} viewBox="0 0 48 46" fill="none" aria-hidden="true">
-          <path fill="var(--color-moca-bolt)" d={BOLT_PATH} />
-        </svg>
+        <span style={{
+          display: 'grid', placeItems: 'center', flexShrink: 0,
+          width: Math.round(boltH * 1.7), height: Math.round(boltH * 1.7),
+          borderRadius: Math.round(boltH * 0.48),
+          background: 'var(--color-moca-bolt)',
+        }}>
+          <svg width={boltW} height={boltH} viewBox="0 0 48 46" fill="none" aria-hidden="true">
+            <path fill="#fff" d={BOLT_PATH} />
+          </svg>
+        </span>
       )}
 
       {wordmarkSize && (

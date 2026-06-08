@@ -79,19 +79,6 @@ function mergeChartData(chartData) {
 
 const BAR_COLORS = ['#5c3317', '#7a4a28', '#9a6040', '#b87c58', '#d4a07a', '#e8c9a8']
 
-const SENTIMENT_BADGE = {
-  positive: 'bg-emerald-50 text-emerald-700',
-  negative: 'bg-red-50 text-red-700',
-  mixed:    'bg-amber-50 text-amber-700',
-  neutral:  'bg-gray-100 text-gray-500',
-}
-const SENTIMENT_LABEL = {
-  positive: 'חיובי', negative: 'שלילי', mixed: 'מעורב', neutral: 'ניטרלי',
-}
-const PLATFORM_SHORT = {
-  facebook: 'FB', instagram: 'IG', twitter: 'X', youtube: 'YT', tiktok: 'TT',
-}
-
 function carrierName(id) {
   return CARRIER_NAMES[id] || id
 }
@@ -114,127 +101,6 @@ function SparkleIcon() {
   )
 }
 
-function UsersIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  )
-}
-
-// ── Standalone social sentiment section (bottom of page) ──────────────────
-
-function SocialSection({ rows, loading, isAdmin, onRefresh, refreshing }) {
-  if (loading) {
-    return (
-      <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5 mb-5 animate-pulse">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-5 h-5 bg-gray-200 rounded" />
-          <div className="h-4 bg-gray-200 rounded w-44" />
-        </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {[0, 1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-100 rounded-xl" />)}
-        </div>
-      </div>
-    )
-  }
-
-  if (!rows || rows.length === 0) return null
-
-  return (
-    <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-moca-sub"><UsersIcon /></span>
-          <h2 className="text-base font-semibold text-moca-text">ניתוח רשתות חברתיות</h2>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-[11px] text-moca-sub">
-            עודכן: {formatDate(rows[0]?.generated_at)}
-          </span>
-          {isAdmin && (
-            <button
-              onClick={onRefresh}
-              disabled={refreshing}
-              className="text-[11px] px-2 py-1 rounded-lg border border-moca-border text-moca-muted hover:text-moca-bolt hover:border-moca-bolt transition-colors disabled:opacity-50"
-            >
-              {refreshing ? 'מרענן...' : 'רענן עכשיו'}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Carrier cards grid — Pelephone pinned first */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {[...rows].sort((a, b) => {
-          if (a.carrier === 'pelephone') return -1
-          if (b.carrier === 'pelephone') return 1
-          return 0
-        }).map(row => {
-          const badgeCls  = SENTIMENT_BADGE[row.sentiment] || SENTIMENT_BADGE.neutral
-          const label     = SENTIMENT_LABEL[row.sentiment] || 'ניטרלי'
-          const platforms = Object.keys(row.platform_data || {}).filter(k => k !== '_counts')
-          const counts    = row.platform_data?._counts || null
-          const totalPosts = platforms.reduce((sum, p) => sum + (row.platform_data[p]?.length || 0), 0)
-          return (
-            <div key={row.carrier} className="bg-moca-bg rounded-xl p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${badgeCls}`}>
-                  {label}
-                </span>
-                <span className="text-xs font-semibold text-moca-text">
-                  {CARRIER_NAMES[row.carrier] || row.carrier}
-                </span>
-              </div>
-              <p className="text-xs text-moca-text leading-relaxed text-right">{row.narrative}</p>
-
-              {/* Bottom row: platform badges (right) + post count breakdown (left) */}
-              <div className="flex items-end justify-between mt-2 flex-wrap gap-1">
-                {/* Platform badges */}
-                <div className="flex items-center gap-1 flex-wrap">
-                  {platforms.map(p => (
-                    <span key={p} className="text-[10px] text-moca-sub bg-white px-1 py-0.5 rounded border border-moca-border/40">
-                      {PLATFORM_SHORT[p] || p} {row.platform_data[p]?.length || 0}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Post count + sentiment breakdown */}
-                <div className="text-right">
-                  <div className="text-[10px] text-moca-sub mb-0.5">
-                    {totalPosts} תגובות נותחו
-                  </div>
-                  {totalPosts > 0 && (
-                    <div className="flex items-center gap-1 justify-end">
-                      <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded" title="חיוביות">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-                        {counts?.positive ?? 0}
-                      </span>
-                      <span className="inline-flex items-center gap-0.5 text-[10px] text-red-600 bg-red-50 px-1 py-0.5 rounded" title="שליליות">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
-                        {counts?.negative ?? 0}
-                      </span>
-                      <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-500 bg-gray-100 px-1 py-0.5 rounded" title="ניטרליות">
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block" />
-                        {counts?.neutral ?? 0}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 // ── Individual category summary section ───────────────────────────────────
 
 function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
@@ -243,7 +109,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
   const icon = CATEGORY_ICONS[category] || null
 
   return (
-    <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5">
+    <div className="bg-white rounded-xl shadow-card border border-moca-border/40 p-5 h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -354,8 +220,8 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
         </div>
       )}
 
-      {/* AI narrative */}
-      <div className="bg-white rounded-xl p-4 border-r-4 border-moca-bolt shadow-sm">
+      {/* AI narrative — flex-1 so the box grows to align card bottom edges */}
+      <div className="bg-white rounded-xl p-4 border-r-4 border-moca-bolt shadow-sm flex-1">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-moca-sub"><SparkleIcon /></span>
           <span className="text-[11px] text-moca-sub font-semibold">ניתוח AI</span>
@@ -391,10 +257,6 @@ export default function ExecutiveSummaryPage() {
   const [notGenerated, setNotGenerated] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
-  const [sentiments, setSentiments] = useState([])
-  const [sentimentLoading, setSentimentLoading] = useState(true)
-  const [sentimentRefreshing, setSentimentRefreshing] = useState(false)
-
   async function load() {
     try {
       const data = await api.getExecutiveSummary()
@@ -418,31 +280,13 @@ export default function ExecutiveSummaryPage() {
     }
   }
 
-  async function loadSentiment() {
-    try {
-      const data = await api.getSocialSentiment()
-      setSentiments(data)
-    } catch {
-      // 404 = not yet generated — sentiments stays []
-    } finally {
-      setSentimentLoading(false)
-    }
-  }
-
-  useEffect(() => { load(); loadSentiment() }, [])
+  useEffect(() => { load() }, [])
 
   async function handleRefresh() {
     setRefreshing(true)
     try { await api.refreshExecutiveSummary(); await load() }
     catch (err) { console.error('refresh failed', err) }
     finally { setRefreshing(false) }
-  }
-
-  async function handleSentimentRefresh() {
-    setSentimentRefreshing(true)
-    try { await api.refreshSocialSentiment(); await loadSentiment() }
-    catch (err) { console.error('sentiment refresh failed', err) }
-    finally { setSentimentRefreshing(false) }
   }
 
   if (loading) {
@@ -479,8 +323,8 @@ export default function ExecutiveSummaryPage() {
     <div className="max-w-6xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-display font-bold text-moca-text mb-6 text-right">תקציר מנהלים</h1>
 
-      {/* Category summaries — 2-up grid on desktop to use the full width */}
-      <div className="grid lg:grid-cols-2 gap-5 items-start mb-5">
+      {/* Category summaries — 2-up grid on desktop; items-stretch keeps row-mates equal height */}
+      <div className="grid lg:grid-cols-2 gap-5 items-stretch mb-5">
         {summaries.map(s => (
           <SummarySection
             key={s.category}
@@ -491,15 +335,6 @@ export default function ExecutiveSummaryPage() {
           />
         ))}
       </div>
-
-      {/* Social sentiment — single section at the bottom, below all categories */}
-      <SocialSection
-        rows={sentiments}
-        loading={sentimentLoading}
-        isAdmin={isAdmin}
-        onRefresh={handleSentimentRefresh}
-        refreshing={sentimentRefreshing}
-      />
     </div>
   )
 }

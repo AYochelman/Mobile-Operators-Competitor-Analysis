@@ -1,4 +1,7 @@
+import base64
+import html
 import json
+import os
 import requests
 import smtplib
 import ssl
@@ -323,7 +326,7 @@ CARRIER_DISPLAY_NAMES = {
     "voye": "VOYE", "orbit": "Orbit", "travelsim": "Travel Sim",
 }
 
-APP_URL = "https://lucent-kulfi-f037ad.netlify.app"
+APP_URL = "https://mocaintel.com"
 
 
 def send_price_alert_email(user_email: str, alert: dict, matching_plans: list, config: dict) -> bool:
@@ -517,7 +520,7 @@ def send_weekly_digest(to_emails: list, workspace_name: str, changes: list, conf
     secondary = bc.get('secondary_color') or '#a08060'
     app_title = bc.get('app_title')       or 'MOCA'
     logo_url  = bc.get('logo_url')        or ''
-    app_url   = app_url or 'https://lucent-kulfi-f037ad.netlify.app'
+    app_url   = app_url or 'https://mocaintel.com'
 
     by_carrier = defaultdict(list)
     for ch in changes:
@@ -582,31 +585,113 @@ def send_weekly_digest(to_emails: list, workspace_name: str, changes: list, conf
     return ok
 
 
+_WELCOME_HERO_URL = "https://mocaintel.com/email/welcome-hero.png"
+_WELCOME_HERO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "mass-market-app", "public", "email", "welcome-hero.png")
+_WELCOME_HERO_CID = "welcomehero"
+
+
+def _build_welcome_html(workspace_name: str, role_he: str, hero_img_url: str,
+                        app_url: str, primary: str, secondary: str) -> str:
+    """Render the welcome email HTML from templates/welcome_email.html.
+
+    Hebrew markup is kept in the template file (like templates/index.html)
+    rather than inline here, per the project convention that Python source
+    uses \\u escapes. workspace_name is HTML-escaped (user-controlled).
+    """
+    tpl_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "templates", "welcome_email.html")
+    with open(tpl_path, encoding="utf-8") as fh:
+        tpl = fh.read()
+    repl = {
+        "{{WORKSPACE}}": html.escape(workspace_name or ""),
+        "{{ROLE}}":      html.escape(role_he or ""),
+        "{{HERO_IMG}}":  hero_img_url,
+        "{{APP_URL}}":   app_url,
+        "{{PRIMARY}}":   primary,
+        "{{SECONDARY}}": secondary,
+        "{{YEAR}}":      str(datetime.now().year),
+    }
+    for key, val in repl.items():
+        tpl = tpl.replace(key, val)
+    return tpl
+
+
 def send_welcome_email(to_email: str, workspace_name: str, role: str, config: dict) -> bool:
-    """Send a welcome email to a newly assigned workspace user."""
+    """Send the welcome email (HTML + plain-text fallback) to a newly added user.
+
+    Signature is unchanged so the existing callers in app.py (workspace
+    assignment + invite acceptance) keep working as-is.
+    """
     api_key = config.get("sendgrid_api_key", "")
     sender  = config.get("email_sender", "")
     if not all([api_key, sender, to_email]):
         return False
 
-    app_url = "https://lucent-kulfi-f037ad.netlify.app"
+    app_url = "https://mocaintel.com"
     role_he = "\u05de\u05e0\u05d4\u05dc" if role == "admin" else "\u05e6\u05d5\u05e4\u05d4"
-    body = (
-        f"\u05e9\u05dc\u05d5\u05dd,\n\n"
-        f"\u05e0\u05d5\u05e1\u05e4\u05ea \u05dc-workspace \u05e9\u05dc {workspace_name} \u05d1-MOCA "
+
+    # plain-text fallback (must precede the HTML part in the SendGrid payload)
+    text_body = (
+        f"\u05e9\u05dc\u05d5\u05dd \u05d5\u05d1\u05e8\u05db\u05d4,\n\n"
+        f"\u05e0\u05e4\u05ea\u05d7 \u05e2\u05d1\u05d5\u05e8\u05da \u05d7\u05e9\u05d1\u05d5\u05df \u05d1-MOCA \u2014 "
+        f"\u05de\u05e2\u05e8\u05db\u05ea \u05d4\u05de\u05e2\u05e7\u05d1 \u05d5\u05d4\u05e0\u05d9\u05ea\u05d5\u05d7 \u05e9\u05dc "
+        f"\u05de\u05d7\u05d9\u05e8\u05d9 \u05d4\u05de\u05ea\u05d7\u05e8\u05d9\u05dd \u05d1\u05e9\u05d5\u05e7 \u05d4\u05e1\u05dc\u05d5\u05dc\u05e8.\n\n"
+        f"\u05e9\u05d5\u05d9\u05d9\u05db\u05ea \u05dc\u05d0\u05d6\u05d5\u05e8 \u05d4\u05e2\u05d1\u05d5\u05d3\u05d4 \u00ab{workspace_name}\u00bb "
         f"\u05d1\u05ea\u05e4\u05e7\u05d9\u05d3 {role_he}.\n\n"
-        f"\u05db\u05e0\u05d9\u05e1\u05d4 \u05dc\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d4:\n{app_url}\n\n"
-        f"\u05d0\u05dd \u05d0\u05d9\u05df \u05dc\u05da \u05d7\u05e9\u05d1\u05d5\u05df \u05e2\u05d3\u05d9\u05d9\u05df, "
-        f"\u05d4\u05d9\u05e8\u05e9\u05dd \u05d1\u05d0\u05d5\u05ea\u05d5 \u05d0\u05d9\u05de\u05d9\u05d9\u05dc "
-        f"\u05d1\u05d3\u05e3 \u05d4\u05db\u05e0\u05d9\u05e1\u05d4.\n\n"
-        f"\u05d1\u05d1\u05e8\u05db\u05d4,\n\u05e6\u05d5\u05d5\u05ea MOCA"
+        f"\u05db\u05e0\u05d9\u05e1\u05d4 \u05dc\u05de\u05e2\u05e8\u05db\u05ea:\n{app_url}\n\n"
+        f"\u05d0\u05dd \u05d0\u05d9\u05df \u05dc\u05da \u05e2\u05d3\u05d9\u05d9\u05df \u05d7\u05e9\u05d1\u05d5\u05df \u2014 \u05db\u05d3\u05d0\u05d9 \u05dc\u05e4\u05e0\u05d5\u05ea "
+        f"\u05dc\u05de\u05d7\u05d6\u05d9\u05e7 \u05d7\u05e9\u05d1\u05d5\u05df \u05d4\u05d0\u05d3\u05de\u05d9\u05df \u05d1\u05d0\u05e8\u05d2\u05d5\u05e0\u05da.\n\n"
+        f"\u05d1\u05d1\u05e8\u05db\u05d4,\n\u05de\u05e0\u05d4\u05dc \u05d4\u05de\u05e2\u05e8\u05db\u05ea \u00b7 \u05e6\u05d5\u05d5\u05ea MOCA"
     )
+
+    # Embed the 3D hero inline (CID) so it always renders -- including in Gmail
+    # with external images off, and without depending on the hosted URL being
+    # live. Falls back to the hosted URL only if the local PNG is missing.
+    hero_src = _WELCOME_HERO_URL
+    hero_attachment = None
+    try:
+        with open(_WELCOME_HERO_PATH, "rb") as _hf:
+            _hero_b64 = base64.b64encode(_hf.read()).decode("ascii")
+        hero_src = f"cid:{_WELCOME_HERO_CID}"
+        hero_attachment = {
+            "content": _hero_b64,
+            "type": "image/png",
+            "filename": "welcome-hero.png",
+            "disposition": "inline",
+            "content_id": _WELCOME_HERO_CID,
+        }
+    except OSError as e:
+        import logging as _log
+        _log.getLogger(__name__).warning(f"welcome hero inline failed, using hosted URL: {e}")
+
+    try:
+        html_body = _build_welcome_html(
+            workspace_name=workspace_name, role_he=role_he,
+            hero_img_url=hero_src, app_url=app_url,
+            primary="#5c3317", secondary="#a08060",
+        )
+    except Exception as e:
+        import logging as _log
+        _log.getLogger(__name__).warning(f"welcome html build failed, sending text-only: {e}")
+        html_body = None
+
+    subject = "\u05d1\u05e8\u05d5\u05db\u05d9\u05dd \u05d4\u05d1\u05d0\u05d9\u05dd \u05dc-MOCA"
+    if workspace_name:
+        subject += f" \u00b7 {workspace_name}"
+
+    content = [{"type": "text/plain", "value": text_body}]
+    if html_body:
+        content.append({"type": "text/html", "value": html_body})
+
     payload = {
         "personalizations": [{"to": [{"email": to_email}]}],
-        "from": {"email": sender},
-        "subject": f"MOCA \u2014 \u05d4\u05ea\u05d5\u05d5\u05e1\u05e4\u05ea \u05dc-{workspace_name}",
-        "content": [{"type": "text/plain", "value": body}],
+        "from": {"email": sender, "name": "MOCA"},
+        "subject": subject,
+        "content": content,
     }
+    if hero_attachment:
+        payload["attachments"] = [hero_attachment]
     try:
         resp = requests.post(
             "https://api.sendgrid.com/v3/mail/send",
@@ -614,6 +699,10 @@ def send_welcome_email(to_email: str, workspace_name: str, role: str, config: di
             headers={"Authorization": f"Bearer {api_key}"},
             timeout=20,
         )
+        if resp.status_code != 202:
+            import logging as _log
+            _log.getLogger(__name__).error(
+                f"welcome SendGrid {resp.status_code} for {to_email}: {resp.text[:200]}")
         return resp.status_code == 202
     except requests.RequestException:
         return False

@@ -13,6 +13,7 @@ $LogFile       = Join-Path $ScriptDir "morning_health_check.log"
 $AlertScript   = Join-Path $ScriptDir "alert.py"
 $FlaskWatchdog = Join-Path $ScriptDir "flask_watchdog.bat"
 $ViteWatchdog  = Join-Path $ScriptDir "vite_watchdog.bat"
+$NgrokWatchdog = Join-Path $ScriptDir "ngrok_watchdog.ps1"
 $ViteWorkDir   = Join-Path $ProjectRoot "mass-market-app"
 
 function Write-Log {
@@ -82,13 +83,33 @@ $r = Restart-Service -Name "Flask" -Port 5000 -WaitSeconds 30 -Launcher {
 }
 if ($r) { [void]$results.Add($r) }
 
-# ---- ngrok (4040) ----
-# 6s was too tight: ngrok has to read config, dial out to ngrok cloud, register
-# the tunnel, and only then open the local 4040 web UI port. Give it 20s.
-$r = Restart-Service -Name "ngrok" -Port 4040 -WaitSeconds 20 -Launcher {
-    Start-Process cmd -ArgumentList "/k ngrok http 5000"
+# ---- Cloudflare tunnel (cloudflared) ----
+# Replaces ngrok as the public ingress (api.mocaintel.com -> :5000). cloudflared has
+# no stable local listen port, so check the PROCESS; if it's gone, (re)start the
+# MOCA-Cloudflared task (its watchdog relaunches cloudflared).
+if (Get-Process cloudflared -ErrorAction SilentlyContinue) {
+    Write-Log "cloudflared: UP"
+} else {
+    Write-Log "cloudflared: DOWN -- starting MOCA-Cloudflared task"
+    try {
+        Start-ScheduledTask -TaskName "MOCA-Cloudflared" -ErrorAction Stop
+        $deadline = (Get-Date).AddSeconds(20)
+        while ((Get-Date) -lt $deadline) {
+            Start-Sleep -Seconds 2
+            if (Get-Process cloudflared -ErrorAction SilentlyContinue) { break }
+        }
+        if (Get-Process cloudflared -ErrorAction SilentlyContinue) {
+            Write-Log "cloudflared restart: SUCCESS"
+            [void]$results.Add(@{ status = 'restarted'; name = 'cloudflared'; port = 0 })
+        } else {
+            Write-Log "cloudflared restart: FAILED (process not up after 20s)"
+            [void]$results.Add(@{ status = 'failed'; name = 'cloudflared'; port = 0; reason = 'process not up after 20s' })
+        }
+    } catch {
+        Write-Log "cloudflared restart EXCEPTION: $_"
+        [void]$results.Add(@{ status = 'failed'; name = 'cloudflared'; port = 0; reason = "$_" })
+    }
 }
-if ($r) { [void]$results.Add($r) }
 
 # ---- Vite (5173) ----
 $r = Restart-Service -Name "Vite" -Port 5173 -WaitSeconds 30 -Launcher {

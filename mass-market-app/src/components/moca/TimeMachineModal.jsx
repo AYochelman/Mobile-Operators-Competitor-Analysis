@@ -232,7 +232,7 @@ export default function TimeMachineModal({ open, onClose }) {
                 letterSpacing: -0.4,
               }}
             >
-              צפה בעבר
+              מכונת זמן
             </h2>
           </div>
           <button

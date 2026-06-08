@@ -65,13 +65,207 @@ function fmtAgo(iso) {
   return d === 1 ? 'אתמול' : `לפני ${d} ימים`
 }
 
+/**
+ * Parse a Python list-repr string into a JS string array.
+ * `extras_change` events store old_val/new_val as `str(list)` (db.py), so the
+ * API hands us something like `['דקות ללא הגבלה', '6GB גלישה בחו"ל']`. Python
+ * uses single quotes by default, double quotes when an item contains an
+ * apostrophe; Hebrew/Unicode is emitted verbatim. Falls back to a single-item
+ * array for any non-list string.
+ */
+function parsePyList(raw) {
+  if (Array.isArray(raw)) return raw.map((x) => String(x))
+  if (typeof raw !== 'string') return []
+  const s = raw.trim()
+  if (!s.startsWith('[') || !s.endsWith(']')) return s ? [s] : []
+  const body = s.slice(1, -1)
+  const items = []
+  let i = 0
+  while (i < body.length) {
+    while (i < body.length && (body[i] === ' ' || body[i] === ',' || body[i] === '\t')) i++
+    if (i >= body.length) break
+    const q = body[i]
+    if (q !== "'" && q !== '"') { items.push(body.slice(i).trim()); break }
+    i++
+    let buf = ''
+    while (i < body.length) {
+      const ch = body[i]
+      if (ch === '\\' && i + 1 < body.length) {
+        const next = body[i + 1]
+        // Python repr() escapes non-printable chars — crucially NBSP (\xa0)
+        // and bidi marks (‎/‏) — which appear verbatim in scraped
+        // benefit strings. Decode \xHH / \uHHHH / \UHHHHHHHH back to the real
+        // character; otherwise the literal "xa0" text leaks into the UI.
+        if (next === 'x' && /^[0-9a-fA-F]{2}$/.test(body.slice(i + 2, i + 4))) {
+          buf += String.fromCharCode(parseInt(body.slice(i + 2, i + 4), 16)); i += 4; continue
+        }
+        if (next === 'u' && /^[0-9a-fA-F]{4}$/.test(body.slice(i + 2, i + 6))) {
+          buf += String.fromCharCode(parseInt(body.slice(i + 2, i + 6), 16)); i += 6; continue
+        }
+        if (next === 'U' && /^[0-9a-fA-F]{8}$/.test(body.slice(i + 2, i + 10))) {
+          buf += String.fromCodePoint(parseInt(body.slice(i + 2, i + 10), 16)); i += 10; continue
+        }
+        buf += next === 'n' ? '\n' : next === 't' ? '\t' : next === 'r' ? '\r' : next
+        i += 2
+        continue
+      }
+      if (ch === q) { i++; break }
+      buf += ch
+      i++
+    }
+    items.push(buf)
+  }
+  return items
+}
+
+/**
+ * Filler tokens that carry no essence — connectors and the "at no extra cost"
+ * family. Dropping them lets "X ללא עלות" and "X ללא תוספת תשלום" (and a comma
+ * vs "ו-" separator, and a reordered app list) collapse to the same signature,
+ * so a pure rewording isn't reported as a benefit change.
+ */
+const BENEFIT_FILLERS = new Set([
+  'ללא', 'תוספת', 'תשלום', 'עלות', 'נוספת', 'נוסף', 'חינם',
+  'כלול', 'כלולה', 'כלולים', 'כולל', 'כוללת',
+  'שירות', 'שירותים', 'בתכנית', 'בתוכנית', 'בחבילה', 'במסלול',
+  'של', 'את', 'עם', 'גם', 'ה', 'ו', 'ב', 'ל',
+])
+
+/**
+ * Canonical signature of one benefit string. Splits on list separators (comma,
+ * bullet, slash, "ו-"…) into independent items, normalizes each (lower-case,
+ * strip 6,000→6000 grouping + punctuation, drop filler words) keeping word
+ * order *within* an item, then sorts the items. So an app list reordered or a
+ * separator/filler reworded collapses to the same signature — but a number
+ * swapped against its noun ("100 דקות ל-50 יעדים" vs "50…ל-100…") does NOT,
+ * because each item's internal order is preserved. Guards against hiding a
+ * real change as if it were cosmetic.
+ */
+function benefitSignature(s) {
+  const segments = String(s)
+    .toLowerCase()
+    .replace(/(?<=\d),(?=\d)/g, '')               // 6,000 → 6000 before splitting on comma
+    .split(/\s*(?:[,;\/|•·]|ו-)\s*/)         // independent list items
+    .map((seg) => seg
+      .replace(/[:."'()[\]\-–—]/g, ' ')           // strip remaining punctuation
+      .split(/\s+/)
+      .filter(Boolean)
+      .filter((t) => !BENEFIT_FILLERS.has(t))
+      .join(' ')                                  // keep word order within an item
+      .trim())
+    .filter(Boolean)
+  return segments.sort().join('|')                // order-insensitive across items
+}
+
+/**
+ * Diff two extras lists, suppressing text-only churn. An old item and a new
+ * item with the same {@link benefitSignature} cancel out (reordered/reworded —
+ * no essence change). What survives is genuinely added / removed.
+ * Returns { added, removed } as the original (display) strings.
+ */
+function materialDiff(oldVal, newVal) {
+  const oldArr = parsePyList(oldVal)
+  const newArr = parsePyList(newVal)
+  const oldSigs = oldArr.map(benefitSignature)
+  const newSigs = newArr.map(benefitSignature)
+
+  const tally = (sigs) => sigs.reduce((m, sig) => m.set(sig, (m.get(sig) || 0) + 1), new Map())
+  const newAvail = tally(newSigs)
+  const oldAvail = tally(oldSigs)
+
+  const removed = oldArr.filter((item, i) => {
+    const sig = oldSigs[i]
+    if ((newAvail.get(sig) || 0) > 0) { newAvail.set(sig, newAvail.get(sig) - 1); return false }
+    return true
+  })
+  const added = newArr.filter((item, i) => {
+    const sig = newSigs[i]
+    if ((oldAvail.get(sig) || 0) > 0) { oldAvail.set(sig, oldAvail.get(sig) - 1); return false }
+    return true
+  })
+  return { added, removed }
+}
+
+/** The added/removed benefit lines shown under an `extras_change` row.
+ *  `diff` is the precomputed material diff (text-only churn already removed).
+ *  added = green "+" (benefit gained), removed = muted strike-through "−". */
+function BenefitDiffRows({ diff }) {
+  const { added = [], removed = [] } = diff || {}
+  if (added.length === 0 && removed.length === 0) return null
+
+  const line = (text, kind, key) => (
+    <div key={key} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, textAlign: 'right' }}>
+      <span
+        aria-hidden="true"
+        style={{
+          flexShrink: 0,
+          marginTop: 1,
+          width: 15,
+          height: 15,
+          borderRadius: 4,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 12,
+          fontWeight: 900,
+          lineHeight: 1,
+          color: '#fff',
+          background: kind === 'added' ? 'var(--color-moca-down)' : 'var(--color-moca-up)',
+        }}
+      >
+        {kind === 'added' ? '+' : '−'}
+      </span>
+      <span
+        dir="rtl"
+        style={{
+          fontSize: 11.5,
+          lineHeight: 1.35,
+          color: kind === 'added' ? 'var(--color-moca-text)' : 'var(--color-moca-muted)',
+          textDecoration: kind === 'removed' ? 'line-through' : 'none',
+          // Benefit strings mix Hebrew + numbers + ₪ + Latin + a trailing "*";
+          // isolate each line so the bidi algorithm doesn't scramble them
+          // (e.g. "100 ₪ ... בפלאפון *").
+          unicodeBidi: 'isolate',
+        }}
+      >
+        {/* Normalize whitespace: scraped values embed NBSP ( ) which
+            force-glues "100 ₪ לרכישת" into one non-breaking run that can't wrap
+            and reorders badly in some browsers. Collapse to plain spaces. */}
+        {String(text).replace(/\s+/g, ' ').trim()}
+      </span>
+    </div>
+  )
+
+  return (
+    <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {added.map((t, idx) => line(t, 'added', `a${idx}`))}
+      {removed.map((t, idx) => line(t, 'removed', `r${idx}`))}
+    </div>
+  )
+}
+
 /** Recent-changes feed with filter pills. */
 function ChangeFeed({ changes, onItemClick }) {
   const [filter, setFilter] = useState('new')
+
+  // Enrich extras_change rows with a material (noise-suppressed) diff and drop
+  // the ones that turn out to be text-only churn — reordered or reworded
+  // benefits with no change in essence. Counts and rows both derive from this,
+  // so the "שינויים בהטבות" tally reflects real changes only.
+  const enriched = useMemo(() => (
+    changes
+      .map((c) => (
+        c.change_type === 'extras_change'
+          ? { c, diff: materialDiff(c.old_val, c.new_val) }
+          : { c, diff: null }
+      ))
+      .filter(({ diff }) => !diff || diff.added.length > 0 || diff.removed.length > 0)
+  ), [changes])
+
   const filtered = useMemo(() => {
     const pred = FILTERS.find((f) => f.id === filter)?.predicate || (() => true)
-    return changes.filter(pred).slice(0, 12)
-  }, [changes, filter])
+    return enriched.filter((e) => pred(e.c)).slice(0, 12)
+  }, [enriched, filter])
 
   return (
     <section
@@ -103,7 +297,7 @@ function ChangeFeed({ changes, onItemClick }) {
       <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
         {FILTERS.map((f) => {
           const active = filter === f.id
-          const matches = changes.filter(f.predicate).length
+          const matches = enriched.filter((e) => f.predicate(e.c)).length
           return (
             <button
               key={f.id}
@@ -137,7 +331,7 @@ function ChangeFeed({ changes, onItemClick }) {
             אין שינויים בקטגוריה זו
           </div>
         )}
-        {filtered.map((c, i) => {
+        {filtered.map(({ c, diff }, i) => {
           const oldVal = Number(c.old_val)
           const newVal = Number(c.new_val)
           const isHot = priceImpact(c) >= 10
@@ -164,7 +358,7 @@ function ChangeFeed({ changes, onItemClick }) {
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
-                  <CarrierChip id={c.carrier} size={20} showName />
+                  <CarrierChip id={c.carrier} size={26} showName logo />
                   <span style={{ color: 'var(--color-moca-muted)' }}>·</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-moca-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '1 1 0%' }}>
                     {c.plan_name}
@@ -179,6 +373,7 @@ function ChangeFeed({ changes, onItemClick }) {
                   {c.change_type === 'extras_change' && 'שינוי הטבות'}
                   <span className="md:hidden" style={{ marginInlineStart: 6, opacity: 0.7 }}>· {fmtAgo(c.changed_at)}</span>
                 </div>
+                {c.change_type === 'extras_change' && <BenefitDiffRows diff={diff} />}
               </div>
               <div className="tnum" style={{ direction: 'ltr', textAlign: 'left' }}>
                 {Number.isFinite(newVal) && (

@@ -1,7 +1,7 @@
 # Mobile Operators Competitor Analysis — Project Links
 
 ## Production URLs
-- **App (Netlify):** https://lucent-kulfi-f037ad.netlify.app
+- **App:** https://mocaintel.com (canonical; www.mocaintel.com redirects to it; Netlify custom domain; subdomain: https://lucent-kulfi-f037ad.netlify.app)
 - **Backend (ngrok):** https://terra-nonrestrained-overpiteously.ngrok-free.dev
 - **Legacy Dashboard:** http://localhost:5000
 
