@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MOCA · Dashboard — Direction Explorations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&family=Frank+Ruhl+Libre:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { direction: rtl; }
+  body { font-family: var(--font-body); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.4; transition: background .25s, color .25s; }
+  .tnum { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+
+  /* ════════════════ THEME TOKENS ════════════════ */
+  body {
+    --font-display: 'Frank Ruhl Libre', serif;
+    --font-body: 'Assistant', system-ui, sans-serif;
+  }
+
+  /* ── BOLD (default) — warm, high-contrast, editorial ── */
+  body.theme-bold {
+    --bg:#f6efe4; --surface:#fffdf9; --surface-2:#f1e7d8; --border:#e4d4be; --border-2:#d8c4a8;
+    --text:#2a1a0e; --text-2:#6b5440; --text-3:#9c8268;
+    --accent:#5c3317; --accent-2:#c2410c; --accent-contrast:#fff; --accent-soft:#efe1d0;
+    --up:#b91c1c; --down:#15803d; --hot:#c2410c;
+    --sidebar-bg:#3d2410; --sidebar-text:#d9c5ac; --sidebar-active-bg:rgba(255,255,255,.13); --sidebar-active-text:#fff; --sidebar-border:rgba(255,255,255,.08);
+    --topbar-bg:#fffdf9; --topbar-border:var(--border);
+    --hero-size:46px; --hero-weight:900; --hero-color:#2a1a0e;
+    --kpi-w:800; --kpi-size:42px; --kpi-color:var(--accent);
+    --card-shadow:0 4px 22px -8px rgba(74,42,19,.16); --r:16px;
+    --heat0:#f1e7d8; --heat1:#e6cfae; --heat2:#cd9d63; --heat3:#9a5a22; --heat4:#5c3317;
+  }
+  /* ── DARK PREMIUM — warm charcoal, gold accent, dense ── */
+  body.theme-dark {
+    --bg:#17120e; --surface:#201913; --surface-2:#2a2018; --border:#392c20; --border-2:#48382a;
+    --text:#f1e8da; --text-2:#b6a48c; --text-3:#83715b;
+    --accent:#d8a766; --accent-2:#e8915a; --accent-contrast:#17120e; --accent-soft:rgba(216,167,102,.14);
+    --up:#f6766f; --down:#54d07e; --hot:#f0974f;
+    --sidebar-bg:#1b150f; --sidebar-text:#b6a48c; --sidebar-active-bg:rgba(216,167,102,.15); --sidebar-active-text:#e8c79a; --sidebar-border:#2c2118;
+    --topbar-bg:rgba(23,18,14,.82); --topbar-border:var(--border);
+    --hero-size:40px; --hero-weight:700; --hero-color:#f6ecdb;
+    --kpi-w:600; --kpi-size:38px; --kpi-color:#f1e8da;
+    --card-shadow:0 1px 0 rgba(255,255,255,.03), 0 12px 32px -18px rgba(0,0,0,.6); --r:14px;
+    --heat0:#241c14; --heat1:#3c2c1b; --heat2:#6b4a26; --heat3:#a3713a; --heat4:#d8a766;
+  }
+  /* ── MINIMAL LIGHT — clean white, sparing accent ── */
+  body.theme-minimal {
+    --bg:#ffffff; --surface:#ffffff; --surface-2:#f7f7f8; --border:#ededf0; --border-2:#e3e3e7;
+    --text:#18181b; --text-2:#6b7280; --text-3:#a1a1aa;
+    --accent:#5c3317; --accent-2:#5c3317; --accent-contrast:#fff; --accent-soft:#f4efe9;
+    --up:#dc2626; --down:#15a34a; --hot:#c2410c;
+    --sidebar-bg:#fff; --sidebar-text:#6b7280; --sidebar-active-bg:#f4efe9; --sidebar-active-text:#5c3317; --sidebar-border:var(--border);
+    --topbar-bg:rgba(255,255,255,.8); --topbar-border:var(--border);
+    --hero-size:34px; --hero-weight:700; --hero-color:#18181b;
+    --kpi-w:300; --kpi-size:34px; --kpi-color:var(--text);
+    --card-shadow:none; --r:14px;
+    --heat0:#f7f7f8; --heat1:#efe7df; --heat2:#ddc9b6; --heat3:#b88a5e; --heat4:#5c3317;
+  }
+
+  /* ════════════════ LAYOUT (theme-driven via vars) ════════════════ */
+  .shell { display: flex; min-height: 100vh; }
+  .sidebar { width: 234px; flex-shrink: 0; background: var(--sidebar-bg); border-inline-start: 1px solid var(--sidebar-border); padding: 22px 16px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 24px; transition: background .25s; }
+  .brand { display: flex; align-items: center; gap: 9px; padding: 2px 6px 0; }
+  .brand .mark { width: 32px; height: 32px; border-radius: 9px; background: var(--accent); color: var(--accent-contrast); display: grid; place-items: center; font-weight: 800; font-size: 16px; font-family: var(--font-display); }
+  .brand .name { font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: -.3px; color: var(--sidebar-active-text); }
+  body.theme-minimal .brand .name { color: var(--text); }
+  .brand .sub { font-size: 9.5px; color: var(--sidebar-text); letter-spacing: .3px; opacity:.8; }
+
+  .nav-group { display: flex; flex-direction: column; gap: 2px; }
+  .nav-label { font-size: 9.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: var(--sidebar-text); opacity:.7; padding: 0 10px 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 9px; font-size: 13.5px; color: var(--sidebar-text); font-weight: 500; cursor: pointer; position: relative; transition: background .12s, color .12s; }
+  .nav-item .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .55; }
+  .nav-item:hover { background: var(--sidebar-active-bg); color: var(--sidebar-active-text); }
+  .nav-item.active { background: var(--sidebar-active-bg); color: var(--sidebar-active-text); font-weight: 700; }
+  .nav-item.active::before { content: ''; position: absolute; inset-inline-start: -16px; top: 7px; bottom: 7px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
+  body.theme-bold .nav-item.active::before, body.theme-dark .nav-item.active::before { background: var(--accent-2); }
+  .nav-item .badge { margin-inline-start: auto; font-size: 10px; font-weight: 700; color: var(--sidebar-text); background: var(--sidebar-active-bg); padding: 1px 7px; border-radius: 999px; }
+
+  .main { flex: 1; min-width: 0; }
+  .topbar { height: 62px; display: flex; align-items: center; gap: 16px; padding: 0 32px; border-bottom: 1px solid var(--topbar-border); background: var(--topbar-bg); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 5; }
+  .topbar .kicker { font-size: 9.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: var(--text-3); }
+  .topbar .ttl { font-family: var(--font-display); font-size: 19px; font-weight: 800; letter-spacing: -.3px; color: var(--text); }
+  .live { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-2); font-weight: 700; }
+  .live .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--down); box-shadow: 0 0 0 0 currentColor; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(120,160,90,.5)} 70%{box-shadow:0 0 0 7px rgba(120,160,90,0)} 100%{box-shadow:0 0 0 0 rgba(120,160,90,0)} }
+  .topbar .spacer { flex: 1; }
+  .pill { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 13px; border: 1px solid var(--border-2); border-radius: 999px; font-size: 12.5px; color: var(--text-2); background: var(--surface); cursor: pointer; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+  body.theme-dark .avatar { color: var(--accent); }
+
+  .content { padding: 32px 32px 90px; max-width: 1180px; }
+
+  .hero { margin-bottom: 28px; }
+  .hero .eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .9px; text-transform: uppercase; color: var(--accent-2); margin-bottom: 10px; }
+  .hero h1 { font-family: var(--font-display); font-size: var(--hero-size); font-weight: var(--hero-weight); letter-spacing: -.9px; line-height: 1.08; margin-bottom: 12px; color: var(--hero-color); }
+  .hero p { font-size: 14.5px; color: var(--text-2); max-width: 560px; }
+  body.theme-bold .hero h1 { border-inline-start: 5px solid var(--accent-2); padding-inline-start: 16px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 26px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; box-shadow: var(--card-shadow); }
+  body.theme-bold .kpi { border-top: 3px solid var(--accent); }
+  body.theme-bold .kpi:nth-child(2) { border-top-color: var(--accent-2); }
+  .kpi .lbl { font-size: 10px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--text-3); margin-bottom: 14px; }
+  .kpi .val { font-size: var(--kpi-size); font-weight: var(--kpi-w); letter-spacing: -1px; line-height: 1; color: var(--kpi-color); }
+  .kpi .val small { font-size: .5em; font-weight: 600; color: var(--text-2); }
+  .kpi .meta { font-size: 12px; color: var(--text-2); margin-top: 11px; }
+  .kpi .meta.down { color: var(--down); font-weight: 700; }
+
+  .grid2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 22px; margin-bottom: 22px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; box-shadow: var(--card-shadow); }
+  .card-h { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+  .card-h .t { font-family: var(--font-display); font-size: 16.5px; font-weight: 800; letter-spacing: -.2px; color: var(--text); }
+  .card-h .s { font-size: 11.5px; color: var(--text-3); margin-top: 3px; }
+  .card-h .link { font-size: 11.5px; color: var(--accent-2); font-weight: 700; cursor: pointer; }
+
+  .heat { padding: 18px 20px; }
+  .heat-row { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 12px; margin-bottom: 7px; }
+  .heat-row .nm { font-size: 12px; color: var(--text-2); font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .heat-row .nm i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .heat-cells { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
+  .cell { height: 23px; border-radius: 5px; background: var(--heat0); }
+  .cell.l1 { background: var(--heat1); } .cell.l2 { background: var(--heat2); } .cell.l3 { background: var(--heat3); } .cell.l4 { background: var(--heat4); }
+  .heat-axis { display: grid; grid-template-columns: 92px 1fr; gap: 12px; margin-top: 8px; }
+  .heat-axis .ax { display: grid; grid-template-columns: repeat(8,1fr); gap: 5px; font-size: 9px; color: var(--text-3); text-align: center; }
+
+  .wl { padding: 6px 12px; }
+  .wl-item { display: flex; align-items: center; gap: 12px; padding: 12px 8px; border-bottom: 1px solid var(--border); }
+  .wl-item:last-child { border-bottom: none; }
+  .wl-item .ic { width: 34px; height: 34px; border-radius: 9px; background: var(--surface-2); display: grid; place-items: center; font-size: 12px; font-weight: 800; color: var(--text-2); flex-shrink: 0; }
+  .wl-item .nm { flex: 1; min-width: 0; }
+  .wl-item .nm .t { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+  .wl-item .nm .c { font-size: 11px; color: var(--text-3); }
+  .wl-item .pr { font-size: 16px; font-weight: 800; direction: ltr; color: var(--text); }
+  .wl-item .pr small { font-size: 11px; color: var(--text-3); font-weight: 500; }
+
+  .changes { padding: 4px 12px 10px; }
+  .chg { display: flex; align-items: center; gap: 14px; padding: 14px 8px; border-bottom: 1px solid var(--border); }
+  .chg:last-child { border-bottom: none; }
+  .chg .pr { font-size: 19px; font-weight: 800; direction: ltr; min-width: 74px; color: var(--text); }
+  .chg .info { flex: 1; }
+  .chg .info .t { font-size: 13.5px; font-weight: 700; color: var(--text); }
+  .chg .info .c { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+  .tag { font-size: 9.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; }
+  .tag.new { background: color-mix(in srgb, var(--down) 16%, transparent); color: var(--down); }
+  .tag.hot { background: color-mix(in srgb, var(--hot) 18%, transparent); color: var(--hot); }
+  .tag.up { background: color-mix(in srgb, var(--up) 16%, transparent); color: var(--up); }
+  .tag.dn { background: color-mix(in srgb, var(--down) 16%, transparent); color: var(--down); }
+  .chg .tags { display: flex; gap: 6px; }
+  .chg .when { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+  section { margin-bottom: 22px; }
+
+  /* ════════════════ THEME SWITCHER ════════════════ */
+  .switcher { position: fixed; inset-inline: 0; bottom: 18px; z-index: 100; display: flex; justify-content: center; pointer-events: none; }
+  .switcher .seg { pointer-events: auto; display: inline-flex; background: rgba(20,16,12,.9); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 5px; gap: 4px; box-shadow: 0 12px 36px rgba(0,0,0,.34); }
+  .switcher button { border: none; background: transparent; color: #cfc3b3; font-family: var(--font-body); font-size: 12.5px; font-weight: 700; padding: 8px 18px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+  .switcher button:hover { color: #fff; }
+  .switcher button.on { background: #fff; color: #1a120a; }
+</style>
+</head>
+<body class="theme-bold">
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">M</div>
+      <div><div class="name">MOCA</div><div class="sub">Competitor Analysis</div></div>
+    </div>
+    <nav class="nav-group">
+      <div class="nav-label">ניטור</div>
+      <div class="nav-item active"><span class="dot"></span> דשבורד</div>
+      <div class="nav-item"><span class="dot"></span> דוח מנהלים</div>
+      <div class="nav-item"><span class="dot"></span> מיצוב תחרותי</div>
+      <div class="nav-item"><span class="dot"></span> היסטוריית שינויים <span class="badge">14</span></div>
+      <div class="nav-item"><span class="dot"></span> התראות <span class="badge">3</span></div>
+    </nav>
+    <nav class="nav-group">
+      <div class="nav-label">תובנות</div>
+      <div class="nav-item"><span class="dot"></span> AI Insights</div>
+      <div class="nav-item"><span class="dot"></span> באנרים</div>
+      <div class="nav-item"><span class="dot"></span> מכונת זמן</div>
+    </nav>
+    <nav class="nav-group">
+      <div class="nav-label">מסלולים</div>
+      <div class="nav-item"><span class="dot"></span> Mass Market</div>
+      <div class="nav-item"><span class="dot"></span> חו״ל · Roaming</div>
+      <div class="nav-item"><span class="dot"></span> eSIM גלובלי</div>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div><div class="kicker">ניטור</div><div class="ttl">דשבורד</div></div>
+      <span class="live"><span class="pulse"></span> LIVE</span>
+      <div class="spacer"></div>
+      <div class="pill">⌕ חיפוש · ⌘K</div>
+      <div class="pill">🕑 מכונת זמן</div>
+      <div class="avatar">A</div>
+    </header>
+
+    <div class="content">
+      <div class="hero">
+        <div class="eyebrow">ברוכים הבאים · MOCA</div>
+        <h1>שקט בשוק — אין שינויים<br/>משמעותיים ב-24 השעות האחרונות</h1>
+        <p>כשמתחרה משנה משהו משמעותי — מחיר, מסלול חדש, הוצאה — תראה זאת כאן בראש העמוד.</p>
+      </div>
+
+      <section class="kpis">
+        <div class="kpi"><div class="lbl">הספק שלך</div><div class="val">—</div><div class="meta">workspace.mvno_carrier</div></div>
+        <div class="kpi"><div class="lbl">מסלולים חדשים · שבוע</div><div class="val tnum">1</div><div class="meta down">▾ ירידה מהשבוע שעבר</div></div>
+        <div class="kpi"><div class="lbl">מחיר ממוצע</div><div class="val tnum">48<small>₪</small></div><div class="meta">על פני 10 ספקים</div></div>
+        <div class="kpi"><div class="lbl">שינויים היום</div><div class="val tnum">0</div><div class="meta">השוק שקט</div></div>
+      </section>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-h"><div><div class="t">עוצמת שינויים · Heatmap</div><div class="s">8 ימים אחרונים · ריחוף לפרטים</div></div></div>
+          <div class="heat">
+            <div class="heat-row"><div class="nm"><i style="background:#00b4a3"></i> פרטנר</div><div class="heat-cells"><div class="cell"></div><div class="cell l3"></div><div class="cell"></div><div class="cell"></div><div class="cell l1"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div></div></div>
+            <div class="heat-row"><div class="nm"><i style="background:#0079C1"></i> פלאפון</div><div class="heat-cells"><div class="cell"></div><div class="cell"></div><div class="cell l1"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div></div></div>
+            <div class="heat-row"><div class="nm"><i style="background:#e8123c"></i> הוט מובייל</div><div class="heat-cells"><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell l2"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div></div></div>
+            <div class="heat-row"><div class="nm"><i style="background:#7ab648"></i> סלקום</div><div class="heat-cells"><div class="cell"></div><div class="cell l4"></div><div class="cell l3"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div></div></div>
+            <div class="heat-row"><div class="nm"><i style="background:#f59e0b"></i> 019</div><div class="heat-cells"><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell l1"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div></div></div>
+            <div class="heat-row"><div class="nm"><i style="background:#6366f1"></i> XPhone</div><div class="heat-cells"><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell l2"></div><div class="cell"></div></div></div>
+            <div class="heat-axis"><div></div><div class="ax"><span>21/5</span><span>23/5</span><span>25/5</span><span>27/5</span><span>29/5</span><span>31/5</span><span>2/6</span><span>4/6</span></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><div><div class="t">Watchlist</div><div class="s">4 מסלולים במעקב</div></div><div class="link">הצג הכל</div></div>
+          <div class="wl">
+            <div class="wl-item"><div class="ic">5G</div><div class="nm"><div class="t">5G Pro Fly</div><div class="c">פרטנר</div></div><div class="pr tnum">119.9<small>₪</small></div></div>
+            <div class="wl-item"><div class="ic">UL</div><div class="nm"><div class="t">5G ULTRA · Plus FLY 10GB</div><div class="c">הוט מובייל</div></div><div class="pr tnum">109.9<small>₪</small></div></div>
+            <div class="wl-item"><div class="ic">WC</div><div class="nm"><div class="t">wecomGlobal 5G ULTRA</div><div class="c">We-Com</div></div><div class="pr tnum">—</div></div>
+            <div class="wl-item"><div class="ic">VIP</div><div class="nm"><div class="t">5G Max VIP Global</div><div class="c">פלאפון</div></div><div class="pr tnum">129<small>₪</small></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div><div class="t">שינויים אחרונים</div><div class="s">לחץ על שורה לפרטים</div></div><div class="link">27 שינויים →</div></div>
+        <div class="changes">
+          <div class="chg"><div class="pr tnum">74.9<small style="font-size:11px;color:var(--text-3)">₪</small></div><div class="info"><div class="t">Better Future Boost 5G</div><div class="c">פרטנר · 200GB · ללא הגבלת דקות</div></div><div class="tags"><span class="tag new">חדש</span><span class="tag hot">חם</span></div><div class="when">לפני יומיים</div></div>
+          <div class="chg"><div class="pr tnum" style="color:var(--down)">39<small style="font-size:11px">₪</small></div><div class="info"><div class="t">מסלול גמיש 50GB</div><div class="c">019 · ירידת מחיר מ-49₪</div></div><div class="tags"><span class="tag dn">ירידת מחיר</span></div><div class="when">לפני 3 ימים</div></div>
+          <div class="chg"><div class="pr tnum" style="color:var(--up)">59<small style="font-size:11px">₪</small></div><div class="info"><div class="t">Unlimited 5G</div><div class="c">סלקום · עליית מחיר מ-54₪</div></div><div class="tags"><span class="tag up">עליית מחיר</span></div><div class="when">לפני 4 ימים</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="switcher">
+  <div class="seg">
+    <button data-theme="bold" class="on" onclick="setTheme('bold')">Bold</button>
+    <button data-theme="dark" onclick="setTheme('dark')">Dark Premium</button>
+    <button data-theme="minimal" onclick="setTheme('minimal')">Minimal</button>
+  </div>
+</div>
+
+<script>
+  function setTheme(t){
+    document.body.className = 'theme-' + t;
+    document.querySelectorAll('.switcher button').forEach(b => b.classList.toggle('on', b.dataset.theme === t));
+  }
+</script>
+</body>
+</html>

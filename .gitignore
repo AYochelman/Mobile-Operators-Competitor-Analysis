@@ -24,3 +24,6 @@ SECRETS_LOCAL_ONLY.md
 .worktrees/
 data/*.session
 data/telegram_pending.json
+
+# Large downloaded binary — fetched/run by the watchdog, never committed (~52MB)
+scripts/cloudflared.exe
