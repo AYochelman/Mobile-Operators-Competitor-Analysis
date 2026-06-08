@@ -11,6 +11,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email import encoders
+from email.header import Header
+from email.utils import formataddr
 
 CARRIER_NAMES = {
     "partner":   "פרטנר",
@@ -228,13 +230,137 @@ def send_slack(message: str, webhook_url: str) -> bool:
         return False
 
 
+_SENDGRID_ENDPOINT = "https://api.sendgrid.com/v3/mail/send"
+
+
+def _mime_attachment(att: dict):
+    """Build a MIMEBase part from an abstract attachment dict
+    {filename, content(bytes), mimetype, cid?}. A 'cid' makes it inline."""
+    maintype, _, subtype = (att.get("mimetype") or "application/octet-stream").partition("/")
+    part = MIMEBase(maintype, subtype or "octet-stream")
+    part.set_payload(att["content"])
+    encoders.encode_base64(part)
+    filename = att.get("filename", "attachment")
+    if att.get("cid"):
+        part.add_header("Content-ID", f"<{att['cid']}>")
+        part.add_header("Content-Disposition", "inline", filename=filename)
+    else:
+        part.add_header("Content-Disposition", "attachment", filename=filename)
+    return part
+
+
+def _send_via_smtp(config, sender, recipients, subject, text, html, attachments, reply_to, from_name):
+    """Send one message over SMTP (Resend by default). Returns True on success."""
+    host = config.get("smtp_host") or "smtp.resend.com"
+    port = int(config.get("smtp_port") or 587)
+    user = config.get("smtp_user") or "resend"
+    password = config.get("smtp_password", "")
+
+    msg = MIMEMultipart("mixed")
+    msg["Subject"] = Header(subject, "utf-8")
+    msg["From"] = formataddr((from_name, sender), charset="utf-8") if from_name else sender
+    msg["To"] = ", ".join(recipients)
+    if reply_to:
+        msg["Reply-To"] = reply_to
+
+    alt = MIMEMultipart("alternative")
+    alt.attach(MIMEText(text or "", "plain", "utf-8"))
+    if html:
+        alt.attach(MIMEText(html, "html", "utf-8"))
+
+    inline = [a for a in attachments if a.get("cid")]
+    files  = [a for a in attachments if not a.get("cid")]
+    if inline:
+        related = MIMEMultipart("related")
+        related.attach(alt)
+        for a in inline:
+            related.attach(_mime_attachment(a))
+        msg.attach(related)
+    else:
+        msg.attach(alt)
+    for a in files:
+        msg.attach(_mime_attachment(a))
+
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP(host, port, timeout=20) as server:
+            server.starttls(context=context)
+            server.login(user, password)
+            server.sendmail(sender, recipients, msg.as_string())
+        return True
+    except Exception as e:
+        import logging as _log
+        _log.getLogger(__name__).error(f"SMTP send to {recipients} via {host}:{port} failed: {e}")
+        return False
+
+
+def _send_via_sendgrid(config, sender, recipients, subject, text, html, attachments, reply_to, from_name):
+    """Legacy fallback: send via the SendGrid REST API. Returns True on success."""
+    api_key = config.get("sendgrid_api_key", "")
+    content = [{"type": "text/plain", "value": text or ""}]
+    if html:
+        content.append({"type": "text/html", "value": html})
+    payload = {
+        "personalizations": [{"to": [{"email": r} for r in recipients]}],
+        "from": {"email": sender, "name": from_name} if from_name else {"email": sender},
+        "subject": subject,
+        "content": content,
+    }
+    if reply_to:
+        payload["reply_to"] = {"email": reply_to}
+    sg_atts = []
+    for a in attachments:
+        item = {
+            "content": base64.b64encode(a["content"]).decode("ascii"),
+            "filename": a.get("filename", "attachment"),
+            "type": a.get("mimetype", "application/octet-stream"),
+            "disposition": "inline" if a.get("cid") else "attachment",
+        }
+        if a.get("cid"):
+            item["content_id"] = a["cid"]
+        sg_atts.append(item)
+    if sg_atts:
+        payload["attachments"] = sg_atts
+    try:
+        resp = requests.post(_SENDGRID_ENDPOINT, json=payload,
+                             headers={"Authorization": f"Bearer {api_key}"}, timeout=20)
+        if resp.status_code != 202:
+            import logging as _log
+            _log.getLogger(__name__).error(f"SendGrid {resp.status_code} to {recipients}: {resp.text[:300]}")
+        return resp.status_code == 202
+    except requests.RequestException as e:
+        import logging as _log
+        _log.getLogger(__name__).error(f"SendGrid network error to {recipients}: {e}")
+        return False
+
+
+def _send_email(config, to, subject, text=None, html=None, attachments=None,
+                reply_to=None, from_name="MOCA"):
+    """Provider-agnostic transactional send. Uses Resend SMTP when `smtp_password`
+    is set in config; otherwise falls back to the legacy SendGrid API. `to` is a
+    str or list. `attachments`: list of {filename, content(bytes), mimetype, cid?}
+    — a 'cid' embeds the part inline for HTML <img src="cid:...">."""
+    sender = config.get("email_sender", "")
+    if not sender or not to:
+        return False
+    recipients = [to] if isinstance(to, str) else [r for r in to if r]
+    if not recipients:
+        return False
+    attachments = attachments or []
+    if config.get("smtp_password"):
+        return _send_via_smtp(config, sender, recipients, subject, text, html, attachments, reply_to, from_name)
+    if config.get("sendgrid_api_key"):
+        return _send_via_sendgrid(config, sender, recipients, subject, text, html, attachments, reply_to, from_name)
+    import logging as _log
+    _log.getLogger(__name__).error("no email transport configured (set smtp_password or sendgrid_api_key)")
+    return False
+
+
 def send_email_report(excel_bytes: bytes, config: dict) -> bool:
-    """Send daily Excel report as email attachment via SendGrid API."""
-    import base64
-    api_key   = config.get("sendgrid_api_key", "")
+    """Send the daily Excel report as an attachment (Resend SMTP, SendGrid fallback)."""
     sender    = config.get("email_sender", "")
     recipient = config.get("email_recipient", "")
-    if not all([api_key, sender, recipient]):
+    if not all([sender, recipient]):
         return False
 
     today    = datetime.now().strftime("%d.%m.%Y")
@@ -243,30 +369,17 @@ def send_email_report(excel_bytes: bytes, config: dict) -> bool:
         f"שלום,\n\n"
         f"מצורף דו\"ח חבילות הסלולר של {today}.\n"
         f"שורות המסומנות בצהוב עברו שינוי ב-24 השעות האחרונות.\n\n"
-        f"http://localhost:5000"
+        f"https://mocaintel.com"
     )
-    payload = {
-        "personalizations": [{"to": [{"email": recipient}]}],
-        "from": {"email": sender},
-        "subject": f'דו"ח סריקת מתחרים - {today}',
-        "content": [{"type": "text/plain", "value": body}],
-        "attachments": [{
-            "content":     base64.b64encode(excel_bytes).decode(),
-            "filename":    filename,
-            "type":        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "disposition": "attachment",
+    return _send_email(
+        config, recipient, f'דו"ח סריקת מתחרים - {today}',
+        text=body,
+        attachments=[{
+            "filename": filename,
+            "content": excel_bytes,
+            "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }],
-    }
-    try:
-        resp = requests.post(
-            "https://api.sendgrid.com/v3/mail/send",
-            json=payload,
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=20,
-        )
-        return resp.status_code == 202
-    except requests.RequestException:
-        return False
+    )
 
 
 def send_push_notifications(changes, config, db_path=None):
@@ -331,9 +444,8 @@ APP_URL = "https://mocaintel.com"
 
 def send_price_alert_email(user_email: str, alert: dict, matching_plans: list, config: dict) -> bool:
     """Send a price-alert notification email via SendGrid to the subscriber."""
-    api_key = config.get("sendgrid_api_key", "")
-    sender  = config.get("email_sender", "")
-    if not all([api_key, sender, user_email]):
+    sender = config.get("email_sender", "")
+    if not all([sender, user_email]):
         return False
 
     carrier_name = CARRIER_DISPLAY_NAMES.get(alert.get("carrier", ""), alert.get("carrier") or "כל הספקים")
@@ -359,22 +471,7 @@ def send_price_alert_email(user_email: str, alert: dict, matching_plans: list, c
 
     subject = f"MOCA \u05d4\u05ea\u05e8\u05d0\u05ea \u05de\u05d7\u05d9\u05e8: {carrier_name} \u05d9\u05e8\u05d3 \u05de\u05ea\u05d7\u05ea \u05dc-\u20aa{alert['threshold']}"
 
-    payload = {
-        "personalizations": [{"to": [{"email": user_email}]}],
-        "from": {"email": sender},
-        "subject": subject,
-        "content": [{"type": "text/plain", "value": body}],
-    }
-    try:
-        resp = requests.post(
-            "https://api.sendgrid.com/v3/mail/send",
-            json=payload,
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=15,
-        )
-        return resp.status_code == 202
-    except requests.RequestException:
-        return False
+    return _send_email(config, user_email, subject, text=body)
 
 
 def send_contact_email(from_email: str, workspace_name: str, message: str, config: dict) -> bool:
@@ -384,10 +481,9 @@ def send_contact_email(from_email: str, workspace_name: str, message: str, confi
     requester's email is placed in Reply-To so a simple 'Reply' in the admin's
     client goes back to them directly.
     """
-    api_key   = config.get("sendgrid_api_key", "")
     sender    = config.get("email_sender", "")
     recipient = config.get("email_recipient", "")
-    if not all([api_key, sender, recipient, from_email, message]):
+    if not all([sender, recipient, from_email, message]):
         return False
 
     ws_label = workspace_name or "(\u05dc\u05dc\u05d0 workspace)"
@@ -405,23 +501,7 @@ def send_contact_email(from_email: str, workspace_name: str, message: str, confi
         "subject": f"MOCA — \u05e4\u05e0\u05d9\u05d9\u05ea \u05e7\u05e9\u05e8 \u05de {ws_label}",
         "content": [{"type": "text/plain", "value": body}],
     }
-    try:
-        resp = requests.post(
-            "https://api.sendgrid.com/v3/mail/send",
-            json=payload,
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=20,
-        )
-        if resp.status_code != 202:
-            import logging as _log
-            _log.getLogger(__name__).error(
-                f"send_contact_email SendGrid {resp.status_code}: {resp.text[:400]}"
-            )
-        return resp.status_code == 202
-    except requests.RequestException as e:
-        import logging as _log
-        _log.getLogger(__name__).error(f"send_contact_email network error: {e}")
-        return False
+    return _send_email(config, recipient, payload["subject"], text=body, reply_to=from_email)
 
 
 CARRIER_LABEL_HE = {
@@ -508,9 +588,8 @@ def send_weekly_digest(to_emails: list, workspace_name: str, changes: list, conf
     secondary_color, app_title, logo_url). Falls back to MOCA defaults.
     Returns True if all emails were dispatched successfully.
     """
-    api_key = config.get("sendgrid_api_key", "")
-    sender  = config.get("email_sender", "")
-    if not all([api_key, sender]) or not to_emails:
+    sender = config.get("email_sender", "")
+    if not sender or not to_emails:
         return False
     if not changes:
         return True  # nothing to report — skip silently
@@ -558,29 +637,7 @@ def send_weekly_digest(to_emails: list, workspace_name: str, changes: list, conf
 
     ok = True
     for email in to_emails:
-        payload = {
-            "personalizations": [{"to": [{"email": email}]}],
-            "from": {"email": sender, "name": app_title},
-            "subject": subject,
-            "content": [
-                {"type": "text/plain", "value": text_body},
-                {"type": "text/html",  "value": html_body},
-            ],
-        }
-        try:
-            resp = requests.post(
-                "https://api.sendgrid.com/v3/mail/send",
-                json=payload,
-                headers={"Authorization": f"Bearer {api_key}"},
-                timeout=20,
-            )
-            if resp.status_code != 202:
-                import logging as _log
-                _log.getLogger(__name__).error(f"weekly_digest SendGrid {resp.status_code} for {email}: {resp.text[:200]}")
-                ok = False
-        except requests.RequestException as e:
-            import logging as _log
-            _log.getLogger(__name__).error(f"weekly_digest network error for {email}: {e}")
+        if not _send_email(config, email, subject, text=text_body, html=html_body, from_name=app_title):
             ok = False
     return ok
 
@@ -623,9 +680,8 @@ def send_welcome_email(to_email: str, workspace_name: str, role: str, config: di
     Signature is unchanged so the existing callers in app.py (workspace
     assignment + invite acceptance) keep working as-is.
     """
-    api_key = config.get("sendgrid_api_key", "")
-    sender  = config.get("email_sender", "")
-    if not all([api_key, sender, to_email]):
+    sender = config.get("email_sender", "")
+    if not all([sender, to_email]):
         return False
 
     app_url = "https://mocaintel.com"
@@ -652,14 +708,13 @@ def send_welcome_email(to_email: str, workspace_name: str, role: str, config: di
     hero_attachment = None
     try:
         with open(_WELCOME_HERO_PATH, "rb") as _hf:
-            _hero_b64 = base64.b64encode(_hf.read()).decode("ascii")
+            _hero_bytes = _hf.read()
         hero_src = f"cid:{_WELCOME_HERO_CID}"
         hero_attachment = {
-            "content": _hero_b64,
-            "type": "image/png",
             "filename": "welcome-hero.png",
-            "disposition": "inline",
-            "content_id": _WELCOME_HERO_CID,
+            "content": _hero_bytes,
+            "mimetype": "image/png",
+            "cid": _WELCOME_HERO_CID,
         }
     except OSError as e:
         import logging as _log
@@ -680,32 +735,11 @@ def send_welcome_email(to_email: str, workspace_name: str, role: str, config: di
     if workspace_name:
         subject += f" \u00b7 {workspace_name}"
 
-    content = [{"type": "text/plain", "value": text_body}]
-    if html_body:
-        content.append({"type": "text/html", "value": html_body})
-
-    payload = {
-        "personalizations": [{"to": [{"email": to_email}]}],
-        "from": {"email": sender, "name": "MOCA"},
-        "subject": subject,
-        "content": content,
-    }
-    if hero_attachment:
-        payload["attachments"] = [hero_attachment]
-    try:
-        resp = requests.post(
-            "https://api.sendgrid.com/v3/mail/send",
-            json=payload,
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=20,
-        )
-        if resp.status_code != 202:
-            import logging as _log
-            _log.getLogger(__name__).error(
-                f"welcome SendGrid {resp.status_code} for {to_email}: {resp.text[:200]}")
-        return resp.status_code == 202
-    except requests.RequestException:
-        return False
+    return _send_email(
+        config, to_email, subject,
+        text=text_body, html=html_body,
+        attachments=[hero_attachment] if hero_attachment else None,
+    )
 
 
 def send_whatsapp(message, config):

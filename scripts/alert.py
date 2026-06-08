@@ -22,14 +22,50 @@ def load_config() -> dict:
 
 
 def send_email(subject: str, body: str, config: dict) -> bool:
-    import requests
-    api_key   = config.get("sendgrid_api_key", "")
+    """Send an alert email. Prefers SMTP (Resend) when smtp_password is set,
+    else falls back to the legacy SendGrid API."""
     sender    = config.get("email_sender", "")
     recipient = config.get("email_recipient", "")
-    if not all([api_key, sender, recipient]):
-        sys.stderr.write("email: missing sendgrid_api_key / email_sender / email_recipient\n")
+    if not all([sender, recipient]):
+        sys.stderr.write("email: missing email_sender / email_recipient\n")
+        return False
+    if config.get("smtp_password"):
+        return _send_email_smtp(subject, body, config, sender, recipient)
+    if config.get("sendgrid_api_key"):
+        return _send_email_sendgrid(subject, body, config, sender, recipient)
+    sys.stderr.write("email: no transport configured (set smtp_password or sendgrid_api_key)\n")
+    return False
+
+
+def _send_email_smtp(subject: str, body: str, config: dict, sender: str, recipient: str) -> bool:
+    import smtplib
+    import ssl
+    from email.mime.text import MIMEText
+    from email.header import Header
+    from email.utils import formataddr
+    host     = config.get("smtp_host") or "smtp.resend.com"
+    port     = int(config.get("smtp_port") or 587)
+    user     = config.get("smtp_user") or "resend"
+    password = config.get("smtp_password", "")
+    msg = MIMEText(body, "plain", "utf-8")
+    msg["Subject"] = Header(subject, "utf-8")
+    msg["From"]    = formataddr(("MOCA Alert", sender), charset="utf-8")
+    msg["To"]      = recipient
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP(host, port, timeout=20) as server:
+            server.starttls(context=context)
+            server.login(user, password)
+            server.sendmail(sender, [recipient], msg.as_string())
+        return True
+    except Exception as e:
+        sys.stderr.write(f"email: SMTP send failed ({host}:{port}): {e}\n")
         return False
 
+
+def _send_email_sendgrid(subject: str, body: str, config: dict, sender: str, recipient: str) -> bool:
+    import requests
+    api_key = config.get("sendgrid_api_key", "")
     payload = {
         "personalizations": [{"to": [{"email": recipient}]}],
         "from":    {"email": sender, "name": "MOCA Backup Alert"},
