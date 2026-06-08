@@ -152,9 +152,13 @@ const CONTENT_URLS = {
 // Manually-curated terms/details PDFs, keyed by carrier → plan_name, surfaced as
 // the "עיקרי התוכנית" link. Roaming (abroad) plans carry no `url` from the scraper
 // (abroad_plans has no url column), so they're wired here. Partner values are the
-// per-plan "תנאי השירות המלאים" links from each plan's "חשוב לדעת" section in the
-// roaming CMS (GetPageContent pageid=75299, property serviceTermsPdf). Several
-// "mix"-family plans share one combined doc — that mirrors Partner's own site.
+// per-plan "תנאי השירות" links read from the roaming CMS (GetPageContent
+// pageid=75299, property serviceTermsPdf). Several "mix"-family plans share one
+// combined doc — that mirrors Partner's own site.
+// NOTE: for Partner these are now only a FALLBACK — scrape_partner_abroad walks the
+// same CMS tree every run and writes serviceTermsPdf into abroad_plans.terms_url,
+// which `detailsUrl` prefers (see below). The map still covers the gap before the
+// first re-scrape and any package the CMS stops returning.
 // Pelephone values are the "לתנאי החבילה והתוכנית" links from each plan's
 // "מידע נוסף" modal (abroad/more-info/?socId=<id>), pointing at the package's own
 // /abroad/terms/<slug>/ page. The whole "מושלמת" family shares one terms doc
@@ -176,6 +180,7 @@ const CONTENT_URLS = {
 // plan_name must match the DB exactly (rows in abroad_plans).
 const PLAN_DETAILS_PDFS = {
   partner: {
+    'חבילת המונדיאל': 'https://u.partner.co.il/media/f01jlh2t/reprt1525p.pdf',
     'חו"ל ספיישל': 'https://u.partner.co.il/media/oqkdbzqn/res_reprt1515p_mix.pdf',
     'חו"ל Connect': 'https://u.partner.co.il/media/1lff4yyl/res_reprt1519p_surf.pdf',
     'חו"ל בסטייל': 'https://u.partner.co.il/media/oqkdbzqn/res_reprt1515p_mix.pdf',

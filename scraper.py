@@ -2118,6 +2118,45 @@ def scrape_partner_abroad(page):
                 break
         except Exception:
             pass
+
+    # Terms PDFs from Partner's roaming CMS — mirrors scrape_partner's domestic walk.
+    # Each roaming package node carries a `serviceTermsPdf` property holding the
+    # canonical "תנאי השירות" PDF link. Walking the tree (pageid=75299) means a NEW
+    # roaming plan gets its "עיקרי התוכנית" link AUTOMATICALLY on the next scrape — no
+    # PLAN_DETAILS_PDFS edit needed. PlanCard prefers this scraped terms_url over the
+    # hardcoded map (which stays as a fallback before the first re-scrape). Historically
+    # Partner roaming had NO terms capture and relied entirely on the manual map, so a
+    # new package (e.g. "חבילת המונדיאל", 2026-06) showed no terms until edited by hand.
+    abroad_terms = {}
+    _ABROAD_PDF_RE = re.compile(r'https?://u\.partner\.co\.il/media/[a-z0-9]+/[^\s"\\]+\.pdf')
+
+    def _collect_abroad_terms(node):
+        if isinstance(node, dict):
+            props = node.get('properties') or {}
+            pname = (props.get('planName') or props.get('packageName')
+                     or node.get('name') or '').strip()
+            terms = props.get('serviceTermsPdf')
+            if pname and isinstance(terms, str) and terms.strip():
+                m = _ABROAD_PDF_RE.search(terms)
+                if m:
+                    abroad_terms.setdefault(pname, m.group(0))
+            for v in node.values():
+                _collect_abroad_terms(v)
+        elif isinstance(node, list):
+            for v in node:
+                _collect_abroad_terms(v)
+
+    try:
+        raw = page.evaluate("""async () => {
+            const r = await fetch(
+                'https://u.partner.co.il/umbraco/api/CmsApi/GetPageContent/?pageid=75299&lang=he'
+            );
+            return r.text();
+        }""")
+        _collect_abroad_terms(_json.loads(raw))
+    except Exception as exc:
+        logger.warning(f"scrape_partner_abroad: failed to fetch terms URLs: {exc}")
+
     plans = []
     for card in page.query_selector_all(".package-wrapper"):
         name_el     = card.query_selector(".package-name")
@@ -2147,9 +2186,16 @@ def scrape_partner_abroad(page):
             if "ימים" not in d and "דקות" not in d and "הודעות" not in d:
                 extras.append(d)
         if name and name != "לא ידוע":
+            # Match storefront name to its terms PDF: exact, then tolerant prefix.
+            terms_url = abroad_terms.get(name)
+            if not terms_url:
+                for pname, url in abroad_terms.items():
+                    if name.startswith(pname) or pname.startswith(name):
+                        terms_url = url
+                        break
             plans.append({"carrier": "partner", "plan_name": name, "price": price,
                           "days": days, "data_gb": gb, "minutes": minutes,
-                          "sms": sms, "extras": extras})
+                          "sms": sms, "extras": extras, "terms_url": terms_url})
     return plans
 
 
