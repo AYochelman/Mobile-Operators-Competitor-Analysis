@@ -1,12 +1,15 @@
 import base64
 import html
 import json
+import logging
 import os
 import requests
 import smtplib
 import ssl
 from datetime import datetime
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
@@ -190,6 +193,75 @@ def send_notification(message, config):
         return resp.status_code == 200
     except requests.RequestException:
         return False
+
+
+# Carriers with no "עיקרי התוכנית" terms link by design — never flag these as missing.
+# neptucom = eSIM-only hardcoded list (no terms button); xphone roaming = scraped as
+# plain text with no terms source. (See the plan-terms-coverage skill methodology table.)
+_TERMS_EXEMPT = {("plans", "neptucom"), ("abroad_plans", "xphone")}
+
+
+def _plan_has_terms(plan, table):
+    """Backend view of 'does this plan expose terms': a scraped link
+    (domestic → url, roaming → terms_url) or an in-app __info__ modal in extras."""
+    extras = plan.get("extras") or []
+    if isinstance(extras, (list, tuple)) and any("__info__" in str(e) for e in extras):
+        return True
+    if table == "abroad_plans":
+        return bool(plan.get("terms_url"))
+    return bool(plan.get("url"))
+
+
+def alert_missing_terms(changes, plans, table, config):
+    """Post-scrape safety net: if a NEWLY ADDED plan arrived with no "עיקרי התוכנית" terms
+    link, send one operator-facing Telegram alert so the per-provider fetch can be wired in
+    (every carrier now auto-captures terms, so a gap means a provider changed their page or a
+    transient fetch failure — run the plan-terms-coverage skill). Returns the count flagged.
+
+    changes — the (already dedup-filtered) change list for this scrape.
+    plans   — the freshly scraped plan dicts (carry url / terms_url / extras).
+    table   — 'plans' (domestic) or 'abroad_plans' (roaming). Global is affiliate-only and
+              content always has its own modal, so callers don't pass those.
+    Never raises — a failure here must not break a scrape.
+    """
+    try:
+        if table not in ("plans", "abroad_plans"):
+            return 0
+        new_keys = {(c.get("carrier"), c.get("plan_name"))
+                    for c in (changes or []) if c.get("change_type") == "new_plan"}
+        if not new_keys:
+            return 0
+        by_key = {(p.get("carrier"), p.get("plan_name")): p for p in (plans or [])}
+        missing = []
+        for carrier, name in sorted(new_keys):
+            if (table, carrier) in _TERMS_EXEMPT:
+                continue
+            plan = by_key.get((carrier, name))
+            if plan is None:            # new_plan with no matching scraped row — skip
+                continue
+            if not _plan_has_terms(plan, table):
+                missing.append((carrier, name))
+        if not missing:
+            return 0
+
+        kind = "חו\"ל" if table == "abroad_plans" else "ארצית"
+        lines = [
+            "⚠️ MOCA — חבילה חדשה ללא \"עיקרי התוכנית\"",
+            "",
+            f"נוספו {len(missing)} חבילות ({kind}) בלי קישור תנאים — צריך לבדוק את שליפת התנאים מהספק:",
+            "",
+        ]
+        for carrier, name in missing[:25]:
+            cname = CARRIER_NAMES.get(carrier, carrier)
+            lines.append(f"• {cname} — {name}")
+        if len(missing) > 25:
+            lines.append(f"… ועוד {len(missing) - 25}")
+        lines += ["", "להרצה: סקיל plan-terms-coverage"]
+        send_notification("\n".join(lines), config)
+        return len(missing)
+    except Exception as exc:
+        logger.warning(f"alert_missing_terms failed: {exc}")
+        return 0
 
 
 import re as _re_slack
@@ -443,7 +515,7 @@ APP_URL = "https://mocaintel.com"
 
 
 def send_price_alert_email(user_email: str, alert: dict, matching_plans: list, config: dict) -> bool:
-    """Send a price-alert notification email via SendGrid to the subscriber."""
+    """Send a price-alert notification email to the subscriber (Resend SMTP, SendGrid fallback)."""
     sender = config.get("email_sender", "")
     if not all([sender, user_email]):
         return False
@@ -494,14 +566,8 @@ def send_contact_email(from_email: str, workspace_name: str, message: str, confi
         f"\u05ea\u05d0\u05e8\u05d9\u05da: {datetime.now().strftime('%d/%m/%Y %H:%M')}\n\n"
         f"---\n\n{message}\n"
     )
-    payload = {
-        "personalizations": [{"to": [{"email": recipient}]}],
-        "from": {"email": sender},
-        "reply_to": {"email": from_email},
-        "subject": f"MOCA — \u05e4\u05e0\u05d9\u05d9\u05ea \u05e7\u05e9\u05e8 \u05de {ws_label}",
-        "content": [{"type": "text/plain", "value": body}],
-    }
-    return _send_email(config, recipient, payload["subject"], text=body, reply_to=from_email)
+    subject = f"MOCA — \u05e4\u05e0\u05d9\u05d9\u05ea \u05e7\u05e9\u05e8 \u05de {ws_label}"
+    return _send_email(config, recipient, subject, text=body, reply_to=from_email)
 
 
 CARRIER_LABEL_HE = {
@@ -687,7 +753,7 @@ def send_welcome_email(to_email: str, workspace_name: str, role: str, config: di
     app_url = "https://mocaintel.com"
     role_he = "\u05de\u05e0\u05d4\u05dc" if role == "admin" else "\u05e6\u05d5\u05e4\u05d4"
 
-    # plain-text fallback (must precede the HTML part in the SendGrid payload)
+    # plain-text fallback (must precede the HTML part in multipart/alternative)
     text_body = (
         f"\u05e9\u05dc\u05d5\u05dd \u05d5\u05d1\u05e8\u05db\u05d4,\n\n"
         f"\u05e0\u05e4\u05ea\u05d7 \u05e2\u05d1\u05d5\u05e8\u05da \u05d7\u05e9\u05d1\u05d5\u05df \u05d1-MOCA \u2014 "

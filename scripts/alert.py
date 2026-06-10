@@ -1,4 +1,4 @@
-"""Send an alert via multiple channels (SendGrid email + Telegram).
+"""Send an alert via multiple channels (SMTP/Resend email + Telegram, SendGrid fallback).
 
 Usage:
     python alert.py "Subject" "Body text"

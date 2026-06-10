@@ -1118,6 +1118,8 @@ def api_scrape_abroad_now():
                 save_abroad_changes(changes, db_path=_db_path())
         save_abroad_plans(new_plans, db_path=_db_path())
         arc.archive_abroad_plans(new_plans)
+        from notifier import alert_missing_terms
+        alert_missing_terms(changes, new_plans, 'abroad_plans', load_config())
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-abroad-now failed: {e}", exc_info=True)
@@ -1269,6 +1271,10 @@ def api_scrape_all_now():
             save_changes(ch_domestic, db_path=_db_path())
         results["domestic"] = {"plans": len(new_domestic), "changes": len(ch_domestic)}
         _scrape_emit('domestic', 'done', count=len(new_domestic), message=f'{len(new_domestic)} חבילות, {len(ch_domestic)} שינויים')
+        # Safety net: alert the operator if a newly-added plan arrived with no terms link.
+        from notifier import alert_missing_terms
+        _terms_cfg = load_config()
+        alert_missing_terms(ch_domestic, new_domestic, 'plans', _terms_cfg)
 
         # ── Abroad ────────────────────────────────────────────────────────
         _scrape_emit('abroad', 'starting', message='סורק חבילות חו"ל')
@@ -1289,6 +1295,7 @@ def api_scrape_all_now():
         save_abroad_plans(new_abroad, db_path=_db_path())
         results["abroad"] = {"plans": len(new_abroad), "changes": len(ch_abroad)}
         _scrape_emit('abroad', 'done', count=len(new_abroad), message=f'{len(new_abroad)} חבילות, {len(ch_abroad)} שינויים')
+        alert_missing_terms(ch_abroad, new_abroad, 'abroad_plans', _terms_cfg)
 
         # ── Global ────────────────────────────────────────────────────────
         _scrape_emit('global', 'starting', message='סורק חבילות גלובל / eSIM')
@@ -2157,6 +2164,8 @@ def api_scrape_now():
         if changes:
             save_changes(changes, db_path=_db_path())
         arc.archive_domestic_plans(new_plans)
+        from notifier import alert_missing_terms
+        alert_missing_terms(changes, new_plans, 'plans', load_config())
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-now failed: {e}", exc_info=True)
@@ -3031,7 +3040,7 @@ def api_my_context():
 @limiter.limit("3 per minute")
 def api_contact():
     """In-app contact form — forwards the requester's message to the MOCA
-    operator via SendGrid. Intentionally bypasses the workspace `active`
+    operator via email (Resend SMTP). Intentionally bypasses the workspace `active`
     gate (ProtectedRoute level), so a suspended user CAN ask to be reinstated.
     Rate-limited strictly to prevent abuse."""
     data = request.get_json(force=True) or {}
@@ -3060,7 +3069,7 @@ def api_contact():
         from notifier import send_contact_email
         ok = send_contact_email(from_email, ws_name, message, load_config())
         if not ok:
-            return jsonify({"error": "failed to send — check SendGrid config"}), 500
+            return jsonify({"error": "failed to send — check email configuration"}), 500
         logger.info(f"AUDIT contact_sent: from={from_email} ws={ws_name!r}")
         return jsonify({"status": "sent"})
     except Exception as e:
@@ -4592,7 +4601,7 @@ if __name__ == "__main__":
     from change_detector import detect_changes
     from notifier import (format_message, format_abroad_message, format_global_message,
                           format_content_message, send_notification, send_whatsapp,
-                          send_email_report, send_push_notifications)
+                          send_email_report, send_push_notifications, alert_missing_terms)
     from excel_report import build_excel_report
     import scraper
 
@@ -4739,6 +4748,11 @@ if __name__ == "__main__":
                 else:
                     logger.info("No domestic changes.")
 
+            # Safety net: alert the operator if a newly-added domestic plan has no terms link.
+            _n_miss = alert_missing_terms(fresh, new_plans, 'plans', config)
+            if _n_miss:
+                logger.warning(f"Terms coverage: {_n_miss} new domestic plan(s) without 'עיקרי התוכנית' — alerted.")
+
             # ── Abroad plans ───────────────────────────────────────────────
             new_abroad = scraper.scrape_all_abroad()
             old_abroad = get_abroad_plans()
@@ -4757,6 +4771,11 @@ if __name__ == "__main__":
                     logger.info(f"Abroad: {len(abroad_changes)} change(s) detected but already notified within 24h — skipping.")
                 else:
                     logger.info("No abroad changes.")
+
+            # Safety net: alert the operator if a newly-added roaming plan has no terms link.
+            _n_miss_ab = alert_missing_terms(fresh_abroad, new_abroad, 'abroad_plans', config)
+            if _n_miss_ab:
+                logger.warning(f"Terms coverage: {_n_miss_ab} new roaming plan(s) without 'עיקרי התוכנית' — alerted.")
 
             # ── Global eSIM ────────────────────────────────────────────────
             from db import save_global_plans, save_global_changes

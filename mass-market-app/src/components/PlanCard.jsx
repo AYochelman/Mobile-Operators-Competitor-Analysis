@@ -190,6 +190,7 @@ const PLAN_DETAILS_PDFS = {
     'חופשה משפחתית בגדול': 'https://u.partner.co.il/media/oqkdbzqn/res_reprt1515p_mix.pdf',
   },
   pelephone: {
+    'מונדיאל 2026': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/Family-Travel-Package/',
     'חבילת חו"ל קטנה': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/hulsmall/',
     'שומרים על קשר': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms-pesach/terms-keepin/',
     'חבילת חו"ל למצרים (טאבה, נואיבה, דאהב, שארם א-שייח)': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/egypt14new/',

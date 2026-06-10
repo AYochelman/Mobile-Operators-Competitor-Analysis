@@ -90,7 +90,7 @@ python telegram_resellers.py scrape                 # ingest channels listed in 
 | scraper.py | 40+ scrapers (domestic + abroad + global per-country/regional + content) + `scrape_carrier_banners()` / `scrape_carrier_store_banners()` for screenshots + `scrape_carrier_news()` for Google News RSS |
 | db.py | SQLite CRUD — 25 tables with UPSERT logic |
 | change_detector.py | Diff old vs new plans, detect price/extras/details changes |
-| notifier.py | Format + send notifications (Telegram, Email, WhatsApp, Web Push) |
+| notifier.py | Format + send notifications (Telegram, Email, WhatsApp, Web Push). `alert_missing_terms()` = post-scrape safety net: if a **new** domestic/roaming plan lands with no "עיקרי התוכנית" link (no `url`/`terms_url`/`__info__`), it Telegrams the operator so the per-provider fetch can be wired in (run the plan-terms-coverage skill). Wired into every scrape path; exempts neptucom domestic + xphone roaming (no terms by design). |
 | excel_report.py | Daily Excel report (openpyxl, RTL, yellow=changed) |
 | seed_resellers.py | Manually-curated reseller plan data — UPSERTs `reseller_plans` table |
 | telegram_resellers.py | Telethon-based scraper for public Telegram channels → `reseller_plans`. Two-phase login flow. |
@@ -354,7 +354,7 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 
 - **08:00** — screenshot all carrier homepages (`scrape_carrier_banners`) + 4 e-store pages (`scrape_carrier_store_banners`), saved as PNG in `data/banners/`
 - **08:10** — scrape Google News RSS for all 10 domestic carriers + Breeze (`scrape_carrier_news()` → `upsert_news_articles()`), INSERT OR IGNORE by URL
-- **09:00** — send daily Excel email report via SendGrid
+- **09:00** — send daily Excel email report via Resend SMTP (SendGrid fallback)
 - **07:30 + 17:00** — scrape all (domestic + abroad + global + content), detect changes, notify (Telegram + WhatsApp + Web Push). Times come from `config.json:schedule_times`. Notifications are deduplicated against the last 24h of changes — `db.filter_already_notified()` drops any (carrier, plan_name, change_type) already announced, so a sticky removal isn't reported twice.
 - WhatsApp via Green API (config.json: greenapi_url, greenapi_instance, greenapi_token, whatsapp_phone or whatsapp_group_id)
 - **Autologon ENABLED** (Sysinternals) — the box auto-logs-in as `Alon` at boot, so the at-logon tasks below start **without a manual login** (survives Windows Update / power-blip reboots).
@@ -375,9 +375,9 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 | restart_flask.bat | Restarts the **elevated** Flask so it reloads backend code — kills the PID on :5000 (watchdog relaunches with new code in ~15s). **Run as administrator.** |
 | vite_watchdog.bat | Keeps Vite alive — loops `npm run dev` via cmd (not PowerShell — execution policy blocks npm.ps1) |
 | backup_to_drive.ps1 | Backup of config.json + plans.db + banner PNGs to Google Drive — **02:30 + every 4h** (RPO ~4h). Auto-restarts GoogleDriveFS if not mounted. |
-| backup_health_check.ps1 | Monthly integrity check: file presence, SQLite PRAGMA integrity_check, row counts per table, Task Scheduler state. Sends email via SendGrid. |
+| backup_health_check.ps1 | Monthly integrity check: file presence, SQLite PRAGMA integrity_check, row counts per table, Task Scheduler state. Sends email via Resend SMTP (SendGrid fallback). |
 | drive_monitor.ps1 | Runs 2×/day, monitors Drive mount health, tracks consecutive failures to avoid alert spam. |
-| alert.py | Multi-channel alert sender (SendGrid + Telegram) used by the PS1 scripts. |
+| alert.py | Multi-channel alert sender (Resend SMTP email + Telegram, SendGrid fallback) used by the PS1 scripts. |
 | morning_health_check.ps1 | Runs **every 10 min** — checks Flask:5000 / cloudflared(process) / Vite:5173, restarts any that are down, alerts via Telegram+email. |
 | cloudflared.exe + cloudflared_watchdog.ps1 | **Cloudflare Tunnel** binary + watchdog: loops `cloudflared tunnel run moca` (config `~/.cloudflared/config.yml`: api.mocaintel.com → localhost:5000). The public ingress — replaced ngrok 2026-06-04. |
 | ngrok_watchdog.ps1 | (Task DISABLED 2026-06-04) loops `ngrok http 5000 --domain=…` — kept as a re-enable-able fallback. |

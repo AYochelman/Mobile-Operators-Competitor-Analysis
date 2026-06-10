@@ -1923,6 +1923,17 @@ def scrape_019(_page=None):
 
 # ── Abroad / Roaming scrapers ──────────────────────────────────────────────
 
+# Pelephone roaming terms: each card's "מידע נוסף" modal (more-info/?socId=<id>) embeds the
+# plan-specific "לתנאי החבילה והתוכנית" link (class icn_pack) → /abroad/terms/<slug>/ page.
+# This regex pulls that exact URL — anchored on the "לתנאי" anchor text so it ignores the
+# recurring nav/footer terms link that also appears on the page. Lets terms_url auto-populate
+# for every present/future roaming plan (replaces the hardcoded PLAN_DETAILS_PDFS.pelephone map).
+_PELE_ABROAD_TERMS_RE = re.compile(
+    r'(https?://[^"\'\\<>\s]+/abroad/terms[^"\'\\<>\s]*)[^>]*?>\s*'
+    "לתנאי"  # 'לתנאי' — start of "לתנאי החבילה והתוכנית"
+)
+
+
 def scrape_pelephone_abroad(page):
     page.goto("https://www.pelephone.co.il/digitalsite/heb/abroad/packages/",
               timeout=40000, wait_until="load")
@@ -1965,13 +1976,46 @@ def scrape_pelephone_abroad(page):
                 extras.append(t)
         if not name:
             continue
+        # socId drives the per-plan terms link — resolved in one batch after the loop
+        soc_id = None
+        info_a = card.query_selector('a[href*="more-info/?socId="]')
+        if info_a:
+            m_soc = re.search(r'socId=(\d+)', info_a.get_attribute("href") or "")
+            if m_soc:
+                soc_id = m_soc.group(1)
         key = (name, days, price)
         if key in seen:
             continue
         seen.add(key)
         plans.append({"carrier": "pelephone", "plan_name": name, "price": price,
                       "days": days, "data_gb": gb, "minutes": minutes,
-                      "sms": sms, "extras": extras})
+                      "sms": sms, "extras": extras, "_soc": soc_id})
+
+    # ── Auto-capture terms_url (the "עיקרי התוכנית" link) per plan ───────────
+    # Each plan's "מידע נוסף" modal embeds its "לתנאי החבילה והתוכנית" link. Fetch all
+    # more-info pages in-page (reuses the browser session — anti-bot-safe) and map
+    # socId→terms_url, so every present/future roaming plan resolves automatically.
+    soc_ids = sorted({p["_soc"] for p in plans if p.get("_soc")})
+    terms_by_soc = {}
+    if soc_ids:
+        try:
+            raw = page.evaluate("""async (socIds) => {
+                const out = {};
+                await Promise.all(socIds.map(soc =>
+                    fetch('/digitalsite/heb/abroad/more-info/?socId=' + soc + '&mode=open')
+                        .then(r => r.text()).then(html => { out[soc] = html; })
+                        .catch(() => { out[soc] = ''; })
+                ));
+                return out;
+            }""", soc_ids)
+            for soc, html in (raw or {}).items():
+                m_t = _PELE_ABROAD_TERMS_RE.search(html or "")
+                if m_t:
+                    terms_by_soc[str(soc)] = m_t.group(1)
+        except Exception as exc:
+            logger.warning(f"scrape_pelephone_abroad: terms capture failed: {exc}")
+    for p in plans:
+        p["terms_url"] = terms_by_soc.get(str(p.pop("_soc", None)))
     return plans
 
 

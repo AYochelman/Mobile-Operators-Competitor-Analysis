@@ -3,7 +3,7 @@
 
 Calls notifier.send_welcome_email(...) exactly as app.py does on workspace
 assignment / invite acceptance -- so this is a faithful end-to-end test
-(HTML + inline CID hero image + plain-text fallback, via SendGrid).
+(HTML + inline CID hero image + plain-text fallback, via Resend SMTP with SendGrid fallback).
 
 Usage:
   python scripts/send_welcome_sample.py [to_email] [workspace] [role]
@@ -25,8 +25,8 @@ def main():
 
     with open(os.path.join(ROOT, "config.json"), encoding="utf-8") as fh:
         config = json.load(fh)
-    if not (config.get("sendgrid_api_key") and config.get("email_sender")):
-        print("ERROR: sendgrid_api_key / email_sender missing in config.json")
+    if not (config.get("email_sender") and (config.get("smtp_password") or config.get("sendgrid_api_key"))):
+        print("ERROR: config.json needs email_sender + (smtp_password or sendgrid_api_key)")
         return 1
 
     ok = send_welcome_email(to_email, workspace, role, config)
@@ -34,7 +34,7 @@ def main():
         print(f"OK — welcome email sent to {to_email} (inline CID hero).")
         return 0
     print(f"FAILED — send_welcome_email returned False for {to_email} "
-          f"(check the logged SendGrid status above; e.g. credits/quota).")
+          f"(check the logged SMTP/SendGrid status above; e.g. credits/quota).")
     return 1
 
 
