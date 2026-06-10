@@ -1944,6 +1944,7 @@ def scrape_pelephone_abroad(page):
         page.wait_for_timeout(1500)
     plans = []
     seen = set()
+    soc_map = {}   # plan name → socId (from each card's "מידע נוסף" link)
     for card in page.query_selector_all(".package"):
         ttl_el = card.query_selector(".ttl")
         if not ttl_el:

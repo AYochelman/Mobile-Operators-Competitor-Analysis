@@ -162,7 +162,9 @@ const CONTENT_URLS = {
 // Pelephone values are the "לתנאי החבילה והתוכנית" links from each plan's
 // "מידע נוסף" modal (abroad/more-info/?socId=<id>), pointing at the package's own
 // /abroad/terms/<slug>/ page. The whole "מושלמת" family shares one terms doc
-// (terms-summer2019) — that mirrors Pelephone's own site.
+// (terms-summer2019) — that mirrors Pelephone's own site. NOTE: like Cellcom,
+// these are now only a FALLBACK — scrape_pelephone_abroad captures the same
+// link into abroad_plans.terms_url every run (so new plans get it automatically).
 // Cellcom values are the per-plan "לתנאי חבילה המלאים" PDFs reached via each
 // roaming card's "חשוב לדעת" popup. They are the `policiesEpi` field returned by
 // Cellcom's own abroad API (GetPackagePopular), prefixed with the contentepi CDN
@@ -203,6 +205,7 @@ const PLAN_DETAILS_PDFS = {
     'חו"ל מושלמת XL': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms-pesach/terms-summer2019/',
     'חו"ל מושלמת 45 יום': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms-pesach/terms-summer2019/',
     'חו"ל מושלמת 60 יום': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms-pesach/terms-summer2019/',
+    'מונדיאל 2026': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/mondial/',
   },
   cellcom: {
     'סופ"ש בקטנה': 'https://contentepi.cellcom.co.il/globalassets/pdf/abraod/30126.pdf',
