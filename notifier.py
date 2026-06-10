@@ -175,6 +175,98 @@ def format_content_message(changes):
     return "\n".join(lines)
 
 
+_DIGEST_CATEGORY_LABELS = {
+    "domestic": "📱 חבילות בארץ",
+    "abroad":   "✈️ חבילות חו\"ל",
+    "global":   "🌍 eSIM גלובלי",
+    "content":  "🎬 שירותי תוכן",
+}
+
+_DIGEST_MAX_LINES_PER_CATEGORY = 15
+_DIGEST_MAX_FRESHNESS_LINES = 12
+
+
+def _digest_carrier_name(carrier_id):
+    return CARRIER_NAMES.get(carrier_id) or GLOBAL_PROVIDER_NAMES.get(carrier_id) or carrier_id
+
+
+def _digest_change_line(ch):
+    carrier = _digest_carrier_name(ch.get("carrier", ""))
+    # Content rows: the "plan" is the service name
+    name = ch.get("plan_name") or ch.get("service") or ""
+    ct = ch.get("change_type", "")
+    if ct == "price_change":
+        old, new = ch.get("old_val"), ch.get("new_val")
+        try:
+            arrow = "↘" if float(new) < float(old) else "↗"
+        except (TypeError, ValueError):
+            arrow = "🔄"
+        return f"{arrow} {carrier} · {name}: ₪{old} ← ₪{new}"
+    if ct == "new_plan":
+        price = ch.get("new_val")
+        suffix = f" (₪{price})" if price not in (None, "") else ""
+        return f"✨ {carrier} · חבילה חדשה: {name}{suffix}"
+    if ct == "removed_plan":
+        return f"❌ {carrier} · הוסרה: {name}"
+    if ct == "extras_change":
+        return f"🔄 {carrier} · שינוי הטבות: {name}"
+    if ct == "details_change":
+        return f"📋 {carrier} · {name}: {ch.get('new_val')} (היה: {ch.get('old_val')})"
+    return f"• {carrier} · {name}: {ct}"
+
+
+def format_morning_digest(summary, freshness_warnings=None, within_hours=26):
+    """Hebrew morning digest of every change recorded in the last N hours.
+
+    Always returns a message — an explicit "no changes" included — so the
+    morning check doubles as a daily heartbeat: if the message doesn't arrive,
+    the job (or Flask itself) is down.
+
+    Args:
+        summary: dict from db.get_recent_changes_summary —
+                 {'domestic': [...], 'abroad': [...], 'global': [...], 'content': [...]}
+        freshness_warnings: list of dicts {carrier, category, count, last_scraped,
+                            hours_ago} for carriers whose data is stale/empty
+        within_hours: the lookback window, echoed in the message
+    """
+    today = datetime.now().strftime("%d/%m/%Y")
+    total = sum(len(v) for v in (summary or {}).values())
+    lines = [f"☀️ MOCA — בדיקת בוקר {today}", ""]
+
+    if total == 0:
+        lines.append(f"✅ לא זוהו שינויים בחבילות ב-{within_hours} השעות האחרונות.")
+    else:
+        lines.append(f"🔔 {total} שינויים ב-{within_hours} השעות האחרונות:")
+        for cat in ("domestic", "abroad", "global", "content"):
+            changes = (summary or {}).get(cat) or []
+            if not changes:
+                continue
+            lines += ["", f"{_DIGEST_CATEGORY_LABELS[cat]} ({len(changes)})"]
+            for ch in changes[:_DIGEST_MAX_LINES_PER_CATEGORY]:
+                lines.append(_digest_change_line(ch))
+            hidden = len(changes) - _DIGEST_MAX_LINES_PER_CATEGORY
+            if hidden > 0:
+                lines.append(f"…ועוד {hidden} שינויים")
+
+    if freshness_warnings:
+        lines += ["", f"⚠️ אזהרת רעננות — ייתכן שהסקרייפר נשבר ({len(freshness_warnings)}):"]
+        for w in freshness_warnings[:_DIGEST_MAX_FRESHNESS_LINES]:
+            carrier = _digest_carrier_name(w.get("carrier", ""))
+            cat_label = _DIGEST_CATEGORY_LABELS.get(w.get("category", ""), w.get("category", ""))
+            if not w.get("count"):
+                lines.append(f"• {carrier} ({cat_label}): 0 חבילות במסד")
+            elif w.get("hours_ago") is not None:
+                lines.append(f"• {carrier} ({cat_label}): לא נסרק כבר {int(w['hours_ago'])} שעות")
+            else:
+                lines.append(f"• {carrier} ({cat_label}): מועד סריקה אחרון לא ידוע")
+        hidden = len(freshness_warnings) - _DIGEST_MAX_FRESHNESS_LINES
+        if hidden > 0:
+            lines.append(f"…ועוד {hidden} אזהרות")
+
+    lines += ["", "📊 https://mocaintel.com"]
+    return "\n".join(lines)
+
+
 def send_notification(message, config):
     token = config["telegram_bot_token"]
     chat_id = config["telegram_chat_id"]

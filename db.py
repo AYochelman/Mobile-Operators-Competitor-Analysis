@@ -2650,3 +2650,69 @@ def get_reseller_plans(reseller_id=None, carrier=None, db_path=None):
         ]
     finally:
         conn.close()
+
+
+def get_recent_changes_summary(within_hours=26, db_path=None):
+    """Return all change events from the last N hours, grouped by plan category.
+
+    Powers the morning-check digest: unlike the per-scrape notifications (which
+    only fire on freshly-detected changes), this reads the change LOG so the
+    daily summary includes every event recorded in the window — even ones whose
+    real-time notification was missed.
+
+    Returns {'domestic': [...], 'abroad': [...], 'global': [...], 'content': [...]}.
+    Content rows carry both 'service' and 'carrier'.
+    """
+    cutoff = (datetime.now() - timedelta(hours=within_hours)).isoformat()
+    conn = _connect(db_path)
+    try:
+        summary = {}
+        for key, table in (("domestic", "changes"), ("abroad", "abroad_changes"),
+                           ("global", "global_changes")):
+            rows = conn.execute(
+                f"SELECT carrier, plan_name, change_type, old_val, new_val, changed_at "
+                f"FROM {table} WHERE changed_at >= ? ORDER BY changed_at DESC, id DESC",
+                (cutoff,)
+            ).fetchall()
+            summary[key] = [
+                {"carrier": r[0], "plan_name": r[1], "change_type": r[2],
+                 "old_val": r[3], "new_val": r[4], "changed_at": r[5]}
+                for r in rows
+            ]
+        rows = conn.execute(
+            "SELECT service, carrier, change_type, old_val, new_val, changed_at "
+            "FROM content_changes WHERE changed_at >= ? ORDER BY changed_at DESC, id DESC",
+            (cutoff,)
+        ).fetchall()
+        summary["content"] = [
+            {"service": r[0], "carrier": r[1], "change_type": r[2],
+             "old_val": r[3], "new_val": r[4], "changed_at": r[5]}
+            for r in rows
+        ]
+        return summary
+    finally:
+        conn.close()
+
+
+def get_scrape_freshness(db_path=None):
+    """Per-carrier plan count + most recent scraped_at for each plan table.
+
+    A carrier whose last_scraped is old (or whose count is 0) means its scraper
+    silently broke — change detection can't flag a new plan it never saw, so
+    the morning check surfaces these as freshness warnings.
+    """
+    conn = _connect(db_path)
+    try:
+        out = {}
+        for key, table in (("domestic", "plans"), ("abroad", "abroad_plans"),
+                           ("global", "global_plans"), ("content", "content_plans")):
+            rows = conn.execute(
+                f"SELECT carrier, COUNT(*), MAX(scraped_at) FROM {table} GROUP BY carrier"
+            ).fetchall()
+            out[key] = [
+                {"carrier": r[0], "count": r[1], "last_scraped": r[2]}
+                for r in rows
+            ]
+        return out
+    finally:
+        conn.close()
