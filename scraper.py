@@ -1933,6 +1933,7 @@ def scrape_pelephone_abroad(page):
         page.wait_for_timeout(1500)
     plans = []
     seen = set()
+    soc_map = {}   # plan name → socId (from each card's "מידע נוסף" link)
     for card in page.query_selector_all(".package"):
         ttl_el = card.query_selector(".ttl")
         if not ttl_el:
@@ -1965,6 +1966,11 @@ def scrape_pelephone_abroad(page):
                 extras.append(t)
         if not name:
             continue
+        more_el = card.query_selector("a.more-info")
+        if more_el and name not in soc_map:
+            m = re.search(r"socId=(\d+)", more_el.get_attribute("href") or "")
+            if m:
+                soc_map[name] = m.group(1)
         key = (name, days, price)
         if key in seen:
             continue
@@ -1972,6 +1978,36 @@ def scrape_pelephone_abroad(page):
         plans.append({"carrier": "pelephone", "plan_name": name, "price": price,
                       "days": days, "data_gb": gb, "minutes": minutes,
                       "sms": sms, "extras": extras})
+
+    # Enrich with terms_url: each card's "מידע נוסף" page (more-info/?socId=N)
+    # links to the package's own /abroad/terms/<slug>/ appendix — the same doc
+    # PlanCard surfaces as "עיקרי התוכנית". Fetched in-page (same-origin, past
+    # Incapsula) in parallel, mirroring scrape_pelephone's PDF-map trick. New
+    # plans (e.g. מונדיאל 2026) get their terms link automatically instead of
+    # waiting for a manual PLAN_DETAILS_PDFS update in PlanCard.jsx.
+    if soc_map:
+        try:
+            terms_map = page.evaluate("""async (socMap) => {
+                const entries = Object.entries(socMap);
+                const fetches = entries.map(([name, socId]) =>
+                    fetch('/digitalsite/heb/abroad/more-info/?socId=' + socId + '&mode=open')
+                        .then(r => r.text())
+                        .then(html => {
+                            const m = html.match(/(?:https?:\\/\\/www\\.pelephone\\.co\\.il)?\\/[Dd]igital[Ss]ite\\/heb\\/abroad\\/terms[^\\s"'<>]*/);
+                            return [name, m ? m[0] : null];
+                        })
+                        .catch(() => [name, null])
+                );
+                return Object.fromEntries(await Promise.all(fetches));
+            }""", soc_map)
+            for plan in plans:
+                t = terms_map.get(plan["plan_name"])
+                if t:
+                    if t.startswith("/"):
+                        t = "https://www.pelephone.co.il" + t
+                    plan["terms_url"] = t
+        except Exception as exc:
+            logger.warning(f"scrape_pelephone_abroad: failed to fetch terms URLs: {exc}")
     return plans
 
 

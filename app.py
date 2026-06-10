@@ -1917,6 +1917,95 @@ def scrape_resellers_job():
             logger.error(f"{module_name} scrape failed: {e}", exc_info=True)
 
 
+def run_morning_check_job(send=True):
+    """Morning changes check — runs daily (default 08:20) via APScheduler.
+
+    Why it exists: the 07:30/17:00 scrape jobs notify only on changes that are
+    freshly detected at scrape time — if a notification is missed, or a scraper
+    silently breaks and stops seeing a carrier's page, nothing tells the
+    operator. This job is the daily heartbeat: it summarizes everything in the
+    change log over the last N hours (new plans / removed plans / price &
+    extras changes across domestic+abroad+global+content), flags carriers whose
+    data went stale or empty (a broken scraper can never report a new plan it
+    didn't see), and ALWAYS sends — an explicit "אין שינויים" included.
+
+    config.json knobs (all optional):
+      morning_check_time          "HH:MM"  — cron time, default "08:20"
+      morning_check_window_hours  int      — lookback window, default 26
+      morning_check_stale_hours   int      — freshness threshold, default 36
+      morning_check_whatsapp      bool     — also send via WhatsApp, default false
+    """
+    from db import get_recent_changes_summary, get_scrape_freshness
+    from notifier import format_morning_digest, send_notification, send_whatsapp
+
+    config = load_config()
+    within = int(config.get("morning_check_window_hours", 26))
+    stale_after = int(config.get("morning_check_stale_hours", 36))
+
+    summary = get_recent_changes_summary(within_hours=within, db_path=_db_path())
+    freshness = get_scrape_freshness(db_path=_db_path())
+
+    warnings = []
+    now = datetime.now()
+    for category, rows in freshness.items():
+        for row in rows:
+            hours_ago = None
+            if row.get("last_scraped"):
+                try:
+                    hours_ago = (now - datetime.fromisoformat(row["last_scraped"])).total_seconds() / 3600
+                except (ValueError, TypeError):
+                    pass
+            if not row.get("count") or hours_ago is None or hours_ago > stale_after:
+                warnings.append({"carrier": row["carrier"], "category": category,
+                                 "count": row.get("count", 0),
+                                 "last_scraped": row.get("last_scraped"),
+                                 "hours_ago": round(hours_ago, 1) if hours_ago is not None else None})
+    # A carrier whose rows vanished entirely has no GROUP BY row at all —
+    # check the known domestic carriers explicitly (skip when the DB is empty,
+    # e.g. a fresh install, to avoid 10 false alarms).
+    domestic_seen = {r["carrier"] for r in freshness.get("domestic", [])}
+    if domestic_seen:
+        for cid in CARRIER_DISPLAY:
+            if cid not in domestic_seen:
+                warnings.append({"carrier": cid, "category": "domestic", "count": 0,
+                                 "last_scraped": None, "hours_ago": None})
+
+    message = format_morning_digest(summary, warnings, within_hours=within)
+    sent = {"telegram": False, "whatsapp": False}
+    if send:
+        sent["telegram"] = send_notification(message, config)
+        if config.get("morning_check_whatsapp"):
+            sent["whatsapp"] = bool(send_whatsapp(message, config))
+
+    total = sum(len(v) for v in summary.values())
+    logger.info(f"Morning check: {total} change(s) in last {within}h, "
+                f"{len(warnings)} freshness warning(s); telegram={sent['telegram']}")
+    return {
+        "total_changes": total,
+        "by_category": {k: len(v) for k, v in summary.items()},
+        "changes": summary,
+        "freshness_warnings": warnings,
+        "message": message,
+        "sent": sent,
+    }
+
+
+@app.route("/api/morning-check/now", methods=["GET", "POST"])
+@require_api_key_or_query
+def api_morning_check_now():
+    """Manually trigger the morning changes digest (same logic as the daily cron).
+
+    ?send=false returns the digest JSON without sending Telegram/WhatsApp —
+    useful for previewing what the morning message will look like.
+    """
+    send = request.args.get("send", "true").lower() != "false"
+    try:
+        return jsonify(run_morning_check_job(send=send))
+    except Exception as e:
+        logger.error(f"Morning check failed: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/executive-summary")
 @limiter.limit("60 per minute")
 def api_executive_summary():
@@ -4964,6 +5053,11 @@ if __name__ == "__main__":
     scheduler.add_job(generate_executive_summary, "cron", hour=8, minute=5, id="executive_summary", **_job_defaults)
     scheduler.add_job(scrape_news_job, "cron", hour=8, minute=10, id="news_scrape", **_job_defaults)
     scheduler.add_job(scrape_resellers_job, "cron", hour=8, minute=15, id="resellers_scrape", **_job_defaults)
+    # Morning changes digest — daily heartbeat summarizing the last day's
+    # new/removed/changed plans + scraper-freshness warnings (see run_morning_check_job)
+    mc_time = config.get("morning_check_time", "08:20")
+    mch, mcm = map(int, mc_time.split(":"))
+    scheduler.add_job(run_morning_check_job, "cron", hour=mch, minute=mcm, id="morning_check", **_job_defaults)
     # Social sentiment: every 3 days at 08:00 — use interval trigger with next 08:00 as start
     from datetime import datetime as _dt, timedelta as _td
     _now = _dt.now()
