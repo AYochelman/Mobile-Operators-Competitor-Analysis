@@ -1933,6 +1933,14 @@ _PELE_ABROAD_TERMS_RE = re.compile(
     "לתנאי"  # 'לתנאי' — start of "לתנאי החבילה והתוכנית"
 )
 
+# Manual corrections for auto-captured terms links. Pelephone clones a new plan's
+# "מידע נוסף" page from an old plan's and sometimes leaves the old "לתנאי" link in
+# place ABOVE the right one, so the first regex hit is wrong (מונדיאל 2026's page
+# leads with חו"ל משפחתית's Family-Travel-Package link). Verified correct URL wins.
+_PELE_ABROAD_TERMS_OVERRIDES = {
+    "מונדיאל 2026": "https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/mondial/",
+}
+
 
 def scrape_pelephone_abroad(page):
     page.goto("https://www.pelephone.co.il/digitalsite/heb/abroad/packages/",
@@ -2010,13 +2018,20 @@ def scrape_pelephone_abroad(page):
                 return out;
             }""", soc_ids)
             for soc, html in (raw or {}).items():
-                m_t = _PELE_ABROAD_TERMS_RE.search(html or "")
-                if m_t:
-                    terms_by_soc[str(soc)] = m_t.group(1)
+                # A more-info page can carry a leftover terms link from the plan it
+                # was CMS-cloned from (e.g. מונדיאל 2026's page leads with חו"ל
+                # משפחתית's link before its own). Log multi-link pages so clone
+                # leftovers surface; overrides below pin the correct URL.
+                found = list(dict.fromkeys(m.group(1) for m in _PELE_ABROAD_TERMS_RE.finditer(html or "")))
+                if found:
+                    terms_by_soc[str(soc)] = found[0]
+                    if len(found) > 1:
+                        logger.warning(f"scrape_pelephone_abroad: socId {soc} has {len(found)} distinct terms links {found} — possible CMS clone leftover, verify/override")
         except Exception as exc:
             logger.warning(f"scrape_pelephone_abroad: terms capture failed: {exc}")
     for p in plans:
-        p["terms_url"] = terms_by_soc.get(str(p.pop("_soc", None)))
+        auto = terms_by_soc.get(str(p.pop("_soc", None)))
+        p["terms_url"] = _PELE_ABROAD_TERMS_OVERRIDES.get(p["plan_name"], auto)
     return plans
 
 
