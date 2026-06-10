@@ -26,7 +26,7 @@ import Button from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
 import {
   TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
-  SIMTLV_COUNTRIES, PELEPHONE_GLOBAL_COUNTRIES, ESIMO_COUNTRIES,
+  SIMTLV_COUNTRIES, PELEPHONE_GLOBAL_COUNTRIES, ESIMO_REGION_MAP,
   WORLD8_EUROPE_USA, WORLD8_WORLDWIDE,
   XPHONE_EUROPE, XPHONE_WORLD,
   AIRALO_DISCOVER,
@@ -78,7 +78,11 @@ function getPlanCoverage(plan) {
   if (carrier === 'airalo') return AIRALO_DISCOVER
   if (carrier === 'airalo_regional') return AIRALO_REGION_MAP[dest] || null
   if (carrier === 'pelephone_global') return PELEPHONE_GLOBAL_COUNTRIES
-  if (carrier === 'esimo') return ESIMO_COUNTRIES
+  if (carrier === 'esimo') {
+    // Regional/global products expand to their coverage list; per-country plans
+    // return null → the destination filter falls back to extras[0] equality.
+    return ESIMO_REGION_MAP[dest] || null
+  }
   if (carrier === 'globalesim') return GLOBALESIM_REGION_MAP[dest] || GLOBALESIM_GLOBAL_REGION
   if (carrier === 'gomoworld') {
     const GOMOWORLD_ZONE_MAP = {
