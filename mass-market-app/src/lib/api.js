@@ -46,6 +46,7 @@ export const api = {
   getGlobalPlans:  (params) => fetchApi(`/api/global-plans${params ? '?' + new URLSearchParams(params) : ''}`),
   getGlobalChanges:() => fetchApi('/api/global-changes'),
   getResellerPlans: (params) => fetchApi(`/api/reseller-plans${params ? '?' + new URLSearchParams(params) : ''}`),
+  getUsaPlans:     (params) => fetchApi(`/api/usa-plans${params ? '?' + new URLSearchParams(params) : ''}`),
   getContentPlans: (params) => fetchApi(`/api/content-plans${params ? '?' + new URLSearchParams(params) : ''}`),
   getContentChanges:() => fetchApi('/api/content-changes'),
   getBanners:      () => fetchApi('/api/banners'),
@@ -239,4 +240,42 @@ export const api = {
   addAnnotation: (data) => fetchApi('/api/annotations', { method: 'POST', body: JSON.stringify(data) }),
   updateAnnotation: (id, note) => fetchApi(`/api/annotations/${id}`, { method: 'PATCH', body: JSON.stringify({ note }) }),
   deleteAnnotation: (id) => fetchApi(`/api/annotations/${id}`, { method: 'DELETE' }),
+
+  // ── MOCA Guest Connect (hotels vertical) ──────────────────────────────────
+  // Public guest portal: branding + live Israel deal feed (no auth).
+  getGuestPortal: (slug) => fetchApi(`/api/guest/${encodeURIComponent(slug)}`),
+  // Anonymous engagement beacon — fire-and-forget (204, no JSON body).
+  guestEvent: (slug, event_type, lang = null) => {
+    try {
+      return fetch(`${API_BASE}/api/guest/${encodeURIComponent(slug)}/event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        keepalive: true,
+        body: JSON.stringify({ event_type, lang }),
+      })
+    } catch {
+      return Promise.resolve()
+    }
+  },
+  // Attribution deep link: routes the click through Flask /go so the hotel earns
+  // and the provider page opens. Returns an absolute URL (open in a new tab).
+  guestGoUrl: (slug, provider, plan, lang = 'en') => {
+    const p = new URLSearchParams({ hotel: slug, plan: plan || '', country: 'Israel', lang })
+    return `${API_BASE}/go/${encodeURIComponent(provider)}?${p.toString()}`
+  },
+  // Branded QR (SVG) for an <img src>; base = the public origin the QR encodes.
+  guestQrUrl: (slug, base) => {
+    const b = base || (typeof window !== 'undefined' ? window.location.origin : 'https://mocaintel.com')
+    return `${API_BASE}/api/guest/${encodeURIComponent(slug)}/qr.svg?base=${encodeURIComponent(b)}`
+  },
+  // Public lead capture from the /hotels marketing landing.
+  submitHotelLead: (data) => fetchApi('/api/hotels/lead', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Operator console — super_admin (or dev API key).
+  getHotels:         () => fetchApi('/api/hotels'),
+  createHotel:       (data) => fetchApi('/api/hotels', { method: 'POST', body: JSON.stringify(data) }),
+  updateHotel:       (slug, data) => fetchApi(`/api/hotels/${encodeURIComponent(slug)}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteHotel:       (slug) => fetchApi(`/api/hotels/${encodeURIComponent(slug)}`, { method: 'DELETE' }),
+  getHotelAnalytics: (slug, days = 30) => fetchApi(`/api/hotels/${encodeURIComponent(slug)}/analytics?days=${days}`),
+  getHotelLeads:     () => fetchApi('/api/hotels/leads'),
 }

@@ -39,6 +39,11 @@ const SuspendedPage         = lazy(() => import('./pages/SuspendedPage'))
 const NotFoundPage          = lazy(() => import('./pages/NotFoundPage'))
 const SocialPage            = lazy(() => import('./pages/SocialPage'))
 const ResetPasswordPage     = lazy(() => import('./pages/ResetPasswordPage'))
+// MOCA Guest Connect (hotels vertical) — public guest portal + marketing
+// landing (both outside the auth gate) and the super-admin operator console.
+const GuestPortalPage       = lazy(() => import('./pages/GuestPortalPage'))
+const HotelsLandingPage     = lazy(() => import('./pages/HotelsLandingPage'))
+const HotelsAdminPage       = lazy(() => import('./pages/HotelsAdminPage'))
 
 function PageFallback() {
   return <div className="flex justify-center py-20"><Spinner /></div>
@@ -64,9 +69,15 @@ function BrandThemeApplier() {
 }
 
 function ProtectedRoute({ children, adminOnly = false, superAdminOnly = false }) {
-  const { user, loading, isAdmin, isSuperAdmin, workspace } = useAuth()
+  const { user, role, loading, isAdmin, isSuperAdmin, workspace } = useAuth()
   if (loading) return <div className="flex items-center justify-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>
   if (!user) return <Navigate to="/login" replace />
+  // `role` is fetched from the backend AFTER `loading` flips false (see useAuth
+  // applyContext). On a hard reload of a gated route, redirecting before the
+  // role resolves bounces super_admins to "/". Wait for the role instead.
+  if ((adminOnly || superAdminOnly) && role == null) {
+    return <div className="flex items-center justify-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>
+  }
   if (!isSuperAdmin && workspace && workspace.active === false) {
     return (
       <Suspense fallback={<PageFallback />}>
@@ -112,6 +123,10 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/invite/:token" element={<InvitePage />} />
+          {/* Guest Connect — public, no auth: guest portal (QR target) + /hotels
+              marketing landing. Siblings of "/" so they bypass the AppShell gate. */}
+          <Route path="/guest/:slug" element={<GuestPortalPage />} />
+          <Route path="/hotels" element={<HotelsLandingPage />} />
           <Route path="/" element={<AppShell />}>
             {/* Phase 19 — / is the Editorial Deep dashboard (executive view).
                 Plan cards UI lives at /plans (and other tab views at /roaming
@@ -126,6 +141,7 @@ export default function App() {
             <Route path="plans"     element={<DashboardPage />} />
             <Route path="roaming"   element={<DashboardPage />} />
             <Route path="esim"      element={<DashboardPage />} />
+            <Route path="usa"       element={<DashboardPage />} />
             <Route path="resellers" element={<DashboardPage />} />
             <Route path="content"   element={<DashboardPage />} />
             <Route path="news"      element={<DashboardPage />} />
@@ -144,6 +160,7 @@ export default function App() {
             <Route path="admin/audit" element={<ProtectedRoute superAdminOnly><AuditLogPage /></ProtectedRoute>} />
             <Route path="usage" element={<ProtectedRoute superAdminOnly><UsagePage /></ProtectedRoute>} />
             <Route path="admin/user-activity" element={<ProtectedRoute superAdminOnly><UserActivityPage /></ProtectedRoute>} />
+            <Route path="admin/hotels" element={<ProtectedRoute superAdminOnly><HotelsAdminPage /></ProtectedRoute>} />
             <Route path="notifications" element={<Navigate to="/alerts?tab=watchlist" replace />} />
             <Route path="ai-insights" element={<AIInsightsPage />} />
             <Route path="social" element={<SocialPage />} />

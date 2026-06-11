@@ -11,6 +11,7 @@ export const ROUTE_META = [
   { match: '/plans',           kicker: 'מסלולים',   title: 'השוואת מסלולים' },
   { match: '/roaming',         kicker: 'מסלולים',   title: 'חו״ל · Roaming' },
   { match: '/esim',            kicker: 'מסלולים',   title: 'eSIM גלובלי' },
+  { match: '/usa',             kicker: 'מסלולים',   title: 'נוחתים בארה״ב' },
   { match: '/resellers',       kicker: 'מסלולים',   title: 'משווקים' },
   { match: '/content',         kicker: 'מסלולים',   title: 'שירותי תוכן' },
   { match: '/news',            kicker: 'תובנות',    title: 'בחדשות' },
@@ -32,6 +33,7 @@ export const ROUTE_META = [
   { match: '/admin/audit',     kicker: 'ניהול',     title: 'יומן ביקורת' },
   { match: '/usage',           kicker: 'ניהול',     title: 'שימוש ב-Claude API' },
   { match: '/admin/user-activity', kicker: 'ניהול', title: 'פעילות משתמשים' },
+  { match: '/admin/hotels',    kicker: 'Guest Connect', title: 'פורטלי אורחים' },
 ]
 
 export function resolveRouteMeta(pathname /*, search */) {

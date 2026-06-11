@@ -8,7 +8,7 @@ import base64
 import time as _time
 from datetime import datetime, timezone, timedelta
 from functools import wraps
-from flask import Flask, jsonify, render_template, request, make_response, send_from_directory, g, abort, redirect
+from flask import Flask, jsonify, render_template, request, make_response, send_from_directory, g, abort, redirect, Response
 from flask_compress import Compress
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -22,6 +22,9 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                get_history_changes, get_history_price_series, \
                upsert_news_articles, get_news_articles, \
                log_affiliate_click, get_affiliate_stats, \
+               upsert_hotel, get_hotel, list_hotels, delete_hotel, \
+               log_guest_event, get_guest_analytics, get_israel_esim_deals, \
+               save_hotel_lead, get_hotel_leads, \
                log_audit, get_audit_log, \
                log_user_activity, get_user_activity_overview, get_user_activity_summary, \
                get_user_activity_events, prune_user_activity, \
@@ -1008,28 +1011,152 @@ _AFFILIATE_FALLBACK_URLS = {
     "globalesim": "https://globalesim.com",
 }
 
+# ── MOCA Guest Connect — provider display + destination resolution ──────────
+# label/color drive the guest-portal chips; url is the public Israel page used
+# as the redirect destination when no affiliate deep link is configured. In
+# production each provider's "url" is replaced by a referral-tagged base_url in
+# config.json -> affiliate. Local Israeli carriers have no affiliate program yet
+# but still flow through /go so per-hotel attribution + analytics are captured.
+_GUEST_PROVIDER_META = {
+    # global eSIM (ids match the scraper carrier ids that carry Israel packages)
+    "saily":       {"label": "Saily",        "color": "#0fb39a", "url": "https://saily.com/esim-israel/"},
+    "airalo_local":{"label": "Airalo",       "color": "#ff5963", "url": "https://www.airalo.com/israel-esim"},
+    "airalo":      {"label": "Airalo",       "color": "#ff5963", "url": "https://www.airalo.com/israel-esim"},
+    "holafly":     {"label": "Holafly",      "color": "#fa3c54", "url": "https://esim.holafly.com/esim-israel/"},
+    "esimo":       {"label": "eSIMo",        "color": "#6c5ce7", "url": "https://esimo.io"},
+    "esimio":      {"label": "eSIM.io",      "color": "#5b6cf0", "url": "https://esim.io"},
+    "orbit":       {"label": "Orbit",        "color": "#2980ff", "url": "https://orbitmobile.com"},
+    "simtlv":      {"label": "SimTLV",       "color": "#2bb3c0", "url": "https://simtlv.co.il"},
+    "voye":        {"label": "Voye",         "color": "#e8553e", "url": "https://voyeglobal.com"},
+    "sparks":      {"label": "Sparks",       "color": "#f2a900", "url": "https://www.sparks.travel"},
+    "gomoworld":   {"label": "GoMoWorld",    "color": "#00a86b", "url": "https://www.gomoworld.com"},
+    "bcengi":      {"label": "BCengi",       "color": "#555c66", "url": "https://mocaintel.com"},
+    "esim70":      {"label": "eSIM70",       "color": "#1f6feb", "url": "https://esim70.com"},
+    "jetpack":     {"label": "Jetpac",       "color": "#7b2ff7", "url": "https://www.jetpacglobal.com"},
+    "breez":       {"label": "Breeze",       "color": "#19b3c7", "url": "https://breezesim.com"},
+    "bytesim":     {"label": "ByteSIM",      "color": "#34495e", "url": "https://bytesim.com"},
+    "besim":       {"label": "BeSIM",        "color": "#e84393", "url": "https://besim.com"},
+    "seven_g":     {"label": "7G",           "color": "#e67e22", "url": "https://mocaintel.com"},
+    "bestconnect": {"label": "Best Connect", "color": "#2d9cdb", "url": "https://mocaintel.com"},
+    "esimplus":    {"label": "eSIM Plus",    "color": "#00b894", "url": "https://esimplus.me/esim/israel"},
+    # local Israeli carriers — inbound-tourist SIM/eSIM (curated, see below)
+    "mobile019":   {"label": "019 Mobile",     "color": "#d81b60", "url": "https://www.019mobile.co.il"},
+    "partner":     {"label": "Partner Tourist","color": "#0072ce", "url": "https://www.partner.co.il"},
+    "cellcom":     {"label": "Cellcom Tourist","color": "#5f259f", "url": "https://www.cellcom.co.il"},
+    "hot":         {"label": "HOT Mobile",     "color": "#e4002b", "url": "https://www.hotmobile.co.il"},
+}
+
+# Inbound-tourist local SIM/eSIM offers. These are NOT scraped (the system
+# scrapes domestic plans for Israelis + roaming + global eSIM), so they are
+# curated here. Prices in ILS, illustrative of current tourist packages — verify
+# periodically. perks keys map to the guest portal i18n dictionary.
+ISRAEL_TOURIST_LOCAL_SIMS = [
+    {"provider": "mobile019", "form": "sim",  "gb": None, "days": 30, "price": 99,
+     "perks": ["ilNumber", "calls", "airport"]},
+    {"provider": "partner",   "form": "esim", "gb": 100,  "days": 30, "price": 89,
+     "perks": ["ilNumber", "calls", "instant"]},
+    {"provider": "cellcom",   "form": "sim",  "gb": 110,  "days": 30, "price": 99,
+     "perks": ["ilNumber", "intlMin", "airport"]},
+]
+
+
+def _guest_provider_dest(provider):
+    """Resolve the redirect destination for a guest-portal provider:
+    affiliate deep link (config) → provider Israel page → legacy fallback."""
+    cfg = load_config()
+    affiliate = cfg.get("affiliate", {}).get(provider)
+    if affiliate and affiliate.get("base_url"):
+        return affiliate["base_url"]
+    meta = _GUEST_PROVIDER_META.get(provider)
+    if meta and meta.get("url"):
+        return meta["url"]
+    return _AFFILIATE_FALLBACK_URLS.get(provider, "https://mocaintel.com")
+
+
+def _assemble_guest_deals(db_path=None):
+    """Build the guest-portal deal list = live Israel-covering global eSIM
+    (curated to a clean per-provider ladder) + curated local Israeli SIMs."""
+    from collections import defaultdict
+    raw = get_israel_esim_deals(db_path=db_path)
+    updated_at = max((d.get("scraped_at") for d in raw if d.get("scraped_at")), default=None)
+    # cheapest per (provider, gb, days) — collapse exact-size duplicates
+    best = {}
+    for d in raw:
+        key = (d["carrier"], d["data_gb"], d["days"])
+        if key not in best or (d["price"] or 1e9) < (best[key]["price"] or 1e9):
+            best[key] = d
+    # cap per provider to a 6-deal ladder spread across data sizes
+    by_prov = defaultdict(list)
+    for d in best.values():
+        by_prov[d["carrier"]].append(d)
+    curated = []
+    for prov, lst in by_prov.items():
+        lst.sort(key=lambda d: ((d["data_gb"] if d["data_gb"] else 9999), d["price"] or 1e9))
+        curated.extend(lst[:6])
+
+    deals = []
+    for d in curated:
+        unl = d["data_gb"] is None
+        deals.append({
+            "provider": d["carrier"],
+            "kind": "global",
+            "form": "esim" if d["esim"] else "sim",
+            "gb": d["data_gb"],
+            "days": d["days"],
+            "price": round(d["price"], 2) if d["price"] is not None else None,
+            "original_price": d["original_price"],
+            "currency": d["currency"] or "USD",
+            "plan_name": d["plan_name"],
+            "perks": ["instant", "unlimited"] if unl else ["instant"],
+        })
+    for s in ISRAEL_TOURIST_LOCAL_SIMS:
+        deals.append({
+            "provider": s["provider"],
+            "kind": "local",
+            "form": s["form"],
+            "gb": s["gb"],
+            "days": s["days"],
+            "price": s["price"],
+            "original_price": s["price"],
+            "currency": "ILS",
+            "plan_name": _GUEST_PROVIDER_META.get(s["provider"], {}).get("label", s["provider"]),
+            "perks": s["perks"],
+        })
+    deals.sort(key=lambda x: (x["price"] if x["price"] is not None else 1e9))
+    providers = {d["provider"]: {
+        "label": _GUEST_PROVIDER_META.get(d["provider"], {}).get("label", d["provider"]),
+        "color": _GUEST_PROVIDER_META.get(d["provider"], {}).get("color", "#5c3317"),
+    } for d in deals}
+    return deals, providers, updated_at
+
+
 @app.route("/go/<provider>")
 @app.route("/go/<provider>/<plan_id>")
-@limiter.limit("60 per minute")
+@limiter.limit("120 per minute")
 def affiliate_redirect(provider, plan_id=None):
     ip      = request.remote_addr or ""
     cfg     = load_config()
     api_key = cfg.get("api_key", "")
     ip_hash = hmac.new(api_key.encode(), ip.encode(), hashlib.sha256).hexdigest()
     country = request.args.get("country")
+    hotel   = request.args.get("hotel")
+    plan    = request.args.get("plan") or plan_id
 
     try:
-        log_affiliate_click(provider, plan_id=plan_id, country=country,
+        log_affiliate_click(provider, plan_id=plan, country=country,
                             ip_hash=ip_hash, db_path=_db_path())
     except Exception:
         app.logger.warning("affiliate click log failed", exc_info=True)
 
-    affiliate = cfg.get("affiliate", {}).get(provider)
-    if affiliate:
-        return redirect(affiliate["base_url"], 302)
+    # Per-hotel attribution: a click from a hotel's guest portal earns the hotel.
+    if hotel:
+        log_guest_event(hotel, "click", provider=provider, plan_name=plan,
+                        lang=request.args.get("lang"),
+                        country=request.headers.get("Accept-Language", "")[:8] or None,
+                        ip_hash=ip_hash, user_agent=request.headers.get("User-Agent"),
+                        db_path=_db_path())
 
-    fallback = _AFFILIATE_FALLBACK_URLS.get(provider, "https://mocaintel.com")
-    return redirect(fallback, 302)
+    return redirect(_guest_provider_dest(provider), 302)
 
 
 @app.route("/api/affiliate/stats")
@@ -1049,6 +1176,215 @@ def api_affiliate_stats():
 def api_exchange_rates():
     from scraper import _get_usd_to_ils, _get_eur_to_ils, _get_gbp_to_ils
     return jsonify({"usd": _get_usd_to_ils(), "eur": _get_eur_to_ils(), "gbp": _get_gbp_to_ils()})
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  MOCA Guest Connect — hotels vertical (public guest portal + operator console)
+#  Plan: Hotel/Hotel Plan.txt §2.3 / §5. Public routes are unauthenticated;
+#  /api/hotels* admin routes require the API key or a super_admin JWT.
+# ════════════════════════════════════════════════════════════════════════════
+
+def _guest_ip_hash():
+    ip = request.remote_addr or ""
+    api_key = load_config().get("api_key", "")
+    return hmac.new(api_key.encode(), ip.encode(), hashlib.sha256).hexdigest()
+
+
+def _qr_svg(data, color="#111111", scale=10, border=3):
+    """Branded QR as a compact single-path SVG. Quiet zone via `border`."""
+    import qrcode
+    qr = qrcode.QRCode(border=border, error_correction=qrcode.constants.ERROR_CORRECT_M)
+    qr.add_data(data)
+    qr.make(fit=True)
+    matrix = qr.get_matrix()
+    size = len(matrix) * scale
+    seg = []
+    for y, row in enumerate(matrix):
+        for x, dark in enumerate(row):
+            if dark:
+                seg.append(f"M{x*scale} {y*scale}h{scale}v{scale}h{-scale}z")
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" '
+            f'viewBox="0 0 {size} {size}" shape-rendering="crispEdges" role="img" '
+            f'aria-label="Guest portal QR">'
+            f'<rect width="{size}" height="{size}" fill="#ffffff"/>'
+            f'<path d="{"".join(seg)}" fill="{color}"/></svg>')
+
+
+@app.route("/api/guest/<slug>")
+@limiter.limit("120 per minute")
+def api_guest_portal(slug):
+    """Public guest portal payload: hotel branding + live Israel deal feed."""
+    hotel = get_hotel(slug, db_path=_db_path())
+    if not hotel or not hotel.get("active"):
+        return jsonify({"error": "Guest portal not found"}), 404
+    deals, providers, updated_at = _assemble_guest_deals(db_path=_db_path())
+    try:
+        from scraper import _get_usd_to_ils
+        fx = _get_usd_to_ils()
+    except Exception:
+        fx = 3.7
+    payload = {
+        "hotel": {
+            "slug": hotel["slug"], "name": hotel["name"], "tagline": hotel.get("tagline"),
+            "brand": {
+                "primary": hotel.get("brand_primary"), "secondary": hotel.get("brand_secondary"),
+                "bg": hotel.get("brand_bg"), "mono": hotel.get("mono"),
+                "logo_url": hotel.get("logo_url"),
+            },
+            "languages": hotel.get("languages") or ["en", "he"],
+            "default_lang": hotel.get("default_lang") or "en",
+        },
+        "deals": deals,
+        "providers": providers,
+        "fx": round(fx, 3),
+        "updated_at": updated_at or datetime.now(timezone.utc).isoformat(),
+    }
+    return _public_cache(jsonify(payload), 300)
+
+
+_GUEST_CLIENT_EVENTS = {"view", "scan", "engage"}
+
+
+@app.route("/api/guest/<slug>/event", methods=["POST"])
+@limiter.limit("240 per minute")
+def api_guest_event(slug):
+    """Anonymous guest-portal beacon (view / scan / engage). 204, never errors."""
+    if not get_hotel(slug, db_path=_db_path()):
+        return ("", 204)
+    data = request.get_json(silent=True) or {}
+    et = (data.get("event_type") or "").strip()
+    if et not in _GUEST_CLIENT_EVENTS:
+        return ("", 204)
+    log_guest_event(
+        slug, et, lang=(data.get("lang") or None),
+        country=(request.headers.get("Accept-Language", "")[:8] or None),
+        ip_hash=_guest_ip_hash(), user_agent=request.headers.get("User-Agent"),
+        db_path=_db_path(),
+    )
+    return ("", 204)
+
+
+@app.route("/api/guest/<slug>/qr.svg")
+@limiter.limit("60 per minute")
+def api_guest_qr(slug):
+    """Branded QR (SVG) that deep-links to the hotel's guest portal."""
+    hotel = get_hotel(slug, db_path=_db_path())
+    if not hotel:
+        abort(404)
+    base = (request.args.get("base") or "https://mocaintel.com").rstrip("/")
+    url = f"{base}/guest/{slug}?via=qr"
+    color = hotel.get("brand_primary") or "#5c3317"
+    try:
+        svg = _qr_svg(url, color=color)
+    except Exception:
+        app.logger.warning("QR generation failed (is 'qrcode' installed?)", exc_info=True)
+        return jsonify({"error": "QR generation unavailable"}), 503
+    resp = Response(svg, mimetype="image/svg+xml")
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
+
+
+# ── Operator console (super_admin / API key) ───────────────────────────────
+@app.route("/api/hotels", methods=["GET"])
+@require_api_key_or_super_admin
+@limiter.limit("60 per minute")
+def api_hotels_list():
+    return jsonify(list_hotels(db_path=_db_path()))
+
+
+@app.route("/api/hotels", methods=["POST"])
+@require_api_key_or_super_admin
+@limiter.limit("30 per minute")
+def api_hotels_create():
+    data = request.get_json(silent=True) or {}
+    try:
+        hotel = upsert_hotel(data, db_path=_db_path())
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify(hotel), 201
+
+
+@app.route("/api/hotels/<slug>", methods=["PATCH"])
+@require_api_key_or_super_admin
+@limiter.limit("30 per minute")
+def api_hotels_update(slug):
+    existing = get_hotel(slug, db_path=_db_path())
+    if not existing:
+        return jsonify({"error": "not found"}), 404
+    data = request.get_json(silent=True) or {}
+    merged = {**existing, **data, "slug": slug}
+    try:
+        hotel = upsert_hotel(merged, db_path=_db_path())
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify(hotel)
+
+
+@app.route("/api/hotels/<slug>", methods=["DELETE"])
+@require_api_key_or_super_admin
+@limiter.limit("30 per minute")
+def api_hotels_delete(slug):
+    delete_hotel(slug, db_path=_db_path())
+    return ("", 204)
+
+
+@app.route("/api/hotels/<slug>/analytics")
+@require_api_key_or_super_admin
+@limiter.limit("60 per minute")
+def api_hotels_analytics(slug):
+    try:
+        days = max(0, min(int(request.args.get("days", 30)), 365))
+    except (ValueError, TypeError):
+        days = 30
+    return jsonify(get_guest_analytics(slug, days=days, db_path=_db_path()))
+
+
+@app.route("/api/hotels/leads")
+@require_api_key_or_super_admin
+@limiter.limit("60 per minute")
+def api_hotels_leads():
+    return jsonify(get_hotel_leads(db_path=_db_path()))
+
+
+def _notify_hotel_lead(lead):
+    msg = (
+        "🏨 ליד חדש — MOCA Guest Connect\n"
+        f"מלון: {lead.get('hotel_name') or '—'}\n"
+        f"איש קשר: {lead.get('contact_name') or '—'}\n"
+        f"אימייל: {lead.get('email') or '—'}\n"
+        f"טלפון: {lead.get('phone') or '—'}\n"
+        f"חדרים: {lead.get('rooms') or '—'}\n"
+        f"הודעה: {lead.get('message') or '—'}"
+    )
+    try:
+        import notifier
+        notifier.send_notification(msg, load_config())
+    except Exception:
+        app.logger.warning("hotel lead telegram failed", exc_info=True)
+
+
+@app.route("/api/hotels/lead", methods=["POST"])
+@limiter.limit("10 per minute")
+def api_hotels_lead():
+    """Public lead capture from the /hotels marketing landing form."""
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    if not email and not phone:
+        return jsonify({"error": "email or phone required"}), 400
+    try:
+        rooms = int(data["rooms"]) if str(data.get("rooms", "")).strip() else None
+    except (ValueError, TypeError):
+        rooms = None
+    lead = {
+        "hotel_name": (data.get("hotel_name") or "")[:200],
+        "contact_name": (data.get("contact_name") or "")[:200],
+        "email": email[:200], "phone": phone[:60], "rooms": rooms,
+        "message": (data.get("message") or "")[:2000], "source": "/hotels",
+    }
+    save_hotel_lead(lead, db_path=_db_path())
+    _notify_hotel_lead(lead)
+    return jsonify({"ok": True})
 
 
 @app.route("/api/global-changes")

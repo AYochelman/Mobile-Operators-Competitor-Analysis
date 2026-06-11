@@ -107,6 +107,7 @@ export function AuthProvider({ children }) {
         if (session?.user) {
           sessionStorage.removeItem('dev_logged_out')
           applyContext(session)
+          setLoading(false)
           // Best-effort login beacon — only on a real sign-in (not token refresh
           // / session restore), deduped per browser session so opening tabs or
           // refreshing doesn't inflate the count. Super-admin logins are dropped
@@ -120,6 +121,16 @@ export function AuthProvider({ children }) {
               }
             } catch { /* ignore */ }
           }
+        } else if (DEV_MODE && !sessionStorage.getItem('dev_logged_out')) {
+          // DEV_MODE: Supabase fires INITIAL_SESSION with a null session on every
+          // load (there's no real session). Re-assert the dev super_admin rather
+          // than clobbering the user getSession() installs — otherwise a hard
+          // reload of any gated route momentarily sees user=null and bounces to
+          // /login → /home. Only a real sign-out (dev_logged_out) clears it.
+          setUser({ email: 'alon.yoch@gmail.com', id: 'dev' })
+          setRole('super_admin')
+          setWorkspace(DEFAULT_WORKSPACE)
+          setLoading(false)
         } else {
           setUser(null)
           setRole(null)
@@ -128,8 +139,8 @@ export function AuthProvider({ children }) {
           localStorage.removeItem('auth_token')
           try { sessionStorage.removeItem('moca_login_beaconed') } catch { /* ignore */ }
           api.clearSessionCookie().catch(() => {})
+          setLoading(false)
         }
-        setLoading(false)
       }
     )
 

@@ -545,6 +545,59 @@ def init_db(db_path=None):
             CREATE INDEX IF NOT EXISTS idx_abroad_changes_changed_at ON abroad_changes(changed_at DESC);
             CREATE INDEX IF NOT EXISTS idx_global_changes_changed_at ON global_changes(changed_at DESC);
             CREATE INDEX IF NOT EXISTS idx_content_changes_changed_at ON content_changes(changed_at DESC);
+            -- ===== MOCA Guest Connect (hotels vertical) =====================
+            -- A hotel/host that exposes a branded guest portal at /guest/<slug>.
+            -- brand_* drive the runtime theme (mirrors workspace brand_config but
+            -- needs no Supabase row — public page reads these over the open API).
+            CREATE TABLE IF NOT EXISTS hotels (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                slug            TEXT NOT NULL UNIQUE,
+                name            TEXT NOT NULL,
+                tagline         TEXT,
+                brand_primary   TEXT,        -- c1 — deep brand color (text/hero)
+                brand_secondary TEXT,        -- c2 — accent color
+                brand_bg        TEXT,        -- page background tint
+                logo_url        TEXT,        -- data: URI or hosted URL (optional)
+                mono            TEXT,        -- 1-3 char monogram fallback for the avatar
+                languages       TEXT,        -- JSON array e.g. ["en","he"]
+                default_lang    TEXT DEFAULT 'en',
+                commission_note TEXT,        -- free text shown to the operator (e.g. "50/50")
+                contact_email   TEXT,
+                active          INTEGER NOT NULL DEFAULT 1,
+                created_at      TEXT NOT NULL,
+                updated_at      TEXT
+            );
+            -- Anonymous guest-portal events powering the per-hotel analytics
+            -- dashboard + affiliate attribution. NO PII — ip is hashed, identity
+            -- is never stored (GDPR-safe per Hotel Plan §8).
+            CREATE TABLE IF NOT EXISTS guest_events (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                hotel_slug  TEXT NOT NULL,
+                event_type  TEXT NOT NULL,   -- view | scan | engage | click | lead
+                provider    TEXT,            -- on click: the eSIM/SIM provider id
+                plan_name   TEXT,            -- on click: which package
+                lang        TEXT,
+                country     TEXT,            -- guest origin (from Accept-Language), anonymous
+                ip_hash     TEXT,
+                user_agent  TEXT,
+                created_at  TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_guest_events_hotel_at
+                ON guest_events(hotel_slug, created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_guest_events_type
+                ON guest_events(event_type);
+            -- Inbound sales leads from the public /hotels marketing landing form.
+            CREATE TABLE IF NOT EXISTS hotel_leads (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                hotel_name   TEXT,
+                contact_name TEXT,
+                email        TEXT,
+                phone        TEXT,
+                rooms        INTEGER,
+                message      TEXT,
+                source       TEXT,
+                created_at   TEXT NOT NULL
+            );
         """)
         conn.commit()
         # Migration: add url column if DB was created before this column existed
@@ -668,6 +721,235 @@ def get_affiliate_stats(days=30, db_path=None):
             (cutoff,)
         ).fetchall()
         return [{"provider": r[0], "date": r[1], "clicks": r[2]} for r in rows]
+    finally:
+        conn.close()
+
+
+# ── MOCA Guest Connect (hotels vertical) ───────────────────────────────────
+_ISRAEL_HE = "ישראל"  # ישראל — canonical destination value (matches _DEST_NORM)
+
+_HOTEL_COLS = ("slug", "name", "tagline", "brand_primary", "brand_secondary",
+               "brand_bg", "logo_url", "mono", "languages", "default_lang",
+               "commission_note", "contact_email", "active", "created_at", "updated_at")
+
+
+def _hotel_row_to_dict(r):
+    d = dict(zip(_HOTEL_COLS, r))
+    try:
+        d["languages"] = json.loads(d["languages"]) if d["languages"] else ["en", "he"]
+    except Exception:
+        d["languages"] = ["en", "he"]
+    d["active"] = bool(d["active"])
+    return d
+
+
+def upsert_hotel(data, db_path=None):
+    """Create or update a hotel by slug. `data` is a dict; unknown keys ignored.
+    Returns the stored hotel dict."""
+    slug = (data.get("slug") or "").strip().lower()
+    if not slug or not (data.get("name") or "").strip():
+        raise ValueError("slug and name are required")
+    now = datetime.now(timezone.utc).isoformat()
+    langs = data.get("languages") or ["en", "he"]
+    conn = _connect(db_path)
+    try:
+        conn.execute("""
+            INSERT INTO hotels (slug, name, tagline, brand_primary, brand_secondary,
+                                brand_bg, logo_url, mono, languages, default_lang,
+                                commission_note, contact_email, active, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(slug) DO UPDATE SET
+                name            = excluded.name,
+                tagline         = excluded.tagline,
+                brand_primary   = excluded.brand_primary,
+                brand_secondary = excluded.brand_secondary,
+                brand_bg        = excluded.brand_bg,
+                logo_url        = excluded.logo_url,
+                mono            = excluded.mono,
+                languages       = excluded.languages,
+                default_lang    = excluded.default_lang,
+                commission_note = excluded.commission_note,
+                contact_email   = excluded.contact_email,
+                active          = excluded.active,
+                updated_at      = excluded.updated_at
+        """, (
+            slug, data["name"].strip(), data.get("tagline"),
+            data.get("brand_primary"), data.get("brand_secondary"), data.get("brand_bg"),
+            data.get("logo_url"), data.get("mono"),
+            json.dumps(langs, ensure_ascii=False), data.get("default_lang", "en"),
+            data.get("commission_note"), data.get("contact_email"),
+            1 if data.get("active", True) else 0, now, now,
+        ))
+        conn.commit()
+    finally:
+        conn.close()
+    return get_hotel(slug, db_path=db_path)
+
+
+def get_hotel(slug, db_path=None):
+    conn = _connect(db_path)
+    try:
+        r = conn.execute(
+            f"SELECT {', '.join(_HOTEL_COLS)} FROM hotels WHERE slug=?",
+            ((slug or "").strip().lower(),)
+        ).fetchone()
+        return _hotel_row_to_dict(r) if r else None
+    finally:
+        conn.close()
+
+
+def list_hotels(db_path=None):
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            f"SELECT {', '.join(_HOTEL_COLS)} FROM hotels ORDER BY active DESC, name"
+        ).fetchall()
+        return [_hotel_row_to_dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def delete_hotel(slug, db_path=None):
+    conn = _connect(db_path)
+    try:
+        conn.execute("DELETE FROM hotels WHERE slug=?", ((slug or "").strip().lower(),))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def log_guest_event(hotel_slug, event_type, provider=None, plan_name=None,
+                    lang=None, country=None, ip_hash=None, user_agent=None, db_path=None):
+    """Best-effort anonymous guest-portal event. NEVER raises into the caller."""
+    if not hotel_slug or not event_type:
+        return
+    try:
+        conn = _connect(db_path)
+        try:
+            conn.execute(
+                "INSERT INTO guest_events "
+                "(hotel_slug, event_type, provider, plan_name, lang, country, ip_hash, user_agent, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                ((hotel_slug or "").strip().lower(), event_type, provider, plan_name,
+                 lang, country, ip_hash, (user_agent or "")[:400] or None,
+                 datetime.now(timezone.utc).isoformat())
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        pass
+
+
+def get_guest_analytics(slug, days=30, db_path=None):
+    """Per-hotel anonymous analytics for the operator dashboard. days=0 = lifetime."""
+    slug = (slug or "").strip().lower()
+    conn = _connect(db_path)
+    try:
+        where = "WHERE hotel_slug=?"
+        params = [slug]
+        if days and days > 0:
+            where += " AND created_at >= ?"
+            params.append((datetime.now(timezone.utc) - timedelta(days=days)).isoformat())
+
+        totals = {"view": 0, "scan": 0, "engage": 0, "click": 0, "lead": 0}
+        for et, n in conn.execute(
+            f"SELECT event_type, COUNT(*) FROM guest_events {where} GROUP BY event_type", params
+        ).fetchall():
+            totals[et] = n
+
+        daily = {}
+        for d, et, n in conn.execute(
+            f"SELECT date(created_at) AS d, event_type, COUNT(*) FROM guest_events {where} "
+            f"GROUP BY d, event_type ORDER BY d", params
+        ).fetchall():
+            row = daily.setdefault(d, {"date": d, "open": 0, "click": 0})
+            if et in ("view", "scan"):
+                row["open"] += n
+            elif et == "click":
+                row["click"] += n
+
+        by_provider = [
+            {"provider": p, "clicks": n}
+            for p, n in conn.execute(
+                f"SELECT provider, COUNT(*) AS c FROM guest_events {where} AND event_type='click' "
+                f"AND provider IS NOT NULL GROUP BY provider ORDER BY c DESC", params
+            ).fetchall()
+        ]
+        by_lang = [
+            {"lang": (lg or "?"), "count": n}
+            for lg, n in conn.execute(
+                f"SELECT lang, COUNT(*) AS c FROM guest_events {where} AND event_type IN ('view','scan') "
+                f"GROUP BY lang ORDER BY c DESC", params
+            ).fetchall()
+        ]
+        by_country = [
+            {"country": (co or "?"), "count": n}
+            for co, n in conn.execute(
+                f"SELECT country, COUNT(*) AS c FROM guest_events {where} AND event_type IN ('view','scan') "
+                f"AND country IS NOT NULL GROUP BY country ORDER BY c DESC LIMIT 8", params
+            ).fetchall()
+        ]
+        opens = totals["view"] + totals["scan"]
+        return {
+            "slug": slug, "days": days,
+            "totals": totals,
+            "opens": opens,
+            "funnel": {"opens": opens, "engaged": totals["engage"], "clicks": totals["click"]},
+            "daily": list(daily.values()),
+            "by_provider": by_provider,
+            "by_lang": by_lang,
+            "by_country": by_country,
+        }
+    finally:
+        conn.close()
+
+
+def get_israel_esim_deals(db_path=None):
+    """Live global eSIM plans that cover Israel — the guest portal's core feed.
+    Returns rows sorted by ILS price (cheapest first)."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT carrier, plan_name, price, currency, original_price, days, data_gb, esim, extras, scraped_at "
+            "FROM global_plans WHERE json_extract(extras, '$[0]') = ? AND price IS NOT NULL "
+            "ORDER BY price",
+            (_ISRAEL_HE,)
+        ).fetchall()
+        return [
+            {"carrier": r[0], "plan_name": r[1], "price": r[2], "currency": r[3],
+             "original_price": r[4], "days": r[5], "data_gb": r[6], "esim": bool(r[7]),
+             "extras": json.loads(r[8]) if r[8] else [], "scraped_at": r[9]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def save_hotel_lead(data, db_path=None):
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO hotel_leads (hotel_name, contact_name, email, phone, rooms, message, source, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (data.get("hotel_name"), data.get("contact_name"), data.get("email"),
+             data.get("phone"), data.get("rooms"), data.get("message"),
+             data.get("source", "/hotels"), datetime.now(timezone.utc).isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_hotel_leads(limit=200, db_path=None):
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT hotel_name, contact_name, email, phone, rooms, message, source, created_at "
+            "FROM hotel_leads ORDER BY created_at DESC LIMIT ?", (limit,)
+        ).fetchall()
+        cols = ("hotel_name", "contact_name", "email", "phone", "rooms", "message", "source", "created_at")
+        return [dict(zip(cols, r)) for r in rows]
     finally:
         conn.close()
 
