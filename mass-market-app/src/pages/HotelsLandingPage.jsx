@@ -21,6 +21,7 @@ const HL_CSS = `
 #hl-app *{box-sizing:border-box;margin:0;padding:0}
 #hl-app .wrap{max-width:1140px;margin:0 auto;padding:0 22px}
 #hl-app section{padding:70px 0}
+#hl-app section[id]{scroll-margin-top:80px}
 #hl-app h2.title{font-family:var(--font-display);font-size:clamp(26px,3.4vw,38px);font-weight:900;color:var(--dark);line-height:1.2}
 #hl-app .kicker{font-size:12.5px;font-weight:800;letter-spacing:2.5px;color:var(--hot);text-transform:uppercase;margin-bottom:12px}
 #hl-app .lead{font-size:17px;color:var(--sub);line-height:1.6;margin-top:14px;max-width:62ch}
@@ -153,7 +154,17 @@ export default function HotelsLandingPage() {
   const [sending, setSending] = useState(false)
   const [err, setErr] = useState('')
 
-  useEffect(() => { document.title = 'MOCA Guest Connect — חיבור לאינטרנט לאורחי המלון' }, [])
+  // Smooth "elevator" scroll when the topbar nav anchors are clicked. Scoped to
+  // this standalone page via an inline style on <html> with cleanup on unmount,
+  // so it doesn't leak into the rest of the app (the original index.html mockup
+  // had a global `html{scroll-behavior:smooth}` that the React port had dropped).
+  useEffect(() => {
+    document.title = 'MOCA Guest Connect — חיבור לאינטרנט לאורחי המלון'
+    const html = document.documentElement
+    const prev = html.style.scrollBehavior
+    html.style.scrollBehavior = 'smooth'
+    return () => { html.style.scrollBehavior = prev }
+  }, [])
 
   const guestUrl = `/guest/${brand}?lang=${demoLang}`
 
