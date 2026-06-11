@@ -238,6 +238,9 @@
 <script>
 /* ================= Brand presets (white-label) ================= */
 const BRANDS = {
+  /* brown = real prospect (colors sampled from brownhotels.co.il:
+     --brand-main-color #d16938, deep espresso rgb(38,23,15), light grey bg) */
+  brown:{ name:"Brown Hotels",            mono:"B",   c1:"#26170f", c2:"#d16938", bgp:"#f4f1ee" },
   pearl:{ name:"Jaffa Pearl Hotels",      mono:"JP",  c1:"#0e2a47", c2:"#c8a24b", bgp:"#f4f7fb" },
   bloom:{ name:"Desert Bloom Resorts",    mono:"DB",  c1:"#8a3d2a", c2:"#e0a458", bgp:"#faf5f0" },
   verde:{ name:"Galil Verde Collection",  mono:"GV",  c1:"#1d4d3b", c2:"#9ec27a", bgp:"#f3f8f4" },
@@ -341,7 +344,7 @@ const T = {
 /* ================= State ================= */
 const params = new URLSearchParams(location.search);
 const state = {
-  brand: BRANDS[params.get("brand")] ? params.get("brand") : "pearl",
+  brand: BRANDS[params.get("brand")] ? params.get("brand") : "brown",
   lang:  params.get("lang") === "he" ? "he" : "en",
   stay: 7, data: 10, filter: "all",
 };
