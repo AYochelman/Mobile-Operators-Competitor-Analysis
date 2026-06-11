@@ -19,12 +19,13 @@ Israel angle: h2o Wireless includes UNLIMITED calling to Israel on every plan �
 the standout for Israeli visitors. Verizon Unlimited Plus (Global Choice) and
 T-Mobile Unlimited Plus (intl texting to 215+) also reach Israel.
 
-NOT seeded yet (4th research pass hit a billing limit): Mint, Tello, Metro,
-Lycamobile USA, Simple Mobile. Their ids exist in USA_LABELS/_CARRIER_NAMES and
-will surface as empty (0) filter chips until added. Also out of scope here: the
-pre-arrival tourist-eSIM resellers (WorldSIM/SimCorner/Simify/ETravelSim/
-ESIMUSA) and airport kiosks (TripTel@SFO, SIMs-on-the-Go@JFK) — they resell
-T-Mobile/AT&T local service and overlap MOCA's existing global-eSIM tab.
+SEEDED 2026-06-11 (2nd research pass): Mint, Tello, Metro, Lycamobile USA,
+Simple Mobile. NOTE: Simple Mobile now runs on the VERIZON network (Tracfone →
+Verizon "Verizon Value" relaunch), NOT T-Mobile. Lyca USA + Simple Mobile both
+include UNLIMITED calling to Israel on every plan (the Israeli-visitor angle).
+Out of scope here: the pre-arrival tourist-eSIM resellers (WorldSIM/SimCorner/
+Simify/ETravelSim/ESIMUSA) and airport kiosks (TripTel@SFO, SIMs-on-the-Go@JFK) —
+they resell T-Mobile/AT&T local service and overlap MOCA's existing global-eSIM tab.
 
 Re-runnable: UPSERTs by (carrier, plan_name).
 """
@@ -542,6 +543,282 @@ PLANS = [
             "ללא בדיקת אשראי · נמכרת כערכת SIM פיזית",
         ],
         "source_url": "https://www.ultramobile.com/tourist/",
+    },
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Mint Mobile (T-Mobile network) — sold in 3/6/12-month PREPAID BUNDLES
+    # (3-month minimum, paid upfront); the intro per-month rate applies to the
+    # first 3 months for new customers, then renews higher. Data tiers were
+    # bumped 2026-06-10 (now 6/17/23GB + Unlimited). The 7-day free-trial eSIM
+    # is the zero-risk way for a tourist to test coverage on landing. Israel
+    # calling is NOT on-plan (UpRoam pay-as-you-go credit, app-only rate).
+    # ─────────────────────────────────────────────────────────────────────
+    {
+        "carrier": "mint", "network": "T-Mobile",
+        "plan_name": "Mint 7-Day Free Trial eSIM", "original_price": 0.0,
+        "data_gb": 250 / 1024, "days": 7, "esim": True,
+        "extras": [
+            "⭐ ניסיון חינם — 250MB + 250 דקות + 250 SMS, עד 7 ימים",
+            "הדרך האפס-סיכון לבדוק כיסוי T-Mobile מרגע הנחיתה",
+            "הפעלת eSIM מיידית דרך אפליקציית Mint (נדרש כרטיס לאימות, מחויב רק אם ממשיכים)",
+            "כמות גלישה לבדיקת רשת בלבד — לא חבילת נסיעה",
+            "ללא תעודה אמריקאית · כרטיסי אשראי זרים/PayPal מתקבלים",
+        ],
+        "source_url": "https://www.mintmobile.com/trial-plan-terms-conditions/",
+    },
+    {
+        "carrier": "mint", "network": "T-Mobile",
+        "plan_name": "Mint 6GB", "original_price": 15.0,
+        "data_gb": 6, "days": 30, "esim": True,
+        "extras": [
+            "$15 לחודש במחיר היכרות (3 חודשים ראשונים) — $45 מראש ל-3 חודשים",
+            "6GB מהיר לחודש ואז 128Kbps",
+            "שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "נמכר במינימום 3 חודשים מראש (הגלישה מתאפסת מדי חודש)",
+            "eSIM · ללא תעודה אמריקאית · כרטיס זר/PayPal",
+        ],
+        "source_url": "https://www.mintmobile.com/plans/",
+    },
+    {
+        "carrier": "mint", "network": "T-Mobile",
+        "plan_name": "Mint 17GB", "original_price": 20.0,
+        "data_gb": 17, "days": 30, "esim": True,
+        "extras": [
+            "$20 לחודש במחיר היכרות (3 חודשים ראשונים) — $60 מראש ל-3 חודשים",
+            "17GB מהיר לחודש ואז 128Kbps",
+            "שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "נקודה חמה כלולה (מתוך ה-17GB)",
+            "נמכר במינימום 3 חודשים מראש · eSIM · ללא תעודה אמריקאית",
+        ],
+        "source_url": "https://www.mintmobile.com/plans/",
+    },
+    {
+        "carrier": "mint", "network": "T-Mobile",
+        "plan_name": "Mint Unlimited", "original_price": 30.0,
+        "data_gb": None, "days": 30, "esim": True,
+        "extras": [
+            "$30 לחודש במחיר היכרות (3 חודשים ראשונים) — $90 מראש ל-3 חודשים",
+            "גלישה ללא הגבלה (עדיפות רשת משנית בעומס)",
+            "שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "נקודה חמה (Hotspot): 20GB",
+            "מחיר רגיל לאחר ההיכרות ~$40/חודש · eSIM",
+        ],
+        "source_url": "https://www.mintmobile.com/plans/",
+    },
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Tello (T-Mobile network) — flexible BUILD-YOUR-OWN prepaid: pick data +
+    # minutes independently, billed monthly, no contract, no credit check.
+    # Unlimited US text on every plan. eSIM must be ACTIVATED inside the US.
+    # Israel calling is NOT free — pay-as-you-go (landline 2.9¢, mobile 9.5¢).
+    # ─────────────────────────────────────────────────────────────────────
+    {
+        "carrier": "tello", "network": "T-Mobile",
+        "plan_name": "Tello 2GB", "original_price": 10.0,
+        "data_gb": 2, "days": 30, "esim": True,
+        "extras": [
+            "שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "בניית חבילה גמישה: בוחרים גלישה + דקות בנפרד (החל מ-$5)",
+            "נקודה חמה כלולה (מתוך הגלישה)",
+            "eSIM · ללא בדיקת אשראי · PayPal/Apple Pay/Google Pay",
+            "⚠️ הפעלת eSIM אפשרית רק מתוך ארה\"ב",
+        ],
+        "source_url": "https://tello.com/buy/custom_plans",
+    },
+    {
+        "carrier": "tello", "network": "T-Mobile",
+        "plan_name": "Tello 5GB", "original_price": 14.0,
+        "data_gb": 5, "days": 30, "esim": True,
+        "extras": [
+            "שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "$10 לחודש הראשון (מחיר היכרות)",
+            "5GB גלישה · נקודה חמה כלולה",
+            "eSIM · ללא תעודה אמריקאית · ללא בדיקת אשראי",
+            "שיחות לישראל בתשלום: קווי 2.9¢/דק', נייד 9.5¢/דק' (לא כלול)",
+        ],
+        "source_url": "https://tello.com/plans",
+    },
+    {
+        "carrier": "tello", "network": "T-Mobile",
+        "plan_name": "Tello Unlimited", "original_price": 25.0,
+        "data_gb": None, "days": 30, "esim": True,
+        "extras": [
+            "גלישה ללא הגבלה (50GB מהיר ואז מהירות מופחתת)",
+            "שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "נקודה חמה (Hotspot): 10GB",
+            "$15 לחודש ב-3 החודשים הראשונים (מחיר היכרות)",
+            "שיחות חינם ל-60+ מדינות — ישראל לא ברשימה (חיוג בתשלום/WhatsApp)",
+        ],
+        "source_url": "https://tello.com/buy/esim",
+    },
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Metro by T-Mobile — T-Mobile's flagship IN-STORE prepaid brand. Walk in
+    # with a PASSPORT (no SSN/credit check), cash accepted ($25 in-store
+    # activation fee). Taxes & fees INCLUDED in the price. AutoPay needs a US
+    # card, so a tourist pays the +$5 first-month rate shown here. eSIM
+    # supported (activate inside the US). Israel calling = Global Voice+ add-on.
+    # ─────────────────────────────────────────────────────────────────────
+    {
+        "carrier": "metro", "network": "T-Mobile",
+        "plan_name": "Metro Unlimited (entry)", "original_price": 30.0,
+        "data_gb": None, "days": 30, "esim": True,
+        "extras": [
+            "גלישה ללא הגבלה ב-5G",
+            "שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "$25 לחודש ב-AutoPay (חודש ראשון $30) · מסים ואגרות כלולים במחיר",
+            "הפעלה בחנות עם דרכון — ללא תעודה אמריקאית (אגרת הפעלה $25)",
+            "eSIM נתמך (הפעלה מתוך ארה\"ב)",
+        ],
+        "source_url": "https://www.metrobyt-mobile.com/phone-plans",
+    },
+    {
+        "carrier": "metro", "network": "T-Mobile",
+        "plan_name": "Metro Unlimited + 10GB Hotspot", "original_price": 35.0,
+        "data_gb": None, "days": 30, "esim": True,
+        "extras": [
+            "גלישה ללא הגבלה ב-5G",
+            "שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "נקודה חמה (Hotspot): 10GB",
+            "$30 לחודש ב-AutoPay (חודש ראשון $35) · מסים כלולים",
+            "הפעלה בחנות עם דרכון · eSIM נתמך",
+        ],
+        "source_url": "https://www.metrobyt-mobile.com/phone-plans",
+    },
+    {
+        "carrier": "metro", "network": "T-Mobile",
+        "plan_name": "Metro Unlimited Best Value", "original_price": 65.0,
+        "data_gb": None, "days": 30, "esim": True,
+        "extras": [
+            "גלישה ללא הגבלה (5G פרימיום — ללא האטה)",
+            "שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "נקודה חמה (Hotspot): 25GB",
+            "כולל Amazon Prime + 100GB Google One",
+            "SMS בינ\"ל ל-210+ יעדים (שיחות לישראל: תוספת Global Voice+ ב-$20)",
+            "$60 לחודש ב-AutoPay (חודש ראשון $65) · מסים כלולים",
+        ],
+        "source_url": "https://www.metrobyt-mobile.com/phone-plans",
+    },
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Lycamobile USA (T-Mobile network) — built around INTERNATIONAL CALLING.
+    # 🇮🇱 Every national plan ($19+) includes UNLIMITED calls to Israel
+    # (landlines + most mobiles) — the standout for an Israeli visitor.
+    # Carve-outs: Israeli mobile prefixes 056/059 (97256/97259) are NOT
+    # unlimited, and "unlimited" = first 10 unique numbers per country/cycle.
+    # eSIM, no SSN/credit check, also sold at airport kiosks.
+    # ─────────────────────────────────────────────────────────────────────
+    {
+        "carrier": "lyca_usa", "network": "T-Mobile",
+        "plan_name": "Lyca $19 Unlimited Intl", "original_price": 19.0,
+        "data_gb": 5, "days": 30, "esim": True,
+        "extras": [
+            "🇮🇱 שיחות ללא הגבלה לישראל כלולות (קווי + רוב הניידים)",
+            "5GB גלישה · שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "שיחות ללא הגבלה ל-~100 מדינות + קרדיט בינ\"ל מתנה",
+            "חריג ישראל: ניידים 056/059 לא כלולים; 'ללא הגבלה' = עד 10 מספרים שונים למדינה",
+            "eSIM · ללא תעודה אמריקאית · זמין גם בקיוסקים בשדה התעופה",
+        ],
+        "source_url": "https://www.lycamobile.us/en/plan-types/national-plans/",
+    },
+    {
+        "carrier": "lyca_usa", "network": "T-Mobile",
+        "plan_name": "Lyca $29 Unlimited Intl", "original_price": 29.0,
+        "data_gb": 15, "days": 30, "esim": True,
+        "extras": [
+            "🇮🇱 שיחות ללא הגבלה לישראל כלולות (קווי + רוב הניידים)",
+            "15GB גלישה · שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "נקודה חמה (Hotspot): 10GB · נדידה במקסיקו/קנדה",
+            "שיחות ללא הגבלה ל-~100 מדינות",
+            "חריג: ניידים ישראליים 056/059 אינם כלולים (חיוג בתשלום)",
+        ],
+        "source_url": "https://www.lycamobile.us/en/plan-types/national-plans/",
+    },
+    {
+        "carrier": "lyca_usa", "network": "T-Mobile",
+        "plan_name": "Lyca $39 High Data Intl", "original_price": 39.0,
+        "data_gb": 25, "days": 30, "esim": True,
+        "extras": [
+            "🇮🇱 שיחות ללא הגבלה לישראל כלולות (קווי + רוב הניידים)",
+            "25GB גלישה · שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "נקודה חמה (Hotspot): 10GB · נדידה במקסיקו/קנדה",
+            "שיחות ללא הגבלה ל-~100 מדינות",
+            "eSIM · ללא תעודה אמריקאית",
+        ],
+        "source_url": "https://www.lycamobile.us/en/plan-types/national-plans/",
+    },
+    {
+        "carrier": "lyca_usa", "network": "T-Mobile",
+        "plan_name": "Lyca $59 Intl", "original_price": 59.0,
+        "data_gb": 60, "days": 30, "esim": True,
+        "extras": [
+            "🇮🇱 שיחות ללא הגבלה לישראל כלולות (קווי + רוב הניידים)",
+            "60GB גלישה · שיחות ו-SMS ללא הגבלה בארה\"ב",
+            "נקודה חמה (Hotspot): 25GB",
+            "שיחות ללא הגבלה ל-85+ מדינות",
+            "חריג: ניידים ישראליים 056/059 אינם כלולים; 'ללא הגבלה' = עד 10 מספרים/מדינה",
+        ],
+        "source_url": "https://www.lycamobile.us/en/plan-types/national-plans/",
+    },
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Simple Mobile — Tracfone brand now on the VERIZON network (the 2025
+    # "Verizon Value" relaunch moved it off T-Mobile). Unlimited US talk/text +
+    # unlimited global texting on every tier; 🇮🇱 Israel IS in the unlimited
+    # intl-calling list (even the $25 plan), capped at 15 unique numbers per
+    # 30-day cycle. eSIM (Verizon-compatible), no SSN, cash SIM kit at Walmart.
+    # ─────────────────────────────────────────────────────────────────────
+    {
+        "carrier": "simple_mobile", "network": "Verizon",
+        "plan_name": "Simple Mobile $25 (15GB)", "original_price": 25.0,
+        "data_gb": 15, "days": 30, "esim": True,
+        "extras": [
+            "🇮🇱 שיחות ללא הגבלה לישראל כלולות (ל-100+ מדינות) + קרדיט בינ\"ל $10",
+            "15GB מהיר ואז מהירות מופחתת",
+            "שיחות ו-SMS ללא הגבלה בארה\"ב + SMS בינ\"ל ללא הגבלה",
+            "מגבלה: עד 15 מספרים בינ\"ל שונים בכל מחזור 30 יום",
+            "eSIM (תואם Verizon) · ללא תעודה אמריקאית · ערכת SIM במזומן ב-Walmart",
+        ],
+        "source_url": "https://www.simplemobile.com/cell-phone-plans",
+    },
+    {
+        "carrier": "simple_mobile", "network": "Verizon",
+        "plan_name": "Simple Mobile $40 (30GB)", "original_price": 40.0,
+        "data_gb": 30, "days": 30, "esim": True,
+        "extras": [
+            "🇮🇱 שיחות ללא הגבלה לישראל כלולות (ל-125+ מדינות) + קרדיט בינ\"ל $10",
+            "30GB מהיר ואז מהירות מופחתת",
+            "שיחות ו-SMS ללא הגבלה בארה\"ב + SMS בינ\"ל ללא הגבלה",
+            "ערך מצוין לתייר עם שיחות הביתה לישראל",
+            "eSIM (תואם Verizon) · ערכת SIM במזומן ב-Walmart",
+        ],
+        "source_url": "https://www.simplemobile.com/cell-phone-plans",
+    },
+    {
+        "carrier": "simple_mobile", "network": "Verizon",
+        "plan_name": "Simple Mobile $50 Unlimited World", "original_price": 50.0,
+        "data_gb": None, "days": 30, "esim": True,
+        "extras": [
+            "🇮🇱 שיחות ללא הגבלה לישראל כלולות (ל-200+ מדינות) + קרדיט בינ\"ל $10",
+            "גלישה ללא הגבלה ברשת Verizon",
+            "שיחות ו-SMS ללא הגבלה בארה\"ב + SMS בינ\"ל ללא הגבלה",
+            "נדידה ב-~16 מדינות (בעיקר אמריקה הלטינית)",
+            "eSIM (תואם Verizon) · ללא תעודה אמריקאית",
+        ],
+        "source_url": "https://www.simplemobile.com/cell-phone-plans",
+    },
+    {
+        "carrier": "simple_mobile", "network": "Verizon",
+        "plan_name": "Simple Mobile $60 Unlimited World+", "original_price": 60.0,
+        "data_gb": None, "days": 30, "esim": True,
+        "extras": [
+            "🇮🇱 שיחות ללא הגבלה לישראל כלולות (ל-200+ מדינות) + קרדיט בינ\"ל $20",
+            "גלישה ללא הגבלה כולל Verizon 5G Ultra Wideband",
+            "שיחות ו-SMS ללא הגבלה בארה\"ב + SMS בינ\"ל ללא הגבלה",
+            "נדידה בינ\"ל ב-140+ מדינות — מצוין למי שממשיך לטייל",
+            "eSIM (תואם Verizon) · ערכת SIM במזומן ב-Walmart",
+        ],
+        "source_url": "https://www.simplemobile.com/cell-phone-plans",
     },
 ]
 

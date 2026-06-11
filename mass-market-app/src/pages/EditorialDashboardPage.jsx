@@ -363,6 +363,7 @@ function ChangeFeed({ changes, onItemClick }) {
                   <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-moca-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '1 1 0%' }}>
                     {c.plan_name}
                   </span>
+                  {c.scope === 'abroad' && <Tag color="var(--color-moca-sub)">{'חו"ל'}</Tag>}
                   {isHot && <Tag color="var(--color-moca-hot)">HOT</Tag>}
                   {isNew && <Tag color="var(--color-moca-down)">NEW</Tag>}
                 </div>
@@ -371,6 +372,7 @@ function ChangeFeed({ changes, onItemClick }) {
                   {c.change_type === 'new_plan' && 'מסלול חדש'}
                   {c.change_type === 'removed_plan' && 'הוסר'}
                   {c.change_type === 'extras_change' && 'שינוי הטבות'}
+                  {c.change_type === 'details_change' && `שינוי פרטים — ${c.old_val} ← ${c.new_val}`}
                   <span className="md:hidden" style={{ marginInlineStart: 6, opacity: 0.7 }}>· {fmtAgo(c.changed_at)}</span>
                 </div>
                 {c.change_type === 'extras_change' && <BenefitDiffRows diff={diff} />}
@@ -661,7 +663,8 @@ export default function EditorialDashboardPage() {
         <ChangeFeed
           changes={recentChanges}
           onItemClick={(c) => {
-            navigate(`/plans?carrier=${c.carrier}&highlight=${encodeURIComponent(c.plan_name || '')}`)
+            const base = c.scope === 'abroad' ? '/roaming' : '/plans'
+            navigate(`${base}?carrier=${c.carrier}&highlight=${encodeURIComponent(c.plan_name || '')}`)
           }}
         />
       </div>

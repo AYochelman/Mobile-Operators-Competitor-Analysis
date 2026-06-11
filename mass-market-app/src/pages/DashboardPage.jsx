@@ -24,6 +24,7 @@ import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import Button from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
+import { ISRAELI_GLOBAL_PROVIDERS, USA_LABELS } from '../data/carrierLabels'
 import {
   TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
   SIMTLV_COUNTRIES, PELEPHONE_GLOBAL_COUNTRIES, ESIMO_REGION_MAP,
@@ -71,7 +72,12 @@ function getPlanCoverage(plan) {
   if (carrier === 'xphone_global') {
     return dest.startsWith('אירופה') ? XPHONE_EUROPE : XPHONE_WORLD
   }
-  if (carrier === 'simtlv') return SIMTLV_COUNTRIES
+  if (carrier === 'simtlv') {
+    // Only the 127-country bundles expand to the full coverage list.
+    // Per-country and regional catalog plans (extras[0] = country name or
+    // 'אירופה (N מדינות)' label) return null → extras[0] equality fallback.
+    return dest === '127 מדינות' ? SIMTLV_COUNTRIES : null
+  }
   if (carrier === 'world8') {
     return (name.includes('אירופה') || name.includes('Europe')) ? WORLD8_EUROPE_USA : WORLD8_WORLDWIDE
   }
@@ -162,12 +168,18 @@ const TAB_ICONS = {
       <path d="M16 10a4 4 0 0 1-8 0"/>
     </svg>
   ),
+  usa: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3.5c-.5-.5-2.5 0-4 1.5L13.5 8 5.2 6.2c-.5-.1-.9.2-.9.7l.3.5L8 11l-3 1-1 1 .5.5L8 15l1 3.5.5.5 1-1 1-3 3.5 2.7.5.3c.5 0 .8-.4.7-.9z"/>
+    </svg>
+  ),
 }
 
 const TABS = [
   { id: 'domestic', label: 'חבילות סלולר' },
   { id: 'abroad', label: 'חו"ל' },
   { id: 'global', label: 'גלובלי' },
+  { id: 'usa', label: 'נוחתים בארה"ב' },
   { id: 'resellers', label: 'משווקים' },
   { id: 'content', label: 'תוכן' },
   { id: 'banners', label: 'באנרים ראשיים' },
@@ -186,7 +198,59 @@ const RESELLERS = [
     source_url: 'https://www.facebook.com/ZorroPricesCompare/' },
   { id: 'rami_levy_landing', label: '\u05e8\u05de\u05d9 \u05dc\u05d5\u05d9 \u05ea\u05e7\u05e9\u05d5\u05e8\u05ea \u2014 \u05d3\u05e3 \u05e0\u05d7\u05d9\u05ea\u05d4', underlying: 'rami_levy',
     source_url: 'https://landing-mobile.rami-levy.co.il/landing/' },
+  // \u2500\u2500 2026-06-11 web sweep: below-the-line sources (btl_scrapers.py + seed) \u2500\u2500
+  { id: 'pelephone_cellphone', label: '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df Deal', underlying: 'pelephone',
+    source_url: 'https://pelephone-deal.co.il/' },
+  { id: 'tiber',          label: '\u05d8\u05d9\u05d1\u05e8 \u2014 \u05e7\u05d0\u05e9\u05d1\u05e7 (\u05e4\u05dc\u05d0\u05e4\u05d5\u05df/\u05e4\u05e8\u05d8\u05e0\u05e8/\u05d2\u05d5\u05dc\u05df/019)', underlying: 'pelephone',
+    source_url: 'https://tiber.co.il/Shop/Details/\u05d7\u05d1\u05d9\u05dc\u05d5\u05ea-\u05e1\u05dc\u05d5\u05dc\u05e8' },
+  { id: 'zol_li',         label: '\u05d6\u05d5\u05dc-\u05dc\u05d9 \u2014 \u05d4\u05d5\u05d8 \u05de\u05d5\u05d1\u05d9\u05d9\u05dc \u05e2\u05e8\u05d5\u05e5 \u05de\u05e9\u05d5\u05d5\u05e7\u05d9\u05dd', underlying: 'hotmobile',
+    source_url: 'https://www.zol-li.co.il/\u05d4\u05d5\u05d8-\u05de\u05d5\u05d1\u05d9\u05d9\u05dc-\u05e1\u05dc\u05d5\u05dc\u05e8/' },
+  { id: 'kamaze',         label: '\u05db\u05de\u05d4 \u05d6\u05d4 \u2014 \u05de\u05e1\u05dc\u05d5\u05dc\u05d9 \u05de\u05e9\u05d5\u05d5\u05e7\u05d9\u05dd (\u05e1\u05dc\u05e7\u05d5\u05dd/\u05e4\u05e8\u05d8\u05e0\u05e8)', underlying: 'cellcom',
+    source_url: 'https://www.kamaze.co.il/' },
+  { id: 'kamazeole',      label: '\u05db\u05de\u05d4 \u05d6\u05d4 \u05e2\u05d5\u05dc\u05d4 \u2014 \u05d2\u05d5\u05dc\u05df \u05de\u05e9\u05e4\u05d7\u05ea\u05d9\u05ea', underlying: 'golan',
+    source_url: 'https://www.kamazeole.co.il/' },
+  { id: 'sell_zoll',      label: 'sell-zoll \u2014 \u05de\u05ea\u05d5\u05d5\u05da \u05e1\u05dc\u05e7\u05d5\u05dd', underlying: 'cellcom',
+    source_url: 'https://sell-zoll.co.il/cellular' },
+  { id: 'tikshoretishit', label: '\u05ea\u05e7\u05e9\u05d5\u05e8\u05ea \u05d0\u05d9\u05e9\u05d9\u05ea \u2014 \u05d2\u05d5\u05dc\u05df 750GB', underlying: 'golan',
+    source_url: 'https://tikshoretishit.co.il/' },
+  { id: 'clubdeal',       label: 'ClubDeal \u2014 \u05de\u05d5\u05e2\u05d3\u05d5\u05df \u05e4\u05dc\u05d0\u05e4\u05d5\u05df', underlying: 'pelephone',
+    source_url: 'https://clubdeal.co.il/pelephone/' },
+  { id: 'partner_site',   label: '\u05e4\u05e8\u05d8\u05e0\u05e8 \u2014 \u05d3\u05e3 \u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea (\u05ea\u05e0\u05d0\u05d9\u05dd \u05de\u05ea\u05d7\u05ea \u05dc\u05e7\u05d5)', underlying: 'partner',
+    source_url: 'https://www.partner.co.il/n/cellularsale/lobby' },
+  { id: 'wecom_site',     label: '\u05d5\u05d9-\u05e7\u05d5\u05dd \u2014 \u05e1\u05d9\u05dd \u05d3\u05d0\u05d8\u05d4', underlying: 'wecom',
+    source_url: 'https://we-com.co.il/sim-data/' },
+  { id: 'rami_levy_hever', label: '\u05e8\u05de\u05d9 \u05dc\u05d5\u05d9 \u2014 \u05de\u05d5\u05e2\u05d3\u05d5\u05df \u05d7\u05d1\u05e8', underlying: 'rami_levy',
+    source_url: 'https://mobile.rami-levy.co.il/Home/Hever' },
+  { id: 'rami_levy_cc',   label: '\u05e8\u05de\u05d9 \u05dc\u05d5\u05d9 \u2014 \u05d4\u05d8\u05d1\u05ea \u05db\u05e8\u05d8\u05d9\u05e1 \u05d0\u05e9\u05e8\u05d0\u05d9', underlying: 'rami_levy',
+    source_url: 'https://mobile.rami-levy.co.il/Home/Landing/' },
+  { id: 'pelephone_fb',   label: '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df \u2014 \u05e7\u05de\u05e4\u05d9\u05d9\u05df \u05e4\u05d9\u05d9\u05e1\u05d1\u05d5\u05e7', underlying: 'pelephone',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=\u05e4\u05dc\u05d0\u05e4\u05d5\u05df&search_type=keyword_unordered' },
+  { id: 'analizer',       label: '\u05d0\u05e0\u05dc\u05d9\u05d9\u05d6\u05e8 \u2014 \u05de\u05ea\u05d5\u05d5\u05da (\u05e1\u05dc\u05e7\u05d5\u05dd)', underlying: 'cellcom',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=\u05d0\u05e0\u05dc\u05d9\u05d9\u05d6\u05e8&search_type=keyword_unordered' },
 ]
+
+// US operators on the "\u05e0\u05d5\u05d7\u05ea\u05d9\u05dd \u05d1\u05d0\u05e8\u05d4"\u05d1" tab. `net` groups them by the underlying
+// network for the network filter. Order: Big-3 / tourist-dedicated first.
+const USA_OPERATORS = [
+  { id: 'tmobile_prepaid', label: 'T-Mobile Prepaid', net: 'T-Mobile' },
+  { id: 'att_prepaid',     label: 'AT&T Prepaid',     net: 'AT&T' },
+  { id: 'verizon_prepaid', label: 'Verizon Prepaid',  net: 'Verizon' },
+  { id: 'ultra',           label: 'Ultra Mobile',     net: 'T-Mobile' },
+  { id: 'cricket',         label: 'Cricket Wireless', net: 'AT&T' },
+  { id: 'h2o',             label: 'H2O Wireless',     net: 'AT&T' },
+  { id: 'visible',         label: 'Visible',          net: 'Verizon' },
+  { id: 'us_mobile',       label: 'US Mobile',        net: '\u05e8\u05d1-\u05e8\u05e9\u05ea\u05d9' },
+  { id: 'red_pocket',      label: 'Red Pocket',       net: '\u05e8\u05d1-\u05e8\u05e9\u05ea\u05d9' },
+  { id: 'straight_talk',   label: 'Straight Talk',    net: 'Verizon' },
+  { id: 'total_wireless',  label: 'Total Wireless',   net: 'Verizon' },
+  { id: 'boost',           label: 'Boost Mobile',     net: 'Boost' },
+  { id: 'mint',            label: 'Mint Mobile',      net: 'T-Mobile' },
+  { id: 'tello',           label: 'Tello',            net: 'T-Mobile' },
+  { id: 'metro',           label: 'Metro by T-Mobile', net: 'T-Mobile' },
+  { id: 'lyca_usa',        label: 'Lycamobile USA',   net: 'T-Mobile' },
+  { id: 'simple_mobile',   label: 'Simple Mobile',    net: 'Verizon' },
+]
+const USA_NETWORKS = ['T-Mobile', 'AT&T', 'Verizon', 'Boost', '\u05e8\u05d1-\u05e8\u05e9\u05ea\u05d9']
 
 const KNOWN_REGIONS = new Set([
   'אירופה','אסיה','אסיה ואוקיאניה','אפריקה','גלובלי','קריביים','איי הקריביים',
@@ -204,6 +268,12 @@ const KNOWN_REGIONS = new Set([
   // Breeze regions
   'אירופה+','אמריקה המרכזית','חבר המדינות',
   'אירופה וארה"ב','פורטוגל וספרד','המזרח התיכון לייט','אירופה לייט',
+  // SimTLV catalog regional bundles (counts < 100 so the generic
+  // "N מדינות → גלובלי" rule doesn't catch them)
+  'אירופה (32 מדינות)','אירופה (33 מדינות)','אירופה (37 מדינות)',
+  'גלובלי (36 מדינות)','גלובלי (37 מדינות)','גלובלי (41 מדינות)',
+  'גלובלי (47 מדינות)','גלובלי (58 מדינות)','גלובלי (84 מדינות)',
+  'דרום אמריקה (11 מדינות)',
 ])
 
 // Region-label consolidation rules:
@@ -219,6 +289,8 @@ function isLargeMultiCountryRegion(region) {
 function normalizeRegionLabel(region) {
   if (isLargeMultiCountryRegion(region)) return 'גלובלי'
   if (region && String(region).includes('אירופה')) return 'אירופה'
+  // "גלובלי (47 מדינות)" etc. (SimTLV) fold into the unified global entry
+  if (region && String(region).includes('גלובלי')) return 'גלובלי'
   return region
 }
 
@@ -285,6 +357,7 @@ export default function DashboardPage() {
     '/plans':     'domestic',
     '/roaming':   'abroad',
     '/esim':      'global',
+    '/usa':       'usa',
     '/resellers': 'resellers',
     '/content':   'content',
     '/news':      'news',
@@ -295,6 +368,7 @@ export default function DashboardPage() {
     domestic:  '/plans',
     abroad:    '/roaming',
     global:    '/esim',
+    usa:       '/usa',
     resellers: '/resellers',
     content:   '/content',
     news:      '/news',
@@ -332,12 +406,13 @@ export default function DashboardPage() {
   }, [flags]) // eslint-disable-line react-hooks/exhaustive-deps
   const [loading, setLoading] = useState(true)
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [plans, setPlans] = useState({ domestic: [], abroad: [], global: [], content: [], resellers: [] })
+  const [plans, setPlans] = useState({ domestic: [], abroad: [], global: [], content: [], resellers: [], usa: [] })
   const [changes, setChanges] = useState({ domestic: [], abroad: [], global: [], content: [] })
   const [filters, setFilters] = useState({
     carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', roaming: 'all',
     globalProvider: 'all', destination: 'all', region: 'all', days: 'all',
-    contentCarrier: 'all', contentService: 'all', reseller: 'all',
+    israeliProvider: 'all', contentCarrier: 'all', contentService: 'all', reseller: 'all',
+    usaOperator: 'all', usaNetwork: 'all',
   })
   const [countryModal, setCountryModal] = useState(null)
   const [highlightPlan, setHighlightPlan] = useState(null)
@@ -367,6 +442,7 @@ export default function DashboardPage() {
     }
     if (tab === 'global') {
       if (filters.globalProvider !== 'all') count++
+      if (filters.israeliProvider !== 'all') count++
       if (filters.region !== 'all') count++
       if (filters.destination !== 'all') count++
     }
@@ -377,6 +453,10 @@ export default function DashboardPage() {
     if (tab === 'resellers') {
       if (filters.reseller !== 'all') count++
       if (filters.carrier !== 'all') count++
+    }
+    if (tab === 'usa') {
+      if (filters.usaOperator !== 'all') count++
+      if (filters.usaNetwork !== 'all') count++
     }
     if (tab !== 'content') {
       if (filters.gb !== 'all') count++
@@ -396,7 +476,7 @@ export default function DashboardPage() {
     const urlHighlight = searchParams.get('highlight')
     if (!urlTab && !urlCarrier && !urlHighlight) return
 
-    const validTabs = ['domestic', 'abroad', 'global', 'content', 'resellers']
+    const validTabs = ['domestic', 'abroad', 'global', 'content', 'resellers', 'usa']
     const targetTab = urlTab && validTabs.includes(urlTab)
       ? urlTab
       : (lockedTab && validTabs.includes(lockedTab) ? lockedTab : null)
@@ -411,6 +491,8 @@ export default function DashboardPage() {
     if (urlCarrier) {
       if (targetTab === 'global') {
         setFilter('globalProvider', urlCarrier)
+      } else if (targetTab === 'usa') {
+        setFilter('usaOperator', urlCarrier)
       } else {
         setFilter('carrier', urlCarrier)
       }
@@ -570,6 +652,10 @@ export default function DashboardPage() {
           return { ...plan, extras: [tag, ...(plan.extras || [])] }
         })
         setPlans(prev => ({ ...prev, resellers: enriched }))
+      } else if (t === 'usa' && plans.usa.length === 0) {
+        const p = await api.getUsaPlans()
+        if (id !== loadIdRef.current) return
+        setPlans(prev => ({ ...prev, usa: p }))
       } else if (t === 'content' && plans.content.length === 0) {
         const p = await api.getContentPlans()
         setPlans(prev => ({ ...prev, content: p }))
@@ -638,6 +724,10 @@ export default function DashboardPage() {
         const ids = f.globalProvider === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [f.globalProvider]
         result = result.filter(p => ids.includes(p.carrier))
       }
+      if (f.israeliProvider !== 'all') {
+        const wantIsraeli = f.israeliProvider === 'israeli'
+        result = result.filter(p => ISRAELI_GLOBAL_PROVIDERS.has(p.carrier) === wantIsraeli)
+      }
       if (f.region !== 'all') result = result.filter(p => p.extras && normalizeRegionLabel(p.extras[0]) === f.region)
       else if (f.destination !== 'all') result = result.filter(p => {
         if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
@@ -659,6 +749,13 @@ export default function DashboardPage() {
       if (f.reseller !== 'all') result = result.filter(p => p.reseller_id === f.reseller)
       if (f.carrier !== 'all') result = result.filter(p => p.carrier === f.carrier)
     }
+    if (tab === 'usa') {
+      if (f.usaOperator !== 'all') result = result.filter(p => p.carrier === f.usaOperator)
+      if (f.usaNetwork !== 'all') {
+        const opsOnNet = new Set(USA_OPERATORS.filter(o => o.net === f.usaNetwork).map(o => o.id))
+        result = result.filter(p => opsOnNet.has(p.carrier))
+      }
+    }
 
     if (f.gb !== 'all' && tab !== 'content') {
       if (f.gb === 'unlimited') result = result.filter(p => p.data_gb === null)
@@ -668,7 +765,7 @@ export default function DashboardPage() {
       else if (f.gb === '100+') result = result.filter(p => p.data_gb !== null && p.data_gb > 100)
     }
 
-    if (f.days !== 'all' && (tab === 'abroad' || tab === 'global')) {
+    if (f.days !== 'all' && (tab === 'abroad' || tab === 'global' || tab === 'usa')) {
       if (f.days === '1-7') result = result.filter(p => p.days && p.days <= 7)
       else if (f.days === '8-14') result = result.filter(p => p.days && p.days > 7 && p.days <= 14)
       else if (f.days === '15-30') result = result.filter(p => p.days && p.days > 14 && p.days <= 30)
@@ -824,7 +921,8 @@ export default function DashboardPage() {
     startTransition(() => {
       setFilters({ carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', roaming: 'all',
         globalProvider: 'all', destination: 'all', region: 'all', days: 'all',
-        contentCarrier: 'all', contentService: 'all' })
+        israeliProvider: 'all', contentCarrier: 'all', contentService: 'all', reseller: 'all',
+        usaOperator: 'all', usaNetwork: 'all' })
       setVisibleCount(50)
     })
   }
@@ -833,7 +931,8 @@ export default function DashboardPage() {
   const providerStats = useMemo(() => {
     const active =
       ((tab === 'domestic' || tab === 'abroad') && filters.carrier !== 'all') ||
-      (tab === 'global' && filters.globalProvider !== 'all')
+      (tab === 'global' && filters.globalProvider !== 'all') ||
+      (tab === 'usa' && filters.usaOperator !== 'all')
     if (!active || filteredPlans.length === 0) return null
     const prices = filteredPlans.map(p => Number(p.price)).filter(p => p > 0)
     if (prices.length === 0) return null
@@ -853,7 +952,7 @@ export default function DashboardPage() {
     if (!filteredPlans.length) return
     // Dynamic-import xlsx (~80KB) only when user clicks export
     const XLSX = await import('xlsx')
-    const TAB_NAMES = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי', content: 'תוכן' }
+    const TAB_NAMES = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי', content: 'תוכן', usa: 'נוחתים בארה"ב' }
     const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack', breez: 'Breez' }
     const GB_HEB = { 'all': 'הכל', '0-5': '0-5GB', '5-15': '5-15GB', '15-100': '15-100GB', '100+': '100+GB', 'unlimited': 'ללא הגבלה' }
     const DAYS_HEB = { 'all': 'הכל', '1-7': '1-7 ימים', '8-14': '8-14 ימים', '15-30': '15-30 ימים', '30+': '30+ ימים' }
@@ -862,6 +961,7 @@ export default function DashboardPage() {
     const parts = [`קטגוריה: ${TAB_NAMES[tab]}`]
     if (filters.carrier !== 'all') parts.push(`ספק: ${CARRIER_HEB[filters.carrier] || filters.carrier}`)
     if (filters.globalProvider !== 'all') parts.push(`ספק: ${CARRIER_HEB[filters.globalProvider] || filters.globalProvider}`)
+    if (filters.israeliProvider !== 'all') parts.push(filters.israeliProvider === 'israeli' ? 'ספקים ישראליים' : 'ספקים בינלאומיים')
     if (filters.region !== 'all') parts.push(`אזור: ${filters.region}`)
     if (filters.destination !== 'all') parts.push(`מדינה: ${filters.destination}`)
     if (filters.gb !== 'all') parts.push(`גלישה: ${GB_HEB[filters.gb] || filters.gb}`)
@@ -982,7 +1082,7 @@ export default function DashboardPage() {
           {visibleTabs.map(t => (
             <button
               key={t.id}
-              onClick={() => { setTab(t.id); setVisibleCount(50); setFilter('carrier', 'all'); setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
+              onClick={() => { setTab(t.id); setVisibleCount(50); setFilter('carrier', 'all'); setFilter('globalProvider', 'all'); setFilter('israeliProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
               className={`relative px-4 py-2.5 text-[13px] font-medium transition-all duration-150
                 ${tab === t.id
                   ? 'text-moca-text after:absolute after:bottom-0 after:inset-x-2 after:h-[2px] after:bg-moca-bolt after:rounded-full'
@@ -1185,15 +1285,86 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Abroad/Global: Sort row — same FilterTag style */}
+              {/* Abroad/Global: Row 3 = מיון, with סוג ספק beside it on the global tab */}
               {(tab === 'abroad' || tab === 'global') && (
-                <div className="border border-moca-border/60 rounded-xl p-2.5">
-                  <p className="text-[11px] font-medium text-gray-500 mb-1.5">מיון</p>
-                  <div className="flex flex-wrap gap-1">
-                    <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
-                    <FilterTag label="מחיר ↓" active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
-                    <FilterTag label="GB ↑" active={filters.sort === 'gb_asc'} onClick={() => setFilter('sort', 'gb_asc')} />
-                    <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
+                <div className={tab === 'global' ? 'grid grid-cols-2 gap-3' : ''}>
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">מיון</p>
+                    <div className="flex flex-wrap gap-1">
+                      <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
+                      <FilterTag label="מחיר ↓" active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
+                      <FilterTag label="GB ↑" active={filters.sort === 'gb_asc'} onClick={() => setFilter('sort', 'gb_asc')} />
+                      <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
+                    </div>
+                  </div>
+                  {/* סוג ספק — ישראלי (אתר בעברית) / בינלאומי. The list lives in carrierLabels.js */}
+                  {tab === 'global' && (
+                    <div className="border border-moca-border/60 rounded-xl p-2.5">
+                      <p className="text-[11px] font-medium text-gray-500 mb-1.5">סוג ספק</p>
+                      <div className="flex flex-wrap gap-1">
+                        {[['all', 'הכל'], ['israeli', 'ספק ישראלי'], ['foreign', 'ספק בינלאומי']].map(([v, label]) => (
+                          <FilterTag
+                            key={v}
+                            label={label}
+                            active={filters.israeliProvider === v}
+                            onClick={() => {
+                              setFilter('israeliProvider', v)
+                              // Drop a selected provider that contradicts the new scope (would yield 0 results)
+                              if (v !== 'all' && filters.globalProvider !== 'all' &&
+                                  ISRAELI_GLOBAL_PROVIDERS.has(filters.globalProvider) !== (v === 'israeli')) {
+                                setFilter('globalProvider', 'all')
+                              }
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* USA: Row 1 = גלישה | תוקף */}
+              {tab === 'usa' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
+                    <div className="flex flex-wrap gap-1">
+                      {['all', '0-5', '5-15', '15-100', 'unlimited'].map(v => (
+                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === 'unlimited' ? 'ללא הגבלה' : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
+                    <div className="flex flex-wrap gap-1">
+                      {['all', '1-7', '8-14', '15-30', '30+'].map(v => (
+                        <FilterTag key={v} label={v === 'all' ? 'הכל' : `${v} ימים`} active={filters.days === v} onClick={() => setFilter('days', v)} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* USA: Row 2 = מיון | רשת */}
+              {tab === 'usa' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">מיון</p>
+                    <div className="flex flex-wrap gap-1">
+                      <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
+                      <FilterTag label="מחיר ↓" active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
+                      <FilterTag label="GB ↑" active={filters.sort === 'gb_asc'} onClick={() => setFilter('sort', 'gb_asc')} />
+                      <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
+                    </div>
+                  </div>
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">רשת</p>
+                    <div className="flex flex-wrap gap-1">
+                      <FilterTag label="כל הרשתות" active={filters.usaNetwork === 'all'} onClick={() => { setFilter('usaNetwork', 'all'); setFilter('usaOperator', 'all') }} />
+                      {USA_NETWORKS.map(n => (
+                        <FilterTag key={n} label={n} active={filters.usaNetwork === n} onClick={() => { setFilter('usaNetwork', n); setFilter('usaOperator', 'all') }} />
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -1267,6 +1438,9 @@ export default function DashboardPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-1">
                     {GLOBAL_PROVIDERS.map(p => {
+                      // Respect the סוג ספק scope — show only providers on the selected side
+                      if (filters.israeliProvider !== 'all' &&
+                          ISRAELI_GLOBAL_PROVIDERS.has(p.id) !== (filters.israeliProvider === 'israeli')) return null
                       const cnt = plans.global?.filter(x => x.carrier === p.id).length || 0
                       if (!cnt) return null
                       return (
@@ -1281,6 +1455,43 @@ export default function DashboardPage() {
                         </button>
                       )
                     })}
+                  </div>
+                </div>
+              )}
+
+              {/* USA operators */}
+              {tab === 'usa' && (
+                <div className="border border-moca-border/60 rounded-xl p-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[11px] font-medium text-gray-500">מפעילים</p>
+                    <button
+                      onClick={() => { setFilter('usaOperator', 'all'); setFilter('usaNetwork', 'all') }}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
+                        filters.usaOperator === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                      }`}
+                    >
+                      כולם
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
+                    {USA_OPERATORS
+                      .filter(o => filters.usaNetwork === 'all' || o.net === filters.usaNetwork)
+                      .map(o => {
+                        const cnt = plans.usa?.filter(p => p.carrier === o.id).length || 0
+                        return (
+                          <button
+                            key={o.id}
+                            onClick={() => cnt > 0 ? setFilter('usaOperator', o.id) : null}
+                            className={`px-1 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
+                              filters.usaOperator === o.id ? 'bg-gray-900 text-white' :
+                              cnt === 0 ? 'text-moca-border cursor-default' :
+                              'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                            }`}
+                          >
+                            {o.label} {cnt > 0 ? `(${cnt})` : ''}
+                          </button>
+                        )
+                      })}
                   </div>
                 </div>
               )}
@@ -1368,7 +1579,7 @@ export default function DashboardPage() {
           <span className="text-gray-300">·</span>
           <span className="text-gray-500">מינימום: <strong className="text-emerald-600">&#8362;{providerStats.min}</strong></span>
           <div className="mr-auto">
-            <CarrierAIInsights carrierId={tab === 'global' ? filters.globalProvider : filters.carrier} />
+            <CarrierAIInsights carrierId={tab === 'global' ? filters.globalProvider : tab === 'usa' ? filters.usaOperator : filters.carrier} />
           </div>
         </div>
       )}

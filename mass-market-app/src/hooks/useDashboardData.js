@@ -4,13 +4,14 @@ import { api } from '../lib/api'
 /**
  * Aggregate dashboard data for the Editorial Deep view.
  *
- * One fetch for plans + one for changes. Everything else is derived in
- * useMemo so cards re-render cheap. Returns:
+ * One fetch for plans + one for domestic changes + one for roaming changes.
+ * Everything else is derived in useMemo so cards re-render cheap. Returns:
  *   { loading, plans, changes,
  *     leadChange,    // biggest 24h change with our-plan match
  *     kpis,          // { changesToday, avgPrice, newPlans, oursVsMarket }
  *     heatmap,       // { carriers[], days[], cells: Map<key, count> }
- *     recentChanges, // sorted desc by changed_at, last 30
+ *     recentChanges, // domestic+roaming merged, tagged scope:'domestic'|'abroad',
+ *                    // sorted desc by changed_at, last 30
  *   }
  */
 
@@ -179,6 +180,7 @@ function buildHeatmap(changes, carrierIds) {
 export function useDashboardData(oursCarrier, carrierIds) {
   const [plans, setPlans] = useState([])
   const [changes, setChanges] = useState([])
+  const [abroadChanges, setAbroadChanges] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -188,10 +190,12 @@ export function useDashboardData(oursCarrier, carrierIds) {
     Promise.all([
       api.getPlans().catch(() => []),
       api.getChanges(300).catch(() => []),
-    ]).then(([planData, changeData]) => {
+      api.getAbroadChanges().catch(() => []),
+    ]).then(([planData, changeData, abroadData]) => {
       if (!alive) return
       setPlans(Array.isArray(planData) ? planData : (planData?.plans || []))
       setChanges(Array.isArray(changeData) ? changeData : (changeData?.changes || []))
+      setAbroadChanges(Array.isArray(abroadData) ? abroadData : (abroadData?.changes || []))
       setLoading(false)
     }).catch((e) => {
       if (!alive) return
@@ -205,15 +209,22 @@ export function useDashboardData(oursCarrier, carrierIds) {
   const kpis = useMemo(() => computeKpis(plans, changes, oursCarrier), [plans, changes, oursCarrier])
   const heatmap = useMemo(() => buildHeatmap(changes, carrierIds), [changes, carrierIds])
 
+  // The feed merges domestic + roaming changes; each row carries `scope` so the
+  // UI can badge חו"ל rows and route clicks to /roaming. KPIs / heatmap /
+  // leadChange stay domestic-only — their price math ("מחיר ממוצע", "vs שוק")
+  // and carrier rows are domestic-market constructs.
   const recentChanges = useMemo(() => {
-    const arr = (changes || []).filter(isValidChange)
+    const arr = [
+      ...(changes || []).map((c) => ({ ...c, scope: 'domestic' })),
+      ...(abroadChanges || []).map((c) => ({ ...c, scope: 'abroad' })),
+    ].filter(isValidChange)
     arr.sort((a, b) => {
       const ta = a?.changed_at ? new Date(a.changed_at).getTime() : 0
       const tb = b?.changed_at ? new Date(b.changed_at).getTime() : 0
       return tb - ta
     })
     return arr.slice(0, 30)
-  }, [changes])
+  }, [changes, abroadChanges])
 
   return { loading, error, plans, changes, leadChange, kpis, heatmap, recentChanges }
 }

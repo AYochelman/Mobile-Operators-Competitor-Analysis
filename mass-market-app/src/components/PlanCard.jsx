@@ -92,6 +92,22 @@ const GLOBAL_COLORS = {
   bytesim: 'emerald', besim: 'teal',
   seven_g: 'violet', bestconnect: 'blue', esimplus: 'blue',
 }
+// US operators for the נוחתים בארה"ב tab (type='usa')
+const USA_LABELS = {
+  tmobile_prepaid: 'T-Mobile Prepaid', att_prepaid: 'AT&T Prepaid',
+  verizon_prepaid: 'Verizon Prepaid', mint: 'Mint Mobile', ultra: 'Ultra Mobile',
+  lyca_usa: 'Lycamobile USA', tello: 'Tello', metro: 'Metro by T-Mobile',
+  simple_mobile: 'Simple Mobile', cricket: 'Cricket Wireless', h2o: 'H2O Wireless',
+  visible: 'Visible', us_mobile: 'US Mobile', red_pocket: 'Red Pocket',
+  straight_talk: 'Straight Talk', total_wireless: 'Total Wireless', boost: 'Boost Mobile',
+}
+const USA_COLORS = {
+  tmobile_prepaid: 'pink', att_prepaid: 'blue', verizon_prepaid: 'red',
+  mint: 'green', ultra: 'purple', lyca_usa: 'blue', tello: 'violet',
+  metro: 'purple', simple_mobile: 'emerald', cricket: 'green', h2o: 'cyan',
+  visible: 'indigo', us_mobile: 'sky', red_pocket: 'red',
+  straight_talk: 'teal', total_wireless: 'orange', boost: 'amber',
+}
 
 // CARRIER_LOGOS now lives in moca/carrierMeta.js (shared with <CarrierChip logo />)
 
@@ -192,7 +208,6 @@ const PLAN_DETAILS_PDFS = {
     'חופשה משפחתית בגדול': 'https://u.partner.co.il/media/oqkdbzqn/res_reprt1515p_mix.pdf',
   },
   pelephone: {
-    'מונדיאל 2026': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/Family-Travel-Package/',
     'חבילת חו"ל קטנה': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/hulsmall/',
     'שומרים על קשר': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms-pesach/terms-keepin/',
     'חבילת חו"ל למצרים (טאבה, נואיבה, דאהב, שארם א-שייח)': 'https://www.pelephone.co.il/DigitalSite/heb/abroad/terms/egypt14new/',
@@ -267,7 +282,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
     e.stopPropagation()
     // Map plan type to phase-9 clean route. Falls back to ?tab= for types
     // that don't have a dedicated route yet (resellers, content, news).
-    const PATH_FOR_TYPE = { domestic: '/plans', abroad: '/roaming', global: '/esim' }
+    const PATH_FOR_TYPE = { domestic: '/plans', abroad: '/roaming', global: '/esim', usa: '/usa' }
     const cleanPath = PATH_FOR_TYPE[type]
     const url = cleanPath
       ? `${window.location.origin}${cleanPath}?carrier=${plan.carrier}&highlight=${encodeURIComponent(plan.plan_name || '')}`
@@ -283,6 +298,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   const isAbroad = type === 'abroad'
   const isContent = type === 'content'
   const isReseller = type === 'resellers'
+  const isUsa = type === 'usa'
   const hasNeptucomRoaming = plan.carrier === 'neptucom' && plan.extras && plan.extras.some(e => /\u05db\u05dc\u05d5\u05dc/.test(e) && /\u05d7\u05d5"?\u05dc/.test(e))
   const countryData = isGlobal
     ? getCountriesForPlan(plan)
@@ -293,12 +309,16 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
         : null
   const appsData = isContent ? null : getAppsForPlan(plan)
   const carrier = plan.carrier
-  const label = isGlobal ? (GLOBAL_LABELS[carrier] || carrier) : (CARRIER_LABELS[carrier] || carrier)
-  const badgeColor = isGlobal ? (GLOBAL_COLORS[carrier] || 'gray') : (CARRIER_COLORS[carrier] || 'gray')
-  // For reseller plans, link out to the source post/page (Instagram, FB, reseller site)
-  // instead of the underlying carrier's homepage. Must be declared AFTER `carrier`.
-  const providerUrl = isReseller && plan.source_url ? plan.source_url : CARRIER_HOME_URLS[carrier]
-  const providerLabel = isReseller ? 'לפוסט המקור' : 'לאתר הספק'
+  const label = isUsa
+    ? (USA_LABELS[carrier] || carrier)
+    : isGlobal ? (GLOBAL_LABELS[carrier] || carrier) : (CARRIER_LABELS[carrier] || carrier)
+  const badgeColor = isUsa
+    ? (USA_COLORS[carrier] || 'gray')
+    : isGlobal ? (GLOBAL_COLORS[carrier] || 'gray') : (CARRIER_COLORS[carrier] || 'gray')
+  // For reseller/USA plans, link out to the source post/plan page instead of the
+  // (Israeli) carrier homepage map. Must be declared AFTER `carrier`.
+  const providerUrl = (isReseller || isUsa) && plan.source_url ? plan.source_url : CARRIER_HOME_URLS[carrier]
+  const providerLabel = isReseller ? 'לפוסט המקור' : isUsa ? 'לאתר המפעיל' : 'לאתר הספק'
   // "עיקרי התוכנית" — direct link to a terms/details PDF, rendered next to the
   // provider link. Prefers the scraped `terms_url` (e.g. Cellcom roaming — captured
   // from the abroad API's policiesEpi on every scrape, so it never goes stale), then
@@ -320,7 +340,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   // Build info line: data + period, dot-separated
   const infoParts = []
   if (!isContent) infoParts.push(formatGB(plan.data_gb))
-  if ((isAbroad || isGlobal) && plan.days) infoParts.push(formatDays(plan.days))
+  if ((isAbroad || isGlobal || isUsa) && plan.days) infoParts.push(formatDays(plan.days))
   if (plan.minutes) infoParts.push(`${Number(plan.minutes).toLocaleString('en-US')} דקות`)
   if (plan.sms) infoParts.push(`${plan.sms} SMS`)
 
@@ -363,10 +383,10 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
     detect5G(plan)
   )
   const nameHas5G = plan.plan_name && /\b5G\b/i.test(plan.plan_name)
-  // Prioritized 5G (תעדוף ברשת) — e.g. Partner "Private 5G". Domestic-type plans only.
-  const isPriority5G = !isGlobal && !isAbroad && !isContent && hasMaxPriority(plan)
+  // Prioritized 5G (תעדוף ברשת) — e.g. Partner "Boost" tier. Domestic-type plans only.
+  const isPriority5G = !isGlobal && !isAbroad && !isContent && !isUsa && hasMaxPriority(plan)
 
-  const hasRoaming = !isGlobal && !isAbroad && !isContent && plan.extras && plan.extras.some(e => typeof e === 'string' && !e.startsWith('__info__|') && /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
+  const hasRoaming = !isGlobal && !isAbroad && !isContent && !isUsa && plan.extras && plan.extras.some(e => typeof e === 'string' && !e.startsWith('__info__|') && /חו"ל|חו״ל/.test(e) && /\d+\s*GB|גלישה/i.test(e))
   const contentUrl = isContent ? (CONTENT_URLS[`${plan.service}_${carrier}`] || null) : null
 
   // For reseller cards: click anywhere outside an interactive element opens the source.
@@ -428,7 +448,8 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
             {trendInfo.pct_change <= -10 && <span aria-hidden="true" className="text-[10px]">🔥</span>}
           </span>
         )}
-        {isGlobal && plan.esim && <Badge color="green">eSIM</Badge>}
+        {(isGlobal || isUsa) && plan.esim && <Badge color="green">eSIM</Badge>}
+        {isUsa && plan.network && <Badge color="gray">{`רשת ${plan.network}`}</Badge>}
         {(hasRoaming || hasNeptucomRoaming) && <Badge color="blue">חו״ל</Badge>}
         {isPriority5G && <Badge color="purple">5G מתועדף</Badge>}
       </div>
@@ -458,7 +479,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
       <div className="mb-3 text-right">
         <div className="flex items-baseline gap-2 justify-start">
           <div className="text-3xl font-bold text-gray-900 tracking-tight">{String(plan.price).startsWith('₪') ? plan.price : `₪${plan.price}`}</div>
-          {!isContent && plan.plan_name && (
+          {!isContent && !isUsa && plan.plan_name && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setShowPriceHistory(true) }}
@@ -472,7 +493,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
             </button>
           )}
         </div>
-        {isGlobal && plan.original_price && plan.currency && plan.currency !== 'ILS' && (
+        {(isGlobal || isUsa) && plan.original_price && plan.currency && plan.currency !== 'ILS' && (
           <div className="text-[11px] text-gray-400 mt-0.5" dir="ltr">{plan.currency} {({'USD':'$','GBP':'£','EUR':'€','AUD':'A$','CAD':'C$','JPY':'¥','CHF':'CHF ','NZD':'NZ$'})[plan.currency] || '$'}{plan.original_price}</div>
         )}
         {plan.promo_price != null && plan.promo_months != null && (
@@ -485,7 +506,8 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
             ₪{(Number(plan.price) / Number(plan.data_gb)).toFixed(2)}/GB
           </div>
         )}
-        {!isContent && plan.plan_name && (
+        {/* usa is seeded (no price history) — skip the per-card history fetch */}
+        {!isContent && !isUsa && plan.plan_name && (
           <SparklineMini carrier={carrier} planName={plan.plan_name} planType={type} />
         )}
       </div>

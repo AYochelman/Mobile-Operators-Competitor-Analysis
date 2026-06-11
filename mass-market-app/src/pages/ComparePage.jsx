@@ -99,6 +99,11 @@ const KNOWN_REGIONS = new Set([
   'טורקיה ואיי יוון',
   // eSIM Plus regional
   'המזרח התיכון ואפריקה','האמריקות',
+  // SimTLV catalog regional bundles
+  'אירופה (32 מדינות)','אירופה (33 מדינות)','אירופה (37 מדינות)',
+  'גלובלי (36 מדינות)','גלובלי (37 מדינות)','גלובלי (41 מדינות)',
+  'גלובלי (47 מדינות)','גלובלי (58 מדינות)','גלובלי (84 מדינות)',
+  'דרום אמריקה (11 מדינות)',
 ])
 
 // Region-label consolidation rules:
@@ -128,6 +133,8 @@ function normalizeRegionLabel(region) {
   if (r === 'Americas' || r === 'Americas + US + CA') return 'האמריקות'
   if (/^Global (Light|Max|Standard|Premium|Plus)$/i.test(r)) return 'גלובלי'
   if (r.includes('אירופה') || /^Europe/i.test(r)) return 'אירופה'
+  // "גלובלי (47 מדינות)" etc. (SimTLV) fold into the unified global entry
+  if (r.includes('גלובלי')) return 'גלובלי'
   return region
 }
 

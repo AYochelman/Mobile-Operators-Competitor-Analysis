@@ -589,7 +589,13 @@ export function getCountriesForPlan(plan) {
 
   // ── SimTLV ──
   if (carrier === 'simtlv') {
-    return { title: 'SimTLV', countries: SIMTLV_COUNTRIES };
+    // Only the 127-country bundles get the full-coverage modal; per-country
+    // catalog plans need none, and regional bundles ('אירופה (37 מדינות)')
+    // have no exact list — showing the 127-country list there would mislead.
+    if (extras[0] === '127 מדינות') {
+      return { title: 'SimTLV', countries: SIMTLV_COUNTRIES };
+    }
+    return null;
   }
 
   // ── Pelephone GlobalSIM ──
