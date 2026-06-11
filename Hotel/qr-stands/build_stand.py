@@ -64,7 +64,10 @@ def build(s):
   .body{{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:6mm 8mm 0}}
   h1{{font-family:'Frank Ruhl Libre',serif;font-weight:700;color:var(--p);font-size:6.6mm;line-height:1.15;margin-bottom:1mm}}
   h1 .he{{display:block;font-size:5.4mm;direction:rtl}}
-  .sub{{font-size:3.3mm;color:#6b5a48;font-weight:600;line-height:1.4;max-width:80mm;margin-top:2mm}}
+  .sub{{margin-top:2.5mm;max-width:86mm;display:flex;flex-direction:column;align-items:center;gap:2mm}}
+  .sub div{{font-size:3.2mm;color:#6b5a48;font-weight:600;line-height:1.4}}
+  .sub .en{{direction:ltr}}
+  .sub .he{{direction:rtl}}
   .qr{{width:54mm;height:54mm;background:#fff;border:1.2mm solid var(--a);border-radius:6mm;padding:4mm;margin:5mm 0 3mm;box-shadow:0 4px 14px rgba(40,20,5,.12)}}
   .scan{{font-size:3.2mm;font-weight:800;color:var(--p);margin-bottom:5mm}}
   .scan .he{{direction:rtl}}
@@ -89,7 +92,10 @@ def build(s):
     </div>
     <div class="body">
       <h1>Stay connected in Israel<span class="he">מתחברים לאינטרנט בישראל</span></h1>
-      <div class="sub">Scan for the best SIM &amp; eSIM deals for your stay — compared live, updated daily. · סרקו להשוואת חבילות הסים וה-eSIM המשתלמות ביותר</div>
+      <div class="sub">
+        <div class="en">Scan for the best SIM &amp; eSIM deals for your stay — compared live, updated daily.</div>
+        <div class="he">סרקו להשוואת חבילות הסים וה-eSIM המשתלמות ביותר לשהות — בהשוואה חיה, מתעדכן מדי יום.</div>
+      </div>
       <div class="qr">{qr}</div>
       <div class="scan">📷 Scan with your phone camera · <span class="he">סרקו עם מצלמת הטלפון</span></div>
     </div>
