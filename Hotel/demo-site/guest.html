@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stay Connected in Israel — Guest Connect</title>
+<meta name="description" content="The best SIM &amp; eSIM deals for your stay in Israel — compared live, updated daily.">
+<meta property="og:title" content="Stay Connected in Israel — Guest Connect">
+<meta property="og:description" content="Hand-picked SIM &amp; eSIM deals for your trip, compared live by MOCA.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --c1:#0e2a47; --c2:#c8a24b; --bgp:#f6f8fb;
+    --ink:#1c2430; --sub:#5b6b7e; --line:#e6ebf2; --card:#ffffff;
+    --good:#2e7d4f; --r:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Assistant',system-ui,-apple-system,'Segoe UI',sans-serif;
+    background:var(--bgp); color:var(--ink); -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative; overflow:hidden; color:#fff;
+    background:linear-gradient(150deg, var(--c1), color-mix(in srgb, var(--c1), #000 30%));
+    padding:46px 22px 30px; border-radius:0 0 30px 30px;
+  }
+  .hero::before{
+    content:""; position:absolute; inset:auto -70px -120px auto; width:260px; height:260px;
+    border-radius:50%; background:color-mix(in srgb, var(--c2), transparent 72%);
+  }
+  .hero::after{
+    content:""; position:absolute; top:-90px; inset-inline-start:-60px; width:220px; height:220px;
+    border-radius:50%; background:color-mix(in srgb, #ffffff, transparent 90%);
+  }
+  .hero > *{position:relative; z-index:1}
+  .hero-top{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px}
+  .hotel-id{display:flex; align-items:center; gap:11px}
+  .mono{
+    width:46px;height:46px;border-radius:14px;background:#fff;color:var(--c1);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;
+    letter-spacing:.5px; box-shadow:0 4px 14px rgba(0,0,0,.25);
+  }
+  .hotel-name{font-weight:700;font-size:15.5px;line-height:1.15}
+  .hotel-tag{font-size:10px;letter-spacing:2.2px;opacity:.75;font-weight:600;margin-top:2px}
+  .lang{display:flex;background:rgba(255,255,255,.14);border-radius:999px;padding:3px}
+  .lang button{
+    border:0;background:transparent;color:#fff;opacity:.65;font:inherit;font-weight:700;
+    font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;
+  }
+  .lang button.on{background:#fff;color:var(--c1);opacity:1}
+  .hero h1{font-size:27px;font-weight:800;line-height:1.18;margin-bottom:8px}
+  .hero p{font-size:14.5px;line-height:1.45;opacity:.85;max-width:34ch}
+  .updated{
+    display:inline-flex;align-items:center;gap:7px;margin-top:16px;
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
+    padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:#5ad08a;box-shadow:0 0 0 3px rgba(90,208,138,.25);animation:pulse 2s infinite}
+  @keyframes pulse{50%{box-shadow:0 0 0 6px rgba(90,208,138,.08)}}
+
+  /* ---------- layout ---------- */
+  main{padding:18px 16px 8px;display:flex;flex-direction:column;gap:20px;flex:1}
+  .card{background:var(--card);border-radius:var(--r);padding:18px;box-shadow:0 6px 24px rgba(20,35,60,.07)}
+  .sec{font-size:16.5px;font-weight:800;margin-bottom:12px}
+
+  /* ---------- wizard ---------- */
+  .wizard{margin-top:-26px}
+  .wizard h2{font-size:16.5px;font-weight:800;margin-bottom:4px}
+  .wizard .q{font-size:13px;font-weight:700;color:var(--sub);margin:14px 0 8px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{
+    border:1.5px solid var(--line);background:#fff;border-radius:14px;cursor:pointer;
+    padding:9px 13px;font:inherit;font-size:13.5px;font-weight:700;color:var(--ink);
+    transition:all .15s; flex:1 1 auto; text-align:center; min-width:74px;
+  }
+  .chip small{display:block;font-size:10.5px;font-weight:600;color:var(--sub);margin-top:2px}
+  .chip.on{background:var(--c1);border-color:var(--c1);color:#fff}
+  .chip.on small{color:rgba(255,255,255,.75)}
+
+  /* ---------- top picks ---------- */
+  .pick{
+    background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:10px;
+    box-shadow:0 6px 24px rgba(20,35,60,.07); border:1.5px solid transparent; position:relative;
+  }
+  .pick.first{border-color:var(--c2); box-shadow:0 10px 30px color-mix(in srgb, var(--c2), transparent 72%)}
+  .badge{
+    display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:1.1px;
+    padding:4px 10px;border-radius:999px;margin-bottom:10px;text-transform:uppercase;
+    margin-inline-end:6px;
+  }
+  .badge.b1{background:color-mix(in srgb, var(--c2), #fff 75%);color:color-mix(in srgb, var(--c2), #000 35%)}
+  .badge.b2{background:#e3f3e9;color:#246b43}
+  .badge.b3{background:#e9ecfd;color:#3a4bbf}
+  .badge.b4{background:#eef1f5;color:#5b6b7e}
+
+  .deal-row{display:flex;align-items:center;gap:12px}
+  .pchip{
+    width:42px;height:42px;border-radius:13px;flex:none;color:#fff;font-weight:800;font-size:13px;
+    display:flex;align-items:center;justify-content:center;letter-spacing:.4px;
+  }
+  .deal-info{flex:1;min-width:0}
+  .deal-provider{font-weight:800;font-size:14.5px}
+  .deal-meta{font-size:12.5px;color:var(--sub);font-weight:600;margin-top:1px}
+  .deal-price{text-align:end}
+  .price-main{font-weight:800;font-size:17px;white-space:nowrap}
+  .price-sub{font-size:11.5px;color:var(--sub);font-weight:600;white-space:nowrap}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .tag{font-size:10.5px;font-weight:700;background:var(--bgp);border:1px solid var(--line);color:var(--sub);padding:3px 9px;border-radius:999px}
+  .get{
+    margin-top:12px;width:100%;border:0;border-radius:13px;cursor:pointer;
+    background:var(--c1);color:#fff;font:inherit;font-weight:800;font-size:14px;padding:11px;
+    transition:transform .12s, opacity .12s;
+  }
+  .get:active{transform:scale(.985);opacity:.9}
+
+  /* ---------- all deals ---------- */
+  .all-head{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+  .filters{display:flex;gap:7px;flex-wrap:wrap}
+  .fpill{
+    border:1.5px solid var(--line);background:#fff;border-radius:999px;cursor:pointer;
+    padding:6px 13px;font:inherit;font-size:12.5px;font-weight:700;color:var(--sub);
+  }
+  .fpill.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .deal{
+    background:var(--card);border-radius:16px;padding:13px 14px;margin-bottom:8px;
+    box-shadow:0 3px 12px rgba(20,35,60,.05);
+  }
+  .deal .get{margin-top:0;width:auto;padding:8px 14px;font-size:12.5px;border-radius:11px}
+  .deal-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+  .empty{padding:26px;text-align:center;color:var(--sub);font-weight:600;font-size:13.5px}
+
+  /* ---------- esim help ---------- */
+  .esim-help h2{font-size:15.5px;font-weight:800;margin-bottom:12px}
+  .step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+  .step:last-of-type{margin-bottom:8px}
+  .snum{
+    width:26px;height:26px;border-radius:9px;background:color-mix(in srgb, var(--c1), #fff 88%);
+    color:var(--c1);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px;
+  }
+  .step b{display:block;font-size:13.5px}
+  .step span{font-size:12.5px;color:var(--sub);line-height:1.4}
+  .compat{font-size:11.5px;color:var(--sub);border-top:1px dashed var(--line);padding-top:10px;margin-top:4px}
+
+  .trust{
+    text-align:center;font-size:12px;color:var(--sub);font-weight:600;line-height:1.6;
+    padding:4px 18px;
+  }
+  .trust b{color:var(--ink)}
+
+  footer{padding:18px 16px 26px;text-align:center}
+  .powered{font-size:12.5px;color:var(--sub);font-weight:600}
+  .powered b{color:var(--ink)}
+  .disclaim{font-size:11px;color:#9aa7b5;margin-top:6px}
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;inset-inline:0;bottom:14px;margin:0 auto;max-width:440px;width:calc(100% - 28px);
+    background:#15211c;color:#eef7f0;border-radius:16px;padding:14px 16px;font-size:13px;font-weight:600;
+    line-height:1.45;box-shadow:0 14px 40px rgba(0,0,0,.35);
+    transform:translateY(130%);transition:transform .32s cubic-bezier(.2,.9,.3,1.1);z-index:50;
+  }
+  .toast.show{transform:translateY(0)}
+  .toast .tk{color:#7fd6a2;font-weight:800}
+
+  [dir="rtl"] .deal-price{text-align:left}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="hero-top">
+      <div class="hotel-id">
+        <div class="mono" id="hotelMono">JP</div>
+        <div>
+          <div class="hotel-name" id="hotelName">Jaffa Pearl Hotels</div>
+          <div class="hotel-tag">GUEST CONNECT</div>
+        </div>
+      </div>
+      <div class="lang" role="group" aria-label="Language">
+        <button id="langEn" class="on" type="button">EN</button>
+        <button id="langHe" type="button">עב</button>
+      </div>
+    </div>
+    <h1 data-i18n="title">Stay connected in Israel</h1>
+    <p data-i18n="sub">The best SIM &amp; eSIM deals for your trip — compared live, picked for you.</p>
+    <div class="updated"><span class="dot"></span><span id="updatedLine"></span></div>
+  </header>
+
+  <main>
+    <section class="card wizard">
+      <h2 data-i18n="wizTitle">Find your plan in 10 seconds</h2>
+      <div class="q" data-i18n="qDays">How long are you staying?</div>
+      <div class="chips" id="dayChips"></div>
+      <div class="q" data-i18n="qData">How much data do you need?</div>
+      <div class="chips" id="dataChips"></div>
+    </section>
+
+    <section>
+      <h2 class="sec" data-i18n="topPicks">Top picks for your trip</h2>
+      <div id="topPicks"></div>
+    </section>
+
+    <section>
+      <div class="all-head">
+        <h2 class="sec" style="margin-bottom:0" data-i18n="allDeals">All deals</h2>
+        <div class="filters" id="filters"></div>
+      </div>
+      <div id="dealList"></div>
+    </section>
+
+    <section class="card esim-help">
+      <h2 data-i18n="helpTitle">New to eSIM?</h2>
+      <div class="step"><div class="snum">1</div><div><b data-i18n="h1b">Buy online — takes 2 minutes</b><span data-i18n="h1s">No store, no queue. Pay by card and you're done.</span></div></div>
+      <div class="step"><div class="snum">2</div><div><b data-i18n="h2b">Scan the QR code you get by email</b><span data-i18n="h2s">Your phone installs the plan automatically.</span></div></div>
+      <div class="step"><div class="snum">3</div><div><b data-i18n="h3b">Stay reachable</b><span data-i18n="h3s">Keep WhatsApp and your home number active alongside.</span></div></div>
+      <div class="compat" data-i18n="compat">Works on iPhone XS and newer, Samsung Galaxy S20+, Google Pixel 3+. Prefer a physical SIM with an Israeli number? Filter for “Local SIM” above.</div>
+    </section>
+
+    <div class="trust" data-i18n-html="trust"></div>
+  </main>
+
+  <footer>
+    <div class="powered"><span id="footerHotel">Jaffa Pearl Hotels</span> · Powered by <b>MOCA</b> Guest Connect ⚡</div>
+    <div class="disclaim" data-i18n="disclaim">Demo page — sample prices for illustration only.</div>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= Brand presets (white-label) ================= */
+const BRANDS = {
+  pearl:{ name:"Jaffa Pearl Hotels",      mono:"JP",  c1:"#0e2a47", c2:"#c8a24b", bgp:"#f4f7fb" },
+  bloom:{ name:"Desert Bloom Resorts",    mono:"DB",  c1:"#8a3d2a", c2:"#e0a458", bgp:"#faf5f0" },
+  verde:{ name:"Galil Verde Collection",  mono:"GV",  c1:"#1d4d3b", c2:"#9ec27a", bgp:"#f3f8f4" },
+  urban:{ name:"TLV Urban Hotels",        mono:"TLV", c1:"#17171c", c2:"#d9c8ae", bgp:"#f7f7f8" },
+};
+
+/* ================= Demo deal data (sample, illustrative) ================= */
+/* kind: global eSIM vs local Israeli carrier · gb:null = unlimited · cur: USD/ILS */
+const FX = 3.7;
+const PROVIDERS = {
+  saily:  { label:"Saily",          mono:"SA",  color:"#0fb39a" },
+  airalo: { label:"Airalo",         mono:"AI",  color:"#ff5963" },
+  holafly:{ label:"Holafly",        mono:"HO",  color:"#fa3c54" },
+  esimo:  { label:"eSIMo",          mono:"ES",  color:"#6c5ce7" },
+  orbit:  { label:"Orbit",          mono:"OR",  color:"#2980ff" },
+  maya:   { label:"Maya Mobile",    mono:"MA",  color:"#f39c12" },
+  m019:   { label:"019 Mobile",     mono:"019", color:"#d81b60" },
+  partner:{ label:"Partner Tourist",mono:"PR",  color:"#0072ce" },
+  cellcom:{ label:"Cellcom Tourist",mono:"CE",  color:"#5f259f" },
+};
+const DEALS = [
+  { p:"saily",   kind:"global", form:"esim", gb:1,    days:7,  price:3.99,  cur:"USD", perks:["instant","app"] },
+  { p:"saily",   kind:"global", form:"esim", gb:3,    days:30, price:9.99,  cur:"USD", perks:["instant","app"] },
+  { p:"saily",   kind:"global", form:"esim", gb:5,    days:30, price:14.99, cur:"USD", perks:["instant","app"] },
+  { p:"saily",   kind:"global", form:"esim", gb:10,   days:30, price:22.99, cur:"USD", perks:["instant","hotspot"] },
+  { p:"saily",   kind:"global", form:"esim", gb:null, days:10, price:34.99, cur:"USD", perks:["instant","hotspot"] },
+  { p:"airalo",  kind:"global", form:"esim", gb:1,    days:7,  price:4.50,  cur:"USD", perks:["instant","topup"] },
+  { p:"airalo",  kind:"global", form:"esim", gb:3,    days:30, price:11.00, cur:"USD", perks:["instant","topup"] },
+  { p:"airalo",  kind:"global", form:"esim", gb:5,    days:30, price:16.00, cur:"USD", perks:["instant","topup"] },
+  { p:"airalo",  kind:"global", form:"esim", gb:10,   days:30, price:26.00, cur:"USD", perks:["instant","topup"] },
+  { p:"airalo",  kind:"global", form:"esim", gb:20,   days:30, price:36.00, cur:"USD", perks:["instant","hotspot"] },
+  { p:"holafly", kind:"global", form:"esim", gb:null, days:5,  price:19.00, cur:"USD", perks:["instant","hotspotCap"] },
+  { p:"holafly", kind:"global", form:"esim", gb:null, days:10, price:34.00, cur:"USD", perks:["instant","hotspotCap"] },
+  { p:"holafly", kind:"global", form:"esim", gb:null, days:15, price:47.00, cur:"USD", perks:["instant","hotspotCap"] },
+  { p:"holafly", kind:"global", form:"esim", gb:null, days:30, price:64.00, cur:"USD", perks:["instant","hotspotCap"] },
+  { p:"esimo",   kind:"global", form:"esim", gb:3,    days:30, price:10.50, cur:"USD", perks:["instant"] },
+  { p:"esimo",   kind:"global", form:"esim", gb:10,   days:30, price:24.00, cur:"USD", perks:["instant"] },
+  { p:"orbit",   kind:"global", form:"esim", gb:5,    days:30, price:13.50, cur:"USD", perks:["instant","topup"] },
+  { p:"orbit",   kind:"global", form:"esim", gb:10,   days:30, price:21.00, cur:"USD", perks:["instant","topup"] },
+  { p:"orbit",   kind:"global", form:"esim", gb:20,   days:30, price:33.00, cur:"USD", perks:["instant","hotspot"] },
+  { p:"maya",    kind:"global", form:"esim", gb:null, days:7,  price:42.00, cur:"USD", perks:["instant","hotspot"] },
+  { p:"m019",    kind:"local",  form:"sim",  gb:null, days:30, price:99,    cur:"ILS", perks:["ilNumber","calls","airport"] },
+  { p:"partner", kind:"local",  form:"esim", gb:100,  days:30, price:89,    cur:"ILS", perks:["ilNumber","calls","instant"] },
+  { p:"cellcom", kind:"local",  form:"sim",  gb:110,  days:30, price:99,    cur:"ILS", perks:["ilNumber","intlMin","airport"] },
+];
+
+/* ================= i18n ================= */
+const T = {
+  en: {
+    title:"Stay connected in Israel",
+    sub:"The best SIM & eSIM deals for your trip — compared live, picked for you.",
+    updated:"Prices updated",
+    wizTitle:"Find your plan in 10 seconds",
+    qDays:"How long are you staying?",
+    qData:"How much data do you need?",
+    topPicks:"Top picks for your trip",
+    allDeals:"All deals",
+    helpTitle:"New to eSIM?",
+    h1b:"Buy online — takes 2 minutes", h1s:"No store, no queue. Pay by card and you're done.",
+    h2b:"Scan the QR code you get by email", h2s:"Your phone installs the plan automatically.",
+    h3b:"Stay reachable", h3s:"Keep WhatsApp and your home number active alongside.",
+    compat:"Works on iPhone XS and newer, Samsung Galaxy S20+, Google Pixel 3+. Prefer a physical SIM with an Israeli number? Filter for “Local SIM” above.",
+    trust:"Compared across <b>27 global eSIM providers</b> and <b>10 Israeli carriers</b><br>Refreshed twice a day by MOCA market intelligence",
+    disclaim:"Demo page — sample prices for illustration only.",
+    days:[ {v:3,l:"3 days"}, {v:7,l:"1 week"}, {v:14,l:"2 weeks"}, {v:30,l:"1 month"} ],
+    data:[ {v:3,l:"Light",s:"3GB · maps & chat"}, {v:10,l:"Regular",s:"10GB · + social"}, {v:20,l:"Heavy",s:"20GB · + video"}, {v:"unl",l:"Unlimited",s:"no limits at all"} ],
+    filters:[ {v:"all",l:"All"}, {v:"esim",l:"eSIM"}, {v:"local",l:"Local SIM"}, {v:"unl",l:"Unlimited"} ],
+    badges:["BEST MATCH","CHEAPEST","MAX DATA","ALSO GREAT"],
+    unlimited:"Unlimited", daysU:"days", get:"Get this deal ↗", perGB:"/GB",
+    perks:{ instant:"Instant eSIM", app:"App support", topup:"Top-up in app", hotspot:"Hotspot", hotspotCap:"Hotspot 1GB/day", ilNumber:"Israeli number", calls:"Calls included", intlMin:"Intl. minutes", airport:"Airport pickup" },
+    toast:(p,h)=>`<span class="tk">✓ Demo</span> · In the live product this opens <b>${p}</b>'s checkout, tagged with <b>${h}</b>'s referral code — the hotel earns on every purchase.`,
+    empty:"No deals match this filter for your trip — try another option.",
+  },
+  he: {
+    title:"להישאר מחוברים בישראל",
+    sub:"חבילות ה-eSIM והסים המשתלמות ביותר לטיול — בהשוואה חיה, מותאם אישית.",
+    updated:"המחירים עודכנו",
+    wizTitle:"מציאת חבילה ב-10 שניות",
+    qDays:"כמה זמן נשארים בישראל?",
+    qData:"כמה דאטה צריך?",
+    topPicks:"ההצעות המובילות לטיול שלכם",
+    allDeals:"כל החבילות",
+    helpTitle:"פעם ראשונה עם eSIM?",
+    h1b:"רוכשים אונליין — לוקח 2 דקות", h1s:"בלי חנות ובלי תור. משלמים בכרטיס וזהו.",
+    h2b:"סורקים את ה-QR שמגיע למייל", h2s:"הטלפון מתקין את החבילה אוטומטית.",
+    h3b:"נשארים זמינים", h3s:"וואטסאפ והמספר מהבית ממשיכים לעבוד במקביל.",
+    compat:"עובד באייפון XS ומעלה, גלקסי S20 ומעלה, פיקסל 3 ומעלה. מעדיפים סים פיזי עם מספר ישראלי? סננו לפי ״סים מקומי״ למעלה.",
+    trust:"מושווה על פני <b>27 ספקי eSIM גלובליים</b> ו-<b>10 מפעילים ישראליים</b><br>מתעדכן פעמיים ביום על ידי מנוע המודיעין של MOCA",
+    disclaim:"עמוד הדגמה — המחירים להמחשה בלבד.",
+    days:[ {v:3,l:"3 ימים"}, {v:7,l:"שבוע"}, {v:14,l:"שבועיים"}, {v:30,l:"חודש"} ],
+    data:[ {v:3,l:"קל",s:"3GB · ניווט והודעות"}, {v:10,l:"רגיל",s:"10GB · + רשתות"}, {v:20,l:"כבד",s:"20GB · + וידאו"}, {v:"unl",l:"ללא הגבלה",s:"בלי לחשוב בכלל"} ],
+    filters:[ {v:"all",l:"הכל"}, {v:"esim",l:"eSIM"}, {v:"local",l:"סים מקומי"}, {v:"unl",l:"ללא הגבלה"} ],
+    badges:["ההתאמה הטובה ביותר","הזולה ביותר","הכי הרבה דאטה","כדאי גם"],
+    unlimited:"ללא הגבלה", daysU:"ימים", get:"לרכישת החבילה ↗", perGB:"/GB",
+    perks:{ instant:"eSIM מיידי", app:"תמיכה באפליקציה", topup:"טעינה באפליקציה", hotspot:"שיתוף רשת", hotspotCap:"שיתוף 1GB ליום", ilNumber:"מספר ישראלי", calls:"שיחות כלולות", intlMin:"דקות לחו״ל", airport:"איסוף בשדה" },
+    toast:(p,h)=>`<span class="tk">✓ דמו</span> · במוצר החי נפתח כאן עמוד התשלום של <b>${p}</b> עם קוד השותף של <b>${h}</b> — המלון מרוויח על כל רכישה.`,
+    empty:"אין חבילות שמתאימות לסינון הזה — נסו אפשרות אחרת.",
+  },
+};
+
+/* ================= State ================= */
+const params = new URLSearchParams(location.search);
+const state = {
+  brand: BRANDS[params.get("brand")] ? params.get("brand") : "pearl",
+  lang:  params.get("lang") === "he" ? "he" : "en",
+  stay: 7, data: 10, filter: "all",
+};
+const L = () => T[state.lang];
+
+/* ================= Helpers ================= */
+const $ = (s) => document.querySelector(s);
+function usd(d){ return d.cur === "USD" ? d.price : d.price / FX; }
+function priceMain(d){
+  return d.cur === "USD" ? `$${d.price.toFixed(2).replace(/\.00$/,"")}` : `₪${d.price}`;
+}
+function priceSub(d){
+  return d.cur === "USD" ? `≈ ₪${Math.round(d.price * FX)}` : `≈ $${Math.round(d.price / FX)}`;
+}
+function gbLabel(d){ return d.gb === null ? L().unlimited : `${d.gb}GB`; }
+function metaLine(d){
+  const bits = [gbLabel(d), `${d.days} ${L().daysU}`, d.form === "esim" ? "eSIM" : "SIM"];
+  if (d.gb) bits.push(`$${(usd(d)/d.gb).toFixed(2)}${L().perGB}`);
+  /* <bdi> isolates each token so mixed Hebrew/Latin/number runs don't scramble in RTL */
+  return bits.map(t => `<bdi>${t}</bdi>`).join(" · ");
+}
+
+/* ================= Brand & language ================= */
+function applyBrand(){
+  const b = BRANDS[state.brand];
+  const root = document.documentElement.style;
+  root.setProperty("--c1", b.c1);
+  root.setProperty("--c2", b.c2);
+  root.setProperty("--bgp", b.bgp);
+  $("#hotelMono").textContent = b.mono;
+  $("#hotelName").textContent = b.name;
+  $("#footerHotel").textContent = b.name;
+  document.title = `Stay Connected in Israel — ${b.name}`;
+}
+function applyLang(){
+  const he = state.lang === "he";
+  document.documentElement.lang = he ? "he" : "en";
+  document.documentElement.dir = he ? "rtl" : "ltr";
+  $("#langEn").classList.toggle("on", !he);
+  $("#langHe").classList.toggle("on", he);
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = L()[el.dataset.i18n]; });
+  document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = L()[el.dataset.i18nHtml]; });
+  const now = new Date();
+  const ds = now.toLocaleDateString(he ? "he-IL" : "en-GB", { weekday:"short", day:"numeric", month:"short" });
+  $("#updatedLine").textContent = `${L().updated}: ${ds} · 07:30`;
+}
+
+/* ================= Wizard chips ================= */
+function renderChips(){
+  $("#dayChips").innerHTML = L().days.map(o =>
+    `<button type="button" class="chip${o.v === state.stay ? " on" : ""}" data-stay="${o.v}">${o.l}</button>`
+  ).join("");
+  $("#dataChips").innerHTML = L().data.map(o =>
+    `<button type="button" class="chip${String(o.v) === String(state.data) ? " on" : ""}" data-data="${o.v}">${o.l}<small>${o.s}</small></button>`
+  ).join("");
+  $("#filters").innerHTML = L().filters.map(o =>
+    `<button type="button" class="fpill${o.v === state.filter ? " on" : ""}" data-filter="${o.v}">${o.l}</button>`
+  ).join("");
+}
+
+/* ================= Ranking ================= */
+function eligible(){
+  return DEALS.filter(d => {
+    if (d.days < state.stay) return false;
+    if (state.data === "unl") return d.gb === null || d.gb >= 80;
+    return d.gb === null || d.gb >= state.data;
+  });
+}
+function topThree(){
+  const el = eligible();
+  if (!el.length) return [];
+  const need = state.data === "unl" ? null : state.data;
+  const fitScore = d =>
+    usd(d)
+    + (d.gb === null && need !== null ? 2.5 : 0)
+    + Math.max(0, d.days - state.stay) * 0.03
+    + (d.gb && need ? Math.max(0, d.gb - need) * 0.08 : 0);
+  const byFit   = [...el].sort((a,b) => fitScore(a) - fitScore(b));
+  const byPrice = [...el].sort((a,b) => usd(a) - usd(b));
+  const byData  = [...el].sort((a,b) =>
+    ((b.gb === null ? 9999 : b.gb) - (a.gb === null ? 9999 : a.gb)) || (usd(a) - usd(b))
+  );
+  /* one deal may earn several titles (e.g. best match = cheapest);
+     freed slots are filled with the next-best fit, labeled "also great" */
+  const winners = new Map();
+  const add = (d, b) => {
+    const k = DEALS.indexOf(d);
+    if (!winners.has(k)) winners.set(k, []);
+    winners.get(k).push(b);
+  };
+  add(byFit[0], 0); add(byPrice[0], 1); add(byData[0], 2);
+  for (const d of byFit){
+    if (winners.size >= 3) break;
+    const k = DEALS.indexOf(d);
+    if (!winners.has(k)) winners.set(k, [3]);
+  }
+  return [...winners.entries()]
+    .map(([k, badges]) => ({ d: DEALS[k], badges }))
+    .sort((a,b) => Math.min(...a.badges) - Math.min(...b.badges));
+}
+
+/* ================= Render deals ================= */
+function dealCore(d){
+  const pv = PROVIDERS[d.p];
+  return `
+    <div class="deal-row">
+      <div class="pchip" style="background:${pv.color}">${pv.mono}</div>
+      <div class="deal-info">
+        <div class="deal-provider"><bdi>${pv.label}</bdi></div>
+        <div class="deal-meta">${metaLine(d)}</div>
+      </div>
+      <div class="deal-price">
+        <div class="price-main" dir="ltr">${priceMain(d)}</div>
+        <div class="price-sub" dir="ltr">${priceSub(d)}</div>
+      </div>
+    </div>
+    <div class="tags">${d.perks.map(k => `<span class="tag">${L().perks[k]}</span>`).join("")}</div>`;
+}
+function renderPicks(){
+  const picks = topThree();
+  const cls = ["b1","b2","b3","b4"];
+  $("#topPicks").innerHTML = picks.map(({d, badges}, i) => `
+    <div class="pick${i === 0 ? " first" : ""}">
+      ${badges.map(b => `<span class="badge ${cls[b]}">${L().badges[b]}</span>`).join("")}
+      ${dealCore(d)}
+      <button type="button" class="get" data-deal="${DEALS.indexOf(d)}">${L().get}</button>
+    </div>`
+  ).join("") || `<div class="card empty">${L().empty}</div>`;
+}
+function renderList(){
+  let rows = [...DEALS];
+  if (state.filter === "esim")  rows = rows.filter(d => d.form === "esim");
+  if (state.filter === "local") rows = rows.filter(d => d.kind === "local");
+  if (state.filter === "unl")   rows = rows.filter(d => d.gb === null);
+  rows.sort((a,b) => usd(a) - usd(b));
+  $("#dealList").innerHTML = rows.map(d => `
+    <div class="deal">
+      ${dealCore(d)}
+      <div class="deal-bottom">
+        <span class="tag">${d.kind === "local" ? (state.lang === "he" ? "מפעיל ישראלי" : "Israeli carrier") : (state.lang === "he" ? "eSIM גלובלי" : "Global eSIM")}</span>
+        <button type="button" class="get" data-deal="${DEALS.indexOf(d)}">${L().get}</button>
+      </div>
+    </div>`
+  ).join("") || `<div class="card empty">${L().empty}</div>`;
+}
+function renderAll(){ renderChips(); renderPicks(); renderList(); }
+
+/* ================= Toast ================= */
+let toastTimer = null;
+function showToast(dealIdx){
+  const d = DEALS[dealIdx];
+  const el = $("#toast");
+  el.innerHTML = L().toast(PROVIDERS[d.p].label, BRANDS[state.brand].name);
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 4200);
+}
+
+/* ================= Events ================= */
+document.addEventListener("click", e => {
+  const chip = e.target.closest(".chip");
+  if (chip){
+    if (chip.dataset.stay) state.stay = Number(chip.dataset.stay);
+    if (chip.dataset.data) state.data = chip.dataset.data === "unl" ? "unl" : Number(chip.dataset.data);
+    renderAll(); return;
+  }
+  const pill = e.target.closest(".fpill");
+  if (pill){ state.filter = pill.dataset.filter; renderChips(); renderList(); return; }
+  const get = e.target.closest(".get");
+  if (get){ showToast(Number(get.dataset.deal)); return; }
+});
+$("#langEn").addEventListener("click", () => { state.lang = "en"; applyLang(); renderAll(); });
+$("#langHe").addEventListener("click", () => { state.lang = "he"; applyLang(); renderAll(); });
+
+/* ================= Init ================= */
+applyBrand();
+applyLang();
+renderAll();
+</script>
+</body>
+</html>

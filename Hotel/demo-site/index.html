@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOCA Guest Connect — פתרון הקישוריות לאורחי המלון</title>
+<meta name="description" content="פורטל ממותג למלון שמשווה לאורח את כל חבילות ה-eSIM והסים לתיירים בישראל — מתעדכן פעמיים ביום, עם עמלה למלון על כל רכישה.">
+<meta property="og:title" content="MOCA Guest Connect — האורח שואל איך מתחברים. המלון עונה, ומרוויח.">
+<meta property="og:description" content="השוואת eSIM חיה לאורחי המלון, ממותגת בצבעי הרשת שלכם. פיילוט 60 יום חינם.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&family=Frank+Ruhl+Libre:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f9f4ee; --cream:#f5ede0; --mist:#faf5ee; --sand:#e8d5bc; --border:#e0cdb5;
+    --bolt:#5c3317; --dark:#4a2a13; --text:#3b1f0d; --sub:#8a6a4a; --muted:#a08468;
+    --up:#b4472d; --down:#4a7c3f; --hot:#c9622f;
+    --sh-card:0 4px 18px rgba(74,42,19,.07);
+    --sh-hover:0 12px 34px rgba(74,42,19,.13);
+    --font-display:'Frank Ruhl Libre',serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Assistant',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 22px}
+  section{padding:74px 0}
+  h2.title{font-family:var(--font-display);font-size:clamp(26px,3.4vw,38px);font-weight:900;color:var(--dark);line-height:1.2}
+  .kicker{font-size:12.5px;font-weight:800;letter-spacing:2.5px;color:var(--hot);text-transform:uppercase;margin-bottom:12px}
+  .lead{font-size:17px;color:var(--sub);line-height:1.6;margin-top:14px;max-width:62ch}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:40;background:rgba(249,244,238,.86);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;color:var(--dark);text-decoration:none}
+  .logo .bolt{
+    width:34px;height:34px;border-radius:11px;background:var(--bolt);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:17px;
+  }
+  .logo small{font-weight:700;color:var(--hot);font-size:11px;letter-spacing:1.6px;display:block;margin-top:1px}
+  nav{display:flex;gap:22px}
+  nav a{color:var(--sub);text-decoration:none;font-weight:700;font-size:14px}
+  nav a:hover{color:var(--dark)}
+  .btn{
+    display:inline-block;border:0;cursor:pointer;text-decoration:none;text-align:center;
+    background:var(--bolt);color:#fff;font:inherit;font-weight:800;font-size:14.5px;
+    padding:11px 22px;border-radius:13px;transition:transform .12s, box-shadow .2s;
+  }
+  .btn:hover{transform:translateY(-1px);box-shadow:var(--sh-hover)}
+  .btn.ghost{background:transparent;color:var(--bolt);border:1.5px solid var(--border)}
+  .btn.ghost:hover{border-color:var(--bolt)}
+  @media (max-width:840px){ nav{display:none} }
+
+  /* ---------- hero ---------- */
+  .hero{padding:84px 0 70px;position:relative;overflow:hidden}
+  .hero::before{
+    content:"";position:absolute;top:-140px;inset-inline-start:-120px;width:380px;height:380px;border-radius:50%;
+    background:radial-gradient(circle, rgba(201,98,47,.12), transparent 65%);
+  }
+  .hero::after{
+    content:"";position:absolute;bottom:-180px;inset-inline-end:-100px;width:420px;height:420px;border-radius:50%;
+    background:radial-gradient(circle, rgba(92,51,23,.10), transparent 65%);
+  }
+  .hero .wrap{position:relative;z-index:1;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .hero h1{
+    font-family:var(--font-display);font-weight:900;color:var(--dark);
+    font-size:clamp(32px,5vw,56px);line-height:1.15;max-width:26ch;
+  }
+  .hero h1 em{font-style:normal;color:var(--hot)}
+  .hero .lead{text-align:center;margin-inline:auto}
+  .cta-row{display:flex;gap:14px;margin-top:30px;flex-wrap:wrap;justify-content:center}
+  .stats{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:38px}
+  .stat{
+    background:#fff;border:1px solid var(--border);border-radius:999px;padding:9px 18px;
+    font-size:13.5px;font-weight:700;color:var(--sub);box-shadow:var(--sh-card);
+  }
+  .stat b{color:var(--dark)}
+
+  /* ---------- demo ---------- */
+  #demo{background:linear-gradient(180deg, var(--cream), var(--bg));border-block:1px solid var(--border)}
+  .demo-grid{display:grid;grid-template-columns:1fr 460px;gap:46px;align-items:center;margin-top:40px}
+  @media (max-width:980px){ .demo-grid{grid-template-columns:1fr} }
+  .controls h3{font-size:16px;font-weight:800;color:var(--dark);margin-bottom:12px}
+  .brand-btns{display:flex;flex-direction:column;gap:9px}
+  .brand-btn{
+    display:flex;align-items:center;gap:13px;background:#fff;border:1.5px solid var(--border);
+    border-radius:15px;padding:13px 16px;cursor:pointer;font:inherit;font-weight:700;font-size:14.5px;
+    color:var(--text);transition:all .15s;text-align:start;
+  }
+  .brand-btn:hover{box-shadow:var(--sh-card)}
+  .brand-btn.on{border-color:var(--bolt);box-shadow:var(--sh-hover)}
+  .brand-btn .sw{
+    width:30px;height:30px;border-radius:50%;flex:none;
+    background:linear-gradient(135deg, var(--a) 50%, var(--b) 50%);
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.55);
+  }
+  .brand-btn small{display:block;font-size:11.5px;color:var(--muted);font-weight:600}
+  .mini-row{display:flex;gap:10px;align-items:center;margin-top:22px;flex-wrap:wrap}
+  .seg{display:flex;background:#fff;border:1.5px solid var(--border);border-radius:999px;padding:3px}
+  .seg button{border:0;background:transparent;font:inherit;font-weight:800;font-size:12.5px;color:var(--sub);padding:6px 14px;border-radius:999px;cursor:pointer}
+  .seg button.on{background:var(--bolt);color:#fff}
+  .open-full{font-size:13.5px;font-weight:700;color:var(--bolt)}
+  .qr-box{
+    margin-top:26px;background:#fff;border:1.5px dashed var(--border);border-radius:16px;
+    padding:16px;display:flex;gap:16px;align-items:center;
+  }
+  .qr-box img,.qr-box svg{width:92px;height:92px;border-radius:8px;flex:none}
+  .qr-box .t{font-size:13px;color:var(--sub);font-weight:600;line-height:1.5}
+  .qr-box .t b{color:var(--dark)}
+
+  .phone-wrap{display:flex;justify-content:center}
+  .phone{
+    width:400px;height:780px;border-radius:52px;background:#17171b;border:11px solid #17171b;
+    box-shadow:0 30px 70px rgba(40,20,5,.30), inset 0 0 0 2px #2c2c33;position:relative;overflow:hidden;flex:none;
+  }
+  .phone .notch{
+    position:absolute;top:9px;left:50%;transform:translateX(-50%);
+    width:118px;height:25px;background:#17171b;border-radius:999px;z-index:3;
+  }
+  .phone iframe{width:100%;height:100%;border:0;background:#fff;border-radius:40px}
+  @media (max-width:980px){
+    .phone{transform:scale(.82);transform-origin:top center}
+    .phone-wrap{height:660px;overflow:hidden}
+  }
+
+  /* ---------- how ---------- */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:42px}
+  @media (max-width:840px){ .steps{grid-template-columns:1fr} }
+  .stepc{background:#fff;border:1px solid var(--border);border-radius:20px;padding:26px;box-shadow:var(--sh-card);position:relative}
+  .stepc .n{
+    width:38px;height:38px;border-radius:13px;background:var(--cream);color:var(--bolt);
+    font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;
+    border:1px solid var(--sand);
+  }
+  .stepc h3{font-size:17px;font-weight:800;color:var(--dark);margin-bottom:8px}
+  .stepc p{font-size:14px;color:var(--sub);line-height:1.55}
+  .stepc .emoji{position:absolute;top:24px;inset-inline-end:22px;font-size:26px;opacity:.9}
+
+  /* ---------- value ---------- */
+  #value{background:var(--mist);border-block:1px solid var(--border)}
+  .vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:42px}
+  .vcard{background:#fff;border:1px solid var(--border);border-radius:18px;padding:22px;box-shadow:var(--sh-card);transition:transform .15s, box-shadow .2s}
+  .vcard:hover{transform:translateY(-3px);box-shadow:var(--sh-hover)}
+  .vcard .ic{font-size:26px;margin-bottom:12px}
+  .vcard h3{font-size:15.5px;font-weight:800;color:var(--dark);margin-bottom:6px}
+  .vcard p{font-size:13.5px;color:var(--sub);line-height:1.5}
+
+  /* ---------- ROI ---------- */
+  .roi-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:42px;align-items:start}
+  @media (max-width:900px){ .roi-grid{grid-template-columns:1fr} }
+  .sliders{display:flex;flex-direction:column;gap:20px}
+  .slider label{display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px}
+  .slider label output{color:var(--bolt);font-weight:800}
+  input[type=range]{
+    width:100%;appearance:none;height:7px;border-radius:999px;background:var(--sand);outline:none;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    appearance:none;width:22px;height:22px;border-radius:50%;background:var(--bolt);
+    border:3px solid #fff;box-shadow:0 2px 8px rgba(74,42,19,.35);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:18px;height:18px;border-radius:50%;background:var(--bolt);border:3px solid #fff;box-shadow:0 2px 8px rgba(74,42,19,.35);
+  }
+  .results{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:520px){ .results{grid-template-columns:1fr} }
+  .rcard{background:#fff;border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:var(--sh-card)}
+  .rcard .lbl{font-size:12.5px;font-weight:700;color:var(--sub);margin-bottom:6px}
+  .rcard .val{font-family:var(--font-display);font-size:30px;font-weight:900;color:var(--dark);line-height:1.1}
+  .rcard .val small{font-size:15px;font-weight:700;color:var(--muted)}
+  .rcard.money{background:linear-gradient(150deg,#fff, var(--cream));border-color:var(--sand)}
+  .rcard.money .val{color:var(--down)}
+  .assume{font-size:12.5px;color:var(--muted);margin-top:18px;line-height:1.6}
+
+  /* ---------- analytics ---------- */
+  #analytics{background:var(--mist);border-block:1px solid var(--border)}
+  .an-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px}
+  @media (max-width:840px){ .an-grid{grid-template-columns:repeat(2,1fr)} }
+  .acard{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--sh-card)}
+  .acard .lbl{font-size:12px;font-weight:700;color:var(--sub)}
+  .acard .val{font-family:var(--font-display);font-size:26px;font-weight:900;color:var(--dark);margin-top:4px}
+  .acard .delta{font-size:12px;font-weight:800;color:var(--down);margin-top:3px}
+  .charts{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-top:14px}
+  @media (max-width:840px){ .charts{grid-template-columns:1fr} }
+  .chart{background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--sh-card)}
+  .chart h4{font-size:14px;font-weight:800;color:var(--dark);margin-bottom:16px}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:11px;font-size:13px;font-weight:700}
+  .bar-row .c{width:86px;color:var(--text);flex:none}
+  .bar-row .track{flex:1;height:12px;border-radius:999px;background:var(--cream);overflow:hidden}
+  .bar-row .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--bolt),var(--hot))}
+  .bar-row .pc{width:38px;color:var(--sub);flex:none;text-align:left}
+  .funnel .frow{margin-bottom:12px}
+  .funnel .ft{display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:5px}
+  .funnel .ft span:last-child{color:var(--sub)}
+  .funnel .track{height:26px;border-radius:9px;background:var(--cream);overflow:hidden}
+  .funnel .fill{height:100%;border-radius:9px;background:linear-gradient(90deg,var(--bolt),var(--hot));display:flex;align-items:center;justify-content:flex-end;padding-inline:10px;color:#fff;font-size:12px;font-weight:800}
+  .mock-note{font-size:12px;color:var(--muted);margin-top:14px}
+
+  /* ---------- pricing ---------- */
+  .pilot{
+    margin-top:40px;background:linear-gradient(135deg,var(--bolt),#7a4a24);color:#fff;border-radius:22px;
+    padding:26px 30px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+    box-shadow:var(--sh-hover);
+  }
+  .pilot h3{font-family:var(--font-display);font-size:23px;font-weight:900;margin-bottom:5px}
+  .pilot p{font-size:14.5px;opacity:.85}
+  .pilot .btn{background:#fff;color:var(--bolt)}
+  .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:26px}
+  @media (max-width:900px){ .tiers{grid-template-columns:1fr} }
+  .tier{background:#fff;border:1.5px solid var(--border);border-radius:22px;padding:28px;box-shadow:var(--sh-card);position:relative;display:flex;flex-direction:column}
+  .tier.pop{border-color:var(--hot)}
+  .tier .pop-tag{
+    position:absolute;top:-12px;inset-inline-start:24px;background:var(--hot);color:#fff;
+    font-size:11.5px;font-weight:800;padding:4px 13px;border-radius:999px;letter-spacing:.6px;
+  }
+  .tier h3{font-size:17px;font-weight:800;color:var(--dark)}
+  .tier .aud{font-size:13px;color:var(--muted);font-weight:600;margin-top:2px}
+  .tier .price{font-family:var(--font-display);font-size:38px;font-weight:900;color:var(--dark);margin:16px 0 2px}
+  .tier .price small{font-size:14px;color:var(--muted);font-weight:700;font-family:'Assistant'}
+  .tier ul{list-style:none;margin:18px 0 22px;display:flex;flex-direction:column;gap:9px;flex:1}
+  .tier li{font-size:13.5px;color:var(--sub);font-weight:600;display:flex;gap:8px;align-items:flex-start}
+  .tier li::before{content:"✓";color:var(--down);font-weight:800}
+  .tier .btn{width:100%}
+
+  /* ---------- FAQ ---------- */
+  .faq{max-width:760px;margin:40px auto 0;display:flex;flex-direction:column;gap:10px}
+  details{background:#fff;border:1px solid var(--border);border-radius:15px;padding:17px 20px;box-shadow:var(--sh-card)}
+  summary{cursor:pointer;font-weight:800;font-size:15px;color:var(--dark);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  summary::after{content:"+";font-size:20px;color:var(--hot);font-weight:700;transition:transform .2s}
+  details[open] summary::after{transform:rotate(45deg)}
+  details p{margin-top:11px;font-size:14px;color:var(--sub);line-height:1.6}
+
+  /* ---------- final CTA / footer ---------- */
+  .final{
+    text-align:center;background:linear-gradient(180deg,var(--bg),var(--cream));
+    border-top:1px solid var(--border);
+  }
+  .final h2{font-family:var(--font-display);font-size:clamp(26px,3.6vw,40px);font-weight:900;color:var(--dark);max-width:24ch;margin:0 auto}
+  .final p{margin:16px auto 0;max-width:56ch;color:var(--sub);font-size:16px;line-height:1.6}
+  footer{border-top:1px solid var(--border);background:var(--cream)}
+  footer .wrap{padding:26px 22px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  footer .f-logo{font-weight:800;color:var(--dark);font-size:15px}
+  footer .f-logo span{color:var(--hot)}
+  footer small{color:var(--muted);font-size:12px;font-weight:600;line-height:1.5}
+</style>
+</head>
+<body>
+
+<!-- ======== topbar ======== -->
+<div class="topbar">
+  <div class="wrap">
+    <a class="logo" href="#">
+      <span class="bolt">⚡</span>
+      <span>MOCA<small>GUEST CONNECT</small></span>
+    </a>
+    <nav>
+      <a href="#demo">הדגמה חיה</a>
+      <a href="#how">איך זה עובד</a>
+      <a href="#roi">מחשבון רווח</a>
+      <a href="#analytics">אנליטיקה</a>
+      <a href="#pricing">תמחור</a>
+    </nav>
+    <a class="btn" href="#pricing">פיילוט 60 יום חינם</a>
+  </div>
+</div>
+
+<!-- ======== hero ======== -->
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">MOCA GUEST CONNECT · פתרון קישוריות לאורחי המלון</div>
+    <h1>האורח נוחת ושואל ״איך מתחברים?״<br>המלון שלכם עונה — <em>ומרוויח</em>.</h1>
+    <p class="lead">
+      פורטל ממותג בצבעי המלון שמשווה לאורח, בזמן אמת, את כל חבילות ה-eSIM והסים לתיירים בישראל —
+      27 ספקים גלובליים ו-10 מפעילים מקומיים, מתעדכן פעמיים ביום.
+      בלי מלאי, בלי תפעול — ועם עמלה למלון על כל רכישה.
+    </p>
+    <div class="cta-row">
+      <a class="btn" href="#demo">▶ צפו בהדגמה החיה</a>
+      <a class="btn ghost" href="mailto:Helpdesk@mocaintel.com?subject=פיילוט MOCA Guest Connect">תיאום שיחת היכרות</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>27</b> ספקי eSIM גלובליים</div>
+      <div class="stat"><b>10</b> מפעילים ישראליים</div>
+      <div class="stat">עדכון מחירים <b>×2 ביום</b></div>
+      <div class="stat">התקנה תוך <b>48 שעות</b></div>
+      <div class="stat"><b>0</b> תפעול למלון</div>
+    </div>
+  </div>
+</header>
+
+<!-- ======== demo ======== -->
+<section id="demo">
+  <div class="wrap">
+    <div class="kicker">הדגמה חיה</div>
+    <h2 class="title">ככה זה נראה לאורח שלכם</h2>
+    <p class="lead">זה לא סרטון — זה הפורטל עצמו. החליפו מותג ושפה ותראו איך המוצר ״מתלבש״ על כל רשת בשנייה, בלי פיתוח ובלי build.</p>
+
+    <div class="demo-grid">
+      <div class="controls">
+        <h3>בחרו רשת מלונות (מיתוג חי)</h3>
+        <div class="brand-btns" id="brandBtns"></div>
+
+        <div class="mini-row">
+          <h3 style="margin:0">שפת האורח:</h3>
+          <div class="seg" id="langSeg">
+            <button type="button" data-lang="en" class="on">English</button>
+            <button type="button" data-lang="he">עברית</button>
+          </div>
+          <a class="open-full" id="openFull" href="guest.html?brand=pearl&lang=en" target="_blank" rel="noopener">פתיחה במסך מלא ↗</a>
+        </div>
+
+        <div class="qr-box">
+          <span id="qrSlot"></span>
+          <div class="t" id="qrText"><b>סריקה בנייד:</b> בדיוק כמו שהאורח יפגוש את זה — מעמד QR בחדר, בצ׳ק-אין ובוואטסאפ של המלון.</div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="notch"></div>
+          <iframe id="demoFrame" src="guest.html?brand=pearl&lang=en" title="Guest portal demo"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======== how ======== -->
+<section id="how">
+  <div class="wrap">
+    <div class="kicker">איך זה עובד</div>
+    <h2 class="title">שלושה צעדים, אפס תפעול</h2>
+    <div class="steps">
+      <div class="stepc">
+        <span class="emoji">📱</span>
+        <div class="n">1</div>
+        <h3>QR בחדר ובצ׳ק-אין</h3>
+        <p>מעמדים ממותגים בחדרים ובדלפק, קישור באתר ובהודעת הוואטסאפ שלפני ההגעה. אנחנו מספקים את הכל מעוצב ומוכן להדפסה.</p>
+      </div>
+      <div class="stepc">
+        <span class="emoji">🛒</span>
+        <div class="n">2</div>
+        <h3>האורח משווה ורוכש</h3>
+        <p>בוחר משך שהות ונפח גלישה, מקבל את ההצעות המשתלמות בשוק — בשפה שלו, במחיר של היום — ורוכש ישירות מהספק. התמיכה על הספק, לא עליכם.</p>
+      </div>
+      <div class="stepc">
+        <span class="emoji">💰</span>
+        <div class="n">3</div>
+        <h3>המלון מרוויח ולומד</h3>
+        <p>כל רכישה מתויגת בקוד ההפניה של המלון ומזכה אתכם בעמלה. בנוסף — דשבורד אנליטיקה על קהל האורחים: מדינות מקור, ביקושים ושעות שיא.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======== value ======== -->
+<section id="value">
+  <div class="wrap">
+    <div class="kicker">למה זה משתלם</div>
+    <h2 class="title">חמישה דברים שהמלון מקבל</h2>
+    <div class="vgrid">
+      <div class="vcard"><div class="ic">🛎️</div><h3>שירות לאורח</h3><p>תשובה מקצועית ועדכנית לשאלה הנפוצה ביותר בדלפק — בלי להעסיק את הקבלה.</p></div>
+      <div class="vcard"><div class="ic">💸</div><h3>הכנסה פסיבית</h3><p>עמלת אפיליאציה על כל רכישת eSIM שמקורה ב-QR של המלון. חלוקה שקופה 50/50.</p></div>
+      <div class="vcard"><div class="ic">🎨</div><h3>מיתוג מלא</h3><p>הפורטל בצבעי המלון ובלוגו שלו — נראה כשירות של המלון, לא של צד שלישי.</p></div>
+      <div class="vcard"><div class="ic">🧘</div><h3>אפס תפעול</h3><p>אין מלאי, אין סים פיזי, אין תמיכה טכנית. הספק מטפל בלקוח מקצה לקצה.</p></div>
+      <div class="vcard"><div class="ic">📊</div><h3>אנליטיקה</h3><p>כמה סרקו, מה חיפשו ומאילו מדינות הגיעו — דאטה שיווקי אנונימי על קהל האורחים.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======== ROI ======== -->
+<section id="roi">
+  <div class="wrap">
+    <div class="kicker">מחשבון רווח</div>
+    <h2 class="title">כמה זה שווה לרשת שלכם?</h2>
+    <p class="lead">הזיזו את המחוונים לפי הנכסים שלכם — החישוב מתעדכן מיד.</p>
+
+    <div class="roi-grid">
+      <div class="sliders">
+        <div class="slider">
+          <label>מספר נכסים ברשת <output id="oProps">5</output></label>
+          <input type="range" id="rProps" min="1" max="30" step="1" value="5">
+        </div>
+        <div class="slider">
+          <label>חדרים לנכס (ממוצע) <output id="oRooms">120</output></label>
+          <input type="range" id="rRooms" min="20" max="400" step="5" value="120">
+        </div>
+        <div class="slider">
+          <label>תפוסה <output id="oOcc">72%</output></label>
+          <input type="range" id="rOcc" min="40" max="95" step="1" value="72">
+        </div>
+        <div class="slider">
+          <label>שיעור אורחים מחו״ל <output id="oForeign">60%</output></label>
+          <input type="range" id="rForeign" min="10" max="90" step="5" value="60">
+        </div>
+        <div class="slider">
+          <label>עמלה ממוצעת לרכישה <output id="oComm">₪18</output></label>
+          <input type="range" id="rComm" min="8" max="35" step="1" value="18">
+        </div>
+      </div>
+
+      <div>
+        <div class="results">
+          <div class="rcard"><div class="lbl">סריקות QR בחודש</div><div class="val" id="vScans">—</div></div>
+          <div class="rcard"><div class="lbl">רכישות בחודש</div><div class="val" id="vBuys">—</div></div>
+          <div class="rcard money"><div class="lbl">הכנסת עמלות שנתית לרשת</div><div class="val" id="vMoney">—</div></div>
+          <div class="rcard"><div class="lbl">פניות דלפק שנחסכות בשנה</div><div class="val" id="vSaved">—</div></div>
+        </div>
+        <p class="assume">
+          הנחות שמרניות, מכוילות בפיילוט: 15% מהלינות הרלוונטיות סורקות · 20% מהסורקים רוכשים ·
+          חלק המלון 50% מהעמלה · 30.4 לילות בחודש. בנוסף לעמלות: שיפור חוויית האורח והביקורות — בלי עלות תפעולית.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======== analytics ======== -->
+<section id="analytics">
+  <div class="wrap">
+    <div class="kicker">דשבורד למלון</div>
+    <h2 class="title">הדאטה שתקבלו על האורחים</h2>
+    <p class="lead">דוגמה לדשבורד החודשי של מלון בודד — אנונימי לחלוטין, ללא איסוף פרטים אישיים.</p>
+
+    <div class="an-grid">
+      <div class="acard"><div class="lbl">סריקות QR החודש</div><div class="val">1,247</div><div class="delta">▲ 18% מהחודש שעבר</div></div>
+      <div class="acard"><div class="lbl">המרה לרכישה</div><div class="val">22%</div><div class="delta">▲ 3 נק׳</div></div>
+      <div class="acard"><div class="lbl">עמלות שנצברו</div><div class="val">₪2,466</div><div class="delta">▲ 21%</div></div>
+      <div class="acard"><div class="lbl">שעת השיא</div><div class="val">21:00</div><div class="delta">ערב הצ׳ק-אין</div></div>
+    </div>
+
+    <div class="charts">
+      <div class="chart">
+        <h4>מדינות מקור מובילות</h4>
+        <div class="bar-row"><span class="c">🇩🇪 גרמניה</span><div class="track"><div class="fill" style="width:88%"></div></div><span class="pc">24%</span></div>
+        <div class="bar-row"><span class="c">🇫🇷 צרפת</span><div class="track"><div class="fill" style="width:70%"></div></div><span class="pc">19%</span></div>
+        <div class="bar-row"><span class="c">🇺🇸 ארה״ב</span><div class="track"><div class="fill" style="width:63%"></div></div><span class="pc">17%</span></div>
+        <div class="bar-row"><span class="c">🇬🇧 בריטניה</span><div class="track"><div class="fill" style="width:44%"></div></div><span class="pc">12%</span></div>
+        <div class="bar-row"><span class="c">🇮🇹 איטליה</span><div class="track"><div class="fill" style="width:33%"></div></div><span class="pc">9%</span></div>
+      </div>
+      <div class="chart funnel">
+        <h4>משפך החודש</h4>
+        <div class="frow"><div class="ft"><span>סריקות</span><span>1,247</span></div><div class="track"><div class="fill" style="width:100%">100%</div></div></div>
+        <div class="frow"><div class="ft"><span>השוואות פעילות</span><span>904</span></div><div class="track"><div class="fill" style="width:72%">72%</div></div></div>
+        <div class="frow"><div class="ft"><span>רכישות</span><span>274</span></div><div class="track"><div class="fill" style="width:22%">22%</div></div></div>
+        <div class="mock-note">* נתוני הדגמה להמחשת המסך בלבד.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======== pricing ======== -->
+<section id="pricing">
+  <div class="wrap">
+    <div class="kicker">תמחור</div>
+    <h2 class="title">מסלולים פשוטים, בלי הפתעות</h2>
+
+    <div class="pilot">
+      <div>
+        <h3>פיילוט 60 יום — חינם לחלוטין</h3>
+        <p>בלי כרטיס אשראי · התקנה ביום אחד · יציאה בהודעה של 30 יום · משלמים רק כשרואים תוצאות</p>
+      </div>
+      <a class="btn" href="mailto:Helpdesk@mocaintel.com?subject=פיילוט MOCA Guest Connect">מתחילים פיילוט</a>
+    </div>
+
+    <div class="tiers">
+      <div class="tier">
+        <h3>Starter</h3>
+        <div class="aud">הוסטל · מלון בוטיק קטן</div>
+        <div class="price">₪290<small> / חודש לנכס</small></div>
+        <ul>
+          <li>פורטל אורח ממותג + QR</li>
+          <li>השוואה חיה, עדכון פעמיים ביום</li>
+          <li>2 שפות (אנגלית + עברית)</li>
+          <li>חלוקת עמלות 50/50</li>
+        </ul>
+        <a class="btn ghost" href="mailto:Helpdesk@mocaintel.com?subject=MOCA Guest Connect — Starter">דברו איתנו</a>
+      </div>
+      <div class="tier pop">
+        <span class="pop-tag">הכי פופולרי</span>
+        <h3>Pro</h3>
+        <div class="aud">מלון בינוני וגדול</div>
+        <div class="price">₪590<small> / חודש לנכס</small></div>
+        <ul>
+          <li>כל מה שב-Starter</li>
+          <li>דשבורד אנליטיקת אורחים</li>
+          <li>המלצות מותאמות לפרופיל האורח</li>
+          <li>4 שפות (+ צרפתית, רוסית)</li>
+          <li>מעמדי QR מודפסים ממותגים</li>
+        </ul>
+        <a class="btn" href="mailto:Helpdesk@mocaintel.com?subject=MOCA Guest Connect — Pro">דברו איתנו</a>
+      </div>
+      <div class="tier">
+        <h3>Chain</h3>
+        <div class="aud">רשת · ניהול ריבוי נכסים</div>
+        <div class="price">מ-₪390<small> / חודש לנכס</small></div>
+        <ul>
+          <li>כל מה שב-Pro</li>
+          <li>ניהול מרוכז לכל הנכסים</li>
+          <li>דוח חודשי להנהלת הרשת</li>
+          <li>SLA ייעודי ומנהל לקוח</li>
+          <li>תמחור מדורג לפי היקף</li>
+        </ul>
+        <a class="btn ghost" href="mailto:Helpdesk@mocaintel.com?subject=MOCA Guest Connect — Chain">דברו איתנו</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======== FAQ ======== -->
+<section id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="kicker" style="text-align:center">שאלות נפוצות</div>
+    <div class="faq">
+      <details>
+        <summary>צריך צוות טכני או אינטגרציה מצד המלון?</summary>
+        <p>לא. ה-onboarding כולו עלינו: דף ממותג, קוד QR ומעמדים מעוצבים — מוכנים תוך 48 שעות. אין התקנה במערכות המלון ואין תלות ב-PMS (אינטגרציה אפשרית בהמשך למי שירצה).</p>
+      </details>
+      <details>
+        <summary>מה עם פרטיות האורחים (GDPR)?</summary>
+        <p>הפורטל פתוח ללא הרשמה וללא איסוף פרטים אישיים. האנליטיקה אנונימית ומצרפית בלבד — מספרי סריקות, שפות ומדינות מקור, לעולם לא זהות של אורח.</p>
+      </details>
+      <details>
+        <summary>יש לנו כבר שיתוף פעולה עם מפעיל / מכירת SIM בדלפק</summary>
+        <p>מצוין — אפשר להציג את ההצעה שלכם ראשונה ולתת לאורח שקיפות על כל השאר. השוואה ניטרלית בונה אמון; נעילה לספק יחיד שאינו הזול ביותר פוגעת בו. וכשהאורח קונה בכל מקרה — עדיף שהמלון ירוויח.</p>
+      </details>
+      <details>
+        <summary>המחירים באמת מתעדכנים? מי עומד מאחורי זה?</summary>
+        <p>כן. Guest Connect רץ על MOCA — מערכת מודיעין תחרותי שסורקת את כל שוק הסלולר הישראלי ו-27 ספקי eSIM גלובליים פעמיים ביום, ומשרתת כבר היום גופים בענף התקשורת בישראל.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ======== final CTA ======== -->
+<section class="final">
+  <div class="wrap">
+    <h2>בואו נריץ פיילוט באחד הנכסים שלכם</h2>
+    <p>60 יום, בלי עלות ובלי התחייבות. אם האורחים לא משתמשים — נפרדים כידידים. אם כן — יש לכם שירות חדש ומקור הכנסה חדש.</p>
+    <div class="cta-row">
+      <a class="btn" href="mailto:Helpdesk@mocaintel.com?subject=פיילוט MOCA Guest Connect">תיאום שיחה ↗</a>
+      <a class="btn ghost" href="#demo">עוד הצצה בדמו</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="f-logo">MOCA <span>Guest Connect</span> ⚡</div>
+    <small>
+      עמוד הדגמה שיווקי · המותגים, המחירים והנתונים להמחשה בלבד ·
+      mocaintel.com · Helpdesk@mocaintel.com
+    </small>
+  </div>
+</footer>
+
+<script>
+/* ---------- brand presets (kept in sync with BRANDS in guest.html) ---------- */
+const BRAND_PRESETS = [
+  { id:"pearl", label:"Jaffa Pearl Hotels",     sub:"בוטיק · נייבי וזהב",    a:"#0e2a47", b:"#c8a24b" },
+  { id:"bloom", label:"Desert Bloom Resorts",   sub:"ריזורט · טרקוטה מדברית", a:"#8a3d2a", b:"#e0a458" },
+  { id:"verde", label:"Galil Verde Collection", sub:"אקולוגי · ירוק גליל",    a:"#1d4d3b", b:"#9ec27a" },
+  { id:"urban", label:"TLV Urban Hotels",       sub:"אורבני · מונוכרום",      a:"#17171c", b:"#d9c8ae" },
+];
+const demoState = { brand:"pearl", lang:"en" };
+
+const frame   = document.getElementById("demoFrame");
+const openFull= document.getElementById("openFull");
+const btnsBox = document.getElementById("brandBtns");
+
+function guestUrl(){ return `guest.html?brand=${demoState.brand}&lang=${demoState.lang}`; }
+
+function renderBrandBtns(){
+  btnsBox.innerHTML = BRAND_PRESETS.map(p => `
+    <button type="button" class="brand-btn${p.id === demoState.brand ? " on" : ""}" data-brand="${p.id}">
+      <span class="sw" style="--a:${p.a};--b:${p.b}"></span>
+      <span>${p.label}<small>${p.sub}</small></span>
+    </button>`
+  ).join("");
+}
+function syncDemo(){
+  renderBrandBtns();
+  document.querySelectorAll("#langSeg button").forEach(b =>
+    b.classList.toggle("on", b.dataset.lang === demoState.lang));
+  frame.src = guestUrl();
+  openFull.href = guestUrl();
+  renderQR();
+}
+btnsBox.addEventListener("click", e => {
+  const b = e.target.closest(".brand-btn");
+  if (b){ demoState.brand = b.dataset.brand; syncDemo(); }
+});
+document.getElementById("langSeg").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (b){ demoState.lang = b.dataset.lang; syncDemo(); }
+});
+
+/* ---------- QR: real QR when hosted, decorative placeholder on file:// ---------- */
+function renderQR(){
+  const slot = document.getElementById("qrSlot");
+  if (location.protocol.startsWith("http")){
+    const abs = new URL(guestUrl(), location.href).href;
+    slot.innerHTML = `<img alt="QR" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(abs)}">`;
+  } else {
+    slot.innerHTML = `
+      <svg viewBox="0 0 90 90" aria-hidden="true">
+        <rect width="90" height="90" rx="8" fill="#f5ede0"/>
+        <g fill="#5c3317">
+          <rect x="8" y="8" width="22" height="22" rx="3"/><rect x="60" y="8" width="22" height="22" rx="3"/>
+          <rect x="8" y="60" width="22" height="22" rx="3"/>
+          <rect x="13" y="13" width="12" height="12" fill="#f5ede0" rx="2"/><rect x="65" y="13" width="12" height="12" fill="#f5ede0" rx="2"/>
+          <rect x="13" y="65" width="12" height="12" fill="#f5ede0" rx="2"/>
+          <rect x="38" y="8" width="7" height="7"/><rect x="48" y="16" width="7" height="7"/><rect x="38" y="26" width="7" height="7"/>
+          <rect x="8" y="38" width="7" height="7"/><rect x="20" y="46" width="7" height="7"/><rect x="34" y="40" width="10" height="10"/>
+          <rect x="50" y="38" width="7" height="7"/><rect x="62" y="44" width="7" height="7"/><rect x="74" y="38" width="7" height="7"/>
+          <rect x="38" y="58" width="7" height="7"/><rect x="48" y="66" width="7" height="7"/><rect x="60" y="58" width="7" height="7"/>
+          <rect x="70" y="66" width="12" height="7"/><rect x="38" y="74" width="7" height="7"/><rect x="56" y="74" width="7" height="7"/>
+        </g>
+      </svg>`;
+    document.getElementById("qrText").innerHTML =
+      "<b>סריקה בנייד:</b> ה-QR מקודד אוטומטית את כתובת הפורטל כשהדף מתארח (Netlify) — בדיוק כמו המעמד שיוצב בחדר.";
+  }
+}
+
+/* ---------- ROI calculator ---------- */
+const R = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString("he-IL");
+function calc(){
+  const props   = +R("rProps").value;
+  const rooms   = +R("rRooms").value;
+  const occ     = +R("rOcc").value / 100;
+  const foreign = +R("rForeign").value / 100;
+  const comm    = +R("rComm").value;
+  R("oProps").textContent  = props;
+  R("oRooms").textContent  = rooms;
+  R("oOcc").textContent    = Math.round(occ * 100) + "%";
+  R("oForeign").textContent= Math.round(foreign * 100) + "%";
+  R("oComm").textContent   = "₪" + comm;
+
+  const roomNights = props * rooms * 30.4 * occ;
+  const relevant   = roomNights * foreign;
+  const scans      = relevant * 0.15;
+  const buys       = scans * 0.20;
+  const hotelYear  = buys * comm * 0.5 * 12;
+
+  R("vScans").textContent = fmt(scans);
+  R("vBuys").textContent  = fmt(buys);
+  R("vMoney").innerHTML   = "₪" + fmt(hotelYear) + "<small> / שנה</small>";
+  R("vSaved").textContent = fmt(scans * 12);
+}
+["rProps","rRooms","rOcc","rForeign","rComm"].forEach(id =>
+  R(id).addEventListener("input", calc));
+
+/* ---------- init ---------- */
+syncDemo();
+calc();
+</script>
+</body>
+</html>
