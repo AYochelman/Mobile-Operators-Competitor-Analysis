@@ -20,6 +20,7 @@ const fmtNum = (n) => {
 
 const T = {
   en: {
+    heroTitle: 'Stay connected in Israel',
     sub: 'The best SIM & eSIM deals for your trip — compared live, picked for you.',
     updated: 'Prices updated',
     wizTitle: 'Find your plan in 10 seconds',
@@ -46,6 +47,7 @@ const T = {
     loading: 'Loading the best deals…',
   },
   he: {
+    heroTitle: 'להישאר מחוברים בישראל',
     sub: 'חבילות ה-eSIM והסים המשתלמות ביותר לטיול — בהשוואה חיה, מותאם אישית.',
     updated: 'המחירים עודכנו',
     wizTitle: 'מציאת חבילה ב-10 שניות',
@@ -71,7 +73,65 @@ const T = {
     notFound: 'פורטל האורח הזה אינו זמין.',
     loading: 'טוענים את ההצעות המשתלמות…',
   },
+  fr: {
+    heroTitle: 'Restez connecté en Israël',
+    sub: 'Les meilleures offres SIM et eSIM pour votre séjour — comparées en direct, choisies pour vous.',
+    updated: 'Prix mis à jour',
+    wizTitle: 'Trouvez votre forfait en 10 secondes',
+    qDays: 'Combien de temps restez-vous ?',
+    qData: 'De combien de données avez-vous besoin ?',
+    topPicks: 'Meilleurs choix pour votre voyage',
+    allDeals: 'Toutes les offres',
+    helpTitle: 'Première fois avec une eSIM ?',
+    h1b: 'Achat en ligne — 2 minutes', h1s: 'Pas de boutique, pas de file d’attente. Payez par carte et c’est fait.',
+    h2b: 'Scannez le QR reçu par e-mail', h2s: 'Votre téléphone installe le forfait automatiquement.',
+    h3b: 'Restez joignable', h3s: 'Gardez WhatsApp et votre numéro habituel actifs en parallèle.',
+    compat: 'Compatible iPhone XS et plus récent, Samsung Galaxy S20+, Google Pixel 3+. Vous préférez une SIM physique avec un numéro israélien ? Filtrez par « SIM locale » ci-dessus.',
+    trust: 'Comparé parmi <b>27 fournisseurs eSIM mondiaux</b> et <b>10 opérateurs israéliens</b><br>Actualisé deux fois par jour par l’intelligence de marché MOCA',
+    disclaim: 'Échantillon de prix du marché en direct. Le prix final s’affiche sur la page du fournisseur.',
+    days: [{ v: 3, l: '3 jours' }, { v: 7, l: '1 semaine' }, { v: 14, l: '2 semaines' }, { v: 30, l: '1 mois' }],
+    data: [{ v: 3, l: 'Léger', s: '3 Go · cartes et messages' }, { v: 10, l: 'Normal', s: '10 Go · + réseaux sociaux' }, { v: 20, l: 'Intensif', s: '20 Go · + vidéo' }, { v: 'unl', l: 'Illimité', s: 'aucune limite' }],
+    filters: [{ v: 'all', l: 'Tout' }, { v: 'esim', l: 'eSIM' }, { v: 'local', l: 'SIM locale' }, { v: 'unl', l: 'Illimité' }],
+    badges: ['MEILLEUR CHOIX', 'LE MOINS CHER', 'MAX DE DONNÉES', 'AUSSI BIEN'],
+    unlimited: 'Illimité', daysU: 'jours', dayU: 'jour', get: 'Choisir cette offre ↗', perGB: '/Go',
+    esimTag: 'eSIM mondiale', localTag: 'Opérateur israélien',
+    perks: { instant: 'eSIM instantanée', unlimited: 'Données illimitées', app: 'Appli dédiée', hotspot: 'Partage de connexion', ilNumber: 'Numéro israélien', calls: 'Appels inclus', intlMin: 'Minutes internationales', airport: 'Retrait à l’aéroport' },
+    empty: 'Aucune offre ne correspond à ce filtre pour votre voyage — essayez une autre option.',
+    notFound: 'Ce portail invité n’est pas disponible.',
+    loading: 'Chargement des meilleures offres…',
+  },
+  ru: {
+    heroTitle: 'Оставайтесь на связи в Израиле',
+    sub: 'Лучшие предложения SIM и eSIM для вашей поездки — сравнение в реальном времени, подобрано для вас.',
+    updated: 'Цены обновлены',
+    wizTitle: 'Подберите тариф за 10 секунд',
+    qDays: 'Сколько вы пробудете?',
+    qData: 'Сколько нужно трафика?',
+    topPicks: 'Лучшее для вашей поездки',
+    allDeals: 'Все предложения',
+    helpTitle: 'Впервые с eSIM?',
+    h1b: 'Покупка онлайн — 2 минуты', h1s: 'Без магазина и очереди. Оплатите картой — и готово.',
+    h2b: 'Отсканируйте QR-код из письма', h2s: 'Телефон установит тариф автоматически.',
+    h3b: 'Оставайтесь на связи', h3s: 'WhatsApp и ваш домашний номер продолжают работать одновременно.',
+    compat: 'Работает на iPhone XS и новее, Samsung Galaxy S20+, Google Pixel 3+. Предпочитаете физическую SIM с израильским номером? Выберите фильтр «Местная SIM» выше.',
+    trust: 'Сравнение по <b>27 мировым операторам eSIM</b> и <b>10 израильским операторам</b><br>Обновляется дважды в день аналитикой MOCA',
+    disclaim: 'Образец актуальных рыночных цен. Итоговая цена указана на странице поставщика.',
+    days: [{ v: 3, l: '3 дня' }, { v: 7, l: '1 неделя' }, { v: 14, l: '2 недели' }, { v: 30, l: '1 месяц' }],
+    data: [{ v: 3, l: 'Лёгкий', s: '3 ГБ · карты и чаты' }, { v: 10, l: 'Обычный', s: '10 ГБ · + соцсети' }, { v: 20, l: 'Большой', s: '20 ГБ · + видео' }, { v: 'unl', l: 'Безлимит', s: 'без ограничений' }],
+    filters: [{ v: 'all', l: 'Все' }, { v: 'esim', l: 'eSIM' }, { v: 'local', l: 'Местная SIM' }, { v: 'unl', l: 'Безлимит' }],
+    badges: ['ЛУЧШИЙ ВЫБОР', 'ДЕШЕВЛЕ ВСЕГО', 'БОЛЬШЕ ГБ', 'ТОЖЕ ХОРОШО'],
+    unlimited: 'Безлимит', daysU: 'дн.', dayU: 'день', get: 'Выбрать тариф ↗', perGB: '/ГБ',
+    esimTag: 'Глобальная eSIM', localTag: 'Израильский оператор',
+    perks: { instant: 'eSIM сразу', unlimited: 'Безлимитный трафик', app: 'Поддержка в приложении', hotspot: 'Точка доступа', ilNumber: 'Израильский номер', calls: 'Звонки включены', intlMin: 'Межд. минуты', airport: 'Получение в аэропорту' },
+    empty: 'Нет предложений по этому фильтру для вашей поездки — попробуйте другой вариант.',
+    notFound: 'Этот гостевой портал недоступен.',
+    loading: 'Загружаем лучшие предложения…',
+  },
 }
+
+const SUPPORTED_LANGS = ['en', 'he', 'fr', 'ru']
+const LANG_LABELS = { en: 'EN', he: 'עב', fr: 'FR', ru: 'RU' }
+const DATE_LOCALES = { en: 'en-GB', he: 'he-IL', fr: 'fr-FR', ru: 'ru-RU' }
 
 const GC_CSS = `
 #gc-app{--c1:#26170f;--c2:#d16938;--bgp:#f4f1ee;--ink:#1c2430;--sub:#5b6b7e;--line:#e6ebf2;--card:#fff;--r:20px;
@@ -194,9 +254,11 @@ export default function GuestPortalPage() {
       .then((d) => {
         if (!alive) return
         setData(d)
-        const initLang = (params.get('lang') === 'he' || params.get('lang') === 'en')
-          ? params.get('lang')
-          : (d.hotel.default_lang || 'en')
+        const langs = (d.hotel.languages && d.hotel.languages.length) ? d.hotel.languages : ['en', 'he']
+        const wanted = params.get('lang')
+        const initLang = langs.includes(wanted)
+          ? wanted
+          : (langs.includes(d.hotel.default_lang) ? d.hotel.default_lang : langs[0])
         setLang(initLang)
         setStatus('ok')
         api.guestEvent(slug, params.get('via') === 'qr' ? 'scan' : 'view', initLang)
@@ -214,7 +276,7 @@ export default function GuestPortalPage() {
     return () => { document.documentElement.dir = prevDir; document.documentElement.lang = prevLang }
   }, [lang])
 
-  const t = T[lang]
+  const t = T[lang] || T.en
   const fx = data?.fx || 3.7
   const deals = data?.deals || []
   const providers = data?.providers || {}
@@ -325,7 +387,7 @@ export default function GuestPortalPage() {
   }
   const updated = data.updated_at ? new Date(data.updated_at) : null
   const updatedStr = updated
-    ? `${t.updated}: ${updated.toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} · ${updated.toLocaleTimeString(lang === 'he' ? 'he-IL' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}`
+    ? `${t.updated}: ${updated.toLocaleDateString(DATE_LOCALES[lang] || 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} · ${updated.toLocaleTimeString(DATE_LOCALES[lang] || 'en-GB', { hour: '2-digit', minute: '2-digit' })}`
     : ''
   const cls = ['b1', 'b2', 'b3', 'b4']
 
@@ -343,11 +405,14 @@ export default function GuestPortalPage() {
               </div>
             </div>
             <div className="lang" role="group" aria-label="Language">
-              <button type="button" className={lang === 'en' ? 'on' : ''} onClick={() => setLang('en')}>EN</button>
-              <button type="button" className={lang === 'he' ? 'on' : ''} onClick={() => setLang('he')}>עב</button>
+              {(h.languages && h.languages.length ? h.languages : ['en', 'he'])
+                .filter((l) => SUPPORTED_LANGS.includes(l))
+                .map((l) => (
+                  <button key={l} type="button" className={lang === l ? 'on' : ''} onClick={() => setLang(l)}>{LANG_LABELS[l]}</button>
+                ))}
             </div>
           </div>
-          <h1>{h.tagline || (lang === 'he' ? 'להישאר מחוברים בישראל' : 'Stay connected in Israel')}</h1>
+          <h1>{h.tagline || t.heroTitle}</h1>
           <p>{t.sub}</p>
           {updatedStr && <div className="updated"><span className="dot" /><span>{updatedStr}</span></div>}
         </header>

@@ -12,32 +12,32 @@ HOTELS = [
     {
         "slug": "brown", "name": "Brown Hotels",
         "brand_primary": "#26170f", "brand_secondary": "#d16938", "brand_bg": "#f4f1ee",
-        "mono": "B", "languages": ["en", "he"], "default_lang": "en",
+        "mono": "B", "languages": ["en", "he", "fr", "ru"], "default_lang": "en",
         "commission_note": "50/50", "active": True,
     },
     # ── White-label demo brands (used by the /hotels landing switcher) ─────
     {
         "slug": "demo", "name": "Coastline Hotels",
         "brand_primary": "#26170f", "brand_secondary": "#d16938", "brand_bg": "#f4f1ee",
-        "mono": "CH", "languages": ["en", "he"], "default_lang": "en",
+        "mono": "CH", "languages": ["en", "he", "fr", "ru"], "default_lang": "en",
         "commission_note": "50/50", "active": True,
     },
     {
         "slug": "demo-navy", "name": "Harbor & Pearl",
         "brand_primary": "#0e2a47", "brand_secondary": "#c8a24b", "brand_bg": "#f4f7fb",
-        "mono": "HP", "languages": ["en", "he"], "default_lang": "en",
+        "mono": "HP", "languages": ["en", "he", "fr", "ru"], "default_lang": "en",
         "commission_note": "50/50", "active": True,
     },
     {
         "slug": "demo-verde", "name": "Galil Verde Collection",
         "brand_primary": "#1d4d3b", "brand_secondary": "#9ec27a", "brand_bg": "#f3f8f4",
-        "mono": "GV", "languages": ["en", "he"], "default_lang": "en",
+        "mono": "GV", "languages": ["en", "he", "fr", "ru"], "default_lang": "en",
         "commission_note": "50/50", "active": True,
     },
     {
         "slug": "demo-urban", "name": "TLV Urban Hotels",
         "brand_primary": "#17171c", "brand_secondary": "#d9c8ae", "brand_bg": "#f7f7f8",
-        "mono": "TLV", "languages": ["en", "he"], "default_lang": "en",
+        "mono": "TLV", "languages": ["en", "he", "fr", "ru"], "default_lang": "en",
         "commission_note": "50/50", "active": True,
     },
 ]
