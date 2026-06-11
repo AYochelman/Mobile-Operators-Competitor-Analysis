@@ -27,6 +27,7 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                get_user_activity_events, prune_user_activity, \
                create_workspace_invite, get_workspace_invite, use_workspace_invite, \
                get_reseller_plans, save_reseller_plans, filter_undominated_reseller_plans, \
+               get_usa_tourist_plans, save_usa_tourist_plans, \
                log_claude_usage, get_claude_usage_recent, get_claude_usage_summary, get_claude_spend, \
                get_active_coupons, get_all_coupons, upsert_coupon, update_coupon, delete_coupon
 import archive as arc
@@ -977,6 +978,20 @@ def api_reseller_plans():
     return jsonify(_filter_hidden_carrier(plans))
 
 
+@app.route("/api/usa-plans")
+@limiter.limit("60 per minute")
+def api_usa_plans():
+    """US operators' prepaid plans for inbound tourists (the נוחתים בארה"ב tab).
+
+    carrier = US operator id (tmobile_prepaid, mint, visible, ...). price is
+    ILS-converted at seed time; original_price keeps the native USD amount.
+    Data is seeded via seed_usa_tourist.py (manually-researched, not scraped).
+    """
+    carrier = request.args.get("carrier")
+    plans = get_usa_tourist_plans(carrier=carrier, db_path=_db_path())
+    return _public_cache(jsonify(plans), 600)
+
+
 @app.route("/api/news")
 @limiter.limit("60 per minute")
 def api_news():
@@ -1903,25 +1918,38 @@ def scrape_news_job():
         logger.error(f"News scrape job failed: {e}", exc_info=True)
 
 
-def scrape_resellers_job():
-    """Scrape known reseller websites for promotional plans not on the carrier rate cards.
+RESELLER_SCRAPER_MODULES = ("pelephon4u_scraper", "pelephone_join_scraper", "btl_scrapers")
 
-    Runs daily at 08:15 via APScheduler. Each reseller has its own scraper module;
-    they're called sequentially so a failure in one doesn't block the others.
+
+def scrape_resellers_job():
+    """Scrape known reseller / below-the-line sources for promotional plans not
+    on the carrier rate cards.
+
+    Runs daily at 08:15 via APScheduler — 5 minutes before the morning digest,
+    whose "מתחת לקו" section reads the reseller_changes this job writes. Each
+    module is called in isolation so a failure in one doesn't block the others;
+    btl_scrapers additionally isolates each SOURCE internally.
+
+    Returns {module: {plans, changes}} for the manual-trigger endpoint.
     """
     logger.info("Scraping reseller websites...")
-    from db import save_reseller_plans
-    for module_name in ("pelephon4u_scraper", "pelephone_join_scraper"):
+    from db import sync_reseller_plans
+    result = {}
+    for module_name in RESELLER_SCRAPER_MODULES:
         try:
             mod = __import__(module_name)
             plans = mod.scrape()
             if plans:
-                save_reseller_plans(plans, db_path=_db_path())
-                logger.info(f"{module_name}: {len(plans)} plans upserted")
+                changes = sync_reseller_plans(plans, db_path=_db_path())
+                logger.info(f"{module_name}: {len(plans)} plans synced, {len(changes)} changes")
+                result[module_name] = {"plans": len(plans), "changes": len(changes)}
             else:
                 logger.warning(f"{module_name}: 0 plans matched — site layout may have changed")
+                result[module_name] = {"plans": 0, "changes": 0}
         except Exception as e:
             logger.error(f"{module_name} scrape failed: {e}", exc_info=True)
+            result[module_name] = {"error": str(e)}
+    return result
 
 
 def run_morning_check_job(send=True):
@@ -1940,6 +1968,7 @@ def run_morning_check_job(send=True):
       morning_check_time          "HH:MM"  — cron time, default "08:20"
       morning_check_window_hours  int      — lookback window, default 26
       morning_check_stale_hours   int      — freshness threshold, default 36
+      morning_check_global_stale_hours int — global freshness threshold, default 72
       morning_check_whatsapp      bool     — also send via WhatsApp, default false
     """
     from db import get_recent_changes_summary, get_scrape_freshness
@@ -1948,6 +1977,15 @@ def run_morning_check_job(send=True):
     config = load_config()
     within = int(config.get("morning_check_window_hours", 26))
     stale_after = int(config.get("morning_check_stale_hours", 36))
+    # Global eSIM providers scrape hundreds of per-country pages; coverage is partial
+    # per run by design, so MAX(scraped_at) legitimately lags a domestic carrier's.
+    # A blanket 36h threshold here false-positives on normal flakiness and trains the
+    # operator to ignore the global section — which is how esimio (frozen since Apr 29)
+    # and maya (May 11) rotted unnoticed. A days-scale threshold flags real breakage
+    # (weeks of zero rows) while tolerating a missed run or two. Note: a broken global
+    # scraper returns [] but save_global_plans never deletes, so its rows AGE rather
+    # than vanish — the per-row staleness check below is what catches the breakage.
+    global_stale_after = int(config.get("morning_check_global_stale_hours", 72))
 
     summary = get_recent_changes_summary(within_hours=within, db_path=_db_path())
     freshness = get_scrape_freshness(db_path=_db_path())
@@ -1955,6 +1993,7 @@ def run_morning_check_job(send=True):
     warnings = []
     now = datetime.now()
     for category, rows in freshness.items():
+        threshold = global_stale_after if category == "global" else stale_after
         for row in rows:
             hours_ago = None
             if row.get("last_scraped"):
@@ -1962,7 +2001,7 @@ def run_morning_check_job(send=True):
                     hours_ago = (now - datetime.fromisoformat(row["last_scraped"])).total_seconds() / 3600
                 except (ValueError, TypeError):
                     pass
-            if not row.get("count") or hours_ago is None or hours_ago > stale_after:
+            if not row.get("count") or hours_ago is None or hours_ago > threshold:
                 warnings.append({"carrier": row["carrier"], "category": category,
                                  "count": row.get("count", 0),
                                  "last_scraped": row.get("last_scraped"),
@@ -2211,6 +2250,21 @@ def api_content_changes():
         limit = 50
     changes = get_content_changes(limit=limit, db_path=_db_path())
     return _public_cache(jsonify(_filter_hidden_carrier(changes)), 600)
+
+
+@app.route("/api/scrape-resellers-now")
+@require_api_key_or_query
+def api_scrape_resellers_now():
+    """Manual trigger: scrape all below-the-line reseller sources, diff + save.
+
+    Same logic as the daily 08:15 job — changes land in reseller_changes and
+    surface in the next morning digest's "מתחת לקו" section.
+    """
+    try:
+        return jsonify({"status": "ok", "modules": scrape_resellers_job()})
+    except Exception as e:
+        logger.error(f"scrape-resellers-now failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/api/scrape-content-now")
@@ -2780,6 +2834,16 @@ def api_chat():
             'bcengi': 'Bcengi', 'esim70': 'eSIM70', 'jetpack': 'Jetpack', 'breez': 'Breeze',
             'bytesim': 'ByteSim', 'besim': 'Besim', 'seven_g': '7G',
             'bestconnect': 'Best Connect', 'esimplus': 'eSIM Plus',
+            # USA tourist-plan operators (נוחתים בארה"ב) — mirror of USA_LABELS
+            # in carrierLabels.js
+            'tmobile_prepaid': 'T-Mobile Prepaid', 'att_prepaid': 'AT&T Prepaid',
+            'verizon_prepaid': 'Verizon Prepaid', 'mint': 'Mint Mobile',
+            'ultra': 'Ultra Mobile', 'lyca_usa': 'Lycamobile USA', 'tello': 'Tello',
+            'metro': 'Metro by T-Mobile', 'simple_mobile': 'Simple Mobile',
+            'cricket': 'Cricket Wireless', 'h2o': 'H2O Wireless',
+            'visible': 'Visible', 'us_mobile': 'US Mobile',
+            'red_pocket': 'Red Pocket', 'straight_talk': 'Straight Talk',
+            'total_wireless': 'Total Wireless', 'boost': 'Boost Mobile',
         }
         def _cn(carrier):
             return _CARRIER_NAMES.get(carrier, carrier)

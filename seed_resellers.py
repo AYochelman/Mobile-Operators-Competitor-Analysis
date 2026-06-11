@@ -16,10 +16,14 @@ Findings after thorough scan (24 candidate accounts checked):
   - DVCOM (Netivot), Royal Phone, Itan Tikshoret, Target Call → telesales call centers, no public prices online.
   - Myphone, Cellcom-ishka, S-Romi, Comy → not selling cellular plans (devices/insurance/B2B/comedy).
 
-Conclusion: Israeli cellular resellers do NOT publish unique pricing on social media. The carriers
-control the rate card; resellers earn commissions, not pricing flexibility. The single confirmed
-unique deal is the cellcomshefamr 200-minute plan, which is a niche local promo for Arab-Israeli
-customers in Shfar'am that doesn't appear in Cellcom's standard catalog.
+Conclusion (2026-04): Israeli cellular resellers do NOT publish unique pricing on social media.
+
+UPDATE 2026-06-11: a broad web sweep DID find below-the-line pricing — on reseller
+WEBSITES (tiber, zol-li, kamaze, tikshoretishit), carrier-owned landing pages
+(Partner lobby, Rami Levy hever/landing, WeCom sim-data, ClubDeal) and Facebook
+Ad Library campaigns. The auto-scrapeable sources live in btl_scrapers.py and
+refresh daily at 08:15; THIS file holds only manual-refresh sources (Facebook
+ads, login-gated club pages, low-churn comparison pages) — re-verify quarterly.
 
 Re-runnable: UPSERTs by (reseller_id, carrier, plan_name).
 """
@@ -137,6 +141,111 @@ PLANS = [
         ],
         "source_url": "https://landing-mobile.rami-levy.co.il/landing/",
         "seen_at": "2026-06",
+    },
+    # ─────────────────────────────────────────────────────────────────────
+    # 2026-06-11 web sweep — manual-refresh sources only (auto-scraped
+    # sources — tiber/zol_li/kamaze/partner_site/rami_levy_hever/wecom_site/
+    # tikshoretishit/clubdeal — are populated daily by btl_scrapers.py).
+    # ─────────────────────────────────────────────────────────────────────
+    {
+        # sell-zoll.co.il — broker/comparison page, Cellcom dealer-channel
+        # multi-line plan. Page is static but low-churn; manual refresh.
+        "reseller_id": "sell_zoll",
+        "carrier": "cellcom",
+        "plan_name": "200GB — שני קווים ומעלה",
+        "price": 34.9,
+        "data_gb": 200,
+        "minutes": 3000,
+        "sms": 3000,
+        "extras": [
+            "34.90 ₪ לקו ב-2 קווים ומעלה, לשנה הראשונה",
+            "לאחר שנה: 49 ₪ לחודש",
+            "3,000 דקות + 100 דקות לחו\"ל",
+            "סים ומשלוח ללא עלות",
+        ],
+        "source_url": "https://sell-zoll.co.il/cellular",
+        "seen_at": "2026-06-11",
+    },
+    {
+        # kamazeole — Golan family bundle (3 lines). The dominance filter would
+        # hide it (total ₪99 > any single-line plan) so the id is whitelisted
+        # in db.ALWAYS_SHOW_RESELLER_IDS; structurally it's a per-line winner.
+        "reseller_id": "kamazeole",
+        "carrier": "golan",
+        "plan_name": "משפחתית — 3 קווים 1500GB",
+        "price": 99.0,
+        "data_gb": 1500,
+        "minutes": None,
+        "sms": None,
+        "extras": [
+            "99 ₪ לחודש בהצטרפות 3 קווים (33 ₪ לקו)",
+            "500GB גלישה לכל קו במשפחה",
+            "1GB גלישה בחו\"ל מתנה בכל חודש",
+            "חיבור eSIM מיידי",
+            "לא מופיעה בדף ה-offers הרשמי של גולן",
+        ],
+        "source_url": "https://www.kamazeole.co.il/packages/cell/company/13/golan-telecom/golan-telecom-1500gb-family-plan",
+        "seen_at": "2026-06-11",
+    },
+    {
+        # "אנלייזר - פשוט לחסוך" — lead-gen broker advertising a Cellcom-implied
+        # 800GB deal via active Facebook ads (Library IDs 978489331480733,
+        # 1002340219151495, running since 28.5/2.6.2026). The continuation
+        # price (49 ₪ fixed) is not on Cellcom's rate card.
+        "reseller_id": "analizer",
+        "carrier": "cellcom",
+        "plan_name": "800GB דור 5 — דרך המתווך אנלייזר",
+        "price": 39.9,
+        "data_gb": 800,
+        "minutes": 5000,
+        "sms": 5000,
+        "extras": [
+            "39.9 ₪ לחודשיים הראשונים, לאחר מכן 49 ₪ במחיר קבוע",
+            "מודעות פייסבוק פעילות (מאי-יוני 2026)",
+            "סים + שליח חינם, אפליקציות חופשיות",
+            "\"חברת הסלולר הגדולה בישראל, 3.6 מיליון לקוחות\" = סלקום (משתמע)",
+        ],
+        "source_url": "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%92%D7%99%D7%92%D7%94%20%D7%9C%D7%97%D7%95%D7%93%D7%A9&search_type=keyword_unordered&media_type=all",
+        "seen_at": "2026-06-11",
+    },
+    {
+        # Official Pelephone Facebook campaign (Library ID 1275298018098297,
+        # running since 18.5.2026) — 300GB at 29.90, below the public rate
+        # card's 39.9 floor. Same offer family as pelephone-join's 300GB.
+        "reseller_id": "pelephone_fb",
+        "carrier": "pelephone",
+        "plan_name": "300GB + eSIM — קמפיין פייסבוק",
+        "price": 29.9,
+        "data_gb": 300,
+        "minutes": None,
+        "sms": None,
+        "extras": [
+            "מודעה רשמית של פלאפון, פעילה מ-18.5.2026",
+            "מתחת לרצפת המחירון הרשמי (39.9 ₪)",
+            "הצטרפות דרך טופס לידים במודעה",
+        ],
+        "source_url": "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%92%D7%99%D7%92%D7%94%20%D7%9C%D7%97%D7%95%D7%93%D7%A9&search_type=keyword_unordered&media_type=all",
+        "seen_at": "2026-06-11",
+    },
+    {
+        # Rami Levy credit-card holders' benefit — the base "זוג ב-50" plan IS
+        # on the rate card, but the 2-free-months + free connection benefit is
+        # landing-page-only. Whitelisted in ALWAYS_SHOW_RESELLER_IDS.
+        "reseller_id": "rami_levy_cc",
+        "carrier": "rami_levy",
+        "plan_name": "זוג קווים ב-50 ₪ — הטבת כרטיס אשראי",
+        "price": 50.0,
+        "data_gb": 250,
+        "minutes": None,
+        "sms": None,
+        "extras": [
+            "חודשיים ראשונים + דמי חיבור חינם — למשלמים בכרטיס אשראי רמי לוי בלבד",
+            "לאחר מכן 22 חודשים ב-50 ₪ לזוג קווים",
+            "דמי מעבר חד-פעמיים 9.90 ₪",
+            "תומך דור 5",
+        ],
+        "source_url": "https://mobile.rami-levy.co.il/Home/Landing/",
+        "seen_at": "2026-06-11",
     },
 ]
 

@@ -13,6 +13,7 @@ import json as _json
 import urllib.request
 import asyncio
 from datetime import datetime, timezone
+from html import unescape as _html_unescape  # aliased: locals named `html` shadow the module
 
 logger = logging.getLogger(__name__)
 
@@ -1620,7 +1621,7 @@ def scrape_pelephone(page):
                 const name = nameEl.innerText.trim();
                 // Find the popup link — href contains showPopupIframe with pid=NNN
                 for (const a of card.querySelectorAll('a[href*="pid="]')) {
-                    const m = a.href.match(/pid=([\d]+)/);
+                    const m = a.href.match(/pid=([\\d]+)/);
                     if (m) { result[name] = m[1]; break; }
                 }
             });
@@ -1747,42 +1748,57 @@ def scrape_hotmobile(page):
     return plans
 
 
-def _fetch_cellcom_terms_urls():
-    """Fetch plan terms PDF URLs from Cellcom Episerver API (featureLink = 'לעיקרי התוכנית').
-    Path: mainContentArea → tabs → salePackages → extraFeatures → featureList[last featureLink]
+def _cellcom_extract_terms_urls(data):
+    """Walk Cellcom's Episerver Packages JSON → {plan_name: terms_url}.
+    Per package: last featureLink (the visible 'לעיקרי התוכנית' anchor), falling back to
+    the block-level programDetailsLink / termsLink — the 2026-06-11 lineup refresh
+    (500GB/550GB/1500GB) shipped cards whose featureList had no link at all.
     """
+    plan_urls = {}
+    content_areas = (data.get("mainContentArea") or {}).get("expandedValue") or []
+    for area in content_areas:
+        tabs = (area.get("tabs") or {}).get("expandedValue") or []
+        for tab in tabs:
+            packages = (tab.get("salePackages") or {}).get("expandedValue") or []
+            for pkg in packages:
+                # Plan name: text before <br> ('title' is the populated field; 'packageTitle' is legacy)
+                title_html = ((pkg.get("title") or {}).get("value")
+                              or (pkg.get("packageTitle") or {}).get("value") or "")
+                name = re.sub(r"<[^>]+>", " ", title_html.split("<br")[0]).strip()
+                if not name:
+                    continue
+                feat_url = None
+                for ef in ((pkg.get("extraFeatures") or {}).get("expandedValue") or []):
+                    for feat in ((ef.get("featureList") or {}).get("expandedValue") or []):
+                        link = (feat.get("featureLink") or {}).get("value")
+                        if link:
+                            feat_url = link
+                if not feat_url:
+                    for key in ("programDetailsLink", "termsLink"):
+                        link = (pkg.get(key) or {}).get("value")
+                        if link:
+                            feat_url = link
+                            break
+                if feat_url:
+                    if not feat_url.startswith("http"):
+                        feat_url = "https://contentepi.cellcom.co.il" + feat_url
+                    plan_urls[name] = feat_url
+    return plan_urls
+
+
+def _fetch_cellcom_terms_urls():
+    """Fetch plan terms PDF URLs from Cellcom Episerver API (see _cellcom_extract_terms_urls)."""
     api_url = (
         "https://contentepi.cellcom.co.il/production/Private/Cellular/Packages/"
         "?expand=*&currentPageUrl=%2Fproduction%2FPrivate%2FCellular%2FPackages%2F"
     )
     try:
-        req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0"})
+        # Without Accept: application/json Episerver serves the HTML page instead
+        req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0",
+                                                       "Accept": "application/json"})
         with urllib.request.urlopen(req, timeout=15) as r:
             data = _json.loads(r.read().decode())
-        plan_urls = {}
-        content_areas = (data.get("mainContentArea") or {}).get("expandedValue") or []
-        for area in content_areas:
-            tabs = (area.get("tabs") or {}).get("expandedValue") or []
-            for tab in tabs:
-                packages = (tab.get("salePackages") or {}).get("expandedValue") or []
-                for pkg in packages:
-                    # Plan name: text before <br> in packageTitle HTML
-                    title_html = (pkg.get("packageTitle") or {}).get("value") or ""
-                    name = re.sub(r"<[^>]+>", " ", title_html.split("<br")[0]).strip()
-                    if not name:
-                        continue
-                    # Find featureLink in extraFeatures → featureList
-                    extra_feats = (pkg.get("extraFeatures") or {}).get("expandedValue") or []
-                    feat_url = None
-                    for ef in extra_feats:
-                        feat_list = (ef.get("featureList") or {}).get("expandedValue") or []
-                        for feat in feat_list:
-                            link = (feat.get("featureLink") or {}).get("value")
-                            if link:
-                                feat_url = "https://contentepi.cellcom.co.il" + link
-                    if name and feat_url:
-                        plan_urls[name] = feat_url
-        return plan_urls
+        return _cellcom_extract_terms_urls(data)
     except Exception as exc:
         logger.warning(f"_fetch_cellcom_terms_urls failed: {exc}")
         return {}
@@ -1802,25 +1818,7 @@ def scrape_cellcom(page):
             );
             return r.text();
         }""")
-        data = _json.loads(raw)
-        content_areas = (data.get("mainContentArea") or {}).get("expandedValue") or []
-        for area in content_areas:
-            tabs = (area.get("tabs") or {}).get("expandedValue") or []
-            for tab in tabs:
-                packages = (tab.get("salePackages") or {}).get("expandedValue") or []
-                for pkg in packages:
-                    title_html = (pkg.get("title") or {}).get("value") or ""
-                    name = re.sub(r"<[^>]+>", " ", title_html.split("<br")[0]).strip()
-                    if not name:
-                        continue
-                    feat_url = None
-                    for ef in ((pkg.get("extraFeatures") or {}).get("expandedValue") or []):
-                        for feat in ((ef.get("featureList") or {}).get("expandedValue") or []):
-                            link = (feat.get("featureLink") or {}).get("value")
-                            if link:
-                                feat_url = "https://contentepi.cellcom.co.il" + link
-                    if feat_url:
-                        cellcom_urls[name] = feat_url
+        cellcom_urls = _cellcom_extract_terms_urls(_json.loads(raw))
     except Exception as exc:
         logger.warning(f"scrape_cellcom: failed to fetch terms URLs: {exc}")
     plans = []
@@ -1842,6 +1840,13 @@ def scrape_cellcom(page):
         # Price: first line only (ignore promo text like "לחודשיים הראשונים")
         price = _parse_price(price_el.inner_text().split("\n")[0]) if price_el else None
         gb    = _parse_gb(gb_text)
+        # Lineup-refresh cards (e.g. '500GB') carry the GB in the name with no second
+        # title line — without this, data_gb=None renders as "ללא הגבלה". Require an
+        # explicit GB suffix so '5G'/'4G Basic' never parse as a volume.
+        if gb is None and not gb_text:
+            gb_in_name = re.search(r"(\d+(?:\.\d+)?)\s*GB", name, re.IGNORECASE)
+            if gb_in_name:
+                gb = _parse_gb(gb_in_name.group(0))
         # Minutes: look for "דק' /SMS" feature line
         minutes = None
         for feat in extras:
@@ -2483,6 +2488,10 @@ def _get_gbp_to_ils():
 
 def _make_global_plan(carrier, name, price_ils, currency, original_price,
                       data_gb, days, minutes=None, sms=None, esim=True, extras=None):
+    # Scraped titles/JSON may carry HTML entities (&amp; \u2192 &) \u2014 unescape before any formatting
+    name = _html_unescape(name)
+    if extras:
+        extras = [_html_unescape(e) if isinstance(e, str) else e for e in extras]
     # Insert RLM (\u200f) before digits after separators to fix BiDi rendering in RTL tables
     import re as _re
     name = _re.sub(r'( [\u2013-] )(\d)', lambda m: m.group(1) + '\u200f' + m.group(2), name)
@@ -3548,6 +3557,204 @@ def scrape_simtlv_global(page):
     return plans
 
 
+# ── SimTLV full eSIM catalog (simtlv.co.il/esim/) ─────────────────────────
+# The WooCommerce Store API exposes the whole catalog (~2,400 products) with
+# ILS prices. Country pages (/esim/<iso3>) render cards whose data-id equals
+# the product id, and every LIVE product follows one of the strict naming
+# conventions below; legacy/B2B products (Global Card zones, TopUps, app
+# credits, physical SIMs, partner promos) don't match them and are skipped.
+# Verified 2026-06-11 against the ita/grc/tha/usa pages: pattern set == page
+# card set, no false positives.
+#
+# SIMTLV_DEST_FIX repairs regex artifacts only: the local pattern strips an
+# optional 'ל' prefix ("eSIM לאיטליה" → "איטליה"), which also eats the first
+# letter of countries that themselves start with ל ("eSIM לוקסמבורג" →
+# "וקסמבורג"). Pure spelling fixes belong in db._DEST_NORM, not here.
+SIMTLV_DEST_FIX = {
+    "וקסמבורג": "לוקסמבורג",
+    "טביה": "לטביה",
+    "יטא": "ליטא",
+    "יכטנשטיין": "ליכטנשטיין",
+    "אוס": "לאוס",
+    "סוטו": "לסוטו",
+    "יבריה": "ליבריה",
+    "רפובליקה הדומיניקנית": "הרפובליקה הדומיניקנית",
+    "לרפובליקה הדומיניקנית": "הרפובליקה הדומיניקנית",  # double-ל typo on the site
+    "דרום אמריקה ל-11 מדינות": "דרום אמריקה (11 מדינות)",
+}
+
+_SIMTLV_RX_UNLIMITED = re.compile(
+    r"^eSIM ברשת Tmobile לארצות הברית ללא הגבלה (\d+) יום$"
+)
+_SIMTLV_RX_EUROPE = re.compile(
+    r"^eSIM לאירופה(?: ל-(\d+)(?: מדינות)?)? (\d+(?:\.\d+)?)GB ל-?\s*(\d+) (?:יום|ימים)\s*[–-]\s*כרטיס סים וירטואלי$"
+)
+_SIMTLV_RX_EUROPE_YR = re.compile(
+    r"^eSIM לאירופה ל-(\d+) מדינות (\d+(?:\.\d+)?)GB לשנה\s*[–-]\s*כרטיס סים וירטואלי$"
+)
+_SIMTLV_RX_GLOBAL_N = re.compile(
+    r"^eSIM גלובלי ל-(\d+) מדינות (\d+(?:\.\d+)?)GB ל-?\s*(\d+) (?:יום|ימים)\s*[–-]\s*כרטיס סים וירטואלי$"
+)
+_SIMTLV_RX_EUR_PKG = re.compile(
+    r"^(?:כרטיס|חבילת) eSIM אירופה: (\d+(?:\.\d+)?)GB (ל-\d+ ימים|לשנה|ל-\d+ שנים) ב-(\d+) מדינות$"
+)
+_SIMTLV_RX_GLOB_PKG = re.compile(
+    r"^חבילת eSIM גלובלית: (\d+(?:\.\d+)?)GB (ל-\d+ ימים|לשנה|ל-\d+ שנים) ב-(\d+) מדינות$"
+)
+_SIMTLV_RX_LOCAL = re.compile(
+    # (?i:esim) — the site mixes eSIM/Esim/esim casing on live products
+    r"^(?i:esim) ל?(.+?) (\d+(?:\.\d+)?)GB ל-?\s*(\d+) (?:יום|ימים)\s*[–-]\s*כרטיס סים וירטואלי$"
+)
+
+
+def _simtlv_duration(text):
+    """'ל-90 ימים' → 90, 'לשנה' → 365, 'ל-5 שנים' → 1825."""
+    if text == "לשנה":
+        return 365
+    m = re.match(r"ל-(\d+) ימים$", text)
+    if m:
+        return int(m.group(1))
+    m = re.match(r"ל-(\d+) שנים$", text)
+    if m:
+        return int(m.group(1)) * 365
+    return None
+
+
+def _simtlv_classify(name):
+    """Classify a normalized catalog product name.
+
+    Returns (dest, gb, days, note) for live store packages, None for
+    everything else (legacy/B2B/physical/credit products). gb=None means
+    unlimited. Patterns are ordered most-specific-first so the regional
+    products don't fall through to the generic local pattern.
+    """
+    m = _SIMTLV_RX_UNLIMITED.match(name)
+    if m:
+        return ("ארצות הברית", None, int(m.group(1)), "רשת T-Mobile")
+    m = _SIMTLV_RX_EUROPE.match(name)
+    if m:
+        n = m.group(1)
+        dest = f"אירופה ({n} מדינות)" if n else "אירופה"
+        return (dest, float(m.group(2)), int(m.group(3)), None)
+    m = _SIMTLV_RX_EUROPE_YR.match(name)
+    if m:
+        return (f"אירופה ({m.group(1)} מדינות)", float(m.group(2)), 365, None)
+    m = _SIMTLV_RX_GLOBAL_N.match(name)
+    if m:
+        return (f"גלובלי ({m.group(1)} מדינות)", float(m.group(2)), int(m.group(3)), None)
+    m = _SIMTLV_RX_EUR_PKG.match(name)
+    if m:
+        return (f"אירופה ({m.group(3)} מדינות)", float(m.group(1)), _simtlv_duration(m.group(2)), None)
+    m = _SIMTLV_RX_GLOB_PKG.match(name)
+    if m:
+        return (f"גלובלי ({m.group(3)} מדינות)", float(m.group(1)), _simtlv_duration(m.group(2)), None)
+    m = _SIMTLV_RX_LOCAL.match(name)
+    if m:
+        dest = m.group(1).strip()
+        dest = SIMTLV_DEST_FIX.get(dest, dest)
+        return (dest, float(m.group(2)), int(m.group(3)), None)
+    return None
+
+
+def _simtlv_fetch_catalog():
+    """Page through the WooCommerce Store API; returns raw product dicts.
+
+    Each page is retried 3× with backoff (the endpoint intermittently takes
+    >30s). A page that still fails is skipped — a partial catalog is safe
+    because save_global_plans never deletes stale rows and new/removed
+    events are dropped for global carriers.
+    """
+    import requests
+    import time
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+    }
+    products, page_num, total_pages, failed_pages = [], 1, 1, 0
+    while page_num <= total_pages:
+        resp = None
+        for attempt in range(3):
+            try:
+                r = requests.get(
+                    "https://simtlv.co.il/wp-json/wc/store/v1/products",
+                    params={"per_page": 100, "page": page_num},
+                    headers=headers, timeout=60,
+                )
+                if r.status_code == 200:
+                    resp = r
+                    break
+                logger.warning(f"SimTLV catalog page {page_num}: HTTP {r.status_code}")
+            except requests.RequestException as exc:
+                logger.warning(f"SimTLV catalog page {page_num} attempt {attempt + 1}: {type(exc).__name__}")
+            time.sleep(2 * (attempt + 1))
+        if resp is None:
+            failed_pages += 1
+            page_num += 1
+            continue
+        total_pages = int(resp.headers.get("X-WP-TotalPages") or page_num)
+        products.extend(resp.json())
+        page_num += 1
+    if failed_pages:
+        logger.warning(f"SimTLV catalog: {failed_pages} pages failed — partial catalog")
+    return products
+
+
+def scrape_simtlv_esim(_page=None):
+    """Scrape SimTLV's full per-country/regional eSIM catalog → ~940 plans.
+
+    Pure HTTP, no Playwright. Complements scrape_simtlv_global (the
+    127-country bundles on /global-61-30days) — both run every cycle.
+    Per-country plans carry the Hebrew country in extras[0]; regional
+    products use the 'אירופה (N מדינות)' / 'גלובלי (N מדינות)' labels the
+    dashboard knows. Destinations are canonicalized via db._DEST_NORM
+    *before* the plan name is built, so plan_name and extras[0] agree
+    (the save path re-applies the same mapping — idempotent).
+    """
+    import html as _html
+    from db import _DEST_NORM
+    products = _simtlv_fetch_catalog()
+    best = {}  # (dest, gb, days) -> (product_id, price, note)
+    for prod in products:
+        try:
+            raw = prod.get("name") or ""
+            name = re.sub(
+                r"\s+", " ",
+                _html.unescape(raw).replace("״", '"').replace("׳", "'")
+            ).strip()
+            parsed = _simtlv_classify(name)
+            if not parsed:
+                continue
+            dest, gb, days, note = parsed
+            dest = _DEST_NORM.get(dest, dest)
+            prices = prod.get("prices") or {}
+            minor = int(prices.get("currency_minor_unit") or 2)
+            price = int(prices.get("price")) / (10 ** minor)
+            pid = int(prod.get("id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if not days or price <= 0:
+            continue
+        key = (dest, gb, days)
+        # Same package published under two product ids → keep the newest
+        if key not in best or pid > best[key][0]:
+            best[key] = (pid, price, note)
+    plans = []
+    for (dest, gb, days), (pid, price, note) in best.items():
+        if gb is None:
+            size_str = "ללא הגבלה"
+        elif gb >= 1:
+            size_str = f"{int(gb)}GB" if gb == int(gb) else f"{gb}GB"
+        else:
+            size_str = f"{round(gb * 1024)}MB"
+        plan_name = f"{dest} – {size_str} – {days} ימים"
+        extras = [dest] + ([note] if note else [])
+        plans.append(_make_global_plan(
+            "simtlv", plan_name, price, "ILS", price,
+            gb, days, esim=True, extras=extras
+        ))
+    logger.info(f"SimTLV eSIM catalog: {len(plans)} plans from {len(products)} products")
+    return plans
+
+
 def scrape_world8_global(page):
     page.goto("https://world8.co.il/", timeout=35000, wait_until="networkidle")
     page.wait_for_timeout(2000)
@@ -4158,68 +4365,82 @@ ESIMIO_SLUG_TO_HEBREW = {
 }
 
 
+def _esimio_packages_to_plans(pkgs, dest_heb, usd_rate):
+    """Convert esim.io RSC `packages` entries to MOCA global plan dicts.
+
+    Package shape since the 2026-04 redesign: `data` in bytes, `duration` +
+    `durationUnit`, price nested as {"price": 2.2, "currency": "USD", ...}.
+    PAYG/unlimited teasers are skipped \u2014 only fixed-GB packages are comparable.
+    """
+    plans = []
+    for pkg in pkgs:
+        if pkg.get("isUnlimited"):
+            continue
+        price_obj = pkg.get("price") or {}
+        try:
+            data_bytes = float(pkg.get("data") or 0)
+            price_usd = float(price_obj.get("price") or 0)
+        except (TypeError, ValueError):
+            continue
+        currency = (price_obj.get("currency") or "USD").upper()
+        gb = data_bytes / (1024 ** 3)
+        if gb < 1 or price_usd <= 0 or currency != "USD":
+            continue
+        days = 30
+        try:
+            if pkg.get("duration") and str(pkg.get("durationUnit") or "DAYS").upper() == "DAYS":
+                days = int(pkg["duration"])
+        except (TypeError, ValueError):
+            pass
+        gb = int(gb) if gb == int(gb) else round(gb, 2)
+        gb_str = f"{int(gb)}GB" if gb == int(gb) else f"{gb}GB"
+        plan_name = f"{dest_heb} \u2013 {gb_str} \u2013 {days} \u05d9\u05de\u05d9\u05dd"
+        plans.append(_make_global_plan(
+            "esimio", plan_name, round(price_usd * usd_rate, 2), "USD", price_usd,
+            gb, days, esim=True, extras=[dest_heb]
+        ))
+    return plans
+
+
 def scrape_esimio_destinations(_page=None, usd_rate=None):
-    """Scrape eSIM.io per-country plans from all destination pages."""
+    """Scrape eSIM.io per-country plans from all destination pages.
+
+    Since ~2026-04 esim.io runs on the eSIMO Next.js platform (assets from
+    statics.esimo.com) \u2014 the old h5 plan cards are gone (only duration-tab labels
+    and a PAYG teaser remain), but the full 30-day packages array is server-rendered
+    into the RSC flight stream, same encoding as esimo.io. Reuses
+    _esimo_extract_packages; pure HTTP, no Playwright. Catalogs/prices differ from
+    esimo.io (separate brand), so it stays a distinct provider.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     if usd_rate is None:
         usd_rate = _get_usd_to_ils()
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    all_plans = []
-    JS_EXTRACT = """() => {
-        const results = [];
-        const headings = document.querySelectorAll('h5');
-        for (const h of headings) {
-            const text = h.textContent.trim();
-            const m = text.match(/(\\d+(?:\\.\\d+)?)\\s*(GB|MB)\\s*\\/\\s*\\$(\\d+(?:\\.\\d+)?)/i);
-            if (!m) continue;
-            const amount = parseFloat(m[1]);
-            const unit = m[2].toUpperCase();
-            const price = parseFloat(m[3]);
-            // Skip Pay As You Go (1 MB plans) and free trial (very small amounts)
-            if (unit === 'MB' && amount <= 1) continue;
-            if (price === 0) continue;
-            results.push({amount, unit, price});
-        }
-        return results;
-    }"""
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch(
-            headless=True,
-            args=["--disable-blink-features=AutomationControlled"]
+
+    def fetch_one(slug):
+        return _esimo_extract_packages(
+            _esimo_fetch(f"https://esim.io/destinations/esim-{slug}")
         )
-        page = browser.new_page(user_agent=ua)
-        for slug, country_heb in ESIMIO_SLUG_TO_HEBREW.items():
+
+    all_plans = []
+    empty, failed = 0, 0
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futures = {ex.submit(fetch_one, s): (s, heb) for s, heb in ESIMIO_SLUG_TO_HEBREW.items()}
+        for fut in as_completed(futures):
+            slug, country_heb = futures[fut]
             try:
-                page.goto(
-                    f"https://esim.io/destinations/esim-{slug}",
-                    timeout=20000, wait_until="domcontentloaded"
-                )
-                page.wait_for_timeout(1500)
-                raw = page.evaluate(JS_EXTRACT)
-                for item in raw:
-                    amount = item["amount"]
-                    unit = item["unit"]
-                    price_usd = item["price"]
-                    # Convert MB to GB
-                    if unit == "MB":
-                        gb = round(amount / 1024, 4)
-                    else:
-                        gb = int(amount) if amount == int(amount) else amount
-                    # Skip plans with less than 1 GB
-                    if gb < 1:
-                        continue
-                    days = 30
-                    price_ils = round(price_usd * usd_rate, 2)
-                    gb_str = f"{int(gb)}GB" if gb == int(gb) else f"{gb}GB"
-                    plan_name = f"{country_heb} \u2013 {gb_str} \u2013 30 \u05d9\u05de\u05d9\u05dd"
-                    all_plans.append(_make_global_plan(
-                        "esimio", plan_name, price_ils, "USD", price_usd,
-                        gb, days, esim=True, extras=[country_heb]
-                    ))
+                pkgs = fut.result()
             except Exception as exc:
+                failed += 1
                 logger.warning(f"eSIM.io {slug}: {exc}")
                 continue
-        browser.close()
-    logger.info(f"eSIM.io destinations: {len(all_plans)} plans from {len(ESIMIO_SLUG_TO_HEBREW)} countries")
+            if not pkgs:
+                empty += 1  # removed destination or page without embedded packages
+                continue
+            all_plans.extend(_esimio_packages_to_plans(pkgs, country_heb, usd_rate))
+    logger.info(
+        f"eSIM.io destinations: {len(all_plans)} plans from "
+        f"{len(ESIMIO_SLUG_TO_HEBREW)} countries ({empty} empty, {failed} failed)"
+    )
     return all_plans
 
 
@@ -4659,64 +4880,41 @@ ESIMIO_REGIONS = {
 
 
 def scrape_esimio_regions(_page=None, usd_rate=None):
-    """Scrape eSIM.io regional eSIM plans (10 regions)."""
+    """Scrape eSIM.io regional eSIM plans (10 regions).
+
+    Same RSC-embedded packages extraction as scrape_esimio_destinations (the old
+    h5-card parsing died in the 2026-04 redesign). The /regions/<slug> pages still
+    use the original esim-* slugs \u2014 verified against the /regions index links.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     if usd_rate is None:
         usd_rate = _get_usd_to_ils()
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    all_plans = []
-    JS_EXTRACT = """() => {
-        const results = [];
-        const headings = document.querySelectorAll('h5');
-        for (const h of headings) {
-            const text = h.textContent.trim();
-            const m = text.match(/(\\d+(?:\\.\\d+)?)\\s*(GB|MB)\\s*\\/\\s*\\$(\\d+(?:\\.\\d+)?)/i);
-            if (!m) continue;
-            const amount = parseFloat(m[1]);
-            const unit = m[2].toUpperCase();
-            const price = parseFloat(m[3]);
-            if (unit === 'MB' && amount <= 1) continue;
-            if (price === 0) continue;
-            results.push({amount, unit, price});
-        }
-        return results;
-    }"""
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch(
-            headless=True,
-            args=["--disable-blink-features=AutomationControlled"]
+
+    def fetch_one(slug):
+        return _esimo_extract_packages(
+            _esimo_fetch(f"https://esim.io/regions/{slug}")
         )
-        page = browser.new_page(user_agent=ua)
-        for slug, region_heb in ESIMIO_REGIONS.items():
+
+    all_plans = []
+    empty, failed = 0, 0
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futures = {ex.submit(fetch_one, s): (s, heb) for s, heb in ESIMIO_REGIONS.items()}
+        for fut in as_completed(futures):
+            slug, region_heb = futures[fut]
             try:
-                page.goto(
-                    f"https://esim.io/regions/{slug}",
-                    timeout=20000, wait_until="domcontentloaded"
-                )
-                page.wait_for_timeout(1500)
-                raw = page.evaluate(JS_EXTRACT)
-                for item in raw:
-                    amount = item["amount"]
-                    unit = item["unit"]
-                    price_usd = item["price"]
-                    if unit == "MB":
-                        gb = round(amount / 1024, 4)
-                    else:
-                        gb = int(amount) if amount == int(amount) else amount
-                    if gb < 1:
-                        continue
-                    days = 30
-                    price_ils = round(price_usd * usd_rate, 2)
-                    gb_str = f"{int(gb)}GB" if gb == int(gb) else f"{gb}GB"
-                    plan_name = f"{region_heb} \u2013 {gb_str} \u2013 30 \u05d9\u05de\u05d9\u05dd"
-                    all_plans.append(_make_global_plan(
-                        "esimio", plan_name, price_ils, "USD", price_usd,
-                        gb, days, esim=True, extras=[region_heb]
-                    ))
+                pkgs = fut.result()
             except Exception as exc:
+                failed += 1
                 logger.warning(f"eSIM.io region {slug}: {exc}")
                 continue
-        browser.close()
-    logger.info(f"eSIM.io regions: {len(all_plans)} plans from {len(ESIMIO_REGIONS)} regions")
+            if not pkgs:
+                empty += 1
+                continue
+            all_plans.extend(_esimio_packages_to_plans(pkgs, region_heb, usd_rate))
+    logger.info(
+        f"eSIM.io regions: {len(all_plans)} plans from "
+        f"{len(ESIMIO_REGIONS)} regions ({empty} empty, {failed} failed)"
+    )
     return all_plans
 
 
@@ -5868,62 +6066,69 @@ def scrape_gomoworld_global(_page=None, gbp_rate=None):
 
 # ── Tasim eSIM (USA only) ────────────────────────────────────────────────────
 def scrape_tasim_global(_page=None, usd_rate=None):
-    """Scrape Tasim eSIM — single USA plan (voice+data+Israel calls, USD pricing)."""
+    """Scrape Tasim eSIM — USA voice+data plans (USD pricing).
+
+    Pure HTTP, no Playwright: the homepage purchase form reads
+    https://www.tasim.us/api/plans?type=one_time — the same endpoint is the
+    source of truth here. one_time = the packages publicly sold on the site
+    (15GB / 50GB as of 2026-06); the API also returns 'subscription' plans
+    that have no public page, so the type filter excludes them. The one-time
+    setup fee (setupCost) is surfaced as an extra, not added to the price —
+    the site advertises the package price.
+
+    Plan-name format is kept identical to the legacy single-plan scraper
+    ("ארצות הברית – 15GB + שיחות ללא הגבלה – 30 ימים") so the existing row
+    keeps its price history.
+    """
+    import requests
     if usd_rate is None:
         usd_rate = _get_usd_to_ils()
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     try:
-        with sync_playwright() as pw:
-            browser = pw.chromium.launch(
-                headless=True,
-                args=["--disable-blink-features=AutomationControlled"]
-            )
-            page = browser.new_page(user_agent=ua)
-            page.goto("https://www.tasim.us/", timeout=30000, wait_until="domcontentloaded")
-            page.wait_for_timeout(3000)
-            body = page.inner_text("body")
-            browser.close()
-
-        # Extract price: "$14.9" or "$14.90"
-        m_price = re.search(r'\$(\d+\.\d+)', body)
-        price_usd = float(m_price.group(1)) if m_price else 14.9
-
-        # Extract days
-        m_days = re.search(r'\u05ea\u05e7\u05e3 \u05dc-(\d+) \u05d9\u05d5\u05dd', body)
-        days = int(m_days.group(1)) if m_days else 30
-
-        # Extract fast-data GB: "15GB"
-        m_gb = re.search(r'(\d+)GB', body)
-        data_gb = int(m_gb.group(1)) if m_gb else 15
-
-        price_ils = round(price_usd * usd_rate, 2)
-        country_heb = "\u05d0\u05e8\u05e6\u05d5\u05ea \u05d4\u05d1\u05e8\u05d9\u05ea"
-
-        plan_name = (
-            f"{country_heb} \u2013 {data_gb}GB + "
-            f"\u05e9\u05d9\u05d7\u05d5\u05ea \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4 "
-            f"\u2013 {days} \u05d9\u05de\u05d9\u05dd"
+        r = requests.get(
+            "https://www.tasim.us/api/plans",
+            params={"type": "one_time"},
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"},
+            timeout=30,
         )
-
-        plan = _make_global_plan(
-            "tasim", plan_name, price_ils, "USD", price_usd,
-            data_gb=data_gb, days=days, esim=True,
-            extras=[
-                country_heb,
-                "\u05e9\u05d9\u05d7\u05d5\u05ea \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4 \u05d1\u05d0\u05e8\u05d4\"\u05d1",   # שיחות ללא הגבלה בארה"ב
-                "\u05e9\u05d9\u05d7\u05d5\u05ea \u05dc\u05d9\u05e9\u05e8\u05d0\u05dc \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4",  # שיחות לישראל ללא הגבלה
-                "\u05d4\u05d5\u05d3\u05e2\u05d5\u05ea SMS \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4",                               # הודעות SMS ללא הגבלה
-                f"\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 {data_gb}GB (\u05dc\u05d0\u05d7\u05e8 \u05de\u05db\u05df \u05de\u05d4\u05d9\u05e8\u05d5\u05ea \u05d9\u05d5\u05e8\u05d3\u05ea)",  # אינטרנט XGB (לאחר מכן מהירות יורדת)
-                "\u05e8\u05e9\u05ea T-Mobile (\u05db\u05d9\u05e1\u05d5\u05d9 \u05de\u05e7\u05e1\u05d9\u05de\u05dc\u05d9)",                  # רשת T-Mobile (כיסוי מקסימלי)
-                "\u05d4\u05e4\u05e2\u05dc\u05d4 \u05de\u05d9\u05d3\u05d9\u05ea — \u05d0\u05d9\u05df \u05e6\u05d5\u05e8\u05da \u05d1\u05db\u05e8\u05d8\u05d9\u05e1 \u05e4\u05d9\u05d6\u05d9",  # הפעלה מידית — אין צורך בכרטיס פיזי
-            ]
-        )
-        logger.info(f"Tasim: 1 plan — {plan_name} ${price_usd}")
-        return [plan]
-
+        r.raise_for_status()
+        items = (r.json() or {}).get("plans") or []
     except Exception as exc:
         logger.warning(f"Tasim scraper failed: {exc}")
         return []
+
+    country_heb = "ארצות הברית"
+    plans = []
+    for item in items:
+        try:
+            price_usd = float(item.get("price"))
+            data_gb = float(item.get("gb"))
+            days = int(item.get("days"))
+            setup_usd = float(item.get("setupCost") or 0)
+        except (TypeError, ValueError):
+            continue
+        if price_usd <= 0 or data_gb <= 0 or days <= 0:
+            continue
+        price_ils = round(price_usd * usd_rate, 2)
+        gb_str = f"{int(data_gb)}GB" if data_gb == int(data_gb) else f"{data_gb}GB"
+        plan_name = f"{country_heb} – {gb_str} + שיחות ללא הגבלה – {days} ימים"
+        extras = [
+            country_heb,
+            'שיחות ללא הגבלה בארה"ב',
+            "שיחות לישראל ללא הגבלה",
+            "הודעות SMS ללא הגבלה",
+            f"אינטרנט {gb_str} (לאחר מכן מהירות יורדת)",
+            "רשת T-Mobile (כיסוי מקסימלי)",
+            "הפעלה מידית — אין צורך בכרטיס פיזי",
+        ]
+        if setup_usd > 0:
+            setup_str = f"{int(setup_usd)}" if setup_usd == int(setup_usd) else f"{setup_usd}"
+            extras.append(f"דמי הקמה חד-פעמיים ${setup_str}")
+        plans.append(_make_global_plan(
+            "tasim", plan_name, price_ils, "USD", price_usd,
+            data_gb=data_gb, days=days, esim=True, extras=extras,
+        ))
+    logger.info(f"Tasim: {len(plans)} plans")
+    return plans
 
 
 # ── Maya Mobile eSIM ─────────────────────────────────────────────────────────
@@ -6139,14 +6344,26 @@ MAYA_SLUG_TO_HEBREW = {
 
 
 def scrape_maya_global(_page=None, usd_rate=None):
-    """Scrape all Maya Mobile eSIM plans using pure HTTP (no Playwright needed).
+    """Scrape Maya Mobile's current eSIM catalog using pure HTTP (no Playwright).
 
-    Maya embeds 'var regionPricing = JSON.parse(...)' in every destination page,
-    containing all prices for all durations (5/10/15/30/60/90/180 days).
-    We fetch pages in parallel threads for speed.
+    PRODUCT-MODEL CHANGE (detected 2026-06): Maya retired its per-country / per-size
+    catalog (the old `var regionPricing = JSON.parse(...)` blob is gone) and rebuilt
+    the site as an Angular SSR app selling ONE global product line -- "Unlimited Global
+    Data" (works in 165+ countries) plus an "Unlimited Global + Cruise" line. Every
+    page now embeds the same catalog in
+        <script id="maya-mobile-state" type="application/json"> ... </script>
+    under CACHE_CONTENT_STATE_KEY.cache: `singleCountries` / `regions` are present but
+    carry EMPTY plan arrays; the real plans live in `globalRegions[].plans` and
+    `cruiseRegions[].plans`. So we fetch one page and read both arrays.
+
+    Plans are marketed as unlimited (daily FUP) -> stored as data_gb=None. The two
+    destination buckets use extras[0] = global / global+cruise (Hebrew); the plain
+    "global" name maps to MAYA_GLOBAL in the frontend's getPlanCoverage. Maya lists
+    each tier under two slugs (e.g. unlimited-global-data + 3-days-unlimited-global-data)
+    -- deduped by plan_name. NOTE: stale per-country rows from the old model must be
+    purged from global_plans after saving (save_global_plans keeps stale rows).
     """
     import re as _re
-    from concurrent.futures import ThreadPoolExecutor, as_completed as _as_completed
 
     if usd_rate is None:
         usd_rate = _get_usd_to_ils()
@@ -6156,119 +6373,81 @@ def scrape_maya_global(_page=None, usd_rate=None):
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     )
 
-    # Plan size key → data_gb value (None = unlimited)
-    SIZE_TO_GB = {
-        "unlimited": None,
-        "100GB":     100,
-        "50GB":      50,
-        "20GB":      20,
-        "10GB":      10,
-        "5GB":       5,
-        "3GB":       3,
-        "1GB":       1,
-    }
-
-    def _fetch_html(slug, base="esim"):
-        url = f"https://maya.net/{base}/{slug}"
+    def _fetch_state(slug):
+        url = f"https://maya.net/{slug}"
         req = urllib.request.Request(url, headers={"User-Agent": UA})
-        with urllib.request.urlopen(req, timeout=20) as r:
-            return r.read().decode("utf-8", errors="replace")
-
-    # Regional eSIM products at /plans/<slug> (different URL prefix from per-country /esim/)
-    MAYA_REGION_TO_HEBREW = {
-        "europe":         "אירופה",          # אירופה
-        "asia":           "אסיה",                       # אסיה
-        "latin-america":  "אמריקה הלטינית",  # אמריקה הלטינית
-        "caribbean":      "קריביים",     # קריביים
-        "middle-east":    "המזרח התיכון",  # המזרח התיכון
-        "balkans":        "בלקן",                        # בלקן
-    }
-
-    def _extract_visible_sizes(html):
-        """Return the set of size keys (e.g. 'unlimited', '5GB', '10GB') that
-        Maya is actually advertising in the page's plan-card UI. The full
-        regionPricing JSON often contains stale tiers (e.g. 1GB for global)
-        that Maya keeps in the backend but no longer renders."""
-        visible = set()
-        if "UNLIMITED DATA" in html:
-            visible.add("unlimited")
-        # Card headings render as "<N> GB" (single space); avoid "<N>Gigabytes"
-        for m_ in _re.finditer(r'\b(\d{1,3})\s+GB\b', html):
-            visible.add(f"{m_.group(1)}GB")
-        return visible
-
-    def _parse_slug(slug, country_heb, html):
-        m = _re.search(r"var regionPricing = JSON\.parse\('(.+?)'\);", html)
+        with urllib.request.urlopen(req, timeout=25) as r:
+            html = r.read().decode("utf-8", errors="replace")
+        m = _re.search(
+            r'<script id="maya-mobile-state" type="application/json">(.*?)</script>',
+            html, _re.S,
+        )
         if not m:
-            return []
-        pricing_str = m.group(1).replace("\\'", "'").replace('\\"', '"')
+            return None
         try:
-            pricing = _json.loads(pricing_str)
-        except Exception:
-            return []
+            return _json.loads(m.group(1))["CACHE_CONTENT_STATE_KEY"]["cache"]
+        except (KeyError, ValueError):
+            return None
 
-        visible_sizes = _extract_visible_sizes(html)
-
-        url = f"https://maya.net/esim/{slug}"
-        plans = []
-        for size_key, gb_val in SIZE_TO_GB.items():
-            if size_key not in pricing:
-                continue
-            # Skip tiers Maya no longer advertises in the UI (e.g. 1GB/global)
-            if visible_sizes and size_key not in visible_sizes:
-                continue
-            for days_str, price_val in pricing[size_key].items():
-                if not price_val:
-                    continue
-                try:
-                    price_usd = float(price_val)
-                    days = int(days_str)
-                except (ValueError, TypeError):
-                    continue
-                if price_usd <= 0:
-                    continue
-                price_ils = round(price_usd * usd_rate, 2)
-                if gb_val is None:
-                    plan_name = (
-                        f"{country_heb} \u2013 "
-                        f"\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4"
-                        f" \u2013 {days} \u05d9\u05de\u05d9\u05dd"
-                    )
-                else:
-                    plan_name = (
-                        f"{country_heb} \u2013 {gb_val}GB"
-                        f" \u2013 {days} \u05d9\u05de\u05d9\u05dd"
-                    )
-                plans.append(_make_global_plan(
-                    "maya", plan_name, price_ils, "USD", price_usd,
-                    data_gb=gb_val, days=days, esim=True,
-                    extras=[country_heb],
-                ))
-        return plans
-
-    def _fetch_and_parse(slug, country_heb, base="esim"):
+    # The global catalog is identical on every page; try a few candidates for resilience.
+    cache = None
+    for slug in ("plans/global", "esim/global", "esim/usa", "esim/france"):
         try:
-            html = _fetch_html(slug, base=base)
-            return _parse_slug(slug, country_heb, html)
+            cache = _fetch_state(slug)
         except Exception as exc:
-            logger.warning(f"Maya Mobile {slug} ({base}): {exc}")
-            return []
+            logger.warning(f"Maya Mobile {slug}: {exc}")
+            cache = None
+        if cache and (cache.get("globalRegions") or cache.get("cruiseRegions")):
+            break
+    if not cache:
+        logger.warning("Maya Mobile: no maya-mobile-state catalog found -- skipping")
+        return []
 
-    all_plans = []
-    with ThreadPoolExecutor(max_workers=12) as executor:
-        futures = {
-            executor.submit(_fetch_and_parse, slug, heb): slug
-            for slug, heb in MAYA_SLUG_TO_HEBREW.items()
-        }
-        # Add regional eSIM products (Europe+, Asia+, LATAM+, Caribbean+, Middle East, Balkans)
-        for slug, heb in MAYA_REGION_TO_HEBREW.items():
-            futures[executor.submit(_fetch_and_parse, slug, heb, "plans")] = slug
-        for future in _as_completed(futures):
-            all_plans.extend(future.result())
+    GLOBAL_HEB = "גלובלי"
+    CRUISE_HEB = "גלובלי ושייט"
 
+    by_name = {}
+
+    def _ingest(regions, dest_heb):
+        for region in regions or []:
+            for p in region.get("plans") or []:
+                try:
+                    days = int(p.get("validity"))
+                    price_usd = float((p.get("priceBundle") or {}).get("USD") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if days <= 0 or price_usd <= 0 or not p.get("isActive", True):
+                    continue
+                # All current Maya plans are unlimited (daily FUP) -> data_gb=None.
+                unlimited = (p.get("dataUsageAllowanceType") or "").upper() == "UNLIMITED"
+                data_gb = None if unlimited else (p.get("dataUsageAllowanceInGb") or None)
+                if data_gb is None:
+                    label = "ללא הגבלה"
+                else:
+                    label = f"{int(data_gb)}GB" if data_gb == int(data_gb) else f"{data_gb}GB"
+                plan_name = (
+                    f"{dest_heb} – {label} – {days} ימים"
+                )
+                extras = [dest_heb]
+                fup = (p.get("fupDescription") or "").strip()
+                if fup:
+                    extras.append(fup)
+                # Dedup: Maya lists each tier twice (two slugs); keep the cheapest.
+                prev = by_name.get(plan_name)
+                if prev and prev.get("original_price", 1e9) <= price_usd:
+                    continue
+                by_name[plan_name] = _make_global_plan(
+                    "maya", plan_name, round(price_usd * usd_rate, 2), "USD",
+                    price_usd, data_gb=data_gb, days=days, esim=True, extras=extras,
+                )
+
+    _ingest(cache.get("globalRegions"), GLOBAL_HEB)
+    _ingest(cache.get("cruiseRegions"), CRUISE_HEB)
+
+    all_plans = list(by_name.values())
     logger.info(
-        f"Maya Mobile: {len(all_plans)} global plans "
-        f"from {len(MAYA_SLUG_TO_HEBREW)} destinations"
+        f"Maya Mobile: {len(all_plans)} plans "
+        f"(global + cruise unlimited; per-country catalog retired)"
     )
     return all_plans
 
@@ -7469,7 +7648,7 @@ def _parse_seven_g_page(html, usd_rate, eng_name, extras_region=None):
     if title_m:
         m = re.search(r"eSIM [לב](.+?) [–—]", title_m.group(1))
         if m:
-            heb_name = m.group(1).strip()
+            heb_name = _html_unescape(m.group(1)).strip()
 
     # Parse plan blocks: N GB → M ימים → US$ → price (each plan appears twice)
     seen = {}
@@ -7660,6 +7839,7 @@ _ESIMPLUS_TO_SAILY = {
     "palestine-state-of": "israel",   # db.py _DEST_NORM maps Palestine → Israel
     "runion": "reunion",
     "saint-barthlemy": "saint-barthelemy",
+    "saint-vincent-and-the-grenadines": "saint-vincent-and-grenadines",
     "virgin-islands-british": "british-virgin-islands",
     "virgin-islands-us": "us-virgin-islands",
     "bonaire-sint-eustatius-and-saba": "bonaire",
@@ -7761,7 +7941,7 @@ def _fetch_esimplus_country(slug, usd_rate):
             html = r.read().decode("utf-8")
         if heb_name is None:
             title_m = re.search(r"<title>eSIM (?:for )?([^|]+)\|", html)
-            heb_name = title_m.group(1).strip() if title_m else slug.replace("-", " ").title()
+            heb_name = _html_unescape(title_m.group(1)).strip() if title_m else slug.replace("-", " ").title()
         # Decode paymentCode base64 PHP-serialized objects for exact prices
         codes = re.findall(r"paymentCode=([A-Za-z0-9+/%]+)", html)
         seen = {}
@@ -7818,6 +7998,329 @@ def scrape_esimplus_global(_page=None, usd_rate=None):
     return all_plans
 
 
+# ─── Besim (https://besim.co.il) ────────────────────────────────────────
+# Israeli eSIM reseller. ~130 single-country pages + 19 regional/global bundles.
+# Every product page renders identical 3-line plan blocks: "<X>GB / תוקף N ימים / $price".
+
+BESIM_SLUG_TO_HEBREW = {
+    # Africa (per-country, 27)
+    "algeria":                  "אלג'יריה",
+    "botswana":                 "בוטסואנה",
+    "burkina-faso":             "בורקינה פאסו",
+    "cameroon":                 "קמרון",
+    "central-african-republic": "הרפובליקה המרכז אפריקאית",
+    "chad":                     "צ'אד",
+    "congo":                    "קונגו",
+    "cote-divoire":             "חוף השנהב",
+    "egypt":                    "מצרים",
+    "gabon":                    "גאבון",
+    "kenya":                    "קניה",
+    "liberia":                  "ליבריה",
+    "madagascar":               "מדגסקר",
+    "malawi":                   "מלאווי",
+    "mali":                     "מאלי",
+    "mozambique":               "מוזמביק",
+    "niger":                    "ניג'ר",
+    "nigeria":                  "ניגריה",
+    "reunion":                  "ראוניון",
+    "senegal":                  "סנגל",
+    "seychelles":               "איי סישל",
+    "south-africa":             "דרום אפריקה",
+    "sudan":                    "סודן",
+    "tanzania":                 "טנזניה",
+    "tunisia":                  "תוניסיה",
+    "uganda":                   "אוגנדה",
+    "zambia":                   "זמביה",
+
+    # Americas (per-country, 19)
+    "argentina":                "ארגנטינה",
+    "belize":                   "בליז",
+    "bolivia":                  "בוליביה",
+    "brazil":                   "ברזיל",
+    "canada":                   "קנדה",
+    "chile":                    "צ'ילה",
+    "colombia":                 "קולומביה",
+    "costa-rica":               "קוסטה ריקה",
+    "ecuador":                  "אקוודור",
+    "el-salvador":              "אל סלבדור",
+    "guatemala":                "גואטמלה",
+    "honduras":                 "הונדורס",
+    "mexico":                   "מקסיקו",
+    "nicaragua":                "ניקראגואה",
+    "panama":                   "פנמה",
+    "paraguay":                 "פראגוואי",
+    "peru":                     "פרו",
+    "united-states":            "ארצות הברית",
+    "uruguay":                  "אורוגוואי",
+
+    # Asia (per-country, 32)
+    "armenia":                  "ארמניה",
+    "azerbaijan":               "אזרבייג'ן",
+    "bahrain":                  "בחריין",
+    "bangladesh":               "בנגלדש",
+    "brunei-darussalam":        "ברוניי",
+    "cambodia":                 "קמבודיה",
+    "china":                    "סין",
+    "georgia":                  "גאורגיה",
+    "hong-kong-china":          "הונג קונג",
+    "india":                    "הודו",
+    "indonesia":                "אינדונזיה",
+    "israel":                   "ישראל",
+    "japan":                    "יפן",
+    "jordan":                   "ירדן",
+    "kazakhstan":               "קזחסטן",
+    "kyrgyzstan":               "קירגיזסטן",
+    "laos":                     "לאוס",
+    "macao-china":              "מקאו",
+    "malaysia":                 "מלזיה",
+    "mongolia":                 "מונגוליה",
+    "nepal":                    "נפאל",
+    "oman":                     "עומן",
+    "pakistan":                 "פקיסטן",
+    "philippines":              "הפיליפינים",
+    "qatar":                    "קטר",
+    "saudi-arabia":             "ערב הסעודית",
+    "singapore":                "סינגפור",
+    "south-korea":              "דרום קוריאה",
+    "sri-lanka":                "סרי לנקה",
+    "thailand":                 "תאילנד",
+    "turkey":                   "טורקיה",
+    "united-arab-emirates":     "איחוד האמירויות",
+    "uzbekistan":               "אוזבקיסטן",
+    "vietnam":                  "וייטנאם",
+
+    # Caribbean (per-country, 4)
+    "dominican-republic":       "הרפובליקה הדומיניקנית",
+    "guadeloupe":               "גוואדלופ",
+    "jamaica":                  "ג'מייקה",
+    "puerto-rico":              "פוארטו ריקו",
+
+    # Europe (per-country, 45 — Besim groups Morocco under Europe)
+    "aland-islands":            "איי אלאנד",
+    "albania":                  "אלבניה",
+    "andorra":                  "אנדורה",
+    "austria":                  "אוסטריה",
+    "belarus":                  "בלארוס",
+    "belgium":                  "בלגיה",
+    "bosnia-and-herzegovina":   "בוסניה והרצגובינה",
+    "bulgaria":                 "בולגריה",
+    "croatia":                  "קרואטיה",
+    "cyprus":                   "קפריסין",
+    "czech-republic":           "צ'כיה",
+    "denmark":                  "דנמרק",
+    "estonia":                  "אסטוניה",
+    "finland":                  "פינלנד",
+    "france":                   "צרפת",
+    "germany":                  "גרמניה",
+    "gibraltar":                "גיברלטר",
+    "greece":                   "יוון",
+    "guernsey":                 "גרנזי",
+    "hungary":                  "הונגריה",
+    "iceland":                  "איסלנד",
+    "ireland":                  "אירלנד",
+    "isle-of-man":              "האי מאן",
+    "italy":                    "איטליה",
+    "jersey":                   "ג'רזי",
+    "latvia":                   "לטביה",
+    "liechtenstein":            "ליכטנשטיין",
+    "lithuania":                "ליטא",
+    "luxembourg":               "לוקסמבורג",
+    "malta":                    "מלטה",
+    "moldova":                  "מולדובה",
+    "monaco":                   "מונקו",
+    "montenegro":               "מונטנגרו",
+    "morocco":                  "מרוקו",
+    "netherlands":              "הולנד",
+    "north-macedonia":          "מקדוניה הצפונית",
+    "norway":                   "נורבגיה",
+    "poland":                   "פולין",
+    "portugal":                 "פורטוגל",
+    "romania":                  "רומניה",
+    "russia":                   "רוסיה",
+    "serbia":                   "סרביה",
+    "slovakia":                 "סלובקיה",
+    "slovenia":                 "סלובניה",
+    "spain":                    "ספרד",
+    "sweden":                   "שבדיה",
+    "switzerland":              "שוויץ",
+    "ukraine":                  "אוקראינה",
+    "united-kingdom":           "בריטניה",
+
+    # Oceania (per-country, 3)
+    "australia":                "אוסטרליה",
+    "guam":                     "גואם",
+    "new-zealand":              "ניו זילנד",
+}
+
+# Regional / global bundles. Tuple = (display_label_hebrew, canonical_region_tag).
+# region_tag is what goes into extras[0] — uses canonical names from KNOWN_REGIONS so the
+# region/destination filters DON'T duplicate. Multiple Asia variants all share extras[0]="אסיה"
+# but their distinct sizes appear in plan_name to keep the cards differentiated.
+BESIM_REGIONAL_BUNDLES = {
+    "africa-25-areas":             ("אפריקה (25+ מדינות)",         "אפריקה"),
+    "united_states_canada":        ("ארה\"ב וקנדה",                                   "צפון אמריקה"),
+    "south-america-15-areas":      ("דרום אמריקה (15+ מדינות)",           "דרום אמריקה"),
+    "north-america-3-areas":       ("צפון אמריקה (3 מדינות)",                 "צפון אמריקה"),
+    "thailand-malaysia-singapore": ("תאילנד, מלזיה וסינגפור",                  "דרום מזרח אסיה"),
+    "south-korea-china-japan":     ("דרום קוריאה, סין ויפן",            "אסיה"),
+    "middle-east-13-areas":        ("המזרח התיכון (13 מדינות)",          "המזרח התיכון"),
+    "gulf-region":                 ("מדינות המפרץ",                                "המזרח התיכון"),
+    "china-mainland-hk-macao":     ("סין, הונג קונג ומקאו",                  "סין + הונג קונג + מקאו"),
+    "asia-7-areas":                ("אסיה (7 מדינות)",                              "אסיה"),
+    "asia-12-areas":               ("אסיה (12 מדינות)",                            "אסיה"),
+    "asia-20-areas":               ("אסיה (20 מדינות)",                            "אסיה"),
+    "asia-21-areas":               ("אסיה (+20 מדינות)",                           "אסיה"),
+    "caribbean-20-areas":          ("הקריביים (20+ מדינות)",                  "קריביים"),
+    "europe-30-areas":             ("אירופה (30+ מדינות)",                       "אירופה"),
+    "europe-40-areas":             ("אירופה (40+ מדינות)",                       "אירופה"),
+    "balkans-5-areas":             ("בלקן (5+ מדינות)",                              "בלקן"),
+    "global-130-areas":            ("גלובלי (130+ מדינות)",                      "גלובלי"),
+    "global-120-areas":            ("גלובלי (120+ מדינות)",                      "גלובלי"),
+}
+
+_BESIM_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+
+# Each plan block on a Besim product page is exactly 3 lines:
+#   "1GB"           ← data
+#   "תוקף 7 ימים"   ← days (Hebrew "validity X days")
+#   "$1"            ← USD price
+# Decimal prices appear inline: "$3.5", "$4.50", "$38.5" — never split across lines.
+_BESIM_GB_RE     = re.compile(r"^(\d+(?:\.\d+)?)GB$",  re.I)
+_BESIM_MB_RE     = re.compile(r"^(\d+(?:\.\d+)?)MB$",  re.I)
+_BESIM_DAYS_RE   = re.compile(r"^תוקף\s+(\d+)\s+ימים$")
+_BESIM_PRICE_RE  = re.compile(r"^\$(\d+(?:\.\d+)?)$")
+
+
+def _parse_besim_plans(body_text):
+    """Parse a Besim product-page body into [(data_gb, days, price_usd), ...].
+    Walks the line list looking for the consecutive-3-line pattern."""
+    lines = [l.strip() for l in body_text.split("\n") if l.strip()]
+    out = []
+    i = 0
+    while i + 2 < len(lines):
+        m_gb = _BESIM_GB_RE.match(lines[i])
+        m_mb = _BESIM_MB_RE.match(lines[i]) if not m_gb else None
+        m_d  = _BESIM_DAYS_RE.match(lines[i + 1]) if (m_gb or m_mb) else None
+        m_p  = _BESIM_PRICE_RE.match(lines[i + 2]) if m_d else None
+        if m_gb and m_d and m_p:
+            gb_val = float(m_gb.group(1))
+            data_gb = int(gb_val) if gb_val == int(gb_val) else gb_val
+            out.append((data_gb, int(m_d.group(1)), float(m_p.group(1))))
+            i += 3
+            continue
+        if m_mb and m_d and m_p:
+            mb_val = float(m_mb.group(1))
+            out.append((round(mb_val / 1024, 4), int(m_d.group(1)), float(m_p.group(1))))
+            i += 3
+            continue
+        i += 1
+    return out
+
+
+def _besim_format_data(data_gb):
+    if data_gb is None:
+        return "ללא הגבלה"
+    if data_gb >= 1:
+        n = int(data_gb) if data_gb == int(data_gb) else data_gb
+        return f"{n}GB"
+    return f"{round(data_gb * 1024)}MB"
+
+
+def _scrape_besim_batch(items, usd_rate):
+    """Fetch a batch of Besim product URLs in one browser session.
+    items: iterable of (url, plan_label_or_country, region_tag) tuples.
+    For per-country plans plan_label_or_country == region_tag == hebrew country name."""
+    _ensure_event_loop()
+    batch_plans = []
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(
+            headless=True, args=["--disable-blink-features=AutomationControlled"]
+        )
+        page = browser.new_page(user_agent=_BESIM_UA)
+        for url, plan_label, region_tag in items:
+            try:
+                # Besim's site is sluggish under parallel load — give it 35s and
+                # retry once on timeout before giving up. about:blank between requests
+                # avoids "interrupted by another navigation" warnings on slow pages.
+                last_err = None
+                for attempt in range(2):
+                    try:
+                        page.goto(url, timeout=35000, wait_until="domcontentloaded")
+                        last_err = None
+                        break
+                    except Exception as e:
+                        last_err = e
+                        try:
+                            page.goto("about:blank", timeout=5000)
+                        except Exception:
+                            pass
+                if last_err is not None:
+                    logger.warning(f"Besim {url}: {last_err}")
+                    continue
+                page.wait_for_timeout(900)
+                body = page.inner_text("body")
+                triplets = _parse_besim_plans(body)
+                for data_gb, days, price_usd in triplets:
+                    if days <= 0 or price_usd <= 0:
+                        continue
+                    price_ils = round(price_usd * usd_rate, 2)
+                    data_str = _besim_format_data(data_gb)
+                    plan_name = f"{plan_label} – {data_str} – {days} ימים"
+                    batch_plans.append(_make_global_plan(
+                        "besim", plan_name, price_ils, "USD", price_usd,
+                        data_gb, days, esim=True, extras=[region_tag],
+                    ))
+            except Exception as exc:
+                logger.warning(f"Besim {url}: {exc}")
+        browser.close()
+    return batch_plans
+
+
+def _scrape_besim_product_list(items, usd_rate):
+    """Split items into 2 parallel browser batches.
+    Besim's site throttles under heavy parallel load, so we use 2 workers
+    (not 4 like ByteSim) — each batch is ~78 pages × ~3s = ~4 min wall time."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed as _as_completed
+    items = list(items)
+    batch_size = max(1, (len(items) + 1) // 2)
+    batches = [items[i:i + batch_size] for i in range(0, len(items), batch_size)]
+    all_plans = []
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(_scrape_besim_batch, b, usd_rate) for b in batches]
+        for fut in _as_completed(futures, timeout=1500):
+            try:
+                all_plans.extend(fut.result())
+            except Exception as exc:
+                logger.warning(f"Besim batch error: {exc}")
+    return all_plans
+
+
+def scrape_besim_global(_page=None, usd_rate=None):
+    """Scrape Besim per-country eSIM plans from ~130 country pages."""
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    items = [
+        (f"https://besim.co.il/product/{slug}", country_heb, country_heb)
+        for slug, country_heb in BESIM_SLUG_TO_HEBREW.items()
+    ]
+    plans = _scrape_besim_product_list(items, usd_rate)
+    logger.info(f"Besim global: {len(plans)} plans from {len(BESIM_SLUG_TO_HEBREW)} countries")
+    return plans
+
+
+def scrape_besim_regions(_page=None, usd_rate=None):
+    """Scrape Besim regional + global bundles (19 products)."""
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    items = [
+        (f"https://besim.co.il/product/{slug}", plan_label, region_tag)
+        for slug, (plan_label, region_tag) in BESIM_REGIONAL_BUNDLES.items()
+    ]
+    plans = _scrape_besim_product_list(items, usd_rate)
+    logger.info(f"Besim regions: {len(plans)} plans from {len(BESIM_REGIONAL_BUNDLES)} bundles")
+    return plans
+
+
 def scrape_all_global():
     """Scrape global eSIM packages from all providers. Returns flat list of plan dicts.
 
@@ -7855,6 +8358,7 @@ def scrape_all_global():
         ("scrape_esimio_destinations", lambda: scrape_esimio_destinations(usd_rate=usd_rate)),
         ("scrape_esimio_regions",      lambda: scrape_esimio_regions(usd_rate=usd_rate)),
         ("scrape_esimo_global",        lambda: scrape_esimo_global(usd_rate=usd_rate)),  # pure HTTP, no Playwright
+        ("scrape_simtlv_esim",         lambda: scrape_simtlv_esim()),  # pure HTTP, no Playwright
         ("scrape_holafly_global",      lambda: scrape_holafly_global(usd_rate=usd_rate)),
         ("scrape_holafly_regions",     lambda: scrape_holafly_regions(usd_rate=usd_rate)),
         ("scrape_sparks_global",       lambda: scrape_sparks_global(usd_rate=usd_rate)),
@@ -7870,6 +8374,8 @@ def scrape_all_global():
         ("scrape_breez_global",         scrape_breez_global),
         ("scrape_bytesim_global",       lambda: scrape_bytesim_global(usd_rate=usd_rate)),
         ("scrape_bytesim_regions",      lambda: scrape_bytesim_regions(usd_rate=usd_rate)),
+        ("scrape_besim_global",         lambda: scrape_besim_global(usd_rate=usd_rate)),
+        ("scrape_besim_regions",        lambda: scrape_besim_regions(usd_rate=usd_rate)),
         ("scrape_seven_g_global",       lambda: scrape_seven_g_global(usd_rate=usd_rate)),
         ("scrape_bestconnect_global",   lambda: scrape_bestconnect_global(usd_rate=usd_rate)),
         ("scrape_esimplus_global",      lambda: scrape_esimplus_global(usd_rate=usd_rate)),

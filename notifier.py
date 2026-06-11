@@ -23,6 +23,11 @@ CARRIER_NAMES = {
     "hotmobile": "הוט מובייל",
     "cellcom":   "סלקום",
     "mobile019": "019",
+    "xphone":    "XPhone",
+    "wecom":     "וי-קום",
+    "neptucom":  "נפטוקום",
+    "golan":     "גולן טלקום",
+    "rami_levy": "רמי לוי תקשורת",
 }
 
 GLOBAL_PROVIDER_NAMES = {
@@ -181,10 +186,35 @@ def format_content_message(changes):
 
 
 _DIGEST_CATEGORY_LABELS = {
-    "domestic": "📱 חבילות בארץ",
-    "abroad":   "✈️ חבילות חו\"ל",
-    "global":   "🌍 eSIM גלובלי",
-    "content":  "🎬 שירותי תוכן",
+    "domestic":  "📱 חבילות בארץ",
+    "abroad":    "✈️ חבילות חו\"ל",
+    "global":    "🌍 eSIM גלובלי",
+    "content":   "🎬 שירותי תוכן",
+    "resellers": "🏷️ מתחת לקו (משווקים)",
+}
+
+# Display names for below-the-line sources (reseller_id → Hebrew label).
+# Keep in sync with RESELLERS in DashboardPage.jsx.
+RESELLER_NAMES = {
+    "tiber":                "טיבר",
+    "zol_li":               "זול-לי",
+    "kamaze":               "כמה זה",
+    "kamazeole":            "כמה זה עולה",
+    "sell_zoll":            "sell-zoll",
+    "tikshoretishit":       "תקשורת אישית",
+    "clubdeal":             "ClubDeal (פלאפון)",
+    "partner_site":         "פרטנר — דף הצטרפות",
+    "wecom_site":           "וי-קום — סים דאטה",
+    "rami_levy_landing":    "רמי לוי — דף נחיתה",
+    "rami_levy_hever":      "רמי לוי — מועדון חבר",
+    "rami_levy_cc":         "רמי לוי — הטבת אשראי",
+    "pelephon4u":           "פלאפון 4U",
+    "pelephone_join":       "פלאפון Join",
+    "pelephone_cellphone":  "פלאפון Deal",
+    "pelephone_fb":         "פלאפון — קמפיין פייסבוק",
+    "analizer":             "אנלייזר (מתווך)",
+    "cellcomshefamr":       "סלקום שפרעם",
+    "zorro":                "זורו",
 }
 
 _DIGEST_MAX_LINES_PER_CATEGORY = 15
@@ -192,11 +222,16 @@ _DIGEST_MAX_FRESHNESS_LINES = 12
 
 
 def _digest_carrier_name(carrier_id):
-    return CARRIER_NAMES.get(carrier_id) or GLOBAL_PROVIDER_NAMES.get(carrier_id) or carrier_id
+    return (CARRIER_NAMES.get(carrier_id) or GLOBAL_PROVIDER_NAMES.get(carrier_id)
+            or RESELLER_NAMES.get(carrier_id) or carrier_id)
 
 
 def _digest_change_line(ch):
     carrier = _digest_carrier_name(ch.get("carrier", ""))
+    # Below-the-line rows: show the source too — "טיבר · פלאפון"
+    if ch.get("reseller_id"):
+        source = RESELLER_NAMES.get(ch["reseller_id"], ch["reseller_id"])
+        carrier = f"{source} · {carrier}"
     # Content rows: the "plan" is the service name
     name = ch.get("plan_name") or ch.get("service") or ""
     ct = ch.get("change_type", "")
@@ -242,7 +277,7 @@ def format_morning_digest(summary, freshness_warnings=None, within_hours=26):
         lines.append(f"✅ לא זוהו שינויים בחבילות ב-{within_hours} השעות האחרונות.")
     else:
         lines.append(f"🔔 {total} שינויים ב-{within_hours} השעות האחרונות:")
-        for cat in ("domestic", "abroad", "global", "content"):
+        for cat in ("domestic", "abroad", "global", "content", "resellers"):
             changes = (summary or {}).get(cat) or []
             if not changes:
                 continue

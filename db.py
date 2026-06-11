@@ -164,7 +164,17 @@ _DEST_NORM = {
     "Scotland": "\u05e1\u05e7\u05d5\u05d8\u05dc\u05e0\u05d3",  # Scotland → סקוטלנד
     "Sint Eustatius": "\u05e1\u05d9\u05e0\u05d8 \u05d0\u05d5\u05e1\u05d8\u05d8\u05d9\u05d5\u05e1",  # Sint Eustatius → סינט אוסטטיוס
     "St. Martin": "\u05e1\u05df \u05de\u05e8\u05d8\u05df",  # St. Martin → סן מרטן
-    "St. Vincent &amp; Grenadines": "\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d4\u05d2\u05e8\u05d3\u05d9\u05e0\u05d9\u05dd",  # St. Vincent &amp; Grenadines → סנט וינסנט והגרדינים
+    "St. Vincent & Grenadines": "\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d4\u05d2\u05e8\u05d3\u05d9\u05e0\u05d9\u05dd",  # St. Vincent & Grenadines → סנט וינסנט והגרדינים
+    # ── SimTLV catalog spellings (2026-06-11) ──
+    'אלגריה': "אלג'יריה",                                       # אלגריה → אלג'יריה
+    'וותיקן': 'ותיקן',                                           # וותיקן → ותיקן
+    'טיוואן': 'טייוואן',                                         # טיוואן → טייוואן
+    'מלדיבים': 'האיים המלדיביים',                                # מלדיבים → האיים המלדיביים
+    'קירגיסטן': 'קירגיזסטן',                                     # קירגיסטן → קירגיזסטן
+    'צאד': "צ'אד",                                               # צאד → צ'אד
+    'אנגליה (בריטניה)': 'בריטניה',                               # אנגליה (בריטניה) → בריטניה
+    'דובאי (איחוד האמירויות הערביות)': 'דובאי',                  # דובאי (איחוד האמירויות הערביות) → דובאי
+    'הונג קונג,סין ומקאו': 'הונג קונג, סין ומקאו',               # missing space after comma
 }
 
 def _norm_extras(extras):
@@ -448,6 +458,45 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_reseller_plans_carrier
                 ON reseller_plans(carrier);
+            -- Change log for below-the-line (משווקים) offers — written by
+            -- sync_reseller_plans() during the daily 08:15 reseller scrape,
+            -- read by the 08:20 morning digest.
+            CREATE TABLE IF NOT EXISTS reseller_changes (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                reseller_id  TEXT NOT NULL,
+                carrier      TEXT NOT NULL,
+                plan_name    TEXT NOT NULL,
+                change_type  TEXT NOT NULL,
+                old_val      TEXT,
+                new_val      TEXT,
+                changed_at   TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_reseller_changes_time
+                ON reseller_changes(changed_at);
+            -- US operators' prepaid plans for inbound tourists (נוחתים בארה"ב tab).
+            -- carrier = US operator id (tmobile_prepaid, mint, visible, ...).
+            -- price is ILS-converted at seed time (matches global_plans convention);
+            -- original_price keeps the native USD amount.
+            CREATE TABLE IF NOT EXISTS usa_tourist_plans (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                carrier        TEXT NOT NULL,
+                plan_name      TEXT NOT NULL,
+                price          REAL,
+                currency       TEXT DEFAULT 'USD',
+                original_price REAL,
+                data_gb        REAL,
+                minutes        INTEGER,
+                sms            INTEGER,
+                days           INTEGER,
+                esim           INTEGER DEFAULT 0,
+                network        TEXT,
+                extras         TEXT,
+                source_url     TEXT,
+                scraped_at     TEXT,
+                UNIQUE(carrier, plan_name)
+            );
+            CREATE INDEX IF NOT EXISTS idx_usa_tourist_plans_carrier
+                ON usa_tourist_plans(carrier);
             -- Tracks every outbound Anthropic API call so the user can monitor
             -- token usage + computed USD cost locally (Anthropic has no balance API).
             CREATE TABLE IF NOT EXISTS claude_api_usage (
@@ -2572,12 +2621,101 @@ def save_reseller_plans(plans, db_path=None):
         conn.close()
 
 
+# Auto-scraped reseller sources (btl_scrapers.py + the per-site modules, daily
+# 08:15). Used by get_scrape_freshness to flag a source whose scraper silently
+# broke — seed-only sources (Facebook ads, login-gated clubs) are excluded so
+# they don't raise false staleness alarms.
+AUTO_SCRAPED_RESELLER_IDS = {
+    "pelephon4u", "pelephone_join",            # legacy per-site modules
+    "tiber", "zol_li", "kamaze",               # btl_scrapers — third-party sites
+    "wecom_site", "rami_levy_landing",         # btl_scrapers — carrier pages
+    "tikshoretishit", "clubdeal",
+    "rami_levy_hever", "partner_site",         # btl_scrapers — JS (Playwright)
+}
+
+
+def sync_reseller_plans(plans, db_path=None):
+    """Diff freshly-scraped reseller plans against the DB, log to reseller_changes,
+    delete stale rows, then UPSERT. Returns the list of change dicts.
+
+    Stale-row deletion is scoped per (reseller_id, carrier) pair and only for
+    pairs that returned ≥1 plan in this scrape — so a partially-failed source
+    (e.g. tiber's golan page down while its pelephone page works) can't mass-
+    remove another pair's rows. Mirrors _delete_stale_carrier_rows semantics.
+    """
+    if not plans:
+        return []
+    pairs = {(p["reseller_id"], p["carrier"]) for p in plans}
+    changes = []
+    conn = _connect(db_path)
+    try:
+        now = datetime.now().isoformat()
+        for rid, carrier in sorted(pairs):
+            old_rows = {
+                r[0]: r[1]
+                for r in conn.execute(
+                    "SELECT plan_name, price FROM reseller_plans "
+                    "WHERE reseller_id = ? AND carrier = ?", (rid, carrier))
+            }
+            new_rows = {p["plan_name"]: p for p in plans
+                        if p["reseller_id"] == rid and p["carrier"] == carrier}
+            for name, p in new_rows.items():
+                if name not in old_rows:
+                    changes.append({"reseller_id": rid, "carrier": carrier,
+                                    "plan_name": name, "change_type": "new_plan",
+                                    "old_val": None, "new_val": str(p.get("price"))})
+                else:
+                    old_price, new_price = old_rows[name], p.get("price")
+                    try:
+                        if old_price is not None and new_price is not None \
+                                and float(old_price) != float(new_price):
+                            changes.append({"reseller_id": rid, "carrier": carrier,
+                                            "plan_name": name, "change_type": "price_change",
+                                            "old_val": str(old_price), "new_val": str(new_price)})
+                    except (TypeError, ValueError):
+                        pass
+            for name, old_price in old_rows.items():
+                if name not in new_rows:
+                    conn.execute(
+                        "DELETE FROM reseller_plans "
+                        "WHERE reseller_id = ? AND carrier = ? AND plan_name = ?",
+                        (rid, carrier, name))
+                    changes.append({"reseller_id": rid, "carrier": carrier,
+                                    "plan_name": name, "change_type": "removed_plan",
+                                    "old_val": str(old_price), "new_val": None})
+        for ch in changes:
+            conn.execute(
+                "INSERT INTO reseller_changes "
+                "(reseller_id, carrier, plan_name, change_type, old_val, new_val, changed_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (ch["reseller_id"], ch["carrier"], ch["plan_name"],
+                 ch["change_type"], ch["old_val"], ch["new_val"], now))
+        conn.commit()
+    finally:
+        conn.close()
+    save_reseller_plans(plans, db_path=db_path)
+    return changes
+
+
 # Reseller sources always shown regardless of carrier dominance — tracked by
 # explicit user request even when the underlying carrier publishes an equal-or-
-# better plan (e.g. a carrier's OWN lead-gen landing page). rami_levy also needs
-# this because its kosher ₪14.9 plan stores data_gb=None (≡ ∞ here), which would
-# otherwise dominate every priced rami_levy reseller plan.
-ALWAYS_SHOW_RESELLER_IDS = {"rami_levy_landing"}
+# better plan (e.g. a carrier's OWN lead-gen landing page, a benefit-club price
+# that needs membership, a multi-line bundle whose TOTAL exceeds a single-line
+# plan, or a Facebook-ad disclosure). rami_levy also needs this because its
+# kosher ₪14.9 plan stores data_gb=None (≡ ∞ here), which would otherwise
+# dominate every priced rami_levy reseller plan.
+ALWAYS_SHOW_RESELLER_IDS = {
+    "rami_levy_landing",
+    "rami_levy_hever",    # club-exclusive prices (membership required)
+    "rami_levy_cc",       # credit-card benefit on a rate-card plan
+    "partner_site",       # Partner's own lobby — BTL terms of rate-card plans
+    "wecom_site",         # WeCom's own data-only page
+    "clubdeal",           # Pelephone-owned members club
+    "pelephone_fb",       # official FB-ad campaign
+    "analizer",           # FB-ad broker disclosure (continuation pricing)
+    "kamaze",             # only BTL-marked rows are scraped (multi-line/ladder)
+    "kamazeole",          # 3-line family bundle — total-price dominance is unfair
+}
 
 
 def filter_undominated_reseller_plans(reseller_plans, db_path=None):
@@ -2652,6 +2790,74 @@ def get_reseller_plans(reseller_id=None, carrier=None, db_path=None):
         conn.close()
 
 
+def save_usa_tourist_plans(plans, db_path=None):
+    """Upsert US tourist-plan rows. Each dict needs carrier (US operator id) and
+    plan_name; price is ILS-converted, original_price is the native USD amount."""
+    conn = _connect(db_path)
+    try:
+        now = datetime.now().isoformat()
+        for plan in plans:
+            conn.execute("""
+                INSERT INTO usa_tourist_plans
+                  (carrier, plan_name, price, currency, original_price, data_gb,
+                   minutes, sms, days, esim, network, extras, source_url, scraped_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(carrier, plan_name) DO UPDATE SET
+                    price          = excluded.price,
+                    currency       = excluded.currency,
+                    original_price = excluded.original_price,
+                    data_gb        = excluded.data_gb,
+                    minutes        = excluded.minutes,
+                    sms            = excluded.sms,
+                    days           = excluded.days,
+                    esim           = excluded.esim,
+                    network        = excluded.network,
+                    extras         = excluded.extras,
+                    source_url     = excluded.source_url,
+                    scraped_at     = excluded.scraped_at
+            """, (
+                plan["carrier"], plan["plan_name"],
+                plan.get("price"), plan.get("currency", "USD"),
+                plan.get("original_price"), plan.get("data_gb"),
+                plan.get("minutes"), plan.get("sms"), plan.get("days"),
+                1 if plan.get("esim") else 0, plan.get("network"),
+                json.dumps(plan.get("extras", []), ensure_ascii=False),
+                plan.get("source_url"),
+                now,
+            ))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_usa_tourist_plans(carrier=None, db_path=None):
+    """Return US tourist plans, optionally filtered by operator id."""
+    conn = _connect(db_path)
+    try:
+        sql = ("SELECT carrier, plan_name, price, currency, original_price, data_gb, "
+               "minutes, sms, days, esim, network, extras, source_url, scraped_at "
+               "FROM usa_tourist_plans")
+        params = []
+        if carrier:
+            sql += " WHERE carrier = ?"
+            params.append(carrier)
+        sql += " ORDER BY price"
+        rows = conn.execute(sql, params).fetchall()
+        return [
+            {
+                "carrier": r[0], "plan_name": r[1], "price": r[2],
+                "currency": r[3], "original_price": r[4], "data_gb": r[5],
+                "minutes": r[6], "sms": r[7], "days": r[8],
+                "esim": bool(r[9]), "network": r[10],
+                "extras": json.loads(r[11]) if r[11] else [],
+                "source_url": r[12], "scraped_at": r[13],
+            }
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
 def get_recent_changes_summary(within_hours=26, db_path=None):
     """Return all change events from the last N hours, grouped by plan category.
 
@@ -2689,6 +2895,18 @@ def get_recent_changes_summary(within_hours=26, db_path=None):
              "old_val": r[3], "new_val": r[4], "changed_at": r[5]}
             for r in rows
         ]
+        # Below-the-line (משווקים) — reseller rows carry both the reseller_id
+        # and the underlying carrier so the digest can show "טיבר · פלאפון".
+        rows = conn.execute(
+            "SELECT reseller_id, carrier, plan_name, change_type, old_val, new_val, changed_at "
+            "FROM reseller_changes WHERE changed_at >= ? ORDER BY changed_at DESC, id DESC",
+            (cutoff,)
+        ).fetchall()
+        summary["resellers"] = [
+            {"reseller_id": r[0], "carrier": r[1], "plan_name": r[2], "change_type": r[3],
+             "old_val": r[4], "new_val": r[5], "changed_at": r[6]}
+            for r in rows
+        ]
         return summary
     finally:
         conn.close()
@@ -2713,6 +2931,18 @@ def get_scrape_freshness(db_path=None):
                 {"carrier": r[0], "count": r[1], "last_scraped": r[2]}
                 for r in rows
             ]
+        # Auto-scraped reseller sources only — seed-only sources (FB ads,
+        # login-gated clubs) refresh manually and must not alarm as stale.
+        seen = {}
+        for rid, count, last in conn.execute(
+                "SELECT reseller_id, COUNT(*), MAX(scraped_at) "
+                "FROM reseller_plans GROUP BY reseller_id"):
+            seen[rid] = (count, last)
+        out["resellers"] = [
+            {"carrier": rid, "count": seen.get(rid, (0, None))[0],
+             "last_scraped": seen.get(rid, (0, None))[1]}
+            for rid in sorted(AUTO_SCRAPED_RESELLER_IDS)
+        ]
         return out
     finally:
         conn.close()
