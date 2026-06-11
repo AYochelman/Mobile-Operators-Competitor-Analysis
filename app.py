@@ -1017,33 +1017,35 @@ _AFFILIATE_FALLBACK_URLS = {
 # production each provider's "url" is replaced by a referral-tagged base_url in
 # config.json -> affiliate. Local Israeli carriers have no affiliate program yet
 # but still flow through /go so per-hotel attribution + analytics are captured.
+# `domain` drives the guest-portal logo (DuckDuckGo favicon CDN). None = no clean
+# domain → the portal falls back to the colored monogram chip.
 _GUEST_PROVIDER_META = {
     # global eSIM (ids match the scraper carrier ids that carry Israel packages)
-    "saily":       {"label": "Saily",        "color": "#0fb39a", "url": "https://saily.com/esim-israel/"},
-    "airalo_local":{"label": "Airalo",       "color": "#ff5963", "url": "https://www.airalo.com/israel-esim"},
-    "airalo":      {"label": "Airalo",       "color": "#ff5963", "url": "https://www.airalo.com/israel-esim"},
-    "holafly":     {"label": "Holafly",      "color": "#fa3c54", "url": "https://esim.holafly.com/esim-israel/"},
-    "esimo":       {"label": "eSIMo",        "color": "#6c5ce7", "url": "https://esimo.io"},
-    "esimio":      {"label": "eSIM.io",      "color": "#5b6cf0", "url": "https://esim.io"},
-    "orbit":       {"label": "Orbit",        "color": "#2980ff", "url": "https://orbitmobile.com"},
-    "simtlv":      {"label": "SimTLV",       "color": "#2bb3c0", "url": "https://simtlv.co.il"},
-    "voye":        {"label": "Voye",         "color": "#e8553e", "url": "https://voyeglobal.com"},
-    "sparks":      {"label": "Sparks",       "color": "#f2a900", "url": "https://www.sparks.travel"},
-    "gomoworld":   {"label": "GoMoWorld",    "color": "#00a86b", "url": "https://www.gomoworld.com"},
-    "bcengi":      {"label": "BCengi",       "color": "#555c66", "url": "https://mocaintel.com"},
-    "esim70":      {"label": "eSIM70",       "color": "#1f6feb", "url": "https://esim70.com"},
-    "jetpack":     {"label": "Jetpac",       "color": "#7b2ff7", "url": "https://www.jetpacglobal.com"},
-    "breez":       {"label": "Breeze",       "color": "#19b3c7", "url": "https://breezesim.com"},
-    "bytesim":     {"label": "ByteSIM",      "color": "#34495e", "url": "https://bytesim.com"},
-    "besim":       {"label": "BeSIM",        "color": "#e84393", "url": "https://besim.com"},
-    "seven_g":     {"label": "7G",           "color": "#e67e22", "url": "https://mocaintel.com"},
-    "bestconnect": {"label": "Best Connect", "color": "#2d9cdb", "url": "https://mocaintel.com"},
-    "esimplus":    {"label": "eSIM Plus",    "color": "#00b894", "url": "https://esimplus.me/esim/israel"},
+    "saily":       {"label": "Saily",        "color": "#0fb39a", "domain": "saily.com",        "url": "https://saily.com/esim-israel/"},
+    "airalo_local":{"label": "Airalo",       "color": "#ff5963", "domain": "airalo.com",       "url": "https://www.airalo.com/israel-esim"},
+    "airalo":      {"label": "Airalo",       "color": "#ff5963", "domain": "airalo.com",       "url": "https://www.airalo.com/israel-esim"},
+    "holafly":     {"label": "Holafly",      "color": "#fa3c54", "domain": "holafly.com",      "url": "https://esim.holafly.com/esim-israel/"},
+    "esimo":       {"label": "eSIMo",        "color": "#6c5ce7", "domain": "esimo.io",         "url": "https://esimo.io"},
+    "esimio":      {"label": "eSIM.io",      "color": "#5b6cf0", "domain": "esim.io",          "url": "https://esim.io"},
+    "orbit":       {"label": "Orbit",        "color": "#2980ff", "domain": "orbitmobile.com",  "url": "https://orbitmobile.com"},
+    "simtlv":      {"label": "SimTLV",       "color": "#2bb3c0", "domain": "simtlv.co.il",     "url": "https://simtlv.co.il"},
+    "voye":        {"label": "Voye",         "color": "#e8553e", "domain": "voyeglobal.com",   "url": "https://voyeglobal.com"},
+    "sparks":      {"label": "Sparks",       "color": "#f2a900", "domain": "sparks.travel",    "url": "https://www.sparks.travel"},
+    "gomoworld":   {"label": "GoMoWorld",    "color": "#00a86b", "domain": "gomoworld.com",    "url": "https://www.gomoworld.com"},
+    "bcengi":      {"label": "BCengi",       "color": "#555c66", "domain": None,               "url": "https://mocaintel.com"},
+    "esim70":      {"label": "eSIM70",       "color": "#1f6feb", "domain": "esim70.com",       "url": "https://esim70.com"},
+    "jetpack":     {"label": "Jetpac",       "color": "#7b2ff7", "domain": "jetpacglobal.com", "url": "https://www.jetpacglobal.com"},
+    "breez":       {"label": "Breeze",       "color": "#19b3c7", "domain": "breezesim.com",    "url": "https://breezesim.com"},
+    "bytesim":     {"label": "ByteSIM",      "color": "#34495e", "domain": "bytesim.com",      "url": "https://bytesim.com"},
+    "besim":       {"label": "BeSIM",        "color": "#e84393", "domain": "besim.com",        "url": "https://besim.com"},
+    "seven_g":     {"label": "7G",           "color": "#e67e22", "domain": None,               "url": "https://mocaintel.com"},
+    "bestconnect": {"label": "Best Connect", "color": "#2d9cdb", "domain": None,               "url": "https://mocaintel.com"},
+    "esimplus":    {"label": "eSIM Plus",    "color": "#00b894", "domain": "esimplus.me",      "url": "https://esimplus.me/esim/israel"},
     # local Israeli carriers — inbound-tourist SIM/eSIM (curated, see below)
-    "mobile019":   {"label": "019 Mobile",     "color": "#d81b60", "url": "https://www.019mobile.co.il"},
-    "partner":     {"label": "Partner Tourist","color": "#0072ce", "url": "https://www.partner.co.il"},
-    "cellcom":     {"label": "Cellcom Tourist","color": "#5f259f", "url": "https://www.cellcom.co.il"},
-    "hot":         {"label": "HOT Mobile",     "color": "#e4002b", "url": "https://www.hotmobile.co.il"},
+    "mobile019":   {"label": "019 Mobile",     "color": "#d81b60", "domain": "019mobile.co.il", "url": "https://www.019mobile.co.il"},
+    "partner":     {"label": "Partner Tourist","color": "#0072ce", "domain": "partner.co.il",   "url": "https://www.partner.co.il"},
+    "cellcom":     {"label": "Cellcom Tourist","color": "#5f259f", "domain": "cellcom.co.il",   "url": "https://www.cellcom.co.il"},
+    "hot":         {"label": "HOT Mobile",     "color": "#e4002b", "domain": "hotmobile.co.il", "url": "https://www.hotmobile.co.il"},
 }
 
 # Inbound-tourist local SIM/eSIM offers. These are NOT scraped (the system
@@ -1126,6 +1128,7 @@ def _assemble_guest_deals(db_path=None):
     providers = {d["provider"]: {
         "label": _GUEST_PROVIDER_META.get(d["provider"], {}).get("label", d["provider"]),
         "color": _GUEST_PROVIDER_META.get(d["provider"], {}).get("color", "#5c3317"),
+        "domain": _GUEST_PROVIDER_META.get(d["provider"], {}).get("domain"),
     } for d in deals}
     return deals, providers, updated_at
 

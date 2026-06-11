@@ -116,6 +116,8 @@ const GC_CSS = `
 #gc-app .badge.b4{background:#eef1f5;color:#5b6b7e}
 #gc-app .deal-row{display:flex;align-items:center;gap:12px}
 #gc-app .pchip{width:42px;height:42px;border-radius:13px;flex:none;color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;letter-spacing:.4px}
+#gc-app .pchip.logo{background:#fff;border:1.5px solid;padding:5px}
+#gc-app .pchip.logo img{width:100%;height:100%;object-fit:contain;display:block}
 #gc-app .deal-info{flex:1;min-width:0}
 #gc-app .deal-provider{font-weight:800;font-size:14.5px}
 #gc-app .deal-meta{font-size:12.5px;color:var(--sub);font-weight:600;margin-top:1px}
@@ -157,6 +159,21 @@ function gbLabel(d, t) {
   if (d.gb == null) return t.unlimited
   if (d.gb < 1) return `${Math.round(d.gb * 1024)}MB`
   return `${+d.gb}GB`
+}
+
+// Provider tile: real logo (DuckDuckGo favicon CDN) on a white chip with a
+// brand-colored ring; falls back to the colored monogram when there's no domain
+// or the logo fails to load.
+function ProviderLogo({ pv, mono }) {
+  const [err, setErr] = useState(false)
+  if (pv.domain && !err) {
+    return (
+      <div className="pchip logo" style={{ borderColor: pv.color }}>
+        <img src={`https://icons.duckduckgo.com/ip3/${pv.domain}.ico`} alt="" loading="lazy" onError={() => setErr(true)} />
+      </div>
+    )
+  }
+  return <div className="pchip" style={{ background: pv.color }}>{mono}</div>
 }
 
 export default function GuestPortalPage() {
@@ -265,7 +282,7 @@ export default function GuestPortalPage() {
     return (
       <>
         <div className="deal-row">
-          <div className="pchip" style={{ background: pv.color }}>{mono}</div>
+          <ProviderLogo pv={pv} mono={mono} />
           <div className="deal-info">
             <div className="deal-provider"><bdi>{pv.label}</bdi></div>
             <div className="deal-meta">{metaLine(d).map((x, i) => <bdi key={i}>{i ? ' · ' : ''}{x}</bdi>)}</div>
