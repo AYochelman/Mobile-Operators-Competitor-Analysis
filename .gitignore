@@ -27,3 +27,8 @@ data/telegram_pending.json
 
 # Large downloaded binary — fetched/run by the watchdog, never committed (~52MB)
 scripts/cloudflared.exe
+
+# Stale build artifact at repo root. The REAL build output is mass-market-app/dist
+# (that's what gets drag-deployed to Netlify). A tracked root dist/ here was a trap:
+# dragging it shipped a months-old build (dead ngrok API URL, no _redirects).
+/dist/
