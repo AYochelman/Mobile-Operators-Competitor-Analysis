@@ -250,16 +250,19 @@ const BRANDS = {
 /* ================= Demo deal data (sample, illustrative) ================= */
 /* kind: global eSIM vs local Israeli carrier · gb:null = unlimited · cur: USD/ILS */
 const FX = 3.7;
+/* url = the most specific public destination page per provider (Israel page where
+   the URL pattern is stable, homepage otherwise). In production each deal carries
+   a referral-tagged deep link to the exact package via the affiliate network. */
 const PROVIDERS = {
-  saily:  { label:"Saily",          mono:"SA",  color:"#0fb39a" },
-  airalo: { label:"Airalo",         mono:"AI",  color:"#ff5963" },
-  holafly:{ label:"Holafly",        mono:"HO",  color:"#fa3c54" },
-  esimo:  { label:"eSIMo",          mono:"ES",  color:"#6c5ce7" },
-  orbit:  { label:"Orbit",          mono:"OR",  color:"#2980ff" },
-  maya:   { label:"Maya Mobile",    mono:"MA",  color:"#f39c12" },
-  m019:   { label:"019 Mobile",     mono:"019", color:"#d81b60" },
-  partner:{ label:"Partner Tourist",mono:"PR",  color:"#0072ce" },
-  cellcom:{ label:"Cellcom Tourist",mono:"CE",  color:"#5f259f" },
+  saily:  { label:"Saily",          mono:"SA",  color:"#0fb39a", url:"https://saily.com/esim-israel/" },
+  airalo: { label:"Airalo",         mono:"AI",  color:"#ff5963", url:"https://www.airalo.com/israel-esim" },
+  holafly:{ label:"Holafly",        mono:"HO",  color:"#fa3c54", url:"https://esim.holafly.com/esim-israel/" },
+  esimo:  { label:"eSIMo",          mono:"ES",  color:"#6c5ce7", url:"https://esimo.io" },
+  orbit:  { label:"Orbit",          mono:"OR",  color:"#2980ff", url:"https://orbitmobile.com" },
+  maya:   { label:"Maya Mobile",    mono:"MA",  color:"#f39c12", url:"https://maya.net" },
+  m019:   { label:"019 Mobile",     mono:"019", color:"#d81b60", url:"https://www.019mobile.co.il" },
+  partner:{ label:"Partner Tourist",mono:"PR",  color:"#0072ce", url:"https://www.partner.co.il" },
+  cellcom:{ label:"Cellcom Tourist",mono:"CE",  color:"#5f259f", url:"https://www.cellcom.co.il" },
 };
 const DEALS = [
   { p:"saily",   kind:"global", form:"esim", gb:1,    days:7,  price:3.99,  cur:"USD", perks:["instant","app"] },
@@ -311,7 +314,7 @@ const T = {
     badges:["BEST MATCH","CHEAPEST","MAX DATA","ALSO GREAT"],
     unlimited:"Unlimited", daysU:"days", get:"Get this deal ↗", perGB:"/GB",
     perks:{ instant:"Instant eSIM", app:"App support", topup:"Top-up in app", hotspot:"Hotspot", hotspotCap:"Hotspot 1GB/day", ilNumber:"Israeli number", calls:"Calls included", intlMin:"Intl. minutes", airport:"Airport pickup" },
-    toast:(p,h)=>`<span class="tk">✓ Demo</span> · In the live product this opens <b>${p}</b>'s checkout, tagged with <b>${h}</b>'s referral code — the hotel earns on every purchase.`,
+    toast:(p,h)=>`<span class="tk">✓ Demo</span> · Opening <b>${p}</b>'s page. In the live product this is a referral-tagged deep link straight to this exact package — and <b>${h}</b> earns on the purchase.`,
     empty:"No deals match this filter for your trip — try another option.",
   },
   he: {
@@ -336,7 +339,7 @@ const T = {
     badges:["ההתאמה הטובה ביותר","הזולה ביותר","הכי הרבה דאטה","כדאי גם"],
     unlimited:"ללא הגבלה", daysU:"ימים", get:"לרכישת החבילה ↗", perGB:"/GB",
     perks:{ instant:"eSIM מיידי", app:"תמיכה באפליקציה", topup:"טעינה באפליקציה", hotspot:"שיתוף רשת", hotspotCap:"שיתוף 1GB ליום", ilNumber:"מספר ישראלי", calls:"שיחות כלולות", intlMin:"דקות לחו״ל", airport:"איסוף בשדה" },
-    toast:(p,h)=>`<span class="tk">✓ דמו</span> · במוצר החי נפתח כאן עמוד התשלום של <b>${p}</b> עם קוד השותף של <b>${h}</b> — המלון מרוויח על כל רכישה.`,
+    toast:(p,h)=>`<span class="tk">✓ דמו</span> · נפתח העמוד של <b>${p}</b>. במוצר החי זהו דיפ-לינק עם קוד ההפניה של <b>${h}</b> — ישירות לחבילה שנבחרה, והמלון מרוויח על הרכישה.`,
     empty:"אין חבילות שמתאימות לסינון הזה — נסו אפשרות אחרת.",
   },
 };
@@ -514,7 +517,12 @@ document.addEventListener("click", e => {
   const pill = e.target.closest(".fpill");
   if (pill){ state.filter = pill.dataset.filter; renderChips(); renderList(); return; }
   const get = e.target.closest(".get");
-  if (get){ showToast(Number(get.dataset.deal)); return; }
+  if (get){
+    const d = DEALS[Number(get.dataset.deal)];
+    window.open(PROVIDERS[d.p].url, "_blank", "noopener");
+    showToast(Number(get.dataset.deal));
+    return;
+  }
 });
 $("#langEn").addEventListener("click", () => { state.lang = "en"; applyLang(); renderAll(); });
 $("#langHe").addEventListener("click", () => { state.lang = "he"; applyLang(); renderAll(); });
