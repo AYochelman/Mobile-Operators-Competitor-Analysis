@@ -40,23 +40,100 @@ GLOBAL_PROVIDER_NAMES = {
     "world8":           "8 World",
 }
 
+# English brand names for domestic carriers (CARRIER_NAMES is Hebrew). The
+# notification language is a global operator setting (config.json:notify_lang,
+# "he"|"en"); these localize only the *framing* — scraped plan names and detail
+# texts are the carriers' real product strings and stay in their original
+# language regardless of the chosen notification language.
+CARRIER_NAMES_EN = {
+    "partner":   "Partner",
+    "pelephone": "Pelephone",
+    "hotmobile": "HOT Mobile",
+    "cellcom":   "Cellcom",
+    "mobile019": "019 Mobile",
+    "xphone":    "XPhone",
+    "wecom":     "We-Com",
+    "neptucom":  "Neptune Mobile",
+    "golan":     "Golan Telecom",
+    "rami_levy": "Rami Levy",
+}
 
-def format_message(changes):
+
+def _carrier_name(carrier, lang="he"):
+    """Carrier/provider display name in the requested language, with graceful
+    fallbacks (global providers are already Latin; unknown ids pass through)."""
+    table = CARRIER_NAMES_EN if lang == "en" else CARRIER_NAMES
+    return table.get(carrier) or GLOBAL_PROVIDER_NAMES.get(carrier) or carrier
+
+
+# Static phrases for the change-notification messages, per language. Hebrew is
+# the default and reproduces the original wording verbatim (pinned by tests).
+_NOTIFY_STRINGS = {
+    "he": {
+        "title_domestic": "📱 השוואת סלולר | עדכון {now}",
+        "title_abroad":   "✈️ חבילות חו\"ל | עדכון {now}",
+        "title_global":   "🌍 חבילות גלובליות | עדכון {now}",
+        "title_content":  "📺 שירותי תוכן | עדכון {now}",
+        "detected":       "🔔 זוהו שינויים ב-{n} {suffix}",
+        "company_1": "חברה", "company_n": "חברות",
+        "provider_1": "ספק",  "provider_n": "ספקים",
+        "service_1": "שירות", "service_n": "שירותים",
+        "new_plan":        "✨ חבילה חדשה: {name} ב-₪{price}",
+        "removed":         "❌ הוסרה: {name}",
+        "extras_benefits": "🔄 שינוי הטבות: {name}",
+        "extras_details":  "🔄 שינוי פרטים: {name}",
+        "details":         "📋 {name}: {new} (היה: {old})",
+        "c_new":   "✨ {carrier}: חדש — {val}",
+        "c_price": "💰 {carrier}: {old} ← {new}",
+        "c_trial": "🎁 {carrier}: ניסיון {old} ← {new}",
+        # Alon's own channel; Flask serves :5000 on his box, so the link is live for him.
+        "footer": "📊 http://localhost:5000",
+    },
+    "en": {
+        "title_domestic": "📱 Cellular plans | update {now}",
+        "title_abroad":   "✈️ Roaming plans | update {now}",
+        "title_global":   "🌍 Global eSIM | update {now}",
+        "title_content":  "📺 Content services | update {now}",
+        "detected":       "🔔 Changes detected at {n} {suffix}",
+        "company_1": "operator", "company_n": "operators",
+        "provider_1": "provider", "provider_n": "providers",
+        "service_1": "service",  "service_n": "services",
+        "new_plan":        "✨ New plan: {name} for ₪{price}",
+        "removed":         "❌ Removed: {name}",
+        "extras_benefits": "🔄 Benefits changed: {name}",
+        "extras_details":  "🔄 Details changed: {name}",
+        "details":         "📋 {name}: {new} (was: {old})",
+        "c_new":   "✨ {carrier}: new — {val}",
+        "c_price": "💰 {carrier}: {old} ← {new}",
+        "c_trial": "🎁 {carrier}: trial {old} ← {new}",
+        # External recipients can't reach localhost — use the public dashboard URL.
+        "footer": "📊 https://mocaintel.com",
+    },
+}
+
+
+def _nstr(lang):
+    """Notification strings for a language, falling back to Hebrew."""
+    return _NOTIFY_STRINGS.get(lang) or _NOTIFY_STRINGS["he"]
+
+
+def format_message(changes, lang="he"):
+    S = _nstr(lang)
     now = datetime.now().strftime("%H:%M")
     by_carrier = defaultdict(list)
     for ch in changes:
         by_carrier[ch["carrier"]].append(ch)
 
     n = len(by_carrier)
-    suffix = "חברה" if n == 1 else "חברות"
+    suffix = S["company_1"] if n == 1 else S["company_n"]
     lines = [
-        f"📱 השוואת סלולר | עדכון {now}",
+        S["title_domestic"].format(now=now),
         "",
-        f"🔔 זוהו שינויים ב-{n} {suffix}",
+        S["detected"].format(n=n, suffix=suffix),
     ]
 
     for carrier, carrier_changes in by_carrier.items():
-        name = CARRIER_NAMES.get(carrier, carrier)
+        name = _carrier_name(carrier, lang)
         lines.append(f"\n● {name}")
         for ch in carrier_changes:
             ct = ch["change_type"]
@@ -65,34 +142,35 @@ def format_message(changes):
                 arrow = "↘" if new < old else "↗"
                 lines.append(f"{arrow} {ch['plan_name']}: ₪{old} ← ₪{new}")
             elif ct == "new_plan":
-                lines.append(f"✨ חבילה חדשה: {ch['plan_name']} ב-₪{ch['new_val']}")
+                lines.append(S["new_plan"].format(name=ch["plan_name"], price=ch["new_val"]))
             elif ct == "removed_plan":
-                lines.append(f"❌ הוסרה: {ch['plan_name']}")
+                lines.append(S["removed"].format(name=ch["plan_name"]))
             elif ct == "extras_change":
-                lines.append(f"🔄 שינוי הטבות: {ch['plan_name']}")
+                lines.append(S["extras_benefits"].format(name=ch["plan_name"]))
             elif ct == "details_change":
-                lines.append(f"📋 {ch['plan_name']}: {ch['new_val']} (היה: {ch['old_val']})")
+                lines.append(S["details"].format(name=ch["plan_name"], new=ch["new_val"], old=ch["old_val"]))
 
-    lines += ["", "📊 http://localhost:5000"]
+    lines += ["", S["footer"]]
     return "\n".join(lines)
 
 
-def format_abroad_message(changes):
+def format_abroad_message(changes, lang="he"):
+    S = _nstr(lang)
     now = datetime.now().strftime("%H:%M")
     by_carrier = defaultdict(list)
     for ch in changes:
         by_carrier[ch["carrier"]].append(ch)
 
     n = len(by_carrier)
-    suffix = "חברה" if n == 1 else "חברות"
+    suffix = S["company_1"] if n == 1 else S["company_n"]
     lines = [
-        f"✈️ חבילות חו\"ל | עדכון {now}",
+        S["title_abroad"].format(now=now),
         "",
-        f"🔔 זוהו שינויים ב-{n} {suffix}",
+        S["detected"].format(n=n, suffix=suffix),
     ]
 
     for carrier, carrier_changes in by_carrier.items():
-        name = CARRIER_NAMES.get(carrier, carrier)
+        name = _carrier_name(carrier, lang)
         lines.append(f"\n● {name}")
         for ch in carrier_changes:
             ct = ch["change_type"]
@@ -104,34 +182,35 @@ def format_abroad_message(changes):
                     arrow = "↕"
                 lines.append(f"{arrow} {ch['plan_name']}: ₪{old} ← ₪{new}")
             elif ct == "new_plan":
-                lines.append(f"✨ חבילה חדשה: {ch['plan_name']} ב-₪{ch['new_val']}")
+                lines.append(S["new_plan"].format(name=ch["plan_name"], price=ch["new_val"]))
             elif ct == "removed_plan":
-                lines.append(f"❌ הוסרה: {ch['plan_name']}")
+                lines.append(S["removed"].format(name=ch["plan_name"]))
             elif ct == "extras_change":
-                lines.append(f"🔄 שינוי פרטים: {ch['plan_name']}")
+                lines.append(S["extras_details"].format(name=ch["plan_name"]))
             elif ct == "details_change":
-                lines.append(f"📋 {ch['plan_name']}: {ch['new_val']} (היה: {ch['old_val']})")
+                lines.append(S["details"].format(name=ch["plan_name"], new=ch["new_val"], old=ch["old_val"]))
 
-    lines += ["", "📊 http://localhost:5000"]
+    lines += ["", S["footer"]]
     return "\n".join(lines)
 
 
-def format_global_message(changes):
+def format_global_message(changes, lang="he"):
+    S = _nstr(lang)
     now = datetime.now().strftime("%H:%M")
     by_provider = defaultdict(list)
     for ch in changes:
         by_provider[ch["carrier"]].append(ch)
 
     n = len(by_provider)
-    suffix = "ספק" if n == 1 else "ספקים"
+    suffix = S["provider_1"] if n == 1 else S["provider_n"]
     lines = [
-        f"🌍 חבילות גלובליות | עדכון {now}",
+        S["title_global"].format(now=now),
         "",
-        f"🔔 זוהו שינויים ב-{n} {suffix}",
+        S["detected"].format(n=n, suffix=suffix),
     ]
 
     for carrier, carrier_changes in by_provider.items():
-        name = GLOBAL_PROVIDER_NAMES.get(carrier, carrier)
+        name = _carrier_name(carrier, lang)
         lines.append(f"\n● {name}")
         for ch in carrier_changes:
             ct = ch["change_type"]
@@ -143,45 +222,46 @@ def format_global_message(changes):
                     arrow = "↕"
                 lines.append(f"{arrow} {ch['plan_name']}: ₪{old} ← ₪{new}")
             elif ct == "new_plan":
-                lines.append(f"✨ חבילה חדשה: {ch['plan_name']} ב-₪{ch['new_val']}")
+                lines.append(S["new_plan"].format(name=ch["plan_name"], price=ch["new_val"]))
             elif ct == "removed_plan":
-                lines.append(f"❌ הוסרה: {ch['plan_name']}")
+                lines.append(S["removed"].format(name=ch["plan_name"]))
             elif ct == "extras_change":
-                lines.append(f"🔄 שינוי פרטים: {ch['plan_name']}")
+                lines.append(S["extras_details"].format(name=ch["plan_name"]))
             elif ct == "details_change":
-                lines.append(f"📋 {ch['plan_name']}: {ch['new_val']} (היה: {ch['old_val']})")
+                lines.append(S["details"].format(name=ch["plan_name"], new=ch["new_val"], old=ch["old_val"]))
 
-    lines += ["", "📊 http://localhost:5000"]
+    lines += ["", S["footer"]]
     return "\n".join(lines)
 
 
-def format_content_message(changes):
+def format_content_message(changes, lang="he"):
+    S = _nstr(lang)
     now = datetime.now().strftime("%H:%M")
     by_service = defaultdict(list)
     for ch in changes:
         by_service[ch["service"]].append(ch)
 
     n = len(by_service)
-    suffix = "שירות" if n == 1 else "שירותים"
+    suffix = S["service_1"] if n == 1 else S["service_n"]
     lines = [
-        f"📺 שירותי תוכן | עדכון {now}",
+        S["title_content"].format(now=now),
         "",
-        f"🔔 זוהו שינויים ב-{n} {suffix}",
+        S["detected"].format(n=n, suffix=suffix),
     ]
 
     for service, service_changes in by_service.items():
         lines.append(f"\n● {service}")
         for ch in service_changes:
             ct = ch["change_type"]
-            carrier_name = CARRIER_NAMES.get(ch.get("carrier", ""), ch.get("carrier", ""))
+            carrier_name = _carrier_name(ch.get("carrier", ""), lang)
             if ct == "price_change":
-                lines.append(f"💰 {carrier_name}: {ch['old_val']} ← {ch['new_val']}")
+                lines.append(S["c_price"].format(carrier=carrier_name, old=ch["old_val"], new=ch["new_val"]))
             elif ct == "new_service":
-                lines.append(f"✨ {carrier_name}: חדש — {ch['new_val']}")
+                lines.append(S["c_new"].format(carrier=carrier_name, val=ch["new_val"]))
             elif ct == "trial_change":
-                lines.append(f"🎁 {carrier_name}: ניסיון {ch['old_val']} ← {ch['new_val']}")
+                lines.append(S["c_trial"].format(carrier=carrier_name, old=ch["old_val"], new=ch["new_val"]))
 
-    lines += ["", "📊 http://localhost:5000"]
+    lines += ["", S["footer"]]
     return "\n".join(lines)
 
 
@@ -192,6 +272,61 @@ _DIGEST_CATEGORY_LABELS = {
     "content":   "🎬 שירותי תוכן",
     "resellers": "🏷️ מתחת לקו (משווקים)",
 }
+
+_DIGEST_CATEGORY_LABELS_EN = {
+    "domestic":  "📱 Domestic plans",
+    "abroad":    "✈️ Roaming plans",
+    "global":    "🌍 Global eSIM",
+    "content":   "🎬 Content services",
+    "resellers": "🏷️ Below-the-line (resellers)",
+}
+
+
+def _digest_category_label(cat, lang="he"):
+    table = _DIGEST_CATEGORY_LABELS_EN if lang == "en" else _DIGEST_CATEGORY_LABELS
+    return table.get(cat, cat)
+
+
+# Static phrases for the morning digest. Hebrew reproduces the original wording
+# verbatim (pinned by tests/test_morning_check.py).
+_DIGEST_STRINGS = {
+    "he": {
+        "title": "☀️ MOCA — בדיקת בוקר {today}",
+        "none":  "✅ לא זוהו שינויים בחבילות ב-{h} השעות האחרונות.",
+        "count": "🔔 {total} שינויים ב-{h} השעות האחרונות:",
+        "more":  "…ועוד {n} שינויים",
+        "fresh_hdr":     "⚠️ אזהרת רעננות — ייתכן שהסקרייפר נשבר ({n}):",
+        "fresh_zero":    "• {carrier} ({cat}): 0 חבילות במסד",
+        "fresh_stale":   "• {carrier} ({cat}): לא נסרק כבר {h} שעות",
+        "fresh_unknown": "• {carrier} ({cat}): מועד סריקה אחרון לא ידוע",
+        "more_warn":     "…ועוד {n} אזהרות",
+        "cl_new":     "✨ {carrier} · חבילה חדשה: {name}{suffix}",
+        "cl_removed": "❌ {carrier} · הוסרה: {name}",
+        "cl_extras":  "🔄 {carrier} · שינוי הטבות: {name}",
+        "cl_details": "📋 {carrier} · {name}: {new} (היה: {old})",
+        "cl_other":   "• {carrier} · {name}: {ct}",
+    },
+    "en": {
+        "title": "☀️ MOCA — morning check {today}",
+        "none":  "✅ No plan changes in the last {h} hours.",
+        "count": "🔔 {total} changes in the last {h} hours:",
+        "more":  "…and {n} more changes",
+        "fresh_hdr":     "⚠️ Freshness warning — a scraper may be broken ({n}):",
+        "fresh_zero":    "• {carrier} ({cat}): 0 plans in DB",
+        "fresh_stale":   "• {carrier} ({cat}): not scraped for {h} hours",
+        "fresh_unknown": "• {carrier} ({cat}): last scrape time unknown",
+        "more_warn":     "…and {n} more warnings",
+        "cl_new":     "✨ {carrier} · New plan: {name}{suffix}",
+        "cl_removed": "❌ {carrier} · Removed: {name}",
+        "cl_extras":  "🔄 {carrier} · Benefits changed: {name}",
+        "cl_details": "📋 {carrier} · {name}: {new} (was: {old})",
+        "cl_other":   "• {carrier} · {name}: {ct}",
+    },
+}
+
+
+def _digest_str(lang):
+    return _DIGEST_STRINGS.get(lang) or _DIGEST_STRINGS["he"]
 
 # Display names for below-the-line sources (reseller_id → Hebrew label).
 # Keep in sync with RESELLERS in DashboardPage.jsx.
@@ -221,14 +356,17 @@ _DIGEST_MAX_LINES_PER_CATEGORY = 15
 _DIGEST_MAX_FRESHNESS_LINES = 12
 
 
-def _digest_carrier_name(carrier_id):
-    return (CARRIER_NAMES.get(carrier_id) or GLOBAL_PROVIDER_NAMES.get(carrier_id)
+def _digest_carrier_name(carrier_id, lang="he"):
+    base = CARRIER_NAMES_EN if lang == "en" else CARRIER_NAMES
+    return (base.get(carrier_id) or GLOBAL_PROVIDER_NAMES.get(carrier_id)
             or RESELLER_NAMES.get(carrier_id) or carrier_id)
 
 
-def _digest_change_line(ch):
-    carrier = _digest_carrier_name(ch.get("carrier", ""))
-    # Below-the-line rows: show the source too — "טיבר · פלאפון"
+def _digest_change_line(ch, lang="he"):
+    S = _digest_str(lang)
+    carrier = _digest_carrier_name(ch.get("carrier", ""), lang)
+    # Below-the-line rows: show the source too — "טיבר · פלאפון" (reseller
+    # brand names have no English form, so they stay as-is).
     if ch.get("reseller_id"):
         source = RESELLER_NAMES.get(ch["reseller_id"], ch["reseller_id"])
         carrier = f"{source} · {carrier}"
@@ -245,18 +383,19 @@ def _digest_change_line(ch):
     if ct == "new_plan":
         price = ch.get("new_val")
         suffix = f" (₪{price})" if price not in (None, "") else ""
-        return f"✨ {carrier} · חבילה חדשה: {name}{suffix}"
+        return S["cl_new"].format(carrier=carrier, name=name, suffix=suffix)
     if ct == "removed_plan":
-        return f"❌ {carrier} · הוסרה: {name}"
+        return S["cl_removed"].format(carrier=carrier, name=name)
     if ct == "extras_change":
-        return f"🔄 {carrier} · שינוי הטבות: {name}"
+        return S["cl_extras"].format(carrier=carrier, name=name)
     if ct == "details_change":
-        return f"📋 {carrier} · {name}: {ch.get('new_val')} (היה: {ch.get('old_val')})"
-    return f"• {carrier} · {name}: {ct}"
+        return S["cl_details"].format(carrier=carrier, name=name,
+                                      new=ch.get("new_val"), old=ch.get("old_val"))
+    return S["cl_other"].format(carrier=carrier, name=name, ct=ct)
 
 
-def format_morning_digest(summary, freshness_warnings=None, within_hours=26):
-    """Hebrew morning digest of every change recorded in the last N hours.
+def format_morning_digest(summary, freshness_warnings=None, within_hours=26, lang="he"):
+    """Morning digest of every change recorded in the last N hours (he/en).
 
     Always returns a message — an explicit "no changes" included — so the
     morning check doubles as a daily heartbeat: if the message doesn't arrive,
@@ -269,39 +408,40 @@ def format_morning_digest(summary, freshness_warnings=None, within_hours=26):
                             hours_ago} for carriers whose data is stale/empty
         within_hours: the lookback window, echoed in the message
     """
+    S = _digest_str(lang)
     today = datetime.now().strftime("%d/%m/%Y")
     total = sum(len(v) for v in (summary or {}).values())
-    lines = [f"☀️ MOCA — בדיקת בוקר {today}", ""]
+    lines = [S["title"].format(today=today), ""]
 
     if total == 0:
-        lines.append(f"✅ לא זוהו שינויים בחבילות ב-{within_hours} השעות האחרונות.")
+        lines.append(S["none"].format(h=within_hours))
     else:
-        lines.append(f"🔔 {total} שינויים ב-{within_hours} השעות האחרונות:")
+        lines.append(S["count"].format(total=total, h=within_hours))
         for cat in ("domestic", "abroad", "global", "content", "resellers"):
             changes = (summary or {}).get(cat) or []
             if not changes:
                 continue
-            lines += ["", f"{_DIGEST_CATEGORY_LABELS[cat]} ({len(changes)})"]
+            lines += ["", f"{_digest_category_label(cat, lang)} ({len(changes)})"]
             for ch in changes[:_DIGEST_MAX_LINES_PER_CATEGORY]:
-                lines.append(_digest_change_line(ch))
+                lines.append(_digest_change_line(ch, lang))
             hidden = len(changes) - _DIGEST_MAX_LINES_PER_CATEGORY
             if hidden > 0:
-                lines.append(f"…ועוד {hidden} שינויים")
+                lines.append(S["more"].format(n=hidden))
 
     if freshness_warnings:
-        lines += ["", f"⚠️ אזהרת רעננות — ייתכן שהסקרייפר נשבר ({len(freshness_warnings)}):"]
+        lines += ["", S["fresh_hdr"].format(n=len(freshness_warnings))]
         for w in freshness_warnings[:_DIGEST_MAX_FRESHNESS_LINES]:
-            carrier = _digest_carrier_name(w.get("carrier", ""))
-            cat_label = _DIGEST_CATEGORY_LABELS.get(w.get("category", ""), w.get("category", ""))
+            carrier = _digest_carrier_name(w.get("carrier", ""), lang)
+            cat_label = _digest_category_label(w.get("category", ""), lang)
             if not w.get("count"):
-                lines.append(f"• {carrier} ({cat_label}): 0 חבילות במסד")
+                lines.append(S["fresh_zero"].format(carrier=carrier, cat=cat_label))
             elif w.get("hours_ago") is not None:
-                lines.append(f"• {carrier} ({cat_label}): לא נסרק כבר {int(w['hours_ago'])} שעות")
+                lines.append(S["fresh_stale"].format(carrier=carrier, cat=cat_label, h=int(w["hours_ago"])))
             else:
-                lines.append(f"• {carrier} ({cat_label}): מועד סריקה אחרון לא ידוע")
+                lines.append(S["fresh_unknown"].format(carrier=carrier, cat=cat_label))
         hidden = len(freshness_warnings) - _DIGEST_MAX_FRESHNESS_LINES
         if hidden > 0:
-            lines.append(f"…ועוד {hidden} אזהרות")
+            lines.append(S["more_warn"].format(n=hidden))
 
     lines += ["", "📊 https://mocaintel.com"]
     return "\n".join(lines)
@@ -581,7 +721,15 @@ def send_email_report(excel_bytes: bytes, config: dict) -> bool:
     )
 
 
-def send_push_notifications(changes, config, db_path=None):
+def _push_payload(n_changes, n_carriers, lang="he"):
+    if lang == "en":
+        title, body = "MOCA Cellular", f"{n_changes} changes across {n_carriers} operators"
+    else:
+        title, body = "השוואת סלולר", f"זוהו {n_changes} שינויים ב-{n_carriers} חברות"
+    return json.dumps({"title": title, "body": body}, ensure_ascii=False)
+
+
+def send_push_notifications(changes, config, db_path=None, lang="he"):
     """Send Web Push notifications to all subscribed devices."""
     from db import get_push_subscriptions, delete_push_subscription
     try:
@@ -594,9 +742,6 @@ def send_push_notifications(changes, config, db_path=None):
     subscriptions = get_push_subscriptions(db_path=db_path)
     if not subscriptions:
         return 0
-    n_carriers = len({c["carrier"] for c in changes})
-    body = f"זוהו {len(changes)} שינויים ב-{n_carriers} חברות"
-    payload = json.dumps({"title": "השוואת סלולר", "body": body}, ensure_ascii=False)
     vapid_email = config.get("vapid_email", "mailto:alon.yoch@gmail.com")
     sent, stale = 0, []
     for sub in subscriptions:
@@ -605,8 +750,7 @@ def send_push_notifications(changes, config, db_path=None):
         if not visible:
             continue
         n_c = len({c["carrier"] for c in visible})
-        body = f"זוהו {len(visible)} שינויים ב-{n_c} חברות"
-        pld = json.dumps({"title": "השוואת סלולר", "body": body}, ensure_ascii=False)
+        pld = _push_payload(len(visible), n_c, lang)
         sub_info = {"endpoint": sub["endpoint"], "keys": sub["keys"]}
         try:
             webpush(

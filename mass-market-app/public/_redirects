@@ -1,6 +1,8 @@
 # Netlify routing (read from dist/_redirects — works with manual drag-deploy,
 # unlike netlify.toml which lives outside dist/).
 # "/" serves the pure-static prerendered marketing page (instant paint, no SPA
-# boot); every other path falls through to the SPA (index.html).
+# boot); "/hotels" serves the prerendered+hydrated Guest Connect marketing page;
+# every other path falls through to the SPA (index.html).
 /            /landing.html   200!
+/hotels      /hotels.html    200!
 /*           /index.html     200

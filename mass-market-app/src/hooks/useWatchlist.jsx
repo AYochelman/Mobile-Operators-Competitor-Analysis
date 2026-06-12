@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { api } from '../lib/api'
 import { useAuth } from './useAuth'
 
@@ -6,13 +6,40 @@ const WatchlistContext = createContext(null)
 
 const keyOf = (p) => `${p.plan_type}|${p.carrier}|${p.plan_name}`
 
+const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000
+
+// `changed_at` is written server-side as `datetime.now().isoformat()` — LOCAL
+// time, 'T' separator, no 'Z'. We store the "seen" cutoff in the same shape so a
+// plain lexical string compare (which is what we use below) stays correct at
+// second granularity instead of skewing by the UTC offset (toISOString would).
+const localIso = (d = new Date()) => {
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
+const defaultSeen = () => localIso(new Date(Date.now() - SEVEN_DAYS))
+
+// Per-user "last acknowledged" timestamp for watched-plan changes (localStorage).
+// The sidebar badge counts changes newer than this; the watchlist alerts tab
+// clears it via markChangesSeen() so the badge doesn't nag forever.
+const seenKey = (user) => `moca_watchlist_seen_${user?.id || user?.email || 'anon'}`
+const readSeen = (user) => { try { return localStorage.getItem(seenKey(user)) } catch { return null } }
+const writeSeen = (user, iso) => { try { localStorage.setItem(seenKey(user), iso) } catch { /* ignore */ } }
+
 export function WatchlistProvider({ children }) {
   const { user } = useAuth()
   const [items, setItems] = useState([])
   const [loaded, setLoaded] = useState(false)
-  const [changesCount, setChangesCount] = useState(0)
-  // Cache recent changes so we don't re-fetch on every watchlist toggle
-  const recentChangesRef = useRef([])
+  const [changes, setChanges] = useState([])
+  const [changesReady, setChangesReady] = useState(false)
+  // "Seen" cutoff — watched-plan changes newer than this are unread. Defaults to
+  // 7 days ago for a fresh browser (matches the previous badge behavior) until
+  // the user acknowledges them; persisted per user once acknowledged.
+  const [lastSeen, setLastSeen] = useState(defaultSeen)
+
+  // Load the persisted "seen" timestamp once the user is known
+  useEffect(() => {
+    setLastSeen(readSeen(user) || defaultSeen())
+  }, [user])
 
   const load = useCallback(async () => {
     if (!user) { setItems([]); setLoaded(true); return }
@@ -28,29 +55,41 @@ export function WatchlistProvider({ children }) {
 
   useEffect(() => { load() }, [load])
 
-  // Fetch changes data once when user loads — stored in ref, never triggers re-fetches
+  // Fetch recent changes once when the user loads. Shared with the watchlist
+  // alerts tab so the badge and the list always agree.
   useEffect(() => {
-    if (!user) return
-    const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    if (!user) { setChanges([]); setChangesReady(true); return }
+    let cancelled = false
+    setChangesReady(false)
     Promise.all([
       api.getChanges(100).catch(() => []),
       api.getAbroadChanges().catch(() => []),
       api.getGlobalChanges().catch(() => []),
     ]).then(([domestic, abroad, global]) => {
-      recentChangesRef.current = [
+      if (cancelled) return
+      setChanges([
         ...(Array.isArray(domestic) ? domestic : []).map(c => ({ ...c, plan_type: 'domestic' })),
         ...(Array.isArray(abroad) ? abroad : []).map(c => ({ ...c, plan_type: 'abroad' })),
         ...(Array.isArray(global) ? global : []).map(c => ({ ...c, plan_type: 'global' })),
-      ].filter(c => c.changed_at >= cutoff)
+      ])
+      setChangesReady(true)
     })
+    return () => { cancelled = true }
   }, [user])
 
-  // Recompute count from cached data whenever items changes — no extra network calls
-  useEffect(() => {
-    if (!loaded || items.length === 0) { setChangesCount(0); return }
+  // Unread = watched-plan changes newer than the acknowledged cutoff
+  const changesCount = useMemo(() => {
+    if (!loaded || items.length === 0) return 0
     const watchedKeys = new Set(items.map(keyOf))
-    setChangesCount(recentChangesRef.current.filter(c => watchedKeys.has(keyOf(c))).length)
-  }, [loaded, items])
+    return changes.filter(c => watchedKeys.has(keyOf(c)) && (c.changed_at || '') > lastSeen).length
+  }, [loaded, items, changes, lastSeen])
+
+  // Acknowledge everything up to "now" — future changes still surface
+  const markChangesSeen = useCallback(() => {
+    const now = localIso()
+    setLastSeen(now)
+    writeSeen(user, now)
+  }, [user])
 
   const keys = new Set(items.map(keyOf))
   const isWatched = (plan) => keys.has(keyOf(plan))
@@ -68,7 +107,7 @@ export function WatchlistProvider({ children }) {
   }
 
   return (
-    <WatchlistContext.Provider value={{ items, loaded, isWatched, toggle, reload: load, changesCount }}>
+    <WatchlistContext.Provider value={{ items, loaded, isWatched, toggle, reload: load, changes, changesReady, changesCount, lastSeen, markChangesSeen }}>
       {children}
     </WatchlistContext.Provider>
   )

@@ -1,8 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<!-- Public marketing pages only. Each language variant is its own <url> and lists
+     ALL alternates (incl. itself) per Google's hreflang-in-sitemap spec. The app
+     (dashboard, admin, auth) is intentionally excluded — it is login-gated. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://mocaintel.com/</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://mocaintel.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mocaintel.com/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mocaintel.com/"/>
+    <lastmod>2026-06-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://mocaintel.com/?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://mocaintel.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mocaintel.com/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mocaintel.com/"/>
+    <lastmod>2026-06-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mocaintel.com/hotels</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://mocaintel.com/hotels"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mocaintel.com/hotels?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mocaintel.com/hotels"/>
+    <lastmod>2026-06-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mocaintel.com/hotels?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://mocaintel.com/hotels"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mocaintel.com/hotels?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mocaintel.com/hotels"/>
+    <lastmod>2026-06-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
 </urlset>

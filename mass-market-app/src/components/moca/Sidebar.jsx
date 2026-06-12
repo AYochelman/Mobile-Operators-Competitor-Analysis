@@ -311,7 +311,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         <NavItem to="/history" icon={Icons.history} label="היסטוריית שינויים" isActive={isPath('/history')} onAfterNav={afterNav} />
         {visible('/alerts') && (
           <NavItem
-            to="/alerts"
+            to={changesCount > 0 ? '/alerts?tab=watchlist' : '/alerts'}
             icon={Icons.alerts}
             label="התראות"
             badge={changesCount > 0 ? (changesCount > 99 ? '99+' : changesCount) : null}

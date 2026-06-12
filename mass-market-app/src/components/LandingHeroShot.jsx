@@ -12,7 +12,7 @@ import bannersWall from '../assets/banners-wall.webp'
 const REST = 'rotateY(-13deg) rotateX(8deg)'
 const MAX = 20 // deg — strengthened a touch per user; still legible
 
-export default function LandingHeroShot() {
+export default function LandingHeroShot({ alt = 'מערכת MOCA — קיר הבאנרים של המתחרים בזמן אמת' }) {
   const stageRef = useRef(null)
   const frameRef = useRef(null)
 
@@ -35,7 +35,7 @@ export default function LandingHeroShot() {
       <style>{CSS}</style>
       <div className="lhs-frame" ref={frameRef} style={{ transform: REST }}>
         <div className="lhs-shot">
-          <img src={bannersWall} alt="מערכת MOCA — קיר הבאנרים של המתחרים בזמן אמת"
+          <img src={bannersWall} alt={alt}
                width="1100" height="957" loading="eager" decoding="async" />
           <div className="lhs-glare" />
         </div>

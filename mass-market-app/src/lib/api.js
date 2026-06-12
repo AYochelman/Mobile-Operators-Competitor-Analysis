@@ -128,6 +128,15 @@ export const api = {
   getOfficialCost:       (days = 30) =>
     fetchApi(`/api/usage/official-cost?days=${days}`),
 
+  // Notification message language (he|en) — applies to Telegram / WhatsApp /
+  // Web Push / Slack + the morning digest. Admin only.
+  getNotificationSettings: () => fetchApi('/api/settings/notifications'),
+  setNotificationSettings: (notify_lang) =>
+    fetchApi('/api/settings/notifications', {
+      method: 'POST',
+      body: JSON.stringify({ notify_lang }),
+    }),
+
   // Push — JWT auth
   getVapidKey: () => fetchApi('/api/push/vapid-public-key'),
   subscribe:   (sub) => fetchApi('/api/push/subscribe', { method: 'POST', body: JSON.stringify(sub) }),

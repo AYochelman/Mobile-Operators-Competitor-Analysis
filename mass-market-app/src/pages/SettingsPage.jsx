@@ -19,9 +19,37 @@ export default function SettingsPage() {
   const [quota, setQuota] = useState(null)
   const prevScrapingRef = useRef(false)
 
+  // Notification message language (he/en) — a global operator setting that
+  // applies to every push channel (Telegram / WhatsApp / Web Push / Slack) and
+  // the morning digest. Super-admin only.
+  const [notifyLang, setNotifyLang]             = useState('he')
+  const [notifyLangSaving, setNotifyLangSaving] = useState(false)
+
   useEffect(() => {
     api.getRefreshQuota().then(setQuota).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!isSuperAdmin) return
+    api.getNotificationSettings()
+      .then(r => setNotifyLang(r?.notify_lang === 'en' ? 'en' : 'he'))
+      .catch(() => {})
+  }, [isSuperAdmin])
+
+  async function changeNotifyLang(lang) {
+    if (lang === notifyLang || notifyLangSaving) return
+    const prev = notifyLang
+    setNotifyLang(lang)              // optimistic
+    setNotifyLangSaving(true)
+    try {
+      const r = await api.setNotificationSettings(lang)
+      setNotifyLang(r?.notify_lang === 'en' ? 'en' : 'he')
+    } catch {
+      setNotifyLang(prev)           // revert on failure
+    } finally {
+      setNotifyLangSaving(false)
+    }
+  }
 
   useEffect(() => {
     if (!scraping && prevScrapingRef.current) {
@@ -331,6 +359,32 @@ export default function SettingsPage() {
               <p>התראות: Telegram + Web Push בלבד על שינויים</p>
             </div>
           </div>
+
+          {isSuperAdmin && (
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <h2 className="font-bold text-sm mb-1">שפת ההתראות</h2>
+              <p className="text-xs text-gray-400 mb-3">
+                השפה של הודעות השינויים בכל הערוצים — Telegram · WhatsApp · Web Push · Slack ותקציר הבוקר.
+                שמות החבילות הנסרקות נשארים בשפת המקור.
+              </p>
+              <div className="inline-flex rounded-full border border-[#d4bfa8] overflow-hidden">
+                {[['he', 'עברית'], ['en', 'English']].map(([code, label]) => (
+                  <button
+                    key={code}
+                    onClick={() => changeNotifyLang(code)}
+                    disabled={notifyLangSaving}
+                    className={`px-5 py-1.5 text-sm font-medium transition-colors disabled:opacity-60
+                      ${notifyLang === code
+                        ? 'bg-moca-bolt text-white'
+                        : 'bg-white text-moca-bolt hover:bg-moca-cream'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {notifyLangSaving && <p className="text-xs text-gray-400 mt-2">שומר…</p>}
+            </div>
+          )}
         </>
       )}
 

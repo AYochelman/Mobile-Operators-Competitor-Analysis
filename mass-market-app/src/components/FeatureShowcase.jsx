@@ -15,7 +15,7 @@ function FeatureRow({ ic, h, p, img, overlay, flip, w, h2, ow, oh }) {
   const src = img || featPlaceholder
   return (
     <div className={`flex flex-col gap-7 lg:gap-14 items-center ${flip ? 'lg:flex-row-reverse' : 'lg:flex-row'}`}>
-      <div className="lg:w-[44%] text-right">
+      <div className="lg:w-[44%] text-start">
         <div className="w-12 h-12 rounded-[14px] grid place-items-center text-2xl bg-moca-cream mb-4"
              style={{ boxShadow: 'var(--sh-card)' }}>{ic}</div>
         <h3 className="font-display text-2xl md:text-[26px] text-moca-dark mb-2.5">{h}</h3>

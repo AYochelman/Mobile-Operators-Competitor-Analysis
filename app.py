@@ -2355,7 +2355,8 @@ def run_morning_check_job(send=True):
                 warnings.append({"carrier": cid, "category": "domestic", "count": 0,
                                  "last_scraped": None, "hours_ago": None})
 
-    message = format_morning_digest(summary, warnings, within_hours=within)
+    message = format_morning_digest(summary, warnings, within_hours=within,
+                                    lang=config.get("notify_lang", "he"))
     sent = {"telegram": False, "whatsapp": False}
     if send:
         sent["telegram"] = send_notification(message, config)
@@ -5067,6 +5068,43 @@ def api_usage_set_budget():
     return jsonify(_claude_budget_block(summary, _db_path()))
 
 
+@app.route('/api/settings/notifications', methods=['GET'])
+@require_api_key_or_super_admin
+def api_get_notification_settings():
+    """Global notification settings — currently just the message language."""
+    cfg = load_config()
+    return jsonify({"notify_lang": cfg.get("notify_lang", "he")})
+
+
+@app.route('/api/settings/notifications', methods=['POST'])
+@require_api_key_or_super_admin
+def api_set_notification_settings():
+    """Set the notification message language (he|en).
+
+    Applies to every push channel — Telegram / WhatsApp / Web Push / Slack —
+    and the morning digest. The scrape/digest jobs re-read config.json each run,
+    so the change takes effect on the next notification with no restart. Scraped
+    plan names and detail texts stay in their original language (real product
+    strings); only the framing is localized.
+    """
+    if not os.path.exists(CONFIG_PATH):
+        return jsonify({"error": "config.json is not writable in this deployment"}), 400
+    data = request.get_json(silent=True) or {}
+    lang = str(data.get("notify_lang") or "").strip().lower()
+    if lang not in ("he", "en"):
+        return jsonify({"error": "notify_lang must be 'he' or 'en'"}), 400
+    try:
+        with open(CONFIG_PATH, encoding="utf-8") as f:
+            cfg = json.load(f)
+        cfg["notify_lang"] = lang
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.warning("notify_lang save failed: %s", e)
+        return jsonify({"error": "could not save settings"}), 500
+    return jsonify({"notify_lang": lang})
+
+
 @app.route('/api/usage/official-cost')
 @require_api_key_or_super_admin
 def api_usage_official_cost():
@@ -5167,15 +5205,18 @@ if __name__ == "__main__":
     def run_scrape_job():
         logger.info("Starting scheduled scrape...")
         config = load_config()
+        # Notification language (he/en) — a global operator setting that applies
+        # to every push channel alike: Telegram / WhatsApp / Web Push / Slack.
+        notify_lang = config.get("notify_lang", "he")
 
         # Helper: broadcast a notification to every workspace that has a Slack/Teams webhook
         # configured. The mvno_carrier of each workspace is treated as their "self" carrier
         # and changes for that carrier are filtered out (they don't want to see themselves).
-        def _broadcast_workspace_slack(changes_list, plan_type_label):
+        def _broadcast_workspace_slack(changes_list, plan_type_label, lang="he"):
             if not changes_list:
                 return 0
             try:
-                from notifier import send_slack
+                from notifier import send_slack, _carrier_name
                 conn = _supabase_conn()
                 cur = conn.cursor()
                 cur.execute("SELECT name, mvno_carrier, brand_config FROM public.workspaces WHERE active IS NOT FALSE")
@@ -5194,18 +5235,21 @@ if __name__ == "__main__":
                 relevant = [c for c in changes_list if not mvno or c.get('carrier') != mvno]
                 if not relevant:
                     continue
-                lines = [f"📡 MOCA — שינויים ב{plan_type_label} ({len(relevant)})"]
+                header = (f"📡 MOCA — {plan_type_label} changes ({len(relevant)})" if lang == "en"
+                          else f"📡 MOCA — שינויים ב{plan_type_label} ({len(relevant)})")
+                lines = [header]
                 for c in relevant[:15]:
                     ctype = c.get('change_type', '')
                     label = {'price_change': '💰', 'new_plan': '🆕', 'removed_plan': '❌'}.get(ctype, '•')
                     name = c.get('plan_name') or ''
-                    carrier = c.get('carrier') or ''
+                    carrier = _carrier_name(c.get('carrier') or '', lang)
                     if ctype == 'price_change':
                         lines.append(f"{label} {carrier} · {name}: ₪{c.get('old_val')} → ₪{c.get('new_val')}")
                     else:
                         lines.append(f"{label} {carrier} · {name}")
                 if len(relevant) > 15:
-                    lines.append(f"_+{len(relevant) - 15} שינויים נוספים_")
+                    extra = len(relevant) - 15
+                    lines.append(f"_+{extra} more changes_" if lang == "en" else f"_+{extra} שינויים נוספים_")
                 if send_slack("\n".join(lines), webhook):
                     sent += 1
             return sent
@@ -5225,14 +5269,15 @@ if __name__ == "__main__":
             fresh = filter_already_notified(changes, 'changes')
             if fresh:
                 save_changes(fresh)
-                msg = format_message(fresh)
+                msg = format_message(fresh, notify_lang)
                 ok_tg = send_notification(msg, config)
                 logger.info(f"Telegram (domestic) sent: {ok_tg}")
                 ok_wa = send_whatsapp(msg, config)
                 logger.info(f"WhatsApp sent: {ok_wa}")
-                n_push = send_push_notifications(fresh, config)
+                n_push = send_push_notifications(fresh, config, lang=notify_lang)
                 logger.info(f"Web Push sent: {n_push}")
-                n_slack = _broadcast_workspace_slack(fresh, 'חבילות סלולר')
+                n_slack = _broadcast_workspace_slack(
+                    fresh, 'cellular plans' if notify_lang == 'en' else 'חבילות סלולר', notify_lang)
                 logger.info(f"Slack workspaces notified (domestic): {n_slack}")
             else:
                 if changes:
@@ -5253,10 +5298,11 @@ if __name__ == "__main__":
             fresh_abroad = filter_already_notified(abroad_changes, 'abroad_changes')
             if fresh_abroad:
                 save_abroad_changes(fresh_abroad)
-                abroad_msg = format_abroad_message(fresh_abroad)
+                abroad_msg = format_abroad_message(fresh_abroad, notify_lang)
                 ok_tg_abroad = send_notification(abroad_msg, config)
                 ok_wa_abroad = send_whatsapp(abroad_msg, config)
-                _broadcast_workspace_slack(fresh_abroad, 'חבילות חו"ל')
+                _broadcast_workspace_slack(
+                    fresh_abroad, 'roaming plans' if notify_lang == 'en' else 'חבילות חו"ל', notify_lang)
                 logger.info(f"Telegram (abroad) sent: {ok_tg_abroad}, WhatsApp: {ok_wa_abroad}, changes: {len(fresh_abroad)}")
             else:
                 if abroad_changes:
@@ -5290,10 +5336,11 @@ if __name__ == "__main__":
                 if existing_global_ch:
                     # Seed already saved above; only persist non-seed fresh changes
                     save_global_changes(fresh_global)
-                global_msg = format_global_message(fresh_global)
+                global_msg = format_global_message(fresh_global, notify_lang)
                 ok_tg_global = send_notification(global_msg, config)
                 ok_wa_global = send_whatsapp(global_msg, config)
-                _broadcast_workspace_slack(fresh_global, 'חבילות גלובל (eSIM)')
+                _broadcast_workspace_slack(
+                    fresh_global, 'global eSIM plans' if notify_lang == 'en' else 'חבילות גלובל (eSIM)', notify_lang)
                 logger.info(f"Telegram (global) sent: {ok_tg_global}, WhatsApp: {ok_wa_global}, changes: {len(fresh_global)}")
             else:
                 if global_changes:
@@ -5311,7 +5358,7 @@ if __name__ == "__main__":
             fresh_content = filter_already_notified(content_changes, 'content_changes', key_field='service')
             if fresh_content:
                 save_content_changes(fresh_content)
-                content_msg = format_content_message(fresh_content)
+                content_msg = format_content_message(fresh_content, notify_lang)
                 ok_tg_content = send_notification(content_msg, config)
                 ok_wa_content = send_whatsapp(content_msg, config)
                 logger.info(f"Telegram (content) sent: {ok_tg_content}, WhatsApp: {ok_wa_content}, changes: {len(fresh_content)}")

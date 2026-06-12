@@ -2,15 +2,19 @@ import { useSearchParams } from 'react-router-dom'
 import AlertsPriceTab from '../components/alerts/AlertsPriceTab'
 import AlertsWatchlistTab from '../components/alerts/AlertsWatchlistTab'
 import { PageHeader } from '../components/moca'
-
-const TABS = [
-  { id: 'price',     label: 'התראות מחיר' },
-  { id: 'watchlist', label: 'הגדרות Push ו-Watchlist' },
-]
+import { useWatchlist } from '../hooks/useWatchlist'
 
 export default function AlertsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const { changesCount } = useWatchlist()
   const tab = searchParams.get('tab') === 'watchlist' ? 'watchlist' : 'price'
+
+  // Surface the unread watched-changes count on the watchlist tab so it's clear
+  // where the sidebar/topbar "התראות" badge is pointing.
+  const TABS = [
+    { id: 'price',     label: 'התראות מחיר' },
+    { id: 'watchlist', label: 'הגדרות Push ו-Watchlist', count: changesCount > 0 ? changesCount : undefined },
+  ]
 
   function selectTab(id) {
     setSearchParams(prev => {

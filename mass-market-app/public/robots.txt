@@ -1,5 +1,13 @@
 User-agent: *
 Allow: /
+
+# Login-gated app areas — no value to index (they redirect to /login)
 Disallow: /login
+Disallow: /reset-password
+Disallow: /invite/
+Disallow: /settings
+Disallow: /admin/
+Disallow: /usage
+Disallow: /workspace/
 
 Sitemap: https://mocaintel.com/sitemap.xml

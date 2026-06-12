@@ -432,6 +432,15 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 - Netlify env vars must include: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL, VITE_API_KEY (NOT VITE_DEV_AUTH)
 - All API requests include `ngrok-skip-browser-warning: true` header (legacy from ngrok; harmless/ignored now that ingress is Cloudflare)
 
+### Static prerendered marketing pages (`/` and `/hotels`)
+
+Two public marketing pages are **prerendered to static HTML at build time** so they paint instantly with no SPA boot. The `npm run build` chain (package.json) is: `vite build` → `vite build --ssr src/entry-landing.jsx --outDir dist-ssr` → `node scripts/prerender-landing.mjs` → `vite build --ssr src/entry-hotels.jsx --outDir dist-ssr-hotels` → `node scripts/prerender-hotels.mjs`. Both prerender scripts run **after** `vite build`, so the PWA service worker never precaches their HTML (the SPA routes are the SW / offline / dev fallback). Netlify serves them via `public/_redirects` rules placed BEFORE the SPA catch-all: `/ → /landing.html`, `/hotels → /hotels.html`.
+
+- **`/` → `dist/landing.html`** (`LandingPage.jsx` + `entry-landing.jsx`): **zero JS** — `renderToStaticMarkup` (purely presentational). Bilingual he/en are BOTH rendered into the DOM under `[data-lang-root]`; a vanilla script toggles visibility + recreates the hero tilt. The SPA home moved to `/home`.
+- **`/hotels` → `dist/hotels.html`** (`HotelsLandingPage.jsx` + `entry-hotels.jsx` + `entry-hotels-client.jsx`): **prerender + React hydration** — this page is interactive (live demo iframe picker, ROI calculator sliders, lead form), so it uses `renderToString` and `hydrateRoot(#hotels-root)`. The hydration bundle is a **2nd Vite input** (`vite.config.js` `build.rollupOptions.input['hotels-client']` → `dist/assets/hotels-client-*.js`), located by `prerender-hotels.mjs` via a glob. Its `<head>` is hand-built (self-hosted `/fonts/fonts.css` only — the component is fully self-scoped under `#hl-app`, no Tailwind needed) with a page-specific canonical + hreflang + OG block for shareable previews. **Hydration gotcha**: `HotelsLandingPage` MUST init language deterministically (`useState('he')`, then apply `?lang=` / stored pref in a mount `useEffect`) — otherwise `?lang=en` deep-links make the server markup ('he') differ from the client's first render and React throws a hydration mismatch.
+
+When adding a new prerendered page: add an `entry-<x>.jsx` (SSR) + — if interactive — an `entry-<x>-client.jsx` (hydration, wired into the vite `input` map), a `scripts/prerender-<x>.mjs`, two build-chain steps in package.json, and a `_redirects` rule before the catch-all.
+
 ## Key UI Components
 
 - **SearchableSelect** (`components/ui/SearchableSelect.jsx`): Custom dropdown with search input, renders via React Portal to avoid clipping
@@ -443,4 +452,4 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 
 ## After Every Code Change
 
-Always run `npm run build` in `mass-market-app/` after any React/JS change. The `dist/` folder is deployed to Netlify manually by dragging.
+Always run `npm run build` in `mass-market-app/` after any React/JS change. The `dist/` folder is deployed to Netlify manually by dragging. The build also regenerates the prerendered `/` and `/hotels` static pages — so a change to `LandingPage.jsx` / `HotelsLandingPage.jsx` (or their copy) only goes live after a rebuild + redeploy (see Deployment → Static prerendered marketing pages).

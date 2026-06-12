@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+const r = (p) => fileURLToPath(new URL(p, import.meta.url))
 
 export default defineConfig({
   plugins: [
@@ -39,6 +42,15 @@ export default defineConfig({
   ],
   build: {
     rollupOptions: {
+      // Two client entries: the SPA (index.html) and a standalone hydration
+      // bundle for the prerendered /hotels page. The latter emits
+      // dist/assets/hotels-client-*.js, which scripts/prerender-hotels.mjs wires
+      // into dist/hotels.html. (entry-hotels.jsx is the SSR sibling, built
+      // separately via `vite build --ssr` — it is NOT a client input.)
+      input: {
+        main: r('./index.html'),
+        'hotels-client': r('./src/entry-hotels-client.jsx'),
+      },
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router')) {
