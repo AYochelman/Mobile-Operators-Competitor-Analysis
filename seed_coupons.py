@@ -16,26 +16,52 @@ from db import init_db, upsert_coupon
 # "evergreen / no fixed end date" — flip to a YYYY-MM-DD if the source page says so.
 COUPONS = [
     # ── Saily (NordVPN's eSIM brand) ──────────────────────────────────────
+    # OUR OWN affiliate code (aff_id 14705). Confirmed live for 10% by the Saily
+    # Affiliate Team on 2026-06-16. This is the only Saily code that earns us
+    # commission, so the third-party codes below are disabled (is_active=False).
+    {
+        "carrier": "saily",
+        "code": "MOCA",
+        "discount_label": "10% הנחה",
+        "source_url": "https://saily.com/",
+        "notes": "MOCA's own affiliate coupon (aff_id 14705). Confirmed live for 10% by Saily Affiliate Team 2026-06-16. Earns commission for us.",
+    },
     {
         "carrier": "saily",
         "code": "GIZMODO",
         "discount_label": "15% הנחה",
+        "is_active": False,
         "source_url": "https://gizmodo.com/best-esim-provider/saily-coupon",
-        "notes": "Highest verified Saily discount as of May 2026 (Gizmodo affiliate). Replace with our own code once we register to Saily's partner program.",
+        "notes": "DISABLED 2026-06-16 — superseded by our own MOCA code. Third-party (Gizmodo affiliate), earns us nothing.",
     },
     {
         "carrier": "saily",
         "code": "TECHNOVICE",
         "discount_label": "10% הנחה",
+        "is_active": False,
         "source_url": "https://www.technovice.net/en/post/saily-coupon-codes-2026-tested",
-        "notes": "Backup 10% code in case GIZMODO stops working.",
+        "notes": "DISABLED 2026-06-16 — superseded by our own MOCA code. Third-party, earns us nothing.",
     },
     {
         "carrier": "saily",
         "code": "ESIMP",
         "discount_label": "10% הנחה",
+        "is_active": False,
         "source_url": "https://esimplanet.io/en/promos/saily",
-        "notes": "Backup 10% code.",
+        "notes": "DISABLED 2026-06-16 — superseded by our own MOCA code. Third-party, earns us nothing.",
+    },
+
+    # ── Voye Global ───────────────────────────────────────────────────────
+    # OUR OWN affiliate code (Impact campaign 25196). Confirmed live for 15% by
+    # the Voye Global Affiliate Team on 2026-06-22 ("the coupon code is active
+    # and working, proceed with publishing"). Earns us 15% commission, 30-day
+    # last-click; tracking link wired at /go/voye.
+    {
+        "carrier": "voye",
+        "code": "MOCA",
+        "discount_label": "15% הנחה",
+        "source_url": "https://voyeglobal.com/",
+        "notes": "MOCA's own affiliate coupon (Impact campaign 25196). Confirmed live for 15% customer discount by Voye Global Affiliate Team 2026-06-22. Earns 15% commission (30-day last-click) for us.",
     },
 
     # ── Holafly ───────────────────────────────────────────────────────────
@@ -87,7 +113,7 @@ def main():
             discount_label=c.get("discount_label"),
             expires_at=c.get("expires_at"),
             source_url=c.get("source_url"),
-            is_active=True,
+            is_active=c.get("is_active", True),
             notes=c.get("notes"),
             external_offer_url=c.get("external_offer_url"),
             partner_name=c.get("partner_name"),
