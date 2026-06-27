@@ -40,14 +40,23 @@ HOTELS = [
         "mono": "TLV", "languages": ["en", "he", "fr", "ru"], "default_lang": "en",
         "commission_note": "50/50", "active": True,
     },
+    # ── Abroad demo — localizes the whole portal to Cyprus (eSIM-only, no local
+    #    Israeli SIMs). `country` must match global_plans.extras[0] exactly. ─────
+    {
+        "slug": "demo-cyprus", "name": "Aphrodite Bay Resort",
+        "brand_primary": "#0e3a53", "brand_secondary": "#e0a23b", "brand_bg": "#f1f6f9",
+        "mono": "AB", "languages": ["en", "he", "fr", "ru"], "default_lang": "en",
+        "commission_note": "50/50", "active": True, "country": "קפריסין",
+    },
 ]
 
 
 def main():
     db.init_db()
     for h in HOTELS:
+        h.setdefault("country", "ישראל")  # all existing demos are Israel portals
         row = db.upsert_hotel(h)
-        print(f"  [ok] {row['slug']:<12} {row['name']}")
+        print(f"  [ok] {row['slug']:<12} {row['name']:<24} {row['country']}")
     print(f"Seeded {len(HOTELS)} guest portals.")
 
 

@@ -651,6 +651,14 @@ def init_db(db_path=None):
             conn.commit()
         except Exception:
             pass  # column already exists
+        # Migration: hotel guest-portal destination localization. `country` is the
+        # canonical Hebrew destination (matches global_plans.extras[0]) the portal
+        # filters its eSIM feed to. NULL = legacy rows → treated as 'ישראל'.
+        try:
+            conn.execute("ALTER TABLE hotels ADD COLUMN country TEXT")
+            conn.commit()
+        except Exception:
+            pass  # column already exists
     finally:
         conn.close()
 
@@ -730,7 +738,8 @@ _ISRAEL_HE = "ישראל"  # ישראל — canonical destination value (matches
 
 _HOTEL_COLS = ("slug", "name", "tagline", "brand_primary", "brand_secondary",
                "brand_bg", "logo_url", "mono", "languages", "default_lang",
-               "commission_note", "contact_email", "active", "created_at", "updated_at")
+               "commission_note", "contact_email", "active", "country",
+               "created_at", "updated_at")
 
 
 def _hotel_row_to_dict(r):
@@ -740,14 +749,15 @@ def _hotel_row_to_dict(r):
     except Exception:
         d["languages"] = ["en", "he"]
     d["active"] = bool(d["active"])
+    d["country"] = d.get("country") or "ישראל"  # default: ישראל
     return d
 
 
 def upsert_hotel(data, db_path=None):
     """Create or update a hotel by slug. `data` is a dict; unknown keys ignored.
     Returns the stored hotel dict."""
-    slug = (data.get("slug") or "").strip().lower()
-    if not slug or not (data.get("name") or "").strip():
+    slug = str(data.get("slug") or "").strip().lower()
+    if not slug or not str(data.get("name") or "").strip():
         raise ValueError("slug and name are required")
     now = datetime.now(timezone.utc).isoformat()
     langs = data.get("languages") or ["en", "he"]
@@ -756,8 +766,9 @@ def upsert_hotel(data, db_path=None):
         conn.execute("""
             INSERT INTO hotels (slug, name, tagline, brand_primary, brand_secondary,
                                 brand_bg, logo_url, mono, languages, default_lang,
-                                commission_note, contact_email, active, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                commission_note, contact_email, active, country,
+                                created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(slug) DO UPDATE SET
                 name            = excluded.name,
                 tagline         = excluded.tagline,
@@ -771,14 +782,16 @@ def upsert_hotel(data, db_path=None):
                 commission_note = excluded.commission_note,
                 contact_email   = excluded.contact_email,
                 active          = excluded.active,
+                country         = excluded.country,
                 updated_at      = excluded.updated_at
         """, (
-            slug, data["name"].strip(), data.get("tagline"),
+            slug, str(data["name"]).strip(), data.get("tagline"),
             data.get("brand_primary"), data.get("brand_secondary"), data.get("brand_bg"),
             data.get("logo_url"), data.get("mono"),
             json.dumps(langs, ensure_ascii=False), data.get("default_lang", "en"),
             data.get("commission_note"), data.get("contact_email"),
-            1 if data.get("active", True) else 0, now, now,
+            1 if data.get("active", True) else 0,
+            str(data.get("country") or "ישראל").strip(), now, now,
         ))
         conn.commit()
     finally:
@@ -905,16 +918,19 @@ def get_guest_analytics(slug, days=30, db_path=None):
         conn.close()
 
 
-def get_israel_esim_deals(db_path=None):
-    """Live global eSIM plans that cover Israel — the guest portal's core feed.
-    Returns rows sorted by ILS price (cheapest first)."""
+def get_esim_deals_for_destination(destination=None, db_path=None):
+    """Live global eSIM plans whose destination (extras[0]) is `destination` — the
+    guest portal's core feed. `destination` is the canonical Hebrew country string
+    (e.g. 'ישראל', 'קפריסין'); defaults to Israel. Returns rows sorted by price
+    (cheapest first)."""
+    dest = (destination or _ISRAEL_HE)
     conn = _connect(db_path)
     try:
         rows = conn.execute(
             "SELECT carrier, plan_name, price, currency, original_price, days, data_gb, esim, extras, scraped_at "
             "FROM global_plans WHERE json_extract(extras, '$[0]') = ? AND price IS NOT NULL "
             "ORDER BY price",
-            (_ISRAEL_HE,)
+            (dest,)
         ).fetchall()
         return [
             {"carrier": r[0], "plan_name": r[1], "price": r[2], "currency": r[3],
@@ -922,6 +938,29 @@ def get_israel_esim_deals(db_path=None):
              "extras": json.loads(r[8]) if r[8] else [], "scraped_at": r[9]}
             for r in rows
         ]
+    finally:
+        conn.close()
+
+
+def get_israel_esim_deals(db_path=None):
+    """Back-compat wrapper — Israel-only eSIM feed."""
+    return get_esim_deals_for_destination(_ISRAEL_HE, db_path=db_path)
+
+
+def get_esim_destinations(db_path=None):
+    """Distinct destinations (extras[0]) that currently carry live global-eSIM
+    deals, each with a deal count + cheapest price. Powers the public consumer
+    compare page's destination picker. Sorted by deal count (most-covered first),
+    so the picker can surface the best-served destinations as quick picks."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT json_extract(extras, '$[0]') AS dest, COUNT(*) AS n, MIN(price) AS minp "
+            "FROM global_plans WHERE price IS NOT NULL "
+            "AND dest IS NOT NULL AND dest != '' "
+            "GROUP BY dest ORDER BY n DESC"
+        ).fetchall()
+        return [{"destination": r[0], "count": r[1], "min_price": r[2]} for r in rows]
     finally:
         conn.close()
 

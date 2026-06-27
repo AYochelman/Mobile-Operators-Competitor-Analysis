@@ -64,6 +64,18 @@ COUPONS = [
         "notes": "MOCA's own affiliate coupon (Impact campaign 25196). Confirmed live for 15% customer discount by Voye Global Affiliate Team 2026-06-22. Earns 15% commission (30-day last-click) for us.",
     },
 
+    # ── aloSIM (AffinityClick / Everflow) ─────────────────────────────────
+    # OUR OWN affiliate code (affid 1652, offer 9). Confirmed live for 15% off
+    # first purchase by Celine Solomon (AffinityClick) on 2026-06-23.
+    # Commission: $5 per sale. Tracking link: alosim.com/?oid=9&affid=1652.
+    {
+        "carrier": "alosim",
+        "code": "MOCA",
+        "discount_label": "15% הנחה",
+        "source_url": "https://alosim.com/",
+        "notes": "MOCA's own affiliate coupon (Everflow affid 1652, offer 9). Confirmed 15% off first purchase by Celine Solomon / AffinityClick 2026-06-23. Earns $5/sale commission.",
+    },
+
     # ── Holafly ───────────────────────────────────────────────────────────
     {
         "carrier": "holafly",

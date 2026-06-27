@@ -4100,73 +4100,317 @@ SAILY_SLUG_TO_HEBREW = {
 }
 
 
+# ISO 3166-1 alpha-2 -> Hebrew country name for Saily's Partners API
+# (covered_countries returns ISO codes, not slugs). Derived from the canonical
+# hotelDestinations.js {he, iso} list so extras[0] matches the rest of the system,
+# plus a few non-ISO codes Saily uses (AS/HI/S1/SB/SX/BQ).
+SAILY_ISO_TO_HEBREW = {
+    "AD": "אנדורה",
+    "AE": "איחוד האמירויות",
+    "AF": "אפגניסטן",
+    "AG": "אנטיגואה וברבודה",
+    "AI": "אנגווילה",
+    "AL": "אלבניה",
+    "AM": "ארמניה",
+    "AR": "ארגנטינה",
+    "AS": "סמואה האמריקנית",
+    "AT": "אוסטריה",
+    "AU": "אוסטרליה",
+    "AW": "ארובה",
+    "AZ": "אזרבייג'ן",
+    "BA": "בוסניה והרצגובינה",
+    "BB": "ברבדוס",
+    "BD": "בנגלדש",
+    "BE": "בלגיה",
+    "BF": "בורקינה פאסו",
+    "BG": "בולגריה",
+    "BH": "בחריין",
+    "BJ": "בנין",
+    "BL": "סן ברתלמי",
+    "BM": "ברמודה",
+    "BN": "ברוניי",
+    "BO": "בוליביה",
+    "BQ": "בונייר",
+    "BR": "ברזיל",
+    "BS": "איי הבהאמה",
+    "BW": "בוטסואנה",
+    "BZ": "בליז",
+    "CA": "קנדה",
+    "CD": "הרפובליקה הדמוקרטית של קונגו",
+    "CF": "הרפובליקה המרכז אפריקאית",
+    "CG": "רפובליקת קונגו",
+    "CH": "שוויץ",
+    "CI": "חוף השנהב",
+    "CL": "צ'ילה",
+    "CM": "קמרון",
+    "CN": "סין",
+    "CO": "קולומביה",
+    "CR": "קוסטה ריקה",
+    "CV": "קייפ ורדה",
+    "CW": "קוראסאו",
+    "CY": "קפריסין",
+    "CZ": "צ'כיה",
+    "DE": "גרמניה",
+    "DK": "דנמרק",
+    "DM": "דומיניקה",
+    "DO": "הרפובליקה הדומיניקנית",
+    "DZ": "אלג'יריה",
+    "EC": "אקוודור",
+    "EE": "אסטוניה",
+    "EG": "מצרים",
+    "ES": "ספרד",
+    "FI": "פינלנד",
+    "FJ": "פיג'י",
+    "FO": "איי פארו",
+    "FR": "צרפת",
+    "GA": "גאבון",
+    "GB": "בריטניה",
+    "GD": "גרנדה",
+    "GE": "גאורגיה",
+    "GF": "גיאנה הצרפתית",
+    "GG": "גרנזי",
+    "GH": "גאנה",
+    "GI": "גיברלטר",
+    "GL": "גרינלנד",
+    "GM": "גמביה",
+    "GN": "גינאה",
+    "GP": "גוואדלופ",
+    "GR": "יוון",
+    "GT": "גואטמלה",
+    "GU": "גואם",
+    "GW": "גינאה ביסאו",
+    "GY": "גיאנה",
+    "HI": "הוואי",
+    "HK": "הונג קונג",
+    "HN": "הונדורס",
+    "HR": "קרואטיה",
+    "HT": "האיטי",
+    "HU": "הונגריה",
+    "ID": "אינדונזיה",
+    "IE": "אירלנד",
+    "IL": "ישראל",
+    "IM": "האי מאן",
+    "IN": "הודו",
+    "IQ": "עיראק",
+    "IS": "איסלנד",
+    "IT": "איטליה",
+    "JE": "ג'רזי",
+    "JM": "ג'מייקה",
+    "JO": "ירדן",
+    "JP": "יפן",
+    "KE": "קניה",
+    "KG": "קירגיזסטן",
+    "KH": "קמבודיה",
+    "KN": "סנט קיטס ונוויס",
+    "KR": "דרום קוריאה",
+    "KW": "כוויית",
+    "KY": "איי קיימן",
+    "KZ": "קזחסטן",
+    "LA": "לאוס",
+    "LC": "סנט לוסיה",
+    "LI": "ליכטנשטיין",
+    "LK": "סרי לנקה",
+    "LR": "ליבריה",
+    "LS": "לסוטו",
+    "LT": "ליטא",
+    "LU": "לוקסמבורג",
+    "LV": "לטביה",
+    "MA": "מרוקו",
+    "MC": "מונקו",
+    "MD": "מולדובה",
+    "ME": "מונטנגרו",
+    "MF": "סן מרטן",
+    "MG": "מדגסקר",
+    "MK": "מקדוניה הצפונית",
+    "ML": "מאלי",
+    "MN": "מונגוליה",
+    "MO": "מקאו",
+    "MP": "איי מריאנה הצפוניים",
+    "MQ": "מרטיניק",
+    "MR": "מאוריטניה",
+    "MS": "מונסראט",
+    "MT": "מלטה",
+    "MU": "מאוריציוס",
+    "MV": "האיים המלדיביים",
+    "MW": "מלאווי",
+    "MX": "מקסיקו",
+    "MY": "מלזיה",
+    "MZ": "מוזמביק",
+    "NA": "נמיביה",
+    "NE": "ניג'ר",
+    "NG": "ניגריה",
+    "NI": "ניקראגואה",
+    "NL": "הולנד",
+    "NO": "נורבגיה",
+    "NP": "נפאל",
+    "NR": "נאורו",
+    "NZ": "ניו זילנד",
+    "OM": "עומאן",
+    "PA": "פנמה",
+    "PE": "פרו",
+    "PF": "פולינזיה הצרפתית",
+    "PG": "פפואה גינאה החדשה",
+    "PH": "הפיליפינים",
+    "PK": "פקיסטן",
+    "PL": "פולין",
+    "PR": "פוארטו ריקו",
+    "PT": "פורטוגל",
+    "PY": "פראגוואי",
+    "QA": "קטר",
+    "RE": "ראוניון",
+    "RO": "רומניה",
+    "RS": "סרביה",
+    "RW": "רואנדה",
+    "S1": "האנטילים ההולנדיים",
+    "SA": "ערב הסעודית",
+    "SB": "איי שלמה",
+    "SC": "איי סיישל",
+    "SD": "סודן",
+    "SE": "שבדיה",
+    "SG": "סינגפור",
+    "SI": "סלובניה",
+    "SK": "סלובקיה",
+    "SL": "סיירה ליאונה",
+    "SM": "סן מרינו",
+    "SN": "סנגל",
+    "SR": "סורינאם",
+    "SS": "דרום סודן",
+    "SV": "אל סלבדור",
+    "SX": "סנט מארטן",
+    "SZ": "אסוואטיני",
+    "TC": "איי טורקס וקאיקוס",
+    "TD": "צ'אד",
+    "TG": "טוגו",
+    "TH": "תאילנד",
+    "TJ": "טג'יקיסטן",
+    "TL": "טימור לסטה",
+    "TN": "תוניסיה",
+    "TO": "טונגה",
+    "TR": "טורקיה",
+    "TT": "טרינידד וטובגו",
+    "TW": "טייוואן",
+    "TZ": "טנזניה",
+    "UA": "אוקראינה",
+    "UG": "אוגנדה",
+    "US": "ארצות הברית",
+    "UY": "אורוגוואי",
+    "UZ": "אוזבקיסטן",
+    "VC": "סנט וינסנט והגרדינים",
+    "VE": "ונצואלה",
+    "VG": "איי הבתולה (בריטניה)",
+    "VI": "איי הבתולה (ארה\"ב)",
+    "VN": "וייטנאם",
+    "VU": "ונואטו",
+    "WS": "סמואה",
+    "XK": "קוסובו",
+    "YT": "מאיוט",
+    "ZA": "דרום אפריקה",
+    "ZM": "זמביה",
+    "ZW": "זימבבואה",
+}
+
+# Saily Partners API region codes -> Hebrew (multi-country plans carry `region`).
+SAILY_API_REGION_TO_HEBREW = {
+    "EU":   "אירופה",
+    "GLB":  "גלובלי",
+    "ASA":  "אסיה ואוקיאניה",
+    "NAM":  "צפון אמריקה",
+    "CIS":  "חבר העמים",
+    "LAT":  "אמריקה הלטינית",
+    "MENA": "המזרח התיכון וצפון אפריקה",
+    "AFR":  "אפריקה",
+}
+
+_SAILY_API_URL = "https://web.saily.com/v3/partners/plans?utm_source=moca"
+# Cloudflare in front of web.saily.com fingerprints the client: a plain urllib
+# request 403s, but a browser User-Agent + Referer (via requests) passes.
+_SAILY_API_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://partners.saily.com/",
+}
+_SAILY_API_CACHE = {"ts": 0.0, "items": None}
+
+
+def _fetch_saily_api(force=False):
+    """GET the Saily Partners API once and cache for 10 min (the global and
+    regional scrape fns run in the same cycle and share this). Returns items[]."""
+    import time
+    import requests
+    now = time.time()
+    if not force and _SAILY_API_CACHE["items"] is not None and now - _SAILY_API_CACHE["ts"] < 600:
+        return _SAILY_API_CACHE["items"]
+    resp = requests.get(_SAILY_API_URL, headers=_SAILY_API_HEADERS, timeout=30)
+    resp.raise_for_status()
+    items = (resp.json() or {}).get("items", []) or []
+    _SAILY_API_CACHE["ts"] = now
+    _SAILY_API_CACHE["items"] = items
+    return items
+
+
+def _saily_api_item_to_plan(item, heb_name, usd_rate):
+    """Convert one Saily API plan item into the internal global-plan dict."""
+    bal = next((b for b in (item.get("balances") or []) if b.get("type") == "DATA"), None)
+    if item.get("is_unlimited") or (bal and bal.get("is_unlimited")):
+        gb = None
+    elif bal is not None and bal.get("amount") is not None:
+        gb = bal["amount"]
+    else:
+        return None
+    dur = item.get("duration") or {}
+    if dur.get("unit") != "day" or dur.get("amount") is None:
+        return None
+    days = dur["amount"]
+    # amount_with_tax is in minor units (cents); take the cheapest USD merchant plan.
+    prices = [mp["price"]["amount_with_tax"]
+              for mp in (item.get("merchant_plans") or [])
+              if mp.get("price") and mp["price"].get("amount_with_tax") is not None
+              and mp["price"].get("currency") == "USD"]
+    if not prices:
+        return None
+    price_usd = round(min(prices) / 100.0, 2)
+    price_ils = round(price_usd * usd_rate, 2)
+    if gb is None:
+        gb_str = "ללא הגבלה"
+    elif gb >= 1:
+        gb_str = f"{int(gb)}GB"
+    else:
+        gb_str = f"{round(gb * 1024)}MB"
+    plan_name = f"{heb_name} – {gb_str} – {days} ימים"
+    return _make_global_plan("saily", plan_name, price_ils, "USD", price_usd,
+                             gb, days, esim=True, extras=[heb_name])
+
+
 def scrape_saily_global(_page=None, usd_rate=None):
-    """Scrape Saily eSIM plans from all ~199 country pages."""
+    """Saily single-country eSIM plans via the official Partners API
+    (utm_source=moca). Replaces the old per-country Playwright scrape (~199 page
+    loads, brittle behind Cloudflare) with one JSON call. _page kept for the
+    runner's uniform signature; unused."""
     if usd_rate is None:
         usd_rate = _get_usd_to_ils()
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     all_plans = []
-    JS_EXTRACT = """() => {
-        const plans = [];
-        document.querySelectorAll('[data-testid^="destination-hero-plan-card"]').forEach(card => {
-            const gbEl = card.querySelector('[class*="body-md-medium"]');
-            const gb = gbEl ? gbEl.textContent.trim() : '';
-            let days = '';
-            const daysEls = card.querySelectorAll('[class*="body-sm-medium"]');
-            for (const el of daysEls) {
-                const t = el.textContent.trim();
-                if (t.includes('day')) { days = t; break; }
-            }
-            if (!days) {
-                const sel = card.querySelector('select');
-                if (sel && sel.options.length > 0) {
-                    const opt = sel.options[sel.selectedIndex] || sel.options[0];
-                    days = opt ? opt.text.trim() : '';
-                }
-            }
-            const discEl = card.querySelector('[data-testid="pricing-card-discount-price"]');
-            const origEl = card.querySelector('[data-testid="pricing-card-original-price"]');
-            const priceEl = discEl || origEl;
-            const price = priceEl ? priceEl.textContent.trim() : '';
-            if (gb && days && price) plans.push({gb, days, price});
-        });
-        return plans;
-    }"""
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-        page = browser.new_page(user_agent=ua)
-        for slug, country_heb in SAILY_SLUG_TO_HEBREW.items():
-            try:
-                page.goto(f"https://saily.com/esim-{slug}/", timeout=20000, wait_until="domcontentloaded")
-                page.wait_for_timeout(1500)
-                raw = page.evaluate(JS_EXTRACT)
-                for item in raw:
-                    gb_text    = item["gb"]    # "1 GB", "Unlimited GB"
-                    days_text  = item["days"]  # "7 days", "30 days"
-                    price_text = item["price"] # "US$3.99"
-                    gb   = _parse_gb(gb_text)  # None = unlimited
-                    m    = re.search(r"(\d+)\s*day", days_text)
-                    days = int(m.group(1)) if m else None
-                    price_usd = _parse_price(price_text.replace("US$", "").strip())
-                    if price_usd is None or days is None:
-                        continue
-                    price_ils = round(price_usd * usd_rate, 2)
-                    if gb is None:
-                        gb_str = "\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4"  # ללא הגבלה
-                    elif gb >= 1:
-                        gb_str = f"{int(gb)}GB"
-                    else:
-                        gb_str = f"{round(gb * 1024)}MB"
-                    plan_name = f"{country_heb} \u2013 {gb_str} \u2013 {days} \u05d9\u05de\u05d9\u05dd"  # – N ימים
-                    all_plans.append(_make_global_plan(
-                        "saily", plan_name, price_ils, "USD", price_usd,
-                        gb, days, esim=True, extras=[country_heb]
-                    ))
-            except Exception as exc:
-                logger.warning(f"Saily {slug}: {exc}")
-                continue
-        browser.close()
-    logger.info(f"Saily global: {len(all_plans)} plans from {len(SAILY_SLUG_TO_HEBREW)} countries")
+    unmapped = set()
+    try:
+        items = _fetch_saily_api()
+    except Exception as exc:
+        logger.warning(f"Saily API fetch failed (global): {exc}")
+        return all_plans
+    for item in items:
+        cc = item.get("covered_countries") or []
+        if len(cc) != 1:
+            continue
+        heb = SAILY_ISO_TO_HEBREW.get(cc[0])
+        if not heb:
+            unmapped.add(cc[0])
+            continue
+        plan = _saily_api_item_to_plan(item, heb, usd_rate)
+        if plan:
+            all_plans.append(plan)
+    if unmapped:
+        logger.warning(f"Saily global: skipped unmapped ISO codes {sorted(unmapped)}")
+    logger.info(f"Saily global: {len(all_plans)} plans (Partners API, single-country)")
     return all_plans
 
 
@@ -4687,85 +4931,579 @@ def scrape_holafly_global(_page=None, usd_rate=None):
     return all_plans
 
 
-SAILY_REGIONS = {
-    "africa":                       "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
-    "asia-and-oceania":             "\u05d0\u05e1\u05d9\u05d4 \u05d5\u05d0\u05d5\u05e7\u05d9\u05d0\u05e0\u05d9\u05d4",
-    "caribbean-islands":            "\u05d0\u05d9\u05d9 \u05d4\u05e7\u05e8\u05d9\u05d1\u05d9\u05d9\u05dd",
-    "europe":                       "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
-    "global":                       "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9",
-    "latin-america":                "\u05d0\u05de\u05e8\u05d9\u05e7\u05d4 \u05d4\u05dc\u05d8\u05d9\u05e0\u05d9\u05ea",
-    "middle-east-and-north-africa": "\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df \u05d5\u05e6\u05e4\u05d5\u05df \u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
-    "north-america":                "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
+def scrape_saily_regions(_page=None, usd_rate=None):
+    """Saily regional eSIM plans via the official Partners API (utm_source=moca).
+    Multi-country items carry a `region` code (EU/GLB/ASA/NAM/CIS/LAT/MENA/AFR).
+    Replaces the old per-region Playwright scrape. _page unused (uniform sig)."""
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    all_plans = []
+    unmapped = set()
+    try:
+        items = _fetch_saily_api()
+    except Exception as exc:
+        logger.warning(f"Saily API fetch failed (regions): {exc}")
+        return all_plans
+    for item in items:
+        cc = item.get("covered_countries") or []
+        if len(cc) <= 1:
+            continue
+        heb = SAILY_API_REGION_TO_HEBREW.get(item.get("region"))
+        if not heb:
+            unmapped.add(item.get("region"))
+            continue
+        plan = _saily_api_item_to_plan(item, heb, usd_rate)
+        if plan:
+            all_plans.append(plan)
+    if unmapped:
+        logger.warning(f"Saily regions: skipped unmapped region codes {sorted(unmapped)}")
+    logger.info(f"Saily regions: {len(all_plans)} plans (Partners API, regional)")
+    return all_plans
+
+
+# ── Yesim (own platform; plans embedded as Next.js __NEXT_DATA__ JSON) ───────
+# Price = vanillaPrice/100 * currency.rate (the geo-localized USD price the
+# Israel-based backend sees = what Israeli users pay). ISO -> Hebrew reuses
+# SAILY_ISO_TO_HEBREW plus a few countries Saily doesn't cover. Palestine (PS)
+# is deliberately excluded (left unmapped → skipped).
+# Shared supplement of ISO -> Hebrew for countries Saily doesn't cover (used by
+# the Yesim and Nomad scrapers on top of SAILY_ISO_TO_HEBREW).
+_YESIM_EXTRA_ISO_TO_HEBREW = {
+    "AO": "אנגולה", "AN": "האנטילים ההולנדיים", "BT": "בהוטן",
+    "BY": "בלארוס", "CU": "קובה", "ET": "אתיופיה", "RU": "רוסיה",
+    "AX": "איי אולנד", "BI": "בורונדי", "DJ": "ג'יבוטי", "LY": "לוב",
+    "ST": "סאו טומה ופרינסיפה", "VA": "הוותיקן", "US-HI": "הוואי",
+}
+
+_YESIM_REGION_TO_HEBREW = {
+    "europe-esim": "אירופה",
+    "balkans-esim": "הבלקן",
+    "asia-pacific-esim": "אסיה ואוקיאניה",
+    "south-east-asia-esim": "דרום מזרח אסיה",
+    "cis-esim": "חבר העמים",
+    "north-america-esim": "צפון אמריקה",
+    "south-america-esim": "דרום אמריקה",
+    "middle-east-esim": "המזרח התיכון",
+    "caribbean-esim": "איי הקריביים",
+    "africa-esim": "אפריקה",
+}
+
+_YESIM_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+             "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+
+
+def _yesim_iso_to_heb(iso):
+    return SAILY_ISO_TO_HEBREW.get(iso) or _YESIM_EXTRA_ISO_TO_HEBREW.get(iso)
+
+
+def _yesim_get_pp(url):
+    """Fetch a Yesim page and return its Next.js pageProps dict (or None)."""
+    import requests
+    try:
+        r = requests.get(url, headers={"User-Agent": _YESIM_UA}, timeout=30)
+    except Exception:
+        return None
+    if r.status_code != 200:
+        return None
+    m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', r.text, re.S)
+    if not m:
+        return None
+    try:
+        return _json.loads(m.group(1)).get("props", {}).get("pageProps")
+    except Exception:
+        return None
+
+
+def _yesim_plans_from_pp(pp, usd_rate, heb_override=None):
+    out = []
+    try:
+        rate = float((pp.get("currency") or {}).get("rate", 1)) or 1.0
+    except (TypeError, ValueError):
+        rate = 1.0
+    for key in ("standardPlans", "unlimitedPlans"):
+        for p in (pp.get(key) or []):
+            if heb_override:
+                heb = heb_override
+            else:
+                dests = p.get("destinations") or []
+                if not dests:
+                    continue
+                iso = ((dests[0].get("direction") or {}).get("iso") or "").upper()
+                heb = _yesim_iso_to_heb(iso)
+                if not heb:
+                    continue  # unmapped / deliberately excluded (e.g. PS)
+            da = p.get("dataAmount") or {}
+            ingb = da.get("inGb")
+            try:
+                gb = None if (p.get("unlimited") or key == "unlimitedPlans"
+                              or ingb in (None, "", "NaN")) else float(ingb)
+            except (TypeError, ValueError):
+                gb = None
+            days = p.get("validityPeriod")
+            vp = p.get("vanillaPrice")
+            if days is None or vp is None:
+                continue
+            price_usd = round(vp / 100 * rate, 2)
+            if price_usd <= 0:
+                continue
+            price_ils = round(price_usd * usd_rate, 2)
+            if gb is None:
+                gb_str = "ללא הגבלה"
+            elif gb >= 1:
+                gb_str = f"{int(gb)}GB"
+            else:
+                gb_str = f"{round(gb * 1024)}MB"
+            plan_name = f"{heb} – {gb_str} – {days} ימים"
+            out.append(_make_global_plan("yesim", plan_name, price_ils, "USD",
+                                         price_usd, gb, days, esim=True, extras=[heb]))
+    return out
+
+
+def scrape_yesim_global(_page=None, usd_rate=None):
+    """Yesim single-country eSIM plans from the site's embedded __NEXT_DATA__ JSON
+    (browser UA required; urllib/empty-UA gets a 202). Enumerates countries from
+    `popularCountries` on one page, then fetches each concurrently. Palestine (PS)
+    is deliberately excluded."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    seed = _yesim_get_pp("https://yesim.app/country/united-states/")
+    if not seed:
+        logger.warning("Yesim: could not load seed page for country enumeration")
+        return []
+    urls = ["https://yesim.app" + (c.get("url") or "")
+            for c in (seed.get("popularCountries") or [])
+            if (c.get("url") or "").startswith("/country/")]
+    all_plans, seen = [], set()
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futs = {ex.submit(_yesim_get_pp, u): u for u in urls}
+        for f in as_completed(futs):
+            try:
+                pp = f.result()
+                if not pp:
+                    continue
+                for plan in _yesim_plans_from_pp(pp, usd_rate):
+                    k = (plan["carrier"], plan["plan_name"])
+                    if k not in seen:
+                        seen.add(k)
+                        all_plans.append(plan)
+            except Exception as exc:
+                logger.warning(f"Yesim country {futs[f]}: {exc}")
+    logger.info(f"Yesim global: {len(all_plans)} plans from {len(urls)} countries")
+    return all_plans
+
+
+def scrape_yesim_regions(_page=None, usd_rate=None):
+    """Yesim regional eSIM plans from /regions/<slug>/ pages (region name forced
+    from the slug since per-plan destinations list individual countries)."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    all_plans, seen = [], set()
+
+    def _one(slug, heb):
+        pp = _yesim_get_pp(f"https://yesim.app/regions/{slug}/")
+        return _yesim_plans_from_pp(pp, usd_rate, heb_override=heb) if pp else []
+
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        futs = {ex.submit(_one, slug, heb): slug
+                for slug, heb in _YESIM_REGION_TO_HEBREW.items()}
+        for f in as_completed(futs):
+            try:
+                for plan in f.result():
+                    k = (plan["carrier"], plan["plan_name"])
+                    if k not in seen:
+                        seen.add(k)
+                        all_plans.append(plan)
+            except Exception as exc:
+                logger.warning(f"Yesim region {futs[f]}: {exc}")
+    logger.info(f"Yesim regions: {len(all_plans)} plans from {len(_YESIM_REGION_TO_HEBREW)} regions")
+    return all_plans
+
+
+# ── Nomad (nomadesim.com; plans embedded as `vike_pageContext` JSON) ─────────
+# ISO-based coverage (single-country) reuses SAILY_ISO_TO_HEBREW + extras;
+# multi-country plans map slug -> region Hebrew. "Unlimited" plans carry a numeric
+# fair-use cap in data.amount but say "unlimited" in the name -> detect via name.
+_NOMAD_REGION_SLUG_TO_HEBREW = {
+    "europe-eSIM": "אירופה",
+    "apac-eSIM": "אסיה ואוקיאניה",
+    "asia-eSIM": "אסיה",
+    "global-eSIM": "גלובלי",
+    "global-ex-eSIM": "גלובלי",
+    "mena-eSIM": "המזרח התיכון וצפון אפריקה",
+    "middle-east-eSIM": "המזרח התיכון",
+    "north-america-eSIM": "צפון אמריקה",
+    "latin-america-eSIM": "אמריקה הלטינית",
+    "caribbean-eSIM": "איי הקריביים",
+    "africa-eSIM": "אפריקה",
+    "balkans-eSIM": "הבלקן",
+    "caucasus-eSIM": "הקווקז",
+    "oceania-eSIM": "אוקיאניה",
+    "cn-jp-kr-eSIM": "סין, יפן, קוריאה",
+    "sg-my-th-eSIM": "סינגפור, מלזיה, תאילנד",
+    "gcc-eSIM": "מדינות המפרץ",
+    "sea-oceania-eSIM": "דרום מזרח אסיה ואוקיאניה",
 }
 
 
-def scrape_saily_regions(_page=None, usd_rate=None):
-    """Scrape Saily regional eSIM plans from 8 region pages."""
+def _nomad_find_plans(obj):
+    if isinstance(obj, dict):
+        v = obj.get("plans")
+        if isinstance(v, list):
+            return v
+        for x in obj.values():
+            r = _nomad_find_plans(x)
+            if r:
+                return r
+    elif isinstance(obj, list):
+        for x in obj:
+            r = _nomad_find_plans(x)
+            if r:
+                return r
+    return None
+
+
+def _nomad_get_plans(url):
+    import requests
+    try:
+        r = requests.get(url, headers={"User-Agent": _YESIM_UA}, timeout=30)
+    except Exception:
+        return []
+    if r.status_code != 200:
+        return []
+    m = re.search(r'<script id="vike_pageContext"[^>]*>(.*?)</script>', r.text, re.S)
+    if not m:
+        return []
+    try:
+        return _nomad_find_plans(_json.loads(m.group(1))) or []
+    except Exception:
+        return []
+
+
+def scrape_nomad_global(_page=None, usd_rate=None):
+    """Nomad eSIM plans from embedded vike_pageContext JSON on each /<slug>-eSIM
+    page (slugs from sitemap-plans.xml). Single-country -> ISO->Hebrew; multi-country
+    -> slug->region Hebrew. Dedups by plan_name keeping the cheapest."""
+    import requests
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     if usd_rate is None:
         usd_rate = _get_usd_to_ils()
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    all_plans = []
-    JS_EXTRACT = """() => {
-        const plans = [];
-        document.querySelectorAll('[data-testid^="destination-hero-plan-card"]').forEach(card => {
-            const gbEl = card.querySelector('[class*="body-md-medium"]');
-            const gb = gbEl ? gbEl.textContent.trim() : '';
-            let days = '';
-            const daysEls = card.querySelectorAll('[class*="body-sm-medium"]');
-            for (const el of daysEls) {
-                const t = el.textContent.trim();
-                if (t.includes('day')) { days = t; break; }
-            }
-            if (!days) {
-                const sel = card.querySelector('select');
-                if (sel && sel.options.length > 0) {
-                    const opt = sel.options[sel.selectedIndex] || sel.options[0];
-                    days = opt ? opt.text.trim() : '';
-                }
-            }
-            const discEl = card.querySelector('[data-testid="pricing-card-discount-price"]');
-            const origEl = card.querySelector('[data-testid="pricing-card-original-price"]');
-            const priceEl = discEl || origEl;
-            const price = priceEl ? priceEl.textContent.trim() : '';
-            if (gb && days && price) plans.push({gb, days, price});
-        });
-        return plans;
-    }"""
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-        page = browser.new_page(user_agent=ua)
-        for slug, region_heb in SAILY_REGIONS.items():
-            try:
-                page.goto(f"https://saily.com/esim-{slug}/", timeout=20000, wait_until="domcontentloaded")
-                page.wait_for_timeout(2000)
-                raw = page.evaluate(JS_EXTRACT)
-                for item in raw:
-                    gb_text    = item["gb"]
-                    days_text  = item["days"]
-                    price_text = item["price"]
-                    gb   = _parse_gb(gb_text)
-                    m    = re.search(r"(\d+)\s*day", days_text)
-                    days = int(m.group(1)) if m else None
-                    price_usd = _parse_price(price_text.replace("US$", "").strip())
-                    if price_usd is None or days is None:
-                        continue
-                    price_ils = round(price_usd * usd_rate, 2)
-                    if gb is None:
-                        gb_str = "\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4"
-                    elif gb >= 1:
-                        gb_str = f"{int(gb)}GB"
-                    else:
-                        gb_str = f"{round(gb * 1024)}MB"
-                    plan_name = f"{region_heb} \u2013 {gb_str} \u2013 {days} \u05d9\u05de\u05d9\u05dd"
-                    all_plans.append(_make_global_plan(
-                        "saily", plan_name, price_ils, "USD", price_usd,
-                        gb, days, esim=True, extras=[region_heb]
-                    ))
-            except Exception as exc:
-                logger.warning(f"Saily region {slug}: {exc}")
+    try:
+        sm = requests.get("https://www.nomadesim.com/sitemap-plans.xml",
+                          headers={"User-Agent": _YESIM_UA}, timeout=30).text
+    except Exception as exc:
+        logger.warning(f"Nomad sitemap fetch failed: {exc}")
+        return []
+    slugs = [u for u in re.findall(r"<loc>([^<]+)</loc>", sm)
+             if re.match(r"https://www\.nomadesim\.com/[^/]+-eSIM$", u)]
+    iso2he = {**SAILY_ISO_TO_HEBREW, **_YESIM_EXTRA_ISO_TO_HEBREW}
+    unmapped = set()
+
+    def _do(url):
+        slug = url.rsplit("/", 1)[-1]
+        res = []
+        for p in _nomad_get_plans(url):
+            prod = p.get("product") or {}
+            cc = (prod.get("coverage") or {}).get("countries") or []
+            if not cc:
                 continue
-        browser.close()
-    logger.info(f"Saily regions: {len(all_plans)} plans from {len(SAILY_REGIONS)} regions")
+            heb = iso2he.get(cc[0]) if len(cc) == 1 else _NOMAD_REGION_SLUG_TO_HEBREW.get(slug)
+            if not heb:
+                unmapped.add(cc[0] if len(cc) == 1 else slug)
+                continue
+            data = (prod.get("service") or {}).get("data") or {}
+            amt = data.get("amount")
+            unit = (data.get("amount_unit") or "GB").upper()
+            if "unlimited" in (prod.get("name") or "").lower():
+                gb = None
+            elif amt is None:
+                continue
+            else:
+                try:
+                    gb = float(amt) / 1024 if unit == "MB" else float(amt)
+                except (TypeError, ValueError):
+                    continue
+            spec = prod.get("specification") or {}
+            days = spec.get("duration")
+            if days is None or (spec.get("duration_unit") or "DAY").upper() != "DAY":
+                continue
+            usd = ((p.get("price") or {}).get("USD") or {}).get("amount")
+            if usd is None:
+                continue
+            try:
+                price_usd = round(float(usd), 2)
+            except (TypeError, ValueError):
+                continue
+            if price_usd <= 0:
+                continue
+            price_ils = round(price_usd * usd_rate, 2)
+            if gb is None:
+                gb_str = "ללא הגבלה"
+            elif gb >= 1:
+                gb_str = f"{int(gb)}GB"
+            else:
+                gb_str = f"{round(gb * 1024)}MB"
+            plan_name = f"{heb} – {gb_str} – {days} ימים"
+            res.append((plan_name, price_ils, price_usd, gb, days, heb))
+        return res
+
+    best = {}
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futs = {ex.submit(_do, u): u for u in slugs}
+        for f in as_completed(futs):
+            try:
+                for (pn, pil, pusd, gb, days, heb) in f.result():
+                    if pn not in best or pil < best[pn][1]:
+                        best[pn] = (pn, pil, pusd, gb, days, heb)
+            except Exception as exc:
+                logger.warning(f"Nomad {futs[f]}: {exc}")
+    all_plans = [_make_global_plan("nomad", pn, pil, "USD", pusd, gb, days, esim=True, extras=[heb])
+                 for (pn, pil, pusd, gb, days, heb) in best.values()]
+    if unmapped:
+        logger.warning(f"Nomad: skipped unmapped {sorted(unmapped)[:30]}")
+    logger.info(f"Nomad global: {len(all_plans)} plans from {len(slugs)} pages")
+    return all_plans
+
+
+# ── Ubigi (Transatel/NTT; open WooCommerce Store REST API) ───────────────────
+# English UPPERCASE destination names -> Hebrew: html-unescape + accent-strip +
+# slugify, then alias map -> SAILY_SLUG_TO_HEBREW -> Ubigi extras (countries Saily
+# lacks + Ubigi regions/combos). Recurring (RBUP) subscriptions are skipped;
+# Palestine + @Football Fever are left unmapped (skipped).
+_UBIGI_API = "https://cellulardata.ubigi.com/wp-json/wc/store/v1/products?per_page=100&lang=en&page={}"
+_UBIGI_ALIAS = {
+    "usa": "united-states", "uk": "united-kingdom", "uae": "united-arab-emirates",
+    "macao": "macau", "ivory-coast": "cote-d-ivoire",
+}
+_UBIGI_EXTRA_HEBREW = {
+    # countries Saily doesn't cover / naming differences
+    "angola": "אנגולה", "belarus": "בלארוס", "bhutan": "בהוטן", "burundi": "בורונדי",
+    "comoros": "איי קומורו", "congo": "רפובליקת קונגו", "djibouti": "ג'יבוטי",
+    "democratic-republic-of-the-congo": "הרפובליקה הדמוקרטית של קונגו",
+    "ethiopia": "אתיופיה", "russia": "רוסיה", "czech-republic": "צ'כיה",
+    "new-caledonia": "קלדוניה החדשה", "saint-martin-french-part": "סן מרטן",
+    "cote-d-ivoire": "חוף השנהב", "bosnia-herzegovina": "בוסניה והרצגובינה",
+    # multi-country combos
+    "australia-nzl": "אוסטרליה וניו זילנד", "ile-of-man-channel-islands": "האי מאן ואיי התעלה",
+    "macau-hong-kong": "מקאו והונג קונג", "malaysia-singapore": "מלזיה וסינגפור",
+    # regions
+    "africa": "אפריקה", "americas": "אמריקה", "asia": "אסיה", "caribbean": "איי הקריביים",
+    "europe": "אירופה", "europe-extended": "אירופה (מורחב)", "middle-east": "המזרח התיכון",
+    "oceania": "אוקיאניה", "world": "גלובלי", "scandinavia-baltic": "סקנדינביה והבלטיות",
+    "best-africa": "אפריקה", "best-asia": "אסיה", "best-caribbean": "איי הקריביים",
+    "best-latam": "אמריקה הלטינית", "best-middle-east": "המזרח התיכון", "best-world": "גלובלי",
+}
+
+
+def _ubigi_norm(s):
+    import unicodedata
+    s = unicodedata.normalize("NFKD", _html_unescape(s))
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
+
+
+def _ubigi_resolve(country):
+    sl = _ubigi_norm(country)
+    sl = _UBIGI_ALIAS.get(sl, sl)
+    return SAILY_SLUG_TO_HEBREW.get(sl) or _UBIGI_EXTRA_HEBREW.get(sl)
+
+
+def scrape_ubigi_global(_page=None, usd_rate=None):
+    """Ubigi eSIM plans from the open WooCommerce Store REST API (~11 pages, no
+    auth). One-time (ONEOFF) plans only; recurring subscriptions skipped. Country/
+    GB/days parsed from the `name` ('DEST • 10GB • 30 days'); price = minor units."""
+    import requests
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    headers = {"User-Agent": _YESIM_UA}
+    try:
+        first = requests.get(_UBIGI_API.format(1), headers=headers, timeout=40)
+        total_pages = int(first.headers.get("X-WP-TotalPages", 1))
+        items = list(first.json())
+    except Exception as exc:
+        logger.warning(f"Ubigi API page 1 failed: {exc}")
+        return []
+    for page in range(2, total_pages + 1):
+        try:
+            items.extend(requests.get(_UBIGI_API.format(page), headers=headers, timeout=40).json())
+        except Exception as exc:
+            logger.warning(f"Ubigi API page {page}: {exc}")
+    best, unmapped = {}, set()
+    for p in items:
+        sku = p.get("sku") or ""
+        if "ONEOFF" not in sku:
+            continue
+        name = _html_unescape(p.get("name") or "")
+        parts = name.split("•")
+        heb = _ubigi_resolve(parts[0].strip())
+        if not heb:
+            unmapped.add(parts[0].strip())
+            continue
+        rest = " ".join(parts[1:])
+        if re.search(r"unlimited", rest, re.I) or "_FUP" in sku.upper():
+            gb = None
+        else:
+            mg = re.search(r"(\d+(?:\.\d+)?)\s*(GB|MB)", rest, re.I)
+            if not mg:
+                continue
+            val = float(mg.group(1))
+            gb = val / 1024 if mg.group(2).upper() == "MB" else val
+        md = re.search(r"(\d+)\s*day", rest, re.I) or re.search(r"_(\d+)D\b", sku)
+        if not md:
+            continue
+        days = int(md.group(1))
+        pr = p.get("prices") or {}
+        if not pr.get("price") or (pr.get("currency_code") or "USD") != "USD":
+            continue
+        try:
+            price_usd = round(int(pr["price"]) / (10 ** int(pr.get("currency_minor_unit", 2))), 2)
+        except (TypeError, ValueError):
+            continue
+        if price_usd <= 0:
+            continue
+        price_ils = round(price_usd * usd_rate, 2)
+        if gb is None:
+            gb_str = "ללא הגבלה"
+        elif gb >= 1:
+            gb_str = f"{int(gb)}GB"
+        else:
+            gb_str = f"{round(gb * 1024)}MB"
+        plan_name = f"{heb} – {gb_str} – {days} ימים"
+        if plan_name not in best or price_ils < best[plan_name][0]:
+            best[plan_name] = (price_ils, price_usd, gb, days, heb, plan_name)
+    if unmapped:
+        logger.warning(f"Ubigi: skipped unmapped {sorted(unmapped)[:30]}")
+    all_plans = [_make_global_plan("ubigi", pn, pil, "USD", pusd, gb, days, esim=True, extras=[heb])
+                 for (pil, pusd, gb, days, heb, pn) in best.values()]
+    logger.info(f"Ubigi global: {len(all_plans)} plans")
+    return all_plans
+
+
+# ── aloSIM (alosim.com; WordPress; plan data in destination-page HTML) ───────
+# Destination slug (strip -esim) -> Hebrew via alias -> SAILY_SLUG_TO_HEBREW ->
+# aloSIM extras (regions, countries Saily lacks, US sub-national). Palestine
+# (state-of-palestine-esim) left unmapped -> skipped. Prices are USD (the IL
+# backend sees $).
+_ALOSIM_EXTRA = {
+    # regions
+    "africa-esim": "אפריקה", "asia-esim": "אסיה", "australia-and-nz-esim": "אוסטרליה וניו זילנד",
+    "caribbean-esim": "איי הקריביים", "central-america-esim": "מרכז אמריקה",
+    "eastern-europe-esim": "מזרח אירופה", "europe-esim": "אירופה", "global-esim": "גלובלי",
+    "middle-east-esim": "המזרח התיכון", "north-america-esim": "צפון אמריקה",
+    "oceania-esim": "אוקיאניה", "scandinavia-esim": "סקנדינביה", "south-america-esim": "דרום אמריקה",
+    "western-europe-esim": "מערב אירופה", "uk-ireland-esim": "בריטניה ואירלנד",
+    # countries Saily lacks / naming differences
+    "belarus-esim": "בלארוס", "bhutan-esim": "בהוטן", "cabo-verde-esim": "קייפ ורדה",
+    "democratic-republic-of-the-congo-esim": "הרפובליקה הדמוקרטית של קונגו",
+    "ethiopia-esim": "אתיופיה", "kiribati-esim": "קיריבטי", "lebanon-esim": "לבנון",
+    "republic-of-the-congo-esim": "רפובליקת קונגו", "saint-vincent-esim": "סנט וינסנט והגרדינים",
+    "the-sudan-esim": "סודן", "timor-leste-esim": "טימור לסטה",
+    "turks-and-caicos-esim": "איי טורקס וקאיקוס", "vatican-city-esim": "הוותיקן",
+    "french-guiana-and-martinique-esim": "גיאנה הצרפתית ומרטיניק",
+    "ivory-coast-cote-divoire-esim": "חוף השנהב", "saint-martin-esim-french": "סן מרטן",
+    # sub-national / cities
+    "bali": "באלי", "california-esim": "קליפורניה", "florida": "פלורידה", "hawaii": "הוואי",
+    "new-york": "ניו יורק", "texas": "טקסס", "halifax-esim": "הליפקס", "toronto": "טורונטו",
+}
+
+
+def _alosim_resolve(slug):
+    base = re.sub(r"-esim$", "", slug or "")
+    base = _UBIGI_ALIAS.get(base, base)
+    return SAILY_SLUG_TO_HEBREW.get(base) or _ALOSIM_EXTRA.get(slug)
+
+
+def _alosim_page_plans(url, heb, usd_rate):
+    import requests, time as _t
+    html = None
+    for attempt in range(3):  # aloSIM (Wordfence/Cloudflare) rate-limits at scale → retry
+        try:
+            r = requests.get(url, headers={"User-Agent": _YESIM_UA}, timeout=30)
+            if r.status_code == 200 and "data-package-id" in r.text:
+                html = r.text
+                break
+        except Exception:
+            pass
+        _t.sleep(1.5 * (attempt + 1))
+    if not html:
+        return []
+    prices = dict(re.findall(r'data-location-package-id="([^"]+)"[^>]*>\s*([\d.]+)\s*<', html))
+    pkgs = re.findall(
+        r'data-package-id="([^"]+)"[^>]*data-package-type="([^"]*)"[^>]*'
+        r'data-package-days-count="(\d+)"[^>]*data-package-gb="([^"]*)"', html)
+    out = []
+    for pid, ptype, days, gbtext in pkgs:
+        ps = prices.get(pid)
+        if not ps:
+            continue
+        try:
+            price_usd = round(float(ps), 2)
+        except ValueError:
+            continue
+        if price_usd <= 0:
+            continue
+        if "unlimited" in (gbtext or "").lower() or ptype == "unlimited":
+            gb = None
+        else:
+            mg = re.search(r"(\d+(?:\.\d+)?)\s*(GB|MB)", gbtext, re.I)
+            if not mg:
+                continue
+            gb = float(mg.group(1)) / 1024 if mg.group(2).upper() == "MB" else float(mg.group(1))
+        price_ils = round(price_usd * usd_rate, 2)
+        if gb is None:
+            gb_str = "ללא הגבלה"
+        elif gb >= 1:
+            gb_str = f"{int(gb)}GB"
+        else:
+            gb_str = f"{round(gb * 1024)}MB"
+        out.append((f"{heb} – {gb_str} – {int(days)} ימים", price_ils, price_usd, gb, int(days), heb))
+    return out
+
+
+def scrape_alosim_global(_page=None, usd_rate=None):
+    """aloSIM eSIM plans. Enumerate destinations via the WP REST `location` type,
+    then parse each destination page's `location-package-v2` blocks (data-attrs +
+    price spans joined by package id). Dedups by plan_name keeping the cheapest."""
+    import requests
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    locs = []
+    for page in range(1, 5):
+        try:
+            r = requests.get(f"https://alosim.com/wp-json/wp/v2/location?per_page=100&page={page}&_fields=slug,link",
+                             headers={"User-Agent": _YESIM_UA}, timeout=40)
+        except Exception:
+            break
+        if r.status_code != 200:
+            break
+        batch = r.json()
+        if not batch:
+            break
+        locs += batch
+    targets, unmapped = [], set()
+    for l in locs:
+        heb = _alosim_resolve(l.get("slug"))
+        if heb and l.get("link"):
+            targets.append((l["link"], heb))
+        elif not heb:
+            unmapped.add(l.get("slug"))
+    best = {}
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        futs = {ex.submit(_alosim_page_plans, link, heb, usd_rate): link for (link, heb) in targets}
+        for f in as_completed(futs):
+            try:
+                for (pn, pil, pusd, gb, days, heb) in f.result():
+                    if pn not in best or pil < best[pn][0]:
+                        best[pn] = (pil, pusd, gb, days, heb)
+            except Exception as exc:
+                logger.warning(f"aloSIM {futs[f]}: {exc}")
+    if unmapped:
+        logger.warning(f"aloSIM: skipped unmapped {sorted(unmapped)[:30]}")
+    all_plans = [_make_global_plan("alosim", pn, pil, "USD", pusd, gb, days, esim=True, extras=[heb])
+                 for pn, (pil, pusd, gb, days, heb) in best.items()]
+    logger.info(f"aloSIM global: {len(all_plans)} plans from {len(targets)} destinations")
     return all_plans
 
 
@@ -8360,6 +9098,11 @@ def scrape_all_global():
         ("scrape_xphone_global",       lambda: scrape_xphone_global()),
         ("scrape_saily_global",        lambda: scrape_saily_global(usd_rate=usd_rate)),
         ("scrape_saily_regions",       lambda: scrape_saily_regions(usd_rate=usd_rate)),
+        ("scrape_yesim_global",        lambda: scrape_yesim_global(usd_rate=usd_rate)),
+        ("scrape_yesim_regions",       lambda: scrape_yesim_regions(usd_rate=usd_rate)),
+        ("scrape_nomad_global",        lambda: scrape_nomad_global(usd_rate=usd_rate)),
+        ("scrape_ubigi_global",        lambda: scrape_ubigi_global(usd_rate=usd_rate)),
+        ("scrape_alosim_global",       lambda: scrape_alosim_global(usd_rate=usd_rate)),
         ("scrape_esimio_destinations", lambda: scrape_esimio_destinations(usd_rate=usd_rate)),
         ("scrape_esimio_regions",      lambda: scrape_esimio_regions(usd_rate=usd_rate)),
         ("scrape_esimo_global",        lambda: scrape_esimo_global(usd_rate=usd_rate)),  # pure HTTP, no Playwright

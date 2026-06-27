@@ -23,7 +23,8 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                upsert_news_articles, get_news_articles, \
                log_affiliate_click, get_affiliate_stats, \
                upsert_hotel, get_hotel, list_hotels, delete_hotel, \
-               log_guest_event, get_guest_analytics, get_israel_esim_deals, \
+               log_guest_event, get_guest_analytics, get_esim_deals_for_destination, \
+               get_esim_destinations, \
                save_hotel_lead, get_hotel_leads, \
                log_audit, get_audit_log, \
                log_user_activity, get_user_activity_overview, get_user_activity_summary, \
@@ -1030,6 +1031,10 @@ _GUEST_PROVIDER_META = {
     "orbit":       {"label": "Orbit",        "color": "#2980ff", "domain": "orbitmobile.com",  "url": "https://orbitmobile.com"},
     "simtlv":      {"label": "SimTLV",       "color": "#2bb3c0", "domain": "simtlv.co.il",     "url": "https://simtlv.co.il"},
     "voye":        {"label": "Voye",         "color": "#e8553e", "domain": "voyeglobal.com",   "url": "https://voyeglobal.com"},
+    "yesim":       {"label": "Yesim",        "color": "#f97316", "domain": "yesim.app",        "url": "https://yesim.app"},
+    "nomad":       {"label": "Nomad",        "color": "#16a34a", "domain": "nomadesim.com",   "url": "https://www.nomadesim.com"},
+    "ubigi":       {"label": "Ubigi",        "color": "#2563eb", "domain": "ubigi.com",        "url": "https://www.ubigi.com"},
+    "alosim":      {"label": "aloSIM",       "color": "#dc2626", "domain": "alosim.com",       "url": "https://alosim.com"},
     "sparks":      {"label": "Sparks",       "color": "#f2a900", "domain": "sparks.travel",    "url": "https://www.sparks.travel"},
     "gomoworld":   {"label": "GoMoWorld",    "color": "#00a86b", "domain": "gomoworld.com",    "url": "https://www.gomoworld.com"},
     "bcengi":      {"label": "BCengi",       "color": "#555c66", "domain": "bcengi.com",        "url": "https://www.bcengi.com"},
@@ -1041,6 +1046,18 @@ _GUEST_PROVIDER_META = {
     "seven_g":     {"label": "7G",           "color": "#e67e22", "domain": "7g.app",            "url": "https://7g.app"},
     "bestconnect": {"label": "Best Connect", "color": "#2d9cdb", "domain": "bestconnect.online", "url": "https://bestconnect.online"},
     "esimplus":    {"label": "eSIM Plus",    "color": "#00b894", "domain": "esimplus.me",      "url": "https://esimplus.me/esim/israel"},
+    # global eSIM carriers that also surface for ABROAD destinations (the Israel
+    # feed didn't reach them, so they were missing — abroad needs every id the
+    # feed can emit to have a label + domain, else the chip is bare + /go dead-ends).
+    "tuki":             {"label": "Tuki",          "color": "#6c2bd9", "domain": "tuki-esim.co.il"},
+    "globalesim":       {"label": "GlobaleSIM",    "color": "#1a73e8", "domain": "globalesim.com"},
+    "airalo_regional":  {"label": "Airalo",        "color": "#ff5963", "domain": "airalo.com"},
+    "pelephone_global": {"label": "GlobalSIM",     "color": "#e3001b", "domain": "pelephone.co.il"},
+    "world8":           {"label": "8 World",       "color": "#00a3a3", "domain": "world8.co.il"},
+    "xphone_global":    {"label": "XPhone Global", "color": "#00857a", "domain": "xphone.co.il"},
+    "travelsim":        {"label": "Travel Sim",    "color": "#f59e0b", "domain": "travelsimobile.co.il"},
+    "tasim":            {"label": "Tasim",         "color": "#2563eb", "domain": "tasim.us"},
+    "maya":             {"label": "Maya Mobile",   "color": "#ec4899", "domain": "maya.net"},
     # local Israeli carriers — inbound-tourist SIM/eSIM (curated, see below)
     "mobile019":   {"label": "019 Mobile",     "color": "#d81b60", "domain": "019mobile.co.il", "url": "https://www.019mobile.co.il"},
     "partner":     {"label": "Partner Tourist","color": "#0072ce", "domain": "partner.co.il",   "url": "https://www.partner.co.il"},
@@ -1062,24 +1079,278 @@ ISRAEL_TOURIST_LOCAL_SIMS = [
 ]
 
 
-def _guest_provider_dest(provider):
+# AUTO-GENERATED aloSIM Hebrew-destination -> (slug, uid) map.
+# Source: Everflow offer-9 URL table + alosim.com location sitemap.
+# Regenerate via _build_alosim_map.py + _gen_alosim_code.py.
+_ALOSIM_DEST_MAP = {
+    "אוגנדה": ("uganda-esim", 1195),
+    "אוזבקיסטן": ("uzbekistan-esim", 1197),
+    "אוסטריה": ("austria-esim", 1177),
+    "אוסטרליה": ("australia-esim", 573),
+    "אוסטרליה וניו זילנד": ("australia-and-nz-esim", None),
+    "אוקראינה": ("ukraine-esim", 1039),
+    "אורוגוואי": ("uruguay-esim", 1038),
+    "אזרבייג'ן": ("azerbaijan-esim", 1244),
+    "איחוד האמירויות": ("united-arab-emirates-esim", 1196),
+    "איטליה": ("italy-esim", 597),
+    "איי הבהאמה": ("bahamas-esim", 574),
+    "איי הבתולה (ארה\"ב)": ("us-virgin-islands-esim", 1194),
+    "איי הבתולה (בריטניה)": ("british-virgin-islands-esim", 1045),
+    "איי הקריביים": ("caribbean-esim", 682),
+    "איי טורקס וקאיקוס": ("turks-and-caicos-esim", 1040),
+    "איי סיישל": ("seychelles-esim", None),
+    "איי פארו": ("faroe-islands-esim", 917),
+    "איי קיימן": ("cayman-islands-esim", 1064),
+    "אינדונזיה": ("indonesia-esim", 1067),
+    "איסלנד": ("iceland-esim", 593),
+    "אירופה": ("europe-esim", 564),
+    "אירלנד": ("ireland-esim", 680),
+    "אל סלבדור": ("el-salvador-esim", 919),
+    "אלבניה": ("albania-esim", 571),
+    "אלג'יריה": ("algeria-esim", 1199),
+    "אנגווילה": ("anguilla-esim", 1049),
+    "אנדורה": ("andorra-esim", None),
+    "אנטיגואה וברבודה": ("antigua-and-barbuda-esim", 918),
+    "אנטילים הולנדיים": ("netherlands-antilles-esim", None),
+    "אסוואטיני": ("eswatini-esim", None),
+    "אסטוניה": ("estonia-esim", 913),
+    "אסיה": ("asia-esim", 562),
+    "אפגניסטן": ("afghanistan-esim", 1243),
+    "אקוודור": ("ecuador-esim", 586),
+    "ארגנטינה": ("argentina-esim", 572),
+    "ארובה": ("aruba-esim", 1065),
+    "ארמניה": ("armenia-esim", 1088),
+    "ארצות הברית": ("united-states-esim", 615),
+    "אתיופיה": ("ethiopia-esim", None),
+    "באלי": ("indonesia-esim", 1067),
+    "בהוטן": ("bhutan-esim", 1245),
+    "בוטסואנה": ("botswana-esim", 1246),
+    "בולגריה": ("bulgaria-esim", 577),
+    "בוליביה": ("bolivia-esim", 1041),
+    "בוסניה והרצגובינה": ("bosnia-and-herzegovina-esim", None),
+    "בורקינה פאסו": ("burkina-faso-esim", None),
+    "בחריין": ("bahrain-esim", 914),
+    "בלארוס": ("belarus-esim", 1178),
+    "בלגיה": ("belgium-esim", 575),
+    "בליז": ("belize-esim", None),
+    "בנגלדש": ("bangladesh-esim", 911),
+    "בנין": ("benin-esim", None),
+    "ברבדוס": ("barbados-esim", 1042),
+    "ברוניי": ("brunei-esim", 1247),
+    "ברזיל": ("brazil-esim", 576),
+    "בריטניה": ("uk-esim", 614),
+    "בריטניה ואירלנד": ("uk-ireland-esim", 569),
+    "ברמודה": ("bermuda-esim", 1037),
+    "ג'מייקה": ("jamaica-esim", 1066),
+    "ג'רזי": ("jersey-esim", 1046),
+    "גאבון": ("gabon-esim", None),
+    "גאורגיה": ("georgia-esim", 908),
+    "גאנה": ("ghana-esim", 590),
+    "גואטמלה": ("guatemala-esim", 1261),
+    "גואם": ("guam-esim", 1262),
+    "גוואדלופ": ("guadeloupe-esim", None),
+    "גיאנה": ("guyana-esim", None),
+    "גיאנה הצרפתית": ("french-guiana-esim", None),
+    "גיאנה הצרפתית ומרטיניק": ("french-guiana-and-martinique-esim", None),
+    "גיברלטר": ("gibraltar-esim", None),
+    "גינאה": ("guinea-esim", None),
+    "גינאה ביסאו": ("guinea-bissau-esim", None),
+    "גלובלי": ("global-esim", None),
+    "גמביה": ("gambia-esim", None),
+    "גרינלנד": ("greenland-esim", 1050),
+    "גרמניה": ("germany-esim", 589),
+    "גרנדה": ("grenada-esim", 1096),
+    "גרנזי": ("guernsey-esim", None),
+    "דומיניקה": ("dominica-esim", 1095),
+    "דנמרק": ("denmark-esim", 585),
+    "דרום אמריקה": ("south-america-esim", 568),
+    "דרום אפריקה": ("south-africa-esim", 1193),
+    "דרום קוריאה": ("south-korea-esim", 608),
+    "האי מאן": ("isle-of-man-esim", None),
+    "האיטי": ("haiti-esim", None),
+    "האיים המלדיביים": ("maldives-esim", None),
+    "הודו": ("india-esim", 594),
+    "הוואי": ("united-states-esim", 615),
+    "הולנד": ("netherlands-esim", 600),
+    "הונג קונג": ("hong-kong-esim", 916),
+    "הונגריה": ("hungary-esim", 592),
+    "הונדורס": ("honduras-esim", 1094),
+    "הליפקס": ("halifax-esim", None),
+    "הפיליפינים": ("philippines-esim", 1187),
+    "הרפובליקה הדומיניקנית": ("dominican-republic-esim", 1063),
+    "הרפובליקה הדמוקרטית של קונגו": ("democratic-republic-of-the-congo-esim", None),
+    "הרפובליקה המרכז אפריקאית": ("central-african-republic-esim", None),
+    "וייטנאם": ("vietnam-esim", 906),
+    "ונצואלה": ("venezuela-esim", 1198),
+    "ותיקן": ("vatican-city-esim", None),
+    "זמביה": ("zambia-esim", 1249),
+    "חוף השנהב": ("ivory-coast-cote-divoire-esim", None),
+    "טג'יקיסטן": ("tajikistan-esim", 1260),
+    "טוגו": ("togo-esim", None),
+    "טונגה": ("tonga-esim", 1253),
+    "טורונטו": ("canada-esim", 578),
+    "טורקיה": ("turkey-esim", 613),
+    "טייוואן": ("taiwan-esim", 912),
+    "טימור לסטה": ("timor-leste-esim", None),
+    "טנזניה": ("tanzania-esim", None),
+    "טקסס": ("united-states-esim", 615),
+    "טרינידד וטובגו": ("trinidad-and-tobago-esim", None),
+    "יוון": ("greece-esim", 591),
+    "יפן": ("japan-esim", 598),
+    "ירדן": ("jordan-esim", 1091),
+    "ישראל": ("israel-esim", 596),
+    "כוויית": ("kuwait-esim", None),
+    "לאוס": ("laos-esim", 1258),
+    "לבנון": ("lebanon-esim", None),
+    "לוקסמבורג": ("luxembourg-esim", 920),
+    "לטביה": ("latvia-esim", 683),
+    "ליבריה": ("liberia-esim", 1090),
+    "ליטא": ("lithuania-esim", 905),
+    "ליכטנשטיין": ("liechtenstein-esim", 1044),
+    "לסוטו": ("lesotho-esim", 1092),
+    "מאוריציוס": ("mauritius-esim", None),
+    "מאיוט": ("mayotte-esim", 1252),
+    "מאלי": ("mali-esim", None),
+    "מדגסקר": ("madagascar-esim", None),
+    "מוזמביק": ("mozambique-esim", None),
+    "מולדובה": ("moldova-esim", 1043),
+    "מונגוליה": ("mongolia-esim", None),
+    "מונטנגרו": ("montenegro-esim", 1181),
+    "מונסראט": ("montserrat-esim", None),
+    "מונקו": ("monaco-esim", None),
+    "מזרח אירופה": ("eastern-europe-esim", 563),
+    "מלאווי": ("malawi-esim", None),
+    "מלזיה": ("malaysia-esim", 910),
+    "מלטה": ("malta-esim", 681),
+    "מערב אירופה": ("western-europe-esim", 570),
+    "מצרים": ("egypt-esim", 907),
+    "מקאו": ("macau-esim", 1051),
+    "מקדוניה הצפונית": ("macedonia-esim", None),
+    "מקסיקו": ("mexico-esim", 599),
+    "מרוקו": ("morocco-esim", 1182),
+    "מרטיניק": ("martinique-esim", 922),
+    "מרכז אמריקה": ("central-america-esim", None),
+    "נאורו": ("nauru-esim", None),
+    "נורבגיה": ("norway-esim", 1184),
+    "ניג'ר": ("niger-esim", None),
+    "ניגריה": ("nigeria-esim", 1183),
+    "ניו זילנד": ("new-zealand-esim", 601),
+    "ניו יורק": ("united-states-esim", 615),
+    "ניקראגואה": ("nicaragua-esim", 1256),
+    "נמיביה": ("namibia-esim", None),
+    "נפאל": ("nepal-esim", 1257),
+    "סודן": ("the-sudan-esim", None),
+    "סורינאם": ("suriname-esim", None),
+    "סיירה ליאונה": ("sierra-leone-esim", None),
+    "סין": ("china-esim", 1180),
+    "סינגפור": ("singapore-esim", 606),
+    "סלובניה": ("slovenia-esim", 909),
+    "סלובקיה": ("slovakia-esim", 607),
+    "סן ברתלמי": ("saint-barthelemy-esim", None),
+    "סן מרינו": ("san-marino-esim", 1048),
+    "סנגל": ("senegal-esim", None),
+    "סנט וינסנט והגרדינים": ("saint-vincent-esim", 1251),
+    "סנט לוסיה": ("saint-lucia-esim", 1191),
+    "סנט קיטס ונוויס": ("saint-kitts-and-nevis-esim", None),
+    "ספרד": ("spain-esim", 609),
+    "סקנדינביה": ("scandinavia-esim", 567),
+    "סרביה": ("serbia-esim", 1036),
+    "סרי לנקה": ("sri-lanka-esim", 1254),
+    "עומאן": ("oman-esim", 1259),
+    "עיראק": ("iraq-esim", 595),
+    "ערב הסעודית": ("saudi-arabia-esim", 1192),
+    "פוארטו ריקו": ("puerto-rico-esim", 1188),
+    "פולין": ("poland-esim", 602),
+    "פולינזיה הצרפתית": ("french-polynesia-esim", None),
+    "פורטוגל": ("portugal-esim", 603),
+    "פיג'י": ("fiji-esim", 679),
+    "פינלנד": ("finland-esim", 587),
+    "פלורידה": ("united-states-esim", 615),
+    "פנמה": ("panama-esim", 1186),
+    "פפואה גינאה החדשה": ("papua-new-guinea-esim", None),
+    "פקיסטן": ("pakistan-esim", 1185),
+    "פראגוואי": ("paraguay-esim", None),
+    "פרו": ("peru-esim", 1047),
+    "צ'אד": ("chad-esim", None),
+    "צ'ילה": ("chile-esim", 579),
+    "צ'כיה": ("czech-republic-esim", 584),
+    "צפון אמריקה": ("north-america-esim", 566),
+    "צרפת": ("france-esim", 588),
+    "קולומביה": ("colombia-esim", 580),
+    "קוסובו": ("kosovo-esim", None),
+    "קוסטה ריקה": ("costa-rica-esim", 581),
+    "קוראסאו": ("curacao-esim", None),
+    "קזחסטן": ("kazakhstan-esim", 915),
+    "קטר": ("qatar-esim", 604),
+    "קייפ ורדה": ("cabo-verde-esim", None),
+    "קירגיזסטן": ("kyrgyzstan-esim", None),
+    "קיריבאטי": ("kiribati-esim", None),
+    "קליפורניה": ("california-esim", None),
+    "קמבודיה": ("cambodia-esim", 1179),
+    "קמרון": ("cameroon-esim", 1248),
+    "קנדה": ("canada-esim", 578),
+    "קניה": ("kenya-esim", 1089),
+    "קפריסין": ("cyprus-esim", 583),
+    "קרואטיה": ("croatia-esim", 582),
+    "ראוניון": ("reunion-esim", 1052),
+    "רואנדה": ("rwanda-esim", 1190),
+    "רומניה": ("romania-esim", 605),
+    "רפובליקת קונגו": ("republic-of-the-congo-esim", None),
+    "שבדיה": ("sweden-esim", 610),
+    "שוויץ": ("switzerland-esim", 611),
+    "תאילנד": ("thailand-esim", 612),
+    "תוניסיה": ("tunisia-esim", 1250),
+}
+
+def _alosim_dest_url(destination):
+    """Build a per-destination aloSIM affiliate URL with Everflow uid when known."""
+    entry = _ALOSIM_DEST_MAP.get(destination or "")
+    if not entry:
+        return None
+    slug, uid = entry
+    params = "uid={}&oid=9&affid=1652".format(uid) if uid else "oid=9&affid=1652"
+    return "https://alosim.com/{}/?{}".format(slug, params)
+
+
+def _guest_provider_dest(provider, destination=None):
     """Resolve the redirect destination for a guest-portal provider:
-    affiliate deep link (config) → provider Israel page → legacy fallback."""
+    affiliate deep link (config) → provider country page → legacy fallback.
+    For non-Israel destinations the per-provider `url` (an Israel landing page) is
+    the wrong target, so fall back to the provider's generic homepage."""
+    # aloSIM: per-destination deep links with Everflow uid tracking
+    if provider == "alosim":
+        dest_url = _alosim_dest_url(destination)
+        if dest_url:
+            return dest_url
+        return "https://alosim.com/?oid=9&affid=1652"
     cfg = load_config()
     affiliate = cfg.get("affiliate", {}).get(provider)
     if affiliate and affiliate.get("base_url"):
         return affiliate["base_url"]
     meta = _GUEST_PROVIDER_META.get(provider)
+    if meta and destination and destination != "ישראל" and meta.get("domain"):
+        return f"https://{meta['domain']}"
     if meta and meta.get("url"):
         return meta["url"]
+    if meta and meta.get("domain"):  # provider with a homepage but no curated url
+        return f"https://{meta['domain']}"
     return _AFFILIATE_FALLBACK_URLS.get(provider, "https://mocaintel.com")
 
 
-def _assemble_guest_deals(db_path=None):
-    """Build the guest-portal deal list = live Israel-covering global eSIM
-    (curated to a clean per-provider ladder) + curated local Israeli SIMs."""
+ISRAEL_HE = "ישראל"  # ישראל — canonical destination
+
+
+def _assemble_guest_deals(db_path=None, destination=None, include_local=True):
+    """Build the guest-portal deal list for a destination country = live eSIM
+    plans covering it (curated to a clean per-provider ladder). For Israel it also
+    appends the curated local Israeli tourist SIMs; abroad destinations get the
+    global-eSIM feed only (we carry no foreign local carriers).
+
+    Pass include_local=False for the public B2C consumer feed, which compares
+    global-eSIM providers only (no local Israeli tourist SIMs)."""
     from collections import defaultdict
-    raw = get_israel_esim_deals(db_path=db_path)
+    dest = (destination or ISRAEL_HE).strip()
+    raw = get_esim_deals_for_destination(dest, db_path=db_path)
     updated_at = max((d.get("scraped_at") for d in raw if d.get("scraped_at")), default=None)
     # cheapest per (provider, gb, days) — collapse exact-size duplicates
     best = {}
@@ -1111,7 +1382,7 @@ def _assemble_guest_deals(db_path=None):
             "plan_name": d["plan_name"],
             "perks": ["instant", "unlimited"] if unl else ["instant"],
         })
-    for s in ISRAEL_TOURIST_LOCAL_SIMS:
+    for s in (ISRAEL_TOURIST_LOCAL_SIMS if (include_local and dest == ISRAEL_HE) else []):
         deals.append({
             "provider": s["provider"],
             "kind": "local",
@@ -1126,7 +1397,8 @@ def _assemble_guest_deals(db_path=None):
         })
     deals.sort(key=lambda x: (x["price"] if x["price"] is not None else 1e9))
     providers = {d["provider"]: {
-        "label": _GUEST_PROVIDER_META.get(d["provider"], {}).get("label", d["provider"]),
+        "label": _GUEST_PROVIDER_META.get(d["provider"], {}).get(
+            "label", _HISTORY_CARRIER_NAMES.get(d["provider"], d["provider"])),
         "color": _GUEST_PROVIDER_META.get(d["provider"], {}).get("color", "#5c3317"),
         "domain": _GUEST_PROVIDER_META.get(d["provider"], {}).get("domain"),
     } for d in deals}
@@ -1144,6 +1416,7 @@ def affiliate_redirect(provider, plan_id=None):
     country = request.args.get("country")
     hotel   = request.args.get("hotel")
     plan    = request.args.get("plan") or plan_id
+    dest    = request.args.get("dest")  # hotel destination (canonical Hebrew)
 
     try:
         log_affiliate_click(provider, plan_id=plan, country=country,
@@ -1159,7 +1432,7 @@ def affiliate_redirect(provider, plan_id=None):
                         ip_hash=ip_hash, user_agent=request.headers.get("User-Agent"),
                         db_path=_db_path())
 
-    return redirect(_guest_provider_dest(provider), 302)
+    return redirect(_guest_provider_dest(provider, destination=dest), 302)
 
 
 @app.route("/api/affiliate/stats")
@@ -1179,6 +1452,60 @@ def api_affiliate_stats():
 def api_exchange_rates():
     from scraper import _get_usd_to_ils, _get_eur_to_ils, _get_gbp_to_ils
     return jsonify({"usd": _get_usd_to_ils(), "eur": _get_eur_to_ils(), "gbp": _get_gbp_to_ils()})
+
+
+# ── Public B2C eSIM price comparison (consumer site, no auth) ────────────────
+# A free, no-login alternative to the B2B dashboard: travelers pick a destination
+# and see the cheapest live global-eSIM deals. Monetized through the same /go
+# affiliate redirect (no hotel attribution). Global eSIM providers only — the
+# include_local=False feed drops local Israeli tourist SIMs.
+
+@app.route("/api/esim/destinations")
+@limiter.limit("60 per minute")
+def api_esim_destinations():
+    """Destinations that currently have live global-eSIM deals, for the consumer
+    destination picker: canonical Hebrew name + deal count + cheapest price."""
+    dests = get_esim_destinations(db_path=_db_path())
+    return _public_cache(jsonify(dests), 600)
+
+
+@app.route("/api/esim/compare")
+@limiter.limit("60 per minute")
+def api_esim_compare():
+    """Public consumer feed: cheapest live global-eSIM deals for a destination.
+    Same shape as the guest portal minus hotel branding, global providers only."""
+    destination = (request.args.get("destination") or ISRAEL_HE).strip()
+    deals, providers, updated_at = _assemble_guest_deals(
+        db_path=_db_path(), destination=destination, include_local=False)
+    # Live FX so the consumer page can show an accurate ₪ headline computed from
+    # each deal's native original_price (the stored `price` column uses a stale
+    # scrape-time rate and understates by ~20%).
+    try:
+        from scraper import _get_usd_to_ils, _get_eur_to_ils, _get_gbp_to_ils
+        fx = {"usd": round(_get_usd_to_ils(), 3), "eur": round(_get_eur_to_ils(), 3),
+              "gbp": round(_get_gbp_to_ils(), 3)}
+    except Exception:
+        fx = {"usd": 3.7, "eur": 4.0, "gbp": 4.7}
+    # First active discount code per provider in the feed (matches PlanCard).
+    provs_in_feed = {d["provider"] for d in deals}
+    coupons = {}
+    for c in get_active_coupons(db_path=_db_path()):
+        car = c["carrier"]
+        if car in provs_in_feed and car not in coupons:
+            coupons[car] = {
+                "code": c["code"], "discount_label": c.get("discount_label"),
+                "external_offer_url": c.get("external_offer_url"),
+                "partner_name": c.get("partner_name"),
+            }
+    payload = {
+        "destination": destination,
+        "deals": deals,
+        "providers": providers,
+        "coupons": coupons,
+        "fx": fx,
+        "updated_at": updated_at or datetime.now(timezone.utc).isoformat(),
+    }
+    return _public_cache(jsonify(payload), 300)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -1220,12 +1547,26 @@ def api_guest_portal(slug):
     hotel = get_hotel(slug, db_path=_db_path())
     if not hotel or not hotel.get("active"):
         return jsonify({"error": "Guest portal not found"}), 404
-    deals, providers, updated_at = _assemble_guest_deals(db_path=_db_path())
+    destination = hotel.get("country") or "ישראל"
+    deals, providers, updated_at = _assemble_guest_deals(db_path=_db_path(), destination=destination)
     try:
         from scraper import _get_usd_to_ils
         fx = _get_usd_to_ils()
     except Exception:
         fx = 3.7
+    # Discount codes for the providers in this feed (e.g. Saily MOCA 10%), first
+    # active code per carrier (matches the main app's PlanCard behaviour).
+    provs_in_feed = {d["provider"] for d in deals}
+    guest_coupons = {}
+    for c in get_active_coupons(db_path=_db_path()):
+        car = c["carrier"]
+        if car in provs_in_feed and car not in guest_coupons:
+            guest_coupons[car] = {
+                "code": c["code"],
+                "discount_label": c.get("discount_label"),
+                "external_offer_url": c.get("external_offer_url"),
+                "partner_name": c.get("partner_name"),
+            }
     payload = {
         "hotel": {
             "slug": hotel["slug"], "name": hotel["name"], "tagline": hotel.get("tagline"),
@@ -1236,9 +1577,11 @@ def api_guest_portal(slug):
             },
             "languages": hotel.get("languages") or ["en", "he"],
             "default_lang": hotel.get("default_lang") or "en",
+            "country": destination,
         },
         "deals": deals,
         "providers": providers,
+        "coupons": guest_coupons,
         "fx": round(fx, 3),
         "updated_at": updated_at or datetime.now(timezone.utc).isoformat(),
     }
@@ -1757,6 +2100,9 @@ def _price_direction(change):
         return None
 
 
+# Carrier ID \u2192 display name for price-history endpoints.
+# MUST stay in sync with mass-market-app/src/data/carrierLabels.js
+# (mirrors _CARRIER_NAMES below; both track the JS GLOBAL_LABELS/DOMESTIC_LABELS).
 _HISTORY_CARRIER_NAMES = {
     'partner': '\u05e4\u05e8\u05d8\u05e0\u05e8',
     'pelephone': '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df',
@@ -1792,6 +2138,7 @@ _HISTORY_CARRIER_NAMES = {
     'seven_g': '7G',
     'bestconnect': 'Best Connect',
     'esimplus': 'eSIM Plus',
+    'yesim': 'Yesim', 'nomad': 'Nomad', 'ubigi': 'Ubigi', 'alosim': 'aloSIM',
 }
 _HISTORY_TYPE_NAMES = {
     'domestic': '\u05de\u05e7\u05d5\u05de\u05d9',
@@ -3174,6 +3521,7 @@ def api_chat():
             'bcengi': 'Bcengi', 'esim70': 'eSIM70', 'jetpack': 'Jetpack', 'breez': 'Breeze',
             'bytesim': 'ByteSim', 'besim': 'Besim', 'seven_g': '7G',
             'bestconnect': 'Best Connect', 'esimplus': 'eSIM Plus',
+            'yesim': 'Yesim', 'nomad': 'Nomad', 'ubigi': 'Ubigi', 'alosim': 'aloSIM',
             # USA tourist-plan operators (נוחתים בארה"ב) — mirror of USA_LABELS
             # in carrierLabels.js
             'tmobile_prepaid': 'T-Mobile Prepaid', 'att_prepaid': 'AT&T Prepaid',
