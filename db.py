@@ -389,6 +389,24 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_at
                 ON affiliate_clicks(clicked_at);
+            -- Anonymous traffic events for the public B2C eSIM compare page
+            -- (page views + destination picks). NO PII — ip is hashed, sid is a
+            -- random per-browser-session token (not an identity). Powers the B2C
+            -- traffic dashboard; deal clicks live in affiliate_clicks (src='esim').
+            CREATE TABLE IF NOT EXISTS esim_events (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                sid         TEXT,
+                event_type  TEXT NOT NULL,   -- page_view | destination_pick
+                destination TEXT,            -- canonical Hebrew dest (on pick / deep-link)
+                src         TEXT,            -- acquisition source (utm_source / referrer host)
+                campaign    TEXT,            -- specific post/video (utm_campaign / campaign)
+                lang        TEXT,
+                referrer    TEXT,            -- referrer host only
+                ip_hash     TEXT,
+                created_at  TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_esim_events_at
+                ON esim_events(created_at);
             CREATE TABLE IF NOT EXISTS workspace_invites (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 token        TEXT NOT NULL UNIQUE,
@@ -774,6 +792,80 @@ def get_affiliate_attribution(days=30, db_path=None):
         return {
             "by_source":   [{"src": r[0], "clicks": r[1]} for r in by_source],
             "by_campaign": [{"campaign": r[0], "src": r[1], "clicks": r[2]} for r in by_campaign],
+        }
+    finally:
+        conn.close()
+
+
+def log_esim_event(event_type, sid=None, destination=None, src=None, campaign=None,
+                   lang=None, referrer=None, ip_hash=None, db_path=None):
+    """Best-effort anonymous B2C eSIM page event. NEVER raises into the caller."""
+    if not event_type:
+        return
+    try:
+        conn = _connect(db_path)
+        try:
+            conn.execute(
+                "INSERT INTO esim_events "
+                "(sid, event_type, destination, src, campaign, lang, referrer, ip_hash, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                ((sid or "")[:40] or None, str(event_type)[:30], destination,
+                 (src or "")[:60] or None, (campaign or "")[:80] or None,
+                 (lang or "")[:8] or None, (referrer or "")[:120] or None, ip_hash,
+                 datetime.now(timezone.utc).isoformat())
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        pass
+
+
+def get_esim_analytics(days=30, db_path=None):
+    """Traffic dashboard for the public B2C eSIM page: views / sessions / destination
+    picks from esim_events + deal clicks from affiliate_clicks (src='esim'), merged
+    into a funnel by day / destination / source / campaign. days=0 = lifetime."""
+    conn = _connect(db_path)
+    try:
+        ev_time, cl_time, pev, pcl = "", "", [], []
+        if days and days > 0:
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+            ev_time, cl_time, pev, pcl = " AND created_at >= ?", " AND clicked_at >= ?", [cutoff], [cutoff]
+
+        one  = lambda sql, p=(): (conn.execute(sql, p).fetchone() or [0])[0]
+        rows = lambda sql, p=(): conn.execute(sql, p).fetchall()
+
+        views    = one(f"SELECT COUNT(*) FROM esim_events WHERE event_type='page_view'{ev_time}", pev)
+        sessions = one(f"SELECT COUNT(DISTINCT sid) FROM esim_events WHERE event_type='page_view' AND sid IS NOT NULL{ev_time}", pev)
+        picks    = one(f"SELECT COUNT(*) FROM esim_events WHERE event_type='destination_pick'{ev_time}", pev)
+        clicks   = one(f"SELECT COUNT(*) FROM affiliate_clicks WHERE src='esim'{cl_time}", pcl)
+
+        v_day = dict(rows(f"SELECT date(created_at), COUNT(*) FROM esim_events WHERE event_type='page_view'{ev_time} GROUP BY 1", pev))
+        c_day = dict(rows(f"SELECT date(clicked_at), COUNT(*) FROM affiliate_clicks WHERE src='esim'{cl_time} GROUP BY 1", pcl))
+        by_day = [{"date": d, "views": v_day.get(d, 0), "clicks": c_day.get(d, 0)} for d in sorted(set(v_day) | set(c_day))]
+
+        d_pick  = dict(rows(f"SELECT destination, COUNT(*) FROM esim_events WHERE event_type='destination_pick' AND destination IS NOT NULL{ev_time} GROUP BY destination", pev))
+        d_click = dict(rows(f"SELECT country, COUNT(*) FROM affiliate_clicks WHERE src='esim' AND country IS NOT NULL{cl_time} GROUP BY country", pcl))
+        top_destinations = sorted(
+            [{"destination": k, "picks": d_pick.get(k, 0), "clicks": d_click.get(k, 0)} for k in (set(d_pick) | set(d_click))],
+            key=lambda r: r["picks"] + r["clicks"], reverse=True)[:12]
+
+        by_source = [{"src": r[0], "views": r[1]} for r in rows(
+            f"SELECT COALESCE(NULLIF(src,''),'—'), COUNT(*) FROM esim_events WHERE event_type='page_view'{ev_time} GROUP BY 1 ORDER BY 2 DESC", pev)][:12]
+
+        c_views  = dict(rows(f"SELECT campaign, COUNT(*) FROM esim_events WHERE event_type='page_view' AND campaign IS NOT NULL AND campaign!=''{ev_time} GROUP BY campaign", pev))
+        c_clicks = dict(rows(f"SELECT campaign, COUNT(*) FROM affiliate_clicks WHERE src='esim' AND campaign IS NOT NULL AND campaign!=''{cl_time} GROUP BY campaign", pcl))
+        by_campaign = sorted(
+            [{"campaign": k, "views": c_views.get(k, 0), "clicks": c_clicks.get(k, 0)} for k in (set(c_views) | set(c_clicks))],
+            key=lambda r: r["views"] + r["clicks"], reverse=True)[:15]
+
+        conv = round(clicks / views * 100, 1) if views else 0.0
+        return {
+            "totals": {"views": views, "sessions": sessions, "picks": picks, "clicks": clicks, "conversion": conv},
+            "by_day": by_day,
+            "top_destinations": top_destinations,
+            "by_source": by_source,
+            "by_campaign": by_campaign,
         }
     finally:
         conn.close()

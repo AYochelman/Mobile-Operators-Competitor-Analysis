@@ -24,6 +24,7 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                log_affiliate_click, get_affiliate_stats, get_affiliate_attribution, \
                upsert_hotel, get_hotel, list_hotels, delete_hotel, \
                log_guest_event, get_guest_analytics, get_esim_deals_for_destination, \
+               log_esim_event, get_esim_analytics, \
                get_esim_destinations, \
                save_hotel_lead, get_hotel_leads, \
                log_audit, get_audit_log, \
@@ -128,6 +129,7 @@ ALLOWED_ORIGINS = [
     "http://localhost:5000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175",
     "http://127.0.0.1:5000", "http://127.0.0.1:5173",
     "https://www.mocaintel.com", "https://mocaintel.com",
+    "https://esim.mocaintel.com",  # public B2C eSIM compare microsite (its own origin)
     "https://lucent-kulfi-f037ad.netlify.app",  # legacy Netlify subdomain — kept as fallback
     # extra origins added dynamically via ALLOWED_ORIGINS env var
 ]
@@ -1525,6 +1527,43 @@ def api_esim_compare():
         "updated_at": updated_at or datetime.now(timezone.utc).isoformat(),
     }
     return _public_cache(jsonify(payload), 300)
+
+
+@app.route("/api/esim/event", methods=["POST"])
+@limiter.limit("240 per minute")
+def api_esim_event():
+    """Anonymous traffic beacon from the public B2C eSIM page (page_view /
+    destination_pick). No auth, no PII — ip hashed, sid is a random session token.
+    Deal clicks are logged separately by the /go redirect (src='esim')."""
+    body = request.get_json(silent=True) or {}
+    etype = (body.get("type") or "").strip()
+    if etype not in ("page_view", "destination_pick"):
+        return jsonify({"ok": False}), 400
+    log_esim_event(
+        etype,
+        sid=body.get("sid"),
+        destination=(body.get("destination") or None),
+        src=(body.get("src") or None),
+        campaign=(body.get("campaign") or None),
+        lang=(body.get("lang") or None),
+        referrer=(body.get("referrer") or None),
+        ip_hash=_guest_ip_hash(),
+        db_path=_db_path(),
+    )
+    return jsonify({"ok": True})
+
+
+@app.route("/api/esim/analytics")
+@require_api_key_or_super_admin
+@limiter.limit("60 per minute")
+def api_esim_analytics():
+    """B2C eSIM traffic dashboard: views / sessions / picks / clicks funnel by day,
+    destination, source and campaign. Admin-only (dev key or super_admin JWT)."""
+    try:
+        days = max(0, min(int(request.args.get("days", 30)), 365))
+    except (ValueError, TypeError):
+        days = 30
+    return jsonify(get_esim_analytics(days=days, db_path=_db_path()))
 
 
 # ════════════════════════════════════════════════════════════════════════════

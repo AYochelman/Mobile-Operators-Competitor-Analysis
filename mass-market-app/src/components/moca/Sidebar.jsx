@@ -385,6 +385,15 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         )}
         {isSuperAdmin && (
           <NavItem
+            to="/admin/esim"
+            icon={Icons.usage}
+            label="דשבורד eSIM (B2C)"
+            isActive={isPath('/admin/esim')}
+            onAfterNav={afterNav}
+          />
+        )}
+        {isSuperAdmin && (
+          <NavItem
             icon={Icons.external}
             label={<span>{'עמוד eSIM (B2C)'} <span style={{ opacity: 0.55 }}>↗</span></span>}
             onClick={() => window.open('/esim-deals', '_blank', 'noopener')}

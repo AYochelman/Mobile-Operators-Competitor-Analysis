@@ -331,6 +331,21 @@ export default function EsimComparePage() {
   // Campaign tag captured from the landing URL (utm), forwarded to /go on each
   // deal tap so a click is attributable to the specific post/video that drove it.
   const [campaign] = useState(() => _initParam('campaign') || _initParam('utm_campaign') || _initParam('utm_source') || '')
+  // Anonymous analytics: a per-session token + acquisition source (utm_source,
+  // else referrer host, else 'direct'). Powers the B2C traffic dashboard.
+  const [sid] = useState(() => {
+    try {
+      let s = sessionStorage.getItem('esim_sid')
+      if (!s) { s = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem('esim_sid', s) }
+      return s
+    } catch { return '' }
+  })
+  const acq = useMemo(() => {
+    let ref = ''
+    try { ref = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, '') : '' } catch { /* ignore */ }
+    return { src: _initParam('utm_source') || ref || 'direct', referrer: ref }
+  }, [])
+  const viewedRef = useRef(false)
 
   const t = T[lang] || T.he
 
@@ -339,6 +354,15 @@ export default function EsimComparePage() {
     let alive = true
     api.getEsimDestinations().then((list) => { if (alive) setDestList(Array.isArray(list) ? list : []) }).catch(() => {})
     return () => { alive = false }
+  }, [])
+
+  // Anonymous page-view beacon, once per mount (ref-guarded against StrictMode).
+  useEffect(() => {
+    if (viewedRef.current) return
+    viewedRef.current = true
+    api.trackEsim({ type: 'page_view', sid, src: acq.src, campaign, lang,
+      destination: dest || undefined, referrer: acq.referrer || undefined })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Fetch deals whenever the chosen destination changes (clearDest resets data).
@@ -376,6 +400,7 @@ export default function EsimComparePage() {
     setDest(he)
     setQuery('')
     setFilter('all')
+    api.trackEsim({ type: 'destination_pick', sid, destination: he, src: acq.src, campaign, lang })
     const next = new URLSearchParams(params)
     next.set('dest', he)
     setParams(next, { replace: true })

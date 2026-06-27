@@ -46,6 +46,7 @@ const HotelsLandingPage     = lazy(() => import('./pages/HotelsLandingPage'))
 const HotelsAdminPage       = lazy(() => import('./pages/HotelsAdminPage'))
 // Public B2C eSIM price-comparison page (free, no auth) — sibling of "/".
 const EsimComparePage       = lazy(() => import('./pages/EsimComparePage'))
+const EsimAnalyticsPage     = lazy(() => import('./pages/EsimAnalyticsPage'))
 
 function PageFallback() {
   return <div className="flex justify-center py-20"><Spinner /></div>
@@ -205,6 +206,7 @@ export default function App() {
             <Route path="usage" element={<ProtectedRoute superAdminOnly><UsagePage /></ProtectedRoute>} />
             <Route path="admin/user-activity" element={<ProtectedRoute superAdminOnly><UserActivityPage /></ProtectedRoute>} />
             <Route path="admin/hotels" element={<ProtectedRoute superAdminOnly><HotelsAdminPage /></ProtectedRoute>} />
+            <Route path="admin/esim" element={<ProtectedRoute superAdminOnly><EsimAnalyticsPage /></ProtectedRoute>} />
             <Route path="notifications" element={<Navigate to="/alerts?tab=watchlist" replace />} />
             <Route path="ai-insights" element={<AIInsightsPage />} />
             <Route path="social" element={<SocialPage />} />

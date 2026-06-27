@@ -296,6 +296,11 @@ export const api = {
     if (campaign) p.set('campaign', campaign)  // which post/video drove this click
     return `${API_BASE}/go/${encodeURIComponent(provider)}?${p.toString()}`
   },
+  // Anonymous traffic beacon for the B2C page (page_view / destination_pick). Fire-and-forget.
+  trackEsim: (payload) =>
+    fetchApi('/api/esim/event', { method: 'POST', body: JSON.stringify(payload), keepalive: true }).catch(() => {}),
+  // B2C traffic dashboard data (admin only). days=0 = lifetime.
+  getEsimAnalytics: (days = 30) => fetchApi(`/api/esim/analytics?days=${days}`),
 
   // Operator console — super_admin (or dev API key).
   getHotels:         () => fetchApi('/api/hotels'),
