@@ -259,14 +259,20 @@ function gbLabel(d, t) {
   return `${+d.gb}GB`
 }
 
-// Provider tile: real logo (DuckDuckGo favicon CDN) on a white chip with a
-// brand-colored ring; falls back to the colored monogram on missing/failed logo.
+// Providers whose DuckDuckGo favicon is too low-res — serve a sharp local logo
+// (in public/logos/) keyed by domain instead. Add entries here as needed.
+const SHARP_LOGOS = { 'tuki-esim.co.il': '/logos/tuki-icon.png' }
+
+// Provider tile: real logo (sharp local file, else DuckDuckGo favicon CDN) on a
+// white chip with a brand-colored ring; falls back to the colored monogram on
+// missing/failed logo.
 function ProviderLogo({ pv, mono }) {
   const [err, setErr] = useState(false)
-  if (pv.domain && !err) {
+  const src = SHARP_LOGOS[pv.domain] || (pv.domain ? `https://icons.duckduckgo.com/ip3/${pv.domain}.ico` : null)
+  if (src && !err) {
     return (
       <div className="pchip logo" style={{ borderColor: pv.color }}>
-        <img src={`https://icons.duckduckgo.com/ip3/${pv.domain}.ico`} alt="" loading="lazy" onError={() => setErr(true)} />
+        <img src={src} alt="" loading="lazy" onError={() => setErr(true)} />
       </div>
     )
   }
@@ -322,6 +328,9 @@ export default function EsimComparePage() {
   const [dataNeed, setDataNeed] = useState(10)
   const [filter, setFilter] = useState('all')
   const resultsRef = useRef(null)
+  // Campaign tag captured from the landing URL (utm), forwarded to /go on each
+  // deal tap so a click is attributable to the specific post/video that drove it.
+  const [campaign] = useState(() => _initParam('campaign') || _initParam('utm_campaign') || _initParam('utm_source') || '')
 
   const t = T[lang] || T.he
 
@@ -497,7 +506,7 @@ export default function EsimComparePage() {
   }, [t, stay, dataNeed, eligible.length])
 
   const openDeal = (d) => {
-    window.open(api.esimGoUrl(d.provider, d.plan_name, lang, dest), '_blank', 'noopener')
+    window.open(api.esimGoUrl(d.provider, d.plan_name, lang, dest, campaign), '_blank', 'noopener')
   }
 
   const updated = data?.updated_at ? new Date(data.updated_at) : null

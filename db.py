@@ -383,7 +383,9 @@ def init_db(db_path=None):
                 plan_id    TEXT,
                 country    TEXT,
                 clicked_at TEXT NOT NULL,
-                ip_hash    TEXT
+                ip_hash    TEXT,
+                src        TEXT,
+                campaign   TEXT
             );
             CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_at
                 ON affiliate_clicks(clicked_at);
@@ -643,6 +645,16 @@ def init_db(db_path=None):
                 conn.commit()
             except Exception:
                 pass  # column already exists
+        # Migration: attribution on affiliate clicks. `src` = the traffic source
+        # channel (e.g. 'esim' for the B2C compare page vs hotel guest portals);
+        # `campaign` = the specific content/post (utm_source/utm_campaign) so we can
+        # tell WHICH video/post drove the click. Both NULL for legacy rows.
+        for col in ("src", "campaign"):
+            try:
+                conn.execute(f"ALTER TABLE affiliate_clicks ADD COLUMN {col} TEXT")
+                conn.commit()
+            except Exception:
+                pass  # column already exists
         # Migration: terms_url on abroad_plans — the roaming card's "עיקרי התוכנית"
         # PDF. Populated per scrape (e.g. Cellcom's policiesEpi from its abroad API),
         # surfaced by PlanCard's details link with the hardcoded map as a fallback.
@@ -703,13 +715,16 @@ def get_news_articles(carrier=None, limit=200, db_path=None):
         conn.close()
 
 
-def log_affiliate_click(provider, plan_id=None, country=None, ip_hash=None, db_path=None):
+def log_affiliate_click(provider, plan_id=None, country=None, ip_hash=None,
+                        src=None, campaign=None, db_path=None):
     conn = _connect(db_path)
     try:
         conn.execute(
-            """INSERT INTO affiliate_clicks (provider, plan_id, country, clicked_at, ip_hash)
-               VALUES (?, ?, ?, ?, ?)""",
-            (provider, plan_id, country, datetime.now(timezone.utc).isoformat(), ip_hash)
+            """INSERT INTO affiliate_clicks
+                   (provider, plan_id, country, clicked_at, ip_hash, src, campaign)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (provider, plan_id, country, datetime.now(timezone.utc).isoformat(),
+             ip_hash, src, campaign)
         )
         conn.commit()
     finally:
@@ -729,6 +744,37 @@ def get_affiliate_stats(days=30, db_path=None):
             (cutoff,)
         ).fetchall()
         return [{"provider": r[0], "date": r[1], "clicks": r[2]} for r in rows]
+    finally:
+        conn.close()
+
+
+def get_affiliate_attribution(days=30, db_path=None):
+    """Click attribution breakdown by traffic source (`src`) and by campaign
+    (the specific post/video, from utm). Lets us see WHICH channel/content drove
+    the clicks — separate from get_affiliate_stats so its provider/date shape
+    (consumed by SettingsPage) stays unchanged. Legacy rows have NULL src/campaign,
+    surfaced as 'ללא תיוג' / 'untagged' so they're still counted."""
+    conn = _connect(db_path)
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        by_source = conn.execute(
+            """SELECT COALESCE(NULLIF(src, ''), '—') AS src, COUNT(*) AS clicks
+               FROM affiliate_clicks WHERE clicked_at >= ?
+               GROUP BY src ORDER BY clicks DESC""",
+            (cutoff,)
+        ).fetchall()
+        by_campaign = conn.execute(
+            """SELECT COALESCE(NULLIF(campaign, ''), '—') AS campaign,
+                      COALESCE(NULLIF(src, ''), '—') AS src, COUNT(*) AS clicks
+               FROM affiliate_clicks
+               WHERE clicked_at >= ? AND campaign IS NOT NULL AND campaign != ''
+               GROUP BY campaign, src ORDER BY clicks DESC""",
+            (cutoff,)
+        ).fetchall()
+        return {
+            "by_source":   [{"src": r[0], "clicks": r[1]} for r in by_source],
+            "by_campaign": [{"campaign": r[0], "src": r[1], "clicks": r[2]} for r in by_campaign],
+        }
     finally:
         conn.close()
 

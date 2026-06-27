@@ -121,10 +121,10 @@ function AppShell() {
 //   production build      → DEV is false, so /esim-deals returns the SPA 404 and
 //                          the esim.* host is inert: a build+deploy never exposes
 //                          it publicly.
-// To LAUNCH publicly: replace this with `const ESIM_B2C_LIVE = true`, then
-// `npm run build`, redeploy dist, and wire the esim.mocaintel.com subdomain
-// (Netlify alias + Cloudflare DNS-only). The page code stays intact either way.
-const ESIM_B2C_LIVE = import.meta.env.DEV
+// LAUNCHED 2026-06-27: the consumer eSIM-compare page is public. `true` exposes
+// /esim-deals and the esim.mocaintel.com microsite in production builds too.
+// (Was `import.meta.env.DEV` while unpublished — flip back to hide it again.)
+const ESIM_B2C_LIVE = true
 
 // Access gate for the consumer eSIM page. Public only once launched / in dev
 // (ESIM_B2C_LIVE). While unpublished, super-admins can still open it (via the

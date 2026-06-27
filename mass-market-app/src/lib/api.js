@@ -110,6 +110,9 @@ export const api = {
   // Affiliate analytics — admin only
   getAffiliateStats: (days = 30) =>
     fetchApi(`/api/affiliate/stats?days=${days}`),
+  // Click attribution by traffic source + campaign (which channel / post drove clicks)
+  getAffiliateAttribution: (days = 30) =>
+    fetchApi(`/api/affiliate/attribution?days=${days}`),
 
   // Claude API usage — admin only. days=0 returns lifetime totals.
   getClaudeUsageSummary: (days = 30) =>
@@ -288,8 +291,9 @@ export const api = {
     fetchApi(`/api/esim/compare${destination ? '?destination=' + encodeURIComponent(destination) : ''}`),
   // Affiliate deep link: routes the click through Flask /go (no hotel attribution
   // — the consumer site earns directly). Returns an absolute URL (open new tab).
-  esimGoUrl: (provider, plan, lang = 'he', dest = 'ישראל') => {
+  esimGoUrl: (provider, plan, lang = 'he', dest = 'ישראל', campaign = '') => {
     const p = new URLSearchParams({ plan: plan || '', country: dest || 'ישראל', dest: dest || 'ישראל', lang, src: 'esim' })
+    if (campaign) p.set('campaign', campaign)  // which post/video drove this click
     return `${API_BASE}/go/${encodeURIComponent(provider)}?${p.toString()}`
   },
 

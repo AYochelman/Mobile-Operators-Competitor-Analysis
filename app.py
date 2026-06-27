@@ -21,7 +21,7 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                get_archive_plans, get_archive_banners, get_archive_date_range, \
                get_history_changes, get_history_price_series, \
                upsert_news_articles, get_news_articles, \
-               log_affiliate_click, get_affiliate_stats, \
+               log_affiliate_click, get_affiliate_stats, get_affiliate_attribution, \
                upsert_hotel, get_hotel, list_hotels, delete_hotel, \
                log_guest_event, get_guest_analytics, get_esim_deals_for_destination, \
                get_esim_destinations, \
@@ -1417,10 +1417,16 @@ def affiliate_redirect(provider, plan_id=None):
     hotel   = request.args.get("hotel")
     plan    = request.args.get("plan") or plan_id
     dest    = request.args.get("dest")  # hotel destination (canonical Hebrew)
+    # Attribution: `src` = traffic-source channel (e.g. 'esim' = the B2C compare
+    # page); `campaign` = the specific post/video, forwarded from utm so we can see
+    # which content drove the click. Accept any of campaign/utm_campaign/utm_source.
+    src      = (request.args.get("src") or "").strip()[:40] or None
+    campaign = (request.args.get("campaign") or request.args.get("utm_campaign")
+                or request.args.get("utm_source") or "").strip()[:80] or None
 
     try:
-        log_affiliate_click(provider, plan_id=plan, country=country,
-                            ip_hash=ip_hash, db_path=_db_path())
+        log_affiliate_click(provider, plan_id=plan, country=country, ip_hash=ip_hash,
+                            src=src, campaign=campaign, db_path=_db_path())
     except Exception:
         app.logger.warning("affiliate click log failed", exc_info=True)
 
@@ -1445,6 +1451,19 @@ def api_affiliate_stats():
         days = 30
     stats = get_affiliate_stats(days=days, db_path=_db_path())
     return jsonify(stats)
+
+
+@app.route("/api/affiliate/attribution")
+@require_api_key
+@limiter.limit("60 per minute")
+def api_affiliate_attribution():
+    """Click breakdown by traffic source + campaign — so we can see which channel
+    (B2C eSIM vs hotels) and which post/video actually drove the clicks."""
+    try:
+        days = max(1, min(int(request.args.get("days", 30)), 365))
+    except (ValueError, TypeError):
+        days = 30
+    return jsonify(get_affiliate_attribution(days=days, db_path=_db_path()))
 
 
 @app.route("/api/exchange-rates")

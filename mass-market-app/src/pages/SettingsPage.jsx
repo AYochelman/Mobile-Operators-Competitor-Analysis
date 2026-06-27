@@ -82,6 +82,7 @@ export default function SettingsPage() {
   const [affiliateStats, setAffiliateStats]     = useState([])
   const [affiliateDays, setAffiliateDays]       = useState(30)
   const [affiliateLoading, setAffiliateLoading] = useState(false)
+  const [affiliateAttr, setAffiliateAttr]       = useState(null)  // {by_source,by_campaign}
 
   // Coupons state (manually curated discount codes for global eSIM providers)
   const COUPON_BLANK = { carrier: '', code: '', discount_label: '', expires_at: '', source_url: '', notes: '', is_active: true, external_offer_url: '', partner_name: '' }
@@ -109,8 +110,12 @@ export default function SettingsPage() {
   const loadAffiliateStats = useCallback(async () => {
     setAffiliateLoading(true)
     try {
-      const data = await api.getAffiliateStats(affiliateDays)
+      const [data, attr] = await Promise.all([
+        api.getAffiliateStats(affiliateDays),
+        api.getAffiliateAttribution(affiliateDays).catch(() => null),
+      ])
       setAffiliateStats(data)
+      setAffiliateAttr(attr)
     } catch {}
     setAffiliateLoading(false)
   }, [affiliateDays])
@@ -580,6 +585,46 @@ export default function SettingsPage() {
                       <Line type="monotone" dataKey="clicks" stroke="#5c3317" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
+                </div>
+              )}
+
+              {affiliateAttr && (
+                <div className="mt-6 grid sm:grid-cols-2 gap-5">
+                  <div>
+                    <p className="text-sm font-medium text-moca-bolt mb-2">לפי ערוץ (src)</p>
+                    {(affiliateAttr.by_source || []).length === 0 ? (
+                      <p className="text-xs text-gray-400 py-2">אין נתונים עדיין</p>
+                    ) : (
+                      <table className="w-full text-sm border-separate border-spacing-y-1">
+                        <tbody>
+                          {affiliateAttr.by_source.map(r => (
+                            <tr key={r.src} className="bg-gray-50">
+                              <td className="px-3 py-2 rounded-r-lg font-medium">{r.src === 'esim' ? 'eSIM B2C' : r.src}</td>
+                              <td className="px-3 py-2 rounded-l-lg text-left">{r.clicks}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-moca-bolt mb-2">לפי קמפיין (פוסט/סרטון)</p>
+                    {(affiliateAttr.by_campaign || []).length === 0 ? (
+                      <p className="text-xs text-gray-400 py-2">אין עדיין קליקים מתויגים. הוסיפו <code>?campaign=…</code> לקישורים בפוסטים.</p>
+                    ) : (
+                      <table className="w-full text-sm border-separate border-spacing-y-1">
+                        <tbody>
+                          {affiliateAttr.by_campaign.map(r => (
+                            <tr key={r.campaign + r.src} className="bg-gray-50">
+                              <td className="px-3 py-2 rounded-r-lg font-medium">{r.campaign}</td>
+                              <td className="px-3 py-2 text-gray-400 text-xs">{r.src}</td>
+                              <td className="px-3 py-2 rounded-l-lg text-left">{r.clicks}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
                 </div>
               )}
             </>
