@@ -32,3 +32,12 @@ scripts/cloudflared.exe
 # (that's what gets drag-deployed to Netlify). A tracked root dist/ here was a trap:
 # dragging it shipped a months-old build (dead ngrok API URL, no _redirects).
 /dist/
+
+# Auto-generated banner archive snapshots (written by archive.py at runtime, ~100s of PNGs)
+/data/archive/banners/
+
+# Ad-hoc scratch / analysis files (root, underscore-prefixed) + local scraper debug dumps
+/_*
+/data/_*
+/data/cellcom_*
+/data/item_*.pdf
