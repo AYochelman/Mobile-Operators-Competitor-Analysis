@@ -6344,27 +6344,25 @@ MAYA_SLUG_TO_HEBREW = {
 
 
 def scrape_maya_global(_page=None, usd_rate=None):
-    """Scrape Maya Mobile's current eSIM catalog using pure HTTP (no Playwright).
+    """Fetch Maya Mobile's current eSIM catalog from the official affiliate feed.
 
-    PRODUCT-MODEL CHANGE (detected 2026-06): Maya retired its per-country / per-size
-    catalog (the old `var regionPricing = JSON.parse(...)` blob is gone) and rebuilt
-    the site as an Angular SSR app selling ONE global product line -- "Unlimited Global
-    Data" (works in 165+ countries) plus an "Unlimited Global + Cruise" line. Every
-    page now embeds the same catalog in
-        <script id="maya-mobile-state" type="application/json"> ... </script>
-    under CACHE_CONTENT_STATE_KEY.cache: `singleCountries` / `regions` are present but
-    carry EMPTY plan arrays; the real plans live in `globalRegions[].plans` and
-    `cruiseRegions[].plans`. So we fetch one page and read both arrays.
+    SOURCE CHANGE (2026-06): switched from scraping the Angular-SSR `maya-mobile-state`
+    blob to Maya's official partner feed at
+        https://assets.maya.net/affiliates/plans.json
+    (shared by their partnerships team; auth-free, stable JSON). The old scrape parsed
+    `CACHE_CONTENT_STATE_KEY.cache.globalRegions/cruiseRegions` out of the page HTML --
+    that markup died twice in the 2026 redesigns, so the official feed is far more robust.
 
-    Plans are marketed as unlimited (daily FUP) -> stored as data_gb=None. The two
-    destination buckets use extras[0] = global / global+cruise (Hebrew); the plain
-    "global" name maps to MAYA_GLOBAL in the frontend's getPlanCoverage. Maya lists
-    each tier under two slugs (e.g. unlimited-global-data + 3-days-unlimited-global-data)
-    -- deduped by plan_name. NOTE: stale per-country rows from the old model must be
-    purged from global_plans after saving (save_global_plans keeps stale rows).
+    The feed lists the same 8 unlimited tiers: 4 "global" (regionType=global) + 4
+    "global + cruise" (regionType=cruise / supportedCruises set), at 3/7/14/30 days. We
+    shape it into the globalRegions / cruiseRegions buckets the rest of this function
+    already expects, so plan naming + dedup (and the stored plan_name keys) are unchanged.
+
+    Plans are unlimited (daily FUP) -> data_gb=None. extras[0] = global / global+cruise
+    (Hebrew); the plain "global" name maps to MAYA_GLOBAL in getPlanCoverage. Price uses
+    priceDiscounted.USD (falls back to priceOriginal). The current catalog is exactly the
+    8 rows already stored, so no stale-row purge is needed.
     """
-    import re as _re
-
     if usd_rate is None:
         usd_rate = _get_usd_to_ils()
 
@@ -6373,35 +6371,42 @@ def scrape_maya_global(_page=None, usd_rate=None):
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     )
 
-    def _fetch_state(slug):
-        url = f"https://maya.net/{slug}"
-        req = urllib.request.Request(url, headers={"User-Agent": UA})
+    # Official affiliate data feed (shared by Maya's partnerships team 2026-06). Replaces
+    # the brittle Angular-SSR `maya-mobile-state` scrape that died twice in the 2026 site
+    # redesigns. Auth-free JSON of the same 8 unlimited tiers (4 global + 4 global+cruise).
+    API_URL = "https://assets.maya.net/affiliates/plans.json"
+    try:
+        req = urllib.request.Request(API_URL, headers={"User-Agent": UA})
         with urllib.request.urlopen(req, timeout=25) as r:
-            html = r.read().decode("utf-8", errors="replace")
-        m = _re.search(
-            r'<script id="maya-mobile-state" type="application/json">(.*?)</script>',
-            html, _re.S,
-        )
-        if not m:
-            return None
-        try:
-            return _json.loads(m.group(1))["CACHE_CONTENT_STATE_KEY"]["cache"]
-        except (KeyError, ValueError):
-            return None
-
-    # The global catalog is identical on every page; try a few candidates for resilience.
-    cache = None
-    for slug in ("plans/global", "esim/global", "esim/usa", "esim/france"):
-        try:
-            cache = _fetch_state(slug)
-        except Exception as exc:
-            logger.warning(f"Maya Mobile {slug}: {exc}")
-            cache = None
-        if cache and (cache.get("globalRegions") or cache.get("cruiseRegions")):
-            break
-    if not cache:
-        logger.warning("Maya Mobile: no maya-mobile-state catalog found -- skipping")
+            payload = _json.loads(r.read().decode("utf-8", errors="replace"))
+        api_plans = payload.get("plans") or []
+    except Exception as exc:
+        logger.warning(f"Maya Mobile API: {exc} -- skipping")
         return []
+    if not api_plans:
+        logger.warning("Maya Mobile API: no plans returned -- skipping")
+        return []
+
+    def _adapt(p):
+        # Map the affiliate-feed shape onto the legacy region-plan shape _ingest expects,
+        # so the naming / dedup logic below (and the stored plan_name keys) stay unchanged.
+        return {
+            "validity": p.get("validityInDays"),
+            "priceBundle": p.get("priceDiscounted") or p.get("priceOriginal") or {},
+            "dataUsageAllowanceType": p.get("dataUsageAllowanceType"),
+            "dataUsageAllowanceInGb": p.get("dataUsageAllowanceInGb"),
+            "fupDescription": p.get("fupDescription"),
+            "isActive": True,
+        }
+
+    def _is_cruise(p):
+        return (p.get("regionType") == "cruise") or bool(p.get("supportedCruises"))
+
+    # Shape into the buckets _ingest already consumes.
+    cache = {
+        "globalRegions": [{"plans": [_adapt(p) for p in api_plans if not _is_cruise(p)]}],
+        "cruiseRegions": [{"plans": [_adapt(p) for p in api_plans if _is_cruise(p)]}],
+    }
 
     GLOBAL_HEB = "גלובלי"
     CRUISE_HEB = "גלובלי ושייט"
