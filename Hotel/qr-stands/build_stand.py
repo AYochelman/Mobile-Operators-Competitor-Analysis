@@ -57,7 +57,7 @@ def build(s):
     width:105mm;height:148mm;background:var(--bg);border-radius:10mm;overflow:hidden;
     box-shadow:0 10px 40px rgba(40,20,5,.25);display:flex;flex-direction:column;position:relative;
   }}
-  .top{{background:var(--p);color:#fff;padding:9mm 8mm 8mm;text-align:center;position:relative;overflow:hidden}}
+  .top{{background:var(--p);color:#fff;min-height:32mm;padding:6mm 8mm;text-align:center;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center}}
   .top::after{{content:"";position:absolute;bottom:-30mm;right:-18mm;width:50mm;height:50mm;border-radius:50%;background:color-mix(in srgb,var(--a),transparent 70%)}}
   .brand{{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:8mm;letter-spacing:.5mm;position:relative;z-index:1}}
   .kicker{{font-size:2.9mm;letter-spacing:2.4mm;font-weight:700;opacity:.7;margin-top:1.5mm;position:relative;z-index:1}}
