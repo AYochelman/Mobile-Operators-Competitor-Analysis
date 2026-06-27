@@ -14,17 +14,12 @@ import AnnotationsModal from './AnnotationsModal'
 import { useWatchlist } from '../hooks/useWatchlist'
 import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
 import { useCoupons } from '../hooks/useCoupons'
+import { AFFILIATE_PROVIDERS, AFFILIATE_URLS } from '../data/affiliateLinks'
+import { alosimUrlFor } from '../data/alosimCountries'
+import { GLOBAL_LABELS, GLOBAL_COLORS } from '../data/carrierLabels'
 
 // Lazy — Recharts is ~340KB. Only load when the user actually opens history.
 const PriceHistoryModal = lazy(() => import('./PriceHistoryModal'))
-
-const AFFILIATE_PROVIDERS = new Set(['airalo', 'holafly', 'saily', 'globalesim'])
-const AFFILIATE_URLS = {
-  airalo:     'https://www.airalo.com',
-  holafly:    'https://esim.holafly.com',
-  saily:      'https://saily.com',
-  globalesim: 'https://globalesim.com',
-}
 
 const CARRIER_HOME_URLS = {
   partner:         'https://www.partner.net.il',
@@ -50,6 +45,10 @@ const CARRIER_HOME_URLS = {
   esimio:          'https://esim.io',
   sparks:          'https://sparksesim.com',
   voye:            'https://voye.com',
+  yesim:           'https://yesim.app',
+  nomad:           'https://www.nomadesim.com',
+  ubigi:           'https://www.ubigi.com',
+  alosim:          'https://alosim.com',
   orbit:           'https://www.orbitmobile.com',
   travelsim:       'https://www.travelsim.com',
   gomoworld:       'https://www.gomoworld.com',
@@ -73,25 +72,9 @@ const CARRIER_LABELS = {
   mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom',
   golan: 'גולן טלקום', rami_levy: 'רמי לוי תקשורת',
 }
-const GLOBAL_LABELS = {
-  tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
-  pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV',
-  world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
-  holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
-  orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
-  maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack',
-  breez: 'Breeze', bytesim: 'ByteSim', besim: 'Besim',
-  seven_g: '7G', bestconnect: 'Best Connect', esimplus: 'eSIM Plus',
-}
-const GLOBAL_COLORS = {
-  tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'blue',
-  esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
-  saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber', voye: 'pink',
-  orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'violet',
-  maya: 'teal', esim70: 'emerald', jetpack: 'sky', breez: 'cyan',
-  bytesim: 'emerald', besim: 'teal',
-  seven_g: 'violet', bestconnect: 'blue', esimplus: 'blue',
-}
+// GLOBAL_LABELS + GLOBAL_COLORS now live in ../data/carrierLabels (single source of
+// truth, shared with GroupedPlanCard + ComparePage + DashboardPage) so newly added
+// eSIM providers can't drift out of sync.
 // US operators for the נוחתים בארה"ב tab (type='usa')
 const USA_LABELS = {
   tmobile_prepaid: 'T-Mobile Prepaid', att_prepaid: 'AT&T Prepaid',
@@ -583,8 +566,31 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
         <div className="pt-3">
           {isGlobalAffiliate ? (
             <div>
+              {coupon && (coupon.external_offer_url ? (
+                <a
+                  href={coupon.external_offer_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 hover:bg-[#ffe9a8]"
+                >
+                  <span aria-hidden="true">🎟</span>
+                  <span>{coupon.discount_label || 'הטבה'}{coupon.partner_name ? ` · אצל ${coupon.partner_name}` : ''}</span>
+                  <span className="text-[10px] text-[#7a5a30] mr-auto">פתח ↗</span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={copyCoupon}
+                  className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 hover:bg-[#ffe9a8]"
+                >
+                  <span aria-hidden="true">🎟</span>
+                  <span>קוד: <span className="font-mono tracking-wide">{coupon.code}</span>{coupon.discount_label ? ` · ${coupon.discount_label}` : ''}</span>
+                  <span className="text-[10px] text-[#7a5a30] mr-auto">{couponCopied ? '✓ הועתק' : 'העתק'}</span>
+                </button>
+              ))}
               <a
-                href={AFFILIATE_URLS[plan.carrier] || `https://www.${plan.carrier}.com`}
+                href={plan.carrier === 'alosim' ? alosimUrlFor(plan.extras?.[0]) : (AFFILIATE_URLS[plan.carrier] || `https://www.${plan.carrier}.com`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-1.5 w-full text-xs text-white bg-moca-bolt rounded-lg py-1.5 font-medium transition-colors hover:bg-[#7a4520]"

@@ -44,6 +44,8 @@ const ResetPasswordPage     = lazy(() => import('./pages/ResetPasswordPage'))
 const GuestPortalPage       = lazy(() => import('./pages/GuestPortalPage'))
 const HotelsLandingPage     = lazy(() => import('./pages/HotelsLandingPage'))
 const HotelsAdminPage       = lazy(() => import('./pages/HotelsAdminPage'))
+// Public B2C eSIM price-comparison page (free, no auth) — sibling of "/".
+const EsimComparePage       = lazy(() => import('./pages/EsimComparePage'))
 
 function PageFallback() {
   return <div className="flex justify-center py-20"><Spinner /></div>
@@ -112,7 +114,45 @@ function AppShell() {
   return <Layout />
 }
 
+// ── Public B2C eSIM page launch switch ──────────────────────────────────────
+// Master switch for the consumer eSIM-compare page.
+//   import.meta.env.DEV  → true only on the local dev server (`npm run dev`), so
+//                          you can preview progress at localhost:5173/esim-deals.
+//   production build      → DEV is false, so /esim-deals returns the SPA 404 and
+//                          the esim.* host is inert: a build+deploy never exposes
+//                          it publicly.
+// To LAUNCH publicly: replace this with `const ESIM_B2C_LIVE = true`, then
+// `npm run build`, redeploy dist, and wire the esim.mocaintel.com subdomain
+// (Netlify alias + Cloudflare DNS-only). The page code stays intact either way.
+const ESIM_B2C_LIVE = import.meta.env.DEV
+
+// Access gate for the consumer eSIM page. Public only once launched / in dev
+// (ESIM_B2C_LIVE). While unpublished, super-admins can still open it (via the
+// dashboard link) to preview the live consumer experience; everyone else gets
+// the 404 page, so it stays hidden from the public.
+function EsimGate() {
+  const { loading, isSuperAdmin } = useAuth()
+  if (ESIM_B2C_LIVE) return <EsimComparePage />
+  if (loading) return <PageFallback />
+  return isSuperAdmin ? <EsimComparePage /> : <NotFoundPage />
+}
+
+// Consumer microsite: on esim.mocaintel.com the whole host serves ONLY the
+// public B2C eSIM price-comparison page (no B2B app chrome / auth / providers).
+// The page reads ?dest / ?lang from the URL, so esim.mocaintel.com/?dest=… works.
+const IS_ESIM_HOST = ESIM_B2C_LIVE && typeof window !== 'undefined' &&
+  (window.location.hostname === 'esim.mocaintel.com' || window.location.hostname.startsWith('esim.'))
+
 export default function App() {
+  if (IS_ESIM_HOST) {
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route path="*" element={<EsimComparePage />} />
+        </Routes>
+      </Suspense>
+    )
+  }
   return (
     <ScrapeProvider>
       <BrandThemeApplier />
@@ -127,6 +167,10 @@ export default function App() {
               marketing landing. Siblings of "/" so they bypass the AppShell gate. */}
           <Route path="/guest/:slug" element={<GuestPortalPage />} />
           <Route path="/hotels" element={<HotelsLandingPage />} />
+          {/* Public B2C eSIM price comparison — free, no auth, sibling of "/".
+              EsimGate keeps it unpublished (404) until launch, but lets a
+              super-admin preview it via the dashboard link. */}
+          <Route path="/esim-deals" element={<EsimGate />} />
           <Route path="/" element={<AppShell />}>
             {/* Phase 19 — / is the Editorial Deep dashboard (executive view).
                 Plan cards UI lives at /plans (and other tab views at /roaming

@@ -12,6 +12,7 @@ const CARRIER_COLORS = {
   esimo: 'amber', simtlv: 'pink', world8: 'amber', xphone_global: 'orange',
   saily: 'pink', holafly: 'orange', esimio: 'orange', sparks: 'amber',
   voye: 'pink', orbit: 'amber', travelsim: 'amber',
+  yesim: 'orange', nomad: 'amber', ubigi: 'orange', alosim: 'pink',
 }
 
 const TAB_TITLE = { domestic: 'חבילות סלולר', abroad: 'חבילות חו"ל', global: 'חבילות גלובלי' }

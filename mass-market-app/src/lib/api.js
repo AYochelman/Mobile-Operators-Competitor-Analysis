@@ -268,8 +268,8 @@ export const api = {
   },
   // Attribution deep link: routes the click through Flask /go so the hotel earns
   // and the provider page opens. Returns an absolute URL (open in a new tab).
-  guestGoUrl: (slug, provider, plan, lang = 'en') => {
-    const p = new URLSearchParams({ hotel: slug, plan: plan || '', country: 'Israel', lang })
+  guestGoUrl: (slug, provider, plan, lang = 'en', dest = 'ישראל') => {
+    const p = new URLSearchParams({ hotel: slug, plan: plan || '', country: dest || 'ישראל', dest: dest || 'ישראל', lang })
     return `${API_BASE}/go/${encodeURIComponent(provider)}?${p.toString()}`
   },
   // Branded QR (SVG) for an <img src>; base = the public origin the QR encodes.
@@ -279,6 +279,19 @@ export const api = {
   },
   // Public lead capture from the /hotels marketing landing.
   submitHotelLead: (data) => fetchApi('/api/hotels/lead', { method: 'POST', body: JSON.stringify(data) }),
+
+  // ── Public B2C eSIM price comparison (consumer site, no auth) ──────────────
+  // Destinations with live global-eSIM deals (for the destination picker).
+  getEsimDestinations: () => fetchApi('/api/esim/destinations'),
+  // Cheapest live global-eSIM deals for a destination (canonical Hebrew name).
+  getEsimCompare: (destination) =>
+    fetchApi(`/api/esim/compare${destination ? '?destination=' + encodeURIComponent(destination) : ''}`),
+  // Affiliate deep link: routes the click through Flask /go (no hotel attribution
+  // — the consumer site earns directly). Returns an absolute URL (open new tab).
+  esimGoUrl: (provider, plan, lang = 'he', dest = 'ישראל') => {
+    const p = new URLSearchParams({ plan: plan || '', country: dest || 'ישראל', dest: dest || 'ישראל', lang, src: 'esim' })
+    return `${API_BASE}/go/${encodeURIComponent(provider)}?${p.toString()}`
+  },
 
   // Operator console — super_admin (or dev API key).
   getHotels:         () => fetchApi('/api/hotels'),

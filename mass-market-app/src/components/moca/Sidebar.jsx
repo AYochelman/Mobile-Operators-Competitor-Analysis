@@ -95,6 +95,9 @@ const Icons = {
   hotels: (
     <svg {...ICON_PROPS}><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>
   ),
+  external: (
+    <svg {...ICON_PROPS}><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+  ),
 }
 
 function NavItem({ to, icon, label, badge, badgeColor, end, onClick, isActive, onAfterNav }) {
@@ -377,6 +380,14 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
             icon={Icons.hotels}
             label="פורטלי אורחים"
             isActive={isPath('/admin/hotels')}
+            onAfterNav={afterNav}
+          />
+        )}
+        {isSuperAdmin && (
+          <NavItem
+            icon={Icons.external}
+            label={<span>{'עמוד eSIM (B2C)'} <span style={{ opacity: 0.55 }}>↗</span></span>}
+            onClick={() => window.open('/esim-deals', '_blank', 'noopener')}
             onAfterNav={afterNav}
           />
         )}

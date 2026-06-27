@@ -41,6 +41,7 @@ const CARRIER_NAMES = {
   pelephone_global: 'GlobalSIM', esimo: 'eSIMo',
   simtlv: 'SimTLV', world8: 'World8', saily: 'Saily', holafly: 'Holafly',
   esimio: 'eSIMio', sparks: 'Sparks', voye: 'Voye', orbit: 'Orbit',
+  yesim: 'Yesim', nomad: 'Nomad', ubigi: 'Ubigi', alosim: 'aloSIM',
   travelsim: 'TravelSim', gomoworld: 'GoMoWorld', tasim: 'Tasim',
   maya: 'Maya Mobile',
   bcengi: 'Bcengi',

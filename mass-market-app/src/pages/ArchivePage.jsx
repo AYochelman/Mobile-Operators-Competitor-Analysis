@@ -44,6 +44,10 @@ const ALL_PROVIDERS = [
   { id: 'seven_g',        label: '7G eSIM',        color: '#7c3aed' },
   { id: 'bestconnect',    label: 'Best Connect',   color: '#0f766e' },
   { id: 'esimplus',       label: 'eSIM Plus',      color: '#059669' },
+  { id: 'yesim',          label: 'Yesim',          color: '#f97316' },
+  { id: 'nomad',          label: 'Nomad',          color: '#16a34a' },
+  { id: 'ubigi',          label: 'Ubigi',          color: '#2563eb' },
+  { id: 'alosim',         label: 'aloSIM',         color: '#dc2626' },
 ]
 
 const PLAN_TYPE_LABELS = {

@@ -635,8 +635,9 @@ export function getCountriesForPlan(plan) {
     return null;
   }
 
-  // ── VOYE ──
-  if (carrier === 'voye') {
+  // ── VOYE / Yesim / Nomad / Ubigi / aloSIM ──
+  if (carrier === 'voye' || carrier === 'yesim' || carrier === 'nomad'
+      || carrier === 'ubigi' || carrier === 'alosim') {
     return null; // per-country and regional plans — no country lists yet
   }
 

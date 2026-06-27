@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
+import { destLabel, destInHe } from '../data/hotelDestinations'
 
 /* ════════════════════════════════════════════════════════════════════════
    MOCA Guest Connect — public guest portal  (route: /guest/:slug)
@@ -20,20 +21,23 @@ const fmtNum = (n) => {
 
 const T = {
   en: {
-    heroTitle: 'Stay connected in Israel',
+    heroTitle: 'Stay connected in {country}',
     sub: 'The best SIM & eSIM deals for your trip — compared live, picked for you.',
     updated: 'Prices updated',
     wizTitle: 'Find your plan in 10 seconds',
     qDays: 'How long are you staying?',
     qData: 'How much data do you need?',
     topPicks: 'Top picks for your trip',
+    tripSummary: '{n} deals for your trip · {days} · {data}',
     allDeals: 'All deals',
     helpTitle: 'New to eSIM?',
     h1b: 'Buy online — takes 2 minutes', h1s: "No store, no queue. Pay by card and you're done.",
     h2b: 'Scan the QR code you get by email', h2s: 'Your phone installs the plan automatically.',
     h3b: 'Stay reachable', h3s: 'Keep WhatsApp and your home number active alongside.',
     compat: 'Works on iPhone XS and newer, Samsung Galaxy S20+, Google Pixel 3+. Prefer a physical SIM with an Israeli number? Filter for “Local SIM” above.',
-    trust: 'Compared across <b>27 global eSIM providers</b> and <b>10 Israeli carriers</b><br>Refreshed twice a day by MOCA market intelligence',
+    compatAbroad: 'Works on iPhone XS and newer, Samsung Galaxy S20+, Google Pixel 3+. Install your eSIM before you fly and you land already connected.',
+    trust: 'Compared across <b>over 30 global eSIM providers</b> and <b>10 Israeli carriers</b><br>Refreshed twice a day by MOCA market intelligence',
+    trustAbroad: 'Compared across <b>over 30 global eSIM providers</b><br>Refreshed twice a day by MOCA market intelligence',
     disclaim: 'Sample of live market prices. Final price is shown on the provider’s page.',
     days: [{ v: 3, l: '3 days' }, { v: 7, l: '1 week' }, { v: 14, l: '2 weeks' }, { v: 30, l: '1 month' }],
     data: [{ v: 3, l: 'Light', s: '3GB · maps & chat' }, { v: 10, l: 'Regular', s: '10GB · + social' }, { v: 20, l: 'Heavy', s: '20GB · + video' }, { v: 'unl', l: 'Unlimited', s: 'no limits at all' }],
@@ -45,22 +49,26 @@ const T = {
     empty: 'No deals match this filter for your trip — try another option.',
     notFound: 'This guest portal is not available.',
     loading: 'Loading the best deals…',
+    couponLabel: 'Code {code} · {pct} off', couponNoPct: 'Discount code: {code}', couponCopy: 'copy', couponCopied: 'copied ✓',
   },
   he: {
-    heroTitle: 'להישאר מחוברים בישראל',
+    heroTitle: 'להישאר מחוברים {inCountry}',
     sub: 'חבילות ה-eSIM והסים המשתלמות ביותר לטיול — בהשוואה חיה, מותאם אישית.',
     updated: 'המחירים עודכנו',
     wizTitle: 'מציאת חבילה ב-10 שניות',
-    qDays: 'כמה זמן נשארים בישראל?',
+    qDays: 'כמה זמן נשארים {inCountry}?',
     qData: 'כמה דאטה צריך?',
     topPicks: 'ההצעות המובילות לטיול שלכם',
+    tripSummary: '{n} חבילות מתאימות · {days} · {data}',
     allDeals: 'כל החבילות',
     helpTitle: 'פעם ראשונה עם eSIM?',
     h1b: 'רוכשים אונליין — לוקח 2 דקות', h1s: 'בלי חנות ובלי תור. משלמים בכרטיס וזהו.',
     h2b: 'סורקים את ה-QR שמגיע למייל', h2s: 'הטלפון מתקין את החבילה אוטומטית.',
     h3b: 'נשארים זמינים', h3s: 'וואטסאפ והמספר מהבית ממשיכים לעבוד במקביל.',
     compat: 'עובד באייפון XS ומעלה, גלקסי S20 ומעלה, פיקסל 3 ומעלה. מעדיפים סים פיזי עם מספר ישראלי? סננו לפי ״סים מקומי״ למעלה.',
-    trust: 'מושווה על פני <b>27 ספקי eSIM גלובליים</b> ו-<b>10 מפעילים ישראליים</b><br>מתעדכן פעמיים ביום על ידי מנוע המודיעין של MOCA',
+    compatAbroad: 'עובד באייפון XS ומעלה, גלקסי S20 ומעלה, פיקסל 3 ומעלה. התקינו את ה-eSIM עוד לפני הטיסה ותנחתו כבר מחוברים.',
+    trust: 'מושווה על פני <b>למעלה מ-30 ספקי eSIM גלובליים</b> ו-<b>10 מפעילים ישראליים</b><br>מתעדכן פעמיים ביום על ידי מנוע המודיעין של MOCA',
+    trustAbroad: 'מושווה על פני <b>למעלה מ-30 ספקי eSIM גלובליים</b><br>מתעדכן פעמיים ביום על ידי מנוע המודיעין של MOCA',
     disclaim: 'מדגם ממחירי השוק החיים. המחיר הסופי מוצג בעמוד הספק.',
     days: [{ v: 3, l: '3 ימים' }, { v: 7, l: 'שבוע' }, { v: 14, l: 'שבועיים' }, { v: 30, l: 'חודש' }],
     data: [{ v: 3, l: 'קל', s: '3GB · ניווט והודעות' }, { v: 10, l: 'רגיל', s: '10GB · + רשתות' }, { v: 20, l: 'כבד', s: '20GB · + וידאו' }, { v: 'unl', l: 'ללא הגבלה', s: 'בלי לחשוב בכלל' }],
@@ -72,22 +80,26 @@ const T = {
     empty: 'אין חבילות שמתאימות לסינון הזה — נסו אפשרות אחרת.',
     notFound: 'פורטל האורח הזה אינו זמין.',
     loading: 'טוענים את ההצעות המשתלמות…',
+    couponLabel: 'קוד {code} · {pct} הנחה', couponNoPct: 'קוד הנחה: {code}', couponCopy: 'העתקה', couponCopied: 'הועתק ✓',
   },
   fr: {
-    heroTitle: 'Restez connecté en Israël',
+    heroTitle: 'Restez connecté en {country}',
     sub: 'Les meilleures offres SIM et eSIM pour votre séjour — comparées en direct, choisies pour vous.',
     updated: 'Prix mis à jour',
     wizTitle: 'Trouvez votre forfait en 10 secondes',
     qDays: 'Combien de temps restez-vous ?',
     qData: 'De combien de données avez-vous besoin ?',
     topPicks: 'Meilleurs choix pour votre voyage',
+    tripSummary: '{n} offres pour votre voyage · {days} · {data}',
     allDeals: 'Toutes les offres',
     helpTitle: 'Première fois avec une eSIM ?',
     h1b: 'Achat en ligne — 2 minutes', h1s: 'Pas de boutique, pas de file d’attente. Payez par carte et c’est fait.',
     h2b: 'Scannez le QR reçu par e-mail', h2s: 'Votre téléphone installe le forfait automatiquement.',
     h3b: 'Restez joignable', h3s: 'Gardez WhatsApp et votre numéro habituel actifs en parallèle.',
     compat: 'Compatible iPhone XS et plus récent, Samsung Galaxy S20+, Google Pixel 3+. Vous préférez une SIM physique avec un numéro israélien ? Filtrez par « SIM locale » ci-dessus.',
+    compatAbroad: 'Compatible iPhone XS et plus récent, Samsung Galaxy S20+, Google Pixel 3+. Installez votre eSIM avant le départ et vous atterrissez déjà connecté.',
     trust: 'Comparé parmi <b>27 fournisseurs eSIM mondiaux</b> et <b>10 opérateurs israéliens</b><br>Actualisé deux fois par jour par l’intelligence de marché MOCA',
+    trustAbroad: 'Comparé parmi <b>27 fournisseurs eSIM mondiaux</b><br>Actualisé deux fois par jour par l’intelligence de marché MOCA',
     disclaim: 'Échantillon de prix du marché en direct. Le prix final s’affiche sur la page du fournisseur.',
     days: [{ v: 3, l: '3 jours' }, { v: 7, l: '1 semaine' }, { v: 14, l: '2 semaines' }, { v: 30, l: '1 mois' }],
     data: [{ v: 3, l: 'Léger', s: '3 Go · cartes et messages' }, { v: 10, l: 'Normal', s: '10 Go · + réseaux sociaux' }, { v: 20, l: 'Intensif', s: '20 Go · + vidéo' }, { v: 'unl', l: 'Illimité', s: 'aucune limite' }],
@@ -99,22 +111,26 @@ const T = {
     empty: 'Aucune offre ne correspond à ce filtre pour votre voyage — essayez une autre option.',
     notFound: 'Ce portail invité n’est pas disponible.',
     loading: 'Chargement des meilleures offres…',
+    couponLabel: 'Code {code} · {pct} de réduction', couponNoPct: 'Code promo : {code}', couponCopy: 'copier', couponCopied: 'copié ✓',
   },
   ru: {
-    heroTitle: 'Оставайтесь на связи в Израиле',
+    heroTitle: 'Оставайтесь на связи в {country}',
     sub: 'Лучшие предложения SIM и eSIM для вашей поездки — сравнение в реальном времени, подобрано для вас.',
     updated: 'Цены обновлены',
     wizTitle: 'Подберите тариф за 10 секунд',
     qDays: 'Сколько вы пробудете?',
     qData: 'Сколько нужно трафика?',
     topPicks: 'Лучшее для вашей поездки',
+    tripSummary: '{n} предложений для поездки · {days} · {data}',
     allDeals: 'Все предложения',
     helpTitle: 'Впервые с eSIM?',
     h1b: 'Покупка онлайн — 2 минуты', h1s: 'Без магазина и очереди. Оплатите картой — и готово.',
     h2b: 'Отсканируйте QR-код из письма', h2s: 'Телефон установит тариф автоматически.',
     h3b: 'Оставайтесь на связи', h3s: 'WhatsApp и ваш домашний номер продолжают работать одновременно.',
     compat: 'Работает на iPhone XS и новее, Samsung Galaxy S20+, Google Pixel 3+. Предпочитаете физическую SIM с израильским номером? Выберите фильтр «Местная SIM» выше.',
+    compatAbroad: 'Работает на iPhone XS и новее, Samsung Galaxy S20+, Google Pixel 3+. Установите eSIM до вылета — и приземлитесь уже на связи.',
     trust: 'Сравнение по <b>27 мировым операторам eSIM</b> и <b>10 израильским операторам</b><br>Обновляется дважды в день аналитикой MOCA',
+    trustAbroad: 'Сравнение по <b>27 мировым операторам eSIM</b><br>Обновляется дважды в день аналитикой MOCA',
     disclaim: 'Образец актуальных рыночных цен. Итоговая цена указана на странице поставщика.',
     days: [{ v: 3, l: '3 дня' }, { v: 7, l: '1 неделя' }, { v: 14, l: '2 недели' }, { v: 30, l: '1 месяц' }],
     data: [{ v: 3, l: 'Лёгкий', s: '3 ГБ · карты и чаты' }, { v: 10, l: 'Обычный', s: '10 ГБ · + соцсети' }, { v: 20, l: 'Большой', s: '20 ГБ · + видео' }, { v: 'unl', l: 'Безлимит', s: 'без ограничений' }],
@@ -126,6 +142,7 @@ const T = {
     empty: 'Нет предложений по этому фильтру для вашей поездки — попробуйте другой вариант.',
     notFound: 'Этот гостевой портал недоступен.',
     loading: 'Загружаем лучшие предложения…',
+    couponLabel: 'Промокод {code} · −{pct}', couponNoPct: 'Промокод: {code}', couponCopy: 'копировать', couponCopied: 'скопировано ✓',
   },
 }
 
@@ -159,6 +176,7 @@ const GC_CSS = `
 #gc-app main{padding:18px 16px 8px;display:flex;flex-direction:column;gap:20px;flex:1}
 #gc-app .card{background:var(--card);border-radius:var(--r);padding:18px;box-shadow:0 6px 24px rgba(20,35,60,.07)}
 #gc-app .sec{font-size:16.5px;font-weight:800;margin-bottom:12px}
+#gc-app .trip-sum{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--c1);background:color-mix(in srgb,var(--c1),#fff 90%);border:1px solid color-mix(in srgb,var(--c1),#fff 78%);padding:5px 11px;border-radius:999px;margin-bottom:12px}
 #gc-app .wizard{margin-top:-26px}
 #gc-app .wizard h2{font-size:16.5px;font-weight:800;margin-bottom:4px}
 #gc-app .wizard .q{font-size:13px;font-weight:700;color:var(--sub);margin:14px 0 8px}
@@ -180,7 +198,8 @@ const GC_CSS = `
 #gc-app .pchip.logo img{width:100%;height:100%;object-fit:contain;display:block}
 #gc-app .deal-info{flex:1;min-width:0}
 #gc-app .deal-provider{font-weight:800;font-size:14.5px}
-#gc-app .deal-meta{font-size:12.5px;color:var(--sub);font-weight:600;margin-top:1px}
+#gc-app .deal-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;color:var(--sub);font-weight:600;margin-top:2px;line-height:1.5}
+#gc-app .deal-meta .deal-sep{opacity:.45}
 #gc-app .deal-price{text-align:end}
 #gc-app .price-main{font-weight:800;font-size:17px;white-space:nowrap}
 #gc-app .price-sub{font-size:11.5px;color:var(--sub);font-weight:600;white-space:nowrap}
@@ -213,6 +232,11 @@ const GC_CSS = `
 #gc-app .spin{width:34px;height:34px;border-radius:50%;border:3px solid color-mix(in srgb,var(--c1),transparent 78%);border-top-color:var(--c1);animation:gcspin .8s linear infinite}
 @keyframes gcspin{to{transform:rotate(360deg)}}
 #gc-app[dir="rtl"] .deal-price{text-align:start}
+#gc-app .coupon{display:flex;align-items:center;gap:8px;width:100%;margin-top:10px;border:1.5px dashed color-mix(in srgb,var(--c2),#fff 35%);background:color-mix(in srgb,var(--c2),#fff 90%);color:color-mix(in srgb,var(--c2),#000 32%);border-radius:12px;padding:8px 11px;font:inherit;font-weight:800;font-size:12.5px;cursor:pointer;text-align:start;transition:transform .12s}
+#gc-app .coupon:active{transform:scale(.99)}
+#gc-app .coupon svg{flex:none;width:15px;height:15px}
+#gc-app .coupon .ctxt{flex:1;min-width:0}
+#gc-app .coupon .ccopy{font-size:10.5px;font-weight:700;background:#fff;border-radius:8px;padding:3px 8px;white-space:nowrap}
 `
 
 function gbLabel(d, t) {
@@ -234,6 +258,32 @@ function ProviderLogo({ pv, mono }) {
     )
   }
   return <div className="pchip" style={{ background: pv.color }}>{mono}</div>
+}
+
+// Discount-code pill for a deal's provider (e.g. Saily MOCA 10%). Tap to copy.
+// Skips link-out (external_offer_url) coupons — the portal buys via the /go link.
+function CouponPill({ coupon, t }) {
+  const [copied, setCopied] = useState(false)
+  if (!coupon || !coupon.code || coupon.external_offer_url) return null
+  const pct = (coupon.discount_label || '').match(/\d+%/)
+  const label = (pct ? (t.couponLabel || 'Code {code} · {pct} off') : (t.couponNoPct || 'Discount code: {code}'))
+    .replace('{code}', coupon.code).replace('{pct}', pct ? pct[0] : '')
+  const copy = () => {
+    if (!navigator.clipboard) return
+    navigator.clipboard.writeText(coupon.code)
+      .then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800) })
+      .catch(() => {})
+  }
+  return (
+    <button type="button" className="coupon" onClick={copy} aria-label={label}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4" />
+        <path d="M15 6v12" />
+      </svg>
+      <span className="ctxt"><bdi>{label}</bdi></span>
+      <span className="ccopy">{copied ? t.couponCopied : t.couponCopy}</span>
+    </button>
+  )
 }
 
 export default function GuestPortalPage() {
@@ -280,6 +330,16 @@ export default function GuestPortalPage() {
   const fx = data?.fx || 3.7
   const deals = data?.deals || []
   const providers = data?.providers || {}
+  const coupons = data?.coupons || {}
+  // Destination localization — the hotel's country drives copy + which "all
+  // deals" filters make sense (no local-SIM filter abroad).
+  const country = data?.hotel?.country || 'ישראל'
+  const isIsrael = country === 'ישראל'
+  const countryLabel = destLabel(country, lang)
+  const fillCountry = (s) => (s || '')
+    .replace(/\{inCountry\}/g, destInHe(country))
+    .replace(/\{country\}/g, countryLabel)
+  const hasLocal = useMemo(() => deals.some((d) => d.kind === 'local'), [deals])
 
   const priceMain = (d) => d.currency === 'ILS'
     ? `₪${fmtNum(d.price)}`
@@ -295,11 +355,14 @@ export default function GuestPortalPage() {
     return bits
   }
 
-  const eligible = useMemo(() => deals.filter((d) => {
-    if (d.days < stay) return false
+  // A deal fits the trip when its validity covers the stay (null days = no
+  // listed expiry → always covers) and it carries at least the wanted data.
+  const fitsTrip = (d) => {
+    if (d.days != null && d.days < stay) return false
     if (dataNeed === 'unl') return d.gb == null || d.gb >= 50
     return d.gb == null || d.gb >= dataNeed
-  }), [deals, stay, dataNeed])
+  }
+  const eligible = useMemo(() => deals.filter(fitsTrip), [deals, stay, dataNeed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const picks = useMemo(() => {
     if (!eligible.length) return []
@@ -322,20 +385,34 @@ export default function GuestPortalPage() {
       .sort((a, b) => Math.min(...a.badges) - Math.min(...b.badges))
   }, [eligible, deals, stay, dataNeed])
 
+  // "All deals" is scoped to the trip too (the empty-state copy says "for your
+  // trip"): start from the wizard-eligible set, then layer the form/kind pill.
   const list = useMemo(() => {
-    let rows = [...deals]
+    let rows = [...eligible]
     if (filter === 'esim') rows = rows.filter((d) => d.form === 'esim')
     if (filter === 'local') rows = rows.filter((d) => d.kind === 'local')
     if (filter === 'unl') rows = rows.filter((d) => d.gb == null)
     return rows.sort((a, b) => a.price - b.price)
-  }, [deals, filter])
+  }, [eligible, filter])
+
+  // Live echo of the current selection — shown under "Top picks" so the chosen
+  // duration + data are always reflected and update on every chip tap.
+  const tripSummary = useMemo(() => {
+    const stayOpt = t.days.find((o) => o.v === stay)
+    const stayLabel = stayOpt ? stayOpt.l : `${stay} ${stay === 1 ? t.dayU : t.daysU}`
+    const dataLabel = dataNeed === 'unl' ? t.unlimited : `${dataNeed}GB`
+    return (t.tripSummary || '')
+      .replace('{n}', String(eligible.length))
+      .replace('{days}', stayLabel)
+      .replace('{data}', dataLabel)
+  }, [t, stay, dataNeed, eligible.length])
 
   const engage = () => {
     if (!engagedRef.current) { engagedRef.current = true; api.guestEvent(slug, 'engage', lang) }
   }
   const openDeal = (d) => {
     engage()
-    window.open(api.guestGoUrl(slug, d.provider, d.plan_name, lang), '_blank', 'noopener')
+    window.open(api.guestGoUrl(slug, d.provider, d.plan_name, lang, country), '_blank', 'noopener')
   }
 
   const DealCore = ({ d }) => {
@@ -347,7 +424,9 @@ export default function GuestPortalPage() {
           <ProviderLogo pv={pv} mono={mono} />
           <div className="deal-info">
             <div className="deal-provider"><bdi>{pv.label}</bdi></div>
-            <div className="deal-meta">{metaLine(d).map((x, i) => <bdi key={i}>{i ? ' · ' : ''}{x}</bdi>)}</div>
+            <div className="deal-meta">{metaLine(d).flatMap((x, i) => i === 0
+              ? [<bdi key={`v${i}`}>{x}</bdi>]
+              : [<span key={`s${i}`} className="deal-sep" aria-hidden="true">·</span>, <bdi key={`v${i}`}>{x}</bdi>])}</div>
           </div>
           <div className="deal-price">
             <div className="price-main" dir="ltr">{priceMain(d)}</div>
@@ -355,6 +434,7 @@ export default function GuestPortalPage() {
           </div>
         </div>
         <div className="tags">{(d.perks || []).map((k) => <span className="tag" key={k}>{t.perks[k] || k}</span>)}</div>
+        <CouponPill coupon={coupons[d.provider]} t={t} />
       </>
     )
   }
@@ -412,7 +492,7 @@ export default function GuestPortalPage() {
                 ))}
             </div>
           </div>
-          <h1>{h.tagline || t.heroTitle}</h1>
+          <h1>{h.tagline || fillCountry(t.heroTitle)}</h1>
           <p>{t.sub}</p>
           {updatedStr && <div className="updated"><span className="dot" /><span>{updatedStr}</span></div>}
         </header>
@@ -420,7 +500,7 @@ export default function GuestPortalPage() {
         <main>
           <section className="card wizard">
             <h2>{t.wizTitle}</h2>
-            <div className="q">{t.qDays}</div>
+            <div className="q">{fillCountry(t.qDays)}</div>
             <div className="chips">
               {t.days.map((o) => (
                 <button key={o.v} type="button" className={`chip${o.v === stay ? ' on' : ''}`}
@@ -439,7 +519,8 @@ export default function GuestPortalPage() {
           </section>
 
           <section>
-            <h2 className="sec">{t.topPicks}</h2>
+            <h2 className="sec" style={{ marginBottom: 6 }}>{t.topPicks}</h2>
+            <div className="trip-sum">{tripSummary}</div>
             {picks.length ? picks.map(({ d, badges }, i) => (
               <div className={`pick${i === 0 ? ' first' : ''}`} key={i}>
                 {badges.map((b) => <span className={`badge ${cls[b]}`} key={b}>{t.badges[b]}</span>)}
@@ -453,7 +534,7 @@ export default function GuestPortalPage() {
             <div className="all-head">
               <h2 className="sec" style={{ marginBottom: 0 }}>{t.allDeals}</h2>
               <div className="filters">
-                {t.filters.map((o) => (
+                {t.filters.filter((o) => o.v !== 'local' || hasLocal).map((o) => (
                   <button key={o.v} type="button" className={`fpill${o.v === filter ? ' on' : ''}`}
                     onClick={() => setFilter(o.v)}>{o.l}</button>
                 ))}
@@ -475,10 +556,10 @@ export default function GuestPortalPage() {
             <div className="step"><div className="snum">1</div><div><b>{t.h1b}</b><span>{t.h1s}</span></div></div>
             <div className="step"><div className="snum">2</div><div><b>{t.h2b}</b><span>{t.h2s}</span></div></div>
             <div className="step"><div className="snum">3</div><div><b>{t.h3b}</b><span>{t.h3s}</span></div></div>
-            <div className="compat">{t.compat}</div>
+            <div className="compat">{isIsrael ? t.compat : t.compatAbroad}</div>
           </section>
 
-          <div className="trust" dangerouslySetInnerHTML={{ __html: t.trust }} />
+          <div className="trust" dangerouslySetInnerHTML={{ __html: isIsrael ? t.trust : t.trustAbroad }} />
         </main>
 
         <footer>

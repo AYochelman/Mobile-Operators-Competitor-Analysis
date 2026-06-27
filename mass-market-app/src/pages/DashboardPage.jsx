@@ -24,7 +24,7 @@ import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import Button from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
-import { ISRAELI_GLOBAL_PROVIDERS, USA_LABELS } from '../data/carrierLabels'
+import { ISRAELI_GLOBAL_PROVIDERS, USA_LABELS, GLOBAL_PROVIDERS } from '../data/carrierLabels'
 import {
   TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
   SIMTLV_COUNTRIES, PELEPHONE_GLOBAL_COUNTRIES, ESIMO_REGION_MAP,
@@ -307,35 +307,8 @@ const CARRIERS = [
   { id: 'rami_levy', label: 'רמי לוי' },
 ]
 
-const GLOBAL_PROVIDERS = [
-  { id: 'seven_g', label: '7G' },
-  { id: 'world8', label: '8 World' },
-  { id: 'airalo', label: 'Airalo' },
-  { id: 'bcengi', label: 'Bcengi' },
-  { id: 'besim', label: 'Besim' },
-  { id: 'bestconnect', label: 'Best Connect' },
-  { id: 'breez', label: 'Breeze' },
-  { id: 'bytesim', label: 'ByteSim' },
-  { id: 'esimplus', label: 'eSIM Plus' },
-  { id: 'esimio', label: 'eSIM.io' },
-  { id: 'esim70', label: 'eSIM70' },
-  { id: 'esimo', label: 'eSIMo' },
-  { id: 'globalesim', label: 'GlobaleSIM' },
-  { id: 'pelephone_global', label: 'GlobalSIM' },
-  { id: 'gomoworld', label: 'GoMoWorld' },
-  { id: 'holafly', label: 'Holafly' },
-  { id: 'jetpack', label: 'Jetpack' },
-  { id: 'maya', label: 'Maya' },
-  { id: 'orbit', label: 'Orbit' },
-  { id: 'saily', label: 'Saily' },
-  { id: 'simtlv', label: 'SimTLV' },
-  { id: 'sparks', label: 'Sparks' },
-  { id: 'tasim', label: 'Tasim' },
-  { id: 'travelsim', label: 'Travel Sim' },
-  { id: 'tuki', label: 'Tuki' },
-  { id: 'voye', label: 'VOYE' },
-  { id: 'xphone_global', label: 'XPhone' },
-]
+// GLOBAL_PROVIDERS (the global-tab provider filter chips) is derived from the single
+// source of truth in data/carrierLabels — add a provider there, not here.
 
 export default function DashboardPage() {
   const { isAdmin, workspace } = useAuth()
@@ -416,7 +389,6 @@ export default function DashboardPage() {
   })
   const [countryModal, setCountryModal] = useState(null)
   const [highlightPlan, setHighlightPlan] = useState(null)
-  const [lastUpdate, setLastUpdate] = useState(null)
   const [usdRate, setUsdRate] = useState(null)
   const [eurRate, setEurRate] = useState(null)
   const [gbpRate, setGbpRate] = useState(null)
@@ -429,6 +401,13 @@ export default function DashboardPage() {
   const [bannersLoaded, setBannersLoaded] = useState(false)
   const [storeBanners, setStoreBanners] = useState([])
   const [storeBannersLoaded, setStoreBannersLoaded] = useState(false)
+
+  // Freshest scrape time of the plans currently shown — drives the "עדכון" stamp.
+  // Plan tabs carry scraped_at; content/banners/history/news don't, so it hides there.
+  const lastUpdate = useMemo(() => {
+    const times = (plans[tab] || []).map(x => x.scraped_at).filter(Boolean)
+    return times.length ? times.reduce((a, b) => (a > b ? a : b)) : null
+  }, [plans, tab])
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -628,10 +607,6 @@ export default function DashboardPage() {
         if (id !== loadIdRef.current) return  // tab changed while fetching
         setPlans(prev => ({ ...prev, domestic: p }))
         setChanges(prev => ({ ...prev, domestic: c }))
-        if (p.length) {
-          const times = p.map(x => x.scraped_at).filter(Boolean).sort()
-          setLastUpdate(times.at(-1))
-        }
       } else if (t === 'abroad' && plans.abroad.length === 0) {
         const [p, c] = await Promise.all([api.getAbroadPlans(), api.getAbroadChanges()])
         if (id !== loadIdRef.current) return
@@ -1004,7 +979,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 tnum">
           {lastUpdate && (
-            <span className="hidden md:inline text-[11px] text-moca-muted">
+            <span className="text-[11px] text-moca-muted">
               <span className="font-bold uppercase tracking-wider text-[9px] me-1">עדכון</span>
               {new Date(lastUpdate).toLocaleDateString('he-IL')} {lastUpdate.slice(11, 16)}
             </span>

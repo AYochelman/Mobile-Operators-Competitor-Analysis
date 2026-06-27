@@ -6,6 +6,9 @@ import AnnotationsModal from './AnnotationsModal'
 import { getCountriesForPlan } from '../data/globalCountries'
 import { useWatchlist } from '../hooks/useWatchlist'
 import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
+import { useCoupons } from '../hooks/useCoupons'
+import { AFFILIATE_PROVIDERS, AFFILIATE_URLS } from '../data/affiliateLinks'
+import { GLOBAL_LABELS, GLOBAL_COLORS } from '../data/carrierLabels'
 
 const CARRIER_LOGOS = {
   tuki:            '/logos/tuki.png',
@@ -23,6 +26,10 @@ const CARRIER_LOGOS = {
   esimio:          '/logos/esimio.png',
   sparks:          '/logos/sparks.png',
   voye:            '/logos/voye.png',
+  yesim:           '/logos/yesim.png',
+  nomad:           '/logos/nomad.png',
+  ubigi:           '/logos/ubigi.png',
+  alosim:          '/logos/alosim.png',
   orbit:           '/logos/orbit.png',
   travelsim:       '/logos/travelsim.png',
   gomoworld:       '/logos/gomoworld.png',
@@ -63,15 +70,8 @@ const LOGO_WIDTHS = {
   breez: '63px',
 }
 
-const AFFILIATE_PROVIDERS = new Set(['airalo', 'airalo_local', 'airalo_regional', 'holafly', 'saily', 'globalesim'])
-const AFFILIATE_URLS = {
-  airalo:          'https://www.airalo.com',
-  airalo_local:    'https://www.airalo.com',
-  airalo_regional: 'https://www.airalo.com',
-  holafly:    'https://esim.holafly.com',
-  saily:      'https://saily.com',
-  globalesim: 'https://globalesim.com',
-}
+// AFFILIATE_PROVIDERS + AFFILIATE_URLS now live in ../data/affiliateLinks (shared
+// with PlanCard) so the Saily/Voye tracking links can't drift between the two views.
 
 function slugify(str) {
   if (!str) return 'plan'
@@ -84,22 +84,9 @@ function slugify(str) {
     .replace(/^-|-$/g, '') || 'plan'
 }
 
-const GLOBAL_LABELS = {
-  tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', airalo_local: 'Airalo', airalo_regional: 'Airalo',
-  pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV',
-  world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
-  holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE',
-  orbit: 'Orbit', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld',
-  tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack',
-  bytesim: 'ByteSim', besim: 'Besim',
-}
-const GLOBAL_COLORS = {
-  tuki: 'blue', globalesim: 'green', airalo: 'orange', airalo_local: 'orange', airalo_regional: 'orange', pelephone_global: 'blue',
-  esimo: 'purple', simtlv: 'red', world8: 'teal', xphone_global: 'teal',
-  saily: 'purple', holafly: 'orange', esimio: 'blue', sparks: 'amber', voye: 'pink',
-  orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'violet', maya: 'teal', esim70: 'emerald', jetpack: 'sky',
-  bytesim: 'blue', besim: 'teal',
-}
+// GLOBAL_LABELS + GLOBAL_COLORS now live in ../data/carrierLabels (single source of
+// truth, shared with PlanCard + ComparePage + DashboardPage) so newly added eSIM
+// providers can't drift out of sync.
 
 function formatGB(gb) {
   if (gb === null || gb === undefined) return 'ללא הגבלה'
@@ -140,6 +127,16 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
   const [showAnnotations, setShowAnnotations] = useState(false)
   const { isWatched, toggle: toggleWatch } = useWatchlist()
   const { countFor } = useAnnotationCounts()
+  const { couponFor } = useCoupons()
+  const coupon = couponFor(carrier)
+  const [couponCopied, setCouponCopied] = useState(false)
+  const copyCoupon = useCallback((e) => {
+    e.stopPropagation()
+    if (!coupon?.code) return
+    navigator.clipboard?.writeText(coupon.code).then(() => {
+      setCouponCopied(true); setTimeout(() => setCouponCopied(false), 2000)
+    }).catch(() => {})
+  }, [coupon])
 
   // One representative plan per unique data label, sorted by data_gb ascending
   const dataOptions = useMemo(() => {
@@ -300,8 +297,35 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
         </div>
       )}
 
-      {/* Bottom section: affiliate buy + icon strip */}
+      {/* Bottom section: coupon + affiliate buy + icon strip */}
       <div className="mt-auto">
+        {coupon && (
+          <div className="pt-3">
+            {coupon.external_offer_url ? (
+              <a
+                href={coupon.external_offer_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="w-full flex items-center justify-center gap-1.5 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
+              >
+                <span aria-hidden="true">🎟</span>
+                <span>{coupon.discount_label || 'הטבה'}{coupon.partner_name ? ` · אצל ${coupon.partner_name}` : ''}</span>
+                <span className="text-[10px] text-[#7a5a30] mr-auto">פתח ↗</span>
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={copyCoupon}
+                className="w-full flex items-center justify-center gap-1.5 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
+              >
+                <span aria-hidden="true">🎟</span>
+                <span>קוד: <span className="font-mono tracking-wide">{coupon.code}</span>{coupon.discount_label ? ` · ${coupon.discount_label}` : ''}</span>
+                <span className="text-[10px] text-[#7a5a30] mr-auto">{couponCopied ? '✓ הועתק' : 'העתק'}</span>
+              </button>
+            )}
+          </div>
+        )}
         {AFFILIATE_PROVIDERS.has(carrier) && (
           <div className="pt-3">
             <a

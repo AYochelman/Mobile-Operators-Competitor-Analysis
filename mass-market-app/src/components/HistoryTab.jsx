@@ -46,6 +46,10 @@ const GLOBAL_CARRIERS = [
   { id: 'breez',          label: 'Breeze' },
   { id: 'bytesim',        label: 'ByteSim' },
   { id: 'besim',          label: 'Besim' },
+  { id: 'yesim',          label: 'Yesim' },
+  { id: 'nomad',          label: 'Nomad' },
+  { id: 'ubigi',          label: 'Ubigi' },
+  { id: 'alosim',         label: 'aloSIM' },
 ]
 
 const CARRIERS_BY_TYPE = {

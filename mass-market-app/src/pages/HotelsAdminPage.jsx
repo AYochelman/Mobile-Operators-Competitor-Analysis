@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { api, API_BASE } from '../lib/api'
+import { HOTEL_DESTINATIONS, destLabel } from '../data/hotelDestinations'
 
 /* ════════════════════════════════════════════════════════════════════════
    MOCA Guest Connect — operator console  (route: /admin/hotels, super_admin)
@@ -10,9 +11,13 @@ import { api, API_BASE } from '../lib/api'
 const BLANK = {
   slug: '', name: '', tagline: '', brand_primary: '#26170f', brand_secondary: '#d16938',
   brand_bg: '#f4f1ee', mono: '', default_lang: 'en', languages: ['en', 'he'],
-  commission_note: '50/50', contact_email: '', active: true,
+  commission_note: '50/50', contact_email: '', active: true, country: 'ישראל',
 }
 const LANGS = [{ id: 'en', l: 'English' }, { id: 'he', l: 'עברית' }, { id: 'fr', l: 'Français' }, { id: 'ru', l: 'Русский' }]
+// Destination dropdown options — "קפריסין · Cyprus". value = canonical Hebrew
+// (matches the DB feed filter); English shown for quick scanning.
+const DEST_OPTIONS = HOTEL_DESTINATIONS.map((d) => ({ he: d.he, label: `${d.he} · ${destLabel(d.he, 'en')}` }))
+const DEST_HE_SET = new Set(DEST_OPTIONS.map((o) => o.he))
 const PUBLIC_ORIGIN = typeof window !== 'undefined' && /mocaintel\.com$/.test(window.location.hostname)
   ? window.location.origin : 'https://mocaintel.com'
 
@@ -186,6 +191,14 @@ export default function HotelsAdminPage() {
                 <Field label="Slug (כתובת הפורטל)">
                   <input className="inp font-mono" disabled={!isNew} value={form.slug}
                     onChange={(e) => set('slug', slugify(e.target.value))} placeholder="coastline" />
+                </Field>
+                <Field label="מדינת היעד — הפורטל יציג חבילות גלישה למדינה זו בלבד" full>
+                  <select className="inp" value={form.country || 'ישראל'} onChange={(e) => set('country', e.target.value)}>
+                    {form.country && !DEST_HE_SET.has(form.country) && (
+                      <option value={form.country}>{`${form.country} · ${destLabel(form.country, 'en')}`}</option>
+                    )}
+                    {DEST_OPTIONS.map((o) => <option key={o.he} value={o.he}>{o.label}</option>)}
+                  </select>
                 </Field>
                 <Field label="כותרת (Tagline)" full>
                   <input className="inp" value={form.tagline || ''} onChange={(e) => set('tagline', e.target.value)}

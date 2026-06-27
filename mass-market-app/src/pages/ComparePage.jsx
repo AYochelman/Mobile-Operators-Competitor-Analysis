@@ -16,6 +16,7 @@ import {
   XPHONE_EUROPE, XPHONE_WORLD, ORBIT_COUNTRIES, TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
   getCountriesForPlan
 } from '../data/globalCountries'
+import { GLOBAL_PROVIDERS_WITH_COLOR } from '../data/carrierLabels'
 
 const TABS = [
   { id: 'domestic', label: 'חבילות סלולר' },
@@ -48,35 +49,9 @@ const CARRIERS_BY_TAB = {
     { id: 'golan',     label: 'גולן טלקום' },
     { id: 'rami_levy', label: 'רמי לוי' },
   ],
-  global: [
-    { id: 'seven_g', label: '7G eSIM', color: '#7c3aed' },
-    { id: 'world8', label: '8 World', color: '#0d9488' },
-    { id: 'airalo', label: 'Airalo', color: '#f97316' },
-    { id: 'bcengi', label: 'Bcengi', color: '#1d4ed8' },
-    { id: 'bestconnect', label: 'Best Connect', color: '#0f766e' },
-    { id: 'besim', label: 'Besim', color: '#0ea5a4' },
-    { id: 'breez', label: 'Breeze', color: '#06b6d4' },
-    { id: 'bytesim', label: 'ByteSim', color: '#00b490' },
-    { id: 'esimio', label: 'eSIM.io', color: '#2563eb' },
-    { id: 'esim70', label: 'eSIM70', color: '#10b981' },
-    { id: 'esimplus', label: 'eSIM Plus', color: '#059669' },
-    { id: 'esimo', label: 'eSIMo', color: '#a855f7' },
-    { id: 'globalesim', label: 'GlobaleSIM', color: '#22c55e' },
-    { id: 'pelephone_global', label: 'GlobalSIM', color: '#2196f3' },
-    { id: 'gomoworld', label: 'GoMoWorld', color: '#0891b2' },
-    { id: 'holafly', label: 'Holafly', color: '#ea580c' },
-    { id: 'jetpack', label: 'Jetpack', color: '#0ea5e9' },
-    { id: 'maya', label: 'Maya', color: '#0f766e' },
-    { id: 'orbit', label: 'Orbit', color: '#6366f1' },
-    { id: 'saily', label: 'Saily', color: '#7c3aed' },
-    { id: 'simtlv', label: 'SimTLV', color: '#ef4444' },
-    { id: 'sparks', label: 'Sparks', color: '#f59e0b' },
-    { id: 'tasim', label: 'Tasim', color: '#7c3aed' },
-    { id: 'travelsim', label: 'Travel Sim', color: '#0d9488' },
-    { id: 'tuki', label: 'Tuki', color: '#3b82f6' },
-    { id: 'voye', label: 'VOYE', color: '#ec4899' },
-    { id: 'xphone_global', label: 'XPhone', color: '#14b8a6' },
-  ],
+  // Global providers (+ their per-provider chart colors) are derived from the single
+  // source of truth in data/carrierLabels — add a provider there, not here.
+  global: GLOBAL_PROVIDERS_WITH_COLOR,
 }
 
 const KNOWN_REGIONS = new Set([
@@ -201,8 +176,8 @@ export default function ComparePage() {
   const getLabel = (id) => carrierOptions.find(x => x.id === id)?.label || id
   // For domestic/abroad MVNOs use the real brand color via getCarrierColor()
   // (same source of truth as CarrierChip, CompetitorBoard, PositioningPage).
-  // For global providers — not in MVNO_BRAND_COLORS — fall back to the
-  // per-provider color hardcoded in CARRIERS_BY_TAB.global.
+  // For global providers — not in MVNO_BRAND_COLORS — fall back to the per-provider
+  // color from the registry (CARRIERS_BY_TAB.global, derived in data/carrierLabels).
   const getColor = (id) => {
     if (MVNO_BRAND_COLORS[id]) return getCarrierColor(id)
     return carrierOptions.find(x => x.id === id)?.color || '#888'

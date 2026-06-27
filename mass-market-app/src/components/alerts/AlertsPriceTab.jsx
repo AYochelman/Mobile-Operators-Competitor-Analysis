@@ -5,6 +5,7 @@ import { useHiddenCarrier } from '../../hooks/useHiddenCarrier'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
 import SearchableSelect from '../ui/SearchableSelect'
+import { GLOBAL_PROVIDERS } from '../../data/carrierLabels'
 
 const TAB_ICONS = {
   domestic: (
@@ -40,35 +41,8 @@ const CARRIERS = [
   { id: 'wecom', label: 'We-Com' },
 ]
 
-const GLOBAL_PROVIDERS = [
-  { id: 'seven_g', label: '7G' },
-  { id: 'world8', label: '8 World' },
-  { id: 'airalo', label: 'Airalo' },
-  { id: 'bcengi', label: 'Bcengi' },
-  { id: 'besim', label: 'Besim' },
-  { id: 'bestconnect', label: 'Best Connect' },
-  { id: 'breez', label: 'Breeze' },
-  { id: 'bytesim', label: 'ByteSim' },
-  { id: 'esimplus', label: 'eSIM Plus' },
-  { id: 'esimio', label: 'eSIM.io' },
-  { id: 'esim70', label: 'eSIM70' },
-  { id: 'esimo', label: 'eSIMo' },
-  { id: 'globalesim', label: 'GlobaleSIM' },
-  { id: 'pelephone_global', label: 'GlobalSIM' },
-  { id: 'gomoworld', label: 'GoMoWorld' },
-  { id: 'holafly', label: 'Holafly' },
-  { id: 'jetpack', label: 'Jetpack' },
-  { id: 'maya', label: 'Maya Mobile' },
-  { id: 'orbit', label: 'Orbit' },
-  { id: 'saily', label: 'Saily' },
-  { id: 'simtlv', label: 'SimTLV' },
-  { id: 'sparks', label: 'Sparks' },
-  { id: 'tasim', label: 'Tasim' },
-  { id: 'travelsim', label: 'Travel Sim' },
-  { id: 'tuki', label: 'Tuki' },
-  { id: 'voye', label: 'VOYE' },
-  { id: 'xphone_global', label: 'XPhone Global' },
-]
+// GLOBAL_PROVIDERS is derived from the single source of truth in data/carrierLabels —
+// add a provider there, not here. (The local CARRIER_COLORS below stays separate.)
 
 const CARRIER_COLORS = {
   partner: 'blue', pelephone: 'orange', hotmobile: 'red', cellcom: 'purple',
@@ -78,6 +52,7 @@ const CARRIER_COLORS = {
   esimio: 'blue', xphone_global: 'teal', sparks: 'amber', voye: 'pink',
   orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'purple',
   maya: 'teal', esim70: 'emerald', jetpack: 'sky', besim: 'teal',
+  yesim: 'orange', nomad: 'green', ubigi: 'sky', alosim: 'red',
 }
 
 const TAB_LABELS = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי' }
