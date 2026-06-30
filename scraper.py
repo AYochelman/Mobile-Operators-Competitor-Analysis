@@ -8925,12 +8925,14 @@ _BESIM_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML
 
 # Each plan block on a Besim product page is exactly 3 lines:
 #   "1GB"           ← data
-#   "תוקף 7 ימים"   ← days (Hebrew "validity X days")
+#   "Validity 7 days"  ← days. Besim relocalized its product pages from Hebrew to
+#                         English (2026-06): the line was "תוקף 7 ימים" before, so
+#                         _BESIM_DAYS_RE matches BOTH phrasings to survive a revert.
 #   "$1"            ← USD price
 # Decimal prices appear inline: "$3.5", "$4.50", "$38.5" — never split across lines.
 _BESIM_GB_RE     = re.compile(r"^(\d+(?:\.\d+)?)GB$",  re.I)
 _BESIM_MB_RE     = re.compile(r"^(\d+(?:\.\d+)?)MB$",  re.I)
-_BESIM_DAYS_RE   = re.compile(r"^תוקף\s+(\d+)\s+ימים$")
+_BESIM_DAYS_RE   = re.compile(r"^(?:תוקף|Validity)\s+(\d+)\s+(?:ימים|days?)$", re.I)
 _BESIM_PRICE_RE  = re.compile(r"^\$(\d+(?:\.\d+)?)$")
 
 
