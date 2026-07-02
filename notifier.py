@@ -375,11 +375,25 @@ def _digest_change_line(ch, lang="he"):
     ct = ch.get("change_type", "")
     if ct == "price_change":
         old, new = ch.get("old_val"), ch.get("new_val")
+        # Domestic/abroad/global store raw numbers → prefix ₪. Content stores
+        # already-formatted strings ("₪19.90") or text sentinels ("לא נמצא") →
+        # leave as-is (avoids the "₪₪19.90" / "₪לא נמצא" mangling in the digest).
+        def _num(v):
+            return float(str(v).replace("₪", "").replace(",", "").strip())
+        def _price(v):
+            s = str(v).strip()
+            if s.startswith("₪"):
+                return s
+            try:
+                _num(s)
+                return f"₪{s}"
+            except ValueError:
+                return s
         try:
-            arrow = "↘" if float(new) < float(old) else "↗"
+            arrow = "↘" if _num(new) < _num(old) else "↗"
         except (TypeError, ValueError):
             arrow = "🔄"
-        return f"{arrow} {carrier} · {name}: ₪{old} ← ₪{new}"
+        return f"{arrow} {carrier} · {name}: {_price(old)} ← {_price(new)}"
     if ct == "new_plan":
         price = ch.get("new_val")
         suffix = f" (₪{price})" if price not in (None, "") else ""

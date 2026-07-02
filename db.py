@@ -1928,10 +1928,23 @@ def get_push_subscriptions(user_email=None, db_path=None):
 
 
 def save_content_plans(plans, db_path=None):
+    # Failure sentinels a flaky scrape can return. Never let one overwrite a
+    # previously-good price: that flap wrote "לא נמצא" over a valid ₪ price and fired
+    # false "service not found" alerts (e.g. cellcom eSIM שעון, 2026-05-28 + 2026-07-01).
+    # NB "לא זמין" is intentional (the not_available strategy) and is NOT a failure.
+    _BAD_CONTENT_PRICES = ("לא נמצא", "שגיאה")
     conn = _connect(db_path)
     try:
         now = datetime.now().isoformat()
         for plan in plans:
+            if plan.get("price") in _BAD_CONTENT_PRICES:
+                existing = conn.execute(
+                    "SELECT price FROM content_plans WHERE service=? AND carrier=?",
+                    (plan["service"], plan["carrier"])
+                ).fetchone()
+                if existing and existing[0] and existing[0] not in _BAD_CONTENT_PRICES:
+                    # keep last-known-good value; skip this failed scrape entirely
+                    continue
             conn.execute("""
                 INSERT INTO content_plans (service, carrier, price, free_trial, note, status, scraped_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)

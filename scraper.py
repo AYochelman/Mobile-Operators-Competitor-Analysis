@@ -9340,6 +9340,96 @@ def _cellcom_hub_price(page, page_keyword):
         return None
 
 
+def _cellcom_faq_esim_price(page, url, attempts=3):
+    """Robustly extract the Cellcom eSIM-watch monthly price.
+
+    The price lives only inside the "מה עלות השירות" FAQ accordion on a heavy SPA,
+    so the naive click-then-read flaked intermittently and returned "לא נמצא" over a
+    good price (false "service not found" alerts, 2026-05-28 + 2026-07-01). Hardened:
+      1. wait for the FAQ block to actually render (not just networkidle),
+      2. read answers via textContent — the answer DOM usually exists even while the
+         accordion is collapsed, so no click/expand-timing dependency,
+      3. fall back to expanding the FAQ (flexible text match) + innerText,
+      4. fall back to a keyword-scoped scan of the rendered page + raw HTML,
+      5. retry the whole flow with a fresh navigation.
+    Returns a "₪X" string or None. Assumes `page` is already on `url` for attempt 0.
+    """
+    _ANSWER_SEL = ".FAQItemBlock__answer, [class*='answer']"
+    _QUESTION_SEL = ".FAQItemBlock__question, [class*='question'], [class*='faq'] button"
+    for attempt in range(attempts):
+        try:
+            if attempt > 0:
+                page.goto(url, timeout=45000)
+                try:
+                    page.wait_for_load_state("networkidle", timeout=15000)
+                except Exception:
+                    page.wait_for_timeout(2500)
+            for pct in (0.3, 0.6, 1.0):
+                page.evaluate(f"window.scrollTo(0, document.body.scrollHeight * {pct})")
+                page.wait_for_timeout(400)
+            try:
+                page.wait_for_selector(".FAQItemBlock__question", timeout=8000)
+            except Exception:
+                pass
+
+            # 1) collapsed answers are usually in the DOM already → textContent
+            answer = page.evaluate(f"""
+                () => {{
+                    const els = Array.from(document.querySelectorAll("{_ANSWER_SEL}"));
+                    for (const el of els) {{
+                        const t = (el.textContent || '').trim();
+                        if (t.includes('₪')) return t;
+                    }}
+                    return null;
+                }}
+            """)
+            price = _extract_content_price(answer) if answer else None
+            if price:
+                return price
+
+            # 2) expand the cost FAQ (flexible match), else expand all, then read
+            page.evaluate(f"""
+                () => {{
+                    const qs = Array.from(document.querySelectorAll("{_QUESTION_SEL}"));
+                    let hit = false;
+                    for (const q of qs) {{
+                        const t = (q.innerText || q.textContent || '').trim();
+                        if (t.includes('עלות השירות') || t.includes('מה עלות') || t.includes('כמה עול')) {{
+                            q.scrollIntoView(); q.click(); hit = true;
+                        }}
+                    }}
+                    if (!hit) {{ for (const q of qs) {{ try {{ q.click(); }} catch (e) {{}} }} }}
+                }}
+            """)
+            page.wait_for_timeout(2000)
+            answer = page.evaluate(f"""
+                () => {{
+                    const els = Array.from(document.querySelectorAll("{_ANSWER_SEL}"));
+                    for (const el of els) {{
+                        const t = (el.innerText || el.textContent || '').trim();
+                        if (t.includes('₪')) return t;
+                    }}
+                    return null;
+                }}
+            """)
+            price = _extract_content_price(answer) if answer else None
+            if price:
+                return price
+
+            # 3) last resort — keyword-scoped scan of rendered text + raw HTML (a
+            #    naive full-page ₪ grab would risk catching an unrelated price)
+            body = page.inner_text("body")
+            html = re.sub(r"<[^>]+>", " ", page.evaluate("() => document.documentElement.innerHTML"))
+            for text in (body, html):
+                for kw in ("עלות השירות", "עלות השרות", "כמה עולה", "עלות", "לחודש"):
+                    price = _extract_content_price(text, kw)
+                    if price:
+                        return price
+        except Exception as e:
+            logger.warning(f"cellcom_faq_esim attempt {attempt + 1}/{attempts} failed: {e}")
+    return None
+
+
 def scrape_all_content():
     """Scrape all content services (eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי).
     Returns list of dicts: {service, carrier, price, free_trial, note, status}
@@ -9390,31 +9480,7 @@ def scrape_all_content():
 
                 # ── Cellcom FAQ (eSIM שעון) ───────────────────────────────
                 elif entry["strategy"] == "cellcom_faq_esim":
-                    for pct in [0.3, 0.6, 1.0]:
-                        page.evaluate(f"window.scrollTo(0, document.body.scrollHeight * {pct})")
-                        page.wait_for_timeout(500)
-                    page.evaluate("""
-                        () => {
-                            const qs = document.querySelectorAll('.FAQItemBlock__question');
-                            for (const q of qs) {
-                                if ((q.innerText || '').includes('מה עלות השירות')) {
-                                    q.scrollIntoView(); q.click(); return true;
-                                }
-                            }
-                        }
-                    """)
-                    page.wait_for_timeout(2500)
-                    answer = page.evaluate("""
-                        () => {
-                            const as = document.querySelectorAll('.FAQItemBlock__answer');
-                            for (const a of as) {
-                                const t = (a.innerText || '').trim();
-                                if (t.includes('₪')) return t;
-                            }
-                            return null;
-                        }
-                    """)
-                    price = _extract_content_price(answer) if answer else None
+                    price = _cellcom_faq_esim_price(page, url)
                     results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא"))
 
                 # ── HTML scan for Angular/React SPAs (Partner Funtone) ────
