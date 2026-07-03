@@ -2543,63 +2543,6 @@ def scrape_tuki_global(page, usd_rate):
     return plans
 
 
-def scrape_globalesim_global(page):
-    page.goto(
-        "https://globalesim.co.il/continent/esim-global/",
-        timeout=30000, wait_until="networkidle"
-    )
-    page.wait_for_timeout(2000)
-    plans = []
-    seen_names = set()
-
-    def scrape_tab(minutes_val):
-        for card in page.query_selector_all(".dataInfo_box"):
-            name_el  = card.query_selector(".dataInfo_content_top p")
-            price_el = card.query_selector(".woocommerce-Price-amount bdi")
-            lis = card.query_selector_all("ul li")
-            name = name_el.inner_text().strip() if name_el else "לא ידוע"
-            if not name or name in seen_names:
-                continue
-            seen_names.add(name)
-            price = None
-            if price_el:
-                price = _parse_price(price_el.inner_text().replace("₪", "").strip())
-            gb, days, countries = None, None, None
-            for li in lis:
-                t = li.inner_text().strip()
-                if "ימים" in t and days is None:
-                    days = _parse_days(t)
-                elif "מדינות" in t and countries is None:
-                    countries = t
-                elif ("GB" in t or "גיגה" in t) and gb is None:
-                    gb = _parse_gb(t)
-            extras = []
-            if countries:
-                extras.append(countries)
-            bonus = card.query_selector(".gift_badge")
-            if bonus:
-                bt = bonus.inner_text().strip()
-                if bt:
-                    extras.append(bt)
-            plans.append(_make_global_plan(
-                "globalesim", name, price, "ILS", price,
-                gb, days, minutes=minutes_val, extras=extras
-            ))
-
-    # Data-only tab (active by default)
-    scrape_tab(None)
-
-    # Calls+Data tab
-    tabs = page.query_selector_all(".choose_plan_type_button")
-    if len(tabs) > 1:
-        tabs[1].click()
-        page.wait_for_timeout(1500)
-        scrape_tab(50)
-
-    logger.info(f"GlobaleSIM global: {len(plans)} plans")
-    return plans
-
-
 def scrape_airalo_global(page, usd_rate):
     """Scrape Airalo global eSIM packages via REST API (no Playwright needed).
     Uses x-client-version: version2 header to get all operators (Discover + Discover+).
@@ -3656,13 +3599,14 @@ def _simtlv_classify(name):
     return None
 
 
-def _simtlv_fetch_catalog():
-    """Page through the WooCommerce Store API; returns raw product dicts.
+def _woo_store_fetch(products_url, label="Woo"):
+    """Page through a WooCommerce Store API `products` endpoint; return raw dicts.
 
-    Each page is retried 3× with backoff (the endpoint intermittently takes
+    Each page is retried 3× with backoff (these endpoints intermittently take
     >30s). A page that still fails is skipped — a partial catalog is safe
     because save_global_plans never deletes stale rows and new/removed
-    events are dropped for global carriers.
+    events are dropped for global carriers. Shared by SimTLV + Terminal eSIM
+    (both run the same WooCommerce Store API).
     """
     import requests
     import time
@@ -3675,16 +3619,16 @@ def _simtlv_fetch_catalog():
         for attempt in range(3):
             try:
                 r = requests.get(
-                    "https://simtlv.co.il/wp-json/wc/store/v1/products",
+                    products_url,
                     params={"per_page": 100, "page": page_num},
                     headers=headers, timeout=60,
                 )
                 if r.status_code == 200:
                     resp = r
                     break
-                logger.warning(f"SimTLV catalog page {page_num}: HTTP {r.status_code}")
+                logger.warning(f"{label} catalog page {page_num}: HTTP {r.status_code}")
             except requests.RequestException as exc:
-                logger.warning(f"SimTLV catalog page {page_num} attempt {attempt + 1}: {type(exc).__name__}")
+                logger.warning(f"{label} catalog page {page_num} attempt {attempt + 1}: {type(exc).__name__}")
             time.sleep(2 * (attempt + 1))
         if resp is None:
             failed_pages += 1
@@ -3694,8 +3638,13 @@ def _simtlv_fetch_catalog():
         products.extend(resp.json())
         page_num += 1
     if failed_pages:
-        logger.warning(f"SimTLV catalog: {failed_pages} pages failed — partial catalog")
+        logger.warning(f"{label} catalog: {failed_pages} pages failed — partial catalog")
     return products
+
+
+def _simtlv_fetch_catalog():
+    """SimTLV WooCommerce catalog (~2,400 products), via the shared Woo fetcher."""
+    return _woo_store_fetch("https://simtlv.co.il/wp-json/wc/store/v1/products", "SimTLV")
 
 
 def scrape_simtlv_esim(_page=None):
@@ -3752,6 +3701,347 @@ def scrape_simtlv_esim(_page=None):
             gb, days, esim=True, extras=extras
         ))
     logger.info(f"SimTLV eSIM catalog: {len(plans)} plans from {len(products)} products")
+    return plans
+
+
+# ── Terminal eSIM (terminalesim.com) ─────────────────
+# Pure-HTTP WooCommerce Store API scrape (same platform as SimTLV). ~2,900
+# products across ~190 countries + regional/global bundles, priced in USD
+# (minor units -> /100). Replaced GlobaleSIM 2026-07 when the operator asked
+# us to track terminalesim.com instead (message from 054-4322104).
+#
+# The product slug encodes the package: "<code>_<gb>_<period>" where period
+# is a day count ("et_20_30" = 20GB/30d) or "daily" ("et_10_daily" = 10GB/
+# day, no fixed validity). Country codes are ISO-3166 alpha-2 -> Hebrew via
+# TERMINAL_CODE_TO_HEBREW; regional codes carry a trailing area count
+# ("eu-33", "gl-120") and map to a canonical Hebrew region (all KNOWN_REGIONS
+# on the dashboard) via TERMINAL_REGION_BASE. Data/validity are read from the
+# product NAME (explicit GB/MB + "NDays" / "/Day"), which is authoritative.
+TERMINAL_CODE_TO_HEBREW = {
+    "ad": "\u05d0\u05e0\u05d3\u05d5\u05e8\u05d4",
+    "ae": "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea",
+    "af": "\u05d0\u05e4\u05d2\u05e0\u05d9\u05e1\u05d8\u05df",
+    "ag": "\u05d0\u05e0\u05d8\u05d9\u05d2\u05d5\u05d0\u05d4 \u05d5\u05d1\u05e8\u05d1\u05d5\u05d3\u05d4",
+    "ai": "\u05d0\u05e0\u05d2\u05d5\u05d5\u05d9\u05dc\u05d4",
+    "al": "\u05d0\u05dc\u05d1\u05e0\u05d9\u05d4",
+    "am": "\u05d0\u05e8\u05de\u05e0\u05d9\u05d4",
+    "ao": "\u05d0\u05e0\u05d2\u05d5\u05dc\u05d4",
+    "ar": "\u05d0\u05e8\u05d2\u05e0\u05d8\u05d9\u05e0\u05d4",
+    "at": "\u05d0\u05d5\u05e1\u05d8\u05e8\u05d9\u05d4",
+    "au": "\u05d0\u05d5\u05e1\u05d8\u05e8\u05dc\u05d9\u05d4",
+    "ax": "\u05d0\u05d9\u05d9 \u05d0\u05d5\u05dc\u05e0\u05d3",
+    "az": "\u05d0\u05d6\u05e8\u05d1\u05d9\u05d9\u05d2'\u05df",
+    "ba": "\u05d1\u05d5\u05e1\u05e0\u05d9\u05d4 \u05d5\u05d4\u05e8\u05e6\u05d2\u05d5\u05d1\u05d9\u05e0\u05d4",
+    "bb": "\u05d1\u05e8\u05d1\u05d3\u05d5\u05e1",
+    "bd": "\u05d1\u05e0\u05d2\u05dc\u05d3\u05e9",
+    "be": "\u05d1\u05dc\u05d2\u05d9\u05d4",
+    "bf": "\u05d1\u05d5\u05e8\u05e7\u05d9\u05e0\u05d4 \u05e4\u05d0\u05e1\u05d5",
+    "bg": "\u05d1\u05d5\u05dc\u05d2\u05e8\u05d9\u05d4",
+    "bh": "\u05d1\u05d7\u05e8\u05d9\u05d9\u05df",
+    "bj": "\u05d1\u05e0\u05d9\u05df",
+    "bl": "\u05e1\u05df \u05d1\u05e8\u05ea\u05dc\u05de\u05d9",
+    "bm": "\u05d1\u05e8\u05de\u05d5\u05d3\u05d4",
+    "bn": "\u05d1\u05e8\u05d5\u05e0\u05d9\u05d9",
+    "bo": "\u05d1\u05d5\u05dc\u05d9\u05d1\u05d9\u05d4",
+    "br": "\u05d1\u05e8\u05d6\u05d9\u05dc",
+    "bs": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05d4\u05d0\u05de\u05d4",
+    "bt": "\u05d1\u05d4\u05d5\u05d8\u05df",
+    "bw": "\u05d1\u05d5\u05e6\u05d5\u05d5\u05d0\u05e0\u05d4",
+    "by": "\u05d1\u05dc\u05d0\u05e8\u05d5\u05e1",
+    "bz": "\u05d1\u05dc\u05d9\u05d6",
+    "ca": "\u05e7\u05e0\u05d3\u05d4",
+    "cd": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4 \u05d4\u05d3\u05de\u05d5\u05e7\u05e8\u05d8\u05d9\u05ea \u05e9\u05dc \u05e7\u05d5\u05e0\u05d2\u05d5",
+    "cf": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4 \u05d4\u05de\u05e8\u05db\u05d6 \u05d0\u05e4\u05e8\u05d9\u05e7\u05d0\u05d9\u05ea",
+    "cg": "\u05e7\u05d5\u05e0\u05d2\u05d5",
+    "ch": "\u05e9\u05d5\u05d5\u05d9\u05e5",
+    "ci": "\u05d7\u05d5\u05e3 \u05d4\u05e9\u05e0\u05d4\u05d1",
+    "cl": "\u05e6'\u05d9\u05dc\u05d4",
+    "cm": "\u05e7\u05de\u05e8\u05d5\u05df",
+    "cn": "\u05e1\u05d9\u05df",
+    "co": "\u05e7\u05d5\u05dc\u05d5\u05de\u05d1\u05d9\u05d4",
+    "cr": "\u05e7\u05d5\u05e1\u05d8\u05d4 \u05e8\u05d9\u05e7\u05d4",
+    "cv": "\u05db\u05e3 \u05d5\u05e8\u05d3\u05d4",
+    "cw": "\u05e7\u05d5\u05e8\u05d0\u05e1\u05d0\u05d5",
+    "cy": "\u05e7\u05e4\u05e8\u05d9\u05e1\u05d9\u05df",
+    "cz": "\u05e6'\u05db\u05d9\u05d4",
+    "de": "\u05d2\u05e8\u05de\u05e0\u05d9\u05d4",
+    "dk": "\u05d3\u05e0\u05de\u05e8\u05e7",
+    "dm": "\u05d3\u05d5\u05de\u05d9\u05e0\u05d9\u05e7\u05d4",
+    "do": "\u05d4\u05e8\u05e4\u05d5\u05d1\u05dc\u05d9\u05e7\u05d4 \u05d4\u05d3\u05d5\u05de\u05d9\u05e0\u05d9\u05e7\u05e0\u05d9\u05ea",
+    "dz": "\u05d0\u05dc\u05d2'\u05d9\u05e8\u05d9\u05d4",
+    "ec": "\u05d0\u05e7\u05d5\u05d5\u05d3\u05d5\u05e8",
+    "ee": "\u05d0\u05e1\u05d8\u05d5\u05e0\u05d9\u05d4",
+    "eg": "\u05de\u05e6\u05e8\u05d9\u05dd",
+    "es": "\u05e1\u05e4\u05e8\u05d3",
+    "et": "\u05d0\u05ea\u05d9\u05d5\u05e4\u05d9\u05d4",
+    "fi": "\u05e4\u05d9\u05e0\u05dc\u05e0\u05d3",
+    "fj": "\u05e4\u05d9\u05d2'\u05d9",
+    "fo": "\u05d0\u05d9\u05d9 \u05e4\u05d0\u05e8\u05d5",
+    "fr": "\u05e6\u05e8\u05e4\u05ea",
+    "ga": "\u05d2\u05d1\u05d5\u05df",
+    "gb": "\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4",
+    "gd": "\u05d2\u05e8\u05e0\u05d3\u05d4",
+    "ge": "\u05d2\u05d0\u05d5\u05e8\u05d2\u05d9\u05d4",
+    "gf": "\u05d2\u05d9\u05d0\u05e0\u05d4 \u05d4\u05e6\u05e8\u05e4\u05ea\u05d9\u05ea",
+    "gg": "\u05d2\u05e8\u05e0\u05d6\u05d9",
+    "gh": "\u05d2\u05d0\u05e0\u05d4",
+    "gi": "\u05d2\u05d9\u05d1\u05e8\u05dc\u05d8\u05e8",
+    "gl": "\u05d2\u05e8\u05d9\u05e0\u05dc\u05e0\u05d3",
+    "gm": "\u05d2\u05de\u05d1\u05d9\u05d4",
+    "gn": "\u05d2\u05d9\u05e0\u05d0\u05d4",
+    "gp": "\u05d2\u05d5\u05d5\u05d0\u05d3\u05dc\u05d5\u05e4",
+    "gr": "\u05d9\u05d5\u05d5\u05df",
+    "gt": "\u05d2\u05d5\u05d0\u05d8\u05de\u05dc\u05d4",
+    "gu": "\u05d2\u05d5\u05d0\u05dd",
+    "gw": "\u05d2\u05d9\u05e0\u05d0\u05d4 \u05d1\u05d9\u05e1\u05d0\u05d5",
+    "gy": "\u05d2\u05d9\u05d0\u05e0\u05d4",
+    "hk": "\u05d4\u05d5\u05e0\u05d2 \u05e7\u05d5\u05e0\u05d2",
+    "hn": "\u05d4\u05d5\u05e0\u05d3\u05d5\u05e8\u05e1",
+    "hr": "\u05e7\u05e8\u05d5\u05d0\u05d8\u05d9\u05d4",
+    "ht": "\u05d4\u05d0\u05d9\u05d8\u05d9",
+    "hu": "\u05d4\u05d5\u05e0\u05d2\u05e8\u05d9\u05d4",
+    "id": "\u05d0\u05d9\u05e0\u05d3\u05d5\u05e0\u05d6\u05d9\u05d4",
+    "ie": "\u05d0\u05d9\u05e8\u05dc\u05e0\u05d3",
+    "il": "\u05d9\u05e9\u05e8\u05d0\u05dc",
+    "im": "\u05d4\u05d0\u05d9 \u05de\u05d0\u05df",
+    "in": "\u05d4\u05d5\u05d3\u05d5",
+    "iq": "\u05e2\u05d9\u05e8\u05d0\u05e7",
+    "is": "\u05d0\u05d9\u05e1\u05dc\u05e0\u05d3",
+    "it": "\u05d0\u05d9\u05d8\u05dc\u05d9\u05d4",
+    "je": "\u05d2'\u05e8\u05d6\u05d9",
+    "jm": "\u05d2'\u05de\u05d9\u05d9\u05e7\u05d4",
+    "jo": "\u05d9\u05e8\u05d3\u05df",
+    "jp": "\u05d9\u05e4\u05df",
+    "ke": "\u05e7\u05e0\u05d9\u05d4",
+    "kg": "\u05e7\u05d9\u05e8\u05d2\u05d9\u05d6\u05e1\u05d8\u05df",
+    "kh": "\u05e7\u05de\u05d1\u05d5\u05d3\u05d9\u05d4",
+    "kn": "\u05e1\u05e0\u05d8 \u05e7\u05d9\u05d8\u05e1 \u05d5\u05e0\u05d5\u05d5\u05d9\u05e1",
+    "kr": "\u05d3\u05e8\u05d5\u05dd \u05e7\u05d5\u05e8\u05d9\u05d0\u05d4",
+    "kw": "\u05db\u05d5\u05d5\u05d9\u05d9\u05ea",
+    "ky": "\u05d0\u05d9\u05d9 \u05e7\u05d9\u05d9\u05de\u05df",
+    "kz": "\u05e7\u05d6\u05d7\u05e1\u05d8\u05df",
+    "la": "\u05dc\u05d0\u05d5\u05e1",
+    "lc": "\u05e1\u05e0\u05d8 \u05dc\u05d5\u05e1\u05d9\u05d4",
+    "li": "\u05dc\u05d9\u05db\u05d8\u05e0\u05e9\u05d8\u05d9\u05d9\u05df",
+    "lk": "\u05e1\u05e8\u05d9 \u05dc\u05e0\u05e7\u05d4",
+    "lr": "\u05dc\u05d9\u05d1\u05e8\u05d9\u05d4",
+    "lt": "\u05dc\u05d9\u05d8\u05d0",
+    "lu": "\u05dc\u05d5\u05e7\u05e1\u05de\u05d1\u05d5\u05e8\u05d2",
+    "lv": "\u05dc\u05d8\u05d1\u05d9\u05d4",
+    "ly": "\u05dc\u05d5\u05d1",
+    "ma": "\u05de\u05e8\u05d5\u05e7\u05d5",
+    "mc": "\u05de\u05d5\u05e0\u05e7\u05d5",
+    "md": "\u05de\u05d5\u05dc\u05d3\u05d5\u05d1\u05d4",
+    "me": "\u05de\u05d5\u05e0\u05d8\u05e0\u05d2\u05e8\u05d5",
+    "mf": "\u05e1\u05df \u05de\u05e8\u05d8\u05df",
+    "mg": "\u05de\u05d3\u05d2\u05e1\u05e7\u05e8",
+    "mk": "\u05de\u05e7\u05d3\u05d5\u05e0\u05d9\u05d4 \u05d4\u05e6\u05e4\u05d5\u05e0\u05d9\u05ea",
+    "ml": "\u05de\u05d0\u05dc\u05d9",
+    "mn": "\u05de\u05d5\u05e0\u05d2\u05d5\u05dc\u05d9\u05d4",
+    "mo": "\u05de\u05e7\u05d0\u05d5",
+    "mq": "\u05de\u05e8\u05d8\u05d9\u05e0\u05d9\u05e7",
+    "ms": "\u05de\u05d5\u05e0\u05d8\u05e1\u05e8\u05d0\u05d8",
+    "mt": "\u05de\u05dc\u05d8\u05d4",
+    "mu": "\u05de\u05d0\u05d5\u05e8\u05d9\u05e6\u05d9\u05d5\u05e1",
+    "mv": "\u05de\u05dc\u05d3\u05d9\u05d1\u05d9\u05d9\u05dd",
+    "mw": "\u05de\u05dc\u05d0\u05d5\u05d5\u05d9",
+    "mx": "\u05de\u05e7\u05e1\u05d9\u05e7\u05d5",
+    "my": "\u05de\u05dc\u05d6\u05d9\u05d4",
+    "mz": "\u05de\u05d5\u05d6\u05de\u05d1\u05d9\u05e7",
+    "ne": "\u05e0\u05d9\u05d2'\u05e8",
+    "ng": "\u05e0\u05d9\u05d2\u05e8\u05d9\u05d4",
+    "ni": "\u05e0\u05d9\u05e7\u05e8\u05d0\u05d2\u05d5\u05d0\u05d4",
+    "nl": "\u05d4\u05d5\u05dc\u05e0\u05d3",
+    "no": "\u05e0\u05d5\u05e8\u05d1\u05d2\u05d9\u05d4",
+    "np": "\u05e0\u05e4\u05d0\u05dc",
+    "nz": "\u05e0\u05d9\u05d5 \u05d6\u05d9\u05dc\u05e0\u05d3",
+    "om": "\u05e2\u05d5\u05de\u05d0\u05df",
+    "pa": "\u05e4\u05e0\u05de\u05d4",
+    "pe": "\u05e4\u05e8\u05d5",
+    "pf": "\u05e4\u05d5\u05dc\u05d9\u05e0\u05d6\u05d9\u05d4 \u05d4\u05e6\u05e8\u05e4\u05ea\u05d9\u05ea",
+    "ph": "\u05d4\u05e4\u05d9\u05dc\u05d9\u05e4\u05d9\u05e0\u05d9\u05dd",
+    "pk": "\u05e4\u05e7\u05d9\u05e1\u05d8\u05df",
+    "pl": "\u05e4\u05d5\u05dc\u05d9\u05df",
+    "pr": "\u05e4\u05d5\u05d0\u05e8\u05d8\u05d5 \u05e8\u05d9\u05e7\u05d5",
+    "pt": "\u05e4\u05d5\u05e8\u05d8\u05d5\u05d2\u05dc",
+    "py": "\u05e4\u05e8\u05d0\u05d2\u05d5\u05d5\u05d0\u05d9",
+    "qa": "\u05e7\u05d8\u05e8",
+    "re": "\u05e8\u05d0\u05d5\u05e0\u05d9\u05d5\u05df",
+    "ro": "\u05e8\u05d5\u05de\u05e0\u05d9\u05d4",
+    "rs": "\u05e1\u05e8\u05d1\u05d9\u05d4",
+    "ru": "\u05e8\u05d5\u05e1\u05d9\u05d4",
+    "rw": "\u05e8\u05d5\u05d0\u05e0\u05d3\u05d4",
+    "sa": "\u05e2\u05e8\u05d1 \u05d4\u05e1\u05e2\u05d5\u05d3\u05d9\u05ea",
+    "sc": "\u05d0\u05d9\u05d9 \u05e1\u05d9\u05d9\u05e9\u05dc",
+    "sd": "\u05e1\u05d5\u05d3\u05df",
+    "se": "\u05e9\u05d1\u05d3\u05d9\u05d4",
+    "sg": "\u05e1\u05d9\u05e0\u05d2\u05e4\u05d5\u05e8",
+    "si": "\u05e1\u05dc\u05d5\u05d1\u05e0\u05d9\u05d4",
+    "sk": "\u05e1\u05dc\u05d5\u05d1\u05e7\u05d9\u05d4",
+    "sl": "\u05e1\u05d9\u05d9\u05e8\u05d4 \u05dc\u05d9\u05d0\u05d5\u05e0\u05d4",
+    "sm": "\u05e1\u05df \u05de\u05e8\u05d9\u05e0\u05d5",
+    "sn": "\u05e1\u05e0\u05d2\u05dc",
+    "sr": "\u05e1\u05d5\u05e8\u05d9\u05e0\u05d0\u05dd",
+    "sv": "\u05d0\u05dc \u05e1\u05dc\u05d1\u05d3\u05d5\u05e8",
+    "sz": "\u05d0\u05e1\u05d5\u05d5\u05d8\u05d9\u05e0\u05d9",
+    "tc": "\u05d0\u05d9\u05d9 \u05d8\u05d5\u05e8\u05e7\u05e1 \u05d5\u05e7\u05d0\u05d9\u05e7\u05d5\u05e1",
+    "td": "\u05e6'\u05d0\u05d3",
+    "th": "\u05ea\u05d0\u05d9\u05dc\u05e0\u05d3",
+    "tj": "\u05d8\u05d2'\u05d9\u05e7\u05d9\u05e1\u05d8\u05df",
+    "tn": "\u05ea\u05d5\u05e0\u05d9\u05e1\u05d9\u05d4",
+    "tr": "\u05d8\u05d5\u05e8\u05e7\u05d9\u05d4",
+    "tt": "\u05d8\u05e8\u05d9\u05e0\u05d9\u05d3\u05d3 \u05d5\u05d8\u05d5\u05d1\u05d2\u05d5",
+    "tz": "\u05d8\u05e0\u05d6\u05e0\u05d9\u05d4",
+    "ua": "\u05d0\u05d5\u05e7\u05e8\u05d0\u05d9\u05e0\u05d4",
+    "ug": "\u05d0\u05d5\u05d2\u05e0\u05d3\u05d4",
+    "us": "\u05d0\u05e8\u05e6\u05d5\u05ea \u05d4\u05d1\u05e8\u05d9\u05ea",
+    "uy": "\u05d0\u05d5\u05e8\u05d5\u05d2\u05d5\u05d5\u05d0\u05d9",
+    "uz": "\u05d0\u05d5\u05d6\u05d1\u05e7\u05d9\u05e1\u05d8\u05df",
+    "va": "\u05d4\u05d5\u05d5\u05ea\u05d9\u05e7\u05df",
+    "vc": "\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d4\u05d2\u05e8\u05e0\u05d3\u05d9\u05e0\u05d9\u05dd",
+    "vg": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 \u05d4\u05d1\u05e8\u05d9\u05d8\u05d9\u05d9\u05dd",
+    "vn": "\u05d5\u05d9\u05d9\u05d8\u05e0\u05d0\u05dd",
+    "ws": "\u05e1\u05de\u05d5\u05d0\u05d4",
+    "xk": "\u05e7\u05d5\u05e1\u05d5\u05d1\u05d5",
+    "yt": "\u05de\u05d0\u05d9\u05d5\u05d8",
+    "za": "\u05d3\u05e8\u05d5\u05dd \u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "zm": "\u05d6\u05de\u05d1\u05d9\u05d4",
+}
+
+TERMINAL_REGION_BASE = {
+    "eu": "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
+    "as": "\u05d0\u05e1\u05d9\u05d4",
+    "na": "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
+    "sa": "\u05d3\u05e8\u05d5\u05dd \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
+    "af": "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+    "oc": "\u05d0\u05d5\u05e7\u05d9\u05d0\u05e0\u05d9\u05d4",
+    "o-oc": "\u05d0\u05d5\u05e7\u05d9\u05d0\u05e0\u05d9\u05d4",
+    "me": "\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df",
+    "cb": "\u05d0\u05d9\u05d9 \u05d4\u05e7\u05e8\u05d9\u05d1\u05d9\u05d9\u05dd",
+    "ca": "\u05de\u05e8\u05db\u05d6 \u05d0\u05e1\u05d9\u05d4",
+    "gl": "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9",
+    "cn": "\u05e1\u05d9\u05df + \u05d4\u05d5\u05e0\u05d2 \u05e7\u05d5\u05e0\u05d2 + \u05de\u05e7\u05d0\u05d5",
+    "cnhk": "\u05e1\u05d9\u05df + \u05d4\u05d5\u05e0\u05d2 \u05e7\u05d5\u05e0\u05d2 + \u05de\u05e7\u05d0\u05d5",
+    "cnjpkr": "\u05d0\u05e1\u05d9\u05d4",
+    "jpkr": "\u05d9\u05e4\u05df \u05d5\u05e7\u05d5\u05e8\u05d9\u05d0\u05d4",
+    "aunz": "\u05d0\u05d5\u05e7\u05d9\u05d0\u05e0\u05d9\u05d4",
+    "usca": "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
+    "bi": "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
+    "iesi": "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
+    "aukus": "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9",
+    "saaeqakwombh": "\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df",
+    "sgmy": "\u05d3\u05e8\u05d5\u05dd \u05de\u05d6\u05e8\u05d7 \u05d0\u05e1\u05d9\u05d4",
+    "sgmyth": "\u05d3\u05e8\u05d5\u05dd \u05de\u05d6\u05e8\u05d7 \u05d0\u05e1\u05d9\u05d4",
+    "sgmyvnthid": "\u05d3\u05e8\u05d5\u05dd \u05de\u05d6\u05e8\u05d7 \u05d0\u05e1\u05d9\u05d4",
+}
+
+TERMINAL_REGION_FULL = {
+    "eu-7": "\u05d1\u05dc\u05e7\u05df",
+    "as-5": "\u05de\u05e8\u05db\u05d6 \u05d0\u05e1\u05d9\u05d4",
+}
+
+
+def _terminal_resolve_dest(slug):
+    """slug -> (dest_hebrew, is_region, area_count) or (None, None, None)."""
+    code = slug.split("_")[0]
+    if code in TERMINAL_CODE_TO_HEBREW:
+        return TERMINAL_CODE_TO_HEBREW[code], False, None
+    low = slug.lower()
+    if low.startswith("england") or low.startswith("united-kingdom"):
+        return TERMINAL_CODE_TO_HEBREW["gb"], False, None
+    if code in TERMINAL_REGION_FULL:
+        m = re.search(r"-(\d+)$", code)
+        return TERMINAL_REGION_FULL[code], True, (int(m.group(1)) if m else None)
+    m = re.match(r"^(.*)-(\d+)$", code)
+    if m and m.group(1) in TERMINAL_REGION_BASE:
+        return TERMINAL_REGION_BASE[m.group(1)], True, int(m.group(2))
+    return None, None, None
+
+
+def _terminal_parse_pkg(name):
+    """Terminal product name -> (data_gb, days, is_daily, fup_note).
+
+    data_gb: None if no size token; MB stored as GB fraction (<1).
+    days: None for "/Day" plans (validity chosen at checkout).
+    """
+    n = name
+    is_daily = bool(re.search(r"/\s*Day", n, re.I) or re.search(r"\bDaily\b", n, re.I))
+    gb = None
+    dm = re.search(r"(\d+(?:\.\d+)?)\s*GB", n, re.I)
+    mbm = re.search(r"(\d+(?:\.\d+)?)\s*MB", n, re.I)
+    if dm:
+        gb = float(dm.group(1))
+        gb = int(gb) if gb == int(gb) else gb
+    elif mbm:
+        gb = round(float(mbm.group(1)) / 1024, 4)
+    dd = re.search(r"(\d+)\s*Days?\b", n, re.I)
+    days = int(dd.group(1)) if dd else None
+    fup = re.search(r"FUP\s*([0-9]+\s*[MKmk]bps)", n)
+    return gb, days, is_daily, (fup.group(1) if fup else None)
+
+
+def scrape_terminalesim(_page=None, usd_rate=None):
+    """Terminal eSIM full per-country/regional catalog via the WooCommerce
+    Store API. Pure HTTP, no Playwright. USD prices -> ILS via usd_rate.
+    Mirrors scrape_simtlv_esim: dedup by (title, gb, days, daily) keeping the
+    newest product id; destinations canonicalized via db._DEST_NORM before the
+    plan name is built so plan_name and extras[0] agree (idempotent on save).
+    """
+    import html as _html
+    from db import _DEST_NORM
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    products = _woo_store_fetch(
+        "https://terminalesim.com/wp-json/wc/store/v1/products", "Terminal eSIM")
+    best = {}  # (title, gb, days, is_daily) -> (product_id, usd, dest, fup)
+    for prod in products:
+        try:
+            slug = prod.get("slug") or ""
+            if not slug or slug == "topup" or slug.startswith("topup"):
+                continue
+            name = re.sub(r"\s+", " ", _html.unescape(prod.get("name") or "")).strip()
+            dest, is_region, area = _terminal_resolve_dest(slug)
+            if dest is None:
+                continue
+            gb, days, is_daily, fup = _terminal_parse_pkg(name)
+            if gb is None and not is_daily:
+                continue
+            if not is_daily and days is None:
+                continue
+            prices = prod.get("prices") or {}
+            minor = int(prices.get("currency_minor_unit") or 2)
+            usd = int(prices.get("price")) / (10 ** minor)
+            pid = int(prod.get("id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if usd <= 0:
+            continue
+        dest = _DEST_NORM.get(dest, dest)
+        title = f"{dest} ({area} " + "\u05de\u05d3\u05d9\u05e0\u05d5\u05ea" + ")" if (is_region and area) else dest
+        key = (title, gb, days, is_daily)
+        if key not in best or pid > best[key][0]:
+            best[key] = (pid, usd, dest, fup)
+    plans = []
+    for (title, gb, days, is_daily), (pid, usd, dest, fup) in best.items():
+        if gb is None:
+            size = "\u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4"
+        elif gb >= 1:
+            size = f"{int(gb)}GB" if gb == int(gb) else f"{gb}GB"
+        else:
+            size = f"{round(gb * 1024)}MB"
+        if is_daily:
+            plan_name = f"{title} \u2013 {size} " + "\u05dc\u05d9\u05d5\u05dd"
+        else:
+            plan_name = f"{title} \u2013 {size} \u2013 {days} " + "\u05d9\u05de\u05d9\u05dd"
+        extras = [dest]
+        if is_daily:
+            extras.append("\u05d2\u05dc\u05d9\u05e9\u05d4 \u05d9\u05d5\u05de\u05d9\u05ea")
+        if fup:
+            extras.append(f"FUP {fup}")
+        plans.append(_make_global_plan(
+            "terminalesim", plan_name, round(usd * usd_rate, 2), "USD", round(usd, 2),
+            gb, days, esim=True, extras=extras))
+    logger.info(f"Terminal eSIM: {len(plans)} plans from {len(products)} products")
     return plans
 
 
@@ -4364,14 +4654,17 @@ def _saily_api_item_to_plan(item, heb_name, usd_rate):
         return None
     days = dur["amount"]
     # amount_with_tax is in minor units (cents); take the cheapest USD merchant plan.
-    prices = [mp["price"]["amount_with_tax"]
-              for mp in (item.get("merchant_plans") or [])
-              if mp.get("price") and mp["price"].get("amount_with_tax") is not None
-              and mp["price"].get("currency") == "USD"]
-    if not prices:
+    usd_mps = [mp for mp in (item.get("merchant_plans") or [])
+               if mp.get("price") and mp["price"].get("amount_with_tax") is not None
+               and mp["price"].get("currency") == "USD"]
+    if not usd_mps:
         return None
-    price_usd = round(min(prices) / 100.0, 2)
+    cheapest = min(usd_mps, key=lambda mp: mp["price"]["amount_with_tax"])
+    price_usd = round(cheapest["price"]["amount_with_tax"] / 100.0, 2)
     price_ils = round(price_usd * usd_rate, 2)
+    # planId for the Saily checkout deep-link: the price `identifier` is the checkout
+    # token for THIS merchant plan, consumed by app.py `_saily_checkout_url` via /go.
+    plan_ref = cheapest["price"].get("identifier")
     if gb is None:
         gb_str = "ללא הגבלה"
     elif gb >= 1:
@@ -4379,8 +4672,11 @@ def _saily_api_item_to_plan(item, heb_name, usd_rate):
     else:
         gb_str = f"{round(gb * 1024)}MB"
     plan_name = f"{heb_name} – {gb_str} – {days} ימים"
-    return _make_global_plan("saily", plan_name, price_ils, "USD", price_usd,
+    plan = _make_global_plan("saily", plan_name, price_ils, "USD", price_usd,
                              gb, days, esim=True, extras=[heb_name])
+    if plan_ref:
+        plan["plan_ref"] = plan_ref
+    return plan
 
 
 def scrape_saily_global(_page=None, usd_rate=None):
@@ -5763,44 +6059,6 @@ def scrape_tuki_local(page, usd_rate):
     except Exception as e:
         logger.error(f"Tuki local API failed: {e}", exc_info=True)
 
-    return all_plans
-
-
-# GlobaleSIM regional plans — all regions share same pricing (ILS)
-_GLOBALESIM_REGION_PLANS = [
-    # (gb, days, price_ils, minutes)
-    (1, 3, 29, None),
-    (3, 14, 69, None),
-    (6, 30, 89, None),
-    (10, 30, 109, None),
-    (1, 3, 54, 50),    # with 50 min
-    (3, 14, 94, 50),
-    (6, 30, 114, 50),
-    (10, 30, 134, 50),
-]
-
-GLOBALESIM_REGIONS = {
-    "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4": "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
-    "\u05d0\u05e1\u05d9\u05d4": "\u05d0\u05e1\u05d9\u05d4",
-    "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4": "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
-    "\u05d3\u05e8\u05d5\u05dd \u05d0\u05de\u05e8\u05d9\u05e7\u05d4": "\u05d3\u05e8\u05d5\u05dd \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
-    "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4": "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
-    "\u05d0\u05d5\u05e7\u05d9\u05d0\u05e0\u05d9\u05d4": "\u05d0\u05d5\u05e7\u05d9\u05d0\u05e0\u05d9\u05d4",
-    "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9": "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9",
-}
-
-def scrape_globalesim_regions(page):
-    """GlobaleSIM regional plans \u2014 hardcoded ILS prices (same for all regions)."""
-    all_plans = []
-    for region_heb in GLOBALESIM_REGIONS.keys():
-        for (gb, days, price, minutes) in _GLOBALESIM_REGION_PLANS:
-            suffix = " + 50 \u05d3\u05e7\u05d5\u05ea" if minutes else ""
-            plan_name = f"{region_heb} \u2013 {gb}GB{suffix} \u2013 {days} \u05d9\u05de\u05d9\u05dd"
-            all_plans.append(_make_global_plan(
-                "globalesim", plan_name, price, "ILS", price,
-                data_gb=gb, days=days, minutes=minutes, esim=True, extras=[region_heb]
-            ))
-    logger.info(f"GlobaleSIM regions: {len(all_plans)} plans from {len(GLOBALESIM_REGIONS)} regions")
     return all_plans
 
 
@@ -9040,6 +9298,156 @@ def _scrape_besim_product_list(items, usd_rate):
     return all_plans
 
 
+# ── BNESIM (bnesim.com) ──────────────────────────────────────────────────────
+# No public API / Store API: each destination page embeds a single schema.org
+# <script type="application/ld+json"> Product with an AggregateOffer. The sitemap
+# enumerates the 186 destination pages (~176 countries + 10 regions). Anonymous
+# requests are priced in EUR; plans are data-only (no minutes/SMS). Destination =
+# Product.name ("eSIM <Country>"), mapped to Hebrew via ORBIT_NAME_TO_HEBREW first,
+# then the supplements below (regions + countries Orbit lacks) — all validated
+# against the live global_plans destinations so they don't flap change-detection.
+_BNESIM_UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"}
+
+BNESIM_REGION_TO_HEBREW = {
+    "Africa": "אפריקה",
+    "Asia": "אסיה",
+    "Caribbean": "קריביים",
+    "Europe": "אירופה",
+    "Global": "גלובלי",
+    "Middle East": "המזרח התיכון",
+    "Mini Global": "גלובלי מיני",
+    "North America": "צפון אמריקה",
+    "Oceania": "אוקיאניה",
+    "South America": "דרום אמריקה",
+}
+
+BNESIM_NAME_TO_HEBREW = {
+    "American Samoa": "סמואה האמריקנית",
+    "Antigua and Barbuda": "אנטיגואה וברבודה",
+    "Bhutan": "בהוטן",
+    "Bosnia and Herzegovina": "בוסניה והרצגובינה",
+    "Brunei Darussalam": "ברוניי",
+    "Democratic Republic of the Congo": "הרפובליקה הדמוקרטית של קונגו",
+    "Israel": "ישראל",
+    "Macao": "מקאו",
+    "Maldives": "האיים המלדיביים",
+    "North Macedonia": "מקדוניה הצפונית",
+    "Republic of Montenegro": "מונטנגרו",
+    "Republic of the Congo": "רפובליקת קונגו",
+    "Russian Federation": "רוסיה",
+    "Saint Barthelemy": "סן ברתלמי",
+    "Saint Kitts and Nevis": "סנט קיטס ונוויס",
+    "Saint Martin": "סן מרטן",
+    "Saint Vincent and The Grenadines": "סנט וינסנט והגרנדינים",
+    "Swaziland": "אסוואטיני",
+    "TimorLeste": "מזרח טימור",
+    "Trinidad and Tobago": "טרינידד וטובגו",
+    "Turks and Caicos Islands": "איי טרקס וקייקוס",
+    "Türkiye": "טורקיה",
+    "United Republic of Tanzania": "טנזניה",
+    "Venezuela": "ונצואלה",
+    "Virgin Islands, British": "איי הבתולה הבריטיים",
+    "Yemen": "תימן",
+}
+
+
+def _bnesim_parse_offers(html):
+    """(product_name, [offer dicts]) from a page's schema.org JSON-LD, else (None, [])."""
+    import json as _js
+    for block in re.findall(r"<script[^>]*application/ld\+json[^>]*>(.*?)</script>", html, re.S):
+        try:
+            d = _js.loads(block)
+        except Exception:
+            continue
+        if isinstance(d, dict) and d.get("@type") == "Product" and isinstance(d.get("offers"), dict):
+            return d.get("name"), (d["offers"].get("offers") or [])
+    return None, []
+
+
+def scrape_bnesim_global(_page=None, eur_rate=None):
+    """BNESIM eSIM catalog (186 destination pages) from the schema.org
+    Product/AggregateOffer JSON-LD on each bnesim.com/plans/<slug>/ page. Pure HTTP
+    (no Playwright); no public API exists. Anonymous pricing is EUR; data-only.
+    _page kept for the uniform runner signature (unused)."""
+    import requests
+    from concurrent.futures import ThreadPoolExecutor
+    from db import _DEST_NORM
+    if eur_rate is None:
+        eur_rate = _get_eur_to_ils()
+    try:
+        sm = requests.get("https://www.bnesim.com/sitemap-0.xml", headers=_BNESIM_UA, timeout=30).text
+        slugs = sorted(set(re.findall(r"<loc>https://www\.bnesim\.com/plans/([a-z0-9-]+)/</loc>", sm)))
+    except Exception as exc:
+        logger.warning(f"BNESIM sitemap fetch failed: {exc}")
+        return []
+
+    def _fetch(slug):
+        try:
+            r = requests.get(f"https://www.bnesim.com/plans/{slug}/", headers=_BNESIM_UA, timeout=25)
+            r.raise_for_status()
+            return _bnesim_parse_offers(r.text)
+        except Exception:
+            return (None, [])
+
+    best, unmapped = {}, set()
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        results = list(ex.map(_fetch, slugs))
+    for product_name, offers in results:
+        if not product_name:
+            continue
+        dest_en = re.sub(r"^eSIM\s+", "", product_name).strip()
+        heb = (ORBIT_NAME_TO_HEBREW.get(dest_en)
+               or BNESIM_NAME_TO_HEBREW.get(dest_en)
+               or BNESIM_REGION_TO_HEBREW.get(dest_en))
+        if not heb:
+            unmapped.add(dest_en)
+            continue
+        heb = _DEST_NORM.get(heb, heb)
+        for o in offers:
+            name = o.get("name") or ""
+            try:
+                price_eur = float(o.get("price"))
+            except (TypeError, ValueError):
+                continue
+            if price_eur <= 0:
+                continue
+            dm = re.search(r"(\d+)\s*days", name, re.I)
+            if not dm:
+                continue  # every real BNESIM offer states a validity ("... N days")
+            days = int(dm.group(1))
+            if re.search(r"\bunlimited\b", name, re.I):
+                gb = None
+                size_str = "ללא הגבלה"
+            else:
+                gm = re.search(r"(\d+(?:\.\d+)?)\s*GB", name, re.I)
+                mm = re.search(r"(\d+(?:\.\d+)?)\s*MB", name, re.I)
+                if gm:
+                    gb = float(gm.group(1))
+                    size_str = f"{int(gb)}GB" if gb == int(gb) else f"{gb}GB"
+                elif mm:
+                    mb = float(mm.group(1))
+                    gb = round(mb / 1024, 4)
+                    size_str = f"{int(mb)}MB"
+                else:
+                    continue
+            plan_name = f"{heb} – {size_str} – {days} ימים"
+            price_ils = round(price_eur * eur_rate, 2)
+            key = (heb, gb, days)
+            prev = best.get(key)
+            if prev is None or price_eur < prev["_eur"]:
+                plan = _make_global_plan("bnesim", plan_name, price_ils, "EUR", price_eur,
+                                         gb, days, esim=True, extras=[heb])
+                plan["_eur"] = price_eur
+                best[key] = plan
+    plans = list(best.values())
+    for p in plans:
+        p.pop("_eur", None)
+    if unmapped:
+        logger.warning(f"BNESIM: skipped unmapped destinations {sorted(unmapped)}")
+    logger.info(f"BNESIM: {len(plans)} plans from {len(slugs)} destination pages")
+    return plans
+
+
 def scrape_besim_global(_page=None, usd_rate=None):
     """Scrape Besim per-country eSIM plans from ~130 country pages."""
     if usd_rate is None:
@@ -9085,8 +9493,6 @@ def scrape_all_global():
         ("scrape_tuki_global",         lambda pg: scrape_tuki_global(pg, usd_rate)),
         ("scrape_tuki_regions",        lambda pg: scrape_tuki_regions(pg, usd_rate)),
         ("scrape_tuki_local",          lambda pg: scrape_tuki_local(pg, usd_rate)),
-        ("scrape_globalesim_global",   scrape_globalesim_global),
-        ("scrape_globalesim_regions",  scrape_globalesim_regions),
         ("scrape_airalo_global",       lambda pg: scrape_airalo_global(pg, usd_rate)),
         ("scrape_airalo_local",        lambda pg: scrape_airalo_local(pg, usd_rate)),
         ("scrape_airalo_regional",     lambda pg: scrape_airalo_regional(pg, usd_rate)),
@@ -9109,6 +9515,7 @@ def scrape_all_global():
         ("scrape_esimio_regions",      lambda: scrape_esimio_regions(usd_rate=usd_rate)),
         ("scrape_esimo_global",        lambda: scrape_esimo_global(usd_rate=usd_rate)),  # pure HTTP, no Playwright
         ("scrape_simtlv_esim",         lambda: scrape_simtlv_esim()),  # pure HTTP, no Playwright
+        ("scrape_terminalesim",        lambda: scrape_terminalesim(usd_rate=usd_rate)),  # pure HTTP, no Playwright
         ("scrape_holafly_global",      lambda: scrape_holafly_global(usd_rate=usd_rate)),
         ("scrape_holafly_regions",     lambda: scrape_holafly_regions(usd_rate=usd_rate)),
         ("scrape_sparks_global",       lambda: scrape_sparks_global(usd_rate=usd_rate)),
@@ -9120,6 +9527,7 @@ def scrape_all_global():
         ("scrape_maya_global",         lambda: scrape_maya_global(usd_rate=usd_rate)),
         ("scrape_bcengi_global",       lambda: scrape_bcengi_global(usd_rate=usd_rate)),
         ("scrape_esim70_global",        lambda: scrape_esim70_global(eur_rate=eur_rate)),
+        ("scrape_bnesim_global",        lambda: scrape_bnesim_global(eur_rate=eur_rate)),
         ("scrape_jetpack_global",       lambda: scrape_jetpack_global(usd_rate=usd_rate)),
         ("scrape_breez_global",         scrape_breez_global),
         ("scrape_bytesim_global",       lambda: scrape_bytesim_global(usd_rate=usd_rate)),

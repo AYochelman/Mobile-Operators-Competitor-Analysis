@@ -32,7 +32,7 @@ CARRIER_NAMES = {
 
 GLOBAL_PROVIDER_NAMES = {
     "tuki":             "Tuki",
-    "globalesim":       "GlobaleSIM",
+    "terminalesim":     "Terminal eSIM",
     "airalo":           "Airalo",
     "pelephone_global": "GlobalSIM - Pelephone",
     "esimo":            "eSIMo",
@@ -789,7 +789,7 @@ CARRIER_DISPLAY_NAMES = {
     "partner": "פרטנר", "pelephone": "פלאפון", "hotmobile": "הוט מובייל",
     "cellcom": "סלקום", "mobile019": "019", "xphone": "XPhone",
     "wecom": "We-Com", "neptucom": "Neptucom",
-    "tuki": "Tuki", "globalesim": "GlobaleSIM", "airalo": "Airalo",
+    "tuki": "Tuki", "terminalesim": "Terminal eSIM", "airalo": "Airalo",
     "pelephone_global": "GlobalSIM", "esimo": "eSIMo", "simtlv": "SimTLV",
     "world8": "8 World", "saily": "Saily", "holafly": "Holafly",
     "esimio": "eSIM.io", "xphone_global": "XPhone Global", "sparks": "Sparks",

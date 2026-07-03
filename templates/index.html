@@ -41,7 +41,7 @@
   .dot-wecom     { background: #d97706; }
   .dot-all       { background: linear-gradient(135deg,#e91e63,#2196f3); }
   .dot-tuki              { background: #0ea5e9; }
-  .dot-globalesim        { background: #22c55e; }
+  .dot-terminalesim      { background: #22c55e; }
   .dot-airalo            { background: #f59e0b; }
   .dot-pelephone_global  { background: #2196f3; }
   .dot-esimo             { background: #8b5cf6; }
@@ -54,7 +54,7 @@
   .dot-sparks            { background: #f59e0b; }
   .dot-voye              { background: #ec4899; }
   .badge-tuki            { color: #0369a1; background: #e0f2fe; }
-  .badge-globalesim      { color: #15803d; background: #dcfce7; }
+  .badge-terminalesim    { color: #15803d; background: #dcfce7; }
   .badge-airalo          { color: #b45309; background: #fef3c7; }
   .badge-pelephone_global{ color: #1d4ed8; background: #dbeafe; }
   .badge-esimo           { color: #7e22ce; background: #f3e8ff; }
@@ -273,9 +273,9 @@
         <span class="dot dot-tuki"></span> Tuki
         <span class="count-badge" id="gcnt-tuki">—</span>
       </button>
-      <button class="carrier-btn" data-global-carrier="globalesim">
-        <span class="dot dot-globalesim"></span> GlobaleSIM
-        <span class="count-badge" id="gcnt-globalesim">—</span>
+      <button class="carrier-btn" data-global-carrier="terminalesim">
+        <span class="dot dot-terminalesim"></span> Terminal eSIM
+        <span class="count-badge" id="gcnt-terminalesim">—</span>
       </button>
       <button class="carrier-btn" data-global-carrier="airalo">
         <span class="dot dot-airalo"></span> Airalo
@@ -619,7 +619,7 @@ const CARRIER_LABELS = {
   cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com'
 };
 const GLOBAL_LABELS = {
-  tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo',
+  tuki: 'Tuki', terminalesim: 'Terminal eSIM', airalo: 'Airalo',
   pelephone_global: 'GlobalSIM - Pelephone', esimo: 'eSIMo',
   simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily',
   holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE'
@@ -730,7 +730,7 @@ function updateCountBadges() {
     allGlobalPlans.forEach(p => { counts[p.carrier] = (counts[p.carrier] || 0) + 1; });
     const allEl = document.getElementById('gcnt-all');
     if (allEl) allEl.textContent = allGlobalPlans.length;
-    ['tuki','globalesim','airalo','pelephone_global','esimo','simtlv','world8','xphone_global','saily','holafly','esimio','sparks','voye'].forEach(c => {
+    ['tuki','terminalesim','airalo','pelephone_global','esimo','simtlv','world8','xphone_global','saily','holafly','esimio','sparks','voye'].forEach(c => {
       const el = document.getElementById(`gcnt-${c}`);
       if (el) el.textContent = counts[c] || 0;
     });

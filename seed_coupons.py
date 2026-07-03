@@ -76,6 +76,66 @@ COUPONS = [
         "notes": "MOCA's own affiliate coupon (Everflow affid 1652, offer 9). Confirmed 15% off first purchase by Celine Solomon / AffinityClick 2026-06-23. Earns $5/sale commission.",
     },
 
+    # ── 7G eSIM ───────────────────────────────────────────────────────────
+    # OUR OWN partner codes. 7G auto-provisioned the account on 2026-06-30 and
+    # issued three codes trading discount vs commission: alonyo10 (10% off / 20%
+    # commission), alonyo15 (15% off / 15% commission), alonyo20 (20% off / 10%
+    # commission). alonyo15 is the PUBLIC code — the balanced split; alonyo10 and
+    # alonyo20 are recorded here as inventory (is_active=False) so they show in the
+    # admin coupons view but the public compare page keeps featuring alonyo15 (only
+    # one active coupon per carrier surfaces publicly). Referral link wired at
+    # /go/seven_g (Branch slug "alonyo"). Pending: asked 7G to rename to a unified
+    # "MOCA" code (email 2026-06-30); swap `code` here once they confirm.
+    {
+        "carrier": "seven_g",
+        "code": "alonyo15",
+        "discount_label": "15% הנחה",
+        "source_url": "https://7g.app/",
+        "notes": "MOCA's own 7G partner code (15% off / 15% commission) — the PUBLIC code. Account auto-created 2026-06-30. Interim code; MOCA-unified rename requested from 7G, swap to MOCA when confirmed.",
+    },
+    {
+        "carrier": "seven_g",
+        "code": "alonyo10",
+        "discount_label": "10% הנחה",
+        "is_active": False,
+        "source_url": "https://7g.app/",
+        "notes": "MOCA's own 7G partner code (10% off / 20% commission) — max commission split. Inventory only; alonyo15 is the public code. Flip is_active to feature this split to customers.",
+    },
+    {
+        "carrier": "seven_g",
+        "code": "alonyo20",
+        "discount_label": "20% הנחה",
+        "is_active": False,
+        "source_url": "https://7g.app/",
+        "notes": "MOCA's own 7G partner code (20% off / 10% commission) — max customer discount split. Inventory only; alonyo15 is the public code. Flip is_active to feature this split to customers.",
+    },
+
+    # ── Terminal eSIM (terminalesim.com) ─────────────────────────────────
+    # OUR OWN affiliate code. Terminal eSIM (which replaced GlobaleSIM in MOCA
+    # 2026-07 at the operator's request) issued "MOCA" for 15% off. Provided by
+    # the operator via WhatsApp (054-4322104).
+    {
+        "carrier": "terminalesim",
+        "code": "MOCA",
+        "discount_label": "15% הנחה",
+        "source_url": "https://terminalesim.com/",
+        "notes": "MOCA's own affiliate coupon for Terminal eSIM. 15% customer discount; earns MOCA 10% commission on converted leads (orders placed with code MOCA). Provided by the operator 2026-07 (WhatsApp 054-4322104). Terminal eSIM replaced GlobaleSIM.",
+    },
+
+    # ── Maya Mobile ───────────────────────────────────────────────────────
+    # OUR OWN affiliate code (Impact, publisher acct 7205658). Bart Skrzypek
+    # (Maya Partner Account Manager) confirmed MOCA10 LIVE on 2026-07-02 after
+    # the Calendly call. 10% off for first-time customers; earns MOCA 15-20%
+    # commission via Impact. Attribution is coupon-based (like Voye/terminalesim)
+    # until the Impact TrackingLink is generated in the dashboard.
+    {
+        "carrier": "maya",
+        "code": "MOCA10",
+        "discount_label": "10% הנחה",
+        "source_url": "https://maya.net/esim/plans",
+        "notes": "MOCA's own affiliate coupon (Impact acct 7205658). Confirmed live for 10% off first-time customers by Bart Skrzypek / Maya 2026-07-02. Earns 15-20% commission. 6-char min forced MOCA10 (plain 'MOCA' rejected).",
+    },
+
     # ── Holafly ───────────────────────────────────────────────────────────
     {
         "carrier": "holafly",

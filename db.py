@@ -554,6 +554,42 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_provider_coupons_carrier
                 ON provider_coupons(carrier, is_active);
+            -- Provider deal/relationship CRM — one row per tracked provider,
+            -- powering the super-admin "סטטוס ספקים" dashboard (outreach state,
+            -- signed agreement + our commission %, required actions). Coupon
+            -- liveness is NOT stored here — it's joined live from provider_coupons
+            -- at read time so "is there a coupon in the air" is always accurate.
+            -- Manually curated via seed_provider_deals.py (UPSERT by provider_id).
+            CREATE TABLE IF NOT EXISTS provider_deals (
+                provider_id       TEXT PRIMARY KEY,   -- carrier/provider id
+                display_name      TEXT NOT NULL,
+                category          TEXT,               -- global | domestic | roaming
+                is_israeli        INTEGER DEFAULT 0,
+                outreach_status   TEXT,               -- not_contacted|contacted|in_discussion|approved|declined|live
+                outreach_last_at  TEXT,               -- ISO date of last contact
+                contact           TEXT,               -- email / WhatsApp of the partner contact
+                program_network   TEXT,               -- Impact | Everflow | Own | AWIN | CJ | PAP | WhatsApp …
+                agreement_status  TEXT,               -- none | pending | signed | live
+                commission_pct    REAL,               -- our commission %, NULL if flat-fee/unknown
+                commission_note   TEXT,               -- free text e.g. "$5/sale" / "10-20% by volume"
+                coupon_note       TEXT,               -- why there is / isn't a live coupon (nuance)
+                has_tracking_link INTEGER DEFAULT 0,  -- 1 = an affiliate tracking link is wired
+                next_actions      TEXT,               -- what WE need to do next
+                priority          TEXT,               -- high | med | low
+                is_leak           INTEGER DEFAULT 0,  -- looks monetized but earns us $0
+                notes             TEXT,
+                updated_at        TEXT
+            );
+            -- Provider-side plan/checkout tokens keyed by (carrier, plan_name), kept
+            -- out of global_plans so they never leak into the UI extras. Currently the
+            -- Saily checkout `identifier` used to build the /go deep-link.
+            CREATE TABLE IF NOT EXISTS plan_refs (
+                carrier     TEXT NOT NULL,
+                plan_name   TEXT NOT NULL,
+                plan_ref    TEXT,
+                updated_at  TEXT,
+                PRIMARY KEY (carrier, plan_name)
+            );
             -- Speed up the per-carrier filters on the dashboard. UNIQUE(carrier, plan_name)
             -- already covers (carrier) lookups via prefix, but an explicit single-column
             -- index makes the planner's choice predictable across SQLite versions.
@@ -874,6 +910,19 @@ def get_esim_analytics(days=30, db_path=None):
 # ── MOCA Guest Connect (hotels vertical) ───────────────────────────────────
 _ISRAEL_HE = "ישראל"  # ישראל — canonical destination value (matches _DEST_NORM)
 
+# Cruise (ship) eSIM packages. A few providers sell dedicated at-sea/cruise data,
+# each under its own destination label (Maya's "global + cruise", VOYE's "cruise at
+# sea"). The public B2C compare page surfaces them all under one synthetic
+# destination — "קרוז" (cruise) — so it can be pinned like a country: get_esim_destinations
+# collapses the sources into it, and get_esim_deals_for_destination("קרוז") unions
+# them back. Add a provider's cruise label here as it appears (verified against
+# global_plans.extras[0]).
+_CRUISE_DEST_HE = "קרוז"  # קרוז — synthetic B2C cruise destination
+_CRUISE_SOURCE_DESTS = (
+    "גלובלי ושייט",   # Maya — unlimited global + cruise tiers
+    "קרוז בספינה",     # VOYE — cruise at sea
+)
+
 _HOTEL_COLS = ("slug", "name", "tagline", "brand_primary", "brand_secondary",
                "brand_bg", "logo_url", "mono", "languages", "default_lang",
                "commission_note", "contact_email", "active", "country",
@@ -1064,12 +1113,22 @@ def get_esim_deals_for_destination(destination=None, db_path=None):
     dest = (destination or _ISRAEL_HE)
     conn = _connect(db_path)
     try:
-        rows = conn.execute(
-            "SELECT carrier, plan_name, price, currency, original_price, days, data_gb, esim, extras, scraped_at "
-            "FROM global_plans WHERE json_extract(extras, '$[0]') = ? AND price IS NOT NULL "
-            "ORDER BY price",
-            (dest,)
-        ).fetchall()
+        if dest == _CRUISE_DEST_HE:
+            # Synthetic cruise destination: union every provider's cruise bucket.
+            placeholders = ",".join("?" * len(_CRUISE_SOURCE_DESTS))
+            rows = conn.execute(
+                "SELECT carrier, plan_name, price, currency, original_price, days, data_gb, esim, extras, scraped_at "
+                f"FROM global_plans WHERE json_extract(extras, '$[0]') IN ({placeholders}) AND price IS NOT NULL "
+                "ORDER BY price",
+                _CRUISE_SOURCE_DESTS
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT carrier, plan_name, price, currency, original_price, days, data_gb, esim, extras, scraped_at "
+                "FROM global_plans WHERE json_extract(extras, '$[0]') = ? AND price IS NOT NULL "
+                "ORDER BY price",
+                (dest,)
+            ).fetchall()
         return [
             {"carrier": r[0], "plan_name": r[1], "price": r[2], "currency": r[3],
              "original_price": r[4], "days": r[5], "data_gb": r[6], "esim": bool(r[7]),
@@ -1098,7 +1157,21 @@ def get_esim_destinations(db_path=None):
             "AND dest IS NOT NULL AND dest != '' "
             "GROUP BY dest ORDER BY n DESC"
         ).fetchall()
-        return [{"destination": r[0], "count": r[1], "min_price": r[2]} for r in rows]
+        out = []
+        cruise_n, cruise_min = 0, None
+        for dest, n, minp in rows:
+            # Fold every provider's cruise bucket into one synthetic "קרוז" entry so
+            # the picker shows a single, pinnable cruise destination (see _assemble).
+            if dest in _CRUISE_SOURCE_DESTS:
+                cruise_n += n
+                if minp is not None and (cruise_min is None or minp < cruise_min):
+                    cruise_min = minp
+                continue
+            out.append({"destination": dest, "count": n, "min_price": minp})
+        if cruise_n:
+            out.append({"destination": _CRUISE_DEST_HE, "count": cruise_n, "min_price": cruise_min})
+            out.sort(key=lambda d: d["count"], reverse=True)  # keep most-covered first
+        return out
     finally:
         conn.close()
 
@@ -1696,7 +1769,29 @@ def save_global_plans(plans, db_path=None):
                 plan.get("sms"), 1 if plan.get("esim", True) else 0,
                 json.dumps(_norm_extras(plan.get("extras", [])), ensure_ascii=False), now
             ))
+            ref = plan.get("plan_ref")
+            if ref:
+                conn.execute("""
+                    INSERT INTO plan_refs (carrier, plan_name, plan_ref, updated_at)
+                    VALUES (?,?,?,?)
+                    ON CONFLICT(carrier, plan_name) DO UPDATE SET
+                        plan_ref   = excluded.plan_ref,
+                        updated_at = excluded.updated_at
+                """, (plan["carrier"], plan["plan_name"], ref, now))
         conn.commit()
+    finally:
+        conn.close()
+
+
+def get_plan_ref(carrier, plan_name, db_path=None):
+    """Provider-side checkout/plan token for one plan, or None. Used by the /go
+    redirect to build a per-plan affiliate deep link (e.g. Saily checkout)."""
+    conn = _connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT plan_ref FROM plan_refs WHERE carrier=? AND plan_name=?",
+            (carrier, plan_name)).fetchone()
+        return row[0] if row and row[0] else None
     finally:
         conn.close()
 
@@ -2977,6 +3072,68 @@ def get_all_coupons(db_path=None):
              "created_at": r[10], "updated_at": r[11]}
             for r in rows
         ]
+    finally:
+        conn.close()
+
+
+# ── Provider deal CRM (manually curated relationship / commission tracker) ───
+
+_PROVIDER_DEAL_FIELDS = (
+    "display_name", "category", "is_israeli", "outreach_status",
+    "outreach_last_at", "contact", "program_network", "agreement_status",
+    "commission_pct", "commission_note", "coupon_note", "has_tracking_link",
+    "next_actions", "priority", "is_leak", "notes",
+)
+
+
+def get_provider_deals(db_path=None):
+    """Return every provider deal row, highest-priority first. Coupon liveness is
+    joined separately (see app._enrich_provider_deals) so it stays live."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            f"""SELECT provider_id, {', '.join(_PROVIDER_DEAL_FIELDS)}, updated_at
+                FROM provider_deals
+                ORDER BY CASE priority WHEN 'high' THEN 0 WHEN 'med' THEN 1
+                                       WHEN 'low' THEN 2 ELSE 3 END,
+                         display_name COLLATE NOCASE"""
+        ).fetchall()
+        out = []
+        for r in rows:
+            d = {"provider_id": r[0]}
+            for i, f in enumerate(_PROVIDER_DEAL_FIELDS, start=1):
+                d[f] = r[i]
+            d["is_israeli"]        = bool(d.get("is_israeli"))
+            d["has_tracking_link"] = bool(d.get("has_tracking_link"))
+            d["is_leak"]           = bool(d.get("is_leak"))
+            d["updated_at"] = r[len(_PROVIDER_DEAL_FIELDS) + 1]
+            out.append(d)
+        return out
+    finally:
+        conn.close()
+
+
+def upsert_provider_deal(provider_id, db_path=None, **fields):
+    """Insert or update a provider deal by provider_id. Only known columns in
+    `fields` are written; booleans accepted as bool/int. Returns provider_id."""
+    now = datetime.now(timezone.utc).isoformat()
+    vals = {f: fields.get(f) for f in _PROVIDER_DEAL_FIELDS}
+    for b in ("is_israeli", "has_tracking_link", "is_leak"):
+        vals[b] = 1 if vals.get(b) else 0
+    cols = list(_PROVIDER_DEAL_FIELDS)
+    placeholders = ", ".join("?" for _ in cols)
+    updates = ", ".join(f"{c} = excluded.{c}" for c in cols)
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            f"""INSERT INTO provider_deals (provider_id, {', '.join(cols)}, updated_at)
+                VALUES (?, {placeholders}, ?)
+                ON CONFLICT(provider_id) DO UPDATE SET
+                  {updates}, updated_at = excluded.updated_at""",
+            (provider_id, *[vals[c] for c in cols], now)
+        )
+        conn.commit()
+        return provider_id
     finally:
         conn.close()
 

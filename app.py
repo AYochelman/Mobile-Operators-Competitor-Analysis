@@ -34,7 +34,9 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                get_reseller_plans, save_reseller_plans, filter_undominated_reseller_plans, \
                get_usa_tourist_plans, save_usa_tourist_plans, \
                log_claude_usage, get_claude_usage_recent, get_claude_usage_summary, get_claude_spend, \
-               get_active_coupons, get_all_coupons, upsert_coupon, update_coupon, delete_coupon
+               get_active_coupons, get_all_coupons, upsert_coupon, update_coupon, delete_coupon, \
+               get_provider_deals, \
+               get_plan_ref
 import archive as arc
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -1011,7 +1013,7 @@ _AFFILIATE_FALLBACK_URLS = {
     "airalo":     "https://www.airalo.com",
     "holafly":    "https://esim.holafly.com",
     "saily":      "https://saily.com",
-    "globalesim": "https://globalesim.com",
+    "terminalesim": "https://terminalesim.com",
 }
 
 # ── MOCA Guest Connect — provider display + destination resolution ──────────
@@ -1044,7 +1046,8 @@ _GUEST_PROVIDER_META = {
     "jetpack":     {"label": "Jetpac",       "color": "#7b2ff7", "domain": "jetpacglobal.com", "url": "https://www.jetpacglobal.com"},
     "breez":       {"label": "Breeze",       "color": "#19b3c7", "domain": "breezesim.com",    "url": "https://breezesim.com"},
     "bytesim":     {"label": "ByteSIM",      "color": "#34495e", "domain": "bytesim.com",      "url": "https://bytesim.com"},
-    "besim":       {"label": "BeSIM",        "color": "#e84393", "domain": "besim.com",        "url": "https://besim.com"},
+    "besim":       {"label": "BeSIM",        "color": "#e84393", "domain": "besim.co.il",      "url": "https://besim.co.il"},
+    "bnesim":      {"label": "BNESIM",       "color": "#1e3a8a", "domain": "bnesim.com",       "url": "https://www.bnesim.com/plans/il/"},
     "seven_g":     {"label": "7G",           "color": "#e67e22", "domain": "7g.app",            "url": "https://7g.app"},
     "bestconnect": {"label": "Best Connect", "color": "#2d9cdb", "domain": "bestconnect.online", "url": "https://bestconnect.online"},
     "esimplus":    {"label": "eSIM Plus",    "color": "#00b894", "domain": "esimplus.me",      "url": "https://esimplus.me/esim/israel"},
@@ -1052,14 +1055,14 @@ _GUEST_PROVIDER_META = {
     # feed didn't reach them, so they were missing — abroad needs every id the
     # feed can emit to have a label + domain, else the chip is bare + /go dead-ends).
     "tuki":             {"label": "Tuki",          "color": "#6c2bd9", "domain": "tuki-esim.co.il"},
-    "globalesim":       {"label": "GlobaleSIM",    "color": "#1a73e8", "domain": "globalesim.com"},
+    "terminalesim":     {"label": "Terminal eSIM", "color": "#1a73e8", "domain": "terminalesim.com"},
     "airalo_regional":  {"label": "Airalo",        "color": "#ff5963", "domain": "airalo.com"},
     "pelephone_global": {"label": "GlobalSIM",     "color": "#e3001b", "domain": "pelephone.co.il"},
     "world8":           {"label": "8 World",       "color": "#00a3a3", "domain": "world8.co.il"},
     "xphone_global":    {"label": "XPhone Global", "color": "#00857a", "domain": "xphone.co.il"},
     "travelsim":        {"label": "Travel Sim",    "color": "#f59e0b", "domain": "travelsimobile.co.il"},
     "tasim":            {"label": "Tasim",         "color": "#2563eb", "domain": "tasim.us"},
-    "maya":             {"label": "Maya Mobile",   "color": "#ec4899", "domain": "maya.net"},
+    "maya":             {"label": "Maya Mobile",   "color": "#ec4899", "domain": "maya.net",       "url": "https://maya.net/esim/israel"},  # Israel dest lands on Maya's IL eSIM page (per Bart, Maya 2026-06-30). Impact tracking base_url pending → add to config.json["affiliate"]["maya"] once the tracked link is generated in the Impact dashboard.
     # local Israeli carriers — inbound-tourist SIM/eSIM (curated, see below)
     "mobile019":   {"label": "019 Mobile",     "color": "#d81b60", "domain": "019mobile.co.il", "url": "https://www.019mobile.co.il"},
     "partner":     {"label": "Partner Tourist","color": "#0072ce", "domain": "partner.co.il",   "url": "https://www.partner.co.il"},
@@ -1340,6 +1343,7 @@ def _guest_provider_dest(provider, destination=None):
 
 
 ISRAEL_HE = "ישראל"  # ישראל — canonical destination
+_CRUISE_DEST_HE = "קרוז"  # קרוז — synthetic B2C cruise destination (mirrors db._CRUISE_DEST_HE)
 
 
 def _assemble_guest_deals(db_path=None, destination=None, include_local=True):
@@ -1360,14 +1364,39 @@ def _assemble_guest_deals(db_path=None, destination=None, include_local=True):
         key = (d["carrier"], d["data_gb"], d["days"])
         if key not in best or (d["price"] or 1e9) < (best[key]["price"] or 1e9):
             best[key] = d
-    # cap per provider to a 6-deal ladder spread across data sizes
+    # Cap per provider to a 6-deal ladder SPREAD across data sizes — NOT the 6
+    # smallest. Providers with many tiny/daily plans (e.g. Terminal eSIM, whose
+    # catalog is dominated by sub-2GB and per-day packages) would otherwise show
+    # only their smallest deals, which all fail the consumer trip filter
+    # (default 10GB) and vanish from the page entirely. Instead: keep the
+    # cheapest deal per data size, then sample up to 6 sizes evenly across the
+    # range so the ladder spans small … large/unlimited.
     by_prov = defaultdict(list)
     for d in best.values():
         by_prov[d["carrier"]].append(d)
+    # For the cruise view, size alone is a poor ladder key: a provider's whole cruise
+    # offering can be unlimited (data_gb=None) at several durations (Maya: 3/7/14/30
+    # days), which would otherwise collapse to a single rung. Key on (size, days) for
+    # cruise so each duration tier survives; countries keep the size-only ladder.
+    cruise_view = (dest == _CRUISE_DEST_HE)
     curated = []
     for prov, lst in by_prov.items():
-        lst.sort(key=lambda d: ((d["data_gb"] if d["data_gb"] else 9999), d["price"] or 1e9))
-        curated.extend(lst[:6])
+        # cheapest deal per distinct data size (None = unlimited → sorted last)
+        per_size = {}
+        for d in lst:
+            k = (d["data_gb"], d["days"]) if cruise_view else d["data_gb"]
+            if k not in per_size or (d["price"] or 1e9) < (per_size[k]["price"] or 1e9):
+                per_size[k] = d
+        sizes = sorted(
+            per_size.values(),
+            key=lambda d: (d["data_gb"] if d["data_gb"] is not None else 1e9),
+        )
+        if len(sizes) <= 6:
+            curated.extend(sizes)
+        else:
+            # evenly-spaced 6 including the smallest and largest tiers
+            idxs = sorted({round(i * (len(sizes) - 1) / 5) for i in range(6)})
+            curated.extend(sizes[i] for i in idxs)
 
     deals = []
     for d in curated:
@@ -2227,7 +2256,7 @@ _HISTORY_CARRIER_NAMES = {
     'wecom': 'We-Com',
     'neptucom': 'Neptucom',
     'tuki': 'Tuki',
-    'globalesim': 'GlobaleSIM',
+    'terminalesim': 'Terminal eSIM',
     'airalo': 'Airalo',
     'pelephone_global': 'GlobalSIM',
     'esimo': 'eSIMo',
@@ -2251,6 +2280,7 @@ _HISTORY_CARRIER_NAMES = {
     'besim': 'Besim',
     'seven_g': '7G',
     'bestconnect': 'Best Connect',
+    'bnesim': 'BNESIM',
     'esimplus': 'eSIM Plus',
     'yesim': 'Yesim', 'nomad': 'Nomad', 'ubigi': 'Ubigi', 'alosim': 'aloSIM',
 }
@@ -3560,6 +3590,51 @@ def api_delete_coupon(coupon_id):
     return jsonify({"status": "deleted"})
 
 
+# ── Provider deal CRM (super-admin "סטטוס ספקים" dashboard) ─────────────────
+
+@app.route("/api/provider-deals", methods=["GET"])
+@require_api_key_or_super_admin
+def api_provider_deals():
+    """Provider relationship/commission status, one row per tracked provider.
+
+    Merges the manually curated CRM rows (seed_provider_deals.py) with two LIVE
+    signals so the dashboard is always accurate without editing the seed:
+      - coupon liveness from provider_coupons (is there a coupon in the air?)
+      - affiliate clicks in the last 30d (is a live deal getting traffic?)
+    """
+    dbp = _db_path()
+    deals = get_provider_deals(db_path=dbp)
+
+    # First live (active, non-expired) coupon per carrier.
+    coupon_by_carrier = {}
+    for c in get_active_coupons(db_path=dbp):
+        car = c.get("carrier")
+        if car and car not in coupon_by_carrier:
+            coupon_by_carrier[car] = c
+
+    # Clicks per provider over the last 30 days (attribution health).
+    clicks_by_provider = {}
+    try:
+        for row in get_affiliate_stats(days=30, db_path=dbp):
+            clicks_by_provider[row["provider"]] = \
+                clicks_by_provider.get(row["provider"], 0) + row.get("clicks", 0)
+    except Exception as exc:  # never fail the dashboard on a stats hiccup
+        logger.warning(f"provider-deals: click stats unavailable: {exc}")
+
+    for d in deals:
+        pid = d["provider_id"]
+        cp = coupon_by_carrier.get(pid)
+        d["coupon_live"]     = bool(cp)
+        d["coupon_code"]     = cp.get("code") if cp else None
+        d["coupon_discount"] = cp.get("discount_label") if cp else None
+        d["clicks_30d"]      = clicks_by_provider.get(pid, 0)
+
+    return jsonify({
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "deals": deals,
+    })
+
+
 # ── Push Notification Routes ───────────────────────────────────────────────
 
 def _chat_user_key():
@@ -3625,7 +3700,7 @@ def api_chat():
             'wecom': 'We-Com', 'neptucom': 'Neptucom', 'golan': 'גולן טלקום',
             'rami_levy': 'רמי לוי תקשורת',
             # Global eSIM
-            'tuki': 'Tuki', 'globalesim': 'GlobaleSIM',
+            'tuki': 'Tuki', 'terminalesim': 'Terminal eSIM',
             'airalo': 'Airalo', 'airalo_local': 'Airalo', 'airalo_regional': 'Airalo',
             'pelephone_global': 'GlobalSIM', 'esimo': 'eSIMo', 'simtlv': 'SimTLV',
             'world8': '8 World', 'xphone_global': 'XPhone Global', 'saily': 'Saily',
@@ -3634,7 +3709,7 @@ def api_chat():
             'gomoworld': 'GoMoWorld', 'tasim': 'Tasim', 'maya': 'Maya Mobile',
             'bcengi': 'Bcengi', 'esim70': 'eSIM70', 'jetpack': 'Jetpack', 'breez': 'Breeze',
             'bytesim': 'ByteSim', 'besim': 'Besim', 'seven_g': '7G',
-            'bestconnect': 'Best Connect', 'esimplus': 'eSIM Plus',
+            'bestconnect': 'Best Connect', 'esimplus': 'eSIM Plus', 'bnesim': 'BNESIM',
             'yesim': 'Yesim', 'nomad': 'Nomad', 'ubigi': 'Ubigi', 'alosim': 'aloSIM',
             # USA tourist-plan operators (נוחתים בארה"ב) — mirror of USA_LABELS
             # in carrierLabels.js
