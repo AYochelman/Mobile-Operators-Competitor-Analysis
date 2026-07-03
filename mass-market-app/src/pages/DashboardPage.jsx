@@ -25,7 +25,7 @@ import Spinner from '../components/ui/Spinner'
 import Button from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
 import { useLang } from '../hooks/useLanguage'
-import { destKey, dedupeDestOptions } from '../data/destI18n'
+import { destKey, dedupeDestOptions, isCruiseDest, cruiseLabel, CRUISE_VALUE } from '../data/destI18n'
 import { ISRAELI_GLOBAL_PROVIDERS, USA_LABELS, GLOBAL_PROVIDERS } from '../data/carrierLabels'
 import {
   TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
@@ -724,6 +724,10 @@ export default function DashboardPage() {
         const rTarget = destKey(f.region)
         result = result.filter(p => p.extras && destKey(normalizeRegionLabel(p.extras[0])) === rTarget)
       }
+      else if (f.destination === CRUISE_VALUE) {
+        // Unified "Cruise" filter — matches every provider's cruise-at-sea package.
+        result = result.filter(p => p.extras && isCruiseDest(p.extras[0]))
+      }
       else if (f.destination !== 'all') {
         // Compare via canonical English key so a selected representative spelling
         // matches plans tagged with any of its de-duplicated variants.
@@ -887,6 +891,9 @@ export default function DashboardPage() {
     }
     const destSet = new Set()
     for (const p of src) {
+      // Cruise packages are surfaced via the single synthetic "Cruise" option
+      // (see hasCruise / destinationOptions), not as raw per-provider rows.
+      if (p.extras && isCruiseDest(p.extras[0])) continue
       if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
         const coverage = getPlanCoverage(p)
         if (coverage) {
@@ -902,10 +909,25 @@ export default function DashboardPage() {
     return [...destSet].sort((a, b) => a.localeCompare(b, 'he'))
   }, [plans.global, tab, filters.globalProvider])
 
+  // Any cruise-at-sea package in the current (provider-filtered) global set?
+  const hasCruise = useMemo(() => {
+    if (tab !== 'global') return false
+    let src = plans.global
+    if (filters.globalProvider !== 'all') {
+      const ids = filters.globalProvider === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [filters.globalProvider]
+      src = src.filter(p => ids.includes(p.carrier))
+    }
+    return src.some(p => p.extras && isCruiseDest(p.extras[0]))
+  }, [plans.global, tab, filters.globalProvider])
+
   // Deduplicated, localized dropdown options — spelling variants that resolve to
   // the same English collapse into one entry (value = a representative Hebrew).
   const regionOptions = useMemo(() => dedupeDestOptions(globalRegions, lang), [globalRegions, lang])
-  const destinationOptions = useMemo(() => dedupeDestOptions(globalDestinations, lang), [globalDestinations, lang])
+  const destinationOptions = useMemo(() => {
+    const opts = dedupeDestOptions(globalDestinations, lang)
+    // Pin the unified "Cruise" option at the top when cruise packages exist.
+    return hasCruise ? [{ value: CRUISE_VALUE, label: cruiseLabel(lang) }, ...opts] : opts
+  }, [globalDestinations, hasCruise, lang])
 
   // Content services list
   const contentServices = useMemo(() => {

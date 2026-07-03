@@ -227,6 +227,18 @@ export function localizeDest(he, lang = 'en') {
   return _toEn(String(he))
 }
 
+// ── Cruise ──────────────────────────────────────────────────────────────────
+// A few providers sell cruise-at-sea packages under different destination
+// strings (Maya "גלובלי ושייט", Voye "קרוז בספינה"). The filters expose them as
+// ONE synthetic "Cruise / קרוז" option instead of several near-duplicate rows.
+export const CRUISE_VALUE = 'קרוז' // sentinel filter value (also the HE label)
+export function isCruiseDest(he) {
+  return !!he && /שייט|קרוז|cruise/i.test(String(he))
+}
+export function cruiseLabel(lang) {
+  return lang === 'he' ? 'קרוז' : 'Cruise'
+}
+
 // Canonical English key for a destination — used to collapse duplicate Hebrew
 // spellings in the dropdowns and to compare when filtering. Cached.
 const _keyCache = new Map()

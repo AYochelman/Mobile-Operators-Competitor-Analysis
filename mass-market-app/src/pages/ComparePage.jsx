@@ -18,7 +18,7 @@ import {
 } from '../data/globalCountries'
 import { GLOBAL_PROVIDERS_WITH_COLOR } from '../data/carrierLabels'
 import { useLang } from '../hooks/useLanguage'
-import { destKey, dedupeDestOptions } from '../data/destI18n'
+import { destKey, dedupeDestOptions, isCruiseDest, cruiseLabel, CRUISE_VALUE } from '../data/destI18n'
 
 const TABS = [
   { id: 'domestic', label: 'חבילות סלולר' },
@@ -207,14 +207,16 @@ export default function ComparePage() {
   }), [])
 
   // Build complete country → carriers mapping
-  const { availableRegions, availableDestinations, countryCarrierMap } = useMemo(() => {
-    if (tab !== 'global') return { availableRegions: [], availableDestinations: [], countryCarrierMap: {} }
+  const { availableRegions, availableDestinations, countryCarrierMap, hasCruise } = useMemo(() => {
+    if (tab !== 'global') return { availableRegions: [], availableDestinations: [], countryCarrierMap: {}, hasCruise: false }
 
     // Keyed by canonical English (destKey) so spelling variants of the same
     // country collapse into one entry; heByKey keeps a representative Hebrew.
     const map = {} // destKey → Set of carrier ids
     const heByKey = {} // destKey → representative Hebrew name
     const addCountry = (heName, carrier) => {
+      // Cruise packages are surfaced via the single synthetic "Cruise" option.
+      if (isCruiseDest(heName)) return
       const k = destKey(heName)
       if (!k) return
       if (!map[k]) { map[k] = new Set(); heByKey[k] = heName }
@@ -253,21 +255,24 @@ export default function ComparePage() {
     )].sort((a, b) => a.localeCompare(b, 'he'))
     // Representative Hebrew per canonical country (already de-duplicated).
     const destinations = Object.values(heByKey).sort((a, b) => a.localeCompare(b, 'he'))
+    const hasCruise = plans.some(p => p.extras && isCruiseDest(p.extras[0]))
 
-    return { availableRegions: regions, availableDestinations: destinations, countryCarrierMap: map }
+    return { availableRegions: regions, availableDestinations: destinations, countryCarrierMap: map, hasCruise }
   }, [plans, tab, CARRIER_COUNTRY_LISTS])
 
   // Localized, de-duplicated dropdown options.
   const regionOptions = useMemo(() => dedupeDestOptions(availableRegions, lang), [availableRegions, lang])
-  const destinationOptions = useMemo(() => (
-    availableDestinations
+  const destinationOptions = useMemo(() => {
+    const opts = availableDestinations
       .map(heRep => {
         const k = destKey(heRep)
         const n = countryCarrierMap[k] ? countryCarrierMap[k].size : 0
         return { value: heRep, label: `${lang === 'he' ? heRep : k} (${n})` }
       })
       .sort((a, b) => a.label.localeCompare(b.label, lang === 'he' ? 'he' : 'en'))
-  ), [availableDestinations, countryCarrierMap, lang])
+    // Pin the unified "Cruise" option at the top when cruise packages exist.
+    return hasCruise ? [{ value: CRUISE_VALUE, label: cruiseLabel(lang) }, ...opts] : opts
+  }, [availableDestinations, countryCarrierMap, hasCruise, lang])
 
   // Filter + sort plans
   const filteredPlans = useMemo(() => {
@@ -285,6 +290,9 @@ export default function ComparePage() {
     if (regionFilter !== 'all') {
       const rTarget = destKey(regionFilter)
       result = result.filter(p => p.extras && destKey(normalizeRegionLabel(p.extras[0])) === rTarget)
+    } else if (destinationFilter === CRUISE_VALUE) {
+      // Unified "Cruise" filter — matches every provider's cruise-at-sea package.
+      result = result.filter(p => p.extras && isCruiseDest(p.extras[0]))
     } else if (destinationFilter !== 'all') {
       // Compare via canonical English key so the selected representative spelling
       // matches plans tagged with any of its de-duplicated variants.
@@ -460,8 +468,13 @@ export default function ComparePage() {
                         setDestinationFilter(val)
                         if (val !== 'all') {
                           setRegionFilter('all')
-                          const carriers = countryCarrierMap[destKey(val)]
-                          if (carriers) setSelectedCarriers([...carriers])
+                          if (val === CRUISE_VALUE) {
+                            const cruiseCarriers = [...new Set(plans.filter(p => p.extras && isCruiseDest(p.extras[0])).map(p => p.carrier))]
+                            setSelectedCarriers(cruiseCarriers)
+                          } else {
+                            const carriers = countryCarrierMap[destKey(val)]
+                            if (carriers) setSelectedCarriers([...carriers])
+                          }
                         }
                       }}
                       options={destinationOptions}
