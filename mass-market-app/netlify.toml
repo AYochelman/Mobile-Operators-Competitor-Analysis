@@ -1,11 +1,32 @@
+# NOTE: production is a manual drag-deploy of dist/, so THIS file is NOT the live
+# router - dist/_redirects (built from public/_redirects) is. Keep the two in sync
+# so a future CI/Git deploy (which DOES read netlify.toml) behaves identically.
+# Specific prerendered pages must precede the /* SPA catch-all (first match wins).
+
 # "/" serves the pure-static prerendered marketing page (dist/landing.html) so it
-# paints instantly with no SPA boot. Everything else falls through to the SPA.
+# paints instantly with no SPA boot.
 [[redirects]]
   from = "/"
   to = "/landing.html"
   status = 200
   force = true
 
+# "/hotels" serves the prerendered + hydrated Guest Connect marketing page.
+[[redirects]]
+  from = "/hotels"
+  to = "/hotels.html"
+  status = 200
+  force = true
+
+# "/esim-deals" serves the eSIM SPA shell whose canonical self-references the apex
+# page (index.html's head would canonicalise it to the site root and de-index it).
+[[redirects]]
+  from = "/esim-deals"
+  to = "/esim.html"
+  status = 200
+  force = true
+
+# Everything else falls through to the SPA.
 [[redirects]]
   from = "/*"
   to = "/index.html"

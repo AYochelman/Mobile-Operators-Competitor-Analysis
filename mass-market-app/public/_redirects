@@ -4,13 +4,21 @@
 # boot); "/hotels" serves the prerendered+hydrated Guest Connect marketing page;
 # every other path falls through to the SPA (index.html).
 #
-# esim.mocaintel.com = the public B2C eSIM-compare microsite. Serve the SPA
-# (index.html) for the whole host so App.jsx (IS_ESIM_HOST) renders the compare
-# page at the clean root URL. MUST precede the "/" landing rule below — first
-# match wins and the path-only rules match every host.
-https://esim.mocaintel.com/*  /index.html  200
+# esim.mocaintel.com = the public B2C eSIM-compare microsite. Serve the eSIM SPA
+# shell (esim.html: same SPA boot as index.html, but with a canonical pointing at
+# the apex https://mocaintel.com/esim-deals) for the whole host, so App.jsx
+# (IS_ESIM_HOST) renders the compare page at the clean root URL AND the subdomain
+# consolidates its SEO signal onto the apex page instead of self-canonicalising.
+# MUST precede the "/" landing rule below — first match wins and the path-only
+# rules match every host. Non-force (200) so existing static files (assets,
+# robots.txt, sitemap.xml) are still served directly on the subdomain.
+https://esim.mocaintel.com/*  /esim.html  200
 /            /landing.html   200!
 /hotels      /hotels.html    200!
+# Public consumer eSIM page — served the prerendered esim.html shell so its raw
+# HTML carries the correct self-referencing canonical/title/OG (index.html's head
+# would point the canonical at the site root and de-index this page).
+/esim-deals  /esim.html      200!
 # Short branded link for the TikTok bio → the tagged eSIM compare page.
 /tt          /esim-deals?utm_source=tiktok&utm_campaign=tiktok_bio   302
 /*           /index.html     200

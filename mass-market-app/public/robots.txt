@@ -1,7 +1,7 @@
 User-agent: *
 Allow: /
 
-# Login-gated app areas — no value to index (they redirect to /login)
+# Login-gated app areas - no value to index (they redirect to /login)
 Disallow: /login
 Disallow: /reset-password
 Disallow: /invite/
@@ -9,5 +9,27 @@ Disallow: /settings
 Disallow: /admin/
 Disallow: /usage
 Disallow: /workspace/
+
+# Internal competitive-intelligence dashboard routes (login-gated SPA tabs/pages).
+# Kept out of the index so only the public marketing + consumer pages rank.
+# NB: do NOT add "/esim" here - it is a prefix of the public /esim-deals page.
+Disallow: /home
+Disallow: /plans
+Disallow: /roaming
+Disallow: /usa
+Disallow: /resellers
+Disallow: /content
+Disallow: /news
+Disallow: /banners
+Disallow: /history
+Disallow: /compare
+Disallow: /positioning
+Disallow: /alerts
+Disallow: /executive-summary
+Disallow: /archive
+Disallow: /preferences
+Disallow: /ai-insights
+Disallow: /social
+Disallow: /notifications
 
 Sitemap: https://mocaintel.com/sitemap.xml

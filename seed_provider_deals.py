@@ -329,13 +329,13 @@ DEALS = [
     {
         "provider_id": "gomoworld", "display_name": "GoMoWorld", "category": "global",
         "outreach_status": "in_discussion", "outreach_last_at": "2026-07-03",
-        "contact": "Rana Doula (Partnership Manager, Puremium) rdoula@puremium.com / team@puremium.com; self-serve my.puremium.com/signup (גם ב-Impact) + support@gomoworld.com",
-        "program_network": "Puremium / Impact",
+        "contact": "Rana Doula (Partnership Manager, Puremium) rdoula@puremium.com / team@puremium.com; self-serve my.puremium.com/signup + support@gomoworld.com",
+        "program_network": "Puremium SAS (פלטפורמת HasOffers/TUNE)",
         "agreement_status": "none", "commission_pct": None,
         "commission_note": "לא פורסם אחוז; ממתין לתנאים מ-Puremium (נשאלו: אחוז + cookie).",
-        "coupon_note": "דיון פעיל: Rana (Puremium) ביקשה נתוני פעילות 03/07; עניתי באותו יום (מקורות תנועה/גיאו/המרות/יעדים/קידום) + ביקשתי tracking+Sub-ID, תנאי עמלה+cookie, דיפ-לינקים, נכסי מותג וקוד MOCA. ממתין למענה.",
+        "coupon_note": "דיון פעיל: נרשמנו ב-Puremium 03/07 (החשבון בבדיקה); Rana ביקשה נתוני פעילות באותו יום, עניתי (מקורות תנועה/גיאו/המרות/יעדים/קידום) + ביקשתי tracking+Sub-ID, תנאי עמלה+cookie, דיפ-לינקים, נכסי מותג וקוד MOCA. ממתין למענה.",
         "priority": "medium", "next_actions": "מעקב אחר מענה Puremium; אם אין תוך כשבוע - תזכורת. לשקול הוספת נתוני Analytics אמיתיים.",
-        "notes": "eircom Limited (eir, אירלנד). כבר ספק נסרק. תוכנית השותפים מנוהלת ע\"י Puremium (פריז).",
+        "notes": "eircom Limited (eir, אירלנד). כבר ספק נסרק. תוכנית השותפים מנוהלת ע\"י Puremium (פריז) על HasOffers/TUNE. הבקשה נעשתה דרך Puremium בלבד (03/07); Impact הוא ערוץ חלופי אפשרי שלא נפתחה בו בקשה נפרדת.",
     },
     {
         "provider_id": "flexiroam", "display_name": "Flexiroam", "category": "global",
