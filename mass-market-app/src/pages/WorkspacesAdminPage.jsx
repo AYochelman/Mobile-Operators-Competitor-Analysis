@@ -5,7 +5,9 @@ import SearchableSelect from '../components/ui/SearchableSelect'
 import LogoField from '../components/LogoField'
 import { api } from '../lib/api'
 import { useAuth } from '../hooks/useAuth'
+import { useLang } from '../hooks/useLanguage'
 import { getMvnoColors, isKnownMvnoPrimary } from '../data/mvnoBrandColors'
+import { DISPLAY_PRESETS, applyDisplayPreset, detectDisplayPreset } from '../data/navFlags'
 
 const DOMESTIC_CARRIERS = [
   { id: 'partner',   label: 'פרטנר' },
@@ -34,22 +36,34 @@ function withMvnoColors(form, newMvno) {
   }
 }
 
+// Keep these keys in sync with FLAG_FOR_PATH (src/data/navFlags.js) — every key
+// here must be consulted by a nav item / page, otherwise the checkbox hides
+// nothing. `hide_chat` is consulted separately in Layout.jsx (not a nav item).
 const FLAG_DEFINITIONS = [
-  { key: 'hide_abroad',            label: 'הסתר טאב חו"ל' },
-  { key: 'hide_global',            label: 'הסתר טאב גלובלי' },
-  { key: 'hide_content',           label: 'הסתר טאב תוכן' },
-  { key: 'hide_banners',           label: 'הסתר טאב באנרים' },
-  { key: 'hide_history',           label: 'הסתר טאב היסטוריה' },
-  { key: 'hide_news',              label: 'הסתר טאב חדשות' },
-  { key: 'hide_compare',           label: 'הסתר עמוד השוואה' },
-  { key: 'hide_alerts',            label: 'הסתר עמוד התראות' },
-  { key: 'hide_executive_summary', label: 'הסתר תקציר מנהלים' },
-  { key: 'hide_archive',           label: 'הסתר ארכיב' },
-  { key: 'hide_chat',              label: "הסתר צ'אט AI" },
+  { key: 'hide_dashboard',         label: 'הסתר דשבורד ראשי',    en: 'Hide main dashboard' },
+  // מסלולים (tabs)
+  { key: 'hide_domestic',          label: 'הסתר טאב סלולר',       en: 'Hide domestic tab' },
+  { key: 'hide_abroad',            label: 'הסתר טאב חו"ל',        en: 'Hide roaming tab' },
+  { key: 'hide_global',            label: 'הסתר טאב גלובלי',      en: 'Hide global tab' },
+  { key: 'hide_usa',               label: 'הסתר טאב ארה"ב',       en: 'Hide USA tab' },
+  { key: 'hide_resellers',         label: 'הסתר טאב משווקים',     en: 'Hide resellers tab' },
+  { key: 'hide_content',           label: 'הסתר טאב תוכן',        en: 'Hide content tab' },
+  { key: 'hide_banners',           label: 'הסתר טאב באנרים',      en: 'Hide banners tab' },
+  { key: 'hide_history',           label: 'הסתר טאב היסטוריה',    en: 'Hide history tab' },
+  { key: 'hide_news',              label: 'הסתר טאב חדשות',       en: 'Hide news tab' },
+  { key: 'hide_social',            label: 'הסתר רשתות חברתיות',   en: 'Hide social media' },
+  // עמודים / תובנות
+  { key: 'hide_compare',           label: 'הסתר עמוד השוואה',     en: 'Hide compare page' },
+  { key: 'hide_positioning',       label: 'הסתר מיצוב תחרותי',    en: 'Hide competitive positioning' },
+  { key: 'hide_alerts',            label: 'הסתר עמוד התראות',     en: 'Hide alerts page' },
+  { key: 'hide_executive_summary', label: 'הסתר תקציר מנהלים',    en: 'Hide executive summary' },
+  { key: 'hide_ai_insights',       label: 'הסתר AI Insights',     en: 'Hide AI Insights' },
+  { key: 'hide_archive',           label: 'הסתר מכונת זמן',       en: 'Hide Time Machine' },
+  { key: 'hide_chat',              label: "הסתר צ'אט AI",         en: 'Hide AI chat' },
 ]
 
 const MVNO_OPTIONS = [
-  { id: '',          label: '— ללא —' },
+  { id: '',          label: '— ללא —', en: '— None —' },
   { id: 'partner',   label: 'פרטנר' },
   { id: 'pelephone', label: 'פלאפון' },
   { id: 'hotmobile', label: 'הוט מובייל' },
@@ -63,16 +77,18 @@ const MVNO_OPTIONS = [
 ]
 
 function StatusPill({ active }) {
+  const { tt } = useLang()
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
       active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'
     }`}>
-      {active ? 'פעיל' : 'מושעה'}
+      {active ? tt('פעיל', 'Active') : tt('מושעה', 'Suspended')}
     </span>
   )
 }
 
 function UsersSection({ workspaceId, onChange }) {
+  const { tt } = useLang()
   const [users, setUsers]   = useState([])
   const [allUsers, setAllUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -112,11 +128,11 @@ function UsersSection({ workspaceId, onChange }) {
     return allUsers
       .map(u => ({
         value: u.email,
-        label: assignedIds.has(u.id) ? `${u.email} · כבר משויך` : u.email,
+        label: assignedIds.has(u.id) ? `${u.email} · ${tt('כבר משויך', 'already assigned')}` : u.email,
         assigned: assignedIds.has(u.id),
       }))
       .sort((a, b) => (a.assigned - b.assigned) || a.value.localeCompare(b.value))
-  }, [allUsers, users])
+  }, [allUsers, users, tt])
 
   const assign = async (e) => {
     e.preventDefault()
@@ -135,7 +151,7 @@ function UsersSection({ workspaceId, onChange }) {
   }
 
   const unassign = async (userId) => {
-    if (!confirm('להעביר את המשתמש ל-moca-internal?')) return
+    if (!confirm(tt('להעביר את המשתמש ל-moca-internal?', 'Move the user to moca-internal?'))) return
     setError(null)
     try {
       await api.unassignWorkspaceUser(workspaceId, userId)
@@ -148,19 +164,19 @@ function UsersSection({ workspaceId, onChange }) {
 
   return (
     <div className="bg-moca-cream/50 rounded-lg p-4 mt-3">
-      <h4 className="text-sm font-semibold mb-2">משתמשים משויכים</h4>
+      <h4 className="text-sm font-semibold mb-2">{tt('משתמשים משויכים', 'Assigned users')}</h4>
       {loading ? (
-        <p className="text-xs text-gray-500">טוען…</p>
+        <p className="text-xs text-gray-500">{tt('טוען…', 'Loading…')}</p>
       ) : users.length === 0 ? (
-        <p className="text-xs text-gray-500">אין משתמשים ב-workspace זה.</p>
+        <p className="text-xs text-gray-500">{tt('אין משתמשים ב-workspace זה.', 'No users in this workspace.')}</p>
       ) : (
         <div className="overflow-x-auto mb-3">
           <table className="w-full text-sm min-w-[460px] md:min-w-0">
             <thead>
               <tr className="text-xs text-gray-500 border-b">
-                <th className="text-right py-1 whitespace-nowrap">אימייל</th>
-                <th className="text-right py-1 whitespace-nowrap">תפקיד</th>
-                <th className="text-right py-1 whitespace-nowrap">כניסה אחרונה</th>
+                <th className="text-right py-1 whitespace-nowrap">{tt('אימייל', 'Email')}</th>
+                <th className="text-right py-1 whitespace-nowrap">{tt('תפקיד', 'Role')}</th>
+                <th className="text-right py-1 whitespace-nowrap">{tt('כניסה אחרונה', 'Last login')}</th>
                 <th className="text-right py-1"></th>
               </tr>
             </thead>
@@ -174,7 +190,7 @@ function UsersSection({ workspaceId, onChange }) {
                   </td>
                   <td className="py-1.5 text-left">
                     <button onClick={() => unassign(u.id)}
-                      className="text-xs text-red-600 hover:underline">הסרה</button>
+                      className="text-xs text-red-600 hover:underline">{tt('הסרה', 'Remove')}</button>
                   </td>
                 </tr>
               ))}
@@ -189,7 +205,7 @@ function UsersSection({ workspaceId, onChange }) {
             value={newEmail || 'all'}
             onChange={v => setNewEmail(v === 'all' ? '' : v)}
             options={userOptions}
-            placeholder="בחר משתמש לשיוך…"
+            placeholder={tt('בחר משתמש לשיוך…', 'Select a user to assign…')}
             size="md"
           />
         </div>
@@ -199,7 +215,7 @@ function UsersSection({ workspaceId, onChange }) {
           <option value="admin">admin</option>
         </select>
         <Button type="submit" disabled={assigning || !newEmail} variant="primary" size="sm">
-          {assigning ? '…' : 'שייך'}
+          {assigning ? '…' : tt('שייך', 'Assign')}
         </Button>
       </form>
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
@@ -208,6 +224,7 @@ function UsersSection({ workspaceId, onChange }) {
 }
 
 function ColorInput({ label, value, onChange, defaultColor = null, defaultLabel = null }) {
+  const { tt } = useLang()
   const usingDefault = !value && defaultColor
   return (
     <label className="text-sm">
@@ -221,32 +238,33 @@ function ColorInput({ label, value, onChange, defaultColor = null, defaultLabel 
           className="flex-1 px-3 py-1.5 border border-moca-border rounded font-mono text-sm" />
         {value && (
           <button type="button" onClick={() => onChange('')}
-            title="אפס לצבע ברירת-המחדל של הספק"
+            title={tt('אפס לצבע ברירת-המחדל של הספק', 'Reset to the carrier default color')}
             className="text-xs text-gray-400 hover:text-red-500">✕</button>
         )}
       </div>
       {usingDefault && (
         <p className="text-[11px] text-gray-500 mt-1">
-          משתמש בצבע של {defaultLabel || 'הספק'}: <code className="font-mono">{defaultColor}</code>
+          {tt('משתמש בצבע של', 'Using the color of')} {defaultLabel || tt('הספק', 'the carrier')}: <code className="font-mono">{defaultColor}</code>
         </p>
       )}
     </label>
   )
 }
 
-function trialBadge(ws) {
+function trialBadge(ws, tt = (he) => he) {
   if (!ws.trial_ends_at) return null
   const end  = new Date(ws.trial_ends_at)
   const days = Math.ceil((end - Date.now()) / 86400000)
   if (ws.trial_expired || days < 0)
-    return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">פיילוט פג</span>
+    return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">{tt('פיילוט פג', 'Trial expired')}</span>
   if (days <= 7)
-    return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">{days}י׳ נותרו</span>
-  return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{days}י׳ נותרו</span>
+    return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">{tt(`${days}י׳ נותרו`, `${days}d left`)}</span>
+  return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{tt(`${days}י׳ נותרו`, `${days}d left`)}</span>
 }
 
 function WorkspaceRow({ ws, onChange }) {
   const { enterViewAs } = useAuth()
+  const { tt } = useLang()
   const navigate = useNavigate()
   const [expanded, setExpanded]   = useState(false)
   const [editing, setEditing]     = useState(false)
@@ -285,9 +303,9 @@ function WorkspaceRow({ ws, onChange }) {
     try {
       const res = await api.triggerDigest(ws.id)
       if (res.status === 'skipped') {
-        setDigestResult({ ok: true, msg: `לא נשלח — ${res.reason || 'אין שינויים'}` })
+        setDigestResult({ ok: true, msg: tt(`לא נשלח — ${res.reason || 'אין שינויים'}`, `Not sent — ${res.reason || 'no changes'}`) })
       } else {
-        setDigestResult({ ok: true, msg: `נשלח ל-${res.emails ?? 0} נמענים · ${res.changes ?? 0} שינויים` })
+        setDigestResult({ ok: true, msg: tt(`נשלח ל-${res.emails ?? 0} נמענים · ${res.changes ?? 0} שינויים`, `Sent to ${res.emails ?? 0} recipients · ${res.changes ?? 0} changes`) })
       }
     } catch (e) {
       setDigestResult({ ok: false, msg: e.message })
@@ -310,7 +328,7 @@ function WorkspaceRow({ ws, onChange }) {
 
   const generateBulk = async () => {
     const emails = bulkEmails.split(/[\s,;\n]+/).map(s => s.trim()).filter(Boolean)
-    if (emails.length === 0) { setInviteErr('הדבק לפחות אימייל אחד'); return }
+    if (emails.length === 0) { setInviteErr(tt('הדבק לפחות אימייל אחד', 'Paste at least one email')); return }
     setInviting(true); setInviteErr(null); setBulkResults(null); setBulkCopiedAll(false)
     try {
       const res = await api.createInviteBulk(ws.id, emails, inviteRole)
@@ -383,7 +401,7 @@ function WorkspaceRow({ ws, onChange }) {
               <span className="font-semibold text-lg">{ws.name}</span>
             )}
             <StatusPill active={ws.active} />
-            {trialBadge(ws)}
+            {trialBadge(ws, tt)}
           </div>
           <div className="flex gap-4 items-center text-sm text-gray-600 mt-2 flex-wrap">
             <span>
@@ -392,19 +410,19 @@ function WorkspaceRow({ ws, onChange }) {
                 <select value={form.mvno_carrier}
                   onChange={e => setForm(withMvnoColors(form, e.target.value))}
                   className="border border-moca-border rounded px-1 py-0.5 text-sm">
-                  {MVNO_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+                  {MVNO_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.en ? tt(o.label, o.en) : o.label}</option>)}
                 </select>
               ) : (
-                <strong>{MVNO_OPTIONS.find(o => o.id === (ws.mvno_carrier || ''))?.label || ws.mvno_carrier || '—'}</strong>
+                <strong>{(() => { const o = MVNO_OPTIONS.find(o => o.id === (ws.mvno_carrier || '')); return o ? (o.en ? tt(o.label, o.en) : o.label) : (ws.mvno_carrier || '—') })()}</strong>
               )}
             </span>
-            <span>משתמשים: <strong>{ws.user_count}</strong></span>
+            <span>{tt('משתמשים:', 'Users:')} <strong>{ws.user_count}</strong></span>
             {ws.last_login && (
-              <span>כניסה אחרונה: <strong>{new Date(ws.last_login).toLocaleDateString('he-IL')}</strong></span>
+              <span>{tt('כניסה אחרונה:', 'Last login:')} <strong>{new Date(ws.last_login).toLocaleDateString('he-IL')}</strong></span>
             )}
             {ws.refresh_limit != null && (
               <span className="flex items-center gap-1">
-                רענונים:&nbsp;
+                {tt('רענונים:', 'Refreshes:')}&nbsp;
                 {Array.from({ length: ws.refresh_limit }).map((_, i) => (
                   <span key={i} className={`inline-block w-2.5 h-2.5 rounded-full ${
                     i < (ws.refresh_limit - (ws.refresh_count_month || 0)) ? 'bg-emerald-400' : 'bg-gray-200'
@@ -417,20 +435,20 @@ function WorkspaceRow({ ws, onChange }) {
             )}
             {!editing && ws.visible_carriers?.length > 0 && (
               <span className="text-xs text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full px-2 py-0.5">
-                {ws.visible_carriers.length} ספקים גלויים
+                {ws.visible_carriers.length} {tt('ספקים גלויים', 'visible carriers')}
               </span>
             )}
             <label className="flex items-center gap-1 cursor-pointer">
               <input type="checkbox" checked={editing ? form.hide_self_carrier : ws.hide_self_carrier}
                 disabled={!editing}
                 onChange={e => setForm({...form, hide_self_carrier: e.target.checked})} />
-              <span className="text-xs">הסתר ספק עצמי</span>
+              <span className="text-xs">{tt('הסתר ספק עצמי', 'Hide self carrier')}</span>
             </label>
             <label className="flex items-center gap-1 cursor-pointer">
               <input type="checkbox" checked={editing ? form.active : ws.active}
                 disabled={!editing}
                 onChange={e => setForm({...form, active: e.target.checked})} />
-              <span className="text-xs">פעיל</span>
+              <span className="text-xs">{tt('פעיל', 'Active')}</span>
             </label>
           </div>
         </div>
@@ -438,7 +456,7 @@ function WorkspaceRow({ ws, onChange }) {
           {editing ? (
             <>
               <Button onClick={save} disabled={saving} variant="primary" size="sm">
-                {saving ? 'שומר…' : 'שמור'}
+                {saving ? tt('שומר…', 'Saving…') : tt('שמור', 'Save')}
               </Button>
               <Button onClick={() => { setEditing(false); setForm({
                 name: ws.name, mvno_carrier: ws.mvno_carrier || '',
@@ -452,11 +470,11 @@ function WorkspaceRow({ ws, onChange }) {
                 trial_ends_at:    ws.trial_ends_at ? ws.trial_ends_at.slice(0, 10) : '',
                 visible_carriers: ws.visible_carriers || [],
                 digest_frequency: ws.digest_frequency || 'weekly',
-              }) }} variant="ghost" size="sm">ביטול</Button>
+              }) }} variant="ghost" size="sm">{tt('ביטול', 'Cancel')}</Button>
             </>
           ) : (
             <>
-              <Button onClick={() => setEditing(true)} variant="ghost" size="sm" className="border border-moca-border/60">עריכה</Button>
+              <Button onClick={() => setEditing(true)} variant="ghost" size="sm" className="border border-moca-border/60">{tt('עריכה', 'Edit')}</Button>
               <Button
                 onClick={() => {
                   enterViewAs({
@@ -473,18 +491,18 @@ function WorkspaceRow({ ws, onChange }) {
                 variant="ghost"
                 size="sm"
                 className="border border-moca-border/60"
-                title="צפה באפליקציה כפי שמשתמש של ה-workspace רואה אותה"
+                title={tt('צפה באפליקציה כפי שמשתמש של ה-workspace רואה אותה', 'View the app as a user of this workspace sees it')}
               >
-                צפה כ
+                {tt('צפה כ', 'View as')}
               </Button>
               <Button onClick={() => { setInviteOpen(o => !o); setInviteLink(null); setInviteErr(null) }} variant="ghost" size="sm" className="border border-moca-border/60">
-                {inviteOpen ? 'סגור הזמנה' : 'הזמן משתמש'}
+                {inviteOpen ? tt('סגור הזמנה', 'Close invite') : tt('הזמן משתמש', 'Invite user')}
               </Button>
               <Button onClick={sendDigest} disabled={digestSending} variant="ghost" size="sm" className="border border-moca-border/60">
-                {digestSending ? 'שולח…' : 'שלח דייג׳סט'}
+                {digestSending ? tt('שולח…', 'Sending…') : tt('שלח דייג׳סט', 'Send digest')}
               </Button>
               <Button onClick={() => setExpanded(e => !e)} variant="ghost" size="sm" className="border border-moca-border/60">
-                {expanded ? 'סגור משתמשים' : 'ניהול משתמשים'}
+                {expanded ? tt('סגור משתמשים', 'Close users') : tt('ניהול משתמשים', 'Manage users')}
               </Button>
             </>
           )}
@@ -498,12 +516,12 @@ function WorkspaceRow({ ws, onChange }) {
       {inviteOpen && (
         <div className="bg-moca-cream/50 rounded-lg p-4 mt-3">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold">הזמנת משתמש חדש</h4>
+            <h4 className="text-sm font-semibold">{tt('הזמנת משתמש חדש', 'Invite a new user')}</h4>
             <div className="flex bg-white rounded-lg border border-moca-border overflow-hidden text-xs">
               <button
                 onClick={() => { setBulkMode(false); setBulkResults(null); setInviteErr(null) }}
                 className={`px-3 py-1 transition-colors ${!bulkMode ? 'bg-moca-bolt text-white' : 'text-gray-600 hover:bg-moca-cream'}`}
-              >יחיד</button>
+              >{tt('יחיד', 'Single')}</button>
               <button
                 onClick={() => { setBulkMode(true); setInviteLink(null); setInviteErr(null) }}
                 className={`px-3 py-1 transition-colors ${bulkMode ? 'bg-moca-bolt text-white' : 'text-gray-600 hover:bg-moca-cream'}`}
@@ -514,16 +532,16 @@ function WorkspaceRow({ ws, onChange }) {
           <div className="flex gap-2 items-center flex-wrap mb-2">
             <select value={inviteRole} onChange={e => { setInviteRole(e.target.value); setInviteLink(null); setBulkResults(null) }}
               className="px-2 py-1.5 text-sm border border-moca-border rounded">
-              <option value="viewer">viewer — צופה</option>
-              <option value="admin">admin — מנהל</option>
+              <option value="viewer">{tt('viewer — צופה', 'viewer')}</option>
+              <option value="admin">{tt('admin — מנהל', 'admin')}</option>
             </select>
             {!bulkMode ? (
               <Button onClick={generateInvite} disabled={inviting} variant="primary" size="sm">
-                {inviting ? 'יוצר…' : 'צור קישור הזמנה'}
+                {inviting ? tt('יוצר…', 'Creating…') : tt('צור קישור הזמנה', 'Create invite link')}
               </Button>
             ) : (
               <Button onClick={generateBulk} disabled={inviting} variant="primary" size="sm">
-                {inviting ? 'יוצר…' : 'צור הזמנות להמונים'}
+                {inviting ? tt('יוצר…', 'Creating…') : tt('צור הזמנות להמונים', 'Create bulk invites')}
               </Button>
             )}
           </div>
@@ -533,12 +551,12 @@ function WorkspaceRow({ ws, onChange }) {
               <textarea
                 value={bulkEmails}
                 onChange={e => setBulkEmails(e.target.value)}
-                placeholder={"הדבק מיילים — אחד בכל שורה, מופרדים בפסיק או ברווח\nname1@partner.co.il\nname2@partner.co.il"}
+                placeholder={tt("הדבק מיילים — אחד בכל שורה, מופרדים בפסיק או ברווח\nname1@partner.co.il\nname2@partner.co.il", "Paste emails — one per line, or comma/space separated\nname1@partner.co.il\nname2@partner.co.il")}
                 rows={5}
                 dir="ltr"
                 className="w-full px-2 py-1.5 text-xs border border-moca-border rounded bg-white font-mono"
               />
-              <p className="text-[11px] text-gray-400 mt-1">מקסימום 50 מיילים · לינק ייחודי לכל אחד · לא נשלח מייל אוטומטי</p>
+              <p className="text-[11px] text-gray-400 mt-1">{tt('מקסימום 50 מיילים · לינק ייחודי לכל אחד · לא נשלח מייל אוטומטי', 'Max 50 emails · a unique link per recipient · no email is sent automatically')}</p>
             </>
           )}
 
@@ -555,10 +573,10 @@ function WorkspaceRow({ ws, onChange }) {
                       ? 'bg-emerald-100 border-emerald-300 text-emerald-700'
                       : 'bg-white border-moca-border text-moca-text hover:border-moca-bolt'
                   }`}>
-                  {copied ? '✓ הועתק' : 'העתק'}
+                  {copied ? tt('✓ הועתק', '✓ Copied') : tt('העתק', 'Copy')}
                 </button>
               </div>
-              <p className="text-xs text-gray-400 mt-1.5">תוקף 7 ימים · שימוש חד-פעמי</p>
+              <p className="text-xs text-gray-400 mt-1.5">{tt('תוקף 7 ימים · שימוש חד-פעמי', 'Valid for 7 days · single use')}</p>
             </>
           )}
 
@@ -566,7 +584,7 @@ function WorkspaceRow({ ws, onChange }) {
             <div className="mt-3">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs text-gray-600">
-                  נוצרו <strong>{bulkResults.filter(r => r.token).length}</strong> הזמנות מתוך {bulkResults.length}
+                  {tt('נוצרו', 'Created')} <strong>{bulkResults.filter(r => r.token).length}</strong> {tt(`הזמנות מתוך ${bulkResults.length}`, `invites of ${bulkResults.length}`)}
                 </p>
                 <div className="flex gap-2">
                   <button onClick={copyAllBulk}
@@ -575,11 +593,11 @@ function WorkspaceRow({ ws, onChange }) {
                         ? 'bg-emerald-100 border-emerald-300 text-emerald-700'
                         : 'bg-white border-moca-border text-moca-text hover:border-moca-bolt'
                     }`}>
-                    {bulkCopiedAll ? '✓ הכל הועתק' : 'העתק הכל (TSV)'}
+                    {bulkCopiedAll ? tt('✓ הכל הועתק', '✓ All copied') : tt('העתק הכל (TSV)', 'Copy all (TSV)')}
                   </button>
                   <button onClick={() => { setBulkResults(null); setBulkEmails('') }}
                     className="text-[11px] text-gray-400 hover:text-moca-bolt px-1">
-                    חדש
+                    {tt('חדש', 'New')}
                   </button>
                 </div>
               </div>
@@ -595,7 +613,7 @@ function WorkspaceRow({ ws, onChange }) {
                               className="w-full px-1.5 py-0.5 text-[11px] border border-moca-border/40 rounded bg-gray-50 font-mono"
                               onClick={e => e.target.select()} />
                           ) : (
-                            <span className="text-red-500 text-[11px]">{r.error || 'שגיאה'}</span>
+                            <span className="text-red-500 text-[11px]">{r.error || tt('שגיאה', 'Error')}</span>
                           )}
                         </td>
                       </tr>
@@ -612,21 +630,21 @@ function WorkspaceRow({ ws, onChange }) {
         const mvnoLabel  = MVNO_OPTIONS.find(o => o.id === form.mvno_carrier)?.label
         return (
         <div className="mt-3 pt-3 border-t border-moca-border/40 grid grid-cols-1 md:grid-cols-2 gap-3">
-          <ColorInput label="צבע ראשי (primary)" value={form.primary_color}
+          <ColorInput label={tt('צבע ראשי (primary)', 'Primary color')} value={form.primary_color}
             defaultColor={mvnoColors?.primary} defaultLabel={mvnoLabel}
             onChange={v => setForm({...form, primary_color: v})} />
-          <ColorInput label="צבע משני (secondary)" value={form.secondary_color}
+          <ColorInput label={tt('צבע משני (secondary)', 'Secondary color')} value={form.secondary_color}
             defaultColor={mvnoColors?.secondary} defaultLabel={mvnoLabel}
             onChange={v => setForm({...form, secondary_color: v})} />
           <label className="text-sm">
-            <span className="block mb-1 text-gray-700">כותרת האפליקציה</span>
+            <span className="block mb-1 text-gray-700">{tt('כותרת האפליקציה', 'App title')}</span>
             <input type="text" value={form.app_title}
               onChange={e => setForm({...form, app_title: e.target.value})}
               placeholder="Partner Intelligence"
               className="w-full px-3 py-1.5 border border-moca-border rounded" />
           </label>
           <div className="text-sm">
-            <span className="block mb-1 text-gray-700">לוגו</span>
+            <span className="block mb-1 text-gray-700">{tt('לוגו', 'Logo')}</span>
             <LogoField value={form.logo_url}
               onChange={v => setForm({...form, logo_url: v})} />
           </div>
@@ -638,28 +656,28 @@ function WorkspaceRow({ ws, onChange }) {
               dir="ltr"
               className="w-full px-3 py-1.5 border border-moca-border rounded font-mono text-xs" />
             <span className="block text-[10px] text-gray-400 mt-1">
-              התראות אוטומטיות על שינויים בחבילות יישלחו לערוץ זה (לאחר סינון הספק העצמי).
+              {tt('התראות אוטומטיות על שינויים בחבילות יישלחו לערוץ זה (לאחר סינון הספק העצמי).', 'Automatic alerts on plan changes are sent to this channel (after filtering the self carrier).')}
             </span>
           </label>
           <label className="text-sm">
-            <span className="block mb-1 text-gray-700">תאריך סיום פיילוט (trial_ends_at)</span>
+            <span className="block mb-1 text-gray-700">{tt('תאריך סיום פיילוט (trial_ends_at)', 'Trial end date (trial_ends_at)')}</span>
             <input type="date" value={form.trial_ends_at}
               onChange={e => setForm({...form, trial_ends_at: e.target.value})}
               className="w-full px-3 py-1.5 border border-moca-border rounded" />
           </label>
           <label className="text-sm">
-            <span className="block mb-1 text-gray-700">תדירות דייג'סט דוא"ל</span>
+            <span className="block mb-1 text-gray-700">{tt('תדירות דייג\'סט דוא"ל', 'Email digest frequency')}</span>
             <select value={form.digest_frequency}
               onChange={e => setForm({...form, digest_frequency: e.target.value})}
               className="w-full px-3 py-1.5 border border-moca-border rounded bg-white">
-              <option value="weekly">שבועי</option>
-              <option value="monthly">חודשי (ראשון בחודש)</option>
-              <option value="off">כבוי</option>
+              <option value="weekly">{tt('שבועי', 'Weekly')}</option>
+              <option value="monthly">{tt('חודשי (ראשון בחודש)', 'Monthly (1st of month)')}</option>
+              <option value="off">{tt('כבוי', 'Off')}</option>
             </select>
           </label>
           <div className="col-span-2 pt-2 border-t border-moca-border/30">
-            <p className="text-sm font-medium text-gray-700 mb-2">ספקים גלויים (ריק = כולם)</p>
-            <p className="text-xs text-gray-500 mb-2">אם נבחר לפחות ספק אחד — הworkspace יראה רק אותם.</p>
+            <p className="text-sm font-medium text-gray-700 mb-2">{tt('ספקים גלויים (ריק = כולם)', 'Visible carriers (empty = all)')}</p>
+            <p className="text-xs text-gray-500 mb-2">{tt('אם נבחר לפחות ספק אחד — הworkspace יראה רק אותם.', 'If at least one carrier is selected, the workspace will see only those.')}</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {DOMESTIC_CARRIERS.map(({ id, label }) => (
                 <label key={id} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -677,15 +695,37 @@ function WorkspaceRow({ ws, onChange }) {
             </div>
           </div>
           <div className="col-span-2 pt-2 border-t border-moca-border/30">
-            <p className="text-sm font-medium text-gray-700 mb-2">הסתרת תכנים (Feature Flags)</p>
+            <div className="flex items-center justify-between gap-3 flex-wrap mb-1">
+              <p className="text-sm font-medium text-gray-700">{tt('הסתרת תכנים (Feature Flags)', 'Hide content (Feature Flags)')}</p>
+              <label className="flex items-center gap-2 text-sm">
+                <span className="text-gray-600 whitespace-nowrap">{tt('מצב תצוגה:', 'Display mode:')}</span>
+                <select
+                  className="border border-moca-border rounded-md px-2 py-1 text-sm bg-white cursor-pointer"
+                  value={detectDisplayPreset(form.feature_flags)}
+                  onChange={e => {
+                    const id = e.target.value
+                    if (id === 'custom') return
+                    setForm({ ...form, feature_flags: applyDisplayPreset(form.feature_flags, id) })
+                  }}
+                >
+                  {detectDisplayPreset(form.feature_flags) === 'custom' && (
+                    <option value="custom">{tt('מותאם אישית', 'Custom')}</option>
+                  )}
+                  {DISPLAY_PRESETS.map(p => (
+                    <option key={p.id} value={p.id}>{p.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">{tt('בחירת מצב תצוגה מסמנת את התיבות אוטומטית. אפשר גם לכוונן ידנית - זה יעבור ל"מותאם אישית".', 'Selecting a display mode ticks the boxes automatically. You can also fine-tune manually — it switches to "Custom".')}</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {FLAG_DEFINITIONS.map(({ key, label }) => (
+              {FLAG_DEFINITIONS.map(({ key, label, en }) => (
                 <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="checkbox" checked={!!form.feature_flags?.[key]}
                     onChange={e => setForm({ ...form, feature_flags: {
                       ...form.feature_flags, [key]: e.target.checked || undefined
                     }})} />
-                  {label}
+                  {tt(label, en)}
                 </label>
               ))}
             </div>
@@ -700,6 +740,7 @@ function WorkspaceRow({ ws, onChange }) {
 }
 
 function StatsBar({ list, recentEvents }) {
+  const { tt } = useLang()
   const totalUsers   = list.reduce((s, w) => s + (w.user_count || 0), 0)
   const activeCount  = list.filter(w => w.active).length
   const expiringSoon = list.filter(w => {
@@ -709,9 +750,9 @@ function StatsBar({ list, recentEvents }) {
 
   const stats = [
     { label: 'Workspaces', value: list.length, color: 'text-moca-text' },
-    { label: 'פעילים', value: activeCount, color: 'text-emerald-600' },
-    { label: 'משתמשים', value: totalUsers, color: 'text-blue-600' },
-    { label: 'פיילוט פג בקרוב', value: expiringSoon, color: expiringSoon > 0 ? 'text-amber-600' : 'text-gray-400' },
+    { label: tt('פעילים', 'Active'), value: activeCount, color: 'text-emerald-600' },
+    { label: tt('משתמשים', 'Users'), value: totalUsers, color: 'text-blue-600' },
+    { label: tt('פיילוט פג בקרוב', 'Trial expiring soon'), value: expiringSoon, color: expiringSoon > 0 ? 'text-amber-600' : 'text-gray-400' },
   ]
 
   return (
@@ -727,8 +768,8 @@ function StatsBar({ list, recentEvents }) {
       {recentEvents.length > 0 && (
         <div className="bg-white border border-moca-border/60 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-gray-700">פעילות אחרונה</p>
-            <Link to="/admin/audit" className="text-xs text-moca-bolt hover:underline">כל הרשומות ←</Link>
+            <p className="text-sm font-medium text-gray-700">{tt('פעילות אחרונה', 'Recent activity')}</p>
+            <Link to="/admin/audit" className="text-xs text-moca-bolt hover:underline">{tt('כל הרשומות ←', 'All records ←')}</Link>
           </div>
           <div className="space-y-1.5">
             {recentEvents.map(e => (
@@ -748,6 +789,7 @@ function StatsBar({ list, recentEvents }) {
 }
 
 export default function WorkspacesAdminPage() {
+  const { tt } = useLang()
   const [list, setList]         = useState([])
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState(null)
@@ -812,10 +854,10 @@ export default function WorkspacesAdminPage() {
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6 gap-4">
         <p className="text-sm text-gray-600 flex-1">
-          כל workspace הוא לקוח MVNO נפרד עם צבעי מותג, feature flags וסינון ספקים משלו.
+          {tt('כל workspace הוא לקוח MVNO נפרד עם צבעי מותג, feature flags וסינון ספקים משלו.', 'Each workspace is a separate MVNO client with its own brand colors, feature flags and carrier filtering.')}
         </p>
         <Button onClick={() => setCreating(c => !c)} variant="primary">
-          {creating ? 'סגור' : '+ workspace חדש'}
+          {creating ? tt('סגור', 'Close') : tt('+ workspace חדש', '+ New workspace')}
         </Button>
       </div>
 
@@ -824,10 +866,10 @@ export default function WorkspacesAdminPage() {
       {creating && (
         <form onSubmit={create}
           className="bg-moca-cream border border-moca-border rounded-xl p-5 mb-6 space-y-3">
-          <h3 className="font-semibold">יצירת workspace</h3>
+          <h3 className="font-semibold">{tt('יצירת workspace', 'Create workspace')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="text-sm">
-              <span className="block mb-1 text-gray-700">Slug (מזהה URL) *</span>
+              <span className="block mb-1 text-gray-700">{tt('Slug (מזהה URL) *', 'Slug (URL identifier) *')}</span>
               <input required pattern="[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?"
                 value={form.slug}
                 onChange={e => setForm({...form, slug: e.target.value.toLowerCase()})}
@@ -835,42 +877,42 @@ export default function WorkspacesAdminPage() {
                 className="w-full px-3 py-1.5 border border-moca-border rounded" />
             </label>
             <label className="text-sm">
-              <span className="block mb-1 text-gray-700">שם תצוגה *</span>
+              <span className="block mb-1 text-gray-700">{tt('שם תצוגה *', 'Display name *')}</span>
               <input required value={form.name}
                 onChange={e => setForm({...form, name: e.target.value})}
                 placeholder="Partner Intelligence"
                 className="w-full px-3 py-1.5 border border-moca-border rounded" />
             </label>
             <label className="text-sm">
-              <span className="block mb-1 text-gray-700">MVNO של הלקוח</span>
+              <span className="block mb-1 text-gray-700">{tt('MVNO של הלקוח', "Client's MVNO")}</span>
               <select value={form.mvno_carrier}
                 onChange={e => setForm(withMvnoColors(form, e.target.value))}
                 className="w-full px-3 py-1.5 border border-moca-border rounded">
-                {MVNO_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+                {MVNO_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.en ? tt(o.label, o.en) : o.label}</option>)}
               </select>
             </label>
             <label className="text-sm flex items-end gap-2 cursor-pointer">
               <input type="checkbox" checked={form.hide_self_carrier}
                 onChange={e => setForm({...form, hide_self_carrier: e.target.checked})} />
-              <span>הסתר ספק עצמי מהתוצאות</span>
+              <span>{tt('הסתר ספק עצמי מהתוצאות', 'Hide self carrier from results')}</span>
             </label>
-            <ColorInput label="צבע ראשי (primary)" value={form.primary_color}
+            <ColorInput label={tt('צבע ראשי (primary)', 'Primary color')} value={form.primary_color}
               defaultColor={getMvnoColors(form.mvno_carrier)?.primary}
               defaultLabel={MVNO_OPTIONS.find(o => o.id === form.mvno_carrier)?.label}
               onChange={v => setForm({...form, primary_color: v})} />
-            <ColorInput label="צבע משני (secondary)" value={form.secondary_color}
+            <ColorInput label={tt('צבע משני (secondary)', 'Secondary color')} value={form.secondary_color}
               defaultColor={getMvnoColors(form.mvno_carrier)?.secondary}
               defaultLabel={MVNO_OPTIONS.find(o => o.id === form.mvno_carrier)?.label}
               onChange={v => setForm({...form, secondary_color: v})} />
             <label className="text-sm">
-              <span className="block mb-1 text-gray-700">כותרת האפליקציה</span>
+              <span className="block mb-1 text-gray-700">{tt('כותרת האפליקציה', 'App title')}</span>
               <input type="text" value={form.app_title}
                 onChange={e => setForm({...form, app_title: e.target.value})}
                 placeholder="Partner Intelligence"
                 className="w-full px-3 py-1.5 border border-moca-border rounded" />
             </label>
             <div className="text-sm">
-              <span className="block mb-1 text-gray-700">לוגו</span>
+              <span className="block mb-1 text-gray-700">{tt('לוגו', 'Logo')}</span>
               <LogoField value={form.logo_url}
                 onChange={v => setForm({...form, logo_url: v})} />
             </div>
@@ -878,17 +920,17 @@ export default function WorkspacesAdminPage() {
           {createError && <p className="text-sm text-red-600">{createError}</p>}
           <div className="flex gap-2">
             <Button type="submit" disabled={submitting} variant="primary">
-              {submitting ? 'יוצר…' : 'צור'}
+              {submitting ? tt('יוצר…', 'Creating…') : tt('צור', 'Create')}
             </Button>
-            <Button type="button" onClick={() => setCreating(false)} variant="ghost">ביטול</Button>
+            <Button type="button" onClick={() => setCreating(false)} variant="ghost">{tt('ביטול', 'Cancel')}</Button>
           </div>
         </form>
       )}
 
       {loading ? (
-        <p className="text-gray-500">טוען…</p>
+        <p className="text-gray-500">{tt('טוען…', 'Loading…')}</p>
       ) : error ? (
-        <p className="text-red-600">שגיאה: {error}</p>
+        <p className="text-red-600">{tt('שגיאה:', 'Error:')} {error}</p>
       ) : (
         <div className="space-y-3">
           {list.map(ws => <WorkspaceRow key={ws.id} ws={ws} onChange={load} />)}

@@ -233,6 +233,9 @@ export const api = {
     headers: { 'Content-Type': 'application/json' },
   }),
 
+  // Provider deal CRM — super-admin relationship/commission status dashboard
+  getProviderDeals: () => fetchApi('/api/provider-deals'),
+
   // Provider coupons — manually curated discount codes for global eSIM providers
   getCoupons:       () => fetchApi('/api/coupons'),
   getAllCoupons:    () => fetchApi('/api/coupons/all'),

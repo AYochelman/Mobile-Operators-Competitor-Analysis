@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../lib/api'
+import { useLang } from '../hooks/useLanguage'
 
 const ACTION_LABELS = {
   user_assigned:      'משתמש שויך',
@@ -14,6 +15,21 @@ const ACTION_LABELS = {
   invite_accepted:    'הזמנה התקבלה',
   trial_expired:      'פיילוט פג',
   digest_sent:        'דייג׳סט נשלח',
+}
+
+const ACTION_LABELS_EN = {
+  user_assigned:      'User assigned',
+  user_removed:       'User removed',
+  workspace_created:  'Workspace created',
+  workspace_updated:  'Workspace updated',
+  branding_updated:   'Branding updated',
+  scrape_triggered:   'Scrape triggered',
+  refresh_triggered:  'Manual refresh',
+  contact_sent:       'Contact sent',
+  invite_created:     'Invite created',
+  invite_accepted:    'Invite accepted',
+  trial_expired:      'Trial expired',
+  digest_sent:        'Digest sent',
 }
 
 const ACTION_COLORS = {
@@ -32,7 +48,8 @@ const ACTION_COLORS = {
 }
 
 function ActionBadge({ action }) {
-  const label = ACTION_LABELS[action] || action
+  const { tt } = useLang()
+  const label = tt(ACTION_LABELS[action], ACTION_LABELS_EN[action]) || action
   const color = ACTION_COLORS[action] || 'bg-gray-100 text-gray-600'
   return (
     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${color}`}>
@@ -42,6 +59,7 @@ function ActionBadge({ action }) {
 }
 
 export default function AuditLogPage() {
+  const { tt } = useLang()
   const [entries, setEntries]   = useState([])
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState(null)
@@ -67,7 +85,7 @@ export default function AuditLogPage() {
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="mb-5 flex items-center justify-between gap-4 flex-wrap">
-        <p className="text-sm text-gray-500">פעולות מערכת — 200 אחרונות</p>
+        <p className="text-sm text-gray-500">{tt('פעולות מערכת — 200 אחרונות', 'System actions — last 200')}</p>
         <div className="flex items-center gap-2">
           {uniqueWorkspaces.length > 0 && (
             <select
@@ -75,7 +93,7 @@ export default function AuditLogPage() {
               onChange={e => setWsFilter(e.target.value)}
               className="px-2 py-1.5 text-sm border border-moca-border rounded"
             >
-              <option value="">כל ה-Workspaces</option>
+              <option value="">{tt('כל ה-Workspaces', 'All workspaces')}</option>
               {uniqueWorkspaces.map(id => (
                 <option key={id} value={id}>{id}</option>
               ))}
@@ -83,28 +101,28 @@ export default function AuditLogPage() {
           )}
           <button onClick={load}
             className="text-xs text-moca-bolt hover:underline px-2 py-1">
-            רענן
+            {tt('רענן', 'Refresh')}
           </button>
         </div>
       </div>
 
       <div className="bg-white rounded-xl border border-moca-border overflow-hidden">
         {loading ? (
-          <p className="text-sm text-gray-500 p-5">טוען…</p>
+          <p className="text-sm text-gray-500 p-5">{tt('טוען…', 'Loading…')}</p>
         ) : error ? (
-          <p className="text-sm text-red-600 p-5">שגיאה: {error}</p>
+          <p className="text-sm text-red-600 p-5">{tt('שגיאה', 'Error')}: {error}</p>
         ) : entries.length === 0 ? (
-          <p className="text-sm text-gray-500 p-5">אין רשומות.</p>
+          <p className="text-sm text-gray-500 p-5">{tt('אין רשומות.', 'No records.')}</p>
         ) : (
           <div className="-mx-4 px-4 overflow-x-auto md:mx-0 md:px-0">
             <table className="w-full text-sm min-w-[720px] md:min-w-0">
               <thead>
                 <tr className="text-xs text-gray-500 border-b bg-gray-50/60">
-                  <th className="text-right py-2 px-4 whitespace-nowrap">זמן</th>
-                  <th className="text-right py-2 px-4 whitespace-nowrap">פעולה</th>
-                  <th className="text-right py-2 px-4 whitespace-nowrap">מבצע</th>
-                  <th className="text-right py-2 px-4 whitespace-nowrap">יעד</th>
-                  <th className="text-right py-2 px-4 whitespace-nowrap">פרטים</th>
+                  <th className="text-right py-2 px-4 whitespace-nowrap">{tt('זמן', 'Time')}</th>
+                  <th className="text-right py-2 px-4 whitespace-nowrap">{tt('פעולה', 'Action')}</th>
+                  <th className="text-right py-2 px-4 whitespace-nowrap">{tt('מבצע', 'Actor')}</th>
+                  <th className="text-right py-2 px-4 whitespace-nowrap">{tt('יעד', 'Target')}</th>
+                  <th className="text-right py-2 px-4 whitespace-nowrap">{tt('פרטים', 'Details')}</th>
                 </tr>
               </thead>
               <tbody>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../lib/api'
+import { useLang } from '../hooks/useLanguage'
 import PlanCard from '../components/PlanCard'
 import BannerMosaic from '../components/moca/BannerMosaic'
 
@@ -18,7 +19,7 @@ const ALL_PROVIDERS = [
   { id: 'rami_levy',        label: 'רמי לוי',          color: '#e32032' },
   // ── Global eSIM ─────────────────────────────────────────────
   { id: 'tuki',             label: 'טוקי',            color: '#0066cc' },
-  { id: 'globalesim',       label: 'GlobaleSIM',      color: '#0099aa' },
+  { id: 'terminalesim',     label: 'Terminal eSIM',   color: '#0099aa' },
   { id: 'airalo',           label: 'Airalo',          color: '#33cc77' },
   { id: 'pelephone_global', label: 'פלאפון גלובל',   color: '#ff6600' },
   { id: 'esimo',            label: 'eSIMo',           color: '#7700cc' },
@@ -51,10 +52,10 @@ const ALL_PROVIDERS = [
 ]
 
 const PLAN_TYPE_LABELS = {
-  domestic: 'חבילות סלולר',
-  abroad:   'חו"ל',
-  global:   'גלובלי',
-  content:  'תוכן',
+  domestic: { he: 'חבילות סלולר', en: 'Cellular plans' },
+  abroad:   { he: 'חו"ל',        en: 'Roaming' },
+  global:   { he: 'גלובלי',      en: 'Global' },
+  content:  { he: 'תוכן',        en: 'Content' },
 }
 
 function todayIso() {
@@ -62,6 +63,7 @@ function todayIso() {
 }
 
 export default function ArchivePage() {
+  const { tt } = useLang()
   const [carrier, setCarrier]   = useState('')
   const [date, setDate]         = useState(todayIso())
   const [result, setResult]     = useState(null)
@@ -85,7 +87,7 @@ export default function ArchivePage() {
       const data = await api.getArchive(carrier, date)
       setResult(data)
     } catch (e) {
-      setError(e.message || 'שגיאה בטעינת הארכיב')
+      setError(e.message || tt('שגיאה בטעינת הארכיב', 'Error loading the archive'))
     } finally {
       setLoading(false)
     }
@@ -101,20 +103,20 @@ export default function ArchivePage() {
     <div className="max-w-6xl mx-auto px-4 py-6">
       {/* Page identity is owned by the Topbar — keep only the subtitle hint. */}
       <p className="text-[13px] text-moca-muted mb-6">
-        חבילות ובאנרים של ספק בתאריך נבחר
+        {tt('חבילות ובאנרים של ספק בתאריך נבחר', 'A provider\'s plans and banners on a selected date')}
       </p>
 
       {/* Filter row */}
       <div className="bg-white border border-moca-border/60 rounded-xl p-4 mb-6 flex flex-wrap gap-3 items-end">
         {/* Carrier selector */}
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-[11px] font-medium text-gray-500 mb-1.5">ספק</label>
+          <label className="block text-[11px] font-medium text-gray-500 mb-1.5">{tt('ספק', 'Provider')}</label>
           <select
             value={carrier}
             onChange={e => { setCarrier(e.target.value); setResult(null) }}
             className="w-full border border-moca-border/60 rounded-lg px-3 py-2 text-[13px] text-moca-text bg-white focus:outline-none focus:ring-1 focus:ring-moca-bolt/40"
           >
-            <option value="">בחר ספק...</option>
+            <option value="">{tt('בחר ספק...', 'Select a provider...')}</option>
             {ALL_PROVIDERS.map(p => (
               <option key={p.id} value={p.id}>{p.label}</option>
             ))}
@@ -124,7 +126,7 @@ export default function ArchivePage() {
         {/* Date picker */}
         <div className="flex-1 min-w-[160px]">
           <label className="block text-[11px] font-medium text-gray-500 mb-1.5">
-            תאריך
+            {tt('תאריך', 'Date')}
             {dateRange?.min && (
               <span className="font-normal text-moca-muted mr-1">
                 ({dateRange.min} – {dateRange.max})
@@ -149,7 +151,7 @@ export default function ArchivePage() {
                      hover:bg-moca-bolt/90 disabled:opacity-40 disabled:cursor-not-allowed
                      transition-colors whitespace-nowrap"
         >
-          {loading ? 'טוען...' : 'חפש'}
+          {loading ? tt('טוען...', 'Loading...') : tt('חפש', 'Search')}
         </button>
       </div>
 
@@ -163,9 +165,9 @@ export default function ArchivePage() {
       {/* No data message */}
       {result && !hasData && (
         <div className="bg-white border border-moca-border/60 rounded-xl p-8 text-center text-moca-muted text-[13px]">
-          אין נתונים שמורים עבור <strong className="text-moca-text">{providerInfo?.label || carrier}</strong> בתאריך {date} או לפניו.
+          {tt('אין נתונים שמורים עבור', 'No saved data for')} <strong className="text-moca-text">{providerInfo?.label || carrier}</strong> {tt('בתאריך', 'on')} {date} {tt('או לפניו.', 'or earlier.')}
           <br />
-          <span className="text-[11px] mt-1 block">הארכיב שומר נתונים מרגע הפעלתו, ומעדכן רק כאשר מתרחש שינוי.</span>
+          <span className="text-[11px] mt-1 block">{tt('הארכיב שומר נתונים מרגע הפעלתו, ומעדכן רק כאשר מתרחש שינוי.', 'The archive stores data from the moment it was enabled, and updates only when a change occurs.')}</span>
         </div>
       )}
 
@@ -180,7 +182,7 @@ export default function ArchivePage() {
                 style={{ background: providerInfo.color }}
               />
               <h2 className="text-base font-semibold text-moca-text">{providerInfo.label}</h2>
-              <span className="text-[11px] text-moca-muted">— נתונים מ-{date} ולפניו</span>
+              <span className="text-[11px] text-moca-muted">{tt(`— נתונים מ-${date} ולפניו`, `— data from ${date} and earlier`)}</span>
             </div>
           )}
 
@@ -188,7 +190,7 @@ export default function ArchivePage() {
               labels each one correctly ("עמוד ראשי" / "חנות ציוד"). */}
           {(result.banners?.homepage || result.banners?.store) && (
             <section>
-              <h3 className="text-[13px] font-medium text-gray-500 mb-3">באנרים</h3>
+              <h3 className="text-[13px] font-medium text-gray-500 mb-3">{tt('באנרים', 'Banners')}</h3>
               <BannerMosaic banners={[
                 result.banners.homepage && {
                   carrier,
@@ -217,10 +219,10 @@ export default function ArchivePage() {
             <section key={planType}>
               <div className="flex items-center gap-2 mb-3">
                 <h3 className="text-[13px] font-medium text-gray-500">
-                  {PLAN_TYPE_LABELS[planType] || planType}
+                  {PLAN_TYPE_LABELS[planType] ? tt(PLAN_TYPE_LABELS[planType].he, PLAN_TYPE_LABELS[planType].en) : planType}
                 </h3>
                 <span className="text-[11px] text-moca-muted">
-                  — snapshot מ-{data.snapshot_date} · {data.plans.length} חבילות
+                  {tt(`— snapshot מ-${data.snapshot_date} · ${data.plans.length} חבילות`, `— snapshot from ${data.snapshot_date} · ${data.plans.length} plans`)}
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -239,7 +241,7 @@ export default function ArchivePage() {
           <svg className="mx-auto mb-3 opacity-30" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/>
           </svg>
-          <p className="text-[13px]">בחר ספק ותאריך כדי לצפות בנתונים היסטוריים</p>
+          <p className="text-[13px]">{tt('בחר ספק ותאריך כדי לצפות בנתונים היסטוריים', 'Select a provider and date to view historical data')}</p>
         </div>
       )}
     </div>

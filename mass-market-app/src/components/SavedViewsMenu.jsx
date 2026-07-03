@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { api } from '../lib/api'
+import { useLang } from '../hooks/useLanguage'
 
 export default function SavedViewsMenu({ tab, filters, onApply }) {
+  const { tt } = useLang()
   const [views, setViews]       = useState([])
   const [open, setOpen]         = useState(false)
   const [naming, setNaming]     = useState(false)
@@ -67,7 +69,7 @@ export default function SavedViewsMenu({ tab, filters, onApply }) {
       onApply?.(parsed)
       setOpen(false)
     } catch {
-      setErr('תצוגה פגומה')
+      setErr(tt('תצוגה פגומה', 'Corrupted view'))
     }
   }
 
@@ -79,12 +81,12 @@ export default function SavedViewsMenu({ tab, filters, onApply }) {
         type="button"
         onClick={() => setOpen(o => !o)}
         className="text-xs text-moca-sub hover:text-moca-bolt flex items-center gap-1.5 transition-colors"
-        title="תצוגות שמורות"
+        title={tt('תצוגות שמורות', 'Saved views')}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
         </svg>
-        <span>תצוגות שמורות</span>
+        <span>{tt('תצוגות שמורות', 'Saved views')}</span>
         {views.length > 0 && (
           <span className="bg-moca-cream text-moca-sub text-[9px] px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{views.length}</span>
         )}
@@ -93,13 +95,13 @@ export default function SavedViewsMenu({ tab, filters, onApply }) {
       {open && (
         <div className="absolute top-full right-0 mt-1 w-72 bg-white border border-moca-border rounded-xl shadow-popover z-50 p-3 animate-fade-in-up">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-gray-700">תצוגות שמורות</p>
+            <p className="text-xs font-semibold text-gray-700">{tt('תצוגות שמורות', 'Saved views')}</p>
             {!naming && (
               <button
                 onClick={() => { setNaming(true); setNewName(''); setErr(null) }}
                 className="text-[11px] text-moca-bolt hover:underline"
               >
-                + שמור פילטר נוכחי
+                {tt('+ שמור פילטר נוכחי', '+ Save current filter')}
               </button>
             )}
           </div>
@@ -112,7 +114,7 @@ export default function SavedViewsMenu({ tab, filters, onApply }) {
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setNaming(false); setErr(null) } }}
-                placeholder="שם התצוגה"
+                placeholder={tt('שם התצוגה', 'View name')}
                 maxLength={60}
                 className="flex-1 px-2 py-1 text-xs border border-moca-border rounded"
               />
@@ -121,7 +123,7 @@ export default function SavedViewsMenu({ tab, filters, onApply }) {
                 disabled={saving || !newName.trim()}
                 className="text-[11px] bg-moca-bolt text-white px-2 py-1 rounded disabled:opacity-50"
               >
-                {saving ? '…' : 'שמור'}
+                {saving ? '…' : tt('שמור', 'Save')}
               </button>
               <button
                 onClick={() => { setNaming(false); setErr(null) }}
@@ -133,7 +135,7 @@ export default function SavedViewsMenu({ tab, filters, onApply }) {
           {err && <p className="text-[11px] text-red-600 mb-2">{err}</p>}
 
           {views.length === 0 ? (
-            <p className="text-[11px] text-gray-400 py-2 text-center">אין תצוגות שמורות</p>
+            <p className="text-[11px] text-gray-400 py-2 text-center">{tt('אין תצוגות שמורות', 'No saved views')}</p>
           ) : (
             <div className="space-y-1 max-h-64 overflow-y-auto">
               {views.map(v => (
@@ -146,7 +148,7 @@ export default function SavedViewsMenu({ tab, filters, onApply }) {
                   <button
                     onClick={() => remove(v.id)}
                     className="text-gray-300 hover:text-red-500 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="מחק"
+                    title={tt('מחק', 'Delete')}
                   >✕</button>
                 </div>
               ))}

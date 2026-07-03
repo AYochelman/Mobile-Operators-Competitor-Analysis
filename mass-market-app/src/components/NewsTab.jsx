@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../lib/api'
+import { useLang } from '../hooks/useLanguage'
 import { getCarrierColor } from './moca/carrierMeta'
 // Inline SVG icons (lucide-react not installed)
 function Newspaper({ size = 24, className = '' }) {
@@ -54,11 +55,11 @@ const CARRIERS = [
 const CARRIER_LABEL = Object.fromEntries(CARRIERS.map(c => [c.id, c.label]))
 
 const DATE_FILTERS = [
-  { id: 'all',   label: 'הכל',           ms: null },
-  { id: 'today', label: 'היום',          ms: 24 * 60 * 60 * 1000 },
-  { id: 'week',  label: 'בשבוע האחרון',  ms: 7  * 24 * 60 * 60 * 1000 },
-  { id: 'month', label: 'בחודש האחרון',  ms: 30 * 24 * 60 * 60 * 1000 },
-  { id: 'year',  label: 'בשנה האחרונה',  ms: 365 * 24 * 60 * 60 * 1000 },
+  { id: 'all',   label: 'הכל',           label_en: 'All',           ms: null },
+  { id: 'today', label: 'היום',          label_en: 'Today',         ms: 24 * 60 * 60 * 1000 },
+  { id: 'week',  label: 'בשבוע האחרון',  label_en: 'Past week',     ms: 7  * 24 * 60 * 60 * 1000 },
+  { id: 'month', label: 'בחודש האחרון',  label_en: 'Past month',    ms: 30 * 24 * 60 * 60 * 1000 },
+  { id: 'year',  label: 'בשנה האחרונה',  label_en: 'Past year',     ms: 365 * 24 * 60 * 60 * 1000 },
 ]
 
 function isWithinPeriod(pubDateStr, period) {
@@ -70,18 +71,18 @@ function isWithinPeriod(pubDateStr, period) {
   } catch { return true }
 }
 
-function formatRelativeDate(pubDateStr) {
+function formatRelativeDate(pubDateStr, tt) {
   if (!pubDateStr) return ''
   try {
     const d    = new Date(pubDateStr)
     const diff = Date.now() - d.getTime()
     const mins = Math.floor(diff / 60000)
-    if (mins < 60)  return `\u05dc\u05e4\u05e0\u05d9 ${mins} \u05d3\u05e7\u05d5\u05ea`
+    if (mins < 60)  return tt(`\u05dc\u05e4\u05e0\u05d9 ${mins} \u05d3\u05e7\u05d5\u05ea`, `${mins} min ago`)
     const hours = Math.floor(mins / 60)
-    if (hours < 24) return `\u05dc\u05e4\u05e0\u05d9 ${hours} \u05e9\u05e2\u05d5\u05ea`
+    if (hours < 24) return tt(`\u05dc\u05e4\u05e0\u05d9 ${hours} \u05e9\u05e2\u05d5\u05ea`, `${hours}h ago`)
     const days  = Math.floor(hours / 24)
-    if (days === 1) return '\u05d0\u05ea\u05de\u05d5\u05dc'
-    if (days < 7)   return `\u05dc\u05e4\u05e0\u05d9 ${days} \u05d9\u05de\u05d9\u05dd`
+    if (days === 1) return tt('\u05d0\u05ea\u05de\u05d5\u05dc', 'Yesterday')
+    if (days < 7)   return tt(`\u05dc\u05e4\u05e0\u05d9 ${days} \u05d9\u05de\u05d9\u05dd`, `${days} days ago`)
     return d.toLocaleDateString('he-IL')
   } catch {
     return ''
@@ -89,6 +90,7 @@ function formatRelativeDate(pubDateStr) {
 }
 
 export default function NewsTab() {
+  const { tt } = useLang()
   const [articles, setArticles]           = useState([])
   const [loading, setLoading]             = useState(true)
   const [error, setError]                 = useState(null)
@@ -124,8 +126,8 @@ export default function NewsTab() {
 
   if (error) return (
     <div className="text-center py-20 text-red-500">
-      <p className="mb-3">שגיאה בטעינת החדשות</p>
-      <button onClick={load} className="text-sm underline">נסה שוב</button>
+      <p className="mb-3">{tt('שגיאה בטעינת החדשות', 'Error loading news')}</p>
+      <button onClick={load} className="text-sm underline">{tt('נסה שוב', 'Try again')}</button>
     </div>
   )
 
@@ -134,16 +136,16 @@ export default function NewsTab() {
       {/* Header */}
       <div className="flex items-center gap-2 mb-1">
         <Newspaper size={20} className="text-moca-bolt" />
-        <h2 className="text-xl font-bold text-moca-bolt">בחדשות</h2>
+        <h2 className="text-xl font-bold text-moca-bolt">{tt('בחדשות', 'In the News')}</h2>
       </div>
       <p className="text-sm text-[#8b6b52] mb-4">
-        אזכורי חברות הסלולר בעיתונות הישראלית
+        {tt('אזכורי חברות הסלולר בעיתונות הישראלית', 'Cellular carrier mentions in the Israeli press')}
       </p>
 
       {/* Filter bar */}
       <div className="flex flex-wrap gap-2 mb-3 items-center" dir="rtl">
         <span className="text-sm text-[#8b6b52] font-medium">
-          סינון לפי חברה:
+          {tt('סינון לפי חברה:', 'Filter by carrier:')}
         </span>
         {CARRIERS.map(c => (
           <button
@@ -163,7 +165,7 @@ export default function NewsTab() {
       {/* Date filter bar */}
       <div className="flex flex-wrap gap-2 mb-4 items-center" dir="rtl">
         <span className="text-sm text-[#8b6b52] font-medium">
-          סינון לפי תאריך:
+          {tt('סינון לפי תאריך:', 'Filter by date:')}
         </span>
         {DATE_FILTERS.map(f => (
           <button
@@ -175,7 +177,7 @@ export default function NewsTab() {
                 : 'bg-white text-moca-bolt border-[#d4bfa8] hover:bg-moca-cream'
               }`}
           >
-            {f.label}
+            {tt(f.label, f.label_en)}
           </button>
         ))}
       </div>
@@ -184,7 +186,7 @@ export default function NewsTab() {
       {fetchedAt && (
         <p className="text-xs text-[#a08060] mb-4 flex items-center gap-1">
           <Calendar size={12} />
-          {'עודכן לאחרונה:'} {fetchedAt} · {filtered.length} {'כתבות'}
+          {tt('עודכן לאחרונה:', 'Last updated:')} {fetchedAt} · {filtered.length} {tt('כתבות', 'articles')}
         </p>
       )}
 
@@ -192,7 +194,7 @@ export default function NewsTab() {
       {filtered.length === 0 && (
         <div className="text-center py-20 text-gray-400">
           <Newspaper size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">לא נמצאו כתבות</p>
+          <p className="text-sm">{tt('לא נמצאו כתבות', 'No articles found')}</p>
         </div>
       )}
 
@@ -209,11 +211,11 @@ export default function NewsTab() {
             {/* Source + date */}
             <div className="flex justify-between items-start mb-2 gap-2">
               <span className="text-xs font-semibold px-2 py-0.5 rounded bg-moca-cream text-moca-bolt">
-                {article.source || '\u05d7\u05d3\u05e9\u05d5\u05ea'}
+                {article.source || tt('\u05d7\u05d3\u05e9\u05d5\u05ea', 'News')}
               </span>
               <span className="text-xs text-[#a08060] flex items-center gap-1 whitespace-nowrap">
                 <Calendar size={11} />
-                {formatRelativeDate(article.published_at)}
+                {formatRelativeDate(article.published_at, tt)}
               </span>
             </div>
 

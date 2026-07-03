@@ -4,6 +4,7 @@ import Sparkline from './Sparkline'
 import Delta from './Delta'
 import { getCarrierColor, getCarrierName } from './carrierMeta'
 import { useCarrierPriceTrend } from '../../hooks/useCarrierPriceTrend'
+import { useLang } from '../../hooks/useLanguage'
 
 // Shared 5-column grid: [carrier+meta] [sparkline] [min] [avg] [position vs ours]
 // Mobile collapses to 2 cols (carrier + avg) — sparkline/min/position-label hide.
@@ -95,6 +96,7 @@ function trimSeries(points, maxPoints = 30) {
 }
 
 const CompetitorRow = memo(function CompetitorRow({ row, isOurs, oursAvg, onRowClick }) {
+  const { tt } = useLang()
   const empty = row.plans === 0
   const trend = useCarrierPriceTrend(row.carrier, 'domestic')
   const sparkData = trend ? trimSeries(trend) : null
@@ -146,13 +148,13 @@ const CompetitorRow = memo(function CompetitorRow({ row, isOurs, oursAvg, onRowC
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-moca-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {getCarrierName(row.carrier)}
             {isOurs && (
-              <span style={{ color: 'var(--color-moca-bolt)', marginInlineStart: 6, fontSize: 10.5, fontWeight: 700 }}>· שלנו</span>
+              <span style={{ color: 'var(--color-moca-bolt)', marginInlineStart: 6, fontSize: 10.5, fontWeight: 700 }}>· {tt('שלנו', 'ours')}</span>
             )}
           </div>
           <div style={{ fontSize: 10.5, color: 'var(--color-moca-muted)', marginTop: 1 }}>
             {empty
-              ? 'אין מסלולים זמינים'
-              : `${row.plans} מסלולים${row.changes7d > 0 ? ` · ${row.changes7d} שינויים · 7 ימים` : ''}`}
+              ? tt('אין מסלולים זמינים', 'No plans available')
+              : `${row.plans} ${tt('מסלולים', 'plans')}${row.changes7d > 0 ? ` · ${row.changes7d} ${tt('שינויים · 7 ימים', 'changes · 7 days')}` : ''}`}
           </div>
         </div>
       </div>
@@ -198,6 +200,7 @@ const CompetitorRow = memo(function CompetitorRow({ row, isOurs, oursAvg, onRowC
 })
 
 function PositionLabel({ row, oursAvg }) {
+  const { tt } = useLang()
   if (oursAvg == null || row.avg == null || row.carrier === undefined) return null
   if (row.avg === oursAvg) {
     return <span style={{ color: 'var(--color-moca-muted)' }}>—</span>
@@ -213,7 +216,7 @@ function PositionLabel({ row, oursAvg }) {
         color: cheaper ? 'var(--color-moca-up)' : 'var(--color-moca-down)',
       }}
     >
-      {cheaper ? `זול ב-${diff}₪` : `יקר ב-${-diff}₪`}
+      {cheaper ? `${tt('זול ב-', 'cheaper by ')}${diff}₪` : `${tt('יקר ב-', 'pricier by ')}${-diff}₪`}
     </span>
   )
 }
@@ -224,9 +227,14 @@ export default function CompetitorBoard({
   carrierIds,
   oursCarrier,
   onRowClick,
-  title = 'סקירה תחרותית',
-  subtitle = 'תמונת מצב לפי מתחרה — מבוסס על המסלולים שכרגע על המסך',
+  title,
+  subtitle,
 }) {
+  const { tt } = useLang()
+  const resolvedTitle = title != null ? title : tt('סקירה תחרותית', 'Competitive overview')
+  const resolvedSubtitle = subtitle != null
+    ? subtitle
+    : tt('תמונת מצב לפי מתחרה — מבוסס על המסלולים שכרגע על המסך', 'Snapshot by competitor — based on the plans currently on screen')
   const snapshots = useMemo(
     () => buildSnapshots(plans, carrierIds, changes),
     [plans, carrierIds, changes],
@@ -281,7 +289,7 @@ export default function CompetitorBoard({
               marginBottom: 4,
             }}
           >
-            ניטור · חבילות סלולר
+            {tt('ניטור · חבילות סלולר', 'Monitoring · Mobile plans')}
           </div>
           <h2
             style={{
@@ -293,18 +301,18 @@ export default function CompetitorBoard({
               letterSpacing: -0.3,
             }}
           >
-            {title}
+            {resolvedTitle}
           </h2>
-          {subtitle && (
+          {resolvedSubtitle && (
             <p style={{ fontSize: 12, color: 'var(--color-moca-sub)', margin: '4px 0 0' }}>
-              {subtitle}
+              {resolvedSubtitle}
             </p>
           )}
         </div>
         {oursAvg != null && (
           <div className="tnum" style={{ textAlign: 'left' }}>
             <div style={{ fontSize: 10, color: 'var(--color-moca-muted)', fontWeight: 800, letterSpacing: 0.4, textTransform: 'uppercase' }}>
-              ממוצע שלך
+              {tt('ממוצע שלך', 'Your average')}
             </div>
             <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-moca-bolt)', direction: 'ltr', letterSpacing: -0.4 }}>
               {oursAvg}₪
@@ -326,11 +334,11 @@ export default function CompetitorBoard({
           textTransform: 'uppercase',
         }}
       >
-        <span>מתחרה</span>
-        <span className="hidden md:inline">מגמת מחיר</span>
-        <span className="hidden md:inline" style={{ textAlign: 'left' }}>מ-</span>
-        <span style={{ textAlign: 'left' }}>ממוצע</span>
-        <span className="hidden md:inline" style={{ textAlign: 'left' }}>ביחס לשלך</span>
+        <span>{tt('מתחרה', 'Competitor')}</span>
+        <span className="hidden md:inline">{tt('מגמת מחיר', 'Price trend')}</span>
+        <span className="hidden md:inline" style={{ textAlign: 'left' }}>{tt('מ-', 'From')}</span>
+        <span style={{ textAlign: 'left' }}>{tt('ממוצע', 'Average')}</span>
+        <span className="hidden md:inline" style={{ textAlign: 'left' }}>{tt('ביחס לשלך', 'vs. yours')}</span>
       </div>
 
       {/* Rows */}

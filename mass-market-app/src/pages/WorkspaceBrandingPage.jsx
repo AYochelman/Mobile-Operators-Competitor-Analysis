@@ -3,16 +3,18 @@ import { useAuth } from '../hooks/useAuth'
 import { api } from '../lib/api'
 import Button from '../components/ui/Button'
 import LogoField from '../components/LogoField'
+import { useLang } from '../hooks/useLanguage'
 
 const FIELDS = [
-  { key: 'app_title',        label: 'שם האפליקציה',        type: 'text',  placeholder: 'MOCA' },
-  { key: 'logo_url',         label: 'לוגו',                type: 'url',   placeholder: 'https://...' },
-  { key: 'primary_color',    label: 'צבע ראשי (hex)',       type: 'color', placeholder: '#5c3317' },
-  { key: 'secondary_color',  label: 'צבע משני (hex)',       type: 'color', placeholder: '#5c3317' },
+  { key: 'app_title',        label: 'שם האפליקציה',        labelEn: 'App name',            type: 'text',  placeholder: 'MOCA' },
+  { key: 'logo_url',         label: 'לוגו',                labelEn: 'Logo',               type: 'url',   placeholder: 'https://...' },
+  { key: 'primary_color',    label: 'צבע ראשי (hex)',       labelEn: 'Primary color (hex)',   type: 'color', placeholder: '#5c3317' },
+  { key: 'secondary_color',  label: 'צבע משני (hex)',       labelEn: 'Secondary color (hex)', type: 'color', placeholder: '#5c3317' },
 ]
 
 export default function WorkspaceBrandingPage() {
   const { workspace } = useAuth()
+  const { tt } = useLang()
   const cfg = workspace?.brand_config || {}
 
   const [form, setForm]     = useState({
@@ -45,7 +47,7 @@ export default function WorkspaceBrandingPage() {
     setSlackTestStatus({ loading: true })
     try {
       const res = await api.testSlackWebhook(form.slack_webhook_url)
-      setSlackTestStatus(res.ok ? { success: true } : { error: 'Slack webhook נכשל — בדוק את ה-URL' })
+      setSlackTestStatus(res.ok ? { success: true } : { error: tt('Slack webhook נכשל — בדוק את ה-URL', 'Slack webhook failed — check the URL') })
     } catch (err) {
       setSlackTestStatus({ error: err.message })
     }
@@ -55,13 +57,13 @@ export default function WorkspaceBrandingPage() {
   return (
     <div className="max-w-xl mx-auto p-6">
       <p className="text-sm text-gray-600 mb-6">
-        התאמה אישית של מראה האפליקציה עבור <strong>{workspace?.name}</strong>
+        {tt('התאמה אישית של מראה האפליקציה עבור', 'Customize the app appearance for')} <strong>{workspace?.name}</strong>
       </p>
 
       <form onSubmit={save} className="bg-white rounded-xl border border-moca-border p-5 space-y-4">
         {FIELDS.map(f => (
           <div key={f.key}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{f.label}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{tt(f.label, f.labelEn)}</label>
             {f.type === 'color' ? (
               <div className="flex items-center gap-2">
                 <input
@@ -79,7 +81,7 @@ export default function WorkspaceBrandingPage() {
                 />
                 {form[f.key] && (
                   <button type="button" onClick={() => setForm(p => ({ ...p, [f.key]: '' }))}
-                    className="text-xs text-gray-400 hover:text-red-500">נקה</button>
+                    className="text-xs text-gray-400 hover:text-red-500">{tt('נקה', 'Clear')}</button>
                 )}
               </div>
             ) : f.key === 'logo_url' ? (
@@ -98,7 +100,7 @@ export default function WorkspaceBrandingPage() {
                 />
                 {form[f.key] && (
                   <button type="button" onClick={() => setForm(p => ({ ...p, [f.key]: '' }))}
-                    className="text-xs text-gray-400 hover:text-red-500">נקה</button>
+                    className="text-xs text-gray-400 hover:text-red-500">{tt('נקה', 'Clear')}</button>
                 )}
               </div>
             )}
@@ -107,8 +109,8 @@ export default function WorkspaceBrandingPage() {
 
         {form.logo_url && (
           <div className="pt-1">
-            <p className="text-xs text-gray-500 mb-1">תצוגה מקדימה של לוגו:</p>
-            <img src={form.logo_url} alt="לוגו" className="h-10 object-contain rounded border border-moca-border/40 bg-gray-50 p-1" />
+            <p className="text-xs text-gray-500 mb-1">{tt('תצוגה מקדימה של לוגו:', 'Logo preview:')}</p>
+            <img src={form.logo_url} alt={tt('לוגו', 'Logo')} className="h-10 object-contain rounded border border-moca-border/40 bg-gray-50 p-1" />
           </div>
         )}
 
@@ -118,7 +120,7 @@ export default function WorkspaceBrandingPage() {
             Slack / Teams Webhook URL
           </label>
           <p className="text-[11px] text-gray-500 mb-2">
-            התראות על שינויים בחבילות יישלחו לערוץ זה. ב-Slack: Apps → Incoming Webhooks. ב-Teams: Connectors → Incoming Webhook.
+            {tt('התראות על שינויים בחבילות יישלחו לערוץ זה. ב-Slack: Apps → Incoming Webhooks. ב-Teams: Connectors → Incoming Webhook.', 'Alerts about plan changes will be sent to this channel. In Slack: Apps → Incoming Webhooks. In Teams: Connectors → Incoming Webhook.')}
           </p>
           <div className="flex items-center gap-2">
             <input
@@ -131,7 +133,7 @@ export default function WorkspaceBrandingPage() {
             />
             {form.slack_webhook_url && (
               <button type="button" onClick={() => setForm(p => ({ ...p, slack_webhook_url: '' }))}
-                className="text-xs text-gray-400 hover:text-red-500">נקה</button>
+                className="text-xs text-gray-400 hover:text-red-500">{tt('נקה', 'Clear')}</button>
             )}
           </div>
           {form.slack_webhook_url && (
@@ -141,25 +143,25 @@ export default function WorkspaceBrandingPage() {
               disabled={slackTestStatus?.loading}
               className="mt-2 text-xs px-3 py-1 rounded bg-moca-cream border border-moca-border/50 text-moca-sub hover:bg-moca-sand transition-colors disabled:opacity-50"
             >
-              {slackTestStatus?.loading ? 'שולח...' : 'שלח הודעת בדיקה'}
+              {slackTestStatus?.loading ? tt('שולח...', 'Sending...') : tt('שלח הודעת בדיקה', 'Send test message')}
             </button>
           )}
-          {slackTestStatus?.success && <p className="text-xs text-green-600 mt-1.5">✓ ההודעה נשלחה בהצלחה</p>}
+          {slackTestStatus?.success && <p className="text-xs text-green-600 mt-1.5">{tt('✓ ההודעה נשלחה בהצלחה', '✓ Message sent successfully')}</p>}
           {slackTestStatus?.error   && <p className="text-xs text-red-600 mt-1.5">✗ {slackTestStatus.error}</p>}
         </div>
 
         {error   && <p className="text-xs text-red-600">{error}</p>}
-        {success && <p className="text-xs text-green-600">השינויים נשמרו בהצלחה</p>}
+        {success && <p className="text-xs text-green-600">{tt('השינויים נשמרו בהצלחה', 'Changes saved successfully')}</p>}
 
         <div className="pt-2 border-t border-moca-border/30 flex justify-start">
           <Button type="submit" disabled={saving} variant="primary" size="sm">
-            {saving ? 'שומר…' : 'שמור שינויים'}
+            {saving ? tt('שומר…', 'Saving…') : tt('שמור שינויים', 'Save changes')}
           </Button>
         </div>
       </form>
 
       <p className="text-xs text-gray-400 mt-3 text-center">
-        השינויים יכנסו לתוקף בכניסה הבאה לאפליקציה.
+        {tt('השינויים יכנסו לתוקף בכניסה הבאה לאפליקציה.', 'Changes will take effect on your next sign-in to the app.')}
       </p>
     </div>
   )

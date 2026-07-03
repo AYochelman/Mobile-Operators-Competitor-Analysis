@@ -1,6 +1,8 @@
 import { useScrape } from '../hooks/useScrape'
+import { useLang } from '../hooks/useLanguage'
 
 export default function ScrapeToast() {
+  const { tt } = useLang()
   const { scraping, countdown, toast, dismissToast } = useScrape()
 
   if (!scraping && !toast) return null
@@ -16,7 +18,7 @@ export default function ScrapeToast() {
             stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 12a9 9 0 1 1-6.22-8.56" />
           </svg>
-          <span>מעדכן נתונים...</span>
+          <span>{tt('מעדכן נתונים...', 'Updating data...')}</span>
           {countdown > 0 && (
             <span className="font-mono bg-white/20 rounded-full px-2 py-0.5 text-xs">
               {formatTime(countdown)}

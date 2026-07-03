@@ -12,23 +12,32 @@ export default function Logo({ size = 'md', showSubtext = true, appTitle = null,
   const { boltW, boltH, wordmarkSize, subtextSize: cfgSubtext } = CONFIG[size]
   const subtextSize = showSubtext ? cfgSubtext : null
 
+  // A custom uploaded logo is a self-contained brand mark (it usually already
+  // includes the brand name, e.g. "maya mobile"), so render ONLY the image.
+  // Rendering the "<appTitle> / by MOCA" wordmark next to it double-brands and,
+  // in the narrow sidebar, the two collide into an overlapping mess.
+  if (logoUrl) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+        <img src={logoUrl} alt={appTitle || 'Logo'}
+          style={{ height: Math.round(boltH * 1.7), width: 'auto', maxWidth: '100%', objectFit: 'contain' }} />
+      </div>
+    )
+  }
+
+  // No custom logo — MOCA bolt glyph + wordmark.
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {logoUrl ? (
-        <img src={logoUrl} alt={appTitle || 'Logo'}
-          style={{ height: Math.round(boltH * 1.7), width: 'auto', maxWidth: Math.round(boltH * 7), objectFit: 'contain' }} />
-      ) : (
-        <span style={{
-          display: 'grid', placeItems: 'center', flexShrink: 0,
-          width: Math.round(boltH * 1.7), height: Math.round(boltH * 1.7),
-          borderRadius: Math.round(boltH * 0.48),
-          background: 'var(--color-moca-bolt)',
-        }}>
-          <svg width={boltW} height={boltH} viewBox="0 0 48 46" fill="none" aria-hidden="true">
-            <path fill="#fff" d={BOLT_PATH} />
-          </svg>
-        </span>
-      )}
+      <span style={{
+        display: 'grid', placeItems: 'center', flexShrink: 0,
+        width: Math.round(boltH * 1.7), height: Math.round(boltH * 1.7),
+        borderRadius: Math.round(boltH * 0.48),
+        background: 'var(--color-moca-bolt)',
+      }}>
+        <svg width={boltW} height={boltH} viewBox="0 0 48 46" fill="none" aria-hidden="true">
+          <path fill="#fff" d={BOLT_PATH} />
+        </svg>
+      </span>
 
       {wordmarkSize && (
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>

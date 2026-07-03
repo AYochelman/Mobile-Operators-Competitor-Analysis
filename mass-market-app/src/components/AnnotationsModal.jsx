@@ -3,10 +3,12 @@ import { api } from '../lib/api'
 import { useAuth } from '../hooks/useAuth'
 import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
 import Modal from './ui/Modal'
+import { useLang } from '../hooks/useLanguage'
 
 export default function AnnotationsModal({ open, onClose, carrier, planName, planType, planLabel }) {
   const { user } = useAuth()
   const { reload: reloadCounts } = useAnnotationCounts()
+  const { tt } = useLang()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [draft, setDraft] = useState('')
@@ -38,18 +40,18 @@ export default function AnnotationsModal({ open, onClose, carrier, planName, pla
       await load()
       reloadCounts()
     } catch (err) {
-      alert(err.message || 'שגיאה בהוספת הערה')
+      alert(err.message || tt('שגיאה בהוספת הערה', 'Failed to add note'))
     }
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('למחוק הערה זו?')) return
+    if (!confirm(tt('למחוק הערה זו?', 'Delete this note?'))) return
     try {
       await api.deleteAnnotation(id)
       await load()
       reloadCounts()
     } catch (err) {
-      alert(err.message || 'שגיאה במחיקה')
+      alert(err.message || tt('שגיאה במחיקה', 'Failed to delete'))
     }
   }
 
@@ -66,19 +68,19 @@ export default function AnnotationsModal({ open, onClose, carrier, planName, pla
       setEditingId(null)
       await load()
     } catch (err) {
-      alert(err.message || 'שגיאה בעדכון')
+      alert(err.message || tt('שגיאה בעדכון', 'Failed to update'))
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={`הערות צוות — ${planLabel || planName}`} maxWidth="max-w-lg">
+    <Modal open={open} onClose={onClose} title={`${tt('הערות צוות', 'Team notes')} — ${planLabel || planName}`} maxWidth="max-w-lg">
       <div className="text-right space-y-3">
         {loading && (
-          <p className="text-xs text-gray-400 text-center py-4">טוען הערות...</p>
+          <p className="text-xs text-gray-400 text-center py-4">{tt('טוען הערות...', 'Loading notes...')}</p>
         )}
 
         {!loading && items.length === 0 && (
-          <p className="text-xs text-gray-400 text-center py-4">אין הערות עדיין. הוסף הערה ראשונה למטה.</p>
+          <p className="text-xs text-gray-400 text-center py-4">{tt('אין הערות עדיין. הוסף הערה ראשונה למטה.', 'No notes yet. Add the first one below.')}</p>
         )}
 
         {!loading && items.length > 0 && (
@@ -90,12 +92,12 @@ export default function AnnotationsModal({ open, onClose, carrier, planName, pla
                     <strong className="text-gray-700">{a.user_email}</strong>
                     <span className="mx-1.5 text-gray-300">·</span>
                     {new Date(a.created_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}
-                    {a.updated_at && <span className="mr-1 text-gray-400">(עודכן)</span>}
+                    {a.updated_at && <span className="mr-1 text-gray-400">{tt('(עודכן)', '(edited)')}</span>}
                   </div>
                   {a.user_email === user?.email && editingId !== a.id && (
                     <div className="flex items-center gap-1.5 text-[10px]">
-                      <button onClick={() => startEdit(a)} className="text-blue-500 hover:text-blue-700">ערוך</button>
-                      <button onClick={() => handleDelete(a.id)} className="text-red-500 hover:text-red-700">מחק</button>
+                      <button onClick={() => startEdit(a)} className="text-blue-500 hover:text-blue-700">{tt('ערוך', 'Edit')}</button>
+                      <button onClick={() => handleDelete(a.id)} className="text-red-500 hover:text-red-700">{tt('מחק', 'Delete')}</button>
                     </div>
                   )}
                 </div>
@@ -109,8 +111,8 @@ export default function AnnotationsModal({ open, onClose, carrier, planName, pla
                       maxLength={1000}
                     />
                     <div className="flex items-center gap-2 mt-1">
-                      <button onClick={() => handleEditSave(a.id)} className="text-[11px] bg-moca-bolt text-white px-2 py-1 rounded hover:bg-moca-dark">שמור</button>
-                      <button onClick={() => setEditingId(null)} className="text-[11px] text-gray-500 hover:text-gray-700">בטל</button>
+                      <button onClick={() => handleEditSave(a.id)} className="text-[11px] bg-moca-bolt text-white px-2 py-1 rounded hover:bg-moca-dark">{tt('שמור', 'Save')}</button>
+                      <button onClick={() => setEditingId(null)} className="text-[11px] text-gray-500 hover:text-gray-700">{tt('בטל', 'Cancel')}</button>
                     </div>
                   </div>
                 ) : (
@@ -125,19 +127,19 @@ export default function AnnotationsModal({ open, onClose, carrier, planName, pla
           <textarea
             value={draft}
             onChange={e => setDraft(e.target.value)}
-            placeholder="הוסף הערה לצוות..."
+            placeholder={tt('הוסף הערה לצוות...', 'Add a note for the team...')}
             className="w-full text-sm bg-white border border-moca-border/60 rounded-lg p-2.5 focus:outline-none focus:border-moca-bolt resize-none"
             rows={3}
             maxLength={1000}
           />
           <div className="flex items-center justify-between mt-1.5">
-            <span className="text-[10px] text-gray-400">{draft.length}/1000 · גלוי לכל הצוות שלך</span>
+            <span className="text-[10px] text-gray-400">{draft.length}/1000 · {tt('גלוי לכל הצוות שלך', 'Visible to your whole team')}</span>
             <button
               type="submit"
               disabled={!draft.trim()}
               className="text-xs bg-moca-bolt text-white px-3 py-1.5 rounded-lg hover:bg-moca-dark disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              הוסף הערה
+              {tt('הוסף הערה', 'Add note')}
             </button>
           </div>
         </form>

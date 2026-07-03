@@ -3,7 +3,10 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import { useWatchlist } from '../hooks/useWatchlist'
+import { useLang } from '../hooks/useLanguage'
+import { FLAG_FOR_PATH } from '../data/navFlags'
 import Logo from './Logo'
+import LangToggle from './LangToggle'
 import NavDropdown from './NavDropdown'
 import MobileMoreSheet from './MobileMoreSheet'
 
@@ -31,17 +34,12 @@ const GROUP_ICONS = {
   ),
 }
 
-const FLAG_FOR_PATH = {
-  '/compare':           'hide_compare',
-  '/positioning':       'hide_positioning',
-  '/alerts':            'hide_alerts',
-  '/executive-summary': 'hide_executive_summary',
-  '/archive':           'hide_archive',
-  '/ai-insights':       'hide_ai_insights',
-}
+// FLAG_FOR_PATH (path → feature-flag that hides the nav item) is imported from
+// ../data/navFlags so Sidebar, Navbar and the admin panel stay in sync.
 
 function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
   const [open, setOpen] = useState(false)
+  const { tt } = useLang()
   const navigate = useNavigate()
   const ref = useRef(null)
 
@@ -60,46 +58,58 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
   const go = (path) => { setOpen(false); navigate(path) }
 
   const initial = (user?.email || '?')[0]?.toUpperCase()
-  const itemCls = 'w-full text-right px-3 py-2 text-[12px] text-moca-text hover:bg-moca-cream rounded-md transition-colors flex items-center justify-between'
+  const itemCls = 'w-full text-start px-3 py-2 text-[12px] text-moca-text hover:bg-moca-cream rounded-md transition-colors flex items-center justify-between'
   const supportHref =
     'mailto:Helpdesk@mocaintel.com?subject=' +
-    encodeURIComponent('פנייה לתמיכה' + (workspace?.name ? ` – ${workspace.name}` : ''))
+    encodeURIComponent(tt('פנייה לתמיכה', 'Support request') + (workspace?.name ? ` – ${workspace.name}` : ''))
 
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
         className="w-7 h-7 rounded-full bg-moca-cream text-moca-bolt text-[11px] font-bold flex items-center justify-center hover:ring-2 hover:ring-moca-bolt/30 transition-all"
-        title={user?.email || 'פרופיל'}
+        title={user?.email || tt('פרופיל', 'Profile')}
         aria-haspopup="menu"
         aria-expanded={open}
       >
         {initial}
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 min-w-[200px] bg-white rounded-xl shadow-popover border border-moca-border/40 p-1.5 z-50 animate-fade-in">
-          <button onClick={() => go('/preferences')} className={itemCls}>העדפות</button>
-          <button onClick={() => go('/alerts?tab=watchlist')} className={itemCls}>הגדרות התראות</button>
+        <div className="absolute top-full mt-1 min-w-[200px] bg-white rounded-xl shadow-popover border border-moca-border/40 p-1.5 z-50 animate-fade-in" style={{ insetInlineEnd: 0 }}>
+          <button onClick={() => go('/preferences')} className={itemCls}>{tt('העדפות', 'Preferences')}</button>
+          <button onClick={() => go('/alerts?tab=watchlist')} className={itemCls}>{tt('הגדרות התראות', 'Alert settings')}</button>
           {isAdmin && !isSuperAdmin && (
             <>
               <div className="h-px bg-moca-border/30 my-1" />
-              <button onClick={() => go('/workspace/users')} className={itemCls}>הצוות</button>
-              <button onClick={() => go('/workspace/settings')} className={itemCls}>מיתוג Workspace</button>
+              <button onClick={() => go('/workspace/users')} className={itemCls}>{tt('הצוות', 'Team')}</button>
+              <button onClick={() => go('/workspace/settings')} className={itemCls}>{tt('מיתוג Workspace', 'Workspace branding')}</button>
             </>
           )}
           {isAdmin && (
-            <button onClick={() => go('/settings')} className={itemCls}>הגדרות מערכת</button>
+            <button onClick={() => go('/settings')} className={itemCls}>{tt('הגדרות מערכת', 'System settings')}</button>
           )}
           {isSuperAdmin && (
             <>
               <div className="h-px bg-moca-border/30 my-1" />
               <button onClick={() => go('/admin/workspaces')} className={itemCls}>Workspaces</button>
-              <button onClick={() => go('/admin/audit')} className={itemCls}>יומן ביקורת</button>
+              <button onClick={() => go('/admin/audit')} className={itemCls}>{tt('יומן ביקורת', 'Audit log')}</button>
+              <button onClick={() => go('/admin/hotels')} className={itemCls}>{tt('פורטלי אורחים', 'Guest portals')}</button>
+              <div className="h-px bg-moca-border/30 my-1" />
+              <div className="px-3 pt-1 pb-0.5 text-[10px] font-bold text-moca-muted uppercase tracking-wide">B2C</div>
+              <button onClick={() => go('/admin/esim')} className={itemCls}>{tt('דשבורד eSIM (B2C)', 'eSIM dashboard (B2C)')}</button>
+              <button onClick={() => go('/admin/deals')} className={itemCls}>{tt('סטטוס ספקים', 'Provider status')}</button>
+              <button
+                onClick={() => { setOpen(false); window.open('/esim-deals', '_blank', 'noopener') }}
+                className={itemCls}
+              >
+                <span>{tt('עמוד eSIM (B2C)', 'eSIM page (B2C)')}</span>
+                <span className="opacity-50">↗</span>
+              </button>
             </>
           )}
           <div className="h-px bg-moca-border/30 my-1" />
-          <a href={supportHref} onClick={() => setOpen(false)} className={itemCls}>פנייה לתמיכה</a>
-          <button onClick={() => { setOpen(false); signOut() }} className={`${itemCls} text-red-600 hover:bg-red-50`}>יציאה</button>
+          <a href={supportHref} onClick={() => setOpen(false)} className={itemCls}>{tt('פנייה לתמיכה', 'Contact support')}</a>
+          <button onClick={() => { setOpen(false); signOut() }} className={`${itemCls} text-red-600 hover:bg-red-50`}>{tt('יציאה', 'Sign out')}</button>
         </div>
       )}
     </div>
@@ -117,6 +127,7 @@ export default function Navbar({ onMobileMenuOpen }) {
   const { user, isAdmin, isSuperAdmin, signOut, workspace } = useAuth()
   const flags = useFeatureFlags()
   const { changesCount } = useWatchlist()
+  const { tt } = useLang()
   const location = useLocation()
   const [moreOpen, setMoreOpen] = useState(false)
   const [activeGroupKey, setActiveGroupKey] = useState(null)
@@ -130,39 +141,39 @@ export default function Navbar({ onMobileMenuOpen }) {
   const groups = [
     {
       key: 'analysis',
-      label: 'ניתוח',
+      label: tt('ניתוח', 'Analysis'),
       items: [
-        { to: '/',        label: 'דשבורד', visible: true },
-        { to: '/compare', label: 'השוואה', visible: visible('/compare') },
-        { to: '/alerts',  label: 'התראות', visible: visible('/alerts') },
+        { to: '/',        label: tt('דשבורד', 'Dashboard'), visible: visible('/') },
+        { to: '/compare', label: tt('השוואה', 'Compare'), visible: visible('/compare') },
+        { to: '/alerts',  label: tt('התראות', 'Alerts'), visible: visible('/alerts') },
       ],
     },
     {
       key: 'insights',
-      label: 'תובנות',
+      label: tt('תובנות', 'Insights'),
       items: [
-        { to: '/executive-summary', label: 'תקציר מנהלים', visible: visible('/executive-summary') },
-        { to: '/positioning',       label: 'מיצוב תחרותי', visible: visible('/positioning') },
+        { to: '/executive-summary', label: tt('תקציר מנהלים', 'Executive summary'), visible: visible('/executive-summary') },
+        { to: '/positioning',       label: tt('מיצוב תחרותי', 'Positioning'), visible: visible('/positioning') },
         { to: '/ai-insights',       label: 'AI Insights',  visible: visible('/ai-insights') },
       ],
     },
     {
       key: 'history',
-      label: 'היסטוריה',
+      label: tt('היסטוריה', 'History'),
       items: [
-        { to: '/archive',      label: 'מכונת זמן', visible: visible('/archive') },
-        { to: '/history', label: 'שינויי היסטוריה', visible: true },
+        { to: '/archive',      label: tt('מכונת זמן', 'Time Machine'), visible: visible('/archive') },
+        { to: '/history', label: tt('שינויי היסטוריה', 'Change history'), visible: visible('/history') },
       ],
     },
     {
       key: 'admin',
-      label: 'ניהול',
+      label: tt('ניהול', 'Admin'),
       items: [
-        { to: '/workspace/users',    label: 'הצוות',         visible: isAdmin },
-        { to: '/workspace/settings', label: 'מיתוג',         visible: isAdmin },
-        { to: '/settings',           label: 'הגדרות',        visible: isAdmin },
+        { to: '/workspace/users',    label: tt('הצוות', 'Team'),         visible: isAdmin },
+        { to: '/workspace/settings', label: tt('מיתוג', 'Branding'),         visible: isAdmin },
+        { to: '/settings',           label: tt('הגדרות', 'Settings'),        visible: isAdmin },
         { to: '/admin/workspaces',   label: 'Workspaces',    visible: isSuperAdmin },
-        { to: '/admin/audit',        label: 'יומן ביקורת',   visible: isSuperAdmin },
+        { to: '/admin/audit',        label: tt('יומן ביקורת', 'Audit log'),   visible: isSuperAdmin },
       ],
     },
   ]
@@ -229,12 +240,13 @@ export default function Navbar({ onMobileMenuOpen }) {
           </nav>
 
           <div className="flex items-center gap-2">
+            <LangToggle variant="ghost" />
             {onMobileMenuOpen && (
               <button
                 onClick={onMobileMenuOpen}
                 className="text-moca-sub hover:text-moca-bolt transition-colors p-1"
-                title="פתח תפריט"
-                aria-label="פתח תפריט"
+                title={tt('פתח תפריט', 'Open menu')}
+                aria-label={tt('פתח תפריט', 'Open menu')}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="3" y1="6" x2="21" y2="6" />
@@ -246,7 +258,7 @@ export default function Navbar({ onMobileMenuOpen }) {
             <NavLink
               to="/alerts?tab=watchlist"
               className="relative text-moca-sub hover:text-moca-bolt transition-colors p-1"
-              title="התראות מעקב"
+              title={tt('התראות מעקב', 'Watchlist alerts')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -290,7 +302,7 @@ export default function Navbar({ onMobileMenuOpen }) {
         open={moreOpen}
         onClose={closeSheet}
         sections={sheetSections}
-        title={activeGroupKey ? (allSheetSections.find(s => s.key === activeGroupKey)?.title || 'תפריט') : 'תפריט'}
+        title={activeGroupKey ? (allSheetSections.find(s => s.key === activeGroupKey)?.title || tt('תפריט', 'Menu')) : tt('תפריט', 'Menu')}
       />
     </>
   )

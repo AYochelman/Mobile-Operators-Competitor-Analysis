@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { api } from '../../lib/api'
 import { useAuth } from '../../hooks/useAuth'
+import { useLang } from '../../hooks/useLanguage'
 import { DOMESTIC_LABELS } from '../../data/carrierLabels'
 import CarrierChip from './CarrierChip'
 
@@ -18,6 +19,7 @@ import CarrierChip from './CarrierChip'
  */
 export default function MyCarrierModal({ open, onClose }) {
   const { workspace, isSuperAdmin } = useAuth()
+  const { tt } = useLang()
   // For super_admins without a user_roles.workspace_id, fetch the workspace
   // list so they can pick which one to bind the carrier to. Regular admins
   // always have their own workspace assigned.
@@ -60,7 +62,7 @@ export default function MyCarrierModal({ open, onClose }) {
           setPickedWsId(list[0].id)
         }
       })
-      .catch((e) => setError(`לא הצלחתי לטעון את רשימת ה-workspaces: ${e.message}`))
+      .catch((e) => setError(`${tt('לא הצלחתי לטעון את רשימת ה-workspaces', 'Failed to load the workspaces list')}: ${e.message}`))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, workspace?.id, isSuperAdmin])
 
@@ -68,7 +70,7 @@ export default function MyCarrierModal({ open, onClose }) {
 
   const handleSave = async () => {
     if (!wsId) {
-      setError('לא נמצא workspace_id — אין workspace זמין לעדכון')
+      setError(tt('לא נמצא workspace_id — אין workspace זמין לעדכון', 'No workspace_id found — no workspace available to update'))
       return
     }
     setSaving(true)
@@ -90,7 +92,7 @@ export default function MyCarrierModal({ open, onClose }) {
       // Force a reload so useAuth re-fetches /api/my-context with the new value.
       window.location.reload()
     } catch (e) {
-      setError(e.message || 'שגיאה בשמירה')
+      setError(e.message || tt('שגיאה בשמירה', 'Error while saving'))
       setSaving(false)
     }
   }
@@ -118,7 +120,7 @@ export default function MyCarrierModal({ open, onClose }) {
       }}
       role="dialog"
       aria-modal="true"
-      aria-label="הגדר את הספק שלי"
+      aria-label={tt('הגדר את הספק שלי', 'Set my carrier')}
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -136,11 +138,13 @@ export default function MyCarrierModal({ open, onClose }) {
           {effectiveWs?.name || 'Workspace'}
         </div>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--color-moca-dark)', margin: 0, letterSpacing: -0.4 }}>
-          הגדר את הספק שלי
+          {tt('הגדר את הספק שלי', 'Set my carrier')}
         </h2>
         <p style={{ fontSize: 13, color: 'var(--color-moca-sub)', margin: '8px 0 18px', lineHeight: 1.55 }}>
-          בחר את המתחרה שאת המסלולים שלו אתה מנהל. הוא יודגש בכל מקום באפליקציה
-          (BENCHMARK, השוואה מיידית, כרטיס pinned), ושינויים שלו לא יופיעו כשינויים תחרותיים.
+          {tt(
+            'בחר את המתחרה שאת המסלולים שלו אתה מנהל. הוא יודגש בכל מקום באפליקציה (BENCHMARK, השוואה מיידית, כרטיס pinned), ושינויים שלו לא יופיעו כשינויים תחרותיים.',
+            'Choose the competitor whose plans you manage. It will be highlighted throughout the app (BENCHMARK, instant comparison, pinned card), and its changes will not appear as competitive changes.'
+          )}
         </p>
 
         {/* Workspace selector — only shown when super_admin without a bound workspace.
@@ -148,12 +152,12 @@ export default function MyCarrierModal({ open, onClose }) {
         {!workspace?.id && isSuperAdmin && (
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 10.5, color: 'var(--color-moca-muted)', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 6 }}>
-              workspace ליעד
+              {tt('workspace ליעד', 'Target workspace')}
             </label>
             {workspaces ? (
               workspaces.length === 0 ? (
                 <div style={{ fontSize: 12, color: 'var(--color-moca-sub)', padding: 10, background: 'var(--color-moca-cream)', borderRadius: 8 }}>
-                  אין workspaces במערכת — צור אחד ב-/admin/workspaces
+                  {tt('אין workspaces במערכת — צור אחד ב-/admin/workspaces', 'No workspaces in the system — create one at /admin/workspaces')}
                 </div>
               ) : (
                 <select
@@ -179,7 +183,7 @@ export default function MyCarrierModal({ open, onClose }) {
                 </select>
               )
             ) : (
-              <div style={{ fontSize: 12, color: 'var(--color-moca-muted)' }}>טוען workspaces…</div>
+              <div style={{ fontSize: 12, color: 'var(--color-moca-muted)' }}>{tt('טוען workspaces…', 'Loading workspaces…')}</div>
             )}
           </div>
         )}
@@ -237,7 +241,7 @@ export default function MyCarrierModal({ open, onClose }) {
               marginBottom: 14,
             }}
           >
-            {selected === '' ? '✓ ' : ''}אל תגדיר ספק ראשי (נקה)
+            {selected === '' ? '✓ ' : ''}{tt('אל תגדיר ספק ראשי (נקה)', "Don't set a primary carrier (clear)")}
           </button>
         )}
 
@@ -264,8 +268,10 @@ export default function MyCarrierModal({ open, onClose }) {
             marginBottom: 14,
             lineHeight: 1.5,
           }}>
-            ⚠ שינוי ספק ראשי דורש הרשאת super_admin (ה-API גוטר את זה ברמה הזאת).
-            אם אתה admin רגיל, פנה ל-super_admin להחיל את הבחירה.
+            {tt(
+              '⚠ שינוי ספק ראשי דורש הרשאת super_admin (ה-API גוטר את זה ברמה הזאת). אם אתה admin רגיל, פנה ל-super_admin להחיל את הבחירה.',
+              '⚠ Changing the primary carrier requires super_admin permission (the API gates this at that level). If you are a regular admin, ask a super_admin to apply the selection.'
+            )}
           </div>
         )}
 
@@ -287,7 +293,7 @@ export default function MyCarrierModal({ open, onClose }) {
               opacity: saving || selected === initialCarrier ? 0.5 : 1,
             }}
           >
-            {saving ? 'שומר…' : 'שמור'}
+            {saving ? tt('שומר…', 'Saving…') : tt('שמור', 'Save')}
           </button>
           <button
             type="button"
@@ -305,7 +311,7 @@ export default function MyCarrierModal({ open, onClose }) {
               fontFamily: 'inherit',
             }}
           >
-            ביטול
+            {tt('ביטול', 'Cancel')}
           </button>
         </div>
       </div>

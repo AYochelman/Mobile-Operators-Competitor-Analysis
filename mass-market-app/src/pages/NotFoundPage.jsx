@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import Button from '../components/ui/Button'
+import { useLang } from '../hooks/useLanguage'
 
 export default function NotFoundPage() {
+  const { tt } = useLang()
   return (
     <div className="min-h-screen flex items-center justify-center bg-moca-bg px-4">
       <div className="text-center max-w-sm">
@@ -16,12 +18,12 @@ export default function NotFoundPage() {
         </div>
         <p className="text-[10px] text-moca-muted font-extrabold tracking-widest uppercase mb-2">404 · Not Found</p>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--color-moca-dark)', letterSpacing: -0.5, margin: '0 0 8px' }}>
-          העמוד לא נמצא
+          {tt('העמוד לא נמצא', 'Page not found')}
         </h1>
         <p className="text-sm text-moca-sub mb-6 leading-relaxed">
-          הקישור שגוי או שהעמוד הוסר. אפשר לחזור לדשבורד ולנסות מהתחלה.
+          {tt('הקישור שגוי או שהעמוד הוסר. אפשר לחזור לדשבורד ולנסות מהתחלה.', 'The link is broken or the page was removed. Return to the dashboard and try again.')}
         </p>
-        <Link to="/"><Button>חזרה לדשבורד</Button></Link>
+        <Link to="/"><Button>{tt('חזרה לדשבורד', 'Back to dashboard')}</Button></Link>
       </div>
     </div>
   )

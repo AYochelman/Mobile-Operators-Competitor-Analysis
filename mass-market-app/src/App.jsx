@@ -1,6 +1,8 @@
 import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
+import { useFeatureFlags } from './hooks/useFeatureFlags'
+import { firstVisibleHome } from './data/navFlags'
 import { ScrapeProvider } from './hooks/useScrape'
 import { getMvnoColors } from './data/mvnoBrandColors'
 import Layout from './components/Layout'
@@ -47,6 +49,7 @@ const HotelsAdminPage       = lazy(() => import('./pages/HotelsAdminPage'))
 // Public B2C eSIM price-comparison page (free, no auth) — sibling of "/".
 const EsimComparePage       = lazy(() => import('./pages/EsimComparePage'))
 const EsimAnalyticsPage     = lazy(() => import('./pages/EsimAnalyticsPage'))
+const ProviderDealsPage     = lazy(() => import('./pages/ProviderDealsPage'))
 
 function PageFallback() {
   return <div className="flex justify-center py-20"><Spinner /></div>
@@ -115,6 +118,19 @@ function AppShell() {
   return <Layout />
 }
 
+// Home ("/" and "/home") renders the editorial dashboard — unless the workspace
+// hides it via the hide_dashboard flag (e.g. a global-only client), in which
+// case we redirect to its first visible section instead of showing an orphaned
+// page with no nav link back to it.
+function HomeRoute() {
+  const flags = useFeatureFlags()
+  if (flags.hide_dashboard) {
+    const target = firstVisibleHome(flags)
+    if (target !== '/') return <Navigate to={target} replace />
+  }
+  return <EditorialDashboardPage />
+}
+
 // ── Public B2C eSIM page launch switch ──────────────────────────────────────
 // Master switch for the consumer eSIM-compare page.
 //   import.meta.env.DEV  → true only on the local dev server (`npm run dev`), so
@@ -172,16 +188,21 @@ export default function App() {
               EsimGate keeps it unpublished (404) until launch, but lets a
               super-admin preview it via the dashboard link. */}
           <Route path="/esim-deals" element={<EsimGate />} />
+          {/* Short branded bio link. Netlify /_redirects 302s /tt for fresh
+              visitors; this client route covers repeat visitors whose PWA
+              service worker serves index.html (navigateFallback) before the
+              redirect can run. Keep the target in sync with public/_redirects. */}
+          <Route path="/tt" element={<Navigate to="/esim-deals?utm_source=tiktok&utm_campaign=tiktok_bio" replace />} />
           <Route path="/" element={<AppShell />}>
             {/* Phase 19 — / is the Editorial Deep dashboard (executive view).
                 Plan cards UI lives at /plans (and other tab views at /roaming
                 /esim /banners /history). Legacy /?tab=X URLs are redirected
                 inside EditorialDashboardPage on mount. */}
-            <Route index element={<EditorialDashboardPage />} />
+            <Route index element={<HomeRoute />} />
             {/* "/" is the static marketing page (Netlify serves dist/landing.html);
                 /home is the SPA dashboard home — the post-login + "logged-in hit /"
                 redirect target. Same component as the index route. */}
-            <Route path="home" element={<EditorialDashboardPage />} />
+            <Route path="home" element={<HomeRoute />} />
             {/* Phase 9 — clean URLs for tab views; DashboardPage detects pathname */}
             <Route path="plans"     element={<DashboardPage />} />
             <Route path="roaming"   element={<DashboardPage />} />
@@ -207,6 +228,7 @@ export default function App() {
             <Route path="admin/user-activity" element={<ProtectedRoute superAdminOnly><UserActivityPage /></ProtectedRoute>} />
             <Route path="admin/hotels" element={<ProtectedRoute superAdminOnly><HotelsAdminPage /></ProtectedRoute>} />
             <Route path="admin/esim" element={<ProtectedRoute superAdminOnly><EsimAnalyticsPage /></ProtectedRoute>} />
+            <Route path="admin/deals" element={<ProtectedRoute superAdminOnly><ProviderDealsPage /></ProtectedRoute>} />
             <Route path="notifications" element={<Navigate to="/alerts?tab=watchlist" replace />} />
             <Route path="ai-insights" element={<AIInsightsPage />} />
             <Route path="social" element={<SocialPage />} />

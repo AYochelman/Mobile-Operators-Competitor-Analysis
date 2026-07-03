@@ -24,6 +24,8 @@ import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import Button from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
+import { useLang } from '../hooks/useLanguage'
+import { destKey, dedupeDestOptions } from '../data/destI18n'
 import { ISRAELI_GLOBAL_PROVIDERS, USA_LABELS, GLOBAL_PROVIDERS } from '../data/carrierLabels'
 import {
   TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
@@ -32,8 +34,8 @@ import {
   XPHONE_EUROPE, XPHONE_WORLD,
   AIRALO_DISCOVER,
   AIRALO_REGION_MAP,
-  GLOBALESIM_EUROPE, GLOBALESIM_ASIA, GLOBALESIM_NORTH_AMERICA,
-  GLOBALESIM_SOUTH_AMERICA, GLOBALESIM_AFRICA, GLOBALESIM_OCEANIA, GLOBALESIM_GLOBAL_REGION,
+  TERMINAL_EUROPE, TERMINAL_ASIA, TERMINAL_NORTH_AMERICA,
+  TERMINAL_SOUTH_AMERICA, TERMINAL_AFRICA, TERMINAL_OCEANIA, TERMINAL_GLOBAL_REGION,
   GOMOWORLD_EUROPE, GOMOWORLD_LATIN_AMERICA, GOMOWORLD_SOUTHEAST_ASIA,
   GOMOWORLD_FRENCH_ANTILLES, GOMOWORLD_NETHERLANDS_ANTILLES, GOMOWORLD_NORTH_AMERICA,
   MAYA_GLOBAL, MAYA_OCEANIA,
@@ -46,18 +48,18 @@ import {
 // Carriers where one plan covers many countries (zone/global plans)
 const MULTI_COUNTRY_CARRIERS = new Set([
   'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
-  'pelephone_global', 'esimo', 'globalesim', 'gomoworld', 'maya', 'besim',
+  'pelephone_global', 'esimo', 'terminalesim', 'gomoworld', 'maya', 'besim',
   'bestconnect', 'esimplus', 'seven_g',
 ])
 
-const GLOBALESIM_REGION_MAP = {
-  'אפריקה': GLOBALESIM_AFRICA,
-  'אסיה': GLOBALESIM_ASIA,
-  'צפון אמריקה': GLOBALESIM_NORTH_AMERICA,
-  'דרום אמריקה': GLOBALESIM_SOUTH_AMERICA,
-  'אוקיאניה': GLOBALESIM_OCEANIA,
-  'אירופה': GLOBALESIM_EUROPE,
-  'גלובלי': GLOBALESIM_GLOBAL_REGION,
+const TERMINAL_REGION_MAP = {
+  'אפריקה': TERMINAL_AFRICA,
+  'אסיה': TERMINAL_ASIA,
+  'צפון אמריקה': TERMINAL_NORTH_AMERICA,
+  'דרום אמריקה': TERMINAL_SOUTH_AMERICA,
+  'אוקיאניה': TERMINAL_OCEANIA,
+  'אירופה': TERMINAL_EUROPE,
+  'גלובלי': TERMINAL_GLOBAL_REGION,
 }
 
 function getPlanCoverage(plan) {
@@ -89,7 +91,7 @@ function getPlanCoverage(plan) {
     // return null → the destination filter falls back to extras[0] equality.
     return ESIMO_REGION_MAP[dest] || null
   }
-  if (carrier === 'globalesim') return GLOBALESIM_REGION_MAP[dest] || GLOBALESIM_GLOBAL_REGION
+  if (carrier === 'terminalesim') return TERMINAL_REGION_MAP[dest] || null
   if (carrier === 'gomoworld') {
     const GOMOWORLD_ZONE_MAP = {
       'אירופה': GOMOWORLD_EUROPE, 'אמריקה הלטינית': GOMOWORLD_LATIN_AMERICA,
@@ -186,6 +188,20 @@ const TABS = [
   { id: 'history', label: 'היסטוריה' },
   { id: 'news', label: '\u05d1\u05d7\u05d3\u05e9\u05d5\u05ea' },
 ]
+
+// English display labels for the tab bar (keyed by tab id). Display-only \u2014
+// the tab identity is the id; these never feed logic/comparisons.
+const TAB_LABELS_EN = {
+  domestic: 'Mobile Plans',
+  abroad: 'Roaming',
+  global: 'Global',
+  usa: 'Landing in USA',
+  resellers: 'Resellers',
+  content: 'Content',
+  banners: 'Main Banners',
+  history: 'History',
+  news: 'News',
+}
 
 const RESELLERS = [
   { id: 'pelephon4u',     label: '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df \u05ea\u05e7\u05e9\u05d5\u05e8\u05ea \u05dc\u05de\u05e6\u05d8\u05e8\u05e4\u05d9\u05dd \u05d7\u05d3\u05e9\u05d9\u05dd', underlying: 'pelephone',
@@ -311,6 +327,7 @@ const CARRIERS = [
 // source of truth in data/carrierLabels — add a provider there, not here.
 
 export default function DashboardPage() {
+  const { tt, lang } = useLang()
   const { isAdmin, workspace } = useAuth()
   const { scraping, countdown, triggerScrape } = useScrape()
   const hiddenCarrier = useHiddenCarrier()
@@ -703,16 +720,23 @@ export default function DashboardPage() {
         const wantIsraeli = f.israeliProvider === 'israeli'
         result = result.filter(p => ISRAELI_GLOBAL_PROVIDERS.has(p.carrier) === wantIsraeli)
       }
-      if (f.region !== 'all') result = result.filter(p => p.extras && normalizeRegionLabel(p.extras[0]) === f.region)
-      else if (f.destination !== 'all') result = result.filter(p => {
-        if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
-          const coverage = getPlanCoverage(p)
-          if (coverage) return coverage.includes(f.destination)
-          // single-country plan from a multi-country carrier — match directly
-          return p.extras && p.extras[0] === f.destination
-        }
-        return p.extras && p.extras[0] === f.destination
-      })
+      if (f.region !== 'all') {
+        const rTarget = destKey(f.region)
+        result = result.filter(p => p.extras && destKey(normalizeRegionLabel(p.extras[0])) === rTarget)
+      }
+      else if (f.destination !== 'all') {
+        // Compare via canonical English key so a selected representative spelling
+        // matches plans tagged with any of its de-duplicated variants.
+        const dTarget = destKey(f.destination)
+        result = result.filter(p => {
+          if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
+            const coverage = getPlanCoverage(p)
+            if (coverage) return coverage.some(c => destKey(c) === dTarget)
+            return p.extras && destKey(p.extras[0]) === dTarget
+          }
+          return p.extras && destKey(p.extras[0]) === dTarget
+        })
+      }
     }
     if (tab === 'content') {
       const NA = ['לא נמצא', 'שגיאה', 'לא זמין']
@@ -878,6 +902,11 @@ export default function DashboardPage() {
     return [...destSet].sort((a, b) => a.localeCompare(b, 'he'))
   }, [plans.global, tab, filters.globalProvider])
 
+  // Deduplicated, localized dropdown options — spelling variants that resolve to
+  // the same English collapse into one entry (value = a representative Hebrew).
+  const regionOptions = useMemo(() => dedupeDestOptions(globalRegions, lang), [globalRegions, lang])
+  const destinationOptions = useMemo(() => dedupeDestOptions(globalDestinations, lang), [globalDestinations, lang])
+
   // Content services list
   const contentServices = useMemo(() => {
     return [...new Set(plans.content.map(p => p.service).filter(Boolean))]
@@ -928,7 +957,7 @@ export default function DashboardPage() {
     // Dynamic-import xlsx (~80KB) only when user clicks export
     const XLSX = await import('xlsx')
     const TAB_NAMES = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי', content: 'תוכן', usa: 'נוחתים בארה"ב' }
-    const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack', breez: 'Breez' }
+    const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', tuki: 'Tuki', terminalesim: 'Terminal eSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack', breez: 'Breez' }
     const GB_HEB = { 'all': 'הכל', '0-5': '0-5GB', '5-15': '5-15GB', '15-100': '15-100GB', '100+': '100+GB', 'unlimited': 'ללא הגבלה' }
     const DAYS_HEB = { 'all': 'הכל', '1-7': '1-7 ימים', '8-14': '8-14 ימים', '15-30': '15-30 ימים', '30+': '30+ ימים' }
 
@@ -980,7 +1009,7 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 tnum">
           {lastUpdate && (
             <span className="text-[11px] text-moca-muted">
-              <span className="font-bold uppercase tracking-wider text-[9px] me-1">עדכון</span>
+              <span className="font-bold uppercase tracking-wider text-[9px] me-1">{tt('עדכון', 'Updated')}</span>
               {new Date(lastUpdate).toLocaleDateString('he-IL')} {lastUpdate.slice(11, 16)}
             </span>
           )}
@@ -1002,9 +1031,9 @@ export default function DashboardPage() {
               className="inline-flex items-center gap-1 text-[11px] text-moca-sub hover:text-moca-bolt disabled:opacity-50 transition-colors"
             >
               {scraping ? (
-                <><svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56" /></svg> מעדכן...</>
+                <><svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56" /></svg> {tt('מעדכן...', 'Updating...')}</>
               ) : (
-                <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg> עדכן</>
+                <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg> {tt('עדכן', 'Update')}</>
               )}
             </button>
             {scraping && countdown > 0 && (
@@ -1065,7 +1094,7 @@ export default function DashboardPage() {
                 }`}
             >
               <span className="hidden sm:inline-flex items-center gap-1.5">{TAB_ICONS[t.id]}</span>
-              {t.label}
+              {tt(t.label, TAB_LABELS_EN[t.id] || t.label)}
             </button>
           ))}
         </div>
@@ -1083,7 +1112,7 @@ export default function DashboardPage() {
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
               </svg>
-              <span>{filtersOpen ? 'סגור סינון' : 'סינון'}</span>
+              <span>{filtersOpen ? tt('סגור סינון', 'Close filters') : tt('סינון', 'Filters')}</span>
               {activeFilterCount > 0 && (
                 <span className="bg-moca-bolt text-white text-[9px] px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{activeFilterCount}</span>
               )}
@@ -1093,7 +1122,7 @@ export default function DashboardPage() {
                 onClick={resetFilters}
                 className="text-xs font-medium bg-moca-bolt text-white px-2.5 py-1 rounded-lg hover:bg-moca-text transition-colors"
               >
-                איפוס
+                {tt('איפוס', 'Reset')}
               </button>
             )}
 
@@ -1104,12 +1133,12 @@ export default function DashboardPage() {
                   ? 'bg-amber-50 border-amber-300 text-amber-700'
                   : 'bg-white border-moca-border/50 text-moca-sub hover:border-moca-bolt/40'
               }`}
-              title={onlyWatched ? 'הצג הכל' : 'הצג רק חבילות במעקב'}
+              title={onlyWatched ? tt('הצג הכל', 'Show all') : tt('הצג רק חבילות במעקב', 'Show watched plans only')}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill={onlyWatched ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
               </svg>
-              <span>המעקב שלי</span>
+              <span>{tt('המעקב שלי', 'My watchlist')}</span>
               {watchItems.length > 0 && (
                 <span className="bg-amber-100 text-amber-700 text-[9px] px-1 py-px rounded-full">{watchItems.length}</span>
               )}
@@ -1134,23 +1163,23 @@ export default function DashboardPage() {
             <div className="hidden md:flex items-center gap-2 border-r border-moca-border/40 pr-2 mr-1">
               <span className="flex items-center gap-1 text-[10px] text-moca-sub">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block flex-shrink-0" />
-                חבילה חדשה
+                {tt('חבילה חדשה', 'New plan')}
               </span>
               <span className="flex items-center gap-1 text-[10px] text-moca-sub">
                 <span className="w-2 h-2 rounded-full bg-red-400 inline-block flex-shrink-0" />
-                חבילה הוסרה
+                {tt('חבילה הוסרה', 'Plan removed')}
               </span>
               <span className="flex items-center gap-1 text-[10px] text-moca-sub">
                 <span className="w-2 h-2 rounded-full bg-amber-400 inline-block flex-shrink-0" />
-                שינוי מחיר
+                {tt('שינוי מחיר', 'Price change')}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-[11px] text-gray-400">{tab === 'banners' ? `${banners.length} ספקים` : tab === 'global' ? `${displayItems.length} כרטיסים` : `${filteredPlans.length} חבילות`}</span>
+            <span className="text-[11px] text-gray-400">{tab === 'banners' ? `${banners.length} ${tt('ספקים', 'providers')}` : tab === 'global' ? `${displayItems.length} ${tt('כרטיסים', 'cards')}` : `${filteredPlans.length} ${tt('חבילות', 'plans')}`}</span>
             {filteredPlans.length > 0 && (
-              <button onClick={exportToExcel} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-moca-sub hover:text-moca-text hover:bg-moca-cream transition-all duration-150" title="ייצוא ל-Excel">
+              <button onClick={exportToExcel} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-moca-sub hover:text-moca-text hover:bg-moca-cream transition-all duration-150" title={tt('ייצוא ל-Excel', 'Export to Excel')}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                 Excel
               </button>
@@ -1167,18 +1196,18 @@ export default function DashboardPage() {
               {tab === 'domestic' && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('גלישה', 'Data')}</p>
                     <div className="flex flex-wrap gap-1">
                       {['all', '0-5', '5-15', '15-100', '100+', 'unlimited'].map(v => (
-                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === 'unlimited' ? 'ללא הגבלה' : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
+                        <FilterTag key={v} label={v === 'all' ? tt('הכל', 'All') : v === 'unlimited' ? tt('ללא הגבלה', 'Unlimited') : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
                       ))}
                     </div>
                   </div>
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה בחו"ל</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('גלישה בחו"ל', 'Roaming data')}</p>
                     <div className="flex flex-wrap gap-1">
-                      <FilterTag label="כולם" active={filters.roaming === 'all'} onClick={() => setFilter('roaming', 'all')} />
-                      <FilterTag label='כולל חו"ל' active={filters.roaming === 'yes'} onClick={() => setFilter('roaming', 'yes')} />
+                      <FilterTag label={tt('כולם', 'All')} active={filters.roaming === 'all'} onClick={() => setFilter('roaming', 'all')} />
+                      <FilterTag label={tt('כולל חו"ל', 'Incl. roaming')} active={filters.roaming === 'yes'} onClick={() => setFilter('roaming', 'yes')} />
                     </div>
                   </div>
                 </div>
@@ -1188,19 +1217,19 @@ export default function DashboardPage() {
               {tab === 'domestic' && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">דור רשת</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('דור רשת', 'Network gen')}</p>
                     <div className="flex flex-wrap gap-1">
-                      <FilterTag label="כולם" active={filters.gen === 'all'} onClick={() => setFilter('gen', 'all')} />
+                      <FilterTag label={tt('כולם', 'All')} active={filters.gen === 'all'} onClick={() => setFilter('gen', 'all')} />
                       <FilterTag label="4G" active={filters.gen === '4g'} onClick={() => setFilter('gen', '4g')} />
                       <FilterTag label="5G" active={filters.gen === '5g'} onClick={() => setFilter('gen', '5g')} />
-                      <FilterTag label="5G מתועדף" active={filters.gen === '5g_priority'} onClick={() => setFilter('gen', '5g_priority')} />
+                      <FilterTag label={tt('5G מתועדף', '5G Priority')} active={filters.gen === '5g_priority'} onClick={() => setFilter('gen', '5g_priority')} />
                     </div>
                   </div>
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">מיון</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('מיון', 'Sort')}</p>
                     <div className="flex flex-wrap gap-1">
-                      <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
-                      <FilterTag label="מחיר ↓" active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
+                      <FilterTag label={tt('מחיר ↑', 'Price ↑')} active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
+                      <FilterTag label={tt('מחיר ↓', 'Price ↓')} active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
                       <FilterTag label="GB ↑" active={filters.sort === 'gb_asc'} onClick={() => setFilter('sort', 'gb_asc')} />
                       <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
                       <FilterTag label="₪/GB ↑" active={filters.sort === 'ppgb_asc'} onClick={() => setFilter('sort', 'ppgb_asc')} />
@@ -1211,27 +1240,27 @@ export default function DashboardPage() {
               )}
 
               {/* Global: Row 1 = אזור | מדינה */}
-              {tab === 'global' && (globalRegions.length > 0 || globalDestinations.length > 0) && (
+              {tab === 'global' && (regionOptions.length > 0 || destinationOptions.length > 0) && (
                 <div className="grid grid-cols-2 gap-3">
-                  {globalRegions.length > 0 && (
+                  {regionOptions.length > 0 && (
                     <div className="border border-moca-border/60 rounded-xl p-2.5">
-                      <p className="text-[11px] font-medium text-gray-500 mb-1">אזור</p>
+                      <p className="text-[11px] font-medium text-gray-500 mb-1">{tt('אזור', 'Region')}</p>
                       <SearchableSelect
                         value={filters.region}
                         onChange={val => { setFilter('region', val); if (val !== 'all') setFilter('destination', 'all') }}
-                        options={globalRegions.map(r => ({ value: r, label: r }))}
-                        placeholder={`כל האזורים (${globalRegions.length})`}
+                        options={regionOptions}
+                        placeholder={tt(`כל האזורים (${regionOptions.length})`, `All regions (${regionOptions.length})`)}
                       />
                     </div>
                   )}
-                  {globalDestinations.length > 0 && (
+                  {destinationOptions.length > 0 && (
                     <div className="border border-moca-border/60 rounded-xl p-2.5">
-                      <p className="text-[11px] font-medium text-gray-500 mb-1">מדינה</p>
+                      <p className="text-[11px] font-medium text-gray-500 mb-1">{tt('מדינה', 'Country')}</p>
                       <SearchableSelect
                         value={filters.destination}
                         onChange={val => { setFilter('destination', val); if (val !== 'all') setFilter('region', 'all') }}
-                        options={globalDestinations.map(c => ({ value: c, label: c }))}
-                        placeholder={`כל המדינות (${globalDestinations.length})`}
+                        options={destinationOptions}
+                        placeholder={tt(`כל המדינות (${destinationOptions.length})`, `All countries (${destinationOptions.length})`)}
                       />
                     </div>
                   )}
@@ -1242,18 +1271,18 @@ export default function DashboardPage() {
               {(tab === 'abroad' || tab === 'global') && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('גלישה', 'Data')}</p>
                     <div className="flex flex-wrap gap-1">
                       {['all', '0-5', '5-15', '15-100', '100+', 'unlimited'].map(v => (
-                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === 'unlimited' ? 'ללא הגבלה' : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
+                        <FilterTag key={v} label={v === 'all' ? tt('הכל', 'All') : v === 'unlimited' ? tt('ללא הגבלה', 'Unlimited') : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
                       ))}
                     </div>
                   </div>
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('תוקף', 'Validity')}</p>
                     <div className="flex flex-wrap gap-1">
                       {['all', '1-7', '8-14', '15-30', '30+'].map(v => (
-                        <FilterTag key={v} label={v === 'all' ? 'הכל' : `${v} ימים`} active={filters.days === v} onClick={() => setFilter('days', v)} />
+                        <FilterTag key={v} label={v === 'all' ? tt('הכל', 'All') : tt(`${v} ימים`, `${v} days`)} active={filters.days === v} onClick={() => setFilter('days', v)} />
                       ))}
                     </div>
                   </div>
@@ -1264,10 +1293,10 @@ export default function DashboardPage() {
               {(tab === 'abroad' || tab === 'global') && (
                 <div className={tab === 'global' ? 'grid grid-cols-2 gap-3' : ''}>
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">מיון</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('מיון', 'Sort')}</p>
                     <div className="flex flex-wrap gap-1">
-                      <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
-                      <FilterTag label="מחיר ↓" active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
+                      <FilterTag label={tt('מחיר ↑', 'Price ↑')} active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
+                      <FilterTag label={tt('מחיר ↓', 'Price ↓')} active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
                       <FilterTag label="GB ↑" active={filters.sort === 'gb_asc'} onClick={() => setFilter('sort', 'gb_asc')} />
                       <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
                     </div>
@@ -1275,9 +1304,9 @@ export default function DashboardPage() {
                   {/* סוג ספק — ישראלי (אתר בעברית) / בינלאומי. The list lives in carrierLabels.js */}
                   {tab === 'global' && (
                     <div className="border border-moca-border/60 rounded-xl p-2.5">
-                      <p className="text-[11px] font-medium text-gray-500 mb-1.5">סוג ספק</p>
+                      <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('סוג ספק', 'Provider type')}</p>
                       <div className="flex flex-wrap gap-1">
-                        {[['all', 'הכל'], ['israeli', 'ספק ישראלי'], ['foreign', 'ספק בינלאומי']].map(([v, label]) => (
+                        {[['all', tt('הכל', 'All')], ['israeli', tt('ספק ישראלי', 'Israeli provider')], ['foreign', tt('ספק בינלאומי', 'International provider')]].map(([v, label]) => (
                           <FilterTag
                             key={v}
                             label={label}
@@ -1302,18 +1331,18 @@ export default function DashboardPage() {
               {tab === 'usa' && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('גלישה', 'Data')}</p>
                     <div className="flex flex-wrap gap-1">
                       {['all', '0-5', '5-15', '15-100', 'unlimited'].map(v => (
-                        <FilterTag key={v} label={v === 'all' ? 'הכל' : v === 'unlimited' ? 'ללא הגבלה' : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
+                        <FilterTag key={v} label={v === 'all' ? tt('הכל', 'All') : v === 'unlimited' ? tt('ללא הגבלה', 'Unlimited') : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
                       ))}
                     </div>
                   </div>
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('תוקף', 'Validity')}</p>
                     <div className="flex flex-wrap gap-1">
                       {['all', '1-7', '8-14', '15-30', '30+'].map(v => (
-                        <FilterTag key={v} label={v === 'all' ? 'הכל' : `${v} ימים`} active={filters.days === v} onClick={() => setFilter('days', v)} />
+                        <FilterTag key={v} label={v === 'all' ? tt('הכל', 'All') : tt(`${v} ימים`, `${v} days`)} active={filters.days === v} onClick={() => setFilter('days', v)} />
                       ))}
                     </div>
                   </div>
@@ -1324,18 +1353,18 @@ export default function DashboardPage() {
               {tab === 'usa' && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">מיון</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('מיון', 'Sort')}</p>
                     <div className="flex flex-wrap gap-1">
-                      <FilterTag label="מחיר ↑" active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
-                      <FilterTag label="מחיר ↓" active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
+                      <FilterTag label={tt('מחיר ↑', 'Price ↑')} active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
+                      <FilterTag label={tt('מחיר ↓', 'Price ↓')} active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
                       <FilterTag label="GB ↑" active={filters.sort === 'gb_asc'} onClick={() => setFilter('sort', 'gb_asc')} />
                       <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
                     </div>
                   </div>
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">רשת</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('רשת', 'Network')}</p>
                     <div className="flex flex-wrap gap-1">
-                      <FilterTag label="כל הרשתות" active={filters.usaNetwork === 'all'} onClick={() => { setFilter('usaNetwork', 'all'); setFilter('usaOperator', 'all') }} />
+                      <FilterTag label={tt('כל הרשתות', 'All networks')} active={filters.usaNetwork === 'all'} onClick={() => { setFilter('usaNetwork', 'all'); setFilter('usaOperator', 'all') }} />
                       {USA_NETWORKS.map(n => (
                         <FilterTag key={n} label={n} active={filters.usaNetwork === n} onClick={() => { setFilter('usaNetwork', n); setFilter('usaOperator', 'all') }} />
                       ))}
@@ -1347,9 +1376,9 @@ export default function DashboardPage() {
               {/* Content service filter (content tab) */}
               {tab === 'content' && (
                 <div className="border border-moca-border/60 rounded-xl p-2.5">
-                  <p className="text-[11px] font-medium text-gray-500 mb-1.5">שירות</p>
+                  <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('שירות', 'Service')}</p>
                   <div className="flex flex-wrap gap-1">
-                    <FilterTag label="כולם" active={filters.contentService === 'all'} onClick={() => setFilter('contentService', 'all')} />
+                    <FilterTag label={tt('כולם', 'All')} active={filters.contentService === 'all'} onClick={() => setFilter('contentService', 'all')} />
                     {contentServices.map(s => (
                       <FilterTag key={s} label={s} active={filters.contentService === s} onClick={() => setFilter('contentService', s)} />
                     ))}
@@ -1364,14 +1393,14 @@ export default function DashboardPage() {
               {(tab === 'domestic' || tab === 'abroad') && (
                 <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[11px] font-medium text-gray-500">ספקים</p>
+                    <p className="text-[11px] font-medium text-gray-500">{tt('ספקים', 'Providers')}</p>
                     <button
                       onClick={() => setFilter('carrier', 'all')}
                       className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
                         filters.carrier === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                       }`}
                     >
-                      כולם
+                      {tt('כולם', 'All')}
                     </button>
                   </div>
                   <div className={`grid gap-1 ${tab === 'domestic' || tab === 'abroad' ? 'grid-cols-2' : 'grid-cols-4'}`}>
@@ -1401,14 +1430,14 @@ export default function DashboardPage() {
               {tab === 'global' && (
                 <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[11px] font-medium text-gray-500">ספקים</p>
+                    <p className="text-[11px] font-medium text-gray-500">{tt('ספקים', 'Providers')}</p>
                     <button
                       onClick={() => { setFilter('globalProvider', 'all'); setFilter('destination', 'all'); setFilter('region', 'all') }}
                       className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
                         filters.globalProvider === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                       }`}
                     >
-                      כולם
+                      {tt('כולם', 'All')}
                     </button>
                   </div>
                   <div className="grid grid-cols-3 gap-1">
@@ -1438,14 +1467,14 @@ export default function DashboardPage() {
               {tab === 'usa' && (
                 <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[11px] font-medium text-gray-500">מפעילים</p>
+                    <p className="text-[11px] font-medium text-gray-500">{tt('מפעילים', 'Operators')}</p>
                     <button
                       onClick={() => { setFilter('usaOperator', 'all'); setFilter('usaNetwork', 'all') }}
                       className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
                         filters.usaOperator === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                       }`}
                     >
-                      כולם
+                      {tt('כולם', 'All')}
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-1">
@@ -1475,14 +1504,14 @@ export default function DashboardPage() {
               {tab === 'content' && (
                 <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[11px] font-medium text-gray-500">ספקים</p>
+                    <p className="text-[11px] font-medium text-gray-500">{tt('ספקים', 'Providers')}</p>
                     <button
                       onClick={() => setFilter('contentCarrier', 'all')}
                       className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
                         filters.contentCarrier === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                       }`}
                     >
-                      כולם
+                      {tt('כולם', 'All')}
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-1">
@@ -1505,14 +1534,14 @@ export default function DashboardPage() {
               {tab === 'resellers' && (
                 <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[11px] font-medium text-gray-500">משווקים</p>
+                    <p className="text-[11px] font-medium text-gray-500">{tt('משווקים', 'Resellers')}</p>
                     <button
                       onClick={() => setFilter('reseller', 'all')}
                       className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
                         filters.reseller === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                       }`}
                     >
-                      כולם
+                      {tt('כולם', 'All')}
                     </button>
                   </div>
                   <div className="grid grid-cols-1 gap-1">
@@ -1548,11 +1577,11 @@ export default function DashboardPage() {
       {/* Provider stats strip — when single carrier/provider selected */}
       {!loading && providerStats && (
         <div className="mb-3 flex items-center gap-3 px-1 text-sm text-right flex-wrap" dir="rtl">
-          <span className="text-gray-500">{providerStats.count} חבילות</span>
+          <span className="text-gray-500">{providerStats.count} {tt('חבילות', 'plans')}</span>
           <span className="text-gray-300">·</span>
-          <span className="text-gray-500">ממוצע: <strong className="text-gray-700">&#8362;{providerStats.avg.toFixed(0)}</strong></span>
+          <span className="text-gray-500">{tt('ממוצע:', 'Avg:')} <strong className="text-gray-700">&#8362;{providerStats.avg.toFixed(0)}</strong></span>
           <span className="text-gray-300">·</span>
-          <span className="text-gray-500">מינימום: <strong className="text-emerald-600">&#8362;{providerStats.min}</strong></span>
+          <span className="text-gray-500">{tt('מינימום:', 'Min:')} <strong className="text-emerald-600">&#8362;{providerStats.min}</strong></span>
           <div className="mr-auto">
             <CarrierAIInsights carrierId={tab === 'global' ? filters.globalProvider : tab === 'usa' ? filters.usaOperator : filters.carrier} />
           </div>
@@ -1612,7 +1641,7 @@ export default function DashboardPage() {
                 onClick={() => setVisibleCount(prev => prev + 500)}
                 className="text-sm text-moca-bolt hover:text-moca-dark px-4 py-2 rounded-lg border border-moca-border hover:bg-moca-cream transition-colors"
               >
-                {'\u05D4\u05E6\u05D2 \u05E2\u05D5\u05D3'} ({displayItems.length - visibleCount} {'\u05E0\u05D5\u05E1\u05E4\u05D9\u05DD'})
+                {tt('\u05D4\u05E6\u05D2 \u05E2\u05D5\u05D3', 'Show more')} ({displayItems.length - visibleCount} {tt('\u05E0\u05D5\u05E1\u05E4\u05D9\u05DD', 'more')})
               </button>
             </div>
           )}
@@ -1655,12 +1684,12 @@ export default function DashboardPage() {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" />
             </svg>
-            <span>צילומי מסך אוטומטיים של עמודי הבית והחנות של הספקים - מתעדכנים כל יום בשעה 08:00</span>
+            <span>{tt('צילומי מסך אוטומטיים של עמודי הבית והחנות של הספקים - מתעדכנים כל יום בשעה 08:00', 'Automatic screenshots of providers\' homepages and stores - updated daily at 08:00')}</span>
           </div>
 
           {bannersLoaded && banners.length === 0 && (
             <div className="text-center text-moca-muted py-16 text-sm">
-              אין באנרים זמינים עדיין — הם יצולמו בשעה 08:00
+              {tt('אין באנרים זמינים עדיין — הם יצולמו בשעה 08:00', 'No banners available yet — they will be captured at 08:00')}
             </div>
           )}
 
@@ -1675,7 +1704,7 @@ export default function DashboardPage() {
               textAlign: 'right',
             }}
           >
-            עמוד ראשי
+            {tt('עמוד ראשי', 'Homepage')}
           </h2>
           <div className="mb-8">
             <BannerMosaic banners={banners} source="home" />
@@ -1694,7 +1723,7 @@ export default function DashboardPage() {
                   textAlign: 'right',
                 }}
               >
-                חנות ציוד קצה
+                {tt('חנות ציוד קצה', 'Device store')}
               </h2>
               <BannerMosaic banners={storeBanners} source="store" />
             </>
@@ -1717,7 +1746,7 @@ export default function DashboardPage() {
       {!loading && filteredPlans.length === 0 && tab !== 'banners' && tab !== 'history' && tab !== 'news' && (
         <div className="text-center py-20 text-gray-400">
           <p className="text-3xl mb-3 opacity-40">&#128269;</p>
-          <p className="text-sm">לא נמצאו חבילות בסינון הנוכחי</p>
+          <p className="text-sm">{tt('לא נמצאו חבילות בסינון הנוכחי', 'No plans found for the current filters')}</p>
         </div>
       )}
 
@@ -1733,12 +1762,12 @@ export default function DashboardPage() {
       <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
         {compareMap.size > 0 ? (
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 px-5 py-3 flex items-center gap-4" dir="rtl">
-            <span className="text-sm font-semibold text-gray-700">{compareMap.size} חבילות נבחרו</span>
+            <span className="text-sm font-semibold text-gray-700">{compareMap.size} {tt('חבילות נבחרו', 'plans selected')}</span>
             <button
               onClick={() => setShowCompareDrawer(true)}
               className="bg-moca-bolt hover:bg-[#7a4520] text-white text-sm font-medium px-4 py-1.5 rounded-xl transition-colors"
             >
-              השווה
+              {tt('השווה', 'Compare')}
             </button>
             <SavedComparesMenu
               comparePlans={[...compareMap.values()]}
@@ -1747,7 +1776,7 @@ export default function DashboardPage() {
             <button
               onClick={() => setCompareMap(new Map())}
               className="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none"
-              title="נקה בחירה"
+              title={tt('נקה בחירה', 'Clear selection')}
             >
               ✕
             </button>
@@ -1764,12 +1793,12 @@ export default function DashboardPage() {
             onClick={e => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between" dir="rtl">
-              <h2 className="text-base font-bold text-gray-800">השוואת חבילות</h2>
+              <h2 className="text-base font-bold text-gray-800">{tt('השוואת חבילות', 'Plan comparison')}</h2>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => {
                     const win = window.open('', '_blank')
-                    const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom', tuki: 'Tuki', globalesim: 'GlobaleSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE', orbit: 'Orbit', travelsim: 'Travel Sim' }
+                    const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom', tuki: 'Tuki', terminalesim: 'Terminal eSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE', orbit: 'Orbit', travelsim: 'Travel Sim' }
                     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
                     const getExtras = (plan) => {
                       if (!plan.extras) return []
@@ -1823,7 +1852,7 @@ ${[...compareMap.values()].map(({ plan, planType }) => {
                     <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
                     <rect x="6" y="14" width="12" height="8"/>
                   </svg>
-                  ייצוא PDF
+                  {tt('ייצוא PDF', 'Export PDF')}
                 </button>
                 <button onClick={() => setShowCompareDrawer(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&#10005;</button>
               </div>
@@ -1834,7 +1863,7 @@ ${[...compareMap.values()].map(({ plan, planType }) => {
                   <div key={i} className="relative">
                     <button
                       onClick={() => toggleCompare(plan, planType)}
-                      title="הסר מהשוואה"
+                      title={tt('הסר מהשוואה', 'Remove from comparison')}
                       className="absolute -top-2 -right-2 z-10 w-6 h-6 flex items-center justify-center text-white bg-red-500 hover:bg-red-600 rounded-full shadow-md border-2 border-white transition-colors"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">

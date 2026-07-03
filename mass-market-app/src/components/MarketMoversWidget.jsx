@@ -2,20 +2,19 @@ import { useState, useEffect, memo } from 'react'
 import { api } from '../lib/api'
 import Badge from './ui/Badge'
 import { ALL_CARRIER_LABELS as CARRIER_LABELS } from '../data/carrierLabels'
+import { useLang } from '../hooks/useLanguage'
 
 const CARRIER_COLORS = {
   // domestic
   partner: 'pink', pelephone: 'blue', hotmobile: 'orange', cellcom: 'green',
   mobile019: 'purple', xphone: 'orange', wecom: 'amber', neptucom: 'purple',
   // global — warm palette so widget looks consistent across tabs
-  tuki: 'amber', globalesim: 'orange', airalo: 'orange', pelephone_global: 'orange',
+  tuki: 'amber', terminalesim: 'orange', airalo: 'orange', pelephone_global: 'orange',
   esimo: 'amber', simtlv: 'pink', world8: 'amber', xphone_global: 'orange',
   saily: 'pink', holafly: 'orange', esimio: 'orange', sparks: 'amber',
   voye: 'pink', orbit: 'amber', travelsim: 'amber',
   yesim: 'orange', nomad: 'amber', ubigi: 'orange', alosim: 'pink',
 }
-
-const TAB_TITLE = { domestic: 'חבילות סלולר', abroad: 'חבילות חו"ל', global: 'חבילות גלובלי' }
 
 function formatPrice(p) {
   return `₪${Number(p).toFixed(Number(p) % 1 === 0 ? 0 : 2)}`
@@ -64,9 +63,16 @@ const MoverCard = memo(function MoverCard({ mover, onClick, isAllowedCarrier }) 
 })
 
 export default function MarketMoversWidget({ onMoverClick, visibleCarriers, tab = 'domestic' }) {
+  const { tt } = useLang()
   const [movers, setMovers] = useState([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState(null)
+
+  const TAB_TITLE_TT = {
+    domestic: tt('חבילות סלולר', 'mobile plans'),
+    abroad:   tt('חבילות חו"ל', 'roaming plans'),
+    global:   tt('חבילות גלובלי', 'global plans'),
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -90,9 +96,9 @@ export default function MarketMoversWidget({ onMoverClick, visibleCarriers, tab 
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
             <polyline points="17 6 23 6 23 12"/>
           </svg>
-          <h2 className="text-sm font-semibold text-gray-800">שינויי מחיר משמעותיים ב{TAB_TITLE[tab] || 'חבילות סלולר'}</h2>
+          <h2 className="text-sm font-semibold text-gray-800">{tt('שינויי מחיר משמעותיים ב', 'Significant price changes in ')}{TAB_TITLE_TT[tab] || tt('חבילות סלולר', 'mobile plans')}</h2>
         </div>
-        <span className="text-[11px] text-gray-400">30 ימים אחרונים</span>
+        <span className="text-[11px] text-gray-400">{tt('30 ימים אחרונים', 'Last 30 days')}</span>
       </div>
       <div className="relative">
         <div

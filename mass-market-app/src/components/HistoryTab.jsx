@@ -5,6 +5,7 @@ import {
 } from 'recharts'
 import * as XLSX from 'xlsx'
 import { api } from '../lib/api'
+import { useLang } from '../hooks/useLanguage'
 import Spinner from './ui/Spinner'
 import SearchableSelect from './ui/SearchableSelect'
 
@@ -23,7 +24,7 @@ const DOMESTIC_CARRIERS = [
 
 const GLOBAL_CARRIERS = [
   { id: 'tuki',             label: 'Tuki' },
-  { id: 'globalesim',       label: 'GlobaleSIM' },
+  { id: 'terminalesim',     label: 'Terminal eSIM' },
   { id: 'airalo',           label: 'Airalo' },
   { id: 'pelephone_global', label: 'GlobalSIM' },
   { id: 'esimo',            label: 'eSIMo' },
@@ -60,10 +61,10 @@ const CARRIERS_BY_TYPE = {
 }
 
 const PLAN_TYPE_LABELS = {
-  domestic: 'מקומי',
-  abroad:   'חו"ל',
-  global:   'גלובלי',
-  content:  'תוכן',
+  domestic: { he: 'מקומי',   en: 'Domestic' },
+  abroad:   { he: 'חו"ל',    en: 'Roaming' },
+  global:   { he: 'גלובלי',  en: 'Global' },
+  content:  { he: 'תוכן',    en: 'Content' },
 }
 
 const LINE_COLORS = [
@@ -73,13 +74,13 @@ const LINE_COLORS = [
 
 const BADGE_CONFIG = {
   price_change: {
-    up:   { label: '⬆ עלייה', cls: 'bg-red-100 text-red-700' },
-    down: { label: '⬇ ירידה', cls: 'bg-green-100 text-green-700' },
+    up:   { he: '⬆ עלייה', en: '⬆ Up',      cls: 'bg-red-100 text-red-700' },
+    down: { he: '⬇ ירידה', en: '⬇ Down',    cls: 'bg-green-100 text-green-700' },
   },
-  new_plan:      { label: '✦ חדש',    cls: 'bg-blue-100 text-blue-700' },
-  removed_plan:  { label: '✕ הוסר',   cls: 'bg-orange-100 text-orange-700' },
-  extras_change: { label: '✎ פרטים',  cls: 'bg-gray-100 text-gray-600' },
-  details_change:{ label: '✎ פרטים',  cls: 'bg-gray-100 text-gray-600' },
+  new_plan:      { he: '✦ חדש',    en: '✦ New',      cls: 'bg-blue-100 text-blue-700' },
+  removed_plan:  { he: '✕ הוסר',   en: '✕ Removed',  cls: 'bg-orange-100 text-orange-700' },
+  extras_change: { he: '✎ פרטים',  en: '✎ Details',  cls: 'bg-gray-100 text-gray-600' },
+  details_change:{ he: '✎ פרטים',  en: '✎ Details',  cls: 'bg-gray-100 text-gray-600' },
 }
 
 function rangeToFrom(range) {
@@ -105,13 +106,15 @@ function PriceTooltip({ active, payload, label }) {
 }
 
 function Badge({ change }) {
+  const { tt } = useLang()
   if (change.change_type === 'price_change') {
     const up = parseFloat(change.new_val) > parseFloat(change.old_val)
     const b = BADGE_CONFIG.price_change[up ? 'up' : 'down']
-    return <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${b.cls}`}>{b.label}</span>
+    return <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${b.cls}`}>{tt(b.he, b.en)}</span>
   }
-  const b = BADGE_CONFIG[change.change_type] || { label: change.change_type, cls: 'bg-gray-100 text-gray-500' }
-  return <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${b.cls}`}>{b.label}</span>
+  const b = BADGE_CONFIG[change.change_type]
+  if (!b) return <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">{change.change_type}</span>
+  return <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${b.cls}`}>{tt(b.he, b.en)}</span>
 }
 
 function Delta({ change }) {
@@ -126,6 +129,7 @@ function Delta({ change }) {
 }
 
 export default function HistoryTab() {
+  const { tt } = useLang()
   const [planType, setPlanType] = useState('domestic')
   const [carrier,  setCarrier]  = useState('pelephone')
   const [planName, setPlanName] = useState('all')
@@ -239,10 +243,10 @@ export default function HistoryTab() {
       const from = rangeToFrom(range)
       const res = await api.analyzeHistory(carrier, planType, from)
       setAnalysis(
-        res.analysis ?? 'אין מספיק נתונים לניתוח עבור הפילטרים הנבחרים.'
+        res.analysis ?? tt('אין מספיק נתונים לניתוח עבור הפילטרים הנבחרים.', 'Not enough data to analyze for the selected filters.')
       )
     } catch {
-      setAnalysis('שגיאה בניתוח. נסה שוב.')
+      setAnalysis(tt('שגיאה בניתוח. נסה שוב.', 'Analysis error. Please try again.'))
     } finally {
       setAnalyzeLoading(false)
     }
@@ -250,15 +254,15 @@ export default function HistoryTab() {
 
   function exportToExcel() {
     const rows = changes.map(c => ({
-      'תאריך':  c.changed_at?.slice(0, 10),
-      'חבילה':  c.plan_name,
-      'שינוי':  c.change_type,
-      'לפני':   c.old_val,
-      'אחרי':   c.new_val,
+      [tt('תאריך', 'Date')]:  c.changed_at?.slice(0, 10),
+      [tt('חבילה', 'Plan')]:  c.plan_name,
+      [tt('שינוי', 'Change')]:  c.change_type,
+      [tt('לפני', 'Before')]:   c.old_val,
+      [tt('אחרי', 'After')]:   c.new_val,
     }))
     const ws = XLSX.utils.json_to_sheet(rows)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'היסטוריה')
+    XLSX.utils.book_append_sheet(wb, ws, tt('היסטוריה', 'History'))
     XLSX.writeFile(wb, `history-${carrier}-${planType}.xlsx`)
     api.trackActivity('export', null, JSON.stringify({ tab: 'history', carrier, count: changes.length })).catch(() => {})
   }
@@ -274,20 +278,20 @@ export default function HistoryTab() {
       {/* Filter bar — RTL flow: סוג → מפעיל → חבילה (right to left) */}
       <div className="flex flex-wrap gap-3 items-end mb-4 bg-white border border-moca-border/60 rounded-xl p-3">
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase text-moca-muted tracking-wide">סוג</span>
+          <span className="text-[10px] font-semibold uppercase text-moca-muted tracking-wide">{tt('סוג', 'Type')}</span>
           <select
             value={planType}
             onChange={e => setPlanType(e.target.value)}
             className="border border-moca-border rounded-lg px-2 py-1.5 text-sm bg-moca-cream text-moca-text"
           >
             {Object.entries(PLAN_TYPE_LABELS).map(([id, label]) => (
-              <option key={id} value={id}>{label}</option>
+              <option key={id} value={id}>{tt(label.he, label.en)}</option>
             ))}
           </select>
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase text-moca-muted tracking-wide">מפעיל</span>
+          <span className="text-[10px] font-semibold uppercase text-moca-muted tracking-wide">{tt('מפעיל', 'Carrier')}</span>
           <select
             value={carrier}
             onChange={e => setCarrier(e.target.value)}
@@ -298,18 +302,18 @@ export default function HistoryTab() {
         </div>
 
         <div className="flex flex-col gap-1 min-w-[200px]">
-          <span className="text-[10px] font-semibold uppercase text-moca-muted tracking-wide">חבילה</span>
+          <span className="text-[10px] font-semibold uppercase text-moca-muted tracking-wide">{tt('חבילה', 'Plan')}</span>
           <SearchableSelect
             value={planName}
             onChange={setPlanName}
             options={planSelectOptions}
-            placeholder="כל החבילות"
+            placeholder={tt('כל החבילות', 'All plans')}
             size="md"
           />
         </div>
 
         <div className="flex gap-1.5 items-center">
-          {[['30d','30י׳'],['90d','90י׳'],['year','שנה'],['all','הכל']].map(([val, lbl]) => (
+          {[['30d', tt('30י׳', '30d')], ['90d', tt('90י׳', '90d')], ['year', tt('שנה', 'Year')], ['all', tt('הכל', 'All')]].map(([val, lbl]) => (
             <button
               key={val}
               onClick={() => setRange(val)}
@@ -338,7 +342,7 @@ export default function HistoryTab() {
             <line x1="8" y1="16" x2="8" y2="16"/>
             <line x1="16" y1="16" x2="16" y2="16"/>
           </svg>
-          {analyzeLoading ? 'מנתח...' : 'ניתוח AI'}
+          {analyzeLoading ? tt('מנתח...', 'Analyzing...') : tt('ניתוח AI', 'AI Analysis')}
         </button>
       </div>
 
@@ -352,10 +356,10 @@ export default function HistoryTab() {
           {summary && (
             <div className="grid grid-cols-4 gap-3 mb-4">
               {[
-                { label: 'כל השינויים', value: summary.total,        sub: 'בתקופה הנבחרת', cls: '' },
-                { label: 'עליות',        value: summary.price_up,     sub: 'מחיר עלה',      cls: 'text-red-600' },
-                { label: 'ירידות',       value: summary.price_down,   sub: 'מחיר ירד',      cls: 'text-green-600' },
-                { label: 'חדש / הוסר',  value: `${summary.new_plans} / ${summary.removed_plans}`, sub: 'חבילות', cls: '' },
+                { label: tt('כל השינויים', 'All changes'), value: summary.total,        sub: tt('בתקופה הנבחרת', 'In selected period'), cls: '' },
+                { label: tt('עליות', 'Increases'),        value: summary.price_up,     sub: tt('מחיר עלה', 'Price rose'),      cls: 'text-red-600' },
+                { label: tt('ירידות', 'Decreases'),       value: summary.price_down,   sub: tt('מחיר ירד', 'Price fell'),      cls: 'text-green-600' },
+                { label: tt('חדש / הוסר', 'New / Removed'),  value: `${summary.new_plans} / ${summary.removed_plans}`, sub: tt('חבילות', 'Plans'), cls: '' },
               ].map(({ label, value, sub, cls }) => (
                 <div key={label} className="bg-white border border-moca-border/60 rounded-xl p-3">
                   <div className="text-[10px] font-semibold uppercase text-moca-muted tracking-wide mb-1">{label}</div>
@@ -371,7 +375,7 @@ export default function HistoryTab() {
             <div className="bg-moca-cream border border-moca-border/60 rounded-xl p-4 mb-4 text-right">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 text-moca-text font-semibold text-sm">
-                  <span>ניתוח AI</span>
+                  <span>{tt('ניתוח AI', 'AI Analysis')}</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                        stroke="currentColor" strokeWidth="2"
                        strokeLinecap="round" strokeLinejoin="round">
@@ -381,7 +385,7 @@ export default function HistoryTab() {
                 <button
                   onClick={() => setAnalysis(null)}
                   className="text-moca-muted hover:text-moca-text transition-colors"
-                  aria-label="סגור ניתוח"
+                  aria-label={tt('סגור ניתוח', 'Close analysis')}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                        stroke="currentColor" strokeWidth="2"
@@ -398,8 +402,8 @@ export default function HistoryTab() {
           {/* Price chart — shown only when series data exists */}
           {series.length > 0 && (
             <div className="bg-white border border-moca-border/60 rounded-xl p-4 mb-4">
-              <div className="text-sm font-bold text-moca-text mb-0.5">מגמת מחיר (₪)</div>
-              <div className="text-xs text-moca-muted mb-3">כל נקודה = שינוי מחיר שזוהה</div>
+              <div className="text-sm font-bold text-moca-text mb-0.5">{tt('מגמת מחיר (₪)', 'Price trend (₪)')}</div>
+              <div className="text-xs text-moca-muted mb-3">{tt('כל נקודה = שינוי מחיר שזוהה', 'Each point = a detected price change')}</div>
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0e8de" />
@@ -427,8 +431,8 @@ export default function HistoryTab() {
           {/* Empty state — no changes at all */}
           {changes.length === 0 && (
             <div className="bg-white border border-moca-border/60 rounded-xl p-8 text-center mb-4">
-              <div className="text-moca-muted text-sm">אין נתוני שינויים לתקופה הנבחרת.</div>
-              <div className="text-moca-muted text-xs mt-1">הנתונים יצטברו עם הזמן עם כל סריקה.</div>
+              <div className="text-moca-muted text-sm">{tt('אין נתוני שינויים לתקופה הנבחרת.', 'No change data for the selected period.')}</div>
+              <div className="text-moca-muted text-xs mt-1">{tt('הנתונים יצטברו עם הזמן עם כל סריקה.', 'Data accumulates over time with each scrape.')}</div>
             </div>
           )}
 
@@ -436,7 +440,7 @@ export default function HistoryTab() {
           {changes.length > 0 && (
             <div className="bg-white border border-moca-border/60 rounded-xl p-4">
               <div className="flex justify-between items-center mb-3">
-                <div className="text-sm font-bold text-moca-text">לוג שינויים</div>
+                <div className="text-sm font-bold text-moca-text">{tt('לוג שינויים', 'Change log')}</div>
                 <button
                   onClick={exportToExcel}
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-moca-sub hover:text-moca-text hover:bg-moca-cream transition-all"
@@ -453,8 +457,8 @@ export default function HistoryTab() {
                 <table className="w-full text-sm min-w-[520px] md:min-w-0">
                   <thead>
                     <tr className="border-b-2 border-moca-border">
-                      {['תאריך','חבילה','שינוי','לפני','אחרי','דלתא'].map(h => (
-                        <th key={h} className="text-right pb-2 px-2 text-[11px] font-semibold uppercase text-moca-muted tracking-wide whitespace-nowrap">{h}</th>
+                      {[['תאריך','Date'],['חבילה','Plan'],['שינוי','Change'],['לפני','Before'],['אחרי','After'],['דלתא','Delta']].map(([he, en]) => (
+                        <th key={he} className="text-right pb-2 px-2 text-[11px] font-semibold uppercase text-moca-muted tracking-wide whitespace-nowrap">{tt(he, en)}</th>
                       ))}
                     </tr>
                   </thead>

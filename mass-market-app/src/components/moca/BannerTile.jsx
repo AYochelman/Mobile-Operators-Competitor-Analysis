@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { API_BASE } from '../../lib/api'
+import { useLang } from '../../hooks/useLanguage'
 import { getCarrierColor, getCarrierName } from './carrierMeta'
 
 // Fallback gradient per carrier when screenshot isn't available yet
@@ -22,14 +23,15 @@ function formatDate(iso) {
   return d.toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
-function freshness(iso) {
+function freshness(iso, tt) {
   if (!iso) return null
   const ageMs = Date.now() - new Date(iso).getTime()
   const days = ageMs / (24 * 60 * 60 * 1000)
-  if (days < 1) return { label: 'היום', fresh: true }
-  if (days < 2) return { label: 'אתמול', fresh: true }
-  if (days < 7) return { label: `לפני ${Math.floor(days)} ימים`, fresh: true }
-  return { label: `לפני ${Math.floor(days)} ימים`, fresh: false }
+  if (days < 1) return { label: tt('היום', 'Today'), fresh: true }
+  if (days < 2) return { label: tt('אתמול', 'Yesterday'), fresh: true }
+  const n = Math.floor(days)
+  if (days < 7) return { label: tt(`לפני ${n} ימים`, `${n} days ago`), fresh: true }
+  return { label: tt(`לפני ${n} ימים`, `${n} days ago`), fresh: false }
 }
 
 /**
@@ -39,6 +41,7 @@ function freshness(iso) {
  * Internal lift-on-hover animation per the design spec (transform 2px + shadow).
  */
 export default function BannerTile({ banner, onClick }) {
+  const { tt } = useLang()
   const [imgError, setImgError] = useState(false)
   const [hovered, setHovered] = useState(false)
 
@@ -47,7 +50,7 @@ export default function BannerTile({ banner, onClick }) {
   const dotColor = banner.color || getCarrierColor(carrier)
   const resolvedImageUrl = image_url ? `${API_BASE}${image_url}` : null
   const hasImage = resolvedImageUrl && !imgError
-  const age = freshness(scraped_at)
+  const age = freshness(scraped_at, tt)
 
   return (
     <button
@@ -88,7 +91,7 @@ export default function BannerTile({ banner, onClick }) {
         {hasImage ? (
           <img
             src={resolvedImageUrl}
-            alt={`באנר ${displayName}`}
+            alt={`${tt('באנר', 'Banner')} ${displayName}`}
             style={{
               width: '100%',
               height: '100%',

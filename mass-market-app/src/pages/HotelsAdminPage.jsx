@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { api, API_BASE } from '../lib/api'
 import { HOTEL_DESTINATIONS, destLabel } from '../data/hotelDestinations'
+import { useLang } from '../hooks/useLanguage'
 
 /* ════════════════════════════════════════════════════════════════════════
    MOCA Guest Connect — operator console  (route: /admin/hotels, super_admin)
@@ -36,6 +37,7 @@ function Stat({ label, value, accent }) {
 }
 
 export default function HotelsAdminPage() {
+  const { tt } = useLang()
   const [hotels, setHotels] = useState([])
   const [sel, setSel] = useState(null)         // slug | 'new' | null
   const [form, setForm] = useState(BLANK)
@@ -81,20 +83,20 @@ export default function HotelsAdminPage() {
 
   const save = async () => {
     setErr(''); setMsg('')
-    if (!form.name.trim()) { setErr('שם המלון חובה.'); return }
+    if (!form.name.trim()) { setErr(tt('שם המלון חובה.', 'Hotel name is required.')); return }
     const slug = isNew ? slugify(form.slug || form.name) : form.slug
-    if (!slug) { setErr('Slug חובה (אותיות לטיניות/מספרים).'); return }
-    if (!form.languages.length) { setErr('בחרו לפחות שפה אחת.'); return }
+    if (!slug) { setErr(tt('Slug חובה (אותיות לטיניות/מספרים).', 'Slug is required (Latin letters/numbers).')); return }
+    if (!form.languages.length) { setErr(tt('בחרו לפחות שפה אחת.', 'Select at least one language.')); return }
     setSaving(true)
     try {
       const payload = { ...form, slug }
-      if (isNew) { await api.createHotel(payload); setMsg('הפורטל נוצר ✓') }
-      else { await api.updateHotel(slug, payload); setMsg('נשמר ✓') }
+      if (isNew) { await api.createHotel(payload); setMsg(tt('הפורטל נוצר ✓', 'Portal created ✓')) }
+      else { await api.updateHotel(slug, payload); setMsg(tt('נשמר ✓', 'Saved ✓')) }
       await loadHotels()
       setIsNew(false); setSel(slug); setForm((s) => ({ ...s, slug }))
       if (!isNew) loadAnalytics(slug, days)
     } catch (e) {
-      setErr(e.message || 'שמירה נכשלה')
+      setErr(e.message || tt('שמירה נכשלה', 'Save failed'))
     } finally {
       setSaving(false)
     }
@@ -102,12 +104,12 @@ export default function HotelsAdminPage() {
 
   const remove = async () => {
     if (!sel || isNew) return
-    if (!window.confirm(`למחוק את הפורטל של ${form.name}? פעולה זו אינה הפיכה.`)) return
-    try { await api.deleteHotel(form.slug); await loadHotels(); setSel(null); setMsg('נמחק') }
+    if (!window.confirm(tt(`למחוק את הפורטל של ${form.name}? פעולה זו אינה הפיכה.`, `Delete the portal for ${form.name}? This action is irreversible.`))) return
+    try { await api.deleteHotel(form.slug); await loadHotels(); setSel(null); setMsg(tt('נמחק', 'Deleted')) }
     catch (e) { setErr(e.message) }
   }
 
-  const copyLink = () => { navigator.clipboard?.writeText(portalUrl); setMsg('הקישור הועתק ✓') }
+  const copyLink = () => { navigator.clipboard?.writeText(portalUrl); setMsg(tt('הקישור הועתק ✓', 'Link copied ✓')) }
 
   const downloadQr = async () => {
     try {
@@ -118,7 +120,7 @@ export default function HotelsAdminPage() {
       const a = document.createElement('a')
       a.href = url; a.download = `${form.slug}-guest-qr.svg`; a.click()
       URL.revokeObjectURL(url)
-    } catch { setErr('הורדת ה-QR נכשלה') }
+    } catch { setErr(tt('הורדת ה-QR נכשלה', 'QR download failed')) }
   }
 
   return (
@@ -126,20 +128,20 @@ export default function HotelsAdminPage() {
       <div className="flex items-center justify-between gap-3 flex-wrap mb-1">
         <div>
           <div className="text-xs font-extrabold tracking-widest text-[var(--color-moca-hot)] uppercase">Guest Connect</div>
-          <h1 className="text-2xl font-extrabold text-[var(--color-moca-dark)] font-[var(--font-display)]">פורטלי אורחים — מלונות</h1>
+          <h1 className="text-2xl font-extrabold text-[var(--color-moca-dark)] font-[var(--font-display)]">{tt('פורטלי אורחים — מלונות', 'Guest portals — hotels')}</h1>
         </div>
         <div className="flex gap-2">
           <a href="/hotels" target="_blank" rel="noopener"
             className="px-4 py-2 rounded-xl border border-[var(--color-moca-border)] text-[var(--color-moca-bolt)] font-bold text-sm hover:border-[var(--color-moca-bolt)]">
-            דף השיווק ↗
+            {tt('דף השיווק ↗', 'Marketing page ↗')}
           </a>
           <button onClick={openNew}
             className="px-4 py-2 rounded-xl bg-[var(--color-moca-bolt)] text-white font-bold text-sm hover:opacity-90">
-            + פורטל חדש
+            {tt('+ פורטל חדש', '+ New portal')}
           </button>
         </div>
       </div>
-      <p className="text-sm text-[var(--color-moca-sub)] mb-5">ניהול הפורטלים הממותגים, אנליטיקת אורחים אנונימית, ומחולל ה-QR. כל פורטל זמין בכתובת <code className="text-xs">/guest/&lt;slug&gt;</code>.</p>
+      <p className="text-sm text-[var(--color-moca-sub)] mb-5">{tt('ניהול הפורטלים הממותגים, אנליטיקת אורחים אנונימית, ומחולל ה-QR. כל פורטל זמין בכתובת', 'Manage the branded portals, anonymous guest analytics, and the QR generator. Each portal is available at')} <code className="text-xs">/guest/&lt;slug&gt;</code>.</p>
 
       {err && <div className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 px-4 py-2 text-sm font-semibold">{err}</div>}
       {msg && <div className="mb-4 rounded-xl bg-green-50 border border-green-200 text-green-700 px-4 py-2 text-sm font-semibold">{msg}</div>}
@@ -148,12 +150,12 @@ export default function HotelsAdminPage() {
         {/* list */}
         <div className="bg-white rounded-2xl border border-[var(--color-moca-border)] shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--color-moca-border)] text-sm font-extrabold text-[var(--color-moca-dark)]">
-            הפורטלים ({hotels.length})
+            {tt('הפורטלים', 'Portals')} ({hotels.length})
           </div>
           {loading ? (
-            <div className="p-5 text-sm text-[var(--color-moca-sub)]">טוען…</div>
+            <div className="p-5 text-sm text-[var(--color-moca-sub)]">{tt('טוען…', 'Loading…')}</div>
           ) : hotels.length === 0 ? (
-            <div className="p-5 text-sm text-[var(--color-moca-sub)]">אין פורטלים עדיין. צרו את הראשון →</div>
+            <div className="p-5 text-sm text-[var(--color-moca-sub)]">{tt('אין פורטלים עדיין. צרו את הראשון →', 'No portals yet. Create the first one →')}</div>
           ) : (
             <ul className="max-h-[60vh] overflow-auto">
               {hotels.map((h) => (
@@ -168,7 +170,7 @@ export default function HotelsAdminPage() {
                       <span className="block text-sm font-bold text-[var(--color-moca-dark)] truncate">{h.name}</span>
                       <span className="block text-xs text-[var(--color-moca-sub)] truncate">/guest/{h.slug}</span>
                     </span>
-                    {!h.active && <span className="text-[10px] font-bold text-red-500">מושהה</span>}
+                    {!h.active && <span className="text-[10px] font-bold text-red-500">{tt('מושהה', 'Suspended')}</span>}
                   </button>
                 </li>
               ))}
@@ -182,17 +184,17 @@ export default function HotelsAdminPage() {
             {/* editor */}
             <div className="bg-white rounded-2xl border border-[var(--color-moca-border)] shadow-sm p-5">
               <h2 className="text-lg font-extrabold text-[var(--color-moca-dark)] mb-4">
-                {isNew ? 'פורטל חדש' : `עריכה — ${form.name}`}
+                {isNew ? tt('פורטל חדש', 'New portal') : `${tt('עריכה', 'Edit')} — ${form.name}`}
               </h2>
               <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="שם המלון / הרשת">
+                <Field label={tt('שם המלון / הרשת', 'Hotel / chain name')}>
                   <input className="inp" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Coastline Hotels" />
                 </Field>
-                <Field label="Slug (כתובת הפורטל)">
+                <Field label={tt('Slug (כתובת הפורטל)', 'Slug (portal address)')}>
                   <input className="inp font-mono" disabled={!isNew} value={form.slug}
                     onChange={(e) => set('slug', slugify(e.target.value))} placeholder="coastline" />
                 </Field>
-                <Field label="מדינת היעד — הפורטל יציג חבילות גלישה למדינה זו בלבד" full>
+                <Field label={tt('מדינת היעד — הפורטל יציג חבילות גלישה למדינה זו בלבד', 'Destination country — the portal will show data plans for this country only')} full>
                   <select className="inp" value={form.country || 'ישראל'} onChange={(e) => set('country', e.target.value)}>
                     {form.country && !DEST_HE_SET.has(form.country) && (
                       <option value={form.country}>{`${form.country} · ${destLabel(form.country, 'en')}`}</option>
@@ -200,31 +202,31 @@ export default function HotelsAdminPage() {
                     {DEST_OPTIONS.map((o) => <option key={o.he} value={o.he}>{o.label}</option>)}
                   </select>
                 </Field>
-                <Field label="כותרת (Tagline)" full>
+                <Field label={tt('כותרת (Tagline)', 'Tagline')} full>
                   <input className="inp" value={form.tagline || ''} onChange={(e) => set('tagline', e.target.value)}
                     placeholder="Stay connected in Israel" />
                 </Field>
-                <Field label="צבע ראשי (כהה)">
+                <Field label={tt('צבע ראשי (כהה)', 'Primary color (dark)')}>
                   <ColorInput value={form.brand_primary} onChange={(v) => set('brand_primary', v)} />
                 </Field>
-                <Field label="צבע משני (הדגשה)">
+                <Field label={tt('צבע משני (הדגשה)', 'Secondary color (accent)')}>
                   <ColorInput value={form.brand_secondary} onChange={(v) => set('brand_secondary', v)} />
                 </Field>
-                <Field label="רקע עמוד">
+                <Field label={tt('רקע עמוד', 'Page background')}>
                   <ColorInput value={form.brand_bg} onChange={(v) => set('brand_bg', v)} />
                 </Field>
-                <Field label="מונוגרמה (1-3 תווים)">
+                <Field label={tt('מונוגרמה (1-3 תווים)', 'Monogram (1-3 chars)')}>
                   <input className="inp" maxLength={3} value={form.mono || ''} onChange={(e) => set('mono', e.target.value)} placeholder="CH" />
                 </Field>
-                <Field label="שפת ברירת מחדל">
+                <Field label={tt('שפת ברירת מחדל', 'Default language')}>
                   <select className="inp" value={form.default_lang} onChange={(e) => set('default_lang', e.target.value)}>
                     {LANGS.map((l) => <option key={l.id} value={l.id}>{l.l}</option>)}
                   </select>
                 </Field>
-                <Field label="הערת עמלה (פנימי)">
+                <Field label={tt('הערת עמלה (פנימי)', 'Commission note (internal)')}>
                   <input className="inp" value={form.commission_note || ''} onChange={(e) => set('commission_note', e.target.value)} placeholder="50/50" />
                 </Field>
-                <Field label="שפות זמינות" full>
+                <Field label={tt('שפות זמינות', 'Available languages')} full>
                   <div className="flex gap-2 flex-wrap">
                     {LANGS.map((l) => (
                       <button key={l.id} type="button" onClick={() => toggleLang(l.id)}
@@ -236,10 +238,10 @@ export default function HotelsAdminPage() {
                     ))}
                   </div>
                 </Field>
-                <Field label="סטטוס" full>
+                <Field label={tt('סטטוס', 'Status')} full>
                   <label className="flex items-center gap-2 text-sm font-semibold text-[var(--color-moca-text)]">
                     <input type="checkbox" checked={form.active} onChange={(e) => set('active', e.target.checked)} />
-                    פעיל (גלוי לאורחים)
+                    {tt('פעיל (גלוי לאורחים)', 'Active (visible to guests)')}
                   </label>
                 </Field>
               </div>
@@ -250,26 +252,26 @@ export default function HotelsAdminPage() {
                   <span className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-extrabold"
                     style={{ color: form.brand_primary }}>{form.mono || (form.name || '?').slice(0, 2).toUpperCase()}</span>
                   <div>
-                    <div className="font-bold text-sm">{form.name || 'שם המלון'}</div>
+                    <div className="font-bold text-sm">{form.name || tt('שם המלון', 'Hotel name')}</div>
                     <div className="text-[10px] tracking-widest opacity-75">GUEST CONNECT</div>
                   </div>
-                  <span className="ms-auto px-3 py-1 rounded-full text-xs font-bold" style={{ background: form.brand_secondary, color: '#fff' }}>תצוגה</span>
+                  <span className="ms-auto px-3 py-1 rounded-full text-xs font-bold" style={{ background: form.brand_secondary, color: '#fff' }}>{tt('תצוגה', 'Preview')}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 mt-5 flex-wrap">
                 <button onClick={save} disabled={saving}
                   className="px-5 py-2.5 rounded-xl bg-[var(--color-moca-bolt)] text-white font-bold text-sm hover:opacity-90 disabled:opacity-60">
-                  {saving ? 'שומר…' : isNew ? 'יצירת פורטל' : 'שמירה'}
+                  {saving ? tt('שומר…', 'Saving…') : isNew ? tt('יצירת פורטל', 'Create portal') : tt('שמירה', 'Save')}
                 </button>
                 {!isNew && (
                   <>
                     <a href={`/guest/${form.slug}`} target="_blank" rel="noopener"
                       className="px-4 py-2.5 rounded-xl border border-[var(--color-moca-border)] text-[var(--color-moca-bolt)] font-bold text-sm hover:border-[var(--color-moca-bolt)]">
-                      פתח פורטל ↗
+                      {tt('פתח פורטל ↗', 'Open portal ↗')}
                     </a>
-                    <button onClick={copyLink} className="px-4 py-2.5 rounded-xl border border-[var(--color-moca-border)] text-[var(--color-moca-sub)] font-bold text-sm hover:border-[var(--color-moca-bolt)]">העתק קישור</button>
-                    <button onClick={remove} className="px-4 py-2.5 rounded-xl text-red-600 font-bold text-sm hover:bg-red-50 ms-auto">מחיקה</button>
+                    <button onClick={copyLink} className="px-4 py-2.5 rounded-xl border border-[var(--color-moca-border)] text-[var(--color-moca-sub)] font-bold text-sm hover:border-[var(--color-moca-bolt)]">{tt('העתק קישור', 'Copy link')}</button>
+                    <button onClick={remove} className="px-4 py-2.5 rounded-xl text-red-600 font-bold text-sm hover:bg-red-50 ms-auto">{tt('מחיקה', 'Delete')}</button>
                   </>
                 )}
               </div>
@@ -279,37 +281,37 @@ export default function HotelsAdminPage() {
             {!isNew && (
               <div className="grid md:grid-cols-[220px_1fr] gap-5 items-start">
                 <div className="bg-white rounded-2xl border border-[var(--color-moca-border)] shadow-sm p-5 text-center">
-                  <div className="text-sm font-extrabold text-[var(--color-moca-dark)] mb-3">קוד QR לחדר</div>
+                  <div className="text-sm font-extrabold text-[var(--color-moca-dark)] mb-3">{tt('קוד QR לחדר', 'Room QR code')}</div>
                   <img src={api.guestQrUrl(form.slug, PUBLIC_ORIGIN)} alt="QR" className="w-40 h-40 mx-auto rounded-lg border border-[var(--color-moca-border)]" />
-                  <button onClick={downloadQr} className="mt-3 w-full px-3 py-2 rounded-xl bg-[var(--color-moca-cream)] text-[var(--color-moca-bolt)] font-bold text-sm hover:opacity-90">הורדת SVG להדפסה</button>
+                  <button onClick={downloadQr} className="mt-3 w-full px-3 py-2 rounded-xl bg-[var(--color-moca-cream)] text-[var(--color-moca-bolt)] font-bold text-sm hover:opacity-90">{tt('הורדת SVG להדפסה', 'Download SVG for print')}</button>
                   <div className="text-[11px] text-[var(--color-moca-muted)] mt-2 break-all">{portalUrl}</div>
                 </div>
 
                 <div className="bg-white rounded-2xl border border-[var(--color-moca-border)] shadow-sm p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="text-sm font-extrabold text-[var(--color-moca-dark)]">אנליטיקה (אנונימי)</div>
+                    <div className="text-sm font-extrabold text-[var(--color-moca-dark)]">{tt('אנליטיקה (אנונימי)', 'Analytics (anonymous)')}</div>
                     <select className="text-sm border border-[var(--color-moca-border)] rounded-lg px-2 py-1 bg-white"
                       value={days} onChange={(e) => setDays(+e.target.value)}>
-                      <option value={7}>7 ימים</option>
-                      <option value={30}>30 ימים</option>
-                      <option value={90}>90 ימים</option>
-                      <option value={0}>מאז ומתמיד</option>
+                      <option value={7}>{tt('7 ימים', '7 days')}</option>
+                      <option value={30}>{tt('30 ימים', '30 days')}</option>
+                      <option value={90}>{tt('90 ימים', '90 days')}</option>
+                      <option value={0}>{tt('מאז ומתמיד', 'All time')}</option>
                     </select>
                   </div>
                   {!analytics ? (
-                    <div className="text-sm text-[var(--color-moca-sub)]">טוען…</div>
+                    <div className="text-sm text-[var(--color-moca-sub)]">{tt('טוען…', 'Loading…')}</div>
                   ) : (
                     <>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <Stat label="פתיחות" value={analytics.funnel.opens} />
-                        <Stat label="סריקות QR" value={analytics.totals.scan} />
-                        <Stat label="השוואות" value={analytics.funnel.engaged} />
-                        <Stat label="רכישות (קליקים)" value={analytics.funnel.clicks} accent="var(--color-moca-down)" />
+                        <Stat label={tt('פתיחות', 'Opens')} value={analytics.funnel.opens} />
+                        <Stat label={tt('סריקות QR', 'QR scans')} value={analytics.totals.scan} />
+                        <Stat label={tt('השוואות', 'Comparisons')} value={analytics.funnel.engaged} />
+                        <Stat label={tt('רכישות (קליקים)', 'Purchases (clicks)')} value={analytics.funnel.clicks} accent="var(--color-moca-down)" />
                       </div>
                       <FunnelRow f={analytics.funnel} />
                       <div className="grid sm:grid-cols-2 gap-4 mt-4">
-                        <MiniBars title="ספקים מובילים (קליקים)" rows={analytics.by_provider.map((p) => ({ label: p.provider, n: p.clicks }))} empty="אין קליקים עדיין" />
-                        <MiniBars title="שפת אורחים" rows={analytics.by_lang.map((p) => ({ label: p.lang, n: p.count }))} empty="אין נתונים עדיין" />
+                        <MiniBars title={tt('ספקים מובילים (קליקים)', 'Top providers (clicks)')} rows={analytics.by_provider.map((p) => ({ label: p.provider, n: p.clicks }))} empty={tt('אין קליקים עדיין', 'No clicks yet')} />
+                        <MiniBars title={tt('שפת אורחים', 'Guest language')} rows={analytics.by_lang.map((p) => ({ label: p.lang, n: p.count }))} empty={tt('אין נתונים עדיין', 'No data yet')} />
                       </div>
                     </>
                   )}
@@ -319,7 +321,7 @@ export default function HotelsAdminPage() {
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-[var(--color-moca-border)] shadow-sm p-10 text-center text-[var(--color-moca-sub)]">
-            בחרו פורטל מהרשימה או צרו פורטל חדש כדי להתחיל.
+            {tt('בחרו פורטל מהרשימה או צרו פורטל חדש כדי להתחיל.', 'Select a portal from the list or create a new one to get started.')}
           </div>
         )}
       </div>
@@ -351,9 +353,10 @@ function ColorInput({ value, onChange }) {
 }
 
 function FunnelRow({ f }) {
+  const { tt } = useLang()
   const max = Math.max(f.opens, 1)
   const rows = [
-    { l: 'פתיחות', n: f.opens }, { l: 'השוואות', n: f.engaged }, { l: 'רכישות', n: f.clicks },
+    { l: tt('פתיחות', 'Opens'), n: f.opens }, { l: tt('השוואות', 'Comparisons'), n: f.engaged }, { l: tt('רכישות', 'Purchases'), n: f.clicks },
   ]
   return (
     <div className="mt-4 space-y-2">

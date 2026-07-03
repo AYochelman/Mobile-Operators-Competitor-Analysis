@@ -16,6 +16,7 @@ import {
 } from '../components/moca'
 import { getCarrierColor, getCarrierName } from '../components/moca/carrierMeta'
 import Spinner from '../components/ui/Spinner'
+import { useLang } from '../hooks/useLanguage'
 
 /**
  * Editorial Deep dashboard — the new "/" route per the design's flagship
@@ -43,6 +44,16 @@ const FILTERS = [
   { id: 'all',     label: 'הכל',             predicate: () => true },
 ]
 
+// English labels for the filter pills, keyed by FILTERS id (the Hebrew lives in
+// FILTERS.label so the array stays the single source of ids/predicates).
+const FILTER_LABELS_EN = {
+  new: 'New plans',
+  price: 'Price changes',
+  extras: 'Benefits changes',
+  removed: 'Removed plans',
+  all: 'All',
+}
+
 function isPriceUp(c) {
   if (c?.change_type !== 'price_change') return false
   return Number(c.new_val) > Number(c.old_val)
@@ -55,14 +66,14 @@ function priceImpact(c) {
   if (!Number.isFinite(o) || !Number.isFinite(n) || o <= 0) return 0
   return Math.abs((n - o) / o) * 100
 }
-function fmtAgo(iso) {
+function fmtAgo(iso, tt) {
   if (!iso) return ''
   const ms = Date.now() - new Date(iso).getTime()
   const h = Math.floor(ms / (60 * 60 * 1000))
-  if (h < 1) return 'הרגע'
-  if (h < 24) return `לפני ${h} שעות`
+  if (h < 1) return tt('הרגע', 'just now')
+  if (h < 24) return tt(`לפני ${h} שעות`, `${h} hours ago`)
   const d = Math.floor(h / 24)
-  return d === 1 ? 'אתמול' : `לפני ${d} ימים`
+  return d === 1 ? tt('אתמול', 'yesterday') : tt(`לפני ${d} ימים`, `${d} days ago`)
 }
 
 /**
@@ -246,6 +257,7 @@ function BenefitDiffRows({ diff }) {
 
 /** Recent-changes feed with filter pills. */
 function ChangeFeed({ changes, onItemClick }) {
+  const { tt } = useLang()
   const [filter, setFilter] = useState('new')
 
   // Enrich extras_change rows with a material (noise-suppressed) diff and drop
@@ -288,9 +300,9 @@ function ChangeFeed({ changes, onItemClick }) {
             margin: 0,
           }}
         >
-          שינויים אחרונים
+          {tt('שינויים אחרונים', 'Recent changes')}
         </h2>
-        <span style={{ fontSize: 11, color: 'var(--color-moca-muted)' }}>לחץ על כל שורה לפרטים</span>
+        <span style={{ fontSize: 11, color: 'var(--color-moca-muted)' }}>{tt('לחץ על כל שורה לפרטים', 'Click any row for details')}</span>
       </header>
 
       {/* Filter pills */}
@@ -317,7 +329,7 @@ function ChangeFeed({ changes, onItemClick }) {
                 gap: 4,
               }}
             >
-              {f.label}
+              {tt(f.label, FILTER_LABELS_EN[f.id])}
               <span className="tnum" style={{ opacity: 0.7, fontSize: 10 }}>· {matches}</span>
             </button>
           )
@@ -328,7 +340,7 @@ function ChangeFeed({ changes, onItemClick }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {filtered.length === 0 && (
           <div style={{ padding: '20px 12px', textAlign: 'center', color: 'var(--color-moca-muted)', fontSize: 13 }}>
-            אין שינויים בקטגוריה זו
+            {tt('אין שינויים בקטגוריה זו', 'No changes in this category')}
           </div>
         )}
         {filtered.map(({ c, diff }, i) => {
@@ -363,17 +375,17 @@ function ChangeFeed({ changes, onItemClick }) {
                   <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-moca-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '1 1 0%' }}>
                     {c.plan_name}
                   </span>
-                  {c.scope === 'abroad' && <Tag color="var(--color-moca-sub)">{'חו"ל'}</Tag>}
+                  {c.scope === 'abroad' && <Tag color="var(--color-moca-sub)">{tt('חו"ל', 'Roaming')}</Tag>}
                   {isHot && <Tag color="var(--color-moca-hot)">HOT</Tag>}
                   {isNew && <Tag color="var(--color-moca-down)">NEW</Tag>}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--color-moca-muted)' }}>
-                  {c.change_type === 'price_change' && (isUp ? 'עליית מחיר' : 'ירידת מחיר')}
-                  {c.change_type === 'new_plan' && 'מסלול חדש'}
-                  {c.change_type === 'removed_plan' && 'הוסר'}
-                  {c.change_type === 'extras_change' && 'שינוי הטבות'}
-                  {c.change_type === 'details_change' && `שינוי פרטים — ${c.old_val} ← ${c.new_val}`}
-                  <span className="md:hidden" style={{ marginInlineStart: 6, opacity: 0.7 }}>· {fmtAgo(c.changed_at)}</span>
+                  {c.change_type === 'price_change' && (isUp ? tt('עליית מחיר', 'Price increase') : tt('ירידת מחיר', 'Price drop'))}
+                  {c.change_type === 'new_plan' && tt('מסלול חדש', 'New plan')}
+                  {c.change_type === 'removed_plan' && tt('הוסר', 'Removed')}
+                  {c.change_type === 'extras_change' && tt('שינוי הטבות', 'Benefits change')}
+                  {c.change_type === 'details_change' && `${tt('שינוי פרטים', 'Details change')} — ${c.old_val} ← ${c.new_val}`}
+                  <span className="md:hidden" style={{ marginInlineStart: 6, opacity: 0.7 }}>· {fmtAgo(c.changed_at, tt)}</span>
                 </div>
                 {c.change_type === 'extras_change' && <BenefitDiffRows diff={diff} />}
               </div>
@@ -390,7 +402,7 @@ function ChangeFeed({ changes, onItemClick }) {
                 )}
               </div>
               <div className="hidden md:block" style={{ fontSize: 10.5, color: 'var(--color-moca-muted)', textAlign: 'left' }}>
-                {fmtAgo(c.changed_at)}
+                {fmtAgo(c.changed_at, tt)}
               </div>
             </button>
           )
@@ -402,6 +414,7 @@ function ChangeFeed({ changes, onItemClick }) {
 
 /** Watchlist sidebar — shows the user's pinned plans. */
 function WatchlistSidebar({ plans }) {
+  const { tt } = useLang()
   const { items } = useWatchlist()
   if (!items || items.length === 0) {
     return (
@@ -419,7 +432,7 @@ function WatchlistSidebar({ plans }) {
           ★ Watchlist
         </div>
         <p style={{ fontSize: 12, color: 'var(--color-moca-sub)', margin: 0 }}>
-          אין מסלולים במעקב. סמן ★ על מסלול בעמוד "השוואת מסלולים" כדי להוסיף.
+          {tt('אין מסלולים במעקב. סמן ★ על מסלול בעמוד "השוואת מסלולים" כדי להוסיף.', 'No plans on your watchlist. Star ★ a plan on the "Plan comparison" page to add it.')}
         </p>
       </section>
     )
@@ -482,6 +495,7 @@ function WatchlistSidebar({ plans }) {
  *    do; they can't change mvno_carrier without a super_admin's help).
  *  - Without carrier (viewer): hidden (no dead CTA). */
 function OursPinned({ carrierId, isAdmin, isSuperAdmin, onOpenCarrierModal }) {
+  const { tt } = useLang()
   const navigate = useNavigate()
 
   // Same fixed positioning for both states. RTL: insetInlineStart = right edge.
@@ -512,8 +526,8 @@ function OursPinned({ carrierId, isAdmin, isSuperAdmin, onOpenCarrierModal }) {
       ? () => onOpenCarrierModal && onOpenCarrierModal()
       : () => navigate('/workspace/settings')
     const titleText = isSuperAdmin
-      ? 'בחר את הספק שלי — נשמר ל-workspace.mvno_carrier'
-      : 'הגדר את הספק שלי בעמוד מיתוג (דורש super_admin)'
+      ? tt('בחר את הספק שלי — נשמר ל-workspace.mvno_carrier', 'Choose my carrier — saved to workspace.mvno_carrier')
+      : tt('הגדר את הספק שלי בעמוד מיתוג (דורש super_admin)', 'Set my carrier on the branding page (requires super_admin)')
     return (
       <button
         type="button"
@@ -542,10 +556,10 @@ function OursPinned({ carrierId, isAdmin, isSuperAdmin, onOpenCarrierModal }) {
         </span>
         <div>
           <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--color-moca-bolt)' }}>
-            הגדר ספק שלי
+            {tt('הגדר ספק שלי', 'Set my carrier')}
           </div>
           <div style={{ fontSize: 9.5, color: 'var(--color-moca-muted)', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>
-            לחץ להגדרה
+            {tt('לחץ להגדרה', 'Click to set')}
           </div>
         </div>
       </button>
@@ -560,7 +574,7 @@ function OursPinned({ carrierId, isAdmin, isSuperAdmin, onOpenCarrierModal }) {
           {getCarrierName(carrierId)}
         </div>
         <div style={{ fontSize: 9.5, color: 'var(--color-moca-muted)', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>
-          הספק שלי
+          {tt('הספק שלי', 'My carrier')}
         </div>
       </div>
     </div>
@@ -568,6 +582,7 @@ function OursPinned({ carrierId, isAdmin, isSuperAdmin, onOpenCarrierModal }) {
 }
 
 export default function EditorialDashboardPage() {
+  const { tt } = useLang()
   const { workspace, isAdmin, isSuperAdmin } = useAuth()
   const flags = useFeatureFlags()
   const navigate = useNavigate()
@@ -621,30 +636,30 @@ export default function EditorialDashboardPage() {
         {/* KPI strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KpiCard
-            label="שינויים היום"
+            label={tt('שינויים היום', 'Changes today')}
             value={kpis.changesToday}
             delta={kpis.changesDelta}
           />
           <KpiCard
-            label="מחיר ממוצע"
+            label={tt('מחיר ממוצע', 'Average price')}
             value={kpis.avgPrice != null ? `${kpis.avgPrice}₪` : '—'}
             delta={kpis.avgPriceDelta}
             neutral={kpis.avgPriceDelta == null}
           />
           <KpiCard
-            label="מסלולים חדשים · שבוע"
+            label={tt('מסלולים חדשים · שבוע', 'New plans · week')}
             value={kpis.newPlans}
             delta={kpis.newPlansDelta}
           />
           {oursCarrier && kpis.oursVsMarketPct != null ? (
             <KpiCard
-              label={`${getCarrierName(oursCarrier)} vs שוק`}
+              label={`${getCarrierName(oursCarrier)} ${tt('vs שוק', 'vs market')}`}
               value={`${kpis.oursVsMarketPct > 0 ? '+' : ''}${kpis.oursVsMarketPct}%`}
               neutral
               accent={kpis.oursVsMarketPct > 0 ? 'var(--color-moca-up)' : 'var(--color-moca-down)'}
             />
           ) : (
-            <KpiCard label="ספק שלך" value="—" neutral note="הגדר workspace.mvno_carrier" />
+            <KpiCard label={tt('ספק שלך', 'Your carrier')} value="—" neutral note={tt('הגדר workspace.mvno_carrier', 'Set workspace.mvno_carrier')} />
           )}
         </div>
 

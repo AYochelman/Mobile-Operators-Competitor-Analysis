@@ -1,12 +1,20 @@
 import { useState, useEffect, useCallback } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { api } from '../lib/api'
+import { useLang } from '../hooks/useLanguage'
 
 const ENDPOINT_LABELS = {
   chat:              'צ׳אט AI',
   history_analyze:   'ניתוח היסטוריה',
   executive_summary: 'דוח מנהלים',
   social_sentiment:  'סנטימנט חברתי',
+}
+
+const ENDPOINT_LABELS_EN = {
+  chat:              'AI Chat',
+  history_analyze:   'History analysis',
+  executive_summary: 'Executive report',
+  social_sentiment:  'Social sentiment',
 }
 
 const MODEL_LABELS = {
@@ -39,19 +47,19 @@ function fmtTok(n) {
   return String(n)
 }
 
-function fmtDays(n) {
+function fmtDays(n, tt = (he) => he) {
   if (n == null) return '—'
-  if (n <= 0)    return 'נוצל'
-  if (n < 1)     return 'פחות מיום'
-  if (n >= 365)  return `~${(n / 365).toFixed(1)} שנים`
-  if (n >= 60)   return `~${Math.round(n / 30)} חודשים`
-  return `~${Math.round(n)} ימים`
+  if (n <= 0)    return tt('נוצל', 'Depleted')
+  if (n < 1)     return tt('פחות מיום', 'Less than a day')
+  if (n >= 365)  return `~${(n / 365).toFixed(1)} ${tt('שנים', 'years')}`
+  if (n >= 60)   return `~${Math.round(n / 30)} ${tt('חודשים', 'months')}`
+  return `~${Math.round(n)} ${tt('ימים', 'days')}`
 }
 
-function fmtDateHe(iso) {
+function fmtDateHe(iso, locale = 'he-IL') {
   if (!iso) return ''
   try {
-    return new Date(`${iso}T00:00:00`).toLocaleDateString('he-IL', {
+    return new Date(`${iso}T00:00:00`).toLocaleDateString(locale, {
       day: 'numeric', month: 'long', year: 'numeric',
     })
   } catch {
@@ -78,6 +86,7 @@ function StatCard({ label, value, sub }) {
 }
 
 function BreakdownTable({ title, rows, labelKey, labelMap }) {
+  const { tt } = useLang()
   const total = rows.reduce((s, r) => s + (r.cost_usd || 0), 0)
   return (
     <div className="rounded-xl border border-moca-border bg-white overflow-hidden">
@@ -85,7 +94,7 @@ function BreakdownTable({ title, rows, labelKey, labelMap }) {
         <h3 className="text-sm font-bold" style={{ color: 'var(--color-moca-dark)' }}>{title}</h3>
       </div>
       {rows.length === 0 ? (
-        <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>אין נתונים</p>
+        <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>{tt('אין נתונים', 'No data')}</p>
       ) : (
         <table className="w-full text-sm">
           <tbody>
@@ -97,7 +106,7 @@ function BreakdownTable({ title, rows, labelKey, labelMap }) {
                     {labelMap[r[labelKey]] || r[labelKey]}
                   </td>
                   <td className="px-4 py-2.5 text-end tnum" style={{ color: 'var(--color-moca-sub)' }}>
-                    {r.calls} קריאות
+                    {r.calls} {tt('קריאות', 'calls')}
                   </td>
                   <td className="px-4 py-2.5 text-end tnum font-semibold" style={{ color: 'var(--color-moca-dark)' }}>
                     {fmtUSD(r.cost_usd)}
@@ -116,14 +125,15 @@ function BreakdownTable({ title, rows, labelKey, labelMap }) {
 }
 
 function OfficialSpend({ official, windowDays }) {
+  const { tt } = useLang()
   if (!official) return null
-  const windowLbl = windowDays === 0 ? 'כל התקופה' : `${windowDays || 30} הימים האחרונים`
+  const windowLbl = windowDays === 0 ? tt('כל התקופה', 'All time') : `${windowDays || 30} ${tt('הימים האחרונים', 'days')}`
 
   if (!official.configured) {
     return (
       <div className="mb-4 rounded-lg p-3 text-xs leading-relaxed" style={{ background: 'var(--color-moca-mist)', color: 'var(--color-moca-sub)' }}>
-        💡 להצגת <span className="font-semibold">הוצאה רשמית מ-Anthropic</span>: הוסף ל-config.json את{' '}
-        <code className="font-mono">anthropic_admin_key</code> (מפתח Admin של ארגון, <code className="font-mono">sk-ant-admin…</code> — לא זמין לחשבון יחיד) והפעל מחדש את Flask. זו הוצאה, לא יתרה.
+        💡 {tt('להצגת', 'To display')} <span className="font-semibold">{tt('הוצאה רשמית מ-Anthropic', 'official spend from Anthropic')}</span>: {tt('הוסף ל-config.json את', 'add to config.json the')}{' '}
+        <code className="font-mono">anthropic_admin_key</code> ({tt('מפתח Admin של ארגון,', 'organization Admin key,')} <code className="font-mono">sk-ant-admin…</code> — {tt('לא זמין לחשבון יחיד) והפעל מחדש את Flask. זו הוצאה, לא יתרה.', 'not available for individual accounts), then restart Flask. This is spend, not balance.')}
       </div>
     )
   }
@@ -131,8 +141,8 @@ function OfficialSpend({ official, windowDays }) {
     const auth = official.status === 401 || official.status === 403
     return (
       <div className="mb-4 rounded-lg p-3 text-xs leading-relaxed" style={{ background: 'var(--color-moca-mist)', color: 'var(--color-moca-up)' }}>
-        ⚠️ לא ניתן למשוך הוצאה רשמית מ-Anthropic ({official.error || 'שגיאה'}).
-        {auth && ' המפתח אינו תקין או שאין הרשאת ארגון — חשבונות יחיד לא תומכים ב-Admin API.'}
+        ⚠️ {tt('לא ניתן למשוך הוצאה רשמית מ-Anthropic', 'Could not fetch official spend from Anthropic')} ({official.error || tt('שגיאה', 'error')}).
+        {auth && tt(' המפתח אינו תקין או שאין הרשאת ארגון — חשבונות יחיד לא תומכים ב-Admin API.', ' The key is invalid or lacks organization permission — individual accounts do not support the Admin API.')}
       </div>
     )
   }
@@ -140,7 +150,7 @@ function OfficialSpend({ official, windowDays }) {
     <div className="mb-4 rounded-lg p-3 flex items-center justify-between gap-3" style={{ background: 'var(--color-moca-mist)' }}>
       <div className="text-right">
         <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-moca-muted)' }}>
-          הוצאה רשמית · Anthropic
+          {tt('הוצאה רשמית · Anthropic', 'Official spend · Anthropic')}
         </div>
         <div className="text-xs mt-0.5" style={{ color: 'var(--color-moca-sub)' }}>{windowLbl}</div>
       </div>
@@ -152,6 +162,8 @@ function OfficialSpend({ official, windowDays }) {
 }
 
 function BudgetPanel({ budget, official, windowDays, onSave }) {
+  const { tt, lang } = useLang()
+  const dateLocale = lang === 'he' ? 'he-IL' : 'en-US'
   const configured = !!budget?.configured
   const [editing, setEditing] = useState(!configured)
   const [total, setTotal]     = useState(budget?.total_usd ?? '')
@@ -171,7 +183,7 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
       await onSave(clear ? null : Number(total), clear ? null : (asOf || null))
       setEditing(clear)  // after a clear, reopen the setup form; after save, close it
     } catch (e) {
-      setErr(e?.message || 'שגיאה בשמירה')
+      setErr(e?.message || tt('שגיאה בשמירה', 'Error saving'))
     } finally {
       setBusy(false)
     }
@@ -182,7 +194,7 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
   const barColor  = pct >= 85 ? 'var(--color-moca-up)'
                   : pct >= 60 ? 'var(--color-moca-hot)'
                   :             'var(--color-moca-down)'
-  const windowLbl = fc.window_days === 0 ? 'כל התקופה' : `${fc.window_days || 30} הימים האחרונים`
+  const windowLbl = fc.window_days === 0 ? tt('כל התקופה', 'All time') : `${fc.window_days || 30} ${tt('הימים האחרונים', 'days')}`
 
   // ── setup / edit form ──
   if (editing) {
@@ -190,24 +202,24 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
       <div className="rounded-xl border border-moca-border bg-white p-5">
         <OfficialSpend official={official} windowDays={windowDays} />
         <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--color-moca-dark)' }}>
-          {configured ? 'עריכת תקציב' : 'הגדרת תקציב Claude'}
+          {configured ? tt('עריכת תקציב', 'Edit budget') : tt('הגדרת תקציב Claude', 'Set Claude budget')}
         </h3>
         <p className="text-xs mb-4" style={{ color: 'var(--color-moca-sub)' }}>
-          הזן את סכום הקרדיט שטענת ב-Anthropic (USD). היתרה תחושב אוטומטית בהפחתת כל השימוש שתועד מקומית.
+          {tt('הזן את סכום הקרדיט שטענת ב-Anthropic (USD). היתרה תחושב אוטומטית בהפחתת כל השימוש שתועד מקומית.', 'Enter the credit amount you topped up at Anthropic (USD). The balance is computed automatically by subtracting all locally-logged usage.')}
         </p>
         <div className="flex flex-wrap items-end gap-3">
           <label className="block text-right">
-            <span className="block text-xs font-semibold mb-1" style={{ color: 'var(--color-moca-muted)' }}>תקציב כולל ($)</span>
+            <span className="block text-xs font-semibold mb-1" style={{ color: 'var(--color-moca-muted)' }}>{tt('תקציב כולל ($)', 'Total budget ($)')}</span>
             <input
               type="number" min="0" step="0.01" value={total}
               onChange={(e) => setTotal(e.target.value)}
-              placeholder="לדוגמה: 50"
+              placeholder={tt('לדוגמה: 50', 'e.g. 50')}
               className="w-36 rounded-lg border border-moca-border px-3 py-2 text-sm tnum"
               style={{ background: 'var(--color-moca-mist)', color: 'var(--color-moca-dark)' }}
             />
           </label>
           <label className="block text-right">
-            <span className="block text-xs font-semibold mb-1" style={{ color: 'var(--color-moca-muted)' }}>ספירה מתאריך (אופציונלי)</span>
+            <span className="block text-xs font-semibold mb-1" style={{ color: 'var(--color-moca-muted)' }}>{tt('ספירה מתאריך (אופציונלי)', 'Count from date (optional)')}</span>
             <input
               type="date" value={asOf || ''}
               onChange={(e) => setAsOf(e.target.value)}
@@ -221,7 +233,7 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
             className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
             style={{ background: 'var(--color-moca-bolt)', color: '#fff' }}
           >
-            {busy ? 'שומר…' : 'שמירה'}
+            {busy ? tt('שומר…', 'Saving…') : tt('שמירה', 'Save')}
           </button>
           {configured && (
             <>
@@ -230,20 +242,20 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
                 className="px-3 py-2 rounded-lg text-sm font-semibold border border-moca-border"
                 style={{ color: 'var(--color-moca-sub)', background: 'var(--color-moca-mist)' }}
               >
-                ביטול
+                {tt('ביטול', 'Cancel')}
               </button>
               <button
                 onClick={() => submit(true)} disabled={busy}
                 className="px-3 py-2 rounded-lg text-sm font-semibold"
                 style={{ color: 'var(--color-moca-up)' }}
               >
-                נקה תקציב
+                {tt('נקה תקציב', 'Clear budget')}
               </button>
             </>
           )}
         </div>
         <p className="text-[11px] mt-3" style={{ color: 'var(--color-moca-muted)' }}>
-          תאריך הספירה שימושי אחרי טעינת קרדיט מחדש — השימוש נספר רק ממנו והלאה. ל-Anthropic אין API ליתרה; הסכום הרשמי ב-console.anthropic.com/settings/billing.
+          {tt('תאריך הספירה שימושי אחרי טעינת קרדיט מחדש — השימוש נספר רק ממנו והלאה. ל-Anthropic אין API ליתרה; הסכום הרשמי ב-console.anthropic.com/settings/billing.', 'The count-from date is useful after a credit top-up — usage is only counted from it onward. Anthropic has no balance API; the official amount is at console.anthropic.com/settings/billing.')}
         </p>
         {err && <p className="text-xs mt-2 text-red-600">{err}</p>}
       </div>
@@ -258,14 +270,14 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
       <div className="flex items-start justify-between gap-3">
         <div className="text-right">
           <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-moca-muted)' }}>
-            יתרת תקציב
+            {tt('יתרת תקציב', 'Budget balance')}
           </div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-3xl font-bold tnum" style={{ color: 'var(--color-moca-dark)' }}>
               {fmtUSD(budget.remaining_usd)}
             </span>
             <span className="text-sm" style={{ color: 'var(--color-moca-sub)' }}>
-              מתוך {fmtUSD(budget.total_usd)}
+              {tt('מתוך', 'of')} {fmtUSD(budget.total_usd)}
             </span>
           </div>
         </div>
@@ -274,7 +286,7 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
           className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-moca-border shrink-0"
           style={{ color: 'var(--color-moca-sub)', background: 'var(--color-moca-mist)' }}
         >
-          ערוך
+          {tt('ערוך', 'Edit')}
         </button>
       </div>
 
@@ -283,28 +295,28 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
         <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, background: barColor }} />
       </div>
       <div className="mt-1.5 flex items-center justify-between text-xs" style={{ color: 'var(--color-moca-sub)' }}>
-        <span className="tnum">נוצל {fmtUSD(budget.spent_usd)} ({pct}%)</span>
-        {budget.as_of && <span>נספר מ-{fmtDateHe(budget.as_of)}</span>}
+        <span className="tnum">{tt('נוצל', 'Used')} {fmtUSD(budget.spent_usd)} ({pct}%)</span>
+        {budget.as_of && <span>{tt('נספר מ-', 'Counted from ')}{fmtDateHe(budget.as_of, dateLocale)}</span>}
       </div>
 
       {/* depletion forecast */}
       <div className="mt-4 pt-4 border-t border-moca-border flex flex-wrap items-baseline gap-x-6 gap-y-1.5">
         <div className="text-right">
           <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-moca-muted)' }}>
-            זמן לסיום היתרה
+            {tt('זמן לסיום היתרה', 'Time to depletion')}
           </div>
           <div
             className="mt-0.5 text-xl font-bold"
             style={{ color: noForecast ? 'var(--color-moca-muted)' : (fc.days_left <= 14 ? 'var(--color-moca-up)' : 'var(--color-moca-dark)') }}
           >
-            {noForecast ? 'אין מספיק נתונים' : fmtDays(fc.days_left)}
+            {noForecast ? tt('אין מספיק נתונים', 'Not enough data') : fmtDays(fc.days_left, tt)}
           </div>
         </div>
         {!noForecast && (
           <div className="text-xs" style={{ color: 'var(--color-moca-sub)' }}>
-            בקצב {windowLbl} (~{fmtUSD(fc.daily_burn_usd)} ליום)
+            {tt('בקצב', 'At the pace of')} {windowLbl} (~{fmtUSD(fc.daily_burn_usd)} {tt('ליום', 'per day')})
             {fc.depletion_date && fc.days_left > 0 && (
-              <> · צפי לסיום בתאריך <span className="font-semibold" style={{ color: 'var(--color-moca-text)' }}>{fmtDateHe(fc.depletion_date)}</span></>
+              <> · {tt('צפי לסיום בתאריך', 'projected depletion on')} <span className="font-semibold" style={{ color: 'var(--color-moca-text)' }}>{fmtDateHe(fc.depletion_date, dateLocale)}</span></>
             )}
           </div>
         )}
@@ -314,6 +326,12 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
 }
 
 export default function UsagePage() {
+  const { tt } = useLang()
+  const WINDOW_LABELS = {
+    7: tt('7 ימים', '7 days'), 30: tt('30 ימים', '30 days'),
+    90: tt('90 ימים', '90 days'), 0: tt('הכל', 'All'),
+  }
+  const endpointLabel = (id) => tt(ENDPOINT_LABELS[id] || id, ENDPOINT_LABELS_EN[id] || id)
   const [days, setDays]       = useState(30)
   const [summary, setSummary] = useState(null)
   const [recent, setRecent]   = useState([])
@@ -334,11 +352,11 @@ export default function UsagePage() {
       setRecent(r.calls || [])
       setOfficial(oc)
     } catch (e) {
-      setError(e.message || 'שגיאה')
+      setError(e.message || tt('שגיאה', 'Error'))
     } finally {
       setLoading(false)
     }
-  }, [days])
+  }, [days, tt])
 
   useEffect(() => { load() }, [load])
 
@@ -348,10 +366,10 @@ export default function UsagePage() {
   }, [load])
 
   if (loading) {
-    return <div className="p-6 text-sm" style={{ color: 'var(--color-moca-muted)' }}>טוען…</div>
+    return <div className="p-6 text-sm" style={{ color: 'var(--color-moca-muted)' }}>{tt('טוען…', 'Loading…')}</div>
   }
   if (error) {
-    return <div className="p-6 text-sm text-red-600">שגיאה: {error}</div>
+    return <div className="p-6 text-sm text-red-600">{tt('שגיאה:', 'Error:')} {error}</div>
   }
 
   const total = summary?.total || {}
@@ -371,7 +389,7 @@ export default function UsagePage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <p className="text-sm" style={{ color: 'var(--color-moca-sub)' }}>
-            מעקב מקומי על שימוש ב-Anthropic API. עלות מחושבת לפי מחירון Anthropic (USD).
+            {tt('מעקב מקומי על שימוש ב-Anthropic API. עלות מחושבת לפי מחירון Anthropic (USD).', 'Local tracking of Anthropic API usage. Cost is computed per Anthropic pricing (USD).')}
           </p>
         </div>
         <div className="flex items-center gap-1.5">
@@ -386,14 +404,14 @@ export default function UsagePage() {
                 border:     '1px solid var(--color-moca-border)',
               }}
             >
-              {w.label}
+              {WINDOW_LABELS[w.days] ?? w.label}
             </button>
           ))}
           <button
             onClick={load}
             className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-moca-border"
             style={{ color: 'var(--color-moca-sub)', background: 'var(--color-moca-mist)' }}
-            title="רענן"
+            title={tt('רענן', 'Refresh')}
           >
             ↻
           </button>
@@ -406,33 +424,33 @@ export default function UsagePage() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
-          label="עלות מצטברת"
+          label={tt('עלות מצטברת', 'Total cost')}
           value={fmtUSD(total.cost_usd)}
-          sub={`${total.calls || 0} קריאות`}
+          sub={`${total.calls || 0} ${tt('קריאות', 'calls')}`}
         />
         <StatCard
-          label="טוקני קלט"
+          label={tt('טוקני קלט', 'Input tokens')}
           value={fmtTok(totalInputTokens)}
-          sub={`כולל ${fmtTok(total.cache_read_tokens)} מ-cache`}
+          sub={`${tt('כולל', 'incl.')} ${fmtTok(total.cache_read_tokens)} ${tt('מ-cache', 'from cache')}`}
         />
         <StatCard
-          label="טוקני פלט"
+          label={tt('טוקני פלט', 'Output tokens')}
           value={fmtTok(total.output_tokens)}
         />
         <StatCard
-          label="חלון זמן"
-          value={summary?.window_days === 0 ? 'הכל' : `${summary?.window_days || 30} ימים`}
+          label={tt('חלון זמן', 'Time window')}
+          value={summary?.window_days === 0 ? tt('הכל', 'All') : `${summary?.window_days || 30} ${tt('ימים', 'days')}`}
         />
       </div>
 
       {/* Daily chart */}
       <div className="rounded-xl border border-moca-border bg-white p-4">
         <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--color-moca-dark)' }}>
-          עלות יומית
+          {tt('עלות יומית', 'Daily cost')}
         </h3>
         {chartData.length === 0 ? (
           <p className="text-sm py-8 text-center" style={{ color: 'var(--color-moca-muted)' }}>
-            עדיין אין נתוני שימוש. הקריאות הבאות לצ׳אט / ניתוח היסטוריה / scheduler יירשמו אוטומטית.
+            {tt('עדיין אין נתוני שימוש. הקריאות הבאות לצ׳אט / ניתוח היסטוריה / scheduler יירשמו אוטומטית.', 'No usage data yet. The next calls to chat / history analysis / scheduler will be logged automatically.')}
           </p>
         ) : (
           <div style={{ width: '100%', height: 260, direction: 'ltr' }}>
@@ -442,7 +460,7 @@ export default function UsagePage() {
                 <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'var(--color-moca-sub)' }} />
                 <YAxis tick={{ fontSize: 11, fill: 'var(--color-moca-sub)' }} tickFormatter={(v) => `$${v}`} />
                 <Tooltip
-                  formatter={(v, name) => name === 'cost' ? [`$${v}`, 'עלות'] : [v, 'קריאות']}
+                  formatter={(v, name) => name === 'cost' ? [`$${v}`, tt('עלות', 'Cost')] : [v, tt('קריאות', 'Calls')]}
                   contentStyle={{
                     background: '#fff',
                     border: '1px solid var(--color-moca-border)',
@@ -460,16 +478,16 @@ export default function UsagePage() {
       {/* Breakdowns */}
       <div className="grid md:grid-cols-2 gap-4">
         <BreakdownTable
-          title="פילוח לפי מודל"
+          title={tt('פילוח לפי מודל', 'Breakdown by model')}
           rows={summary?.by_model || []}
           labelKey="model"
           labelMap={MODEL_LABELS}
         />
         <BreakdownTable
-          title="פילוח לפי endpoint"
+          title={tt('פילוח לפי endpoint', 'Breakdown by endpoint')}
           rows={summary?.by_endpoint || []}
           labelKey="endpoint"
-          labelMap={ENDPOINT_LABELS}
+          labelMap={Object.fromEntries(Object.keys(ENDPOINT_LABELS).map((k) => [k, endpointLabel(k)]))}
         />
       </div>
 
@@ -477,27 +495,27 @@ export default function UsagePage() {
       <div className="rounded-xl border border-moca-border bg-white overflow-hidden">
         <div className="px-4 py-3 border-b border-moca-border">
           <h3 className="text-sm font-bold" style={{ color: 'var(--color-moca-dark)' }}>
-            קריאות אחרונות {hasMoreRecent && !showAllRecent
-              ? `(${shownRecent.length} מתוך ${recent.length})`
+            {tt('קריאות אחרונות', 'Recent calls')} {hasMoreRecent && !showAllRecent
+              ? `(${shownRecent.length} ${tt('מתוך', 'of')} ${recent.length})`
               : `(${recent.length})`}
           </h3>
         </div>
         {recent.length === 0 ? (
-          <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>אין קריאות בטווח הזה</p>
+          <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>{tt('אין קריאות בטווח הזה', 'No calls in this range')}</p>
         ) : (
           <>
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[720px]">
               <thead style={{ background: 'var(--color-moca-mist)' }}>
                 <tr>
-                  <th className="px-3 py-2 text-start text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>זמן</th>
+                  <th className="px-3 py-2 text-start text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>{tt('זמן', 'Time')}</th>
                   <th className="px-3 py-2 text-start text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>endpoint</th>
-                  <th className="px-3 py-2 text-start text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>מודל</th>
-                  <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>קלט</th>
+                  <th className="px-3 py-2 text-start text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>{tt('מודל', 'Model')}</th>
+                  <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>{tt('קלט', 'Input')}</th>
                   <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>cache</th>
-                  <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>פלט</th>
-                  <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>עלות</th>
-                  <th className="px-3 py-2 text-start text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>משתמש</th>
+                  <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>{tt('פלט', 'Output')}</th>
+                  <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>{tt('עלות', 'Cost')}</th>
+                  <th className="px-3 py-2 text-start text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>{tt('משתמש', 'User')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -510,7 +528,7 @@ export default function UsagePage() {
                       })}
                     </td>
                     <td className="px-3 py-2" style={{ color: 'var(--color-moca-text)' }}>
-                      {ENDPOINT_LABELS[r.endpoint] || r.endpoint}
+                      {endpointLabel(r.endpoint)}
                     </td>
                     <td className="px-3 py-2 text-xs" style={{ color: 'var(--color-moca-sub)' }}>
                       {MODEL_LABELS[r.model] || r.model}
@@ -534,7 +552,7 @@ export default function UsagePage() {
                 className="text-xs font-semibold px-4 py-1.5 rounded-lg border border-moca-border transition-colors"
                 style={{ color: 'var(--color-moca-bolt)', background: 'var(--color-moca-mist)' }}
               >
-                {showAllRecent ? 'הצג פחות' : `הצג את כל ${recent.length} הקריאות`}
+                {showAllRecent ? tt('הצג פחות', 'Show less') : tt(`הצג את כל ${recent.length} הקריאות`, `Show all ${recent.length} calls`)}
               </button>
             </div>
           )}
@@ -544,15 +562,15 @@ export default function UsagePage() {
 
       {/* Pricing note */}
       <div className="rounded-xl border border-moca-border bg-white p-4 text-xs" style={{ color: 'var(--color-moca-sub)' }}>
-        <p className="mb-2 font-semibold" style={{ color: 'var(--color-moca-dark)' }}>הערה</p>
+        <p className="mb-2 font-semibold" style={{ color: 'var(--color-moca-dark)' }}>{tt('הערה', 'Note')}</p>
         <p>{summary?.note}</p>
         {summary?.pricing && (
           <details className="mt-3">
-            <summary className="cursor-pointer font-semibold" style={{ color: 'var(--color-moca-text)' }}>מחירון נוכחי ($ per 1M tokens)</summary>
+            <summary className="cursor-pointer font-semibold" style={{ color: 'var(--color-moca-text)' }}>{tt('מחירון נוכחי ($ per 1M tokens)', 'Current pricing ($ per 1M tokens)')}</summary>
             <table className="mt-2 text-xs">
               <thead>
                 <tr style={{ color: 'var(--color-moca-muted)' }}>
-                  <th className="text-start py-1 pe-4">מודל</th>
+                  <th className="text-start py-1 pe-4">{tt('מודל', 'Model')}</th>
                   <th className="text-end py-1 pe-4">input</th>
                   <th className="text-end py-1 pe-4">output</th>
                   <th className="text-end py-1 pe-4">cache read</th>

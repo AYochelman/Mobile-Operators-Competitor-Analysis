@@ -6,6 +6,7 @@ import {
 import Modal from './ui/Modal'
 import Spinner from './ui/Spinner'
 import { api } from '../lib/api'
+import { useLang } from '../hooks/useLanguage'
 
 function formatDate(iso) {
   if (!iso) return ''
@@ -23,6 +24,7 @@ function StatBox({ label, value, color = 'text-gray-800' }) {
 }
 
 export default function PriceHistoryModal({ open, onClose, carrier, planName, planType = 'domestic', currentPrice }) {
+  const { tt } = useLang()
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
   const [points, setPoints]   = useState([])
@@ -75,7 +77,7 @@ export default function PriceHistoryModal({ open, onClose, carrier, planName, pl
   }, [chartData, stats])
 
   return (
-    <Modal open={open} onClose={onClose} title="היסטוריית מחיר" maxWidth="max-w-2xl">
+    <Modal open={open} onClose={onClose} title={tt('היסטוריית מחיר', 'Price history')} maxWidth="max-w-2xl">
       <div className="mb-3">
         <p className="text-sm font-semibold text-gray-800">{planName}</p>
         <p className="text-xs text-gray-500 mt-0.5">{carrier}</p>
@@ -84,23 +86,23 @@ export default function PriceHistoryModal({ open, onClose, carrier, planName, pl
       {loading ? (
         <div className="py-10 flex justify-center"><Spinner /></div>
       ) : error ? (
-        <p className="text-sm text-red-600 py-6 text-center">שגיאה: {error}</p>
+        <p className="text-sm text-red-600 py-6 text-center">{tt('שגיאה:', 'Error:')} {error}</p>
       ) : chartData.length === 0 ? (
         <div className="py-8 text-center text-sm text-gray-500">
-          <p>אין שינויי מחיר מתועדים לתוכנית זו.</p>
+          <p>{tt('אין שינויי מחיר מתועדים לתוכנית זו.', 'No recorded price changes for this plan.')}</p>
           {currentPrice && (
-            <p className="mt-2 text-gray-400">מחיר נוכחי: <strong className="text-gray-700">₪{currentPrice}</strong></p>
+            <p className="mt-2 text-gray-400">{tt('מחיר נוכחי:', 'Current price:')} <strong className="text-gray-700">₪{currentPrice}</strong></p>
           )}
         </div>
       ) : (
         <>
           {stats && (
             <div className="grid grid-cols-4 gap-2 mb-4">
-              <StatBox label="מחיר נוכחי" value={`₪${stats.last.toFixed(2)}`} color="text-moca-espresso" />
-              <StatBox label="מינימום" value={`₪${stats.min.toFixed(2)}`} color="text-emerald-600" />
-              <StatBox label="מקסימום" value={`₪${stats.max.toFixed(2)}`} color="text-red-600" />
+              <StatBox label={tt('מחיר נוכחי', 'Current price')} value={`₪${stats.last.toFixed(2)}`} color="text-moca-espresso" />
+              <StatBox label={tt('מינימום', 'Minimum')} value={`₪${stats.min.toFixed(2)}`} color="text-emerald-600" />
+              <StatBox label={tt('מקסימום', 'Maximum')} value={`₪${stats.max.toFixed(2)}`} color="text-red-600" />
               <StatBox
-                label="שינוי מצטבר"
+                label={tt('שינוי מצטבר', 'Cumulative change')}
                 value={`${stats.delta >= 0 ? '+' : ''}${stats.deltaPct.toFixed(1)}%`}
                 color={stats.delta > 0 ? 'text-red-600' : stats.delta < 0 ? 'text-emerald-600' : 'text-gray-600'}
               />
@@ -115,7 +117,7 @@ export default function PriceHistoryModal({ open, onClose, carrier, planName, pl
                 <YAxis tickFormatter={v => `₪${v}`} tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
                 <Tooltip
                   labelFormatter={formatDate}
-                  formatter={(value) => [`₪${value}`, 'מחיר']}
+                  formatter={(value) => [`₪${value}`, tt('מחיר', 'Price')]}
                   contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5d8c5' }}
                 />
                 <Line
@@ -137,7 +139,7 @@ export default function PriceHistoryModal({ open, onClose, carrier, planName, pl
           </div>
 
           <p className="text-[11px] text-gray-400 text-center mt-3">
-            {chartData.length} נקודות · {formatDate(chartData[0].date)} – {formatDate(chartData[chartData.length - 1].date)}
+            {chartData.length} {tt('נקודות', 'points')} · {formatDate(chartData[0].date)} – {formatDate(chartData[chartData.length - 1].date)}
           </p>
         </>
       )}

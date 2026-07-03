@@ -1,7 +1,9 @@
 import { useAuth } from '../hooks/useAuth'
+import { useLang } from '../hooks/useLanguage'
 
 export default function ViewAsBanner() {
   const { viewAs, exitViewAs } = useAuth()
+  const { tt } = useLang()
   if (!viewAs) return null
 
   return (
@@ -13,7 +15,7 @@ export default function ViewAsBanner() {
             <circle cx="12" cy="12" r="3"/>
           </svg>
           <span className="truncate">
-            צופה כ-<strong>{viewAs.name}</strong>
+            {tt('צופה כ-', 'Viewing as ')}<strong>{viewAs.name}</strong>
             <span className="mx-1.5 text-indigo-200">·</span>
             <code className="text-[11px] opacity-80">{viewAs.slug}</code>
           </span>
@@ -22,7 +24,7 @@ export default function ViewAsBanner() {
           onClick={exitViewAs}
           className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 rounded-lg px-3 py-1 text-xs font-medium transition-colors"
         >
-          יציאה ממצב צפייה
+          {tt('יציאה ממצב צפייה', 'Exit view mode')}
           <span className="text-base leading-none">×</span>
         </button>
       </div>

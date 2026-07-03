@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { api } from '../lib/api'
+import { useLang } from '../hooks/useLanguage'
 
 /**
  * Saved comparison sets — stored as saved_views with filters_json containing
@@ -10,6 +11,7 @@ import { api } from '../lib/api'
 const PREFIX = '[CMP] '
 
 export default function SavedComparesMenu({ comparePlans, onApply, onSaved }) {
+  const { tt } = useLang()
   const [items, setItems] = useState([])
   const [open, setOpen]   = useState(false)
   const [naming, setNaming] = useState(false)
@@ -79,10 +81,10 @@ export default function SavedComparesMenu({ comparePlans, onApply, onSaved }) {
         onApply?.(parsed.plans)
         setOpen(false)
       } else {
-        setErr('פורמט סט לא תקין')
+        setErr(tt('פורמט סט לא תקין', 'Invalid set format'))
       }
     } catch {
-      setErr('סט פגום')
+      setErr(tt('סט פגום', 'Corrupted set'))
     }
   }
 
@@ -92,12 +94,12 @@ export default function SavedComparesMenu({ comparePlans, onApply, onSaved }) {
         type="button"
         onClick={() => setOpen(o => !o)}
         className="text-xs text-moca-sub hover:text-moca-bolt border border-moca-border/40 rounded-lg px-3 py-1.5 transition-colors hover:bg-moca-cream flex items-center gap-1.5"
-        title="סטים שמורים"
+        title={tt('סטים שמורים', 'Saved sets')}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
         </svg>
-        סטים שמורים
+        {tt('סטים שמורים', 'Saved sets')}
         {items.length > 0 && (
           <span className="bg-moca-cream text-moca-sub text-[9px] px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{items.length}</span>
         )}
@@ -106,13 +108,13 @@ export default function SavedComparesMenu({ comparePlans, onApply, onSaved }) {
       {open && (
         <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-moca-border rounded-xl shadow-popover z-[9999] p-3 animate-fade-in-up text-right" dir="rtl">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-gray-700">סטים שמורים</p>
+            <p className="text-xs font-semibold text-gray-700">{tt('סטים שמורים', 'Saved sets')}</p>
             {!naming && comparePlans.length > 0 && (
               <button
                 onClick={() => { setNaming(true); setNewName(''); setErr(null) }}
                 className="text-[11px] text-moca-bolt hover:underline"
               >
-                + שמור סט נוכחי ({comparePlans.length})
+                {tt('+ שמור סט נוכחי', '+ Save current set')} ({comparePlans.length})
               </button>
             )}
           </div>
@@ -125,7 +127,7 @@ export default function SavedComparesMenu({ comparePlans, onApply, onSaved }) {
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setNaming(false); setErr(null) } }}
-                placeholder="שם הסט"
+                placeholder={tt('שם הסט', 'Set name')}
                 maxLength={50}
                 className="flex-1 px-2 py-1 text-xs border border-moca-border rounded"
               />
@@ -134,7 +136,7 @@ export default function SavedComparesMenu({ comparePlans, onApply, onSaved }) {
                 disabled={saving || !newName.trim()}
                 className="text-[11px] bg-moca-bolt text-white px-2 py-1 rounded disabled:opacity-50"
               >
-                {saving ? '…' : 'שמור'}
+                {saving ? '…' : tt('שמור', 'Save')}
               </button>
               <button
                 onClick={() => { setNaming(false); setErr(null) }}
@@ -146,7 +148,7 @@ export default function SavedComparesMenu({ comparePlans, onApply, onSaved }) {
           {err && <p className="text-[11px] text-red-600 mb-2">{err}</p>}
 
           {items.length === 0 ? (
-            <p className="text-[11px] text-gray-400 py-2 text-center">אין סטים שמורים</p>
+            <p className="text-[11px] text-gray-400 py-2 text-center">{tt('אין סטים שמורים', 'No saved sets')}</p>
           ) : (
             <div className="space-y-1 max-h-64 overflow-y-auto">
               {items.map(v => {
@@ -165,7 +167,7 @@ export default function SavedComparesMenu({ comparePlans, onApply, onSaved }) {
                     <button
                       onClick={() => remove(v.id)}
                       className="text-gray-300 hover:text-red-500 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="מחק"
+                      title={tt('מחק', 'Delete')}
                     >✕</button>
                   </div>
                 )

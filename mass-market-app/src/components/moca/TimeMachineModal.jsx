@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { api, API_BASE } from '../../lib/api'
+import { useLang } from '../../hooks/useLanguage'
 import { DOMESTIC_LABELS, GLOBAL_LABELS } from '../../data/carrierLabels'
 import { getCarrierColor } from './carrierMeta'
 import CarrierChip from './CarrierChip'
@@ -11,10 +12,10 @@ import CarrierChip from './CarrierChip'
  */
 
 const PLAN_TYPE_LABELS = {
-  domestic: 'חבילות סלולר',
-  abroad:   'חו״ל',
-  global:   'גלובלי',
-  content:  'תוכן',
+  domestic: { he: 'חבילות סלולר', en: 'Cellular plans' },
+  abroad:   { he: 'חו״ל',        en: 'Roaming' },
+  global:   { he: 'גלובלי',      en: 'Global' },
+  content:  { he: 'תוכן',        en: 'Content' },
 }
 
 function todayIso() {
@@ -22,6 +23,7 @@ function todayIso() {
 }
 
 function PlanRow({ plan, isContent }) {
+  const { tt } = useLang()
   return (
     <div
       style={{
@@ -50,11 +52,11 @@ function PlanRow({ plan, isContent }) {
         </div>
         {!isContent && (plan.data_gb != null || plan.minutes || plan.days) && (
           <div style={{ fontSize: 11, color: 'var(--color-moca-muted)', marginTop: 2 }}>
-            {plan.data_gb === null && 'ללא הגבלה'}
+            {plan.data_gb === null && tt('ללא הגבלה', 'Unlimited')}
             {plan.data_gb != null && plan.data_gb >= 1 && `${Number(plan.data_gb).toLocaleString('en-US')}GB`}
             {plan.data_gb != null && plan.data_gb < 1 && `${Math.round(plan.data_gb * 1024)}MB`}
-            {plan.days ? ` · ${plan.days} ימים` : ''}
-            {plan.minutes ? ` · ${Number(plan.minutes).toLocaleString('en-US')} דק׳` : ''}
+            {plan.days ? ` · ${plan.days} ${tt('ימים', 'days')}` : ''}
+            {plan.minutes ? ` · ${Number(plan.minutes).toLocaleString('en-US')} ${tt('דק׳', 'min')}` : ''}
           </div>
         )}
       </div>
@@ -103,6 +105,7 @@ function ArchiveBannerPreview({ archiveDate, url, label }) {
 }
 
 export default function TimeMachineModal({ open, onClose }) {
+  const { tt } = useLang()
   const [carrier, setCarrier]     = useState('')
   const [date, setDate]           = useState(todayIso())
   const [result, setResult]       = useState(null)
@@ -147,7 +150,7 @@ export default function TimeMachineModal({ open, onClose }) {
       const data = await api.getArchive(carrier, date)
       setResult(data)
     } catch (e) {
-      setError(e.message || 'שגיאה בטעינת הארכיב')
+      setError(e.message || tt('שגיאה בטעינת הארכיב', 'Error loading the archive'))
     } finally {
       setLoading(false)
     }
@@ -220,7 +223,7 @@ export default function TimeMachineModal({ open, onClose }) {
                 marginBottom: 4,
               }}
             >
-              כלים · ארכיב חי
+              {tt('כלים · ארכיב חי', 'Tools · Live archive')}
             </div>
             <h2
               style={{
@@ -232,12 +235,12 @@ export default function TimeMachineModal({ open, onClose }) {
                 letterSpacing: -0.4,
               }}
             >
-              מכונת זמן
+              {tt('מכונת זמן', 'Time Machine')}
             </h2>
           </div>
           <button
             onClick={onClose}
-            aria-label="סגור"
+            aria-label={tt('סגור', 'Close')}
             style={{
               width: 34,
               height: 34,
@@ -269,7 +272,7 @@ export default function TimeMachineModal({ open, onClose }) {
         >
           <div style={{ flex: '1 1 200px', minWidth: 180 }}>
             <label style={{ display: 'block', fontSize: 10.5, color: 'var(--color-moca-muted)', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 6 }}>
-              מתחרה
+              {tt('מתחרה', 'Competitor')}
             </label>
             <select
               value={carrier}
@@ -286,13 +289,13 @@ export default function TimeMachineModal({ open, onClose }) {
                 cursor: 'pointer',
               }}
             >
-              <option value="">בחר מתחרה…</option>
-              <optgroup label="ישראל">
+              <option value="">{tt('בחר מתחרה…', 'Select a competitor…')}</option>
+              <optgroup label={tt('ישראל', 'Israel')}>
                 {domesticOpts.map(([id, label]) => (
                   <option key={id} value={id}>{label}</option>
                 ))}
               </optgroup>
-              <optgroup label="גלובלי">
+              <optgroup label={tt('גלובלי', 'Global')}>
                 {globalOpts.map(([id, label]) => (
                   <option key={id} value={id}>{label}</option>
                 ))}
@@ -302,7 +305,7 @@ export default function TimeMachineModal({ open, onClose }) {
 
           <div style={{ flex: '1 1 160px', minWidth: 150 }}>
             <label style={{ display: 'block', fontSize: 10.5, color: 'var(--color-moca-muted)', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 6 }}>
-              תאריך
+              {tt('תאריך', 'Date')}
               {dateRange?.min && (
                 <span style={{ fontWeight: 500, marginInlineStart: 6, textTransform: 'none', letterSpacing: 0 }}>
                   ({dateRange.min} – {dateRange.max})
@@ -346,7 +349,7 @@ export default function TimeMachineModal({ open, onClose }) {
               flexShrink: 0,
             }}
           >
-            {loading ? 'טוען…' : 'הצג snapshot'}
+            {loading ? tt('טוען…', 'Loading…') : tt('הצג snapshot', 'Show snapshot')}
           </button>
         </div>
 
@@ -366,7 +369,7 @@ export default function TimeMachineModal({ open, onClose }) {
                 <polyline points="12 6 12 12 16 14" />
                 <path d="M3.5 8.5 6 6" />
               </svg>
-              <p style={{ margin: 0 }}>בחר מתחרה ותאריך כדי לצפות במצב שהיה באותו יום.</p>
+              <p style={{ margin: 0 }}>{tt('בחר מתחרה ותאריך כדי לצפות במצב שהיה באותו יום.', 'Select a competitor and date to view how things looked that day.')}</p>
             </div>
           )}
 
@@ -398,10 +401,10 @@ export default function TimeMachineModal({ open, onClose }) {
                 lineHeight: 1.5,
               }}
             >
-              אין נתונים שמורים עבור <strong style={{ color: 'var(--color-moca-text)' }}>{carrier}</strong> בתאריך {date} או לפניו.
+              {tt('אין נתונים שמורים עבור', 'No saved data for')} <strong style={{ color: 'var(--color-moca-text)' }}>{carrier}</strong> {tt('בתאריך', 'on')} {date} {tt('או לפניו.', 'or earlier.')}
               <br />
               <span style={{ fontSize: 11, marginTop: 4, display: 'inline-block' }}>
-                הארכיב נשמר רק כאשר מתרחש שינוי.
+                {tt('הארכיב נשמר רק כאשר מתרחש שינוי.', 'The archive is saved only when a change occurs.')}
               </span>
             </div>
           )}
@@ -416,7 +419,7 @@ export default function TimeMachineModal({ open, onClose }) {
                     {DOMESTIC_LABELS[carrier] || GLOBAL_LABELS[carrier] || carrier}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--color-moca-muted)' }}>
-                    snapshot מ-{date} ולפניו
+                    {tt(`snapshot מ-${date} ולפניו`, `snapshot from ${date} and earlier`)}
                   </div>
                 </div>
               </div>
@@ -434,21 +437,21 @@ export default function TimeMachineModal({ open, onClose }) {
                       margin: '0 0 10px',
                     }}
                   >
-                    באנרים
+                    {tt('באנרים', 'Banners')}
                   </h3>
                   <div style={{ display: 'grid', gridTemplateColumns: result.banners.homepage && result.banners.store ? '1fr 1fr' : '1fr', gap: 12 }}>
                     {result.banners.homepage && (
                       <ArchiveBannerPreview
                         archiveDate={result.banners.homepage.archive_date}
                         url={result.banners.homepage.url}
-                        label="עמוד ראשי"
+                        label={tt('עמוד ראשי', 'Homepage')}
                       />
                     )}
                     {result.banners.store && (
                       <ArchiveBannerPreview
                         archiveDate={result.banners.store.archive_date}
                         url={result.banners.store.url}
-                        label="חנות ציוד"
+                        label={tt('חנות ציוד', 'Equipment store')}
                       />
                     )}
                   </div>
@@ -471,9 +474,9 @@ export default function TimeMachineModal({ open, onClose }) {
                       gap: 8,
                     }}
                   >
-                    {PLAN_TYPE_LABELS[planType] || planType}
+                    {PLAN_TYPE_LABELS[planType] ? tt(PLAN_TYPE_LABELS[planType].he, PLAN_TYPE_LABELS[planType].en) : planType}
                     <span style={{ fontWeight: 500, fontSize: 10.5, letterSpacing: 0, textTransform: 'none', color: 'var(--color-moca-muted)' }}>
-                      snapshot מ-{data.snapshot_date} · {data.plans.length} מסלולים
+                      {tt(`snapshot מ-${data.snapshot_date} · ${data.plans.length} מסלולים`, `snapshot from ${data.snapshot_date} · ${data.plans.length} plans`)}
                     </span>
                   </h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8 }}>

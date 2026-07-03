@@ -31,6 +31,11 @@ export default class ErrorBoundary extends Component {
   render() {
     if (!this.state.error) return this.props.children
 
+    // Class component — cannot use hooks. Read the current UI language from
+    // localStorage (same key as useLanguage) and pick the string locally.
+    const _lang = (typeof localStorage !== 'undefined' && localStorage.getItem('moca_lang') === 'en') ? 'en' : 'he'
+    const _t = (he, en) => (_lang === 'en' ? en : he)
+
     const message = this.state.error?.message || String(this.state.error)
     const stack = this.state.error?.stack || ''
     const componentStack = this.state.info?.componentStack || ''
@@ -67,7 +72,7 @@ export default class ErrorBoundary extends Component {
               marginBottom: 6,
             }}
           >
-            ⚠ שגיאה בטעינת העמוד
+            ⚠ {_t('שגיאה בטעינת העמוד', 'Page load error')}
           </div>
           <h1
             style={{
@@ -79,11 +84,13 @@ export default class ErrorBoundary extends Component {
               margin: '0 0 10px',
             }}
           >
-            משהו השתבש
+            {_t('משהו השתבש', 'Something went wrong')}
           </h1>
           <p style={{ fontSize: 13, color: 'var(--color-moca-sub)', lineHeight: 1.55, margin: '0 0 14px' }}>
-            התרחשה שגיאה ברנדור של העמוד הזה. אפשר לנסות שוב או לחזור לדשבורד.
-            הפרטים המלאים מודפסים ל-console (F12).
+            {_t(
+              'התרחשה שגיאה ברנדור של העמוד הזה. אפשר לנסות שוב או לחזור לדשבורד. הפרטים המלאים מודפסים ל-console (F12).',
+              'An error occurred while rendering this page. You can try again or return to the dashboard. Full details are printed to the console (F12).'
+            )}
           </p>
 
           <div
@@ -132,7 +139,7 @@ export default class ErrorBoundary extends Component {
                 fontFamily: 'inherit',
               }}
             >
-              נסה שוב
+              {_t('נסה שוב', 'Try again')}
             </button>
             <button
               type="button"
@@ -149,7 +156,7 @@ export default class ErrorBoundary extends Component {
                 fontFamily: 'inherit',
               }}
             >
-              לדשבורד
+              {_t('לדשבורד', 'Dashboard')}
             </button>
             <button
               type="button"
@@ -166,7 +173,7 @@ export default class ErrorBoundary extends Component {
                 fontFamily: 'inherit',
               }}
             >
-              רענן את הדפדפן
+              {_t('רענן את הדפדפן', 'Reload browser')}
             </button>
           </div>
         </div>

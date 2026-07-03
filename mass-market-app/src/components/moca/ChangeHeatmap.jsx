@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getCarrierColor, getCarrierName } from './carrierMeta'
+import { useLang } from '../../hooks/useLanguage'
 
 /**
  * Domestic-carrier × 14-day heatmap (up to 10 rows). Cell intensity = number
@@ -20,15 +21,17 @@ function dayLabel(iso) {
   return `${dd}/${mm}`
 }
 
-function changeTypeLabel(c) {
+function changeTypeLabel(c, tt) {
   if (c.change_type === 'price_change') {
-    return Number(c.new_val) < Number(c.old_val) ? 'ירידת מחיר' : 'עליית מחיר'
+    return Number(c.new_val) < Number(c.old_val)
+      ? tt('ירידת מחיר', 'Price drop')
+      : tt('עליית מחיר', 'Price increase')
   }
-  if (c.change_type === 'new_plan') return 'מסלול חדש'
-  if (c.change_type === 'removed_plan') return 'הוסר'
-  if (c.change_type === 'extras_change') return 'שינוי הטבות'
-  if (c.change_type === 'details_change') return 'שינוי פרטים'
-  return 'שינוי'
+  if (c.change_type === 'new_plan') return tt('מסלול חדש', 'New plan')
+  if (c.change_type === 'removed_plan') return tt('הוסר', 'Removed')
+  if (c.change_type === 'extras_change') return tt('שינוי הטבות', 'Benefits change')
+  if (c.change_type === 'details_change') return tt('שינוי פרטים', 'Details change')
+  return tt('שינוי', 'Change')
 }
 
 function changePriceText(c) {
@@ -41,21 +44,22 @@ function changePriceText(c) {
   return ''
 }
 
-function buildTooltip(changes, day) {
+function buildTooltip(changes, day, tt) {
   const lines = [
-    `${dayLabel(day)} · ${changes.length} ${changes.length === 1 ? 'שינוי' : 'שינויים'}`,
+    `${dayLabel(day)} · ${changes.length} ${changes.length === 1 ? tt('שינוי', 'change') : tt('שינויים', 'changes')}`,
   ]
   for (const c of changes.slice(0, 10)) {
-    const label = changeTypeLabel(c)
+    const label = changeTypeLabel(c, tt)
     const price = changePriceText(c)
     const name = c.plan_name || ''
     lines.push(`• ${label}${price ? ' ' + price : ''} — ${name}`)
   }
-  if (changes.length > 10) lines.push(`+ ${changes.length - 10} נוספים`)
+  if (changes.length > 10) lines.push(`+ ${changes.length - 10} ${tt('נוספים', 'more')}`)
   return lines.join('\n')
 }
 
 function HeatmapPopover({ popover, onPick }) {
+  const { tt } = useLang()
   const { changes, rect } = popover
   const maxWidth = 300
   const cellCenterX = rect.left + rect.width / 2
@@ -82,7 +86,7 @@ function HeatmapPopover({ popover, onPick }) {
       role="menu"
     >
       <div style={{ padding: '4px 8px 6px', fontSize: 11, color: 'var(--color-moca-muted)', fontWeight: 700 }}>
-        {changes.length} שינויים · בחר מסלול
+        {changes.length} {tt('שינויים · בחר מסלול', 'changes · pick a plan')}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 280, overflowY: 'auto' }}>
         {changes.map((c, i) => (
@@ -108,7 +112,7 @@ function HeatmapPopover({ popover, onPick }) {
               {c.plan_name}
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--color-moca-muted)', marginTop: 2 }}>
-              {changeTypeLabel(c)}{changePriceText(c) ? ' · ' + changePriceText(c) : ''}
+              {changeTypeLabel(c, tt)}{changePriceText(c) ? ' · ' + changePriceText(c) : ''}
             </div>
           </button>
         ))}
@@ -118,6 +122,7 @@ function HeatmapPopover({ popover, onPick }) {
 }
 
 export default function ChangeHeatmap({ data, onCellClick }) {
+  const { tt } = useLang()
   const [popover, setPopover] = useState(null)
 
   useEffect(() => {
@@ -175,10 +180,10 @@ export default function ChangeHeatmap({ data, onCellClick }) {
               margin: 0,
             }}
           >
-            עוצמת שינויים · Heatmap
+            {tt('עוצמת שינויים · Heatmap', 'Change intensity · Heatmap')}
           </h2>
           <span style={{ fontSize: 11, color: 'var(--color-moca-muted)' }}>
-            {days.length} ימים אחרונים · ריחוף לפרטים · לחיצה למסלול
+            {days.length} {tt('ימים אחרונים · ריחוף לפרטים · לחיצה למסלול', 'recent days · hover for details · click a plan')}
           </span>
         </header>
 
@@ -268,8 +273,8 @@ export default function ChangeHeatmap({ data, onCellClick }) {
                       const opacity = count === 0 ? 0.08 : 0.25 + intensity * 0.7
                       const hasChanges = count > 0
                       const tooltip = hasChanges
-                        ? `${carrierName}\n${buildTooltip(cellChanges, d)}`
-                        : `אין שינויים · ${dayLabel(d)}`
+                        ? `${carrierName}\n${buildTooltip(cellChanges, d, tt)}`
+                        : `${tt('אין שינויים', 'No changes')} · ${dayLabel(d)}`
                       return (
                         <button
                           type="button"

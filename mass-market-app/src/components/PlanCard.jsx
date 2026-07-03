@@ -17,6 +17,8 @@ import { useCoupons } from '../hooks/useCoupons'
 import { AFFILIATE_PROVIDERS, AFFILIATE_URLS } from '../data/affiliateLinks'
 import { alosimUrlFor } from '../data/alosimCountries'
 import { GLOBAL_LABELS, GLOBAL_COLORS } from '../data/carrierLabels'
+import { useLang } from '../hooks/useLanguage'
+import { localizeDest } from '../data/destI18n'
 
 // Lazy — Recharts is ~340KB. Only load when the user actually opens history.
 const PriceHistoryModal = lazy(() => import('./PriceHistoryModal'))
@@ -33,7 +35,7 @@ const CARRIER_HOME_URLS = {
   golan:           'https://www.golantelecom.co.il',
   rami_levy:       'https://mobile.rami-levy.co.il',
   tuki:            'https://tuki.co.il',
-  globalesim:      'https://globalesim.com',
+  terminalesim:    'https://terminalesim.com',
   airalo:          'https://www.airalo.com',
   pelephone_global:'https://www.pelephone.co.il',
   esimo:           'https://esimo.co.il',
@@ -44,7 +46,7 @@ const CARRIER_HOME_URLS = {
   holafly:         'https://esim.holafly.com',
   esimio:          'https://esim.io',
   sparks:          'https://sparksesim.com',
-  voye:            'https://voye.com',
+  voye:            'https://voyeglobal.com',
   yesim:           'https://yesim.app',
   nomad:           'https://www.nomadesim.com',
   ubigi:           'https://www.ubigi.com',
@@ -96,7 +98,6 @@ const USA_COLORS = {
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
 const LOGO_SIZES = {
-  globalesim:       '72px',
   pelephone_global: '72px',
   esimo:            '72px',
   cellcom:          '48px',
@@ -234,17 +235,19 @@ const CHANGE_DOT = {
   removed_plan: 'bg-red-400',
 }
 
-function formatGB(gb) {
-  if (gb === null || gb === undefined) return 'ללא הגבלה'
+// `tt` (he,en) is threaded in from the component so unit words localize with
+// the UI language; defaults to Hebrew when called without it.
+function formatGB(gb, tt = (he) => he) {
+  if (gb === null || gb === undefined) return tt('ללא הגבלה', 'Unlimited')
   if (gb < 1) return `${Math.round(gb * 1024)}MB`
   return `${Number(gb).toLocaleString('en-US')}GB`
 }
 
-function formatDays(days) {
+function formatDays(days, tt = (he) => he) {
   if (!days) return null
-  if (days >= 365) return `${(days / 365).toFixed(days % 365 === 0 ? 0 : 1)} שנים`
-  if (days > 60) return `${Math.round(days / 30)} חודשים`
-  return `${days} ימים`
+  if (days >= 365) return `${(days / 365).toFixed(days % 365 === 0 ? 0 : 1)} ${tt('שנים', 'yr')}`
+  if (days > 60) return `${Math.round(days / 30)} ${tt('חודשים', 'mo')}`
+  return `${days} ${tt('ימים', 'days')}`
 }
 
 function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo, isInCompare, onCompareToggle }) {
@@ -259,6 +262,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   const { isWatched, toggle: toggleWatch } = useWatchlist()
   const { countFor } = useAnnotationCounts()
   const { couponFor } = useCoupons()
+  const { tt, lang } = useLang()
   const annotationCount = type !== 'content' && plan.plan_name ? countFor(plan.carrier, type, plan.plan_name) : 0
 
   const handleShare = useCallback((e) => {
@@ -301,7 +305,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   // For reseller/USA plans, link out to the source post/plan page instead of the
   // (Israeli) carrier homepage map. Must be declared AFTER `carrier`.
   const providerUrl = (isReseller || isUsa) && plan.source_url ? plan.source_url : CARRIER_HOME_URLS[carrier]
-  const providerLabel = isReseller ? 'לפוסט המקור' : isUsa ? 'לאתר המפעיל' : 'לאתר הספק'
+  const providerLabel = isReseller ? tt('לפוסט המקור', 'To source post') : isUsa ? tt('לאתר המפעיל', 'To operator site') : tt('לאתר הספק', 'To provider site')
   // "עיקרי התוכנית" — direct link to a terms/details PDF, rendered next to the
   // provider link. Prefers the scraped `terms_url` (e.g. Cellcom roaming — captured
   // from the abroad API's policiesEpi on every scrape, so it never goes stale), then
@@ -322,9 +326,9 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
 
   // Build info line: data + period, dot-separated
   const infoParts = []
-  if (!isContent) infoParts.push(formatGB(plan.data_gb))
-  if ((isAbroad || isGlobal || isUsa) && plan.days) infoParts.push(formatDays(plan.days))
-  if (plan.minutes) infoParts.push(`${Number(plan.minutes).toLocaleString('en-US')} דקות`)
+  if (!isContent) infoParts.push(formatGB(plan.data_gb, tt))
+  if ((isAbroad || isGlobal || isUsa) && plan.days) infoParts.push(formatDays(plan.days, tt))
+  if (plan.minutes) infoParts.push(`${Number(plan.minutes).toLocaleString('en-US')} ${tt('דקות', 'minutes')}`)
   if (plan.sms) infoParts.push(`${plan.sms} SMS`)
 
   // Extract plan_info marker (stored inside extras as "__info__|<text>")
@@ -405,7 +409,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
       {changeType && CHANGE_DOT[changeType] && (
         <span
           className={`absolute w-2 h-2 rounded-full ${CHANGE_DOT[changeType]} top-2 left-2`}
-          title={changeType === 'new_plan' ? 'חדש' : changeType === 'price_change' ? 'שינוי מחיר' : 'הוסרה'}
+          title={changeType === 'new_plan' ? tt('חדש', 'New') : changeType === 'price_change' ? tt('שינוי מחיר', 'Price change') : tt('הוסרה', 'Removed')}
         />
       )}
 
@@ -432,9 +436,9 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
           </span>
         )}
         {(isGlobal || isUsa) && plan.esim && <Badge color="green">eSIM</Badge>}
-        {isUsa && plan.network && <Badge color="gray">{`רשת ${plan.network}`}</Badge>}
-        {(hasRoaming || hasNeptucomRoaming) && <Badge color="blue">חו״ל</Badge>}
-        {isPriority5G && <Badge color="purple">5G מתועדף</Badge>}
+        {isUsa && plan.network && <Badge color="gray">{`${tt('רשת', 'Network')} ${plan.network}`}</Badge>}
+        {(hasRoaming || hasNeptucomRoaming) && <Badge color="blue">{tt('חו״ל', 'Roaming')}</Badge>}
+        {isPriority5G && <Badge color="purple">{tt('5G מתועדף', '5G Priority')}</Badge>}
       </div>
 
       {/* Spacer so content starts below logo/badge row when logo present */}
@@ -466,7 +470,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setShowPriceHistory(true) }}
-              title="היסטוריית מחיר"
+              title={tt('היסטוריית מחיר', 'Price history')}
               className="text-gray-300 hover:text-moca-bolt transition-colors p-1 -m-1"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -481,7 +485,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
         )}
         {plan.promo_price != null && plan.promo_months != null && (
           <div className="text-[11px] text-moca-bolt font-medium mt-0.5">
-            {plan.promo_months === 2 ? 'חודשיים ראשונים' : `${plan.promo_months} חודשים ראשונים`} ב-₪{plan.promo_price} לחודש
+            {plan.promo_months === 2 ? tt('חודשיים ראשונים', 'First two months') : `${plan.promo_months} ${tt('חודשים ראשונים', 'first months')}`} {tt('ב-', 'at ')}₪{plan.promo_price} {tt('לחודש', 'per month')}
           </div>
         )}
         {!isContent && Number(plan.price) > 0 && Number(plan.data_gb) > 0 && (
@@ -523,7 +527,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
           {visibleExtras.map((extra, i) => (
             <div key={i} className="text-[11px] text-gray-400 flex items-start gap-1.5">
               <span className="text-gray-300 mt-px shrink-0">&#10022;</span>
-              <span>{extra}</span>
+              <span>{(isGlobal || isAbroad || isUsa) ? localizeDest(extra, lang) : extra}</span>
             </div>
           ))}
           {hiddenCount > 0 && !showAllExtras && (
@@ -531,7 +535,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               onClick={() => setShowAllExtras(true)}
               className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
             >
-              +{hiddenCount} נוספים
+              +{hiddenCount} {tt('נוספים', 'more')}
             </button>
           )}
         </div>
@@ -545,7 +549,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               onClick={() => setShowCountries(true)}
               className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
             >
-              מדינות ({countryData.countries.length}) &larr;
+              {tt('מדינות', 'Countries')} ({countryData.countries.length}) &larr;
             </button>
           )}
           {appsData && (
@@ -553,7 +557,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               onClick={() => setShowApps(true)}
               className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
             >
-              אפליקציות &larr;
+              {tt('אפליקציות', 'Apps')} &larr;
             </button>
           )}
         </div>
@@ -575,8 +579,8 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                   className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 hover:bg-[#ffe9a8]"
                 >
                   <span aria-hidden="true">🎟</span>
-                  <span>{coupon.discount_label || 'הטבה'}{coupon.partner_name ? ` · אצל ${coupon.partner_name}` : ''}</span>
-                  <span className="text-[10px] text-[#7a5a30] mr-auto">פתח ↗</span>
+                  <span>{coupon.discount_label || tt('הטבה', 'Deal')}{coupon.partner_name ? ` · ${tt('אצל', 'at')} ${coupon.partner_name}` : ''}</span>
+                  <span className="text-[10px] text-[#7a5a30] mr-auto">{tt('פתח', 'Open')} ↗</span>
                 </a>
               ) : (
                 <button
@@ -585,8 +589,8 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                   className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 hover:bg-[#ffe9a8]"
                 >
                   <span aria-hidden="true">🎟</span>
-                  <span>קוד: <span className="font-mono tracking-wide">{coupon.code}</span>{coupon.discount_label ? ` · ${coupon.discount_label}` : ''}</span>
-                  <span className="text-[10px] text-[#7a5a30] mr-auto">{couponCopied ? '✓ הועתק' : 'העתק'}</span>
+                  <span>{tt('קוד:', 'Code:')} <span className="font-mono tracking-wide">{coupon.code}</span>{coupon.discount_label ? ` · ${coupon.discount_label}` : ''}</span>
+                  <span className="text-[10px] text-[#7a5a30] mr-auto">{couponCopied ? tt('✓ הועתק', '✓ Copied') : tt('העתק', 'Copy')}</span>
                 </button>
               ))}
               <a
@@ -600,9 +604,9 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                   <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
                   <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
                 </svg>
-                רכישה
+                {tt('רכישה', 'Buy')}
               </a>
-              <p className="text-center text-[10px] text-[#a08060] mt-1">דרך MOCA</p>
+              <p className="text-center text-[10px] text-[#a08060] mt-1">{tt('דרך MOCA', 'via MOCA')}</p>
             </div>
           ) : (
             <>
@@ -612,34 +616,34 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                title={coupon.partner_name ? `הצעה חיצונית אצל ${coupon.partner_name}` : 'הצעה חיצונית'}
+                title={coupon.partner_name ? `${tt('הצעה חיצונית אצל', 'External offer at')} ${coupon.partner_name}` : tt('הצעה חיצונית', 'External offer')}
                 className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
               >
                 <span aria-hidden="true">🎟</span>
                 <span>
-                  {coupon.discount_label || 'הטבה'}
+                  {coupon.discount_label || tt('הטבה', 'Deal')}
                   {coupon.partner_name && (
-                    <span className="text-[#7a5a30]"> · אצל {coupon.partner_name}</span>
+                    <span className="text-[#7a5a30]"> · {tt('אצל', 'at')} {coupon.partner_name}</span>
                   )}
                 </span>
-                <span className="text-[10px] text-[#7a5a30] mr-auto">פתח ↗</span>
+                <span className="text-[10px] text-[#7a5a30] mr-auto">{tt('פתח', 'Open')} ↗</span>
               </a>
             ) : coupon && (
               <button
                 type="button"
                 onClick={copyCoupon}
-                title={`לחץ להעתקה — בדקו בקופה של ${providerLabel}`}
+                title={`${tt('לחץ להעתקה — בדקו בקופה של', 'Click to copy — check at checkout of')} ${providerLabel}`}
                 className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
               >
                 <span aria-hidden="true">🎟</span>
                 <span>
-                  קוד הנחה: <span className="font-mono tracking-wide">{coupon.code}</span>
+                  {tt('קוד הנחה:', 'Discount code:')} <span className="font-mono tracking-wide">{coupon.code}</span>
                   {coupon.discount_label && (
                     <span className="text-[#7a5a30]"> · {coupon.discount_label}</span>
                   )}
                 </span>
                 <span className="text-[10px] text-[#7a5a30] mr-auto">
-                  {couponCopied ? '✓ הועתק' : 'העתק'}
+                  {couponCopied ? tt('✓ הועתק', '✓ Copied') : tt('העתק', 'Copy')}
                 </span>
               </button>
             )}
@@ -656,7 +660,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                     <line x1="12" y1="16" x2="12" y2="12"/>
                     <line x1="12" y1="8" x2="12.01" y2="8"/>
                   </svg>
-                  {planInfoLabel}
+                  {planInfoLabel === 'עיקרי התוכנית' ? tt('עיקרי התוכנית', 'Plan highlights') : tt('תנאי התוכנית', 'Plan terms')}
                 </button>
               ) : (
               <a
@@ -671,7 +675,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                   <polyline points="15 3 21 3 21 9"/>
                   <line x1="10" y1="14" x2="21" y2="3"/>
                 </svg>
-                תנאי התוכנית
+                {tt('תנאי התוכנית', 'Plan terms')}
               </a>
               ))}
               {detailsUrl && (
@@ -686,7 +690,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                     <polyline points="14 2 14 8 20 8"/>
                   </svg>
-                  עיקרי התוכנית
+                  {tt('עיקרי התוכנית', 'Plan highlights')}
                 </a>
               )}
               {showProviderLink && (
@@ -726,7 +730,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onCompareToggle(plan, type) }}
-              title={isInCompare ? 'הסר מהשוואה' : 'הוסף להשוואה'}
+              title={isInCompare ? tt('הסר מהשוואה', 'Remove from comparison') : tt('הוסף להשוואה', 'Add to comparison')}
               className={`p-1 rounded transition-all ${
                 isInCompare ? 'text-blue-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-blue-400'
               }`}
@@ -743,7 +747,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               rel="noopener noreferrer"
               className="p-1 text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt transition-colors"
               onClick={(e) => e.stopPropagation()}
-              title="לאתר הספק"
+              title={tt('לאתר הספק', 'To provider site')}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -758,7 +762,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setShowAnnotations(true) }}
-              title={annotationCount > 0 ? `${annotationCount} הערות צוות` : 'הוסף הערה'}
+              title={annotationCount > 0 ? `${annotationCount} ${tt('הערות צוות', 'team notes')}` : tt('הוסף הערה', 'Add a note')}
               className={`relative p-1 transition-all ${
                 annotationCount > 0 ? 'text-moca-bolt' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
               }`}
@@ -779,7 +783,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
             <button
               type="button"
               onClick={handleShare}
-              title="שתף חבילה"
+              title={tt('שתף חבילה', 'Share plan')}
               className={`p-1 transition-all ${
                 copied ? 'text-emerald-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
               }`}
@@ -803,7 +807,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); toggleWatch(watchKey) }}
-              title={watched ? 'הסר מהמעקב' : 'הוסף למעקב'}
+              title={watched ? tt('הסר מהמעקב', 'Remove from watchlist') : tt('הוסף למעקב', 'Add to watchlist')}
               className={`p-1 transition-all ${
                 watched ? 'text-amber-400 hover:text-amber-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-amber-400'
               }`}
@@ -856,7 +860,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
         </Suspense>
       )}
       {planInfo && (
-        <Modal open={showPlanInfo} onClose={() => setShowPlanInfo(false)} title={planInfoLabel === 'עיקרי התוכנית' ? 'עיקרי התוכנית' : 'מידע נוסף על התוכנית'} maxWidth="max-w-md">
+        <Modal open={showPlanInfo} onClose={() => setShowPlanInfo(false)} title={planInfoLabel === 'עיקרי התוכנית' ? tt('עיקרי התוכנית', 'Plan highlights') : tt('מידע נוסף על התוכנית', 'More plan information')} maxWidth="max-w-md">
           <div className="space-y-2 text-sm text-gray-700 leading-relaxed text-right">
             {planInfo.split('\n').map(l => l.trim()).filter(Boolean).map((line, i) => {
               // "label|https://..." lines render as a clickable link (e.g. terms PDF)

@@ -4,41 +4,54 @@
  * Keys are matched in order: exact match wins; `/path/*` wildcards match
  * any descendant; `*` is a fallback. Tab-suffix entries (`/?tab=banners`)
  * are checked against the full pathname + search.
+ *
+ * Each kicker/title carries both languages; resolveRouteMeta(pathname, search,
+ * lang) returns the strings for the active UI language.
  */
 
 export const ROUTE_META = [
-  { match: '/',                kicker: 'ניטור',     title: 'דשבורד' },
-  { match: '/plans',           kicker: 'מסלולים',   title: 'השוואת מסלולים' },
-  { match: '/roaming',         kicker: 'מסלולים',   title: 'חו״ל · Roaming' },
-  { match: '/esim',            kicker: 'מסלולים',   title: 'eSIM גלובלי' },
-  { match: '/usa',             kicker: 'מסלולים',   title: 'נוחתים בארה״ב' },
-  { match: '/resellers',       kicker: 'מסלולים',   title: 'משווקים' },
-  { match: '/content',         kicker: 'מסלולים',   title: 'שירותי תוכן' },
-  { match: '/news',            kicker: 'תובנות',    title: 'בחדשות' },
-  { match: '/social',          kicker: 'תובנות',    title: 'ברשתות החברתיות' },
-  { match: '/banners',         kicker: 'תובנות',    title: 'באנרים פעילים' },
-  { match: '/history',         kicker: 'ניטור',     title: 'היסטוריית שינויים' },
-  { match: '/compare',         kicker: 'מסלולים',   title: 'השוואת מחירים · גרפים' },
-  { match: '/positioning',     kicker: 'ניטור',     title: 'מיצוב תחרותי' },
-  { match: '/alerts',          kicker: 'ניטור',     title: 'התראות' },
-  { match: '/executive-summary', kicker: 'ניטור',   title: 'דוח מנהלים שבועי' },
-  { match: '/ai-insights',     kicker: 'תובנות',    title: 'AI Insights' },
-  { match: '/archive',         kicker: 'תובנות',    title: 'מכונת זמן' },
-  { match: '/preferences',     kicker: 'כלים',      title: 'העדפות' },
-  { match: '/notifications',   kicker: 'כלים',      title: 'הגדרות התראות' },
-  { match: '/settings',        kicker: 'ניהול',     title: 'הגדרות מערכת' },
-  { match: '/workspace/users', kicker: 'ניהול',     title: 'הצוות' },
-  { match: '/workspace/settings', kicker: 'ניהול',  title: 'מיתוג Workspace' },
-  { match: '/admin/workspaces', kicker: 'ניהול',    title: 'Workspaces' },
-  { match: '/admin/audit',     kicker: 'ניהול',     title: 'יומן ביקורת' },
-  { match: '/usage',           kicker: 'ניהול',     title: 'שימוש ב-Claude API' },
-  { match: '/admin/user-activity', kicker: 'ניהול', title: 'פעילות משתמשים' },
-  { match: '/admin/hotels',    kicker: 'Guest Connect', title: 'פורטלי אורחים' },
+  { match: '/',                  kicker: { he: 'ניטור',        en: 'Monitoring' },    title: { he: 'דשבורד',              en: 'Dashboard' } },
+  { match: '/plans',             kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'השוואת מסלולים',       en: 'Plan comparison' } },
+  { match: '/roaming',           kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'חו״ל · Roaming',       en: 'Roaming' } },
+  { match: '/esim',              kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'eSIM גלובלי',          en: 'Global eSIM' } },
+  { match: '/usa',               kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'נוחתים בארה״ב',        en: 'Landing in the USA' } },
+  { match: '/resellers',         kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'משווקים',              en: 'Resellers' } },
+  { match: '/content',           kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'שירותי תוכן',          en: 'Content services' } },
+  { match: '/news',              kicker: { he: 'תובנות',       en: 'Insights' },      title: { he: 'בחדשות',               en: 'In the news' } },
+  { match: '/social',            kicker: { he: 'תובנות',       en: 'Insights' },      title: { he: 'ברשתות החברתיות',      en: 'On social media' } },
+  { match: '/banners',           kicker: { he: 'תובנות',       en: 'Insights' },      title: { he: 'באנרים פעילים',        en: 'Active banners' } },
+  { match: '/history',           kicker: { he: 'ניטור',        en: 'Monitoring' },    title: { he: 'היסטוריית שינויים',    en: 'Change history' } },
+  { match: '/compare',           kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'השוואת מחירים · גרפים', en: 'Price comparison · Charts' } },
+  { match: '/positioning',       kicker: { he: 'ניטור',        en: 'Monitoring' },    title: { he: 'מיצוב תחרותי',         en: 'Competitive positioning' } },
+  { match: '/alerts',            kicker: { he: 'ניטור',        en: 'Monitoring' },    title: { he: 'התראות',               en: 'Alerts' } },
+  { match: '/executive-summary', kicker: { he: 'ניטור',        en: 'Monitoring' },    title: { he: 'דוח מנהלים שבועי',     en: 'Weekly executive report' } },
+  { match: '/ai-insights',       kicker: { he: 'תובנות',       en: 'Insights' },      title: { he: 'AI Insights',          en: 'AI Insights' } },
+  { match: '/archive',           kicker: { he: 'תובנות',       en: 'Insights' },      title: { he: 'מכונת זמן',            en: 'Time Machine' } },
+  { match: '/preferences',       kicker: { he: 'כלים',         en: 'Tools' },         title: { he: 'העדפות',               en: 'Preferences' } },
+  { match: '/notifications',     kicker: { he: 'כלים',         en: 'Tools' },         title: { he: 'הגדרות התראות',        en: 'Notification settings' } },
+  { match: '/settings',          kicker: { he: 'ניהול',        en: 'Admin' },         title: { he: 'הגדרות מערכת',         en: 'System settings' } },
+  { match: '/workspace/users',   kicker: { he: 'ניהול',        en: 'Admin' },         title: { he: 'הצוות',                en: 'Team' } },
+  { match: '/workspace/settings',kicker: { he: 'ניהול',        en: 'Admin' },         title: { he: 'מיתוג Workspace',      en: 'Workspace branding' } },
+  { match: '/admin/workspaces',  kicker: { he: 'ניהול',        en: 'Admin' },         title: { he: 'Workspaces',           en: 'Workspaces' } },
+  { match: '/admin/audit',       kicker: { he: 'ניהול',        en: 'Admin' },         title: { he: 'יומן ביקורת',          en: 'Audit log' } },
+  { match: '/usage',             kicker: { he: 'ניהול',        en: 'Admin' },         title: { he: 'שימוש ב-Claude API',   en: 'Claude API usage' } },
+  { match: '/admin/user-activity',kicker: { he: 'ניהול',       en: 'Admin' },         title: { he: 'פעילות משתמשים',       en: 'User activity' } },
+  { match: '/admin/hotels',      kicker: { he: 'Guest Connect',en: 'Guest Connect' }, title: { he: 'פורטלי אורחים',        en: 'Guest portals' } },
+  { match: '/admin/esim',        kicker: { he: 'B2C',          en: 'B2C' },           title: { he: 'דשבורד eSIM',          en: 'eSIM dashboard' } },
+  { match: '/admin/deals',       kicker: { he: 'B2C',          en: 'B2C' },           title: { he: 'סטטוס ספקים',          en: 'Provider status' } },
 ]
 
-export function resolveRouteMeta(pathname /*, search */) {
+function pick(val, lang) {
+  if (val == null) return ''
+  if (typeof val === 'string') return val
+  return val[lang] != null ? val[lang] : (val.he != null ? val.he : '')
+}
+
+export function resolveRouteMeta(pathname, _search, lang = 'he') {
   for (const r of ROUTE_META) {
-    if (r.match === pathname) return r
+    if (r.match === pathname) {
+      return { kicker: pick(r.kicker, lang), title: pick(r.title, lang) }
+    }
   }
   return { kicker: '', title: 'MOCA' }
 }

@@ -1,4 +1,5 @@
 import featPlaceholder from '../assets/banners-wall.webp'
+import { useLang } from '../hooks/useLanguage'
 
 /* ─────────────────────────────────────────────────────────────
    FeatureShowcase — alternating "zigzag" feature rows for the
@@ -12,6 +13,7 @@ import featPlaceholder from '../assets/banners-wall.webp'
    ───────────────────────────────────────────────────────────── */
 
 function FeatureRow({ ic, h, p, img, overlay, flip, w, h2, ow, oh }) {
+  const { tt } = useLang()
   const src = img || featPlaceholder
   return (
     <div className={`flex flex-col gap-7 lg:gap-14 items-center ${flip ? 'lg:flex-row-reverse' : 'lg:flex-row'}`}>
@@ -25,7 +27,7 @@ function FeatureRow({ ic, h, p, img, overlay, flip, w, h2, ow, oh }) {
         <div className="fs-stack" data-tilt={flip ? 'r' : 'l'}>
           <div className="fs-shot">
             <img src={src} alt={h} loading="lazy" decoding="async" width={w} height={h2} />
-            {!img && <span className="fs-ph">תמונה זמנית — כאן ייכנס צילום המסך שלך</span>}
+            {!img && <span className="fs-ph">{tt('תמונה זמנית — כאן ייכנס צילום המסך שלך', 'Placeholder image — your screenshot goes here')}</span>}
           </div>
           {overlay && (
             <div className="fs-overlay">

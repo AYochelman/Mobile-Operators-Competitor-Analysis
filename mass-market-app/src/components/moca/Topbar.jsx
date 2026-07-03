@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useWatchlist } from '../../hooks/useWatchlist'
+import { useLang } from '../../hooks/useLanguage'
 import { resolveRouteMeta } from './routeMeta'
 import ChangePasswordModal from '../ChangePasswordModal'
+import LangToggle from '../LangToggle'
 
 /**
  * Top bar (desktop only) per MOCA design handoff.
@@ -79,6 +81,7 @@ function IconButton({ title, onClick, children }) {
 function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
   const [open, setOpen] = useState(false)
   const [showChangePw, setShowChangePw] = useState(false)
+  const { tt } = useLang()
   const navigate = useNavigate()
   const ref = useRef(null)
 
@@ -96,17 +99,17 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
 
   const go = (path) => { setOpen(false); navigate(path) }
   const initial = (user?.email || '?')[0]?.toUpperCase()
-  const itemCls = 'w-full text-right px-3 py-2 text-[12px] text-moca-text hover:bg-moca-cream rounded-md transition-colors flex items-center justify-between'
+  const itemCls = 'w-full text-start px-3 py-2 text-[12px] text-moca-text hover:bg-moca-cream rounded-md transition-colors flex items-center justify-between'
   const supportHref =
     'mailto:Helpdesk@mocaintel.com?subject=' +
-    encodeURIComponent('פנייה לתמיכה' + (workspace?.name ? ` – ${workspace.name}` : ''))
+    encodeURIComponent(tt('פנייה לתמיכה', 'Support request') + (workspace?.name ? ` – ${workspace.name}` : ''))
 
   return (
     <>
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
-        title={user?.email || 'פרופיל'}
+        title={user?.email || tt('פרופיל', 'Profile')}
         aria-haspopup="menu"
         aria-expanded={open}
         style={{
@@ -127,30 +130,42 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
         {initial}
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 min-w-[200px] bg-white rounded-xl shadow-popover border border-moca-border/40 p-1.5 z-50 animate-fade-in">
-          <button onClick={() => go('/preferences')} className={itemCls}>העדפות</button>
-          <button onClick={() => go('/alerts?tab=watchlist')} className={itemCls}>הגדרות התראות</button>
-          <button onClick={() => { setOpen(false); setShowChangePw(true) }} className={itemCls}>שינוי סיסמה</button>
+        <div className="absolute top-full mt-1 min-w-[200px] bg-white rounded-xl shadow-popover border border-moca-border/40 p-1.5 z-50 animate-fade-in" style={{ insetInlineEnd: 0 }}>
+          <button onClick={() => go('/preferences')} className={itemCls}>{tt('העדפות', 'Preferences')}</button>
+          <button onClick={() => go('/alerts?tab=watchlist')} className={itemCls}>{tt('הגדרות התראות', 'Alert settings')}</button>
+          <button onClick={() => { setOpen(false); setShowChangePw(true) }} className={itemCls}>{tt('שינוי סיסמה', 'Change password')}</button>
           {isAdmin && !isSuperAdmin && (
             <>
               <div className="h-px bg-moca-border/30 my-1" />
-              <button onClick={() => go('/workspace/users')} className={itemCls}>הצוות</button>
-              <button onClick={() => go('/workspace/settings')} className={itemCls}>מיתוג Workspace</button>
+              <button onClick={() => go('/workspace/users')} className={itemCls}>{tt('הצוות', 'Team')}</button>
+              <button onClick={() => go('/workspace/settings')} className={itemCls}>{tt('מיתוג Workspace', 'Workspace branding')}</button>
             </>
           )}
           {isAdmin && (
-            <button onClick={() => go('/settings')} className={itemCls}>הגדרות מערכת</button>
+            <button onClick={() => go('/settings')} className={itemCls}>{tt('הגדרות מערכת', 'System settings')}</button>
           )}
           {isSuperAdmin && (
             <>
               <div className="h-px bg-moca-border/30 my-1" />
               <button onClick={() => go('/admin/workspaces')} className={itemCls}>Workspaces</button>
-              <button onClick={() => go('/admin/audit')} className={itemCls}>יומן ביקורת</button>
+              <button onClick={() => go('/admin/audit')} className={itemCls}>{tt('יומן ביקורת', 'Audit log')}</button>
+              <button onClick={() => go('/admin/hotels')} className={itemCls}>{tt('פורטלי אורחים', 'Guest portals')}</button>
+              <div className="h-px bg-moca-border/30 my-1" />
+              <div className="px-3 pt-1 pb-0.5 text-[10px] font-bold text-moca-muted uppercase tracking-wide">B2C</div>
+              <button onClick={() => go('/admin/esim')} className={itemCls}>{tt('דשבורד eSIM (B2C)', 'eSIM dashboard (B2C)')}</button>
+              <button onClick={() => go('/admin/deals')} className={itemCls}>{tt('סטטוס ספקים', 'Provider status')}</button>
+              <button
+                onClick={() => { setOpen(false); window.open('/esim-deals', '_blank', 'noopener') }}
+                className={itemCls}
+              >
+                <span>{tt('עמוד eSIM (B2C)', 'eSIM page (B2C)')}</span>
+                <span className="opacity-50">↗</span>
+              </button>
             </>
           )}
           <div className="h-px bg-moca-border/30 my-1" />
-          <a href={supportHref} onClick={() => setOpen(false)} className={itemCls}>פנייה לתמיכה</a>
-          <button onClick={() => { setOpen(false); signOut() }} className={`${itemCls} text-red-600 hover:bg-red-50`}>יציאה</button>
+          <a href={supportHref} onClick={() => setOpen(false)} className={itemCls}>{tt('פנייה לתמיכה', 'Contact support')}</a>
+          <button onClick={() => { setOpen(false); signOut() }} className={`${itemCls} text-red-600 hover:bg-red-50`}>{tt('יציאה', 'Sign out')}</button>
         </div>
       )}
     </div>
@@ -171,8 +186,9 @@ function openGlobalSearch() {
 export default function Topbar({ onTimeMachine }) {
   const { user, isAdmin, isSuperAdmin, signOut, workspace } = useAuth()
   const { changesCount } = useWatchlist()
+  const { lang, tt } = useLang()
   const location = useLocation()
-  const meta = resolveRouteMeta(location.pathname, location.search)
+  const meta = resolveRouteMeta(location.pathname, location.search, lang)
 
   return (
     <header
@@ -232,8 +248,8 @@ export default function Topbar({ onTimeMachine }) {
         <button
           type="button"
           onClick={openGlobalSearch}
-          title="חיפוש מתקדם · Ctrl+K"
-          aria-label="חיפוש מתקדם"
+          title={tt('חיפוש מתקדם · Ctrl+K', 'Advanced search · Ctrl+K')}
+          aria-label={tt('חיפוש מתקדם', 'Advanced search')}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -256,12 +272,15 @@ export default function Topbar({ onTimeMachine }) {
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
           </svg>
-          <span style={{ flex: 1, textAlign: 'right' }}>חיפוש…</span>
+          <span style={{ flex: 1, textAlign: 'start' }}>{tt('חיפוש…', 'Search…')}</span>
           <kbd style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, background: 'var(--color-moca-cream)', color: 'var(--color-moca-muted)', fontFamily: 'inherit' }}>Ctrl K</kbd>
         </button>
 
+        {/* UI language toggle (Hebrew ⇄ English) */}
+        <LangToggle variant="chrome" />
+
         {/* Time Machine — placeholder for now (modal lands in a later phase) */}
-        <IconButton title="מכונת זמן · Time Machine" onClick={onTimeMachine}>
+        <IconButton title={tt('מכונת זמן · Time Machine', 'Time Machine')} onClick={onTimeMachine}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
@@ -272,8 +291,8 @@ export default function Topbar({ onTimeMachine }) {
         {/* Watchlist alerts */}
         <NavLink
           to="/alerts?tab=watchlist"
-          title="התראות מעקב"
-          aria-label="התראות מעקב"
+          title={tt('התראות מעקב', 'Watchlist alerts')}
+          aria-label={tt('התראות מעקב', 'Watchlist alerts')}
           style={{
             position: 'relative',
             display: 'inline-flex',

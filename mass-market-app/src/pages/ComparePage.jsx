@@ -11,12 +11,14 @@ import { has5G as detect5G, hasMaxPriority } from '../data/networkPriority'
 import { getAppsForPlan } from '../data/abroadApps'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import {
-  AIRALO_DISCOVER, AIRALO_REGION_MAP, GLOBALESIM_COUNTRIES, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
+  AIRALO_DISCOVER, AIRALO_REGION_MAP, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
   PELEPHONE_GLOBAL_COUNTRIES, ESIMO_COUNTRIES, WORLD8_WORLDWIDE, WORLD8_EUROPE_USA,
   XPHONE_EUROPE, XPHONE_WORLD, ORBIT_COUNTRIES, TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
   getCountriesForPlan
 } from '../data/globalCountries'
 import { GLOBAL_PROVIDERS_WITH_COLOR } from '../data/carrierLabels'
+import { useLang } from '../hooks/useLanguage'
+import { destKey, dedupeDestOptions } from '../data/destI18n'
 
 const TABS = [
   { id: 'domestic', label: 'חבילות סלולר' },
@@ -114,6 +116,7 @@ function normalizeRegionLabel(region) {
 }
 
 export default function ComparePage() {
+  const { tt, lang } = useLang()
   const navigate = useNavigate()
   const [tab, setTab] = useState('domestic')
   const [selectedCarriers, setSelectedCarriers] = useState([])
@@ -193,7 +196,6 @@ export default function ComparePage() {
   // Static country lists for carriers that don't store country in extras
   const CARRIER_COUNTRY_LISTS = useMemo(() => ({
     tuki: TUKI_COUNTRIES,
-    globalesim: GLOBALESIM_COUNTRIES,
     airalo: AIRALO_DISCOVER,
     pelephone_global: PELEPHONE_GLOBAL_COUNTRIES,
     esimo: ESIMO_COUNTRIES,
@@ -208,24 +210,29 @@ export default function ComparePage() {
   const { availableRegions, availableDestinations, countryCarrierMap } = useMemo(() => {
     if (tab !== 'global') return { availableRegions: [], availableDestinations: [], countryCarrierMap: {} }
 
-    const map = {} // country → Set of carrier ids
+    // Keyed by canonical English (destKey) so spelling variants of the same
+    // country collapse into one entry; heByKey keeps a representative Hebrew.
+    const map = {} // destKey → Set of carrier ids
+    const heByKey = {} // destKey → representative Hebrew name
+    const addCountry = (heName, carrier) => {
+      const k = destKey(heName)
+      if (!k) return
+      if (!map[k]) { map[k] = new Set(); heByKey[k] = heName }
+      map[k].add(carrier)
+    }
 
     // From extras[0] (saily, holafly, esimio per-country plans)
     plans.forEach(p => {
       if (p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(normalizeRegionLabel(p.extras[0]))) {
-        if (!map[p.extras[0]]) map[p.extras[0]] = new Set()
-        map[p.extras[0]].add(p.carrier)
+        addCountry(p.extras[0], p.carrier)
       }
     })
 
-    // From static country lists (tuki, airalo, globalesim, etc.)
+    // From static country lists (tuki, airalo, etc.)
     Object.entries(CARRIER_COUNTRY_LISTS).forEach(([carrier, countries]) => {
       // Only add if carrier has plans in data
       if (plans.some(p => p.carrier === carrier)) {
-        countries.forEach(country => {
-          if (!map[country]) map[country] = new Set()
-          map[country].add(carrier)
-        })
+        countries.forEach(country => addCountry(country, carrier))
       }
     })
 
@@ -234,10 +241,7 @@ export default function ComparePage() {
       if (p.extras && p.extras[0] && KNOWN_REGIONS.has(normalizeRegionLabel(p.extras[0]))) {
         const data = getCountriesForPlan(p)
         if (data && data.countries) {
-          data.countries.forEach(country => {
-            if (!map[country]) map[country] = new Set()
-            map[country].add(p.carrier)
-          })
+          data.countries.forEach(country => addCountry(country, p.carrier))
         }
       }
     })
@@ -247,10 +251,23 @@ export default function ComparePage() {
         .filter(p => p.extras && p.extras[0] && (KNOWN_REGIONS.has(normalizeRegionLabel(p.extras[0])) || isLargeMultiCountryRegion(p.extras[0])))
         .map(p => normalizeRegionLabel(p.extras[0]))
     )].sort((a, b) => a.localeCompare(b, 'he'))
-    const destinations = Object.keys(map).sort((a, b) => a.localeCompare(b, 'he'))
+    // Representative Hebrew per canonical country (already de-duplicated).
+    const destinations = Object.values(heByKey).sort((a, b) => a.localeCompare(b, 'he'))
 
     return { availableRegions: regions, availableDestinations: destinations, countryCarrierMap: map }
   }, [plans, tab, CARRIER_COUNTRY_LISTS])
+
+  // Localized, de-duplicated dropdown options.
+  const regionOptions = useMemo(() => dedupeDestOptions(availableRegions, lang), [availableRegions, lang])
+  const destinationOptions = useMemo(() => (
+    availableDestinations
+      .map(heRep => {
+        const k = destKey(heRep)
+        const n = countryCarrierMap[k] ? countryCarrierMap[k].size : 0
+        return { value: heRep, label: `${lang === 'he' ? heRep : k} (${n})` }
+      })
+      .sort((a, b) => a.label.localeCompare(b.label, lang === 'he' ? 'he' : 'en'))
+  ), [availableDestinations, countryCarrierMap, lang])
 
   // Filter + sort plans
   const filteredPlans = useMemo(() => {
@@ -266,9 +283,13 @@ export default function ComparePage() {
     }
 
     if (regionFilter !== 'all') {
-      result = result.filter(p => p.extras && normalizeRegionLabel(p.extras[0]) === regionFilter)
+      const rTarget = destKey(regionFilter)
+      result = result.filter(p => p.extras && destKey(normalizeRegionLabel(p.extras[0])) === rTarget)
     } else if (destinationFilter !== 'all') {
-      const carriersForCountry = countryCarrierMap[destinationFilter] || new Set()
+      // Compare via canonical English key so the selected representative spelling
+      // matches plans tagged with any of its de-duplicated variants.
+      const dTarget = destKey(destinationFilter)
+      const carriersForCountry = countryCarrierMap[dTarget] || new Set()
       result = result.filter(p => {
         if (!carriersForCountry.has(p.carrier)) return false
 
@@ -276,14 +297,14 @@ export default function ComparePage() {
 
         // Per-country plan (extras[0] = country name, not a region)
         if (ext && !KNOWN_REGIONS.has(ext) && !/\d/.test(ext)) {
-          return ext === destinationFilter
+          return destKey(ext) === dTarget
         }
 
         // Regional plan (extras[0] = region name like "אירופה")
         if (ext && KNOWN_REGIONS.has(ext)) {
           const regionData = getCountriesForPlan(p)
           if (regionData && regionData.countries) {
-            return regionData.countries.includes(destinationFilter)
+            return regionData.countries.some(c => destKey(c) === dTarget)
           }
           return false
         }
@@ -366,15 +387,22 @@ export default function ComparePage() {
     + (appsFilter !== 'all' ? 1 : 0)
 
   const GB_OPTIONS = tab === 'domestic'
-    ? [['all', 'הכל'], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['100+', '100+GB'], ['unlimited', 'ללא הגבלה']]
-    : [['all', 'הכל'], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['unlimited', 'ללא הגבלה']]
+    ? [['all', tt('הכל', 'All')], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['100+', '100+GB'], ['unlimited', tt('ללא הגבלה', 'Unlimited')]]
+    : [['all', tt('הכל', 'All')], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['unlimited', tt('ללא הגבלה', 'Unlimited')]]
+
+  const TAB_LABELS = {
+    domestic: tt('חבילות סלולר', 'Cellular Plans'),
+    abroad: tt('חו"ל', 'Roaming'),
+    global: tt('גלובלי', 'Global'),
+  }
+  const translatedTabs = TABS.map(t => ({ ...t, label: TAB_LABELS[t.id] ?? t.label }))
 
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
 
   return (
     <>
       <PageHeader
-        tabs={TABS}
+        tabs={translatedTabs}
         activeTab={tab}
         onTabChange={setTab}
       />
@@ -384,14 +412,14 @@ export default function ComparePage() {
       <div className="flex items-center gap-2 mb-2">
         <span className="text-xs text-moca-sub flex items-center gap-1.5">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
-          סינון
+          {tt('סינון', 'Filter')}
           {activeFilterCount > 0 && (
             <span className="bg-moca-bolt text-white text-[9px] px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{activeFilterCount}</span>
           )}
         </span>
         {activeFilterCount > 0 && (
           <button onClick={resetFilters} className="text-xs font-medium bg-moca-bolt text-white px-2.5 py-1 rounded-lg hover:bg-moca-text transition-colors">
-            איפוס
+            {tt('איפוס', 'Reset')}
           </button>
         )}
       </div>
@@ -404,42 +432,40 @@ export default function ComparePage() {
             <>
               {/* Region + Country side by side with searchable dropdowns */}
               <div className="grid grid-cols-2 gap-2">
-                {availableRegions.length > 0 && (
+                {regionOptions.length > 0 && (
                   <div>
-                    <p className="text-[11px] font-medium text-gray-500 mb-1">אזור</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1">{tt('אזור', 'Region')}</p>
                     <SearchableSelect
                       value={regionFilter}
                       onChange={val => {
                         setRegionFilter(val)
                         if (val !== 'all') {
                           setDestinationFilter('all')
-                          const regionCarriers = [...new Set(plans.filter(p => p.extras && normalizeRegionLabel(p.extras[0]) === val).map(p => p.carrier))]
+                          const rTarget = destKey(val)
+                          const regionCarriers = [...new Set(plans.filter(p => p.extras && destKey(normalizeRegionLabel(p.extras[0])) === rTarget).map(p => p.carrier))]
                           setSelectedCarriers(regionCarriers)
                         }
                       }}
-                      options={availableRegions.map(r => ({ value: r, label: r }))}
-                      placeholder={`כל האזורים (${availableRegions.length})`}
+                      options={regionOptions}
+                      placeholder={`${tt('כל האזורים', 'All regions')} (${regionOptions.length})`}
                     />
                   </div>
                 )}
-                {availableDestinations.length > 0 && (
+                {destinationOptions.length > 0 && (
                   <div>
-                    <p className="text-[11px] font-medium text-gray-500 mb-1">מדינה</p>
+                    <p className="text-[11px] font-medium text-gray-500 mb-1">{tt('מדינה', 'Country')}</p>
                     <SearchableSelect
                       value={destinationFilter}
                       onChange={val => {
                         setDestinationFilter(val)
                         if (val !== 'all') {
                           setRegionFilter('all')
-                          const carriers = countryCarrierMap[val]
+                          const carriers = countryCarrierMap[destKey(val)]
                           if (carriers) setSelectedCarriers([...carriers])
                         }
                       }}
-                      options={availableDestinations.map(c => {
-                        const n = countryCarrierMap[c] ? countryCarrierMap[c].size : 0
-                        return { value: c, label: `${c} (${n})` }
-                      })}
-                      placeholder={`כל המדינות (${availableDestinations.length})`}
+                      options={destinationOptions}
+                      placeholder={`${tt('כל המדינות', 'All countries')} (${destinationOptions.length})`}
                     />
                   </div>
                 )}
@@ -449,7 +475,7 @@ export default function ComparePage() {
 
           <div className={showDays ? 'grid grid-cols-2 gap-3' : tab === 'domestic' ? 'grid grid-cols-2 gap-3' : ''}>
             <div>
-              <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה</p>
+              <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('גלישה', 'Data')}</p>
               <div className="flex flex-wrap gap-1">
                 {GB_OPTIONS.map(([val, label]) => (
                   <FilterTag key={val} label={label} active={gbFilter === val} onClick={() => setGbFilter(val)} />
@@ -458,30 +484,30 @@ export default function ComparePage() {
             </div>
           {tab === 'domestic' && (
             <div>
-              <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה בחו"ל</p>
+              <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('גלישה בחו"ל', 'Roaming data')}</p>
               <div className="flex flex-wrap gap-1">
-                <FilterTag label="כולם" active={roamingFilter === 'all'} onClick={() => setRoamingFilter('all')} />
-                <FilterTag label='כולל חו"ל' active={roamingFilter === 'yes'} onClick={() => setRoamingFilter('yes')} />
+                <FilterTag label={tt('כולם', 'All')} active={roamingFilter === 'all'} onClick={() => setRoamingFilter('all')} />
+                <FilterTag label={tt('כולל חו"ל', 'Includes roaming')} active={roamingFilter === 'yes'} onClick={() => setRoamingFilter('yes')} />
               </div>
             </div>
           )}
           {tab === 'domestic' && (
             <div>
-              <p className="text-[11px] font-medium text-gray-500 mb-1.5">דור רשת</p>
+              <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('דור רשת', 'Network generation')}</p>
               <div className="flex flex-wrap gap-1">
-                <FilterTag label="הכל" active={genFilter === 'all'} onClick={() => setGenFilter('all')} />
+                <FilterTag label={tt('הכל', 'All')} active={genFilter === 'all'} onClick={() => setGenFilter('all')} />
                 <FilterTag label="4G" active={genFilter === '4g'} onClick={() => setGenFilter('4g')} />
                 <FilterTag label="5G" active={genFilter === '5g'} onClick={() => setGenFilter('5g')} />
-                <FilterTag label="5G מתועדף" active={genFilter === '5g_priority'} onClick={() => setGenFilter('5g_priority')} />
+                <FilterTag label={tt('5G מתועדף', '5G Priority')} active={genFilter === '5g_priority'} onClick={() => setGenFilter('5g_priority')} />
               </div>
             </div>
           )}
 
           {showDays && (
             <div>
-              <p className="text-[11px] font-medium text-gray-500 mb-1.5">תוקף</p>
+              <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('תוקף', 'Validity')}</p>
               <div className="flex flex-wrap gap-1">
-                {[['all', 'הכל'], ['1-7', '1-7 ימים'], ['8-14', '8-14 ימים'], ['15-30', '15-30 ימים'], ['30+', '30+ ימים']].map(([val, label]) => (
+                {[['all', tt('הכל', 'All')], ['1-7', tt('1-7 ימים', '1-7 days')], ['8-14', tt('8-14 ימים', '8-14 days')], ['15-30', tt('15-30 ימים', '15-30 days')], ['30+', tt('30+ ימים', '30+ days')]].map(([val, label]) => (
                   <FilterTag key={val} label={label} active={daysFilter === val} onClick={() => setDaysFilter(val)} />
                 ))}
               </div>
@@ -489,21 +515,21 @@ export default function ComparePage() {
           )}
           {tab !== 'global' && (
             <div>
-              <p className="text-[11px] font-medium text-gray-500 mb-1.5">גלישה חופשית באפליקציות</p>
+              <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('גלישה חופשית באפליקציות', 'Free in-app browsing')}</p>
               <div className="flex flex-wrap gap-1">
-                <FilterTag label="הכל" active={appsFilter === 'all'} onClick={() => setAppsFilter('all')} />
-                <FilterTag label="כן" active={appsFilter === 'yes'} onClick={() => setAppsFilter('yes')} />
-                <FilterTag label="לא" active={appsFilter === 'no'} onClick={() => setAppsFilter('no')} />
+                <FilterTag label={tt('הכל', 'All')} active={appsFilter === 'all'} onClick={() => setAppsFilter('all')} />
+                <FilterTag label={tt('כן', 'Yes')} active={appsFilter === 'yes'} onClick={() => setAppsFilter('yes')} />
+                <FilterTag label={tt('לא', 'No')} active={appsFilter === 'no'} onClick={() => setAppsFilter('no')} />
               </div>
             </div>
           )}
           </div>
 
           <div>
-            <p className="text-[11px] font-medium text-gray-500 mb-1.5">מיון</p>
+            <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('מיון', 'Sort')}</p>
             <div className="flex flex-wrap gap-1">
-              <FilterTag label="מחיר ↑" active={sortBy === 'price_asc'} onClick={() => setSortBy('price_asc')} />
-              <FilterTag label="מחיר ↓" active={sortBy === 'price_desc'} onClick={() => setSortBy('price_desc')} />
+              <FilterTag label={tt('מחיר ↑', 'Price ↑')} active={sortBy === 'price_asc'} onClick={() => setSortBy('price_asc')} />
+              <FilterTag label={tt('מחיר ↓', 'Price ↓')} active={sortBy === 'price_desc'} onClick={() => setSortBy('price_desc')} />
               <FilterTag label="GB ↑" active={sortBy === 'gb_asc'} onClick={() => setSortBy('gb_asc')} />
               <FilterTag label="GB ↓" active={sortBy === 'gb_desc'} onClick={() => setSortBy('gb_desc')} />
           </div>
@@ -513,12 +539,12 @@ export default function ComparePage() {
         {/* Left column — Carriers */}
         <div className="bg-white rounded-xl border border-gray-200 p-3">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-medium text-gray-500">ספקים</p>
+            <p className="text-[11px] font-medium text-gray-500">{tt('ספקים', 'Providers')}</p>
             <button
               onClick={() => setSelectedCarriers(prev => prev.length === availableCarriers.length ? [] : availableCarriers.map(c => c.id))}
               className="text-[10px] text-moca-sub hover:text-moca-text"
             >
-              {selectedCarriers.length === availableCarriers.length ? 'נקה' : 'הכל'}
+              {selectedCarriers.length === availableCarriers.length ? tt('נקה', 'Clear') : tt('הכל', 'All')}
             </button>
           </div>
           <div className={`grid gap-1 ${tab === 'domestic' || tab === 'abroad' ? 'grid-cols-2' : 'grid-cols-3'}`}>
@@ -542,7 +568,7 @@ export default function ComparePage() {
 
       {/* Results count */}
       {selectedCarriers.length > 0 && (
-        <p className="text-[11px] text-gray-400 mb-3">{filteredPlans.length} חבילות נמצאו</p>
+        <p className="text-[11px] text-gray-400 mb-3">{filteredPlans.length} {tt('חבילות נמצאו', 'plans found')}</p>
       )}
 
       {/* Chart: price range per carrier */}
@@ -559,9 +585,9 @@ export default function ComparePage() {
               margin: '0 0 14px',
             }}
           >
-            טווח מחירים לפי ספק
+            {tt('טווח מחירים לפי ספק', 'Price range by provider')}
             <span style={{ marginInlineStart: 8, fontSize: 11, fontWeight: 500, color: 'var(--color-moca-muted)', fontFamily: 'var(--font-body)' }}>
-              מינימום · ממוצע · מקסימום
+              {tt('מינימום · ממוצע · מקסימום', 'Min · Avg · Max')}
             </span>
           </h2>
           <div style={{ direction: 'ltr' }}>
@@ -587,19 +613,19 @@ export default function ComparePage() {
           <div className="px-4 py-2 border-b border-gray-100">
             <p className="text-[11px] text-moca-sub flex items-center gap-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-              לחצו על שורה למעבר לחבילה בלשונית הרלוונטית
+              {tt('לחצו על שורה למעבר לחבילה בלשונית הרלוונטית', 'Click a row to jump to the plan in the relevant tab')}
             </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm" dir="rtl">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">ספק</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">שם חבילה</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">מחיר ₪</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">גלישה</th>
-                  {showDays && <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">ימים</th>}
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">דקות</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">{tt('ספק', 'Provider')}</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">{tt('שם חבילה', 'Plan name')}</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">{tt('מחיר ₪', 'Price ₪')}</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">{tt('גלישה', 'Data')}</th>
+                  {showDays && <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">{tt('ימים', 'Days')}</th>}
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500">{tt('דקות', 'Minutes')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -610,7 +636,7 @@ export default function ComparePage() {
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToPlan(p) } }}
                     tabIndex={0}
                     role="link"
-                    title={`מעבר לחבילה "${p.plan_name}" בלשונית הרלוונטית`}
+                    title={tt(`מעבר לחבילה "${p.plan_name}" בלשונית הרלוונטית`, `Go to plan "${p.plan_name}" in the relevant tab`)}
                     className="border-b border-gray-50 hover:bg-moca-cream/60 focus:bg-moca-cream focus:outline-none cursor-pointer transition-colors">
                     <td className="px-4 py-2 text-xs">
                       <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium text-white" style={{ backgroundColor: getColor(p.carrier) }}>
@@ -620,11 +646,11 @@ export default function ComparePage() {
                     <td className="px-4 py-2 text-xs text-gray-700" dir="rtl" style={{unicodeBidi: 'plaintext'}}>
                       {p.plan_name}
                       {tab === 'domestic' && hasMaxPriority(p) && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 mr-1.5 align-middle text-[9px] font-bold rounded bg-violet-50 text-violet-600 leading-none tracking-wide whitespace-nowrap">5G מתועדף</span>
+                        <span className="inline-flex items-center px-1.5 py-0.5 mr-1.5 align-middle text-[9px] font-bold rounded bg-violet-50 text-violet-600 leading-none tracking-wide whitespace-nowrap">{tt('5G מתועדף', '5G Priority')}</span>
                       )}
                     </td>
                     <td className="px-4 py-2 text-xs font-bold text-gray-900">₪{p.price}</td>
-                    <td className="px-4 py-2 text-xs text-gray-600">{p.data_gb === null ? 'ללא הגבלה' : `${Number(p.data_gb).toLocaleString('en-US')}GB`}</td>
+                    <td className="px-4 py-2 text-xs text-gray-600">{p.data_gb === null ? tt('ללא הגבלה', 'Unlimited') : `${Number(p.data_gb).toLocaleString('en-US')}GB`}</td>
                     {showDays && <td className="px-4 py-2 text-xs text-gray-600">{p.days || '—'}</td>}
                     <td className="px-4 py-2 text-xs text-gray-600">{p.minutes ? Number(p.minutes).toLocaleString('en-US') : '—'}</td>
                   </tr>
@@ -638,7 +664,7 @@ export default function ComparePage() {
                 onClick={() => setTableVisibleCount(prev => prev + 50)}
                 className="text-sm text-moca-bolt hover:text-moca-dark px-4 py-2 rounded-lg border border-moca-border hover:bg-moca-cream transition-colors"
               >
-                {'\u05D4\u05E6\u05D2 \u05E2\u05D5\u05D3'} ({filteredPlans.length - tableVisibleCount} {'\u05E0\u05D5\u05E1\u05E4\u05D9\u05DD'})
+                {tt('\u05D4\u05E6\u05D2 \u05E2\u05D5\u05D3', 'Show more')} ({filteredPlans.length - tableVisibleCount} {tt('\u05E0\u05D5\u05E1\u05E4\u05D9\u05DD', 'more')})
               </button>
             </div>
           )}
@@ -650,7 +676,7 @@ export default function ComparePage() {
           <svg className="mx-auto mb-3 w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 3v18" /><path d="M4 7h16" /><path d="M4 7l3 8h0a4 4 0 0 0 3.5 2h0A4 4 0 0 0 14 15h0l3-8" /><circle cx="7" cy="15" r="3" /><circle cx="17" cy="15" r="3" />
           </svg>
-          <p className="text-sm">בחר לפחות ספק אחד להשוואה</p>
+          <p className="text-sm">{tt('בחר לפחות ספק אחד להשוואה', 'Select at least one provider to compare')}</p>
         </div>
       )}
       </div>

@@ -3,10 +3,12 @@ import { useAuth } from '../hooks/useAuth'
 import { api } from '../lib/api'
 import Logo from '../components/Logo'
 import Button from '../components/ui/Button'
+import { useLang } from '../hooks/useLanguage'
 
 export default function SuspendedPage() {
   const { workspace, user, signOut } = useAuth()
-  const name = workspace?.name || 'החשבון שלך'
+  const { tt } = useLang()
+  const name = workspace?.name || tt('החשבון שלך', 'your account')
   const isTrialExpired = workspace?.trial_expired === true
 
   const [formOpen, setFormOpen]   = useState(false)
@@ -25,7 +27,7 @@ export default function SuspendedPage() {
       setMessage('')
     } catch (err) {
       setStatus('error')
-      setError(err.message || 'שליחה נכשלה')
+      setError(err.message || tt('שליחה נכשלה', 'Sending failed'))
     } finally {
       setSubmitting(false)
     }
@@ -49,31 +51,29 @@ export default function SuspendedPage() {
           </div>
 
           <h1 className="text-xl font-bold text-moca-text">
-            {isTrialExpired ? 'תקופת הניסיון הסתיימה' : 'החשבון הושעה'}
+            {isTrialExpired ? tt('תקופת הניסיון הסתיימה', 'Trial period ended') : tt('החשבון הושעה', 'Account suspended')}
           </h1>
 
           <p className="text-sm text-moca-sub leading-relaxed">
             {isTrialExpired ? (
-              <>תקופת הפיילוט של <strong>{name}</strong> הגיעה לסיומה.
-              צרו קשר כדי לחדש את הגישה או לעבור למנוי מלא.</>
+              <>{tt('תקופת הפיילוט של', 'The pilot period for')} <strong>{name}</strong> {tt('הגיעה לסיומה. צרו קשר כדי לחדש את הגישה או לעבור למנוי מלא.', 'has ended. Contact us to renew access or move to a full subscription.')}</>
             ) : (
-              <>הגישה של <strong>{name}</strong> ל-MOCA הושהתה זמנית.
-              אם לדעתך זו טעות או שברצונך לחדש את המנוי — פנה אלינו.</>
+              <>{tt('הגישה של', 'Access for')} <strong>{name}</strong> {tt('ל-MOCA הושהתה זמנית. אם לדעתך זו טעות או שברצונך לחדש את המנוי — פנה אלינו.', 'to MOCA has been temporarily suspended. If you think this is a mistake or you want to renew the subscription, contact us.')}</>
             )}
           </p>
 
           {status === 'sent' ? (
             <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 text-sm">
-              ✓ הפנייה נשלחה. נחזור אליך בהקדם למייל {user?.email}.
+              {tt('✓ הפנייה נשלחה. נחזור אליך בהקדם למייל', '✓ Your message was sent. We\'ll get back to you soon at')} {user?.email}.
             </div>
           ) : formOpen ? (
             <form onSubmit={submit} className="text-right space-y-3 pt-2">
               <label className="block text-xs text-moca-sub">
-                הודעה ל-MOCA
+                {tt('הודעה ל-MOCA', 'Message to MOCA')}
                 <textarea
                   value={message} onChange={e => setMessage(e.target.value)}
                   required maxLength={4000} rows={5}
-                  placeholder="ספר לנו מה קרה או בקש לחדש את הגישה…"
+                  placeholder={tt('ספר לנו מה קרה או בקש לחדש את הגישה…', 'Tell us what happened or ask to renew access…')}
                   className="mt-1 w-full px-3 py-2 border border-moca-border rounded-xl
                              text-sm focus:ring-2 focus:ring-moca-bolt/30
                              focus:border-moca-bolt outline-none"
@@ -84,10 +84,10 @@ export default function SuspendedPage() {
                 <button type="submit" disabled={submitting || !message.trim()}
                   className="flex-1 bg-moca-bolt text-white font-medium py-2 rounded-xl
                              hover:bg-moca-dark disabled:opacity-50 transition-colors text-sm">
-                  {submitting ? 'שולח…' : 'שלח פנייה'}
+                  {submitting ? tt('שולח…', 'Sending…') : tt('שלח פנייה', 'Send message')}
                 </button>
                 <Button type="button" onClick={() => setFormOpen(false)} variant="ghost">
-                  ביטול
+                  {tt('ביטול', 'Cancel')}
                 </Button>
               </div>
             </form>
@@ -95,12 +95,12 @@ export default function SuspendedPage() {
             <button onClick={() => { setFormOpen(true); setStatus(null) }}
               className="block w-full bg-moca-bolt text-white font-medium py-2.5 rounded-xl
                          hover:bg-moca-dark transition-colors">
-              צור קשר עם MOCA
+              {tt('צור קשר עם MOCA', 'Contact MOCA')}
             </button>
           )}
 
           <Button onClick={signOut} variant="ghost" className="w-full">
-            יציאה
+            {tt('יציאה', 'Sign out')}
           </Button>
         </div>
 

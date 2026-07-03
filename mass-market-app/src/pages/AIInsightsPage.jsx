@@ -4,6 +4,7 @@ import { useVisibleCarriers } from '../hooks/useHiddenCarrier'
 import { DOMESTIC_LABELS, carrierLabel } from '../data/carrierLabels'
 import { CarrierChip, Tag } from '../components/moca'
 import { getCarrierColor } from '../components/moca/carrierMeta'
+import { useLang } from '../hooks/useLanguage'
 
 /**
  * Per-carrier AI insight feed. Each row pulls a focused Hebrew competitive
@@ -31,6 +32,7 @@ const REPORT_PROMPT = (carrierName) => `תן לי דוח תחרותי תמצית
 - פורמט: כותרות מודגשות (## כותרת), נקודות קצרות תחת כל כותרת.`
 
 function CarrierInsightCard({ carrierId, planCount, changes7d, accentColor }) {
+  const { tt } = useLang()
   const carrierName = carrierLabel(carrierId)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -47,7 +49,7 @@ function CarrierInsightCard({ carrierId, planCount, changes7d, accentColor }) {
       setReport(res?.answer || res?.response || res?.text || JSON.stringify(res))
       setGeneratedAt(new Date())
     } catch (e) {
-      setError(e.message || 'שגיאה בטעינת הדוח')
+      setError(e.message || tt('שגיאה בטעינת הדוח', 'Failed to load the report'))
     } finally {
       setLoading(false)
     }
@@ -124,12 +126,12 @@ function CarrierInsightCard({ carrierId, planCount, changes7d, accentColor }) {
                 flexWrap: 'wrap',
               }}
             >
-              <span>{planCount} מסלולים</span>
+              <span>{planCount} {tt('מסלולים', 'plans')}</span>
               {hasActivity && (
                 <>
                   <span aria-hidden="true">·</span>
                   <span style={{ color: isHot ? 'var(--color-moca-up)' : 'var(--color-moca-sub)', fontWeight: 700 }}>
-                    {changes7d} שינויים · 7 ימים
+                    {changes7d} {tt('שינויים · 7 ימים', 'changes · 7 days')}
                   </span>
                 </>
               )}
@@ -163,7 +165,7 @@ function CarrierInsightCard({ carrierId, planCount, changes7d, accentColor }) {
             <path d="M12 3v2M12 19v2M5 12H3M21 12h-2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4" />
             <circle cx="12" cy="12" r="4" />
           </svg>
-          {loading ? 'מנתח…' : (open ? (report ? 'הסתר דוח' : 'טוען…') : 'טען דוח AI')}
+          {loading ? tt('מנתח…', 'Analyzing…') : (open ? (report ? tt('הסתר דוח', 'Hide report') : tt('טוען…', 'Loading…')) : tt('טען דוח AI', 'Load AI report'))}
         </button>
       </header>
 
@@ -195,7 +197,7 @@ function CarrierInsightCard({ carrierId, planCount, changes7d, accentColor }) {
                   borderTopColor: 'var(--color-moca-bolt)',
                 }}
               />
-              <p style={{ fontSize: 12, margin: 0 }}>Claude מנתח את הנתונים…</p>
+              <p style={{ fontSize: 12, margin: 0 }}>{tt('Claude מנתח את הנתונים…', 'Claude is analyzing the data…')}</p>
             </div>
           )}
 
@@ -225,7 +227,7 @@ function CarrierInsightCard({ carrierId, planCount, changes7d, accentColor }) {
                   fontFamily: 'inherit',
                 }}
               >
-                נסה שוב
+                {tt('נסה שוב', 'Try again')}
               </button>
             </div>
           )}
@@ -272,7 +274,7 @@ function CarrierInsightCard({ carrierId, planCount, changes7d, accentColor }) {
                     <polyline points="23 4 23 10 17 10" />
                     <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
                   </svg>
-                  רענן דוח
+                  {tt('רענן דוח', 'Refresh report')}
                 </button>
                 {generatedAt && (
                   <span style={{ fontSize: 10, color: 'var(--color-moca-muted)' }}>
@@ -289,6 +291,7 @@ function CarrierInsightCard({ carrierId, planCount, changes7d, accentColor }) {
 }
 
 function FeedSummary({ totalPlans, totalChanges7d, hotCount }) {
+  const { tt } = useLang()
   return (
     <div
       style={{
@@ -305,7 +308,7 @@ function FeedSummary({ totalPlans, totalChanges7d, hotCount }) {
     >
       <div className="tnum">
         <div style={{ fontSize: 10, color: 'var(--color-moca-muted)', fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase' }}>
-          מסלולים תחת מעקב
+          {tt('מסלולים תחת מעקב', 'Plans tracked')}
         </div>
         <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-moca-dark)', letterSpacing: -0.4, lineHeight: 1.1, marginTop: 2 }}>
           {totalPlans}
@@ -313,7 +316,7 @@ function FeedSummary({ totalPlans, totalChanges7d, hotCount }) {
       </div>
       <div className="tnum">
         <div style={{ fontSize: 10, color: 'var(--color-moca-muted)', fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase' }}>
-          שינויים · 7 ימים
+          {tt('שינויים · 7 ימים', 'Changes · 7 days')}
         </div>
         <div style={{ fontSize: 24, fontWeight: 800, color: totalChanges7d > 0 ? 'var(--color-moca-up)' : 'var(--color-moca-dark)', letterSpacing: -0.4, lineHeight: 1.1, marginTop: 2, direction: 'ltr' }}>
           {totalChanges7d}
@@ -322,7 +325,7 @@ function FeedSummary({ totalPlans, totalChanges7d, hotCount }) {
       {hotCount > 0 && (
         <div className="tnum">
           <div style={{ fontSize: 10, color: 'var(--color-moca-muted)', fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase' }}>
-            מתחרים פעילים
+            {tt('מתחרים פעילים', 'Active competitors')}
           </div>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-moca-hot)', letterSpacing: -0.4, lineHeight: 1.1, marginTop: 2 }}>
             {hotCount}
@@ -334,6 +337,7 @@ function FeedSummary({ totalPlans, totalChanges7d, hotCount }) {
 }
 
 export default function AIInsightsPage() {
+  const { tt } = useLang()
   const allDomestic = Object.keys(DOMESTIC_LABELS)
   const carriers = useVisibleCarriers(allDomestic)
 
@@ -404,7 +408,7 @@ export default function AIInsightsPage() {
             marginBottom: 4,
           }}
         >
-          תובנות · ניתוח Claude
+          {tt('תובנות · ניתוח Claude', 'Insights · Claude analysis')}
         </div>
         <h1
           style={{
@@ -428,7 +432,7 @@ export default function AIInsightsPage() {
             maxWidth: 640,
           }}
         >
-          דוח תחרותי לכל מתחרה — מצב נוכחי, אסטרטגיה, שינויים אחרונים והזדמנויות. הדוחות נטענים בלחיצה ומיוצרים על ידי Claude Sonnet.
+          {tt('דוח תחרותי לכל מתחרה — מצב נוכחי, אסטרטגיה, שינויים אחרונים והזדמנויות. הדוחות נטענים בלחיצה ומיוצרים על ידי Claude Sonnet.', 'A competitive report for each carrier — current status, strategy, recent changes and opportunities. Reports load on click and are generated by Claude Sonnet.')}
         </p>
       </div>
 
@@ -464,7 +468,7 @@ export default function AIInsightsPage() {
             fontSize: 13,
           }}
         >
-          אין מתחרים זמינים בטלסקופ הנוכחי.
+          {tt('אין מתחרים זמינים בטלסקופ הנוכחי.', 'No competitors available in the current scope.')}
         </div>
       )}
     </div>

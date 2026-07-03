@@ -9,10 +9,11 @@ import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
 import { useCoupons } from '../hooks/useCoupons'
 import { AFFILIATE_PROVIDERS, AFFILIATE_URLS } from '../data/affiliateLinks'
 import { GLOBAL_LABELS, GLOBAL_COLORS } from '../data/carrierLabels'
+import { useLang } from '../hooks/useLanguage'
+import { localizeDest } from '../data/destI18n'
 
 const CARRIER_LOGOS = {
   tuki:            '/logos/tuki.png',
-  globalesim:      '/logos/globalesim.png',
   airalo:          '/logos/airalo.png',
   airalo_local:    '/logos/airalo.png',
   airalo_regional: '/logos/airalo.png',
@@ -48,7 +49,6 @@ const CARRIER_LOGOS = {
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
 const LOGO_SIZES = {
-  globalesim:       '72px',
   pelephone_global: '72px',
   esimo:            '72px',
   simtlv:           '48px',
@@ -103,11 +103,15 @@ function getPillLabel(plan) {
   return formatGB(plan.data_gb)
 }
 
-function formatDays(days) {
+// formatGB / getPillLabel outputs double as GB-group KEYS (compared in the
+// data-option grouping below), so they must NOT localize — keep Hebrew, and
+// localize the "unlimited" sentinel only at the render sites (pillDisplay).
+// formatDays is display-only, so it localizes via the threaded `tt`.
+function formatDays(days, tt = (he) => he) {
   if (!days) return null
-  if (days >= 365) return `${(days / 365).toFixed(days % 365 === 0 ? 0 : 1)} שנים`
-  if (days > 60) return `${Math.round(days / 30)} חודשים`
-  return `${days} ימים`
+  if (days >= 365) return `${(days / 365).toFixed(days % 365 === 0 ? 0 : 1)} ${tt('שנים', 'yr')}`
+  if (days > 60) return `${Math.round(days / 30)} ${tt('חודשים', 'mo')}`
+  return `${days} ${tt('ימים', 'days')}`
 }
 
 function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, onCompareToggle, repPlan, tabId }) {
@@ -128,6 +132,13 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
   const { isWatched, toggle: toggleWatch } = useWatchlist()
   const { countFor } = useAnnotationCounts()
   const { couponFor } = useCoupons()
+  const { tt, lang } = useLang()
+  // Localize the "unlimited" GB pill for display only — getPillLabel itself
+  // stays Hebrew because its output is used as a grouping key above.
+  const pillDisplay = (p) => {
+    const l = getPillLabel(p)
+    return l === 'ללא הגבלה' ? tt('ללא הגבלה', 'Unlimited') : l
+  }
   const coupon = couponFor(carrier)
   const [couponCopied, setCouponCopied] = useState(false)
   const copyCoupon = useCallback((e) => {
@@ -221,7 +232,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
 
       {/* Destination title */}
       <h3 className="text-[15px] font-bold text-gray-800 mb-3">
-        <bdi>{destination}</bdi>
+        <bdi>{localizeDest(destination, lang)}</bdi>
       </h3>
 
       {/* Data / days selector — deduplicated for all carriers */}
@@ -237,7 +248,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
                   : 'bg-moca-cream text-moca-sub hover:bg-moca-sand hover:text-moca-text'
               }`}
             >
-              {getPillLabel(rep)}
+              {pillDisplay(rep)}
             </button>
           ))}
         </div>
@@ -253,7 +264,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
                     : 'bg-white text-moca-sub border border-gray-200 hover:bg-moca-cream hover:text-moca-text'
                 }`}
               >
-                {days} ימים
+                {days} {tt('ימים', 'days')}
               </button>
             ))}
           </div>
@@ -274,11 +285,11 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
 
       {/* Info line */}
       <p className="text-sm text-gray-500 mb-3">
-        <bdi>{getPillLabel(selectedPlan)}</bdi>
+        <bdi>{pillDisplay(selectedPlan)}</bdi>
         <span className="mx-1.5 text-gray-300">·</span>
-        <bdi>{formatDays(selectedPlan.days)}</bdi>
+        <bdi>{formatDays(selectedPlan.days, tt)}</bdi>
         {selectedPlan.minutes ? (
-          <><span className="mx-1.5 text-gray-300">·</span><bdi>{Number(selectedPlan.minutes).toLocaleString('en-US')} דקות</bdi></>
+          <><span className="mx-1.5 text-gray-300">·</span><bdi>{Number(selectedPlan.minutes).toLocaleString('en-US')} {tt('דקות', 'minutes')}</bdi></>
         ) : null}
         {selectedPlan.sms ? (
           <><span className="mx-1.5 text-gray-300">·</span><bdi>{selectedPlan.sms} SMS</bdi></>
@@ -292,7 +303,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
             onClick={() => setShowCountries(true)}
             className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
           >
-            מדינות ({countryData.countries.length}) &larr;
+            {tt('מדינות', 'Countries')} ({countryData.countries.length}) &larr;
           </button>
         </div>
       )}
@@ -310,8 +321,8 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
                 className="w-full flex items-center justify-center gap-1.5 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
               >
                 <span aria-hidden="true">🎟</span>
-                <span>{coupon.discount_label || 'הטבה'}{coupon.partner_name ? ` · אצל ${coupon.partner_name}` : ''}</span>
-                <span className="text-[10px] text-[#7a5a30] mr-auto">פתח ↗</span>
+                <span>{coupon.discount_label || tt('הטבה', 'Deal')}{coupon.partner_name ? ` · ${tt('אצל', 'at')} ${coupon.partner_name}` : ''}</span>
+                <span className="text-[10px] text-[#7a5a30] mr-auto">{tt('פתח', 'Open')} ↗</span>
               </a>
             ) : (
               <button
@@ -320,8 +331,8 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
                 className="w-full flex items-center justify-center gap-1.5 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
               >
                 <span aria-hidden="true">🎟</span>
-                <span>קוד: <span className="font-mono tracking-wide">{coupon.code}</span>{coupon.discount_label ? ` · ${coupon.discount_label}` : ''}</span>
-                <span className="text-[10px] text-[#7a5a30] mr-auto">{couponCopied ? '✓ הועתק' : 'העתק'}</span>
+                <span>{tt('קוד:', 'Code:')} <span className="font-mono tracking-wide">{coupon.code}</span>{coupon.discount_label ? ` · ${coupon.discount_label}` : ''}</span>
+                <span className="text-[10px] text-[#7a5a30] mr-auto">{couponCopied ? tt('✓ הועתק', '✓ Copied') : tt('העתק', 'Copy')}</span>
               </button>
             )}
           </div>
@@ -339,9 +350,9 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
                 <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
                 <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
               </svg>
-              רכישה
+              {tt('רכישה', 'Buy')}
             </a>
-            <p className="text-center text-[10px] text-[#a08060] mt-1">דרך MOCA</p>
+            <p className="text-center text-[10px] text-[#a08060] mt-1">{tt('דרך MOCA', 'via MOCA')}</p>
           </div>
         )}
 
@@ -352,7 +363,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onCompareToggle(repPlan || selectedPlan, tabId || 'global') }}
-              title={isInCompare ? 'הסר מהשוואה' : 'הוסף להשוואה'}
+              title={isInCompare ? tt('הסר מהשוואה', 'Remove from comparison') : tt('הוסף להשוואה', 'Add to comparison')}
               className={`p-1 rounded transition-all ${
                 isInCompare ? 'text-blue-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-blue-400'
               }`}
@@ -369,7 +380,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setShowAnnotations(true) }}
-              title={annotationCount > 0 ? `${annotationCount} הערות צוות` : 'הוסף הערה'}
+              title={annotationCount > 0 ? `${annotationCount} ${tt('הערות צוות', 'team notes')}` : tt('הוסף הערה', 'Add a note')}
               className={`relative p-1 transition-all ${
                 annotationCount > 0 ? 'text-moca-bolt' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
               }`}
@@ -390,7 +401,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
             <button
               type="button"
               onClick={handleShare}
-              title="שתף חבילה"
+              title={tt('שתף חבילה', 'Share plan')}
               className={`p-1 transition-all ${
                 copied ? 'text-emerald-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
               }`}
@@ -414,7 +425,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); toggleWatch(watchKey) }}
-              title={watched ? 'הסר מהמעקב' : 'הוסף למעקב'}
+              title={watched ? tt('הסר מהמעקב', 'Remove from watchlist') : tt('הוסף למעקב', 'Add to watchlist')}
               className={`p-1 transition-all ${
                 watched ? 'text-amber-400 hover:text-amber-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-amber-400'
               }`}
@@ -445,7 +456,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
           carrier={carrier}
           planName={selectedPlan.plan_name}
           planType="global"
-          planLabel={`${destination} · ${selectedPlan.data_gb === null ? 'ללא הגבלה' : Number(selectedPlan.data_gb).toLocaleString('en-US') + 'GB'}`}
+          planLabel={`${localizeDest(destination, lang)} · ${selectedPlan.data_gb === null ? tt('ללא הגבלה', 'Unlimited') : Number(selectedPlan.data_gb).toLocaleString('en-US') + 'GB'}`}
         />
       )}
     </div>

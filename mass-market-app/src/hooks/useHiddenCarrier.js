@@ -4,8 +4,10 @@ import { useAuth } from './useAuth'
 // or null. Backend already filters data — this hook is a UX failsafe so
 // hardcoded carrier dropdowns/lists don't show an option that returns empty.
 export function useHiddenCarrier() {
-  const { workspace, isSuperAdmin } = useAuth()
-  if (isSuperAdmin) return null
+  const { workspace, isSuperAdmin, viewAs } = useAuth()
+  // Bypass for super-admin — but not while impersonating a workspace (view-as),
+  // so the preview reflects the client's hidden self-carrier.
+  if (isSuperAdmin && !viewAs) return null
   if (!workspace?.hide_self_carrier) return null
   return workspace.mvno_carrier || null
 }
@@ -13,8 +15,8 @@ export function useHiddenCarrier() {
 // Convenience: filter a carrier-id list applying both visible_carriers scoping
 // (allowlist) and hide_self_carrier (denylist). Super-admins bypass both.
 export function useVisibleCarriers(carrierIds) {
-  const { workspace, isSuperAdmin } = useAuth()
-  if (isSuperAdmin) return carrierIds
+  const { workspace, isSuperAdmin, viewAs } = useAuth()
+  if (isSuperAdmin && !viewAs) return carrierIds
 
   let result = carrierIds
 

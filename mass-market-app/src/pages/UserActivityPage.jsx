@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { api } from '../lib/api'
 import { ROUTE_META } from '../components/moca/routeMeta'
+import { useLang } from '../hooks/useLanguage'
 
 const WINDOWS = [
   { label: '7 ימים',  days: 7 },
@@ -11,6 +12,7 @@ const WINDOWS = [
 ]
 
 const ROLE_LABELS = { admin: 'מנהל', viewer: 'צופה', super_admin: 'מנהל-על' }
+const ROLE_LABELS_EN = { admin: 'Admin', viewer: 'Viewer', super_admin: 'Super admin' }
 
 // Gender-neutral noun phrases (Hebrew verbs inflect for gender; nouns don't).
 const EVENT_LABELS = {
@@ -26,6 +28,19 @@ const EVENT_LABELS = {
   export:            'ייצוא לאקסל',
 }
 
+const EVENT_LABELS_EN = {
+  login:             'Login',
+  page_view:         'Page view',
+  alert_created:     'Alert created',
+  watchlist_added:   'Added to watchlist',
+  watchlist_removed: 'Removed from watchlist',
+  comparison_saved:  'Comparison saved',
+  chat_used:         'AI chat used',
+  annotation_added:  'Team note added',
+  search:            'Search',
+  export:            'Excel export',
+}
+
 // pathname → Hebrew page name (reuse the Topbar route map)
 const PATH_LABELS = ROUTE_META.reduce((m, r) => { m[r.match] = r.title; return m }, {})
 function pageLabel(path) {
@@ -35,7 +50,7 @@ function pageLabel(path) {
   return PATH_LABELS[base] || path
 }
 
-function detailSummary(details) {
+function detailSummary(details, tt = (he) => he) {
   if (!details) return ''
   try {
     const d = JSON.parse(details)
@@ -43,7 +58,7 @@ function detailSummary(details) {
     if (d.carrier && d.plan_name)    return `${d.carrier} · ${d.plan_name}`
     if (d.carrier && d.plan_pattern) return `${d.carrier} · ${d.plan_pattern}`
     if (d.carrier)                   return d.carrier
-    if (d.name)                      return `${d.name}${d.count != null ? ` · ${d.count} חבילות` : ''}`
+    if (d.name)                      return `${d.name}${d.count != null ? ` · ${d.count} ${tt('חבילות', 'plans')}` : ''}`
     if (d.tab)                       return `${d.tab}${d.count != null ? ` · ${d.count}` : ''}`
     if (d.model)                     return d.model
     return ''
@@ -67,26 +82,26 @@ function fmtDateTime(iso) {
   } catch { return iso }
 }
 
-function fmtDate(iso) {
+function fmtDate(iso, locale = 'he-IL') {
   if (!iso) return '—'
   try {
-    return new Date(iso).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: '2-digit' })
+    return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: '2-digit' })
   } catch { return iso }
 }
 
-function fmtRelative(iso) {
-  if (!iso) return 'אף פעם'
+function fmtRelative(iso, tt = (he) => he, locale = 'he-IL') {
+  if (!iso) return tt('אף פעם', 'Never')
   try {
     const diffMs = Date.now() - new Date(iso).getTime()
     const min = Math.floor(diffMs / 60000)
-    if (min < 1)  return 'הרגע'
-    if (min < 60) return `לפני ${min} דק׳`
+    if (min < 1)  return tt('הרגע', 'Just now')
+    if (min < 60) return tt(`לפני ${min} דק׳`, `${min} min ago`)
     const hrs = Math.floor(min / 60)
-    if (hrs < 24) return `לפני ${hrs} שע׳`
+    if (hrs < 24) return tt(`לפני ${hrs} שע׳`, `${hrs} hr ago`)
     const days = Math.floor(hrs / 24)
-    if (days < 30) return `לפני ${days} ימים`
-    return fmtDate(iso)
-  } catch { return fmtDate(iso) }
+    if (days < 30) return tt(`לפני ${days} ימים`, `${days} days ago`)
+    return fmtDate(iso, locale)
+  } catch { return fmtDate(iso, locale) }
 }
 
 const pctOf = (n, d) => (d > 0 ? Math.round((n / d) * 100) : 0)
@@ -110,26 +125,28 @@ function StatCard({ label, value, sub }) {
 }
 
 function RoleBadge({ role }) {
+  const { tt } = useLang()
   const color = role === 'admin' ? 'var(--color-moca-bolt)' : 'var(--color-moca-sub)'
   return (
     <span
       className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap"
       style={{ background: 'var(--color-moca-cream)', color }}
     >
-      {ROLE_LABELS[role] || role}
+      {ROLE_LABELS[role] ? tt(ROLE_LABELS[role], ROLE_LABELS_EN[role] || role) : role}
     </span>
   )
 }
 
 // Sortable table header cell.
 function Th({ label, sortField, sortKey, sortDir, onSort, align = 'end' }) {
+  const { tt } = useLang()
   const active = sortKey === sortField
   return (
     <th
       onClick={() => onSort(sortField)}
       className={`px-3 py-2 text-${align} text-xs font-semibold cursor-pointer select-none whitespace-nowrap`}
       style={{ color: active ? 'var(--color-moca-bolt)' : 'var(--color-moca-muted)' }}
-      title="מיון"
+      title={tt('מיון', 'Sort')}
     >
       {label}{active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
     </th>
@@ -137,6 +154,9 @@ function Th({ label, sortField, sortKey, sortDir, onSort, align = 'end' }) {
 }
 
 export default function UserActivityPage() {
+  const { tt, lang } = useLang()
+  const dateLocale = lang === 'he' ? 'he-IL' : 'en-US'
+  const WINDOW_LABELS = { 7: tt('7 ימים', '7 days'), 30: tt('30 ימים', '30 days'), 90: tt('90 ימים', '90 days') }
   const [days, setDays]       = useState(30)
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
@@ -155,11 +175,11 @@ export default function UserActivityPage() {
       const d = await api.getActivityOverview(days)
       setData(d)
     } catch (e) {
-      setError(e.message || 'שגיאה')
+      setError(e.message || tt('שגיאה', 'Error'))
     } finally {
       setLoading(false)
     }
-  }, [days])
+  }, [days, tt])
 
   useEffect(() => { load() }, [load])
 
@@ -237,19 +257,19 @@ export default function UserActivityPage() {
       funnel: { registered: total, loggedIn, activated },
       buckets: { active7, dormant, never },
       adoption: [
-        { key: 'page', label: 'גלישה בעמודים', n: wPages,   pct: pctOf(wPages, total) },
-        { key: 'alert', label: 'התראות',        n: wAlerts,  pct: pctOf(wAlerts, total) },
-        { key: 'watch', label: 'מעקב חבילות',   n: wWatch,   pct: pctOf(wWatch, total) },
-        { key: 'comp',  label: 'השוואות',        n: wCompare, pct: pctOf(wCompare, total) },
-        { key: 'chat',  label: 'צ׳אט AI',        n: wChat,    pct: pctOf(wChat, total) },
+        { key: 'page', label: tt('גלישה בעמודים', 'Page browsing'), n: wPages,   pct: pctOf(wPages, total) },
+        { key: 'alert', label: tt('התראות', 'Alerts'),        n: wAlerts,  pct: pctOf(wAlerts, total) },
+        { key: 'watch', label: tt('מעקב חבילות', 'Plan watchlist'),   n: wWatch,   pct: pctOf(wWatch, total) },
+        { key: 'comp',  label: tt('השוואות', 'Comparisons'),        n: wCompare, pct: pctOf(wCompare, total) },
+        { key: 'chat',  label: tt('צ׳אט AI', 'AI chat'),        n: wChat,    pct: pctOf(wChat, total) },
       ],
     }
-  }, [users])
+  }, [users, tt])
 
   const workspaceRollup = useMemo(() => {
     const map = new Map()
     for (const u of users) {
-      const name = u.workspace_name || '— ללא Workspace'
+      const name = u.workspace_name || tt('— ללא Workspace', '— No workspace')
       const g = map.get(name) || { name, users: 0, active: 0, logins: 0, page_views: 0, actions: 0 }
       g.users += 1
       if (u.last_seen) g.active += 1
@@ -259,7 +279,7 @@ export default function UserActivityPage() {
       map.set(name, g)
     }
     return [...map.values()].sort((a, b) => b.page_views - a.page_views)
-  }, [users])
+  }, [users, tt])
 
   const dau = summary.active_today || 0
   const wau = summary.active_this_week || 0
@@ -267,10 +287,10 @@ export default function UserActivityPage() {
   const stickiness = pctOf(dau, mau)
 
   if (loading) {
-    return <div className="p-6 text-sm" style={{ color: 'var(--color-moca-muted)' }}>טוען…</div>
+    return <div className="p-6 text-sm" style={{ color: 'var(--color-moca-muted)' }}>{tt('טוען…', 'Loading…')}</div>
   }
   if (error) {
-    return <div className="p-6 text-sm text-red-600">שגיאה: {error}</div>
+    return <div className="p-6 text-sm text-red-600">{tt('שגיאה:', 'Error:')} {error}</div>
   }
 
   const { funnel, buckets, adoption } = analytics
@@ -285,10 +305,10 @@ export default function UserActivityPage() {
             className="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap"
             style={{ background: 'var(--color-moca-bolt)', color: '#fff' }}
           >
-            ניהול משתמשים
+            {tt('ניהול משתמשים', 'User management')}
           </Link>
           <p className="text-sm" style={{ color: 'var(--color-moca-sub)' }}>
-            מעקב פעילות לקוחות — התחברויות, עמודים שנצפו ופעולות. מנהלי-על אינם נספרים.
+            {tt('מעקב פעילות לקוחות — התחברויות, עמודים שנצפו ופעולות. מנהלי-על אינם נספרים.', 'Client activity tracking — logins, pages viewed and actions. Super admins are not counted.')}
           </p>
         </div>
         <div className="flex items-center gap-1.5">
@@ -303,14 +323,14 @@ export default function UserActivityPage() {
                 border:     '1px solid var(--color-moca-border)',
               }}
             >
-              {w.label}
+              {WINDOW_LABELS[w.days] ?? w.label}
             </button>
           ))}
           <button
             onClick={load}
             className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-moca-border"
             style={{ color: 'var(--color-moca-sub)', background: 'var(--color-moca-mist)' }}
-            title="רענן"
+            title={tt('רענן', 'Refresh')}
           >
             ↻
           </button>
@@ -319,40 +339,40 @@ export default function UserActivityPage() {
 
       {/* Stat cards — active-user funnel by recency (DAU / WAU / MAU) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="סך משתמשים" value={fmtNum(summary.total_users)} sub="לקוחות (ללא מנהלי-על)" />
-        <StatCard label="פעילים היום" value={fmtNum(dau)} sub="DAU" />
-        <StatCard label="פעילים השבוע" value={fmtNum(wau)} sub="WAU" />
-        <StatCard label="פעילים החודש" value={fmtNum(mau)} sub={mau > 0 ? `MAU · דביקות ${stickiness}%` : 'MAU'} />
+        <StatCard label={tt('סך משתמשים', 'Total users')} value={fmtNum(summary.total_users)} sub={tt('לקוחות (ללא מנהלי-על)', 'Clients (excl. super admins)')} />
+        <StatCard label={tt('פעילים היום', 'Active today')} value={fmtNum(dau)} sub="DAU" />
+        <StatCard label={tt('פעילים השבוע', 'Active this week')} value={fmtNum(wau)} sub="WAU" />
+        <StatCard label={tt('פעילים החודש', 'Active this month')} value={fmtNum(mau)} sub={mau > 0 ? `MAU · ${tt('דביקות', 'Stickiness')} ${stickiness}%` : 'MAU'} />
       </div>
 
       {/* Activation funnel + retention buckets */}
       <div className="rounded-xl border border-moca-border bg-white p-4">
         <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--color-moca-dark)' }}>
-          אקטיבציה ושימור <span className="font-normal text-xs" style={{ color: 'var(--color-moca-muted)' }}>(פעולות בטווח הנבחר)</span>
+          {tt('אקטיבציה ושימור', 'Activation & retention')} <span className="font-normal text-xs" style={{ color: 'var(--color-moca-muted)' }}>({tt('פעולות בטווח הנבחר', 'actions in selected range')})</span>
         </h3>
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-lg p-3 text-center" style={{ background: 'var(--color-moca-mist)' }}>
             <div className="text-2xl font-bold" style={{ color: 'var(--color-moca-dark)' }}>{fmtNum(funnel.registered)}</div>
-            <div className="text-xs mt-0.5" style={{ color: 'var(--color-moca-sub)' }}>נרשמו</div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--color-moca-sub)' }}>{tt('נרשמו', 'Registered')}</div>
           </div>
           <div className="rounded-lg p-3 text-center" style={{ background: 'var(--color-moca-mist)' }}>
             <div className="text-2xl font-bold" style={{ color: 'var(--color-moca-dark)' }}>{fmtNum(funnel.loggedIn)}</div>
-            <div className="text-xs mt-0.5" style={{ color: 'var(--color-moca-sub)' }}>התחברו · {pctOf(funnel.loggedIn, funnel.registered)}%</div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--color-moca-sub)' }}>{tt('התחברו', 'Logged in')} · {pctOf(funnel.loggedIn, funnel.registered)}%</div>
           </div>
           <div className="rounded-lg p-3 text-center" style={{ background: 'var(--color-moca-mist)' }}>
             <div className="text-2xl font-bold" style={{ color: 'var(--color-moca-dark)' }}>{fmtNum(funnel.activated)}</div>
-            <div className="text-xs mt-0.5" style={{ color: 'var(--color-moca-sub)' }}>ביצעו פעולה · {pctOf(funnel.activated, funnel.registered)}%</div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--color-moca-sub)' }}>{tt('ביצעו פעולה', 'Took an action')} · {pctOf(funnel.activated, funnel.registered)}%</div>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 mt-3">
           <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'var(--color-moca-cream)', color: 'var(--color-moca-down)' }}>
-            פעילים (7 ימים): {fmtNum(buckets.active7)}
+            {tt('פעילים (7 ימים):', 'Active (7 days):')} {fmtNum(buckets.active7)}
           </span>
           <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'var(--color-moca-cream)', color: 'var(--color-moca-up)' }}>
-            רדומים (14+ ימים): {fmtNum(buckets.dormant)}
+            {tt('רדומים (14+ ימים):', 'Dormant (14+ days):')} {fmtNum(buckets.dormant)}
           </span>
           <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'var(--color-moca-cream)', color: 'var(--color-moca-muted)' }}>
-            נרשמו ולא התחברו: {fmtNum(buckets.never)}
+            {tt('נרשמו ולא התחברו:', 'Registered, never logged in:')} {fmtNum(buckets.never)}
           </span>
         </div>
       </div>
@@ -360,11 +380,11 @@ export default function UserActivityPage() {
       {/* Daily activity chart */}
       <div className="rounded-xl border border-moca-border bg-white p-4">
         <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--color-moca-dark)' }}>
-          פעילות יומית
+          {tt('פעילות יומית', 'Daily activity')}
         </h3>
         {chartData.length === 0 ? (
           <p className="text-sm py-8 text-center" style={{ color: 'var(--color-moca-muted)' }}>
-            עדיין אין נתוני פעילות. ברגע שלקוחות יתחברו ויגלשו, האירועים יירשמו כאן אוטומטית.
+            {tt('עדיין אין נתוני פעילות. ברגע שלקוחות יתחברו ויגלשו, האירועים יירשמו כאן אוטומטית.', 'No activity data yet. Once clients log in and browse, events will be logged here automatically.')}
           </p>
         ) : (
           <div style={{ width: '100%', height: 260, direction: 'ltr' }}>
@@ -374,8 +394,8 @@ export default function UserActivityPage() {
                 <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'var(--color-moca-sub)' }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--color-moca-sub)' }} />
                 <Tooltip
-                  formatter={(v, name) => name === 'users' ? [v, 'משתמשים פעילים'] : [v, 'אירועים']}
-                  labelFormatter={(l) => `יום ${l}`}
+                  formatter={(v, name) => name === 'users' ? [v, tt('משתמשים פעילים', 'Active users')] : [v, tt('אירועים', 'Events')]}
+                  labelFormatter={(l) => tt(`יום ${l}`, `Day ${l}`)}
                   contentStyle={{
                     background: '#fff',
                     border: '1px solid var(--color-moca-border)',
@@ -393,7 +413,7 @@ export default function UserActivityPage() {
       {/* Feature adoption */}
       <div className="rounded-xl border border-moca-border bg-white p-4">
         <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--color-moca-dark)' }}>
-          אימוץ פיצ׳רים <span className="font-normal text-xs" style={{ color: 'var(--color-moca-muted)' }}>(% מהמשתמשים שהשתמשו, בטווח)</span>
+          {tt('אימוץ פיצ׳רים', 'Feature adoption')} <span className="font-normal text-xs" style={{ color: 'var(--color-moca-muted)' }}>({tt('% מהמשתמשים שהשתמשו, בטווח', '% of users who used it, in range')})</span>
         </h3>
         <div className="space-y-2.5">
           {adoption.map((a) => (
@@ -412,20 +432,20 @@ export default function UserActivityPage() {
       <div className="grid md:grid-cols-2 gap-4">
         <div className="rounded-xl border border-moca-border bg-white overflow-hidden">
           <div className="px-4 py-3 border-b border-moca-border">
-            <h3 className="text-sm font-bold" style={{ color: 'var(--color-moca-dark)' }}>פעילות לפי Workspace</h3>
+            <h3 className="text-sm font-bold" style={{ color: 'var(--color-moca-dark)' }}>{tt('פעילות לפי Workspace', 'Activity by workspace')}</h3>
           </div>
           {workspaceRollup.length === 0 ? (
-            <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>אין נתונים</p>
+            <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>{tt('אין נתונים', 'No data')}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[420px]">
                 <thead style={{ background: 'var(--color-moca-mist)' }}>
                   <tr>
                     <th className="px-3 py-2 text-start text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>Workspace</th>
-                    <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>משתמשים</th>
-                    <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>פעילים</th>
-                    <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>צפיות</th>
-                    <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>פעולות</th>
+                    <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>{tt('משתמשים', 'Users')}</th>
+                    <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>{tt('פעילים', 'Active')}</th>
+                    <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>{tt('צפיות', 'Views')}</th>
+                    <th className="px-3 py-2 text-end text-xs font-semibold" style={{ color: 'var(--color-moca-muted)' }}>{tt('פעולות', 'Actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -446,17 +466,17 @@ export default function UserActivityPage() {
 
         <div className="rounded-xl border border-moca-border bg-white overflow-hidden">
           <div className="px-4 py-3 border-b border-moca-border">
-            <h3 className="text-sm font-bold" style={{ color: 'var(--color-moca-dark)' }}>פילוח לפי סוג אירוע</h3>
+            <h3 className="text-sm font-bold" style={{ color: 'var(--color-moca-dark)' }}>{tt('פילוח לפי סוג אירוע', 'Breakdown by event type')}</h3>
           </div>
           {(summary.by_event_type || []).length === 0 ? (
-            <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>אין נתונים</p>
+            <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>{tt('אין נתונים', 'No data')}</p>
           ) : (
             <table className="w-full text-sm">
               <tbody>
                 {summary.by_event_type.map((e) => (
                   <tr key={e.event_type} className="border-t border-moca-border first:border-t-0">
                     <td className="px-4 py-2.5 text-start" style={{ color: 'var(--color-moca-text)' }}>
-                      {EVENT_LABELS[e.event_type] || e.event_type}
+                      {EVENT_LABELS[e.event_type] ? tt(EVENT_LABELS[e.event_type], EVENT_LABELS_EN[e.event_type] || e.event_type) : e.event_type}
                     </td>
                     <td className="px-4 py-2.5 text-end tnum font-semibold" style={{ color: 'var(--color-moca-dark)' }}>
                       {fmtNum(e.count)}
@@ -472,10 +492,10 @@ export default function UserActivityPage() {
       {/* Top pages */}
       <div className="rounded-xl border border-moca-border bg-white overflow-hidden">
         <div className="px-4 py-3 border-b border-moca-border">
-          <h3 className="text-sm font-bold" style={{ color: 'var(--color-moca-dark)' }}>עמודים מובילים</h3>
+          <h3 className="text-sm font-bold" style={{ color: 'var(--color-moca-dark)' }}>{tt('עמודים מובילים', 'Top pages')}</h3>
         </div>
         {(summary.top_pages || []).length === 0 ? (
-          <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>אין נתונים</p>
+          <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>{tt('אין נתונים', 'No data')}</p>
         ) : (
           <table className="w-full text-sm">
             <tbody>
@@ -501,31 +521,31 @@ export default function UserActivityPage() {
       <div className="rounded-xl border border-moca-border bg-white overflow-hidden">
         <div className="px-4 py-3 border-b border-moca-border">
           <h3 className="text-sm font-bold" style={{ color: 'var(--color-moca-dark)' }}>
-            משתמשים ({fmtNum(users.length)})
+            {tt('משתמשים', 'Users')} ({fmtNum(users.length)})
           </h3>
           <p className="text-xs mt-0.5" style={{ color: 'var(--color-moca-muted)' }}>
-            לחיצה על שורה מציגה את פירוט הפעילות של המשתמש
+            {tt('לחיצה על שורה מציגה את פירוט הפעילות של המשתמש', 'Click a row to see the user\'s activity details')}
           </p>
         </div>
         {users.length === 0 ? (
-          <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>אין משתמשים להצגה</p>
+          <p className="text-sm p-4" style={{ color: 'var(--color-moca-muted)' }}>{tt('אין משתמשים להצגה', 'No users to display')}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[980px]">
               <thead style={{ background: 'var(--color-moca-mist)' }}>
                 <tr>
-                  <Th label="משתמש"        sortField="email"           sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="start" />
-                  <Th label="תפקיד"        sortField="role"            sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="start" />
+                  <Th label={tt('משתמש', 'User')}        sortField="email"           sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="start" />
+                  <Th label={tt('תפקיד', 'Role')}        sortField="role"            sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="start" />
                   <Th label="Workspace"    sortField="workspace_name"  sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="start" />
-                  <Th label="הצטרף"        sortField="created_at"      sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                  <Th label="התחברות אחרונה" sortField="last_sign_in_at" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                  <Th label="התחברויות"    sortField="logins"          sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                  <Th label="צפיות"        sortField="page_views"      sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                  <Th label="התראות"       sortField="alerts_created"  sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                  <Th label="מעקב"         sortField="watchlist_added" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                  <Th label="השוואות"      sortField="comparisons_saved" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                  <Th label="צ׳אט"         sortField="chat_used"       sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                  <Th label="פעילות אחרונה" sortField="last_seen"       sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label={tt('הצטרף', 'Joined')}        sortField="created_at"      sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label={tt('התחברות אחרונה', 'Last login')} sortField="last_sign_in_at" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label={tt('התחברויות', 'Logins')}    sortField="logins"          sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label={tt('צפיות', 'Views')}        sortField="page_views"      sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label={tt('התראות', 'Alerts')}       sortField="alerts_created"  sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label={tt('מעקב', 'Watchlist')}         sortField="watchlist_added" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label={tt('השוואות', 'Comparisons')}      sortField="comparisons_saved" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label={tt('צ׳אט', 'Chat')}         sortField="chat_used"       sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label={tt('פעילות אחרונה', 'Last active')} sortField="last_seen"       sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                 </tr>
               </thead>
               <tbody>
@@ -538,7 +558,7 @@ export default function UserActivityPage() {
                     <td className="px-3 py-2 text-start" style={{ color: 'var(--color-moca-text)' }}>{u.email}</td>
                     <td className="px-3 py-2 text-start"><RoleBadge role={u.role} /></td>
                     <td className="px-3 py-2 text-start text-xs" style={{ color: 'var(--color-moca-sub)' }}>{u.workspace_name || '—'}</td>
-                    <td className="px-3 py-2 text-end text-xs tnum" style={{ color: 'var(--color-moca-sub)' }}>{fmtDate(u.created_at)}</td>
+                    <td className="px-3 py-2 text-end text-xs tnum" style={{ color: 'var(--color-moca-sub)' }}>{fmtDate(u.created_at, dateLocale)}</td>
                     <td className="px-3 py-2 text-end text-xs tnum" style={{ color: 'var(--color-moca-text)' }}>{u.last_sign_in_at ? fmtDateTime(u.last_sign_in_at) : '—'}</td>
                     <td className="px-3 py-2 text-end tnum" style={{ color: 'var(--color-moca-text)' }}>{fmtNum(u.logins)}</td>
                     <td className="px-3 py-2 text-end tnum" style={{ color: 'var(--color-moca-text)' }}>{fmtNum(u.page_views)}</td>
@@ -546,7 +566,7 @@ export default function UserActivityPage() {
                     <td className="px-3 py-2 text-end tnum" style={{ color: 'var(--color-moca-text)' }}>{fmtNum(u.watchlist_added)}</td>
                     <td className="px-3 py-2 text-end tnum" style={{ color: 'var(--color-moca-text)' }}>{fmtNum(u.comparisons_saved)}</td>
                     <td className="px-3 py-2 text-end tnum" style={{ color: 'var(--color-moca-text)' }}>{fmtNum(u.chat_used)}</td>
-                    <td className="px-3 py-2 text-end text-xs" style={{ color: 'var(--color-moca-sub)' }}>{fmtRelative(u.last_seen)}</td>
+                    <td className="px-3 py-2 text-end text-xs" style={{ color: 'var(--color-moca-sub)' }}>{fmtRelative(u.last_seen, tt, dateLocale)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -570,7 +590,7 @@ export default function UserActivityPage() {
             <div className="px-5 py-4 border-b border-moca-border flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-moca-muted)' }}>
-                  פעילות אחרונה
+                  {tt('פעילות אחרונה', 'Recent activity')}
                 </div>
                 <div className="text-sm font-bold truncate" style={{ color: 'var(--color-moca-dark)' }}>{openEmail}</div>
               </div>
@@ -578,25 +598,25 @@ export default function UserActivityPage() {
                 onClick={() => setOpenEmail(null)}
                 className="text-2xl leading-none px-2 shrink-0"
                 style={{ color: 'var(--color-moca-sub)' }}
-                aria-label="סגור"
+                aria-label={tt('סגור', 'Close')}
               >
                 ×
               </button>
             </div>
             <div className="overflow-y-auto">
               {eventsLoading ? (
-                <p className="text-sm p-5" style={{ color: 'var(--color-moca-muted)' }}>טוען…</p>
+                <p className="text-sm p-5" style={{ color: 'var(--color-moca-muted)' }}>{tt('טוען…', 'Loading…')}</p>
               ) : events.length === 0 ? (
-                <p className="text-sm p-5" style={{ color: 'var(--color-moca-muted)' }}>אין פעילות מתועדת בטווח הזה</p>
+                <p className="text-sm p-5" style={{ color: 'var(--color-moca-muted)' }}>{tt('אין פעילות מתועדת בטווח הזה', 'No recorded activity in this range')}</p>
               ) : (
                 <ul>
                   {events.map((ev) => {
-                    const sub = ev.event_type === 'page_view' ? pageLabel(ev.path) : detailSummary(ev.details)
+                    const sub = ev.event_type === 'page_view' ? pageLabel(ev.path) : detailSummary(ev.details, tt)
                     return (
                       <li key={ev.id} className="flex items-center justify-between gap-3 px-5 py-2.5 border-b border-moca-border last:border-b-0">
                         <div className="min-w-0">
                           <div className="text-sm font-medium" style={{ color: 'var(--color-moca-text)' }}>
-                            {EVENT_LABELS[ev.event_type] || ev.event_type}
+                            {EVENT_LABELS[ev.event_type] ? tt(EVENT_LABELS[ev.event_type], EVENT_LABELS_EN[ev.event_type] || ev.event_type) : ev.event_type}
                           </div>
                           {sub && (
                             <div className="text-xs truncate" style={{ color: 'var(--color-moca-sub)' }}>{sub}</div>

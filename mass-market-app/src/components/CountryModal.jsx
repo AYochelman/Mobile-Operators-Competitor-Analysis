@@ -1,4 +1,6 @@
 import Modal from './ui/Modal'
+import { useLang } from '../hooks/useLanguage'
+import { localizeDest } from '../data/destI18n'
 
 const GlobeIcon = () => (
   <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
@@ -12,17 +14,18 @@ const GlobeIcon = () => (
 )
 
 export default function CountryModal({ open, onClose, title, countries }) {
+  const { tt, lang } = useLang()
   if (!countries) return null
   return (
-    <Modal open={open} onClose={onClose} title={<span className="flex items-center gap-2"><GlobeIcon />{title} — מדינות כלולות</span>} maxWidth="max-w-xl">
+    <Modal open={open} onClose={onClose} title={<span className="flex items-center gap-2"><GlobeIcon />{localizeDest(title, lang)} · {tt('מדינות כלולות', 'Countries included')}</span>} maxWidth="max-w-xl">
       <div className="flex flex-wrap gap-2">
         {countries.map(c => (
           <span key={c} className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs rounded-full border border-gray-200">
-            {c}
+            {localizeDest(c, lang)}
           </span>
         ))}
       </div>
-      <p className="text-xs text-gray-400 mt-4">{countries.length} מדינות</p>
+      <p className="text-xs text-gray-400 mt-4">{countries.length} {tt('מדינות', 'countries')}</p>
     </Modal>
   )
 }

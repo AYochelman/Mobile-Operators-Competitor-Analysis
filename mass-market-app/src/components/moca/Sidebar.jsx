@@ -4,6 +4,8 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useFeatureFlags } from '../../hooks/useFeatureFlags'
 import { useWatchlist } from '../../hooks/useWatchlist'
+import { useLang } from '../../hooks/useLanguage'
+import { FLAG_FOR_PATH } from '../../data/navFlags'
 import Logo from '../Logo'
 
 /**
@@ -13,14 +15,8 @@ import Logo from '../Logo'
  * deep-linked rather than full pages.
  */
 
-const FLAG_FOR_PATH = {
-  '/compare':           'hide_compare',
-  '/positioning':       'hide_positioning',
-  '/alerts':            'hide_alerts',
-  '/executive-summary': 'hide_executive_summary',
-  '/archive':           'hide_archive',
-  '/ai-insights':       'hide_ai_insights',
-}
+// FLAG_FOR_PATH (path → feature-flag that hides the nav item) lives in
+// ../../data/navFlags so Sidebar, Navbar and the admin panel stay in sync.
 
 // Lucide-style inline SVGs — render reliably in RTL/BiDi (Unicode glyphs
 // occasionally flip or render with the wrong baseline in mixed contexts).
@@ -97,6 +93,9 @@ const Icons = {
   ),
   external: (
     <svg {...ICON_PROPS}><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+  ),
+  deals: (
+    <svg {...ICON_PROPS}><path d="M4 7h16v13H4z"/><path d="M2 7h20"/><path d="M12 20V7"/><path d="M12 7S11 2 7.5 2a2.5 2.5 0 0 0 0 5H12z"/><path d="M12 7s1-5 4.5-5a2.5 2.5 0 0 1 0 5H12z"/></svg>
   ),
 }
 
@@ -218,6 +217,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
   const { isSuperAdmin, workspace } = useAuth()
   const flags = useFeatureFlags()
   const { changesCount } = useWatchlist()
+  const { dir, tt } = useLang()
   const location = useLocation()
 
   // Mobile-mode: lock body scroll + Esc to close while drawer is open
@@ -277,7 +277,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         {mobile && (
           <button
             onClick={onClose}
-            aria-label="סגור תפריט"
+            aria-label={tt('סגור תפריט', 'Close menu')}
             style={{
               width: 32,
               height: 32,
@@ -302,21 +302,27 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
       </div>
 
       <nav style={{ padding: '4px 8px 10px', display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {/* ─── ניטור ─── */}
-        <GroupLabel>ניטור</GroupLabel>
-        <NavItem to="/" end icon={Icons.dashboard} label="דשבורד" isActive={isPath('/')} onAfterNav={afterNav} />
+        {/* ─── Monitoring ─── */}
+        {(visible('/') || visible('/executive-summary') || visible('/positioning') || visible('/history') || visible('/alerts')) && (
+          <GroupLabel>{tt('ניטור', 'Monitoring')}</GroupLabel>
+        )}
+        {visible('/') && (
+          <NavItem to="/" end icon={Icons.dashboard} label={tt('דשבורד', 'Dashboard')} isActive={isPath('/')} onAfterNav={afterNav} />
+        )}
         {visible('/executive-summary') && (
-          <NavItem to="/executive-summary" icon={Icons.exec} label="דוח מנהלים" isActive={isPath('/executive-summary')} onAfterNav={afterNav} />
+          <NavItem to="/executive-summary" icon={Icons.exec} label={tt('דוח מנהלים', 'Executive report')} isActive={isPath('/executive-summary')} onAfterNav={afterNav} />
         )}
         {visible('/positioning') && (
-          <NavItem to="/positioning" icon={Icons.positioning} label="מיצוב תחרותי" isActive={isPath('/positioning')} onAfterNav={afterNav} />
+          <NavItem to="/positioning" icon={Icons.positioning} label={tt('מיצוב תחרותי', 'Positioning')} isActive={isPath('/positioning')} onAfterNav={afterNav} />
         )}
-        <NavItem to="/history" icon={Icons.history} label="היסטוריית שינויים" isActive={isPath('/history')} onAfterNav={afterNav} />
+        {visible('/history') && (
+          <NavItem to="/history" icon={Icons.history} label={tt('היסטוריית שינויים', 'Change history')} isActive={isPath('/history')} onAfterNav={afterNav} />
+        )}
         {visible('/alerts') && (
           <NavItem
             to={changesCount > 0 ? '/alerts?tab=watchlist' : '/alerts'}
             icon={Icons.alerts}
-            label="התראות"
+            label={tt('התראות', 'Alerts')}
             badge={changesCount > 0 ? (changesCount > 99 ? '99+' : changesCount) : null}
             badgeColor="var(--color-moca-up)"
             isActive={isPath('/alerts')}
@@ -324,35 +330,57 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
           />
         )}
 
-        {/* ─── תובנות ─── */}
-        <GroupLabel>תובנות</GroupLabel>
+        {/* ─── Insights ─── */}
+        {(visible('/ai-insights') || visible('/news') || visible('/social') || visible('/banners') || visible('/archive')) && (
+          <GroupLabel>{tt('תובנות', 'Insights')}</GroupLabel>
+        )}
         {visible('/ai-insights') && (
           <NavItem to="/ai-insights" icon={Icons.ai} label="AI Insights" isActive={isPath('/ai-insights')} onAfterNav={afterNav} />
         )}
-        <NavItem to="/news" icon={Icons.news} label="בחדשות" isActive={isPath('/news')} onAfterNav={afterNav} />
-        <NavItem to="/social" icon={Icons.social} label="ברשתות החברתיות" isActive={isPath('/social')} onAfterNav={afterNav} />
-        <NavItem to="/banners" icon={Icons.banners} label="באנרים" isActive={isPath('/banners')} onAfterNav={afterNav} />
+        {visible('/news') && (
+          <NavItem to="/news" icon={Icons.news} label={tt('בחדשות', 'In the news')} isActive={isPath('/news')} onAfterNav={afterNav} />
+        )}
+        {visible('/social') && (
+          <NavItem to="/social" icon={Icons.social} label={tt('ברשתות החברתיות', 'On social')} isActive={isPath('/social')} onAfterNav={afterNav} />
+        )}
+        {visible('/banners') && (
+          <NavItem to="/banners" icon={Icons.banners} label={tt('באנרים', 'Banners')} isActive={isPath('/banners')} onAfterNav={afterNav} />
+        )}
         {visible('/archive') && (
-          <NavItem to="/archive" icon={Icons.archive} label="מכונת זמן" isActive={isPath('/archive')} onAfterNav={afterNav} />
+          <NavItem to="/archive" icon={Icons.archive} label={tt('מכונת זמן', 'Time Machine')} isActive={isPath('/archive')} onAfterNav={afterNav} />
         )}
 
-        {/* ─── מסלולים ─── */}
-        <GroupLabel>מסלולים</GroupLabel>
-        <NavItem to="/plans" icon={Icons.plans} label="Mass Market" isActive={isPath('/plans')} onAfterNav={afterNav} />
-        <NavItem to="/roaming" icon={Icons.roaming} label={'חו״ל · Roaming'} isActive={isPath('/roaming')} onAfterNav={afterNav} />
-        <NavItem to="/esim" icon={Icons.esim} label="eSIM גלובלי" isActive={isPath('/esim')} onAfterNav={afterNav} />
-        <NavItem to="/usa" icon={Icons.usa} label={'נוחתים בארה״ב'} isActive={isPath('/usa')} onAfterNav={afterNav} />
-        <NavItem to="/resellers" icon={Icons.resellers} label="משווקים" isActive={isPath('/resellers')} onAfterNav={afterNav} />
-        <NavItem to="/content" icon={Icons.content} label="תוכן" isActive={isPath('/content')} onAfterNav={afterNav} />
+        {/* ─── Plans ─── */}
+        {(visible('/plans') || visible('/roaming') || visible('/esim') || visible('/usa') || visible('/resellers') || visible('/content') || visible('/compare')) && (
+          <GroupLabel>{tt('מסלולים', 'Plans')}</GroupLabel>
+        )}
+        {visible('/plans') && (
+          <NavItem to="/plans" icon={Icons.plans} label="Mass Market" isActive={isPath('/plans')} onAfterNav={afterNav} />
+        )}
+        {visible('/roaming') && (
+          <NavItem to="/roaming" icon={Icons.roaming} label={tt('חו״ל · Roaming', 'Roaming')} isActive={isPath('/roaming')} onAfterNav={afterNav} />
+        )}
+        {visible('/esim') && (
+          <NavItem to="/esim" icon={Icons.esim} label={tt('eSIM גלובלי', 'Global eSIM')} isActive={isPath('/esim')} onAfterNav={afterNav} />
+        )}
+        {visible('/usa') && (
+          <NavItem to="/usa" icon={Icons.usa} label={tt('נוחתים בארה״ב', 'USA')} isActive={isPath('/usa')} onAfterNav={afterNav} />
+        )}
+        {visible('/resellers') && (
+          <NavItem to="/resellers" icon={Icons.resellers} label={tt('משווקים', 'Resellers')} isActive={isPath('/resellers')} onAfterNav={afterNav} />
+        )}
+        {visible('/content') && (
+          <NavItem to="/content" icon={Icons.content} label={tt('תוכן', 'Content')} isActive={isPath('/content')} onAfterNav={afterNav} />
+        )}
         {visible('/compare') && (
-          <NavItem to="/compare" icon={Icons.compare} label="השוואת מחירים" isActive={isPath('/compare')} onAfterNav={afterNav} />
+          <NavItem to="/compare" icon={Icons.compare} label={tt('השוואת מחירים', 'Price compare')} isActive={isPath('/compare')} onAfterNav={afterNav} />
         )}
 
-        {/* ─── כלים ─── */}
-        <GroupLabel>כלים</GroupLabel>
+        {/* ─── Tools ─── */}
+        <GroupLabel>{tt('כלים', 'Tools')}</GroupLabel>
         <NavItem
           icon={Icons.search}
-          label={<span>חיפוש מתקדם <kbd style={{ fontSize: 9, padding: '1px 4px', borderRadius: 3, background: 'var(--color-moca-sand)', color: 'var(--color-moca-sub)', marginInlineStart: 6, fontFamily: 'inherit' }}>Ctrl K</kbd></span>}
+          label={<span>{tt('חיפוש מתקדם', 'Advanced search')} <kbd style={{ fontSize: 9, padding: '1px 4px', borderRadius: 3, background: 'var(--color-moca-sand)', color: 'var(--color-moca-sub)', marginInlineStart: 6, fontFamily: 'inherit' }}>Ctrl K</kbd></span>}
           onClick={openSearch}
           onAfterNav={afterNav}
         />
@@ -360,46 +388,13 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
           <NavItem
             to="/usage"
             icon={Icons.usage}
-            label="שימוש ב-Claude"
+            label={tt('שימוש ב-Claude', 'Claude usage')}
             isActive={isPath('/usage')}
             onAfterNav={afterNav}
           />
         )}
-        {isSuperAdmin && (
-          <NavItem
-            to="/admin/user-activity"
-            icon={Icons.userActivity}
-            label="פעילות משתמשים"
-            isActive={isPath('/admin/user-activity')}
-            onAfterNav={afterNav}
-          />
-        )}
-        {isSuperAdmin && (
-          <NavItem
-            to="/admin/hotels"
-            icon={Icons.hotels}
-            label="פורטלי אורחים"
-            isActive={isPath('/admin/hotels')}
-            onAfterNav={afterNav}
-          />
-        )}
-        {isSuperAdmin && (
-          <NavItem
-            to="/admin/esim"
-            icon={Icons.usage}
-            label="דשבורד eSIM (B2C)"
-            isActive={isPath('/admin/esim')}
-            onAfterNav={afterNav}
-          />
-        )}
-        {isSuperAdmin && (
-          <NavItem
-            icon={Icons.external}
-            label={<span>{'עמוד eSIM (B2C)'} <span style={{ opacity: 0.55 }}>↗</span></span>}
-            onClick={() => window.open('/esim-deals', '_blank', 'noopener')}
-            onAfterNav={afterNav}
-          />
-        )}
+        {/* פעילות משתמשים moved to הגדרות מערכת → ניהול משתמשים tab;
+            פורטלי אורחים + eSIM (B2C) dashboard/page moved to the profile menu. */}
       </nav>
     </>
   )
@@ -423,7 +418,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         }}
         role="dialog"
         aria-modal="true"
-        aria-label="תפריט ניווט"
+        aria-label={tt('תפריט ניווט', 'Navigation menu')}
       >
         <aside
           onClick={(e) => e.stopPropagation()}
@@ -434,7 +429,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
             background: 'var(--color-moca-cream)',
             overflowY: 'auto',
             boxShadow: 'var(--sh-drawer)',
-            direction: 'rtl',
+            direction: dir,
             animation: 'drawerSlideIn 250ms var(--ease-out)',
             display: 'flex',
             flexDirection: 'column',

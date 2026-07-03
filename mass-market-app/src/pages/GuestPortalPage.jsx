@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { destLabel, destInHe } from '../data/hotelDestinations'
+import { PROVIDER_LOGOS } from '../data/providerLogos'
 
 /* ════════════════════════════════════════════════════════════════════════
    MOCA Guest Connect — public guest portal  (route: /guest/:slug)
@@ -245,15 +246,18 @@ function gbLabel(d, t) {
   return `${+d.gb}GB`
 }
 
-// Provider tile: real logo (DuckDuckGo favicon CDN) on a white chip with a
-// brand-colored ring; falls back to the colored monogram when there's no domain
-// or the logo fails to load.
-function ProviderLogo({ pv, mono }) {
+// Provider tile: real logo (curated local file by provider id, else DuckDuckGo
+// favicon CDN by domain) on a white chip with a brand-colored ring; falls back to
+// the colored monogram when there's no logo. Local logos win because the favicon
+// CDN serves a generic placeholder (HTTP 200) for unknown domains, so onError
+// never fires — see data/providerLogos.js.
+function ProviderLogo({ pv, provider, mono }) {
   const [err, setErr] = useState(false)
-  if (pv.domain && !err) {
+  const src = PROVIDER_LOGOS[provider] || (pv.domain ? `https://icons.duckduckgo.com/ip3/${pv.domain}.ico` : null)
+  if (src && !err) {
     return (
       <div className="pchip logo" style={{ borderColor: pv.color }}>
-        <img src={`https://icons.duckduckgo.com/ip3/${pv.domain}.ico`} alt="" loading="lazy" onError={() => setErr(true)} />
+        <img src={src} alt="" loading="lazy" onError={() => setErr(true)} />
       </div>
     )
   }
@@ -421,7 +425,7 @@ export default function GuestPortalPage() {
     return (
       <>
         <div className="deal-row">
-          <ProviderLogo pv={pv} mono={mono} />
+          <ProviderLogo pv={pv} provider={d.provider} mono={mono} />
           <div className="deal-info">
             <div className="deal-provider"><bdi>{pv.label}</bdi></div>
             <div className="deal-meta">{metaLine(d).flatMap((x, i) => i === 0

@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { api } from '../lib/api'
 import Button from '../components/ui/Button'
+import { useLang } from '../hooks/useLanguage'
 
 export default function WorkspaceUsersPage() {
   const { workspace, workspaceId } = useAuth()
+  const { tt } = useLang()
   const [users, setUsers]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState(null)
@@ -69,7 +71,7 @@ export default function WorkspaceUsersPage() {
   }
 
   const unassign = async (userId) => {
-    if (!confirm('להסיר את המשתמש מה-workspace?')) return
+    if (!confirm(tt('להסיר את המשתמש מה-workspace?', 'Remove this user from the workspace?'))) return
     setError(null)
     try {
       await api.unassignWorkspaceUser(wsId, userId)
@@ -82,24 +84,24 @@ export default function WorkspaceUsersPage() {
   return (
     <div className="max-w-3xl mx-auto p-6">
       <p className="text-sm text-gray-600 mb-6">
-        ניהול משתמשים עבור workspace <strong>{workspace?.name}</strong>
+        {tt('ניהול משתמשים עבור workspace', 'User management for workspace')} <strong>{workspace?.name}</strong>
       </p>
 
       <div className="bg-white rounded-xl border border-moca-border p-5 space-y-4">
         {loading ? (
-          <p className="text-gray-500 text-sm">טוען…</p>
+          <p className="text-gray-500 text-sm">{tt('טוען…', 'Loading…')}</p>
         ) : error ? (
-          <p className="text-red-600 text-sm">שגיאה: {error}</p>
+          <p className="text-red-600 text-sm">{tt('שגיאה', 'Error')}: {error}</p>
         ) : users.length === 0 ? (
-          <p className="text-gray-500 text-sm">אין משתמשים ב-workspace זה.</p>
+          <p className="text-gray-500 text-sm">{tt('אין משתמשים ב-workspace זה.', 'No users in this workspace.')}</p>
         ) : (
           <div className="-mx-4 px-4 overflow-x-auto md:mx-0 md:px-0">
             <table className="w-full text-sm min-w-[480px] md:min-w-0">
               <thead>
                 <tr className="text-xs text-gray-500 border-b">
-                  <th className="text-right py-1.5 whitespace-nowrap">אימייל</th>
-                  <th className="text-right py-1.5 whitespace-nowrap">תפקיד</th>
-                  <th className="text-right py-1.5 whitespace-nowrap">כניסה אחרונה</th>
+                  <th className="text-right py-1.5 whitespace-nowrap">{tt('אימייל', 'Email')}</th>
+                  <th className="text-right py-1.5 whitespace-nowrap">{tt('תפקיד', 'Role')}</th>
+                  <th className="text-right py-1.5 whitespace-nowrap">{tt('כניסה אחרונה', 'Last sign-in')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -117,7 +119,7 @@ export default function WorkspaceUsersPage() {
                     </td>
                     <td className="py-2 text-left">
                       <button onClick={() => unassign(u.id)}
-                        className="text-xs text-red-500 hover:underline">הסרה</button>
+                        className="text-xs text-red-500 hover:underline">{tt('הסרה', 'Remove')}</button>
                     </td>
                   </tr>
                 ))}
@@ -127,7 +129,7 @@ export default function WorkspaceUsersPage() {
         )}
 
         <div className="pt-3 border-t border-moca-border/30">
-          <h3 className="text-sm font-semibold mb-3">הוספת משתמש קיים</h3>
+          <h3 className="text-sm font-semibold mb-3">{tt('הוספת משתמש קיים', 'Add existing user')}</h3>
           <form onSubmit={assign} className="flex gap-2 flex-wrap items-center">
             <input type="email" required placeholder="email@example.com"
               value={newEmail} onChange={e => setNewEmail(e.target.value)}
@@ -138,14 +140,14 @@ export default function WorkspaceUsersPage() {
               <option value="admin">admin</option>
             </select>
             <Button type="submit" disabled={assigning} variant="primary" size="sm">
-              {assigning ? '…' : 'הוסף'}
+              {assigning ? '…' : tt('הוסף', 'Add')}
             </Button>
           </form>
           {formError && <p className="text-xs text-red-600 mt-2">{formError}</p>}
         </div>
 
         <div className="pt-3 border-t border-moca-border/30">
-          <h3 className="text-sm font-semibold mb-3">קישור הזמנה</h3>
+          <h3 className="text-sm font-semibold mb-3">{tt('קישור הזמנה', 'Invite link')}</h3>
           <div className="flex gap-2 items-center flex-wrap">
             <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}
               className="px-2 py-1.5 text-sm border border-moca-border rounded">
@@ -153,7 +155,7 @@ export default function WorkspaceUsersPage() {
               <option value="admin">admin</option>
             </select>
             <Button onClick={createInvite} disabled={creatingInvite} variant="secondary" size="sm">
-              {creatingInvite ? '…' : 'צור לינק'}
+              {creatingInvite ? '…' : tt('צור לינק', 'Create link')}
             </Button>
           </div>
           {inviteLink && (
@@ -162,11 +164,11 @@ export default function WorkspaceUsersPage() {
                 className="flex-1 px-2 py-1 text-xs border border-moca-border rounded font-mono bg-gray-50 min-w-0" />
               <button onClick={copyLink}
                 className="text-xs px-2 py-1 rounded border border-moca-border hover:bg-moca-cream transition-colors whitespace-nowrap">
-                {copied ? 'הועתק ✓' : 'העתק'}
+                {copied ? tt('הועתק ✓', 'Copied ✓') : tt('העתק', 'Copy')}
               </button>
             </div>
           )}
-          <p className="text-xs text-gray-400 mt-1.5">תוקף: 7 ימים · שימוש חד-פעמי</p>
+          <p className="text-xs text-gray-400 mt-1.5">{tt('תוקף: 7 ימים · שימוש חד-פעמי', 'Valid for 7 days · single use')}</p>
         </div>
       </div>
     </div>

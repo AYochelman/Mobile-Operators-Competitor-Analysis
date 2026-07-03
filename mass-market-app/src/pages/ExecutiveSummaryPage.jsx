@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { api } from '../lib/api'
 import { useAuth } from '../hooks/useAuth'
+import { useLang } from '../hooks/useLanguage'
 
 const CATEGORY_ICONS = {
   domestic: (
@@ -36,7 +37,7 @@ const CATEGORIES = [
 const CARRIER_NAMES = {
   partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל',
   cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'וי-קום',
-  neptucom: 'נפטוקום', golan: 'גולן טלקום', tuki: 'Tuki', globalesim: 'GlobaleSIM',
+  neptucom: 'נפטוקום', golan: 'גולן טלקום', tuki: 'Tuki', terminalesim: 'Terminal eSIM',
   airalo: 'Airalo', airalo_local: 'Airalo', airalo_regional: 'Airalo',
   pelephone_global: 'GlobalSIM', esimo: 'eSIMo',
   simtlv: 'SimTLV', world8: 'World8', saily: 'Saily', holafly: 'Holafly',
@@ -104,9 +105,18 @@ function SparkleIcon() {
 
 // ── Individual category summary section ───────────────────────────────────
 
+const CATEGORY_LABELS_EN = {
+  domestic: 'Cellular plans',
+  abroad:   'Roaming',
+  global:   'Global',
+  content:  'Content',
+}
+
 function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
+  const { tt } = useLang()
   const { category, metrics, narrative, generated_at } = data
   const meta = CATEGORIES.find(c => c.id === category) || { label: category }
+  const categoryLabel = tt(meta.label, CATEGORY_LABELS_EN[category] || meta.label)
   const icon = CATEGORY_ICONS[category] || null
 
   return (
@@ -117,17 +127,17 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
           {icon && (
             <span className="text-moca-text">{icon}</span>
           )}
-          <h2 className="text-lg font-display font-semibold text-moca-text">{meta.label}</h2>
+          <h2 className="text-lg font-display font-semibold text-moca-text">{categoryLabel}</h2>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] text-moca-sub">עודכן: {formatDate(generated_at)}</span>
+          <span className="text-[11px] text-moca-sub">{tt('עודכן', 'Updated')}: {formatDate(generated_at)}</span>
           {isAdmin && (
             <button
               onClick={onRefresh}
               disabled={refreshing}
               className="text-[11px] px-2 py-1 rounded-lg border border-moca-border text-moca-muted hover:text-moca-bolt hover:border-moca-bolt transition-colors disabled:opacity-50"
             >
-              {refreshing ? 'מרענן...' : 'רענן עכשיו'}
+              {refreshing ? tt('מרענן...', 'Refreshing...') : tt('רענן עכשיו', 'Refresh now')}
             </button>
           )}
         </div>
@@ -142,7 +152,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
               <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
             </svg>
           </div>
-          <div className="text-[10px] opacity-80 mb-1">המשתלם ביותר</div>
+          <div className="text-[10px] opacity-80 mb-1">{tt('המשתלם ביותר', 'Best value')}</div>
           <div className="text-sm font-bold">{carrierName(metrics.cheapest?.carrier)}</div>
           <div className="text-[10px] opacity-70 mt-1">
             {metrics.cheapest?.value} {metrics.cheapest?.unit}
@@ -154,7 +164,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
           </div>
-          <div className="text-[10px] opacity-80 mb-1">האגרסיבי ביותר</div>
+          <div className="text-[10px] opacity-80 mb-1">{tt('האגרסיבי ביותר', 'Most aggressive')}</div>
           <div className="text-sm font-bold">
             {metrics.most_aggressive?.changes > 0
               ? carrierName(metrics.most_aggressive?.carrier)
@@ -162,8 +172,8 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
           </div>
           <div className="text-[10px] opacity-70 mt-1">
             {metrics.most_aggressive?.changes > 0
-              ? `${metrics.most_aggressive.changes} הורדות מחיר`
-              : 'אין הורדות מחיר'}
+              ? tt(`${metrics.most_aggressive.changes} הורדות מחיר`, `${metrics.most_aggressive.changes} price drops`)
+              : tt('אין הורדות מחיר', 'No price drops')}
           </div>
         </div>
         <div className="rounded-xl p-3 text-center text-white" style={{ background: '#c47a3a' }}>
@@ -174,10 +184,10 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
               <line x1="6" y1="20" x2="6" y2="14"/>
             </svg>
           </div>
-          <div className="text-[10px] opacity-80 mb-1">שינויים השבוע</div>
-          <div className="text-sm font-bold">{metrics.weekly_changes?.total} שינויים</div>
+          <div className="text-[10px] opacity-80 mb-1">{tt('שינויים השבוע', 'Changes this week')}</div>
+          <div className="text-sm font-bold">{metrics.weekly_changes?.total} {tt('שינויים', 'changes')}</div>
           <div className="text-[10px] opacity-70 mt-1">
-            {metrics.weekly_changes?.drops} ירידות · {metrics.weekly_changes?.rises} עליות
+            {metrics.weekly_changes?.drops} {tt('ירידות', 'drops')} · {metrics.weekly_changes?.rises} {tt('עליות', 'rises')}
           </div>
         </div>
       </div>
@@ -186,7 +196,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
       {metrics.chart_data?.length > 0 && (
         <div className="bg-moca-bg rounded-xl p-4 mb-4">
           <div className="text-[11px] text-moca-sub font-semibold mb-3 text-right">
-            {metrics.cheapest?.unit} לפי ספק
+            {metrics.cheapest?.unit} {tt('לפי ספק', 'by carrier')}
           </div>
           <div dir="ltr">
             <ResponsiveContainer width="100%" height={metrics.chart_data.length * 36 + 20}>
@@ -207,7 +217,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
                   axisLine={false}
                 />
                 <Tooltip
-                  formatter={(value) => [`${value} ${metrics.cheapest?.unit}`, 'ערך']}
+                  formatter={(value) => [`${value} ${metrics.cheapest?.unit}`, tt('ערך', 'Value')]}
                   labelFormatter={carrierName}
                 />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
@@ -225,7 +235,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
       <div className="bg-white rounded-xl p-4 border-r-4 border-moca-bolt shadow-sm flex-1">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-moca-sub"><SparkleIcon /></span>
-          <span className="text-[11px] text-moca-sub font-semibold">ניתוח AI</span>
+          <span className="text-[11px] text-moca-sub font-semibold">{tt('ניתוח AI', 'AI analysis')}</span>
         </div>
         <p className="text-sm text-moca-text leading-relaxed text-right">{narrative}</p>
       </div>
@@ -253,6 +263,7 @@ function SkeletonSection() {
 
 export default function ExecutiveSummaryPage() {
   const { isAdmin } = useAuth()
+  const { tt } = useLang()
   const [summaries, setSummaries] = useState([])
   const [loading, setLoading] = useState(true)
   const [notGenerated, setNotGenerated] = useState(false)
@@ -305,14 +316,14 @@ export default function ExecutiveSummaryPage() {
       <div className="max-w-3xl mx-auto px-4 py-6">
         <div className="bg-white rounded-xl p-12 text-center border border-moca-border/40">
           <div className="text-4xl mb-3">🕗</div>
-          <p className="text-moca-muted text-sm">הניתוח ייווצר ב-08:00 הקרוב</p>
+          <p className="text-moca-muted text-sm">{tt('הניתוח ייווצר ב-08:00 הקרוב', 'The analysis will be generated at the next 08:00')}</p>
           {isAdmin && (
             <button
               onClick={handleRefresh}
               disabled={refreshing}
               className="mt-4 px-4 py-2 rounded-lg bg-moca-bolt text-white text-sm hover:bg-[#7a4a28] transition-colors disabled:opacity-50"
             >
-              {refreshing ? 'מייצר ניתוח...' : 'צור עכשיו'}
+              {refreshing ? tt('מייצר ניתוח...', 'Generating analysis...') : tt('צור עכשיו', 'Generate now')}
             </button>
           )}
         </div>
@@ -322,7 +333,7 @@ export default function ExecutiveSummaryPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-display font-bold text-moca-text mb-6 text-right">תקציר מנהלים</h1>
+      <h1 className="text-2xl font-display font-bold text-moca-text mb-6 text-right">{tt('תקציר מנהלים', 'Executive Summary')}</h1>
 
       {/* Category summaries — 2-up grid on desktop; items-stretch keeps row-mates equal height */}
       <div className="grid lg:grid-cols-2 gap-5 items-stretch mb-5">

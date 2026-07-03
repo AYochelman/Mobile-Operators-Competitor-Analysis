@@ -1,20 +1,22 @@
 import { useScrape, useScrapeProgress } from '../hooks/useScrape'
-
-const STAGE_LABELS = {
-  domestic: 'חבילות סלולר',
-  abroad:   'חו"ל',
-  global:   'גלובל / eSIM',
-  content:  'שירותי תוכן',
-  archive:  'שמירת ארכיון',
-  banners:  'באנרים',
-  all:      'סיכום',
-}
+import { useLang } from '../hooks/useLanguage'
 
 const STAGE_ORDER = ['domestic', 'abroad', 'global', 'content', 'archive', 'banners']
 
 export default function ScrapeProgressPanel() {
+  const { tt } = useLang()
   const { scraping } = useScrape()
   const progress = useScrapeProgress()
+
+  const STAGE_LABELS = {
+    domestic: tt('חבילות סלולר', 'Cellular plans'),
+    abroad:   tt('חו"ל', 'Roaming'),
+    global:   tt('גלובל / eSIM', 'Global / eSIM'),
+    content:  tt('שירותי תוכן', 'Content services'),
+    archive:  tt('שמירת ארכיון', 'Archive save'),
+    banners:  tt('באנרים', 'Banners'),
+    all:      tt('סיכום', 'Summary'),
+  }
 
   if (!scraping && progress.length === 0) return null
 
@@ -35,7 +37,7 @@ export default function ScrapeProgressPanel() {
           </svg>
         )}
         <p className="text-xs font-semibold text-gray-700">
-          {scraping ? 'התקדמות עדכון...' : 'עדכון אחרון'}
+          {scraping ? tt('התקדמות עדכון...', 'Update in progress...') : tt('עדכון אחרון', 'Last update')}
         </p>
       </div>
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -53,7 +55,7 @@ export default function ScrapeProgressPanel() {
                 <span className="text-[10px]">{icon}</span>
               </div>
               {ev?.count != null && (
-                <div className="text-[10px] opacity-75">{ev.count} פריטים</div>
+                <div className="text-[10px] opacity-75">{ev.count} {tt('פריטים', 'items')}</div>
               )}
             </div>
           )

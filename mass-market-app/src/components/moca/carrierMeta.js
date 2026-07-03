@@ -60,7 +60,7 @@ export const CARRIER_LOGOS = {
   rami_levy:        '/logos/rami_levy.png',
   // Global eSIM
   tuki:             '/logos/tuki.png',
-  globalesim:       '/logos/globalesim.png',
+  terminalesim:     '/logos/terminalesim.png',
   airalo:           '/logos/airalo.png',
   airalo_local:     '/logos/airalo.png',
   airalo_regional:  '/logos/airalo.png',

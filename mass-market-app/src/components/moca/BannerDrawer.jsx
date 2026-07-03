@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { API_BASE } from '../../lib/api'
+import { useLang } from '../../hooks/useLanguage'
 import { getCarrierColor, getCarrierName } from './carrierMeta'
 
 const CARRIER_GRADIENT = {
@@ -65,6 +66,7 @@ function Fact({ label, value }) {
  *   - Contains: large preview, facts grid, action buttons
  */
 export default function BannerDrawer({ banner, onClose }) {
+  const { tt } = useLang()
   const [imgError, setImgError] = useState(false)
 
   // Reset image error state when banner changes (otherwise the next banner
@@ -109,7 +111,7 @@ export default function BannerDrawer({ banner, onClose }) {
       }}
       role="dialog"
       aria-modal="true"
-      aria-label={`באנר ${displayName}`}
+      aria-label={`${tt('באנר', 'Banner')} ${displayName}`}
     >
       <aside
         onClick={(e) => e.stopPropagation()}
@@ -137,7 +139,7 @@ export default function BannerDrawer({ banner, onClose }) {
                 textTransform: 'uppercase',
               }}
             >
-              באנר · {isStore ? 'חנות ציוד' : 'עמוד ראשי'}
+              {tt('באנר', 'Banner')} · {isStore ? tt('חנות ציוד', 'Equipment store') : tt('עמוד ראשי', 'Homepage')}
             </div>
             <h2
               style={{
@@ -158,7 +160,7 @@ export default function BannerDrawer({ banner, onClose }) {
           </div>
           <button
             onClick={onClose}
-            aria-label="סגור"
+            aria-label={tt('סגור', 'Close')}
             style={{
               width: 32,
               height: 32,
@@ -195,7 +197,7 @@ export default function BannerDrawer({ banner, onClose }) {
           {hasImage ? (
             <img
               src={resolvedImageUrl}
-              alt={`באנר ${displayName}`}
+              alt={`${tt('באנר', 'Banner')} ${displayName}`}
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               onError={() => setImgError(true)}
             />
@@ -220,10 +222,10 @@ export default function BannerDrawer({ banner, onClose }) {
 
         {/* Facts */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 16 }}>
-          <Fact label="מפעיל" value={displayName} />
-          <Fact label="מקור" value={isStore ? 'חנות ציוד קצה' : 'עמוד ראשי'} />
-          <Fact label="צולם" value={formatFullDate(scraped_at)} />
-          <Fact label="עדכון תמונה" value={banner.changed_today ? 'התמונה השתנתה היום' : 'יציבה'} />
+          <Fact label={tt('מפעיל', 'Operator')} value={displayName} />
+          <Fact label={tt('מקור', 'Source')} value={isStore ? tt('חנות ציוד קצה', 'Device store') : tt('עמוד ראשי', 'Homepage')} />
+          <Fact label={tt('צולם', 'Captured')} value={formatFullDate(scraped_at)} />
+          <Fact label={tt('עדכון תמונה', 'Image update')} value={banner.changed_today ? tt('התמונה השתנתה היום', 'Image changed today') : tt('יציבה', 'Stable')} />
         </div>
 
         {/* Actions */}
@@ -252,7 +254,7 @@ export default function BannerDrawer({ banner, onClose }) {
                 <polyline points="15 3 21 3 21 9" />
                 <line x1="10" y1="14" x2="21" y2="3" />
               </svg>
-              פתח את עמוד {displayName}
+              {tt('פתח את עמוד', 'Open page of')} {displayName}
             </a>
           )}
           {hasImage && (
@@ -279,7 +281,7 @@ export default function BannerDrawer({ banner, onClose }) {
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
-              הגדל את הצילום
+              {tt('הגדל את הצילום', 'Enlarge screenshot')}
             </a>
           )}
         </div>

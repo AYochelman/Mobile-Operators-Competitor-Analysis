@@ -1,15 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
-
-const EXAMPLES = [
-  'מה החבילה הכי זולה עם 5G?',
-  'השוו בין פרטנר לפלאפון',
-  'איזה eSIM הכי משתלם לאירופה?',
-  'מה השתנה היום?',
-  'מה הכי זול ל-7 ימים בארה"ב?',
-  'השוו Airalo ו-Holafly לאירופה',
-]
+import { useLang } from '../hooks/useLanguage'
 
 // Map carrier names (Hebrew + English) to their IDs and tabs
 const CARRIER_MAP = {
@@ -23,7 +15,7 @@ const CARRIER_MAP = {
   'we-com': { id: 'wecom', tab: 'domestic' },
   'We-Com': { id: 'wecom', tab: 'domestic' },
   'Tuki': { id: 'tuki', tab: 'global' },
-  'GlobaleSIM': { id: 'globalesim', tab: 'global' },
+  'Terminal eSIM': { id: 'terminalesim', tab: 'global' },
   'Airalo': { id: 'airalo', tab: 'global' },
   'GlobalSIM': { id: 'pelephone_global', tab: 'global' },
   'eSIMo': { id: 'esimo', tab: 'global' },
@@ -99,6 +91,7 @@ function renderMessageWithLinks(text, onCarrierClick) {
 }
 
 export default function ChatPanel() {
+  const { tt } = useLang()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -106,6 +99,15 @@ export default function ChatPanel() {
   const messagesEnd = useRef(null)
   const inputRef = useRef(null)
   const navigate = useNavigate()
+
+  const EXAMPLES = [
+    tt('מה החבילה הכי זולה עם 5G?', 'What is the cheapest 5G plan?'),
+    tt('השוו בין פרטנר לפלאפון', 'Compare Partner and Pelephone'),
+    tt('איזה eSIM הכי משתלם לאירופה?', 'Which eSIM is best value for Europe?'),
+    tt('מה השתנה היום?', 'What changed today?'),
+    tt('מה הכי זול ל-7 ימים בארה"ב?', 'What is cheapest for 7 days in the USA?'),
+    tt('השוו Airalo ו-Holafly לאירופה', 'Compare Airalo and Holafly for Europe'),
+  ]
 
   useEffect(() => {
     messagesEnd.current?.scrollIntoView({ behavior: 'smooth' })
@@ -151,7 +153,7 @@ export default function ChatPanel() {
     setLoading(true)
     try {
       const res = await api.chat(q)
-      setMessages(prev => [...prev, { role: 'assistant', text: res.answer || 'לא התקבלה תשובה' }])
+      setMessages(prev => [...prev, { role: 'assistant', text: res.answer || tt('לא התקבלה תשובה', 'No response received') }])
     } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', text: `❌ ${err.message}` }])
     }
@@ -180,7 +182,7 @@ export default function ChatPanel() {
         <div className="fixed bottom-[7.5rem] md:bottom-20 left-5 z-50 w-[340px] max-w-[calc(100vw-40px)] bg-white rounded-xl shadow-2xl border border-moca-border flex flex-col overflow-hidden animate-fade-in-up" style={{ maxHeight: '60vh' }}>
           {/* Header */}
           <div className="bg-moca-bolt text-white px-4 py-3 flex items-center justify-between flex-shrink-0">
-            <h3 className="text-sm font-bold">💬 צריך עזרה?</h3>
+            <h3 className="text-sm font-bold">💬 {tt('צריך עזרה?', 'Need help?')}</h3>
             <button onClick={() => setOpen(false)} className="text-white/70 hover:text-white text-lg leading-none">&times;</button>
           </div>
 
@@ -188,7 +190,7 @@ export default function ChatPanel() {
           <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-[200px]">
             {messages.length === 0 && (
               <div className="text-center py-4">
-                <p className="text-xs text-gray-400 mb-3">שאל אותי על חבילות סלולר</p>
+                <p className="text-xs text-gray-400 mb-3">{tt('שאל אותי על חבילות סלולר', 'Ask me about cellular plans')}</p>
                 <div className="flex flex-wrap gap-1.5 justify-center">
                   {EXAMPLES.map((ex, i) => (
                     <button
@@ -218,7 +220,7 @@ export default function ChatPanel() {
             ))}
             {loading && (
               <div className="flex justify-end">
-                <div className="bg-gray-100 px-3 py-2 rounded-lg text-sm text-gray-400">⏳ מחשב...</div>
+                <div className="bg-gray-100 px-3 py-2 rounded-lg text-sm text-gray-400">⏳ {tt('מחשב...', 'Thinking...')}</div>
               </div>
             )}
             <div ref={messagesEnd} />
@@ -231,7 +233,7 @@ export default function ChatPanel() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="שאל שאלה..."
+              placeholder={tt('שאל שאלה...', 'Ask a question...')}
               rows={1}
               className="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-moca-bolt focus:border-moca-bolt max-h-[80px]"
               style={{ fontSize: '16px' }}
@@ -241,7 +243,7 @@ export default function ChatPanel() {
               disabled={loading || !input.trim()}
               className="px-3 py-2 bg-moca-bolt text-white rounded-lg text-sm font-medium hover:bg-moca-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
             >
-              שלח
+              {tt('שלח', 'Send')}
             </button>
           </div>
         </div>

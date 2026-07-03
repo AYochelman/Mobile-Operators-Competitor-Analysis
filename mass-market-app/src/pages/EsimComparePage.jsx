@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
+import { initTikTokPixel, trackTikTok } from '../lib/tiktokPixel'
 import { DEST_ISO_BY_HE, DEST_BY_HE, destLabel, destInHe } from '../data/hotelDestinations'
+import { PROVIDER_LOGOS } from '../data/providerLogos'
 import BoltMark from '../components/BoltMark'
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -27,6 +29,13 @@ const POPULAR = [
   'ארצות הברית', 'איטליה', 'יוון', 'תאילנד', 'יפן', 'צרפת',
   'ספרד', 'גאורגיה', 'טורקיה', 'איחוד האמירויות', 'בריטניה', 'אירופה',
 ]
+
+// Cruise is a synthetic, always-pinned "destination" (not a country) — the backend
+// folds every provider's cruise bucket (Maya, VOYE) into this one Hebrew key. It has
+// no ISO flag (→ ship icon) and its English name isn't derivable from a country code,
+// so resolve the label locally; every other destination defers to destLabel().
+const CRUISE_HE = 'קרוז'
+const destName = (he, lang) => (he === CRUISE_HE ? (lang === 'he' ? 'קרוז' : 'Cruise') : destLabel(he, lang))
 
 const T = {
   he: {
@@ -243,6 +252,9 @@ const CSS = `
 // load → a globe emoji (which Windows does render). CSS sizes it per context.
 function Flag({ he }) {
   const [err, setErr] = useState(false)
+  // Cruise has no country flag — a ship emoji (renders fine on Windows, unlike the
+  // regional-indicator flag emojis) stands in for it.
+  if (he === CRUISE_HE) return <span className="flag" aria-hidden="true">🚢</span>
   const iso = he === 'אירופה' ? 'eu' : (DEST_ISO_BY_HE[he] || '').toLowerCase()
   if (iso && !err) {
     return (
@@ -259,16 +271,14 @@ function gbLabel(d, t) {
   return `${+d.gb}GB`
 }
 
-// Providers whose DuckDuckGo favicon is too low-res — serve a sharp local logo
-// (in public/logos/) keyed by domain instead. Add entries here as needed.
-const SHARP_LOGOS = { 'tuki-esim.co.il': '/logos/tuki-icon.png' }
-
-// Provider tile: real logo (sharp local file, else DuckDuckGo favicon CDN) on a
-// white chip with a brand-colored ring; falls back to the colored monogram on
-// missing/failed logo.
-function ProviderLogo({ pv, mono }) {
+// Provider tile: real logo (curated local file by provider id, else DuckDuckGo
+// favicon CDN by domain) on a white chip with a brand-colored ring; falls back to
+// the colored monogram on missing/failed logo. Local logos win because the favicon
+// CDN serves a generic placeholder (HTTP 200) for unknown domains, so onError
+// never fires — see data/providerLogos.js.
+function ProviderLogo({ pv, provider, mono }) {
   const [err, setErr] = useState(false)
-  const src = SHARP_LOGOS[pv.domain] || (pv.domain ? `https://icons.duckduckgo.com/ip3/${pv.domain}.ico` : null)
+  const src = PROVIDER_LOGOS[provider] || (pv.domain ? `https://icons.duckduckgo.com/ip3/${pv.domain}.ico` : null)
   if (src && !err) {
     return (
       <div className="pchip logo" style={{ borderColor: pv.color }}>
@@ -360,6 +370,9 @@ export default function EsimComparePage() {
   useEffect(() => {
     if (viewedRef.current) return
     viewedRef.current = true
+    // TikTok Pixel: load + PageView (powers "Landing page view" optimization and
+    // a retargeting audience). No-op unless VITE_TIKTOK_PIXEL_ID is set.
+    initTikTokPixel()
     api.trackEsim({ type: 'page_view', sid, src: acq.src, campaign, lang,
       destination: dest || undefined, referrer: acq.referrer || undefined })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -383,7 +396,7 @@ export default function EsimComparePage() {
     const prevDir = html.dir, prevLang = html.lang, prevTitle = document.title
     html.dir = t.dir
     html.lang = lang
-    const cl = dest ? destLabel(dest, lang) : null
+    const cl = dest ? destName(dest, lang) : null
     document.title = cl
       ? (lang === 'he' ? `חבילות eSIM ל${cl} - השוואת מחירים | MOCA` : `eSIM plans for ${cl} - price comparison | MOCA`)
       : (lang === 'he' ? 'השוואת מחירי eSIM לטיול בחו"ל - חינם | MOCA' : 'Compare eSIM prices for your trip - free | MOCA')
@@ -429,7 +442,7 @@ export default function EsimComparePage() {
       .filter((d) => d.destination)
       .map((d) => ({
         he: d.destination,
-        label: destLabel(d.destination, lang),
+        label: destName(d.destination, lang),
         count: d.count,
         min: d.min_price,
       }))
@@ -455,7 +468,11 @@ export default function EsimComparePage() {
         if (DEST_BY_HE[d.destination]) picks.push(d.destination)
       }
     }
-    return picks.slice(0, 12).map((he) => ({ he, label: destLabel(he, lang) }))
+    // Cruise is pinned first (like USA) whenever it actually carries deals.
+    const pinned = destByHe[CRUISE_HE]
+      ? [CRUISE_HE, ...picks.filter((he) => he !== CRUISE_HE)]
+      : picks
+    return pinned.slice(0, 12).map((he) => ({ he, label: destName(he, lang) }))
   }, [destByHe, destList, lang])
 
   const fx = data?.fx || { usd: 3.7, eur: 4.0, gbp: 4.7 }
@@ -465,7 +482,7 @@ export default function EsimComparePage() {
   const destInfo = dest ? destByHe[dest] : null
   const fillCountry = (s) => (s || '')
     .replace(/\{inCountry\}/g, destInHe(dest || ''))
-    .replace(/\{country\}/g, dest ? destLabel(dest, lang) : '')
+    .replace(/\{country\}/g, dest ? destName(dest, lang) : '')
 
   // Accurate ₪ headline: the stored `price` column uses a stale scrape-time rate
   // (~20% low), so convert the native original_price with the live FX instead.
@@ -531,6 +548,14 @@ export default function EsimComparePage() {
   }, [t, stay, dataNeed, eligible.length])
 
   const openDeal = (d) => {
+    // TikTok conversion signal: the affiliate tap is the money event. No-op
+    // unless the pixel is configured. Lets the campaign optimize toward clicks.
+    trackTikTok('ClickButton', {
+      content_type: 'product',
+      content_id: d.provider,
+      content_name: d.plan_name,
+      description: dest || undefined,
+    })
     window.open(api.esimGoUrl(d.provider, d.plan_name, lang, dest, campaign), '_blank', 'noopener')
   }
 
@@ -546,7 +571,7 @@ export default function EsimComparePage() {
     return (
       <>
         <div className="deal-row">
-          <ProviderLogo pv={pv} mono={mono} />
+          <ProviderLogo pv={pv} provider={d.provider} mono={mono} />
           <div className="deal-info">
             <div className="deal-provider"><bdi>{pv.label}</bdi></div>
             <div className="deal-meta">{metaLine(d).flatMap((x, i) => i === 0
@@ -630,7 +655,7 @@ export default function EsimComparePage() {
             <section className="dest-bar reveal" ref={resultsRef}>
               <Flag he={dest} />
               <div className="dmeta">
-                <div className="dname"><bdi>{destLabel(dest, lang)}</bdi></div>
+                <div className="dname"><bdi>{destName(dest, lang)}</bdi></div>
                 {destInfo && <div className="dcount">{t.comparing.replace('{n}', destInfo.count)}</div>}
               </div>
               <button type="button" className="changeb" onClick={clearDest}>{t.change}</button>

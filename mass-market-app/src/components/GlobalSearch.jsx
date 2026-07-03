@@ -5,7 +5,9 @@ import { api } from '../lib/api'
 import { useAuth } from '../hooks/useAuth'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import { ALL_CARRIER_LABELS as CARRIER_LABELS } from '../data/carrierLabels'
+import { useLang } from '../hooks/useLanguage'
 const TYPE_LABELS = { domestic: 'סלולר', abroad: 'חו"ל', global: 'גלובלי' }
+const TYPE_LABELS_EN = { domestic: 'Cellular', abroad: 'Roaming', global: 'Global' }
 
 // App pages — command-palette style navigation. The `keywords` field lets users
 // find a page by Hebrew name, English name, or related concepts.
@@ -55,6 +57,7 @@ export default function GlobalSearch() {
   const navigate = useNavigate()
   const { isAdmin, isSuperAdmin } = useAuth()
   const flags = useFeatureFlags()
+  const { tt } = useLang()
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const [selectedIdx, setSelectedIdx] = useState(0)
@@ -227,7 +230,7 @@ export default function GlobalSearch() {
               value={q}
               onChange={e => setQ(e.target.value)}
               onKeyDown={onKeyDownInput}
-              placeholder="עבור לדף, חפש חבילה, ספק, ידיעה..."
+              placeholder={tt('עבור לדף, חפש חבילה, ספק, ידיעה...', 'Go to a page, search a plan, provider, news...')}
               className="flex-1 bg-transparent outline-none text-sm"
             />
             <kbd className="text-[10px] font-mono bg-gray-100 text-gray-500 rounded px-1.5 py-0.5">ESC</kbd>
@@ -236,32 +239,32 @@ export default function GlobalSearch() {
           {/* Results */}
           <div className="max-h-[60vh] overflow-y-auto">
             {loading && !loaded && (
-              <div className="px-4 py-8 text-center text-sm text-gray-400">טוען אינדקס…</div>
+              <div className="px-4 py-8 text-center text-sm text-gray-400">{tt('טוען אינדקס…', 'Loading index…')}</div>
             )}
             {loaded && q.trim() === '' && (
               <div className="px-4 py-8 text-center text-sm text-gray-400">
-                הקלד לחיפוש בדפים, חבילות, ספקים, חדשות{isSuperAdmin ? ', workspaces' : ''}
+                {tt('הקלד לחיפוש בדפים, חבילות, ספקים, חדשות', 'Type to search pages, plans, providers, news')}{isSuperAdmin ? ', workspaces' : ''}
                 <div className="mt-1 text-[10px] text-gray-400">
-                  טיפ: <code className="font-mono bg-gray-100 px-1 rounded">מיצוב</code> קפיצה לדף ·{' '}
-                  <code className="font-mono bg-gray-100 px-1 rounded">&lt;50</code> מחיר עד ₪50 ·{' '}
-                  <code className="font-mono bg-gray-100 px-1 rounded">50gb+</code> 50GB ומעלה
+                  {tt('טיפ:', 'Tip:')} <code className="font-mono bg-gray-100 px-1 rounded">מיצוב</code> {tt('קפיצה לדף', 'jump to a page')} ·{' '}
+                  <code className="font-mono bg-gray-100 px-1 rounded">&lt;50</code> {tt('מחיר עד ₪50', 'price up to ₪50')} ·{' '}
+                  <code className="font-mono bg-gray-100 px-1 rounded">50gb+</code> {tt('50GB ומעלה', '50GB and up')}
                 </div>
                 <div className="mt-3 text-[11px] text-gray-300">
                   <kbd className="font-mono bg-gray-100 text-gray-500 rounded px-1.5 py-0.5 mx-0.5">↑</kbd>
                   <kbd className="font-mono bg-gray-100 text-gray-500 rounded px-1.5 py-0.5 mx-0.5">↓</kbd>
-                  ניווט ·
+                  {tt('ניווט', 'Navigate')} ·
                   <kbd className="font-mono bg-gray-100 text-gray-500 rounded px-1.5 py-0.5 mx-0.5 mr-2">↵</kbd>
-                  בחר
+                  {tt('בחר', 'Select')}
                 </div>
               </div>
             )}
             {loaded && q.trim() !== '' && flatResults.length === 0 && (
-              <div className="px-4 py-8 text-center text-sm text-gray-400">אין תוצאות עבור "{q}"</div>
+              <div className="px-4 py-8 text-center text-sm text-gray-400">{tt('אין תוצאות עבור', 'No results for')} "{q}"</div>
             )}
 
             {results.pages.length > 0 && (
               <div className="border-b border-gray-100">
-                <p className="text-[10px] font-semibold uppercase text-gray-400 px-4 pt-3 pb-1 tracking-wider">דפים</p>
+                <p className="text-[10px] font-semibold uppercase text-gray-400 px-4 pt-3 pb-1 tracking-wider">{tt('דפים', 'Pages')}</p>
                 {results.pages.map((pg, i) => {
                   const idx = i
                   const sel = idx === selectedIdx
@@ -287,7 +290,7 @@ export default function GlobalSearch() {
 
             {results.plans.length > 0 && (
               <div className="border-b border-gray-100">
-                <p className="text-[10px] font-semibold uppercase text-gray-400 px-4 pt-3 pb-1 tracking-wider">חבילות</p>
+                <p className="text-[10px] font-semibold uppercase text-gray-400 px-4 pt-3 pb-1 tracking-wider">{tt('חבילות', 'Plans')}</p>
                 {results.plans.map((p, i) => {
                   const idx = results.pages.length + i
                   const sel = idx === selectedIdx
@@ -303,7 +306,7 @@ export default function GlobalSearch() {
                         <p className="text-[11px] text-gray-500 mt-0.5">
                           {CARRIER_LABELS[p.carrier] || p.carrier}
                           <span className="mx-1.5 text-gray-300">·</span>
-                          {TYPE_LABELS[p.plan_type] || p.plan_type}
+                          {TYPE_LABELS[p.plan_type] ? tt(TYPE_LABELS[p.plan_type], TYPE_LABELS_EN[p.plan_type] || p.plan_type) : p.plan_type}
                           {p.data_gb ? <><span className="mx-1.5 text-gray-300">·</span>{Number(p.data_gb).toLocaleString('en-US')}GB</> : null}
                         </p>
                       </div>
@@ -316,7 +319,7 @@ export default function GlobalSearch() {
 
             {results.news.length > 0 && (
               <div className="border-b border-gray-100">
-                <p className="text-[10px] font-semibold uppercase text-gray-400 px-4 pt-3 pb-1 tracking-wider">חדשות</p>
+                <p className="text-[10px] font-semibold uppercase text-gray-400 px-4 pt-3 pb-1 tracking-wider">{tt('חדשות', 'News')}</p>
                 {results.news.map((n, i) => {
                   const idx = results.pages.length + results.plans.length + i
                   const sel = idx === selectedIdx
@@ -356,7 +359,7 @@ export default function GlobalSearch() {
                         <code className="text-[11px] text-gray-500 font-mono">{w.slug}</code>
                       </div>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full ${w.active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {w.active ? 'פעיל' : 'מושעה'}
+                        {w.active ? tt('פעיל', 'Active') : tt('מושעה', 'Suspended')}
                       </span>
                     </button>
                   )

@@ -6,6 +6,7 @@ import { useVisibleCarriers } from '../hooks/useHiddenCarrier'
 import { classifyPriority } from '../data/networkPriority'
 import { getCarrierColor } from '../components/moca/carrierMeta'
 import { getAppsForPlan } from '../data/abroadApps'
+import { useLang } from '../hooks/useLanguage'
 
 const CARRIERS = [
   { id: 'partner',   label: 'פרטנר' },
@@ -156,6 +157,7 @@ function heatColor(v, max) {
 }
 
 export default function PositioningPage() {
+  const { tt } = useLang()
   const navigate = useNavigate()
   const [domesticPlans, setDomesticPlans] = useState([])
   const [abroadPlans, setAbroadPlans] = useState([])
@@ -280,21 +282,46 @@ export default function PositioningPage() {
     navigate(`${path}?carrier=${carrierId}`)
   }
 
+  // English labels for bucket/axis ids — translate at render only (data ids stay untouched)
+  const BUCKET_LABELS_EN = {
+    // domestic price
+    '0-25': '₪0-25', '26-38': '₪26-38', '39-49': '₪39-49', '50-79': '₪50-79', '80-99': '₪80-99', '100+': '₪100+',
+    // domestic GB
+    '0-50': 'Under 50GB', '51-200': '51-200GB', '201-500': '201-500GB', '501-999': '501-999GB',
+    '1000-2000': '1000-2000GB', '2001-3000': '2001-3000GB', '3001-5000': '3001-5000GB', '5000+': 'Over 5000GB',
+    unlim: 'Unlimited',
+    // priority
+    none: 'No 5G', basic: 'Basic 5G', max: 'Max priority',
+    // roaming GB
+    '0-1': 'Up to 1GB', '1-5': '1-5GB', '5-15': '5-15GB', '15-50': '15-50GB', '50+': '50GB+',
+    // roaming days
+    '1-7': 'Up to 7 days', '8-14': '8-14 days', '15-30': '15-30 days', '30+': '30+ days',
+    // roaming price
+    '0-100': 'Under ₪100', '100-149': '₪101-149', '150-199': '₪150-199', '200-249': '₪200-249',
+    '250-299': '₪250-299', '300-349': '₪300-349', '350+': 'Over ₪350',
+  }
+  const bucketLabel = (b) => tt(b.label, BUCKET_LABELS_EN[b.id] ?? b.label)
+
+  const AXIS_LABELS_EN = { price: 'By price', gb: 'By data', priority: 'By priority', days: 'By days' }
+  const axisLabel = (a) => tt(a.label, AXIS_LABELS_EN[a.id] ?? a.label)
+
+  const DOMAIN_TABS = [
+    { id: 'domestic', label: tt('חבילות בארץ', 'Domestic plans') },
+    { id: 'abroad',   label: tt('חבילות חו"ל', 'Roaming plans') },
+  ]
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
       {/* Page identity is owned by the Topbar — only the helper subtitle stays. */}
       <p className="text-xs text-gray-400 mb-5 text-right">
         {domain === 'abroad'
-          ? 'פיזור חבילות חו"ל לפי ספק ונפח גלישה — אתר את ה-white space'
-          : 'פיזור חבילות סלולר לפי ספק וקטגוריה — אתר את ה-white space'}
+          ? tt('פיזור חבילות חו"ל לפי ספק ונפח גלישה — אתר את ה-white space', 'Distribution of roaming plans by provider and data volume — find the white space')
+          : tt('פיזור חבילות סלולר לפי ספק וקטגוריה — אתר את ה-white space', 'Distribution of cellular plans by provider and category — find the white space')}
       </p>
 
       {/* Domain tabs — בארץ / חו"ל */}
       <div className="mb-5 flex items-center gap-1 border-b border-moca-border/40">
-        {[
-          { id: 'domestic', label: 'חבילות בארץ' },
-          { id: 'abroad',   label: 'חבילות חו"ל' },
-        ].map(d => (
+        {DOMAIN_TABS.map(d => (
           <button
             key={d.id}
             onClick={() => handleDomain(d.id)}
@@ -311,7 +338,7 @@ export default function PositioningPage() {
 
       {/* Axis toggle */}
       <div className="mb-6 flex items-center gap-2">
-        <span className="text-xs text-moca-sub">צירים:</span>
+        <span className="text-xs text-moca-sub">{tt('צירים:', 'Axes:')}</span>
         {axes.map(a => (
           <button
             key={a.id}
@@ -320,10 +347,10 @@ export default function PositioningPage() {
               axis === a.id ? 'bg-moca-bolt text-white' : 'bg-white border border-moca-border/50 text-moca-sub hover:bg-moca-cream'
             }`}
           >
-            {a.label}
+            {axisLabel(a)}
           </button>
         ))}
-        <span className="mr-auto text-xs text-gray-400">{totalPlans} חבילות סך הכל</span>
+        <span className="mr-auto text-xs text-gray-400">{totalPlans} {tt('חבילות סך הכל', 'plans total')}</span>
       </div>
 
       {loading && <div className="flex justify-center py-20"><Spinner /></div>}
@@ -336,13 +363,13 @@ export default function PositioningPage() {
               <table className="w-full text-right" dir="rtl">
                 <thead>
                   <tr className="bg-moca-cream/60 border-b border-moca-border/40">
-                    <th className="px-3 py-2.5 text-[11px] font-semibold text-moca-sub text-right sticky right-0 bg-moca-cream/95 backdrop-blur-sm z-10 md:static md:bg-transparent">ספק</th>
+                    <th className="px-3 py-2.5 text-[11px] font-semibold text-moca-sub text-right sticky right-0 bg-moca-cream/95 backdrop-blur-sm z-10 md:static md:bg-transparent">{tt('ספק', 'Provider')}</th>
                     {buckets.map(b => (
                       <th key={b.id} className="px-2 py-2.5 text-[11px] font-semibold text-moca-sub text-center min-w-[88px]">
-                        {b.label}
+                        {bucketLabel(b)}
                       </th>
                     ))}
-                    <th className="px-3 py-2.5 text-[11px] font-semibold text-moca-sub text-center min-w-[60px]">סה"כ</th>
+                    <th className="px-3 py-2.5 text-[11px] font-semibold text-moca-sub text-center min-w-[60px]">{tt('סה"כ', 'Total')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -355,7 +382,7 @@ export default function PositioningPage() {
                           {domain === 'abroad' && carrierApps[c.id] && (
                             <span
                               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-moca-cream border border-moca-sand text-moca-bolt text-[10px] font-bold leading-none whitespace-nowrap"
-                              title={`גלישה חופשית ב-${carrierApps[c.id].maxApps} אפליקציות · ${carrierApps[c.id].planCount} מסלולי חו"ל\n${carrierApps[c.id].names.join(' · ')}`}
+                              title={tt(`גלישה חופשית ב-${carrierApps[c.id].maxApps} אפליקציות · ${carrierApps[c.id].planCount} מסלולי חו"ל\n${carrierApps[c.id].names.join(' · ')}`, `Free browsing in ${carrierApps[c.id].maxApps} apps · ${carrierApps[c.id].planCount} roaming plans\n${carrierApps[c.id].names.join(' · ')}`)}
                             >
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                 <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
@@ -375,11 +402,11 @@ export default function PositioningPage() {
                             className={`px-2 py-2.5 text-center transition-all ${heatColor(cell.count, maxCount)} ${
                               cell.count > 0 ? 'cursor-pointer hover:opacity-80' : ''
                             }`}
-                            title={cell.count > 0 ? `${cell.count} חבילות, מ-₪${cell.minPrice}` : 'אין חבילות'}
+                            title={cell.count > 0 ? tt(`${cell.count} חבילות, מ-₪${cell.minPrice}`, `${cell.count} plans, from ₪${cell.minPrice}`) : tt('אין חבילות', 'No plans')}
                           >
                             <div className="text-base font-bold">{cell.count || ''}</div>
                             {cell.count > 0 && cell.minPrice !== Infinity && (
-                              <div className="text-[9px] opacity-75 mt-0.5">מ-&#8362;{cell.minPrice}</div>
+                              <div className="text-[9px] opacity-75 mt-0.5">{tt('מ-', 'from ')}&#8362;{cell.minPrice}</div>
                             )}
                           </td>
                         )
@@ -390,7 +417,7 @@ export default function PositioningPage() {
                     </tr>
                   ))}
                   <tr className="bg-moca-cream/40">
-                    <td className="px-3 py-2.5 text-[11px] font-semibold text-moca-sub sticky right-0 bg-moca-cream/95 backdrop-blur-sm z-10 md:static md:bg-transparent">סה"כ</td>
+                    <td className="px-3 py-2.5 text-[11px] font-semibold text-moca-sub sticky right-0 bg-moca-cream/95 backdrop-blur-sm z-10 md:static md:bg-transparent">{tt('סה"כ', 'Total')}</td>
                     {buckets.map(b => (
                       <td key={b.id} className="px-2 py-2.5 text-center text-[12px] font-bold text-gray-700">
                         {bucketTotals[b.id]}
@@ -410,13 +437,13 @@ export default function PositioningPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <span>הזדמנויות (White Space)</span>
+                <span>{tt('הזדמנויות (White Space)', 'Opportunities (White Space)')}</span>
               </h3>
               <ul className="space-y-1.5">
                 {whiteSpaces.slice(0, 5).map((ws, i) => (
                   <li key={i} className="text-xs text-amber-800">
-                    <strong>{ws.bucket.label}</strong> —
-                    <span className="text-amber-700 mx-1">חסר אצל:</span>
+                    <strong>{bucketLabel(ws.bucket)}</strong> —
+                    <span className="text-amber-700 mx-1">{tt('חסר אצל:', 'Missing from:')}</span>
                     {ws.carriers.map(c => c.label).join(', ')}
                   </li>
                 ))}
@@ -425,8 +452,8 @@ export default function PositioningPage() {
           )}
 
           <p className="text-[11px] text-gray-400 mt-4 text-right">
-            לחץ על תא כדי לראות את החבילות בדשבורד · צבע ירוק כהה = ריבוי חבילות בקטגוריה
-            {domain === 'abroad' && ' · התג ▦ ליד שם הספק = גלישה חופשית באפליקציות (המספר = כמה אפליקציות)'}
+            {tt('לחץ על תא כדי לראות את החבילות בדשבורד · צבע ירוק כהה = ריבוי חבילות בקטגוריה', 'Click a cell to see the plans in the dashboard · dark green = many plans in the category')}
+            {domain === 'abroad' && tt(' · התג ▦ ליד שם הספק = גלישה חופשית באפליקציות (המספר = כמה אפליקציות)', ' · the ▦ tag next to a provider = free in-app browsing (the number = how many apps)')}
           </p>
         </>
       )}

@@ -11,4 +11,6 @@
 https://esim.mocaintel.com/*  /index.html  200
 /            /landing.html   200!
 /hotels      /hotels.html    200!
+# Short branded link for the TikTok bio → the tagged eSIM compare page.
+/tt          /esim-deals?utm_source=tiktok&utm_campaign=tiktok_bio   302
 /*           /index.html     200

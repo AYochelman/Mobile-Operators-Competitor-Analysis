@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useLang } from '../../hooks/useLanguage'
 
-export default function SearchableSelect({ value, onChange, options, placeholder = 'בחר...', className = '', size = 'sm' }) {
+export default function SearchableSelect({ value, onChange, options, placeholder, className = '', size = 'sm' }) {
+  const { tt } = useLang()
+  const resolvedPlaceholder = placeholder != null ? placeholder : tt('בחר...', 'Select...')
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 })
@@ -70,7 +73,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
   const hiddenCount = filtered.length - visible.length
 
   const selectedLabel = value === 'all'
-    ? placeholder
+    ? resolvedPlaceholder
     : (options.find(o => o.value === value)?.label || value)
 
   const handleSelect = (val) => {
@@ -115,7 +118,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="חפש..."
+              placeholder={tt('חפש...', 'Search...')}
               className="w-full border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:border-moca-bolt"
             />
           </div>
@@ -128,7 +131,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
                 value === 'all' ? 'bg-moca-cream font-medium text-moca-text' : 'text-gray-600'
               }`}
             >
-              {placeholder}
+              {resolvedPlaceholder}
             </button>
 
             {visible.map(o => (
@@ -145,12 +148,12 @@ export default function SearchableSelect({ value, onChange, options, placeholder
 
             {hiddenCount > 0 && (
               <p className="px-2.5 py-2 text-[11px] text-gray-400 text-center border-t border-gray-100">
-                ועוד {hiddenCount.toLocaleString('he-IL')} תוצאות — חפש לצמצום
+                {tt('ועוד ', '')}{hiddenCount.toLocaleString('he-IL')}{tt(' תוצאות — חפש לצמצום', ' more results — search to narrow')}
               </p>
             )}
 
             {filtered.length === 0 && (
-              <p className="px-2.5 py-2 text-xs text-gray-400 text-center">לא נמצאו תוצאות</p>
+              <p className="px-2.5 py-2 text-xs text-gray-400 text-center">{tt('לא נמצאו תוצאות', 'No results found')}</p>
             )}
           </div>
         </div>,

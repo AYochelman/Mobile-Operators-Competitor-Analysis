@@ -6,6 +6,7 @@ import Button from '../ui/Button'
 import Badge from '../ui/Badge'
 import SearchableSelect from '../ui/SearchableSelect'
 import { GLOBAL_PROVIDERS } from '../../data/carrierLabels'
+import { useLang } from '../../hooks/useLanguage'
 
 const TAB_ICONS = {
   domestic: (
@@ -47,7 +48,7 @@ const CARRIERS = [
 const CARRIER_COLORS = {
   partner: 'blue', pelephone: 'orange', hotmobile: 'red', cellcom: 'purple',
   mobile019: 'teal', xphone: 'pink', wecom: 'amber',
-  tuki: 'blue', globalesim: 'green', airalo: 'orange', pelephone_global: 'orange',
+  tuki: 'blue', terminalesim: 'green', airalo: 'orange', pelephone_global: 'orange',
   esimo: 'purple', simtlv: 'teal', world8: 'pink', saily: 'blue', holafly: 'green',
   esimio: 'blue', xphone_global: 'teal', sparks: 'amber', voye: 'pink',
   orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'purple',
@@ -67,9 +68,17 @@ function carriersForTab(tab) {
   return CARRIERS
 }
 
+// UI labels for the plan-category tabs (kept out of the data-oriented TAB_LABELS map).
+const TAB_UI_LABELS = {
+  domestic: ['חבילות סלולר', 'Cellular plans'],
+  abroad:   ['חו"ל', 'Roaming'],
+  global:   ['גלובלי', 'Global'],
+}
+
 export default function AlertsPriceTab() {
   const { user } = useAuth()
   const hiddenCarrier = useHiddenCarrier()
+  const { tt } = useLang()
   const [alerts, setAlerts] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -211,7 +220,7 @@ export default function AlertsPriceTab() {
           size="sm"
           onClick={() => setShowForm(v => !v)}
         >
-          {showForm ? 'ביטול' : '+ הוספת התראה'}
+          {showForm ? tt('ביטול', 'Cancel') : tt('+ הוספת התראה', '+ Add alert')}
         </Button>
       </div>
 
@@ -221,11 +230,11 @@ export default function AlertsPriceTab() {
           onSubmit={handleCreate}
           className="bg-white rounded-xl border border-gray-200 p-5 mb-5 space-y-4"
         >
-          <p className="text-sm font-semibold text-gray-700 mb-1">התראה חדשה</p>
+          <p className="text-sm font-semibold text-gray-700 mb-1">{tt('התראה חדשה', 'New alert')}</p>
 
           {/* Tab select */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">סוג חבילה</label>
+            <label className="block text-xs text-gray-500 mb-1">{tt('סוג חבילה', 'Plan type')}</label>
             <div className="flex gap-2">
               {TABS.map(t => (
                 <button
@@ -238,7 +247,7 @@ export default function AlertsPriceTab() {
                       : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
                   }`}
                 >
-                  <span className="inline-flex items-center gap-1.5">{TAB_ICONS[t.id]}{t.label}</span>
+                  <span className="inline-flex items-center gap-1.5">{TAB_ICONS[t.id]}{TAB_UI_LABELS[t.id] ? tt(TAB_UI_LABELS[t.id][0], TAB_UI_LABELS[t.id][1]) : t.label}</span>
                 </button>
               ))}
             </div>
@@ -246,30 +255,30 @@ export default function AlertsPriceTab() {
 
           {/* Carrier select */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">ספק (אופציונלי)</label>
+            <label className="block text-xs text-gray-500 mb-1">{tt('ספק (אופציונלי)', 'Provider (optional)')}</label>
             <SearchableSelect
               value={formCarrier || 'all'}
               onChange={v => handleCarrierChange({ target: { value: v === 'all' ? '' : v } })}
               options={availableCarriers.map(c => ({ value: c.id, label: c.label }))}
-              placeholder="הכל"
+              placeholder={tt('הכל', 'All')}
               size="md"
             />
           </div>
 
           {/* Plan name dropdown */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">חבילה (אופציונלי)</label>
+            <label className="block text-xs text-gray-500 mb-1">{tt('חבילה (אופציונלי)', 'Plan (optional)')}</label>
             {plansLoading ? (
               <div className="flex items-center gap-2 py-2 text-xs text-gray-400">
                 <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.22-8.56" /></svg>
-                טוען חבילות...
+                {tt('טוען חבילות...', 'Loading plans...')}
               </div>
             ) : (
               <SearchableSelect
                 value={formPlanName || 'all'}
                 onChange={handlePlanSelect}
                 options={planOptions}
-                placeholder="כל החבילות"
+                placeholder={tt('כל החבילות', 'All plans')}
                 size="md"
               />
             )}
@@ -278,10 +287,10 @@ export default function AlertsPriceTab() {
           {/* Threshold */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-xs text-gray-500">סף מחיר (&#8362;)</label>
+              <label className="text-xs text-gray-500">{tt('סף מחיר (₪)', 'Price threshold (₪)')}</label>
               {selectedPlanPrice != null && (
                 <span className="text-[11px] text-gray-400">
-                  מחיר נוכחי: <span className="font-medium text-gray-600">&#8362;{selectedPlanPrice}</span>
+                  {tt('מחיר נוכחי:', 'Current price:')} <span className="font-medium text-gray-600">&#8362;{selectedPlanPrice}</span>
                 </span>
               )}
             </div>
@@ -295,23 +304,23 @@ export default function AlertsPriceTab() {
               required
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
-            <p className="text-[11px] text-gray-400 mt-1">תקבל התראה כשמחיר חבילה תואמת יורד מתחת לסכום זה</p>
+            <p className="text-[11px] text-gray-400 mt-1">{tt('תקבל התראה כשמחיר חבילה תואמת יורד מתחת לסכום זה', 'You will be notified when a matching plan drops below this amount')}</p>
           </div>
 
           <Button type="submit" variant="primary" size="md" disabled={submitting || !formThreshold}>
-            {submitting ? 'שומר...' : 'שמור התראה'}
+            {submitting ? tt('שומר...', 'Saving...') : tt('שמור התראה', 'Save alert')}
           </Button>
         </form>
       )}
 
       {/* ── Alerts list ────────────────────────────────────────────── */}
       {loading ? (
-        <div className="text-center py-10 text-gray-400 text-sm">טוען...</div>
+        <div className="text-center py-10 text-gray-400 text-sm">{tt('טוען...', 'Loading...')}</div>
       ) : alerts.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
           <p className="text-3xl mb-3">🔔</p>
-          <p className="text-gray-600 mb-2 font-medium">אין התראות פעילות</p>
-          <p className="text-sm text-gray-400">הגדר התראת מחיר וקבל הודעה כשמחיר חבילה יורד מתחת לסכום שתבחר</p>
+          <p className="text-gray-600 mb-2 font-medium">{tt('אין התראות פעילות', 'No active alerts')}</p>
+          <p className="text-sm text-gray-400">{tt('הגדר התראת מחיר וקבל הודעה כשמחיר חבילה יורד מתחת לסכום שתבחר', 'Set a price alert and get notified when a plan drops below the amount you choose')}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -325,7 +334,7 @@ export default function AlertsPriceTab() {
                   <Badge color={CARRIER_COLORS[a.carrier] || 'gray'}>
                     {carrierLabel(a.carrier)}
                   </Badge>
-                  <Badge color="blue">{TAB_LABELS[a.tab] || a.tab}</Badge>
+                  <Badge color="blue">{TAB_UI_LABELS[a.tab] ? tt(TAB_UI_LABELS[a.tab][0], TAB_UI_LABELS[a.tab][1]) : (TAB_LABELS[a.tab] || a.tab)}</Badge>
                   {a.plan_pattern && (
                     <span className="text-[11px] text-gray-400 truncate max-w-[140px]" title={a.plan_pattern}>
                       "{a.plan_pattern}"
@@ -333,18 +342,18 @@ export default function AlertsPriceTab() {
                   )}
                 </div>
                 <p className="text-sm text-gray-700">
-                  הודע כשמחיר &lt; <span className="font-semibold text-blue-600">&#8362;{a.threshold}</span>
+                  {tt('הודע כשמחיר', 'Notify when price')} &lt; <span className="font-semibold text-blue-600">&#8362;{a.threshold}</span>
                 </p>
                 {a.last_triggered && (
                   <p className="text-[11px] text-gray-400 mt-0.5">
-                    הופעל לאחרונה: {new Date(a.last_triggered).toLocaleDateString('he-IL')}
+                    {tt('הופעל לאחרונה:', 'Last triggered:')} {new Date(a.last_triggered).toLocaleDateString('he-IL')}
                   </p>
                 )}
               </div>
               <button
                 onClick={() => handleDelete(a.id)}
                 className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
-                title="מחק התראה"
+                title={tt('מחק התראה', 'Delete alert')}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />

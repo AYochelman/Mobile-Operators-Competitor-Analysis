@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import CarrierChip from './CarrierChip'
 import { getCarrierName } from './carrierMeta'
+import { useLang } from '../../hooks/useLanguage'
 
 /**
  * Lead-story card per the design's Editorial Deep dashboard.
@@ -14,18 +15,18 @@ import { getCarrierName } from './carrierMeta'
  * unanchored.
  */
 
-function fmtHoursAgo(iso) {
+function fmtHoursAgo(iso, tt) {
   if (!iso) return ''
   const ms = Date.now() - new Date(iso).getTime()
   const hours = Math.floor(ms / (60 * 60 * 1000))
-  if (hours < 1) return 'הרגע'
-  if (hours === 1) return 'לפני שעה'
-  if (hours < 24) return `לפני ${hours} שעות`
+  if (hours < 1) return tt('הרגע', 'just now')
+  if (hours === 1) return tt('לפני שעה', '1 hour ago')
+  if (hours < 24) return tt(`לפני ${hours} שעות`, `${hours} hours ago`)
   const days = Math.floor(hours / 24)
-  return days === 1 ? 'אתמול' : `לפני ${days} ימים`
+  return days === 1 ? tt('אתמול', 'yesterday') : tt(`לפני ${days} ימים`, `${days} days ago`)
 }
 
-function buildHeadline(change) {
+function buildHeadline(change, tt) {
   if (!change) return null
   const carrier = getCarrierName(change.carrier)
   const name = change.plan_name || ''
@@ -36,45 +37,45 @@ function buildHeadline(change) {
     const diff = oldVal - newVal
     if (diff > 0) {
       return {
-        kicker: `שינוי משמעותי בשוק · ${fmtHoursAgo(change.changed_at)}`,
+        kicker: `${tt('שינוי משמעותי בשוק', 'Significant market move')} · ${fmtHoursAgo(change.changed_at, tt)}`,
         title: (
           <>
-            {carrier} חתכה את <span style={{ color: 'var(--color-moca-down)', textDecoration: 'underline', textDecorationColor: 'var(--color-moca-down)', textUnderlineOffset: 4 }}>{name} ב-{diff}₪</span>
+            {carrier} {tt('חתכה את', 'cut')} <span style={{ color: 'var(--color-moca-down)', textDecoration: 'underline', textDecorationColor: 'var(--color-moca-down)', textUnderlineOffset: 4 }}>{name} {tt('ב-', 'by ')}{diff}₪</span>
           </>
         ),
-        body: `המחיר החדש (${newVal}₪) ירידה של ${Math.round((diff / oldVal) * 100)}% מהמחיר הקודם. ${carrier} מציבה לחץ תחרותי על מסלולים בקטגוריה דומה.`,
+        body: `${tt('המחיר החדש', 'The new price')} (${newVal}₪) ${tt('ירידה של', 'a drop of')} ${Math.round((diff / oldVal) * 100)}% ${tt('מהמחיר הקודם', 'from the previous price')}. ${carrier} ${tt('מציבה לחץ תחרותי על מסלולים בקטגוריה דומה', 'is putting competitive pressure on plans in a similar category')}.`,
       }
     }
     if (diff < 0) {
       return {
-        kicker: `התייקרות · ${fmtHoursAgo(change.changed_at)}`,
+        kicker: `${tt('התייקרות', 'Price hike')} · ${fmtHoursAgo(change.changed_at, tt)}`,
         title: (
           <>
-            {carrier} העלתה את <span style={{ color: 'var(--color-moca-up)' }}>{name} ב-{-diff}₪</span> — הפוך ממגמת השוק
+            {carrier} {tt('העלתה את', 'raised')} <span style={{ color: 'var(--color-moca-up)' }}>{name} {tt('ב-', 'by ')}{-diff}₪</span> — {tt('הפוך ממגמת השוק', 'against the market trend')}
           </>
         ),
-        body: `המחיר החדש (${newVal}₪) — עליה של ${Math.round((-diff / oldVal) * 100)}% מהמחיר הקודם. ייתכן שזה אות לעיכוב במהלך תחרותי או שינוי במיצוב.`,
+        body: `${tt('המחיר החדש', 'The new price')} (${newVal}₪) — ${tt('עליה של', 'an increase of')} ${Math.round((-diff / oldVal) * 100)}% ${tt('מהמחיר הקודם', 'from the previous price')}. ${tt('ייתכן שזה אות לעיכוב במהלך תחרותי או שינוי במיצוב', 'This may signal a pause in a competitive move or a repositioning')}.`,
       }
     }
   }
 
   if (change.change_type === 'new_plan') {
     return {
-      kicker: `מסלול חדש · ${fmtHoursAgo(change.changed_at)}`,
+      kicker: `${tt('מסלול חדש', 'New plan')} · ${fmtHoursAgo(change.changed_at, tt)}`,
       title: (
         <>
-          {carrier} השיקה את <span style={{ color: 'var(--color-moca-hot)' }}>{name}</span> במחיר {newVal}₪
+          {carrier} {tt('השיקה את', 'launched')} <span style={{ color: 'var(--color-moca-hot)' }}>{name}</span> {tt('במחיר', 'at')} {newVal}₪
         </>
       ),
-      body: `מסלול חדש שנכנס לשוק. ${carrier} מרחיבה את הסל התחרותי שלה.`,
+      body: `${tt('מסלול חדש שנכנס לשוק', 'A new plan has entered the market')}. ${carrier} ${tt('מרחיבה את הסל התחרותי שלה', 'is expanding its competitive lineup')}.`,
     }
   }
 
   if (change.change_type === 'removed_plan') {
     return {
-      kicker: `מסלול הוסר · ${fmtHoursAgo(change.changed_at)}`,
-      title: <>{carrier} הסירה את <span style={{ color: 'var(--color-moca-muted)' }}>{name}</span></>,
-      body: `המסלול לא מופיע יותר באתר ${carrier}.`,
+      kicker: `${tt('מסלול הוסר', 'Plan removed')} · ${fmtHoursAgo(change.changed_at, tt)}`,
+      title: <>{carrier} {tt('הסירה את', 'removed')} <span style={{ color: 'var(--color-moca-muted)' }}>{name}</span></>,
+      body: `${tt('המסלול לא מופיע יותר באתר', 'The plan no longer appears on the site of')} ${carrier}.`,
     }
   }
 
@@ -82,6 +83,7 @@ function buildHeadline(change) {
 }
 
 function ComparisonCard({ plan, carrierId, label, accent, oldPrice }) {
+  const { tt } = useLang()
   if (!plan) {
     return (
       <div
@@ -94,7 +96,7 @@ function ComparisonCard({ plan, carrierId, label, accent, oldPrice }) {
           minWidth: 0,
         }}
       >
-        <div style={{ fontSize: 11, color: 'var(--color-moca-muted)' }}>אין מסלול תואם להשוואה</div>
+        <div style={{ fontSize: 11, color: 'var(--color-moca-muted)' }}>{tt('אין מסלול תואם להשוואה', 'No matching plan to compare')}</div>
       </div>
     )
   }
@@ -122,16 +124,17 @@ function ComparisonCard({ plan, carrierId, label, accent, oldPrice }) {
         </span>
       </div>
       <div style={{ fontSize: 10.5, color: 'var(--color-moca-muted)', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {plan.data_gb === null ? 'ללא הגבלה' : plan.data_gb >= 1 ? `${Number(plan.data_gb).toLocaleString('en-US')}GB` : `${Math.round(plan.data_gb * 1024)}MB`}
-        {plan.minutes ? ` · ${Number(plan.minutes).toLocaleString('en-US')} דק׳` : ' · ללא הגבלה'}
+        {plan.data_gb === null ? tt('ללא הגבלה', 'Unlimited') : plan.data_gb >= 1 ? `${Number(plan.data_gb).toLocaleString('en-US')}GB` : `${Math.round(plan.data_gb * 1024)}MB`}
+        {plan.minutes ? ` · ${Number(plan.minutes).toLocaleString('en-US')} ${tt('דק׳', 'min')}` : ` · ${tt('ללא הגבלה', 'Unlimited')}`}
       </div>
     </div>
   )
 }
 
 export default function EditorialHero({ leadChange, oursCarrier, onAnalyze, onPositioning, onWeeklyReport }) {
+  const { tt } = useLang()
   const navigate = useNavigate()
-  const headline = buildHeadline(leadChange?.change)
+  const headline = buildHeadline(leadChange?.change, tt)
 
   if (!headline || !leadChange) {
     return (
@@ -145,13 +148,13 @@ export default function EditorialHero({ leadChange, oursCarrier, onAnalyze, onPo
         <div className="max-w-[1320px] mx-auto px-6">
           <div style={{ maxWidth: 720 }}>
             <div style={{ fontSize: 11, color: 'var(--color-moca-muted)', fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
-              ברוכים הבאים · MOCA
+              {tt('ברוכים הבאים · MOCA', 'Welcome · MOCA')}
             </div>
             <h1 className="text-[22px] md:text-[30px]" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--color-moca-dark)', letterSpacing: -0.5, lineHeight: 1.2, margin: 0 }}>
-              אין שינויים משמעותיים ב-24 שעות האחרונות
+              {tt('אין שינויים משמעותיים ב-24 שעות האחרונות', 'No significant changes in the last 24 hours')}
             </h1>
             <p style={{ fontSize: 14, color: 'var(--color-moca-sub)', lineHeight: 1.65, marginTop: 12, maxWidth: 520 }}>
-              השוק שקט. כשמתחרה משנה משהו משמעותי — מחיר, מסלול חדש, הוצאה — תראה זאת כאן בראש העמוד.
+              {tt('השוק שקט. כשמתחרה משנה משהו משמעותי — מחיר, מסלול חדש, הוצאה — תראה זאת כאן בראש העמוד.', 'The market is quiet. When a competitor makes a significant move — a price, a new plan, a removal — you will see it here at the top of the page.')}
             </p>
           </div>
         </div>
@@ -219,7 +222,7 @@ export default function EditorialHero({ leadChange, oursCarrier, onAnalyze, onPo
                 fontFamily: 'inherit',
               }}
             >
-              נתח השוואה
+              {tt('נתח השוואה', 'Analyze comparison')}
             </button>
             <button
               onClick={() => onPositioning ? onPositioning() : navigate('/positioning')}
@@ -235,7 +238,7 @@ export default function EditorialHero({ leadChange, oursCarrier, onAnalyze, onPo
                 fontFamily: 'inherit',
               }}
             >
-              מפת מיצוב
+              {tt('מפת מיצוב', 'Positioning map')}
             </button>
             <button
               onClick={() => onWeeklyReport ? onWeeklyReport() : navigate('/executive-summary')}
@@ -251,7 +254,7 @@ export default function EditorialHero({ leadChange, oursCarrier, onAnalyze, onPo
                 fontFamily: 'inherit',
               }}
             >
-              דוח שבועי
+              {tt('דוח שבועי', 'Weekly report')}
             </button>
           </div>
         </div>
@@ -276,13 +279,13 @@ export default function EditorialHero({ leadChange, oursCarrier, onAnalyze, onPo
               marginBottom: 14,
             }}
           >
-            ההשוואה המיידית
+            {tt('ההשוואה המיידית', 'Head-to-head comparison')}
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
             <ComparisonCard
               plan={ours}
               carrierId={oursCarrier}
-              label={ours?.plan_name || 'אין מסלול שלך'}
+              label={ours?.plan_name || tt('אין מסלול שלך', 'No plan of yours')}
             />
             <div style={{ display: 'flex', alignItems: 'center', color: 'var(--color-moca-muted)', fontSize: 16, fontWeight: 600 }}>vs</div>
             <ComparisonCard
