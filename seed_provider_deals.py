@@ -34,7 +34,7 @@ DEALS = [
         "coupon_note": "קוד MOCA = 15% הנחת לקוח, חי ומזכה אותנו.",
         "has_tracking_link": True, "priority": "low",
         "next_actions": "לעדכן את Voye ש-live; ממתינים לקריאייטיבים (לוגו/באנרים) מהם.",
-        "notes": "מאושר ופעיל מ-2026-06-15. לינק /go/voye מחובר.",
+        "notes": "מאושר ופעיל מ-2026-06-15. לינק /go/voye מחובר. Deep-links פר-יעד (03/07): נוצרו ב-Impact 16 TrackingLinks ליעדים המובילים (voyeglobal.com/he/esim/<country>/) וחוברו ב-app.py (_VOYE_DEST_DEEPLINKS, מפתח לפי dest); /go/voye?dest= מוביל לעמוד המדינה עם attribution, שאר היעדים נופלים ללינק הגנרי. מכסה B2C + מלונות. מאומת 16/16.",
     },
     {
         "provider_id": "saily", "display_name": "Saily", "category": "global",
@@ -103,6 +103,17 @@ DEALS = [
         "next_actions": "אין - הקופון פעיל. תווית ה-5% נמשכת חי מ-/api/coupons (אין צורך בפריסת Netlify); מופיעה בעמוד הציבורי תוך ~5 דק' (client cache).",
         "notes": "נרשמנו לתוכנית האפיליאייט הפנימית 2026-07-03 (referral_code 8F68HJS3KPDU). לינק /go/bytesim + AFFILIATE_URLS.bytesim + קוד MOCA חוברו. החליף את הפנייה הקרה שחזרה (support@bytesim.com bounced).",
     },
+    {
+        "provider_id": "maya", "display_name": "Maya Mobile", "category": "global",
+        "outreach_status": "live", "outreach_last_at": "2026-07-03",
+        "contact": "bskrzypek@maya.net", "program_network": "Impact",
+        "agreement_status": "live", "commission_pct": 17,
+        "commission_note": "15%-20% עמלה (Impact acct 7205658).",
+        "coupon_note": "קוד MOCA10 = 10% הנחה לרכישה ראשונה. Bart אישר בכתב (מייל 2026-07-02) שהקוד חי; כבר מוזן ב-seed_coupons ומזכה אותנו. קיים גם לינק tracking של Impact (mayamobile.pxf.io/oNV1xn) - הזיכוי דרך הלינק וגם דרך הקוד.",
+        "has_tracking_link": True, "priority": "med",
+        "next_actions": "1) פיילוט B2B (חדש 2026-07-03): נשלח ל-Bart דשבורד ממותג בצבעי Maya לשבוע ניסיון + פרטי כניסה (מייל 03/07, סיסמה עודכנה ידנית); מעקב ~2026-07-10 לאיסוף פידבק ולדון בהמשך/מנוי בתשלום. 2) לוודא ש-MOCA10 מוצג בעמוד הציבורי (הרצת seed_coupons + פריסה). 3) API - הושלם. תיעוד ה-Partner Reference (v0.2 draft, AI-generated) נסקר 03/07: מאשר ש-assets.maya.net/affiliates/plans.json הוא ה-endpoint היחיד (JSON סטטי ב-CDN, ללא auth, אין real-time - poll שבועי מספיק), ואנחנו כבר קוראים אותו נכון (8 חבילות + מחירים תואמים). בוצע 03/07: השיפור שהדוק המליץ עליו הושלם - יוצרו ב-Impact 8 TrackingLinks (אחד לכל חבילה) וחוברו ב-app.py (_MAYA_PLAN_DEEPLINKS + _maya_deeplink_url), כך ש-/go/maya?plan= מוביל ל-deep-link לחבילה המדויקת (כמו Saily). מכסה את עמוד ה-B2C ופורטלי המלונות; הדשבורד הפנימי נשאר על הלינק הגנרי (כמו Saily). מאומת חי: 302 לכל חבילה + 8 הלינקים נפתרים לעמוד הנכון.",
+        "notes": "פריצת דרך 2026-06-26. שיחה + מייל אישור 2026-07-02: MOCA10 חי + Direct Link ל-API + תיעוד Affiliate API מצורף (מייבא 8 חבילות: 4 roaming גלובלי + 4 שייט). לינק tracking של Impact (mayamobile.pxf.io/oNV1xn) כבר מחווט ב-affiliateLinks.js + config.affiliate.maya; /go/maya מאומת 302 → הלינק. פיילוט B2B 2026-07-03: הוקם דשבורד ייעודי ל-Bart בצבעי המותג של Maya, גישת שבוע להשוואת מחירי מתחרים ליעדים בעולם; פרטי כניסה נשלחו במייל (יוזר bskrzypek@maya.net), הסיסמה עודכנה ידנית. ה-API מחובר ומאומת: scrape_maya_global מייבא את 8 החבילות מ-assets.maya.net/affiliates/plans.json (feed סטטי ב-CDN, ללא auth). תיעוד ה-Partner Reference v0.2 נסקר 03/07 ומאשר שאנחנו על ה-endpoint הנכון והיחיד (אין real-time). איש קשר טכני/schema: jean.m@maya.net (Bart = partnerships). Deep-links פר-חבילה: 8 TrackingLinks נוצרו ב-Impact וחוברו ב-app.py (_MAYA_PLAN_DEEPLINKS), /go/maya?plan= מוביל לחבילה המדויקת - מכסה B2C + מלונות (03/07).",
+    },
 
     # ══ IN DISCUSSION / PENDING (yellow) ══════════════════════════════════════
     {
@@ -117,17 +128,6 @@ DEALS = [
         "notes": "מופיע כממומן (כפתור רכישה) אך הלינק הוא דף הבית ללא tracking - כרגע לא מזכה.",
     },
     {
-        "provider_id": "maya", "display_name": "Maya Mobile", "category": "global",
-        "outreach_status": "approved", "outreach_last_at": "2026-07-02",
-        "contact": "bskrzypek@maya.net", "program_network": "Impact",
-        "agreement_status": "signed", "commission_pct": 17,
-        "commission_note": "15%-20% עמלה (Impact acct 7205658 אושר).",
-        "coupon_note": "שיחה בוצעה 2026-07-02 - סגרנו על קופון (MOCA10, 10% רכישה ראשונה) + API. Bart ישלח מייל שסוגר קצוות עם אישור שהקופון באוויר.",
-        "has_tracking_link": False, "priority": "high",
-        "next_actions": "ממתינים למייל האישור מ-Bart שהקופון באוויר; אז להזין קופון ב-seed_coupons, לחווט לינק Impact ולחבר את ה-API (plans.json).",
-        "notes": "פריצת דרך 2026-06-26. שיחה נסגרה 2026-07-02 (קופון + API). API plans.json יעבור ל-real-time ביולי.",
-    },
-    {
         "provider_id": "ubigi", "display_name": "Ubigi", "category": "global",
         "outreach_status": "approved", "outreach_last_at": "2026-07-03",
         "contact": "cynthia.razafindrakoto@transatel.com", "program_network": "Impact",
@@ -136,7 +136,7 @@ DEALS = [
         "coupon_note": "לינק tracking חי ומזכה אותנו (/go/ubigi מאומת 302 → MKgJG3). קוד MOCA עדיין בהקמה אצל Cynthia.",
         "has_tracking_link": True, "priority": "med",
         "next_actions": "אומת 2026-07-03 (מייל Impact 'tracking value' + /go/ubigi חי). נותר רק קוד הקופון MOCA מ-Cynthia → להזין ב-seed_coupons כשמגיע.",
-        "notes": "כבר ספק נסרק. Sub-ID לכל מלון + deep links אושרו כאפשריים. לינק שני (go.ubigi.com/vDWBGO) נוצר 07-03 = כפול (אותו acct 7205658); נשאר MKgJG3.",
+        "notes": "כבר ספק נסרק. Sub-ID לכל מלון + deep links אושרו כאפשריים. לינק שני (go.ubigi.com/vDWBGO) נוצר 07-03 = כפול (אותו acct 7205658); נשאר MKgJG3. Deep-links פר-יעד (03/07): נוצרו ב-Impact 14 TrackingLinks ליעדים המובילים (cellulardata.ubigi.com/...?destination=<iso3>) וחוברו ב-app.py (_UBIGI_DEST_DEEPLINKS, מפתח לפי dest); /go/ubigi?dest= מוביל לעמוד היעד עם attribution (utm_source=7205658), שאר היעדים נופלים ללינק הגנרי. מאומת 14/14.",
     },
     {
         "provider_id": "yesim", "display_name": "Yesim", "category": "global",
@@ -359,13 +359,13 @@ DEALS = [
     },
     {
         "provider_id": "gigsky", "display_name": "GigSky", "category": "global",
-        "outreach_status": "in_discussion", "outreach_last_at": "2026-06-17",
+        "outreach_status": "in_discussion", "outreach_last_at": "2026-07-03",
         "contact": "Alex Dufort (Head of Partnerships)", "program_network": "Everflow",
         "agreement_status": "pending", "commission_pct": 10,
         "commission_note": "~10% (טרם פורסם רשמית).",
-        "coupon_note": "אין קוד; לבקש קוד + Sub-ID.",
-        "priority": "med", "next_actions": "לענות/שיחה אופציונלית; להשלים Legal Entity Type בטופס.",
-        "notes": "לא ספק נסרק כרגע.",
+        "coupon_note": "קוד MOCA + Sub-ID התבקשו במייל 03/07; ממתין לתשובה.",
+        "priority": "med", "next_actions": "ממתין לתשובת Alex: אישור גישה לתיקיית assets (alon.yoch@gmail.com) + tracking link + קוד MOCA + Sub-ID; שיחת Calendly אופציונלית.",
+        "notes": "לא ספק נסרק כרגע. השבתי ל-Alex 03/07 (התנצלות על העיכוב); תיקיית assets ב-Drive מוגבלת - נשלחה בקשת גישה.",
     },
 ]
 
