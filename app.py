@@ -1071,7 +1071,7 @@ _GUEST_PROVIDER_META = {
     "xphone_global":    {"label": "XPhone Global", "color": "#00857a", "domain": "xphone.co.il"},
     "travelsim":        {"label": "Travel Sim",    "color": "#f59e0b", "domain": "travelsimobile.co.il"},
     "tasim":            {"label": "Tasim",         "color": "#2563eb", "domain": "tasim.us"},
-    "maya":             {"label": "Maya Mobile",   "color": "#ec4899", "domain": "maya.net",       "url": "https://maya.net/esim/israel"},  # Israel dest lands on Maya's IL eSIM page (per Bart, Maya 2026-06-30). Impact tracking base_url pending → add to config.json["affiliate"]["maya"] once the tracked link is generated in the Impact dashboard.
+    "maya":             {"label": "Maya Mobile",   "color": "#ec4899", "domain": "maya.net",       "url": "https://maya.net/esim/israel"},  # Israel dest lands on Maya's IL eSIM page (per Bart, Maya 2026-06-30). Impact tracking base_url is wired in config.json["affiliate"]["maya"] (mayamobile.pxf.io/oNV1xn) → /go/maya attributes; this `url` is only the Israel-dest fallback.
     # local Israeli carriers — inbound-tourist SIM/eSIM (curated, see below)
     "mobile019":   {"label": "019 Mobile",     "color": "#d81b60", "domain": "019mobile.co.il", "url": "https://www.019mobile.co.il"},
     "partner":     {"label": "Partner Tourist","color": "#0072ce", "domain": "partner.co.il",   "url": "https://www.partner.co.il"},
@@ -1490,6 +1490,97 @@ def _saily_checkout_url(plan_name, db_path=None, sub_id=None):
     return base + sep + "url=" + quote(checkout, safe="")
 
 
+# Per-plan Maya Impact deep-links — generated 2026-07-03 in the Impact partner
+# dashboard (one TrackingLink per plan URL from assets.maya.net/affiliates/plans.json).
+# A /go/maya?plan=… click deep-links to the exact plan page WITH attribution instead
+# of the generic plans-page link (config.json affiliate.maya.base_url = oNV1xn), which
+# still serves as the fallback. Keyed by (region, days) parsed from the plan_name the
+# maya scraper builds: "גלובלי – … – 3 ימים" (global)
+# / "גלובלי ושייט – … – 14 ימים" (cruise).
+_MAYA_PLAN_DEEPLINKS = {
+    ("global", 3):  "https://mayamobile.pxf.io/VOgJBM",
+    ("global", 7):  "https://mayamobile.pxf.io/vDW5Qy",
+    ("global", 14): "https://mayamobile.pxf.io/4a2zyr",
+    ("global", 30): "https://mayamobile.pxf.io/NGX5Rb",
+    ("cruise", 3):  "https://mayamobile.pxf.io/yZWajb",
+    ("cruise", 7):  "https://mayamobile.pxf.io/MKgP22",
+    ("cruise", 14): "https://mayamobile.pxf.io/KBgrOy",
+    ("cruise", 30): "https://mayamobile.pxf.io/7XdEnd",
+}
+
+
+def _maya_deeplink_url(plan_name):
+    """Map a stored Maya plan_name to its plan-specific Impact TrackingLink, or None
+    if it can't be matched (so /go/maya falls back to the generic base_url)."""
+    if not plan_name:
+        return None
+    name = plan_name.strip()
+    if name.startswith("גלובלי ושייט"):  # "גלובלי ושייט" (global + cruise)
+        region = "cruise"
+    elif name.startswith("גלובלי"):  # "גלובלי" (global)
+        region = "global"
+    else:
+        return None
+    days = next((d for d in (3, 7, 14, 30)
+                 if f"{d} ימים" in name), None)  # "N ימים"
+    if days is None:
+        return None
+    return _MAYA_PLAN_DEEPLINKS.get((region, days))
+
+
+# Per-destination deep-links for Voye + Ubigi (top travel destinations only).
+# Unlike Maya's 8-plan catalog, these have 1,000+ plans across 180+ countries with
+# no per-plan URL, so we deep-link the busiest destinations and let the long tail
+# fall back to the generic base_url. Generated 2026-07-03 in the Impact dashboard
+# (Voye → voyeglobal.com/he/esim/<country>/, Ubigi → cellulardata.ubigi.com/…
+# ?destination=<iso3>). Keyed by the canonical Hebrew destination the consumer/guest
+# surfaces pass as ?dest=. All verified: 302 → country page carrying irpid=7205658.
+_VOYE_DEST_DEEPLINKS = {
+    "ישראל":            "https://voyeglobalconnectivity.pxf.io/aNPbPb",
+    "ארצות הברית":      "https://voyeglobalconnectivity.pxf.io/1G2X2a",
+    "בריטניה":          "https://voyeglobalconnectivity.pxf.io/JkB9jr",
+    "תאילנד":           "https://voyeglobalconnectivity.pxf.io/gRJmrO",
+    "יפן":              "https://voyeglobalconnectivity.pxf.io/PzBeBX",
+    "איטליה":           "https://voyeglobalconnectivity.pxf.io/oNVxGn",
+    "יוון":             "https://voyeglobalconnectivity.pxf.io/B5BNGx",
+    "ספרד":             "https://voyeglobalconnectivity.pxf.io/0G2gnP",
+    "צרפת":             "https://voyeglobalconnectivity.pxf.io/E02Lxe",
+    "גרמניה":           "https://voyeglobalconnectivity.pxf.io/n4gqAo",
+    "איחוד האמירויות":  "https://voyeglobalconnectivity.pxf.io/bk56qP",
+    "טורקיה":           "https://voyeglobalconnectivity.pxf.io/6k70xV",
+    "הולנד":            "https://voyeglobalconnectivity.pxf.io/OYzkaz",
+    "גאורגיה":          "https://voyeglobalconnectivity.pxf.io/2R2ogg",
+    "אירופה":           "https://voyeglobalconnectivity.pxf.io/R0KALa",
+    "גלובלי":           "https://voyeglobalconnectivity.pxf.io/vDW50O",
+}
+_UBIGI_DEST_DEEPLINKS = {
+    "ישראל":            "https://go.ubigi.com/MKgPk3",
+    "ארצות הברית":      "https://go.ubigi.com/KBgrPA",
+    "בריטניה":          "https://go.ubigi.com/m4NLaq",
+    "תאילנד":           "https://go.ubigi.com/L0gj5L",
+    "יפן":              "https://go.ubigi.com/4a2zLM",
+    "איטליה":           "https://go.ubigi.com/qWVQ0j",
+    "יוון":             "https://go.ubigi.com/DWBYqo",
+    "ספרד":             "https://go.ubigi.com/QY0aGM",
+    "צרפת":             "https://go.ubigi.com/9V2m90",
+    "גרמניה":           "https://go.ubigi.com/rER905",
+    "איחוד האמירויות":  "https://go.ubigi.com/PzBeAX",
+    "טורקיה":           "https://go.ubigi.com/5kKWq9",
+    "הולנד":            "https://go.ubigi.com/k4Vykn",
+    "גאורגיה":          "https://go.ubigi.com/ena3QD",
+}
+
+
+def _voye_deeplink_url(dest):
+    """Voye per-destination Impact deep-link for a top destination, else None."""
+    return _VOYE_DEST_DEEPLINKS.get((dest or "").strip())
+
+
+def _ubigi_deeplink_url(dest):
+    """Ubigi per-destination Impact deep-link for a top destination, else None."""
+    return _UBIGI_DEST_DEEPLINKS.get((dest or "").strip())
+
+
 @app.route("/go/<provider>")
 @app.route("/go/<provider>/<plan_id>")
 @limiter.limit("120 per minute")
@@ -1536,6 +1627,23 @@ def affiliate_redirect(provider, plan_id=None):
                 return redirect(deep, 302)
         return redirect(_saily_attach_sub(
             _guest_provider_dest(provider, destination=dest), hotel), 302)
+    # Maya: deep-link straight to the clicked plan's page (with attribution) when we
+    # have a per-plan Impact TrackingLink for it; otherwise fall through to the generic
+    # per-provider destination (config.json affiliate.maya.base_url).
+    if provider == "maya" and plan:
+        deep = _maya_deeplink_url(plan)
+        if deep:
+            return redirect(deep, 302)
+    # Voye / Ubigi: deep-link to the viewed destination's country page (top
+    # destinations only) with attribution; else fall through to the generic link.
+    if provider == "voye" and dest:
+        deep = _voye_deeplink_url(dest)
+        if deep:
+            return redirect(deep, 302)
+    if provider == "ubigi" and dest:
+        deep = _ubigi_deeplink_url(dest)
+        if deep:
+            return redirect(deep, 302)
     return redirect(_guest_provider_dest(provider, destination=dest), 302)
 
 
