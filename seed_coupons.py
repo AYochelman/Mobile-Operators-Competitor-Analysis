@@ -177,17 +177,16 @@ COUPONS = [
     # ── ByteSim (in-house affiliate / personal-store program) ─────────────
     # OUR OWN affiliate code, set up in the ByteSim affiliate dashboard
     # (bytesim.com/affiliate-program, referral_code 8F68HJS3KPDU). Program
-    # headline is "Share & earn up to 10% per sale" — that 10% is OUR reward;
-    # ByteSim's UI does not expose a distinct customer-discount %, so the
-    # "10% הנחה" label below is ASSUMED from that headline and must be CONFIRMED
-    # with ByteSim (flip the value / set is_active=False if the code carries no
-    # customer discount). Tracking link wired at /go/bytesim + AFFILIATE_URLS.
+    # headline is "Share & earn up to 10% per sale" — UNCLEAR whether that 10%
+    # is the customer discount or OUR commission (ByteSim's UI exposes no
+    # customer-discount %), so NO discount_label is set: the pill shows just the
+    # code ("קוד: MOCA") with no %-off claim. Tracking link wired at
+    # /go/bytesim + AFFILIATE_URLS.
     {
         "carrier": "bytesim",
-        "code": "Moca",
-        "discount_label": "10% הנחה",
+        "code": "MOCA",
         "source_url": "https://bytesim.com/",
-        "notes": "MOCA's own ByteSim affiliate code (referral_code 8F68HJS3KPDU). 'up to 10% per sale' is our commission; customer discount % ASSUMED 10% from ByteSim headline — CONFIRM exact customer discount before relying on the label.",
+        "notes": "MOCA's own ByteSim affiliate code (referral_code 8F68HJS3KPDU). No discount_label on purpose — the '10% per sale' figure may be OUR commission, not a customer discount. ByteSim's stored code case is 'Moca' (checkout is case-insensitive). Add a % only if ByteSim confirms a specific customer discount.",
     },
 ]
 

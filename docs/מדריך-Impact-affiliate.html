@@ -70,8 +70,8 @@
   ul,ol{margin:8px 0;padding-inline-start:26px}
   li{margin:5px 0}
   strong{color:var(--dark)}
-  code,.ui{background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:1px 8px;font-size:14.5px;font-family:"Consolas","Courier New",monospace;color:var(--bolt);white-space:nowrap}
-  .path{background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:7px 12px;display:inline-block;font-size:14.5px;color:var(--dark);direction:ltr;text-align:left;font-family:"Consolas",monospace;margin:4px 0}
+  code,.ui{background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:1px 8px;font-size:14.5px;font-family:"Consolas","Courier New",monospace;color:var(--bolt);white-space:normal;overflow-wrap:anywhere}
+  .path{background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:7px 12px;display:inline-block;max-width:100%;font-size:14.5px;color:var(--dark);direction:ltr;text-align:left;font-family:"Consolas",monospace;margin:4px 0;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
 
   /* Callouts */
   .box{border-radius:12px;padding:14px 18px 14px 16px;margin:16px 0;border:1px solid;position:relative;font-size:15.8px}
@@ -102,8 +102,8 @@
   .arrow{color:var(--muted);padding:0 4px;font-weight:700}
 
   /* Figures (annotated screen illustrations) */
-  figure.fig{margin:20px 0 4px;padding:0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#f7eddd;box-shadow:var(--sh)}
-  figure.fig svg{display:block;width:100%;height:auto}
+  figure.fig{margin:20px 0 4px;padding:0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#f7eddd;box-shadow:var(--sh);direction:ltr}
+  figure.fig svg{display:block;width:100%;max-width:100%;height:auto}
   figure.fig figcaption{padding:7px 14px;background:var(--cream);border-top:1px solid var(--border);font-size:13.5px;color:var(--sub);text-align:center}
   .legend{margin:8px 0 16px;padding:12px 16px;background:var(--mist);border:1px solid var(--border);border-radius:12px;font-size:15px}
   .legend ol{list-style:none;padding:0;margin:0;counter-reset:lg}

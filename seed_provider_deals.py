@@ -98,10 +98,10 @@ DEALS = [
         "program_network": "עצמאי (תוכנית פנימית, self-serve)",
         "agreement_status": "live", "commission_pct": 10,
         "commission_note": "עד 10% עמלה למכירה (תוכנית פנימית, הרשמה עצמית - ללא מו\"מ).",
-        "coupon_note": "קוד Moca מחובר. הנחת הלקוח מונחת 10% מכותרת התוכנית ('up to 10% per sale' = העמלה שלנו) - לאמת מול ByteSim שהקוד אכן מקנה הנחת לקוח.",
+        "coupon_note": "קוד MOCA מחובר, ללא תווית %-הנחה בכוונה: לא ברור אם 10% הוא הנחת לקוח או העמלה שלנו, אז מוצג רק הקוד. לאמת מול ByteSim ואז להוסיף % אם יש הנחת לקוח.",
         "has_tracking_link": True, "priority": "med",
-        "next_actions": "לאמת מול ByteSim את אחוז הנחת הלקוח בקוד Moca (כרגע מונח 10%); אם אין הנחת לקוח - להפוך is_active=False / להסיר את התווית. לפרוס dist מעודכן ל-Netlify.",
-        "notes": "נרשמנו לתוכנית האפיליאייט הפנימית 2026-07-03 (referral_code 8F68HJS3KPDU). לינק /go/bytesim + AFFILIATE_URLS.bytesim + קוד Moca חוברו. החליף את הפנייה הקרה שחזרה (support@bytesim.com bounced).",
+        "next_actions": "לאמת מול ByteSim אם קוד MOCA מקנה הנחת לקוח וכמה; אם כן - להוסיף discount_label ב-seed_coupons. לפרוס dist מעודכן ל-Netlify.",
+        "notes": "נרשמנו לתוכנית האפיליאייט הפנימית 2026-07-03 (referral_code 8F68HJS3KPDU). לינק /go/bytesim + AFFILIATE_URLS.bytesim + קוד MOCA חוברו. החליף את הפנייה הקרה שחזרה (support@bytesim.com bounced).",
     },
 
     # ══ IN DISCUSSION / PENDING (yellow) ══════════════════════════════════════
