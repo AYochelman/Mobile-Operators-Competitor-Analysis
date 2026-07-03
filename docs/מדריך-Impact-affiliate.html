@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>המדריך המלא ל-Impact.com לשותפים (Affiliate / Partner)</title>
+<style>
+  :root{
+    --bg:#f9f4ee;
+    --cream:#f5ede0;
+    --mist:#faf5ee;
+    --sand:#e8d5bc;
+    --border:#e0cdb5;
+    --bolt:#5c3317;
+    --dark:#4a2a13;
+    --text:#3b1f0d;
+    --sub:#8a6a4a;
+    --muted:#a08468;
+    --up:#b4472d;
+    --down:#4a7c3f;
+    --hot:#c9622f;
+    --sh:0 1px 3px rgba(92,51,23,.08),0 1px 2px rgba(92,51,23,.06);
+    --sh-lg:0 10px 30px rgba(92,51,23,.10);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:"Segoe UI","Assistant",Arial,"Helvetica Neue",sans-serif;
+    line-height:1.75;font-size:17px;
+  }
+  a{color:var(--bolt);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* Layout */
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px;display:flex;gap:36px;align-items:flex-start}
+  main{flex:1;min-width:0;padding:40px 0 80px}
+  nav.toc{
+    position:sticky;top:20px;width:270px;flex-shrink:0;
+    background:var(--mist);border:1px solid var(--border);border-radius:16px;
+    padding:20px 18px;margin-top:40px;box-shadow:var(--sh);max-height:calc(100vh - 60px);overflow:auto
+  }
+  nav.toc h4{margin:0 0 12px;font-size:13px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+  nav.toc ol{margin:0;padding:0;list-style:none;counter-reset:t}
+  nav.toc li{counter-increment:t;margin:2px 0}
+  nav.toc a{display:block;padding:6px 10px;border-radius:8px;font-size:14.5px;color:var(--sub)}
+  nav.toc a:hover{background:var(--cream);color:var(--bolt);text-decoration:none}
+  nav.toc a::before{content:counter(t);display:inline-block;width:22px;color:var(--muted);font-weight:700;font-size:12.5px}
+
+  /* Hero */
+  header.hero{
+    background:linear-gradient(135deg,#5c3317,#7a4a24 55%,#a0673a);
+    color:#fdf7ef;border-radius:22px;padding:44px 40px;margin:40px 0 34px;box-shadow:var(--sh-lg);position:relative;overflow:hidden
+  }
+  header.hero::after{content:"";position:absolute;left:-60px;top:-60px;width:220px;height:220px;background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%);border-radius:50%}
+  .hero .kick{font-size:13px;letter-spacing:.18em;text-transform:uppercase;opacity:.82;margin:0 0 10px}
+  .hero h1{margin:0 0 12px;font-size:33px;line-height:1.25;font-weight:800}
+  .hero p{margin:0;max-width:720px;font-size:17px;opacity:.94}
+  .hero .chips{margin-top:20px;display:flex;gap:8px;flex-wrap:wrap}
+  .hero .chips span{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);padding:5px 13px;border-radius:999px;font-size:13.5px}
+
+  /* Sections */
+  section{margin:0 0 14px;padding:26px 28px;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--sh)}
+  section > h2{margin:0 0 6px;font-size:24px;color:var(--dark);display:flex;align-items:center;gap:12px;font-weight:800}
+  .num{background:var(--bolt);color:#fff;width:38px;height:38px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:var(--sh)}
+  section > h3{margin:22px 0 8px;font-size:18.5px;color:var(--bolt);font-weight:700}
+  section > h4{margin:16px 0 6px;font-size:16px;color:var(--dark);font-weight:700}
+  p{margin:8px 0}
+  .lead{color:var(--sub);font-size:16px;margin-top:0}
+  ul,ol{margin:8px 0;padding-inline-start:26px}
+  li{margin:5px 0}
+  strong{color:var(--dark)}
+  code,.ui{background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:1px 8px;font-size:14.5px;font-family:"Consolas","Courier New",monospace;color:var(--bolt);white-space:nowrap}
+  .path{background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:7px 12px;display:inline-block;font-size:14.5px;color:var(--dark);direction:ltr;text-align:left;font-family:"Consolas",monospace;margin:4px 0}
+
+  /* Callouts */
+  .box{border-radius:12px;padding:14px 18px 14px 16px;margin:16px 0;border:1px solid;position:relative;font-size:15.8px}
+  .box .t{font-weight:800;display:block;margin-bottom:3px}
+  .tip{background:#eef6ea;border-color:#c9e0bf;color:#2f5426}
+  .tip .t{color:var(--down)}
+  .warn{background:#fbeee7;border-color:#f0cdb8;color:#7a3417}
+  .warn .t{color:var(--up)}
+  .note{background:var(--mist);border-color:var(--sand);color:var(--dark)}
+  .note .t{color:var(--bolt)}
+  .moca{background:#f3edfb;border-color:#d9c9ef;color:#4a2c72}
+  .moca .t{color:#6a3fb0}
+
+  /* Steps */
+  ol.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+  ol.steps > li{counter-increment:s;position:relative;padding:12px 52px 12px 16px;margin:9px 0;background:var(--mist);border:1px solid var(--border);border-radius:12px}
+  ol.steps > li::before{content:counter(s);position:absolute;right:14px;top:12px;width:28px;height:28px;background:var(--bolt);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:15px;background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+  th,td{padding:10px 13px;text-align:right;border-bottom:1px solid var(--border);vertical-align:top}
+  th{background:var(--cream);color:var(--dark);font-weight:700;font-size:14px}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--mist)}
+  td code{white-space:normal}
+
+  .kbd{display:inline-block;background:#fff;border:1px solid var(--border);border-bottom-width:2px;border-radius:6px;padding:1px 8px;font-size:13.5px;color:var(--dark)}
+  .arrow{color:var(--muted);padding:0 4px;font-weight:700}
+
+  /* Figures (annotated screen illustrations) */
+  figure.fig{margin:20px 0 4px;padding:0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#f7eddd;box-shadow:var(--sh)}
+  figure.fig svg{display:block;width:100%;height:auto}
+  figure.fig figcaption{padding:7px 14px;background:var(--cream);border-top:1px solid var(--border);font-size:13.5px;color:var(--sub);text-align:center}
+  .legend{margin:8px 0 16px;padding:12px 16px;background:var(--mist);border:1px solid var(--border);border-radius:12px;font-size:15px}
+  .legend ol{list-style:none;padding:0;margin:0;counter-reset:lg}
+  .legend li{counter-increment:lg;position:relative;padding:5px 36px 5px 0;margin:3px 0}
+  .legend li::before{content:counter(lg);position:absolute;right:0;top:5px;width:24px;height:24px;background:var(--hot);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+
+  /* Checklist */
+  .day{font-weight:800;color:var(--bolt);margin:20px 0 4px;font-size:15.5px;letter-spacing:.02em;border-bottom:2px solid var(--sand);padding-bottom:4px}
+  ul.check{list-style:none;padding:0;margin:8px 0}
+  ul.check li{position:relative;padding:11px 46px 11px 14px;margin:8px 0;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:16px}
+  ul.check li::before{content:"";position:absolute;right:13px;top:12px;width:22px;height:22px;border:2px solid var(--bolt);border-radius:6px;background:#fff}
+  ul.check li small{display:block;color:var(--sub);font-size:13.5px;margin-top:2px}
+
+  /* Print / PDF */
+  @media print{
+    html,body{background:#fff}
+    body{font-size:11.5pt}
+    .wrap{display:block;max-width:none;padding:0}
+    nav.toc{display:none}
+    main{padding:0}
+    header.hero{box-shadow:none}
+    section{box-shadow:none;border-color:#d8c4a8;margin-bottom:10px}
+    section>h2{break-after:avoid}
+    h3,h4{break-after:avoid}
+    .box,table,ol.steps>li,figure.fig,.legend,ul.check li{break-inside:avoid}
+    a{color:var(--dark)}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+
+  footer{color:var(--muted);font-size:14px;text-align:center;padding:30px 0 50px}
+  .pill{display:inline-block;background:var(--bolt);color:#fff;font-size:12px;padding:2px 10px;border-radius:999px;margin-inline-start:8px;vertical-align:middle}
+
+  @media(max-width:900px){
+    .wrap{flex-direction:column;gap:0}
+    nav.toc{position:static;width:100%;margin-top:20px;order:2}
+    main{order:1;width:100%}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <main>
+    <header class="hero">
+      <p class="kick">MOCA · מדריך פנימי</p>
+      <h1>המדריך המלא ל-Impact.com<br>לשותפי אפיליאייט (מאפס)</h1>
+      <p>כל מה שצריך לדעת כדי לעבוד עם הפלטפורמה שדרכה אתה מקדם את ספקי ה-eSIM (Airalo, Holafly, Voye) ומקבל עמלות. כתוב בעברית פשוטה, שלב אחרי שלב, בהנחה שמעולם לא נכנסת לממשק.</p>
+      <div class="chips">
+        <span>⏱ זמן קריאה: ~20 דק'</span>
+        <span>👤 רמה: מתחיל מוחלט</span>
+        <span>🎯 התפקיד שלך: Partner / Publisher</span>
+      </div>
+    </header>
+
+    <!-- 1 -->
+    <section id="s1">
+      <h2><span class="num">1</span> מה זה Impact.com ולמה זה נוגע לך</h2>
+      <p class="lead">בקצרה: Impact.com היא "שוק" (מרקטפלייס) שמחבר בין מותגים שרוצים שיפרסמו אותם לבין אנשים כמוך שמפרסמים אותם, ומנהל את כל הכסף שביניכם.</p>
+
+      <p><strong>Impact.com</strong> (בעבר נקראה Impact Radius) היא אחת מפלטפורמות ניהול השותפויות (Affiliate / Partnerships) הגדולות בעולם. מותגים גדולים מנהלים דרכה את תוכניות השותפים שלהם, כי היא נותנת להם מעקב מדויק, דוחות ותשלומים אוטומטיים.</p>
+
+      <h3>שני צדדים לפלטפורמה</h3>
+      <table>
+        <tr><th>הצד</th><th>מי זה</th><th>מה הוא עושה</th></tr>
+        <tr><td><strong>Brand</strong> (מותג / מפרסם)</td><td>Airalo, Holafly, Voye</td><td>מקים תוכנית שותפים, מגדיר עמלה, מאשר שותפים ומשלם להם</td></tr>
+        <tr><td><strong>Partner</strong> (שותף / Publisher / Affiliate) <span class="pill">זה אתה</span></td><td>MOCA / אתה</td><td>מקבל קישור מעקב ייחודי, מפנה דרכו לקוחות, ומקבל עמלה על כל מכירה</td></tr>
+      </table>
+
+      <div class="note"><span class="t">חשוב להבין את המילה "Partner"</span>
+        בכל הממשק, אתה נקרא <strong>Partner</strong> (שותף). מרכז העזרה מחולק ל"I'm a Brand" ו-"I'm a Partner". תמיד תבחר את החלק של <strong>Partner</strong>. בעברית לפעמים קוראים לזה "מפרסם שותף" או "אפיליאייט".</div>
+
+      <h3>איך זה עובד בפועל, ב-30 שניות</h3>
+      <ol class="steps">
+        <li>נרשמת ל-Impact והתאשרת כשותף.</li>
+        <li>מצאת מותג (למשל Airalo) והגשת בקשה להצטרף לתוכנית שלו. המותג אישר אותך.</li>
+        <li>יצרת <strong>קישור מעקב ייחודי</strong> למותג הזה.</li>
+        <li>שמת את הקישור באתר שלך (ב-MOCA זה קורה דרך מנגנון ה-<code>/go</code>).</li>
+        <li>גולש לחץ על הקישור, קנה eSIM. Impact רשם את המכירה על שמך.</li>
+        <li>המכירה עברה תקופת בדיקה (בגלל ביטולים אפשריים), ואז הכסף הפך ל"זמין למשיכה".</li>
+        <li>כשהגעת למינימום, Impact העביר לך את הכסף לבנק או ל-PayPal.</li>
+      </ol>
+
+      <div class="moca"><span class="t">🟣 ההקשר שלך ב-MOCA</span>
+        לפי git, כבר קיים ב-MOCA מנגנון קישור affiliate עם <code>Sub-ID</code> (למשל ה-<code>aff_sub</code> של Saily וה-redirect של <code>/go</code>). Impact הוא בדיוק המקום שבו אתה שולף את קישורי המעקב ל-Airalo/Holafly/Voye ורואה כמה עמלות הם מייצרים. את המונח <strong>SubId</strong> נסביר בהמשך, הוא בדיוק ה"מקור" שאתה כבר מסמן בקוד.</div>
+    </section>
+
+    <!-- 2 -->
+    <section id="s2">
+      <h2><span class="num">2</span> מילון מונחים (קרא את זה קודם)</h2>
+      <p class="lead">רוב הבלבול בהתחלה הוא מונחים באנגלית. הנה כל מה שתפגוש, בשורה אחת כל אחד. אפשר לחזור לכאן בכל פעם שנתקעת על מילה.</p>
+      <table>
+        <tr><th>מונח</th><th>מה זה בעברית פשוטה</th></tr>
+        <tr><td><strong>Partner / Publisher / Affiliate</strong></td><td>אתה. מי שמפרסם ומקבל עמלה.</td></tr>
+        <tr><td><strong>Brand / Advertiser</strong></td><td>המותג שאתה מקדם (Airalo וכו').</td></tr>
+        <tr><td><strong>Program / Campaign</strong></td><td>תוכנית השותפים של מותג מסוים. לפעמים למותג יש כמה תוכניות.</td></tr>
+        <tr><td><strong>Marketplace</strong></td><td>ה"קטלוג" של כל המותגים שאפשר להצטרף אליהם.</td></tr>
+        <tr><td><strong>Contract / Terms / Insertion Order</strong></td><td>ההסכם עם המותג: כמה עמלה, על מה, לכמה זמן. חייבים לאשר אותו כדי להתחיל.</td></tr>
+        <tr><td><strong>Payout / Commission</strong></td><td>העמלה שאתה מקבל על פעולה (מכירה / ליד).</td></tr>
+        <tr><td><strong>Action</strong></td><td>פעולה שנרשמה: מכירה, ליד או התקנה. כל שורה בדוחות היא Action.</td></tr>
+        <tr><td><strong>Conversion / Sale</strong></td><td>המרה, כלומר שהגולש באמת קנה.</td></tr>
+        <tr><td><strong>Tracking Link</strong></td><td>קישור המעקב הייחודי שלך. דרכו Impact יודע שהלקוח הגיע ממך.</td></tr>
+        <tr><td><strong>Deep Link</strong></td><td>קישור מעקב שמוביל לעמוד ספציפי באתר המותג (לא רק לדף הבית).</td></tr>
+        <tr><td><strong>Vanity Link</strong></td><td>קישור מעקב "יפה" עם סיומת קריאה שאתה בוחר, במקום מספרים.</td></tr>
+        <tr><td><strong>SubId / SharedId</strong></td><td>תגית מעקב חופשית שאתה מוסיף לקישור כדי לדעת <em>מאיזה מקום</em> באתר הגיעה המכירה. בדיוק ה-<code>aff_sub</code> שלך.</td></tr>
+        <tr><td><strong>EPC (Earnings Per Click)</strong></td><td>כמה כסף בממוצע מייצר קליק אחד. מדד לכדאיות של מותג.</td></tr>
+        <tr><td><strong>Cookie / Lifespan / Locking</strong></td><td>כמה זמן אחרי הקליק המכירה עדיין נזקפת לך (למשל 30 יום).</td></tr>
+        <tr><td><strong>Reversal / Reversed</strong></td><td>מכירה שבוטלה (החזר / ביטול), והעמלה נמחקת. לכן יש תקופת המתנה.</td></tr>
+        <tr><td><strong>Pending / Locked / Payable</strong></td><td>סטטוסי הכסף: ממתין לבדיקה ← נעול/מאושר ← זמין לתשלום.</td></tr>
+        <tr><td><strong>Media / Media Property</strong></td><td>הנכס שלך: האתר (mocaintel.com), עמוד פייסבוק, ערוץ וכו'.</td></tr>
+        <tr><td><strong>W-8BEN</strong></td><td>טופס מס אמריקאי שממלאים כאזרח לא-אמריקאי. חובה כדי לקבל תשלום ממותגים אמריקאים.</td></tr>
+      </table>
+    </section>
+
+    <!-- 3 -->
+    <section id="s3">
+      <h2><span class="num">3</span> כניסה ראשונה והכרת לוח הבקרה</h2>
+      <p class="lead">מתחברים בכתובת <span class="path">app.impact.com</span> עם המייל והסיסמה שלך.</p>
+
+      <div class="warn"><span class="t">⚠ שים לב, יש שתי כתובות התחברות שונות</span>
+        לכל <strong>מותג</strong> שנרשמת אליו בנפרד (לפני Impact) לפעמים יש דף כניסה משלו, אבל <strong>ה-Dashboard המרכזי שלך כשותף</strong> הוא תמיד <span class="path" style="direction:ltr">https://app.impact.com</span>. אם קיבלת הזמנה ממותג, ודא שאתה נכנס לחשבון ה-Partner הכללי ולא לפורטל של מותג בודד.</div>
+
+      <h3>מה יש בסרגל העליון (Top Navigation)</h3>
+      <table>
+        <tr><th>תפריט</th><th>למה הוא משמש</th></tr>
+        <tr><td><strong>Home / Dashboard</strong></td><td>מסך הבית: סיכום הכנסות, קליקים, פעולות אחרונות, ווידג'ט "Create a link".</td></tr>
+        <tr><td><strong>Discover</strong></td><td>כאן מוצאים מותגים. מכיל <span class="ui">Find Brands</span> (המרקטפלייס) ו-<span class="ui">My Brands</span> (מותגים שכבר הצטרפת אליהם).</td></tr>
+        <tr><td><strong>Reports</strong></td><td>כל הדוחות: פעולות, ביצועים, תשלומים.</td></tr>
+        <tr><td><strong>Content / Ads</strong></td><td>נכסים פרסומיים שהמותג מספק: באנרים, מודעות, קופונים, דילים.</td></tr>
+        <tr><td><strong>Finance / Settings</strong> <span class="arrow">(תחת אייקון הפרופיל)</span></td><td>הגדרות חשבון, בנק, טפסי מס ופרטי חברה.</td></tr>
+      </table>
+
+      <figure class="fig">
+        <svg viewBox="0 0 760 430" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+          <rect x="10" y="10" width="740" height="410" rx="12" fill="#ffffff" stroke="#e0cdb5" stroke-width="1.5"/>
+          <path d="M10 22 a12 12 0 0 1 12 -12 h716 a12 12 0 0 1 12 12 v18 h-740 z" fill="#ece0cc"/>
+          <circle cx="30" cy="25" r="4.5" fill="#cf9a86"/><circle cx="46" cy="25" r="4.5" fill="#d9bd83"/><circle cx="62" cy="25" r="4.5" fill="#9cbf8c"/>
+          <rect x="90" y="16" width="470" height="18" rx="9" fill="#fbf6ee" stroke="#e0cdb5"/>
+          <text x="104" y="29" font-size="12" fill="#8a6a4a">app.impact.com  ·  Dashboard</text>
+          <!-- nav -->
+          <rect x="10" y="41" width="740" height="46" fill="#ffffff"/>
+          <line x1="11" y1="87" x2="749" y2="87" stroke="#e0cdb5"/>
+          <text x="30" y="70" font-size="17" font-weight="700" fill="#5c3317">impact.com</text>
+          <text x="150" y="69" font-size="14" fill="#3b1f0d">Home</text>
+          <text x="215" y="69" font-size="14" fill="#3b1f0d">Discover ▾</text>
+          <text x="320" y="69" font-size="14" fill="#3b1f0d">Reports</text>
+          <text x="398" y="69" font-size="14" fill="#3b1f0d">Content</text>
+          <circle cx="676" cy="64" r="9" fill="none" stroke="#a08468" stroke-width="1.5"/><line x1="683" y1="71" x2="690" y2="78" stroke="#a08468" stroke-width="1.5"/>
+          <circle cx="716" cy="64" r="13" fill="#e8d5bc" stroke="#c9a880"/><text x="716" y="69" font-size="13" fill="#5c3317" text-anchor="middle">A</text>
+          <!-- content -->
+          <rect x="10" y="88" width="740" height="332" fill="#f7eddd"/>
+          <rect x="25" y="104" width="222" height="66" rx="10" fill="#ffffff" stroke="#e0cdb5"/>
+          <text x="41" y="128" font-size="12.5" fill="#8a6a4a">Clicks (30d)</text><text x="41" y="154" font-size="22" font-weight="800" fill="#3b1f0d">1,240</text>
+          <rect x="259" y="104" width="222" height="66" rx="10" fill="#ffffff" stroke="#e0cdb5"/>
+          <text x="275" y="128" font-size="12.5" fill="#8a6a4a">Actions</text><text x="275" y="154" font-size="22" font-weight="800" fill="#3b1f0d">38</text>
+          <rect x="493" y="104" width="222" height="66" rx="10" fill="#ffffff" stroke="#e0cdb5"/>
+          <text x="509" y="128" font-size="12.5" fill="#8a6a4a">Earnings</text><text x="509" y="154" font-size="22" font-weight="800" fill="#4a7c3f">$412.50</text>
+          <!-- create a link widget -->
+          <rect x="25" y="190" width="690" height="126" rx="12" fill="#ffffff" stroke="#e0cdb5"/>
+          <text x="42" y="220" font-size="15" font-weight="700" fill="#5c3317">Create a link</text>
+          <rect x="42" y="232" width="520" height="42" rx="8" fill="#fbf6ee" stroke="#e0cdb5"/>
+          <text x="56" y="258" font-size="12.5" fill="#a08468">Search a brand, or paste a landing page URL...</text>
+          <rect x="576" y="232" width="122" height="42" rx="8" fill="#5c3317"/>
+          <text x="637" y="258" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">Copy Link</text>
+          <text x="42" y="300" font-size="12.5" fill="#8a6a4a">Advanced ▾   (SubId · Vanity link)</text>
+          <!-- markers -->
+          <g><circle cx="255" cy="55" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="255" y="59.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">1</text></g>
+          <g><circle cx="345" cy="55" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="345" y="59.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">2</text></g>
+          <g><circle cx="716" cy="40" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="716" y="44.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">3</text></g>
+          <g><circle cx="700" cy="230" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="700" y="234.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">4</text></g>
+          <g><circle cx="36" cy="103" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="36" y="107.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">5</text></g>
+        </svg>
+        <figcaption>איור 1 · מסך הבית (Dashboard) והתפריט העליון</figcaption>
+      </figure>
+      <div class="legend"><ol>
+        <li><b>Discover</b> - מכאן מוצאים מותגים חדשים ורואים את המותגים שכבר הצטרפת אליהם.</li>
+        <li><b>Reports</b> - כל הדוחות: קליקים, מכירות, עמלות ותשלומים.</li>
+        <li><b>אייקון הפרופיל</b> - לחיצה פותחת את Settings (הגדרות בנק, מס ופרטי חשבון).</li>
+        <li><b>כפתור Copy Link</b> - מעתיק את קישור המעקב שנוצר, מוכן להדבקה.</li>
+        <li><b>שורת הנתונים</b> - סיכום מהיר של הביצועים (קליקים / פעולות / הכנסות).</li>
+      </ol></div>
+
+      <div class="tip"><span class="t">💡 טיפ</span>
+        השמות המדויקים בתפריט משתנים מדי פעם כש-Impact מעדכנת עיצוב. אל תילחץ אם כתוב "Brands" במקום "Discover", ההיגיון זהה: יש איזור <em>למצוא מותגים</em>, איזור <em>למותגים שלי</em>, איזור <em>דוחות</em> ואיזור <em>כספים</em>.</div>
+    </section>
+
+    <!-- 4 -->
+    <section id="s4">
+      <h2><span class="num">4</span> שלב א': השלמת הפרופיל ואישור ל-Marketplace</h2>
+      <p class="lead">לפני שתוכל להגיש בקשה למותגים, החשבון שלך צריך להיות מאושר ל-Marketplace. זה קורה בדרך כלל אוטומטית בסיום ההרשמה, ומאושר תוך <strong>עד יומיים עסקים</strong>.</p>
+
+      <h3>מה למלא כדי לא להיתקע</h3>
+      <ul>
+        <li><strong>פרופיל ציבורי (Public Profile)</strong>: תיאור קצר של מי אתה ומה אתה מקדם. המותגים רואים את זה ומחליטים אם לאשר אותך, אז כדאי לכתוב משהו רציני (למשל: "אתר השוואת חבילות eSIM ותקשורת סלולרית לישראלים").</li>
+        <li><strong>נכס מדיה (Media Property)</strong>: הוסף את האתר שלך, <span class="path" style="direction:ltr">mocaintel.com</span> ו/או <span class="path" style="direction:ltr">esim.mocaintel.com</span>. אפשר להוסיף גם עמוד פייסבוק/סושיאל. חלק מהמותגים מאשרים רק שותפים עם נכס מדיה מאומת.</li>
+        <li><strong>אימות בעלות</strong>: Impact עשויה לבקש להוכיח שהאתר שלך, למשל בהוספת קוד לאתר או קובץ. אם התבקשת, בצע את זה כדי לזרז אישור.</li>
+        <li><strong>אימות דו-שלבי (2FA)</strong>: <span class="path" style="direction:ltr">User Profile → Edit Profile → Basic Info</span>. חובה כדי לאפשר משיכת כספים בהמשך, אז עדיף להפעיל כבר עכשיו.</li>
+      </ul>
+
+      <div class="note"><span class="t">מה קורה אחרי האישור</span>
+        ברגע ש-Impact מאשרת שאתה מי שאתה טוען ושהאתר באמת שלך, הפרופיל הציבורי שלך עולה למרקטפלייס וכל המותגים יכולים לראות אותך. מכאן אפשר להגיש בקשות למותגים.</div>
+    </section>
+
+    <!-- 5 -->
+    <section id="s5">
+      <h2><span class="num">5</span> שלב ב': מציאת מותגים והגשת בקשה להצטרף</h2>
+      <p class="lead">כאן מתחילה העבודה האמיתית: למצוא את Airalo / Holafly / Voye (ומותגים נוספים), ולהגיש בקשה להצטרף לתוכנית שלהם.</p>
+
+      <h3>איך מגיעים למרקטפלייס</h3>
+      <div class="path" style="direction:ltr">Top navigation → Discover → Find Brands</div>
+      <p>יופיע סרגל עם הלשוניות: <span class="ui">Home</span>, <span class="ui">All Brands</span>, <span class="ui">Pre-approved</span> (מותגים שכבר מוכנים לאשר אותך אוטומטית), <span class="ui">New</span> ו-<span class="ui">Favorites</span>.</p>
+
+      <h3>חיפוש וסינון</h3>
+      <ul>
+        <li><strong>שורת חיפוש</strong>: הקלד את שם המותג, למשל <code>Airalo</code>, או קטגוריה כמו <code>eSIM</code> / <code>travel</code>.</li>
+        <li><strong>מסננים בתפריט הצד</strong>: <span class="ui">Categories</span> (קטגוריה), <span class="ui">Payout Model</span> (סוג עמלה: CPA / ליד / התקנה), <span class="ui">Brand Attributes</span> (יש קופונים? תומך Deep Link?), <span class="ui">Service Areas</span> (מדינות), ו-<span class="ui">Eligibility</span> (רק מותגים שאתה עומד בתנאים שלהם).</li>
+      </ul>
+
+      <h3>מה רואים בכרטיס של מותג</h3>
+      <p>כשלוחצים על מותג, מוצג עמוד עם המידע החשוב שלפיו כדאי להחליט:</p>
+      <table>
+        <tr><th>נתון</th><th>מה זה אומר לך</th></tr>
+        <tr><td><strong>30 Day EPC</strong></td><td>כמה כסף בממוצע מייצר קליק אצל שותפים אחרים ב-30 הימים האחרונים. גבוה = כדאי.</td></tr>
+        <tr><td><strong>Payout / Commission terms</strong></td><td>גובה העמלה: אחוז מהמכירה או סכום קבוע.</td></tr>
+        <tr><td><strong>Response / Acceptance rate</strong></td><td>כמה מהר המותג עונה לבקשות ואיזה אחוז מהמבקשים הוא מאשר.</td></tr>
+        <tr><td><strong>Deep linking / Promo codes / Mobile</strong></td><td>יכולות מעקב: אם מותר Deep Link, אם יש קודי קופון, אם יש מעקב מובייל.</td></tr>
+        <tr><td><strong>Service regions</strong></td><td>באילו מדינות התוכנית פעילה.</td></tr>
+      </table>
+
+      <figure class="fig">
+        <svg viewBox="0 0 760 450" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+          <rect x="10" y="10" width="740" height="430" rx="12" fill="#ffffff" stroke="#e0cdb5" stroke-width="1.5"/>
+          <text x="28" y="42" font-size="15" font-weight="700" fill="#5c3317">Discover ▸ Find Brands</text>
+          <!-- tabs -->
+          <g font-size="12.5">
+            <rect x="26" y="58" width="66" height="26" rx="13" fill="#5c3317"/><text x="59" y="75" fill="#fff" text-anchor="middle">All Brands</text>
+            <rect x="100" y="58" width="60" height="26" rx="13" fill="#f0e3d0" stroke="#e0cdb5"/><text x="130" y="75" fill="#5c3317" text-anchor="middle">Home</text>
+            <rect x="168" y="58" width="96" height="26" rx="13" fill="#f0e3d0" stroke="#e0cdb5"/><text x="216" y="75" fill="#5c3317" text-anchor="middle">Pre-approved</text>
+            <rect x="272" y="58" width="50" height="26" rx="13" fill="#f0e3d0" stroke="#e0cdb5"/><text x="297" y="75" fill="#5c3317" text-anchor="middle">New</text>
+          </g>
+          <rect x="500" y="56" width="222" height="30" rx="8" fill="#fbf6ee" stroke="#e0cdb5"/>
+          <text x="516" y="76" font-size="12.5" fill="#a08468">Search: Airalo / eSIM ...</text>
+          <!-- filter panel -->
+          <rect x="26" y="100" width="176" height="322" rx="10" fill="#faf5ee" stroke="#e0cdb5"/>
+          <text x="42" y="124" font-size="13.5" font-weight="700" fill="#5c3317">Filters</text>
+          <g font-size="12.5" fill="#3b1f0d">
+            <text x="42" y="150">▸ Categories</text>
+            <text x="42" y="176">▸ Payout Model</text>
+            <text x="42" y="202">▸ Brand Attributes</text>
+            <text x="42" y="228">▸ Service Areas</text>
+            <text x="42" y="254">▸ Eligibility</text>
+          </g>
+          <!-- brand cards -->
+          <g>
+            <!-- card template repeated -->
+            <rect x="220" y="100" width="248" height="150" rx="10" fill="#ffffff" stroke="#e0cdb5"/>
+            <rect x="236" y="114" width="40" height="40" rx="8" fill="#eadfce"/>
+            <text x="286" y="132" font-size="15" font-weight="700" fill="#3b1f0d">Airalo</text>
+            <text x="286" y="150" font-size="11.5" fill="#8a6a4a">eSIM · Travel</text>
+            <text x="236" y="182" font-size="12.5" fill="#8a6a4a">30 Day EPC</text><text x="330" y="182" font-size="13" font-weight="700" fill="#4a7c3f">$0.42</text>
+            <text x="236" y="204" font-size="11" fill="#8a6a4a">Deep link · Promo codes</text>
+            <rect x="236" y="214" width="90" height="30" rx="8" fill="#5c3317"/><text x="281" y="234" font-size="12.5" fill="#fff" text-anchor="middle">Apply</text>
+
+            <rect x="480" y="100" width="248" height="150" rx="10" fill="#ffffff" stroke="#e0cdb5"/>
+            <rect x="496" y="114" width="40" height="40" rx="8" fill="#eadfce"/>
+            <text x="546" y="132" font-size="15" font-weight="700" fill="#3b1f0d">Holafly</text>
+            <text x="546" y="150" font-size="11.5" fill="#8a6a4a">eSIM · Travel</text>
+            <text x="496" y="182" font-size="12.5" fill="#8a6a4a">30 Day EPC</text><text x="590" y="182" font-size="13" font-weight="700" fill="#4a7c3f">$0.55</text>
+            <text x="496" y="204" font-size="11" fill="#8a6a4a">Deep link · Coupons</text>
+            <rect x="496" y="214" width="90" height="30" rx="8" fill="#5c3317"/><text x="541" y="234" font-size="12.5" fill="#fff" text-anchor="middle">Apply</text>
+
+            <rect x="220" y="264" width="248" height="150" rx="10" fill="#ffffff" stroke="#e0cdb5"/>
+            <rect x="236" y="278" width="40" height="40" rx="8" fill="#eadfce"/>
+            <text x="286" y="296" font-size="15" font-weight="700" fill="#3b1f0d">Voye</text>
+            <text x="286" y="314" font-size="11.5" fill="#8a6a4a">eSIM · Travel</text>
+            <text x="236" y="346" font-size="12.5" fill="#8a6a4a">30 Day EPC</text><text x="330" y="346" font-size="13" font-weight="700" fill="#4a7c3f">$0.38</text>
+            <text x="236" y="368" font-size="11" fill="#8a6a4a">Mobile · Deep link</text>
+            <rect x="236" y="378" width="90" height="30" rx="8" fill="#5c3317"/><text x="281" y="398" font-size="12.5" fill="#fff" text-anchor="middle">Apply</text>
+
+            <rect x="480" y="264" width="248" height="150" rx="10" fill="#ffffff" stroke="#e0cdb5"/>
+            <rect x="496" y="278" width="40" height="40" rx="8" fill="#eadfce"/>
+            <text x="546" y="296" font-size="15" font-weight="700" fill="#3b1f0d">More brands...</text>
+            <text x="546" y="314" font-size="11.5" fill="#8a6a4a">600M+ products</text>
+            <text x="496" y="348" font-size="12" fill="#a08468">סמן עד 10 מותגים</text>
+            <text x="496" y="366" font-size="12" fill="#a08468">והגש לכולם יחד</text>
+          </g>
+          <!-- markers -->
+          <g><circle cx="216" cy="71" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="216" y="75.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">1</text></g>
+          <g><circle cx="42" cy="196" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="42" y="200.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">2</text></g>
+          <g><circle cx="708" cy="71" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="708" y="75.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">3</text></g>
+          <g><circle cx="330" cy="196" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="330" y="200.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">4</text></g>
+          <g><circle cx="281" cy="229" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="281" y="233.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">5</text></g>
+        </svg>
+        <figcaption>איור 2 · מרקטפלייס (Discover ▸ Find Brands) - מציאת מותגים והגשת בקשה</figcaption>
+      </figure>
+      <div class="legend"><ol>
+        <li><b>לשונית Pre-approved</b> - מותגים שיאשרו אותך כמעט מיד, מקום מצוין להתחיל בו.</li>
+        <li><b>פאנל המסננים</b> - סנן לפי קטגוריה (eSIM), סוג עמלה, מדינות ותנאי זכאות.</li>
+        <li><b>שורת החיפוש</b> - הקלד שם מותג (Airalo) או קטגוריה.</li>
+        <li><b>30 Day EPC</b> - כמה כסף בממוצע מייצר קליק. מספר גבוה = מותג משתלם.</li>
+        <li><b>כפתור Apply</b> - שולח בקשת הצטרפות. אחריו יופיע אייקון שעון עד לאישור.</li>
+      </ol></div>
+
+      <h3>איך מגישים בקשה</h3>
+      <ol class="steps">
+        <li>רחף מעל כרטיס המותג ולחץ <span class="ui">Apply</span>.</li>
+        <li>ייפתח חלון עם <strong>תנאי החוזה (Contract Terms)</strong>. קרא אותם, זה הסכם העמלות שלך.</li>
+        <li>אפשר להוסיף הערה אישית שמסבירה למה כדאי למותג לאשר אותך (לא חובה, אבל עוזר).</li>
+        <li>אם צמוד סקר קצר, מלא אותו.</li>
+        <li>לחץ שוב <span class="ui">Apply</span> כדי לשלוח.</li>
+      </ol>
+      <p><strong>הגשה מרובה:</strong> אפשר לסמן צ'קבוקס על עד 10 מותגים ולהגיש לכולם יחד עם <span class="ui">Apply to Selected Brands</span>.</p>
+
+      <div class="tip"><span class="t">💡 איך יודעים אם אושרת</span>
+        ליד שם המותג יופיע אייקון שעון (ממתין). כשהמותג מחליט, השעון הופך ל-<strong>וי</strong> (אושרת) או נעלם (נדחית). בכל מקרה יגיע מייל עם ההחלטה. מותגים ב-<span class="ui">Pre-approved</span> מאשרים כמעט מיידית.</div>
+
+      <div class="warn"><span class="t">⚠ נדחית? זה נורמלי</span>
+        חלק מהמותגים דוחים שותפים חדשים בלי היסטוריית מכירות, או שרוצים אתר עם יותר תנועה. אפשר להגיש שוב בעוד כמה חודשים עם הערה שמסבירה את הפעילות שלך, או לפנות אליהם ישירות דרך פרטי הקשר בעמוד התוכנית.</div>
+    </section>
+
+    <!-- 6 -->
+    <section id="s6">
+      <h2><span class="num">6</span> שלב ג': להבין את החוזה והעמלות</h2>
+      <p class="lead">אחרי שאושרת, כדאי מאוד לפתוח את החוזה ולהבין בדיוק על מה מקבלים כסף. זה מה שיקבע כמה תרוויח.</p>
+
+      <h3>סוגי מודל תשלום (Payout Model)</h3>
+      <table>
+        <tr><th>מודל</th><th>מתי מקבלים עמלה</th><th>טיפוסי ל-</th></tr>
+        <tr><td><strong>CPA / % מהמכירה</strong></td><td>אחוז מסכום הרכישה בפועל</td><td>eSIM (Airalo, Holafly, Voye), מסחר</td></tr>
+        <tr><td><strong>Flat / סכום קבוע</strong></td><td>סכום קבוע על כל מכירה</td><td>מנויים, חבילות</td></tr>
+        <tr><td><strong>CPL / ליד</strong></td><td>על כל הרשמה / השארת פרטים</td><td>שירותים, ביטוח</td></tr>
+        <tr><td><strong>CPI / התקנה</strong></td><td>על כל התקנת אפליקציה</td><td>אפליקציות מובייל</td></tr>
+      </table>
+
+      <h3>שלושה מספרים קריטיים לבדוק בחוזה</h3>
+      <ul>
+        <li><strong>גובה העמלה</strong>: לדוגמה 10% מכל מכירת eSIM. לפעמים יש מדרגות (עמלה גבוהה יותר ללקוח חדש).</li>
+        <li><strong>חלון ההמרה (Cookie / Lifespan)</strong>: כמה ימים אחרי הקליק המכירה עדיין נזקפת לך. נפוץ 30 יום. ככל שארוך יותר, טוב לך יותר.</li>
+        <li><strong>תקופת נעילה / אישור (Locking period)</strong>: כמה זמן המכירה נשארת ב-<em>Pending</em> לפני שהיא הופכת ל-<em>Payable</em>. בזמן הזה המותג יכול לבטל אותה (Reversal) אם הלקוח ביקש החזר.</li>
+      </ul>
+
+      <div class="note"><span class="t">למה יש בכלל תקופת המתנה</span>
+        אם משלמים לך מיד וללקוח יש 14 יום להחזר, נוצר סיכון שקיבלת עמלה על מכירה שבוטלה. לכן Impact "נועל" את הכסף לתקופה, ורק אחרי שהיא עוברת בשלום הוא הופך לזמין למשיכה. <strong>Reversed</strong> בדוח = מכירה שבוטלה והעמלה ירדה.</div>
+    </section>
+
+    <!-- 7 -->
+    <section id="s7">
+      <h2><span class="num">7</span> שלב ד': יצירת קישור מעקב (הלב של העניין)</h2>
+      <p class="lead">קישור המעקב הוא הכלי המרכזי שלך. בלעדיו, אף מכירה לא נזקפת לך. אפשר ליצור אותו רק אחרי שהצטרפת לפחות לתוכנית אחת.</p>
+
+      <h3>הדרך המהירה (קישור לדף הבית של המותג)</h3>
+      <ol class="steps">
+        <li>לך אל <span class="ui">Discover → My Brands</span>.</li>
+        <li>רחף מעל המותג הרצוי.</li>
+        <li>לחץ <span class="ui">Copy Link</span>. הקישור עכשיו בלוח (Clipboard) שלך, מוכן להדבקה.</li>
+      </ol>
+
+      <h3>הדרך המלאה (ווידג'ט Create a link)</h3>
+      <p>במסך הבית יש ווידג'ט <span class="ui">Create a link</span>. הוא הכלי הגמיש, וכך משתמשים בו:</p>
+      <ol class="steps">
+        <li>בתיבת החיפוש הקלד <strong>שם מותג</strong>, קמפיין, או <strong>הדבק כתובת של עמוד ספציפי</strong> באתר המותג.</li>
+        <li>אם הדבקת עמוד ספציפי, Impact ייצר <strong>Deep Link</strong> ישר לעמוד הזה (למשל עמוד חבילת eSIM לארה"ב). אם רק חיפשת מותג, ייווצר קישור לדף הבית שלו.</li>
+        <li>אם למותג כמה תוכניות, בחר את הנכונה מהרשימה הנפתחת.</li>
+        <li>לחץ <span class="ui">Advanced</span> כדי להוסיף <strong>SubId / SharedId</strong> (ראה למטה, חשוב מאוד עבורך).</li>
+        <li>אופציונלי: לחץ על אייקון העריכה כדי ליצור <strong>Vanity Link</strong> עם סיומת יפה שאתה בוחר.</li>
+        <li>לחץ <span class="ui">Copy Link</span>.</li>
+      </ol>
+
+      <div class="moca"><span class="t">🟣 SubId, זה בדיוק ה-aff_sub שלך</span>
+        <p style="margin:6px 0 0"><strong>SubId</strong> הוא תגית חופשית שאתה מדביק לקישור כדי לדעת <em>מאיזה מקום בדיוק</em> הגיעה המכירה: מאיזה עמוד ב-MOCA, מאיזה מלון (Guest Connect), מאיזו מדינת יעד, או מאיזו קמפיין. זה בדיוק אותו רעיון של ה-<code>aff_sub</code> שכבר קיים אצלך בקוד ה-<code>/go</code>.</p>
+        <p style="margin:6px 0 0">דוגמה מעשית: אם תוסיף <code>SubId1 = usa</code> לקישור של Airalo שמופיע בעמוד היעד ארה"ב, בדוחות של Impact תוכל לסנן ולראות כמה כסף הביא ספציפית עמוד ארה"ב. תכנן מראש קונבנציה קבועה (למשל <code>dest_usa</code>, <code>hotel_dan</code>, <code>esimdeals</code>) כדי שהדוחות יהיו נקיים.</p>
+      </div>
+
+      <figure class="fig">
+        <svg viewBox="0 0 760 380" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+          <rect x="10" y="10" width="740" height="360" rx="12" fill="#ffffff" stroke="#e0cdb5" stroke-width="1.5"/>
+          <text x="30" y="44" font-size="16" font-weight="700" fill="#5c3317">Create a link</text>
+          <!-- URL field -->
+          <text x="30" y="76" font-size="12.5" fill="#8a6a4a">Brand / Landing page URL</text>
+          <rect x="30" y="84" width="700" height="42" rx="8" fill="#fbf6ee" stroke="#e0cdb5"/>
+          <text x="46" y="110" font-size="13" fill="#3b1f0d">airalo.com/esim/united-states</text>
+          <!-- program dropdown -->
+          <text x="30" y="152" font-size="12.5" fill="#8a6a4a">Program</text>
+          <rect x="30" y="160" width="340" height="40" rx="8" fill="#ffffff" stroke="#e0cdb5"/>
+          <text x="46" y="185" font-size="13" fill="#3b1f0d">Airalo Affiliate Program</text><text x="352" y="185" font-size="13" fill="#8a6a4a">▾</text>
+          <!-- advanced -->
+          <text x="390" y="152" font-size="12.5" fill="#8a6a4a">Advanced ▾</text>
+          <rect x="390" y="160" width="170" height="40" rx="8" fill="#ffffff" stroke="#c9622f"/>
+          <text x="404" y="176" font-size="10.5" fill="#8a6a4a">SubId1</text><text x="404" y="192" font-size="13" font-weight="700" fill="#3b1f0d">dest_usa</text>
+          <rect x="568" y="160" width="162" height="40" rx="8" fill="#ffffff" stroke="#e0cdb5"/>
+          <text x="582" y="176" font-size="10.5" fill="#a08468">SubId2 (optional)</text>
+          <!-- copy button -->
+          <rect x="30" y="222" width="160" height="44" rx="8" fill="#5c3317"/>
+          <text x="110" y="249" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">Copy Link</text>
+          <rect x="204" y="222" width="120" height="44" rx="8" fill="#f0e3d0" stroke="#e0cdb5"/>
+          <text x="264" y="249" font-size="13" fill="#5c3317" text-anchor="middle">Vanity link</text>
+          <!-- result -->
+          <text x="30" y="298" font-size="12.5" fill="#8a6a4a">Your tracking link</text>
+          <rect x="30" y="306" width="700" height="44" rx="8" fill="#eef6ea" stroke="#c9e0bf"/>
+          <text x="46" y="333" font-size="12.5" fill="#2f5426">https://airalo.pxf.io/c/1011l/AbCdEf/154?subId1=dest_usa</text>
+          <!-- markers -->
+          <g><circle cx="716" cy="105" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="716" y="109.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">1</text></g>
+          <g><circle cx="474" cy="146" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="474" y="150.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">2</text></g>
+          <g><circle cx="352" cy="146" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="352" y="150.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">3</text></g>
+          <g><circle cx="176" cy="222" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="176" y="226.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">4</text></g>
+          <g><circle cx="716" cy="328" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="716" y="332.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">5</text></g>
+        </svg>
+        <figcaption>איור 3 · ווידג'ט Create a link - יצירת קישור מעקב עם תיוג SubId</figcaption>
+      </figure>
+      <div class="legend"><ol>
+        <li><b>שדה הכתובת</b> - הדבק כאן עמוד ספציפי (כמו עמוד ארה"ב) ותקבל Deep Link ישר אליו.</li>
+        <li><b>SubId1</b> - התגית שמזהה את המקור. כאן <code>dest_usa</code>. זה ה-<code>aff_sub</code> שלך.</li>
+        <li><b>Program</b> - אם למותג כמה תוכניות, בחר את הנכונה.</li>
+        <li><b>Copy Link</b> - יוצר ומעתיק את הקישור הסופי.</li>
+        <li><b>הקישור המוכן</b> - שים לב שה-<code>?subId1=dest_usa</code> מופיע בסוף. זה מה שתראה אחר כך בדוחות.</li>
+      </ol></div>
+
+      <h4>מבנה טכני של קישור מעקב (למקרה שתרצה להרכיב לבד)</h4>
+      <div class="path" style="direction:ltr">https://{tracking-domain}/c/{Account&nbsp;ID}/{Ad&nbsp;ID}/{Campaign&nbsp;ID}?u={encoded-landing-page-url}</div>
+      <p>ה-<code>u=</code> בסוף הוא ה-Deep Link, כתובת העמוד הסופי אחרי URL-encoding. אם כבר יש לך את קישור המעקב המלא, אפשר להוסיף <code>u=</code> בעצמך בלי אפילו להתחבר ל-Impact.</p>
+
+      <div class="tip"><span class="t">💡 תוסף כרום (Chrome Extension)</span>
+        ל-Impact יש תוסף לכרום שיוצר קישור מעקב "על הזבוב" בזמן שאתה גולש באתר של המותג. שימושי מאוד לבדיקות ידניות, אבל עבור MOCA העבודה תהיה בעיקר דרך הרכבת הקישור בקוד. שים לב: חלק מהמותגים <strong>חוסמים</strong> Deep Link או את מחולל הקישורים, ואז נשאר רק הקישור הרגיל לדף הבית.</div>
+    </section>
+
+    <!-- 8 -->
+    <section id="s8">
+      <h2><span class="num">8</span> שלב ה': הטמעה ב-MOCA</h2>
+      <p class="lead">איך הקישור מ-Impact מתחבר למערכת שכבר בנית.</p>
+      <p>ב-MOCA כבר קיים מנגנון ייחוס (<code>/go</code> redirect) עם <code>Sub-ID</code>. ההיגיון הפרקטי:</p>
+      <ol class="steps">
+        <li>שלוף מ-Impact את קישור המעקב הבסיסי של כל ספק (Airalo, Holafly, Voye).</li>
+        <li>שמור אותו כ"קישור בסיס" של הספק במערכת (איפה שכבר שמורים קישורי האפיליאייט).</li>
+        <li>בזמן ריצה, הוסף <code>SubId</code> דינמי לפי המקור (עמוד יעד / מלון / קמפיין), בדיוק כמו שכבר עושים עם <code>aff_sub</code>.</li>
+        <li>ה-<code>/go</code> מפנה את הגולש דרך הקישור הזה, וכך המכירה נזקפת ל-MOCA עם תיוג המקור.</li>
+      </ol>
+      <div class="warn"><span class="t">⚠ לפני השקה, ודא ייחוס תקין</span>
+        בזיכרון הפרויקט רשום שצריך לתקן את מקור הייחוס (<code>src=esim</code>) לפני הקמפיין הצרכני. כדאי לבצע קליק-בדיקה אמיתי דרך הקישור, לוודא שהוא מגיע לעמוד הנכון, ואז לוודא ב-<span class="ui">Reports</span> של Impact שהקליק נרשם (ושה-SubId מופיע נכון). בלי בדיקה כזו אפשר לפרסם שבועות ולגלות שאף מכירה לא יוחסה.</div>
+    </section>
+
+    <!-- 9 -->
+    <section id="s9">
+      <h2><span class="num">9</span> שלב ו': דוחות ומעקב ביצועים</h2>
+      <p class="lead">כאן רואים אם זה עובד: כמה קליקים, כמה מכירות, כמה כסף.</p>
+      <h3>הדוחות העיקריים (תפריט Reports)</h3>
+      <table>
+        <tr><th>דוח</th><th>מה הוא מראה</th></tr>
+        <tr><td><strong>Performance</strong></td><td>סיכום: קליקים, פעולות, הכנסה, EPC, לפי מותג / תאריך.</td></tr>
+        <tr><td><strong>Action Listing</strong></td><td>שורה לכל פעולה בודדת: מתי, איזה מותג, כמה עמלה, מה הסטטוס, ואיזה SubId.</td></tr>
+        <tr><td><strong>Action Inquiries</strong></td><td>מכירות שלא נרשמו כמו שצריך, שאפשר לפתוח עליהן בירור מול המותג.</td></tr>
+        <tr><td><strong>Payments / Finance</strong></td><td>מה שולם, מה ממתין (Pending), ומה זמין למשיכה.</td></tr>
+      </table>
+
+      <figure class="fig">
+        <svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+          <rect x="10" y="10" width="740" height="320" rx="12" fill="#ffffff" stroke="#e0cdb5" stroke-width="1.5"/>
+          <text x="30" y="42" font-size="15" font-weight="700" fill="#5c3317">Reports ▸ Action Listing</text>
+          <!-- header row -->
+          <rect x="24" y="58" width="712" height="34" fill="#f0e3d0"/>
+          <g font-size="12" font-weight="700" fill="#5c3317">
+            <text x="40" y="80">Date</text>
+            <text x="140" y="80">Brand</text>
+            <text x="250" y="80">SubId</text>
+            <text x="400" y="80">Sale</text>
+            <text x="490" y="80">Payout</text>
+            <text x="600" y="80">Status</text>
+          </g>
+          <!-- rows -->
+          <g font-size="12.5" fill="#3b1f0d">
+            <line x1="24" y1="122" x2="736" y2="122" stroke="#efe3d1"/>
+            <text x="40" y="115">2026-07-01</text><text x="140" y="115">Airalo</text><text x="250" y="115" fill="#5c3317" font-weight="700">dest_usa</text><text x="400" y="115">$28.00</text><text x="490" y="115">$2.80</text>
+            <rect x="592" y="102" width="72" height="20" rx="10" fill="#fbeee0"/><text x="628" y="116" font-size="11" fill="#b06a1f" text-anchor="middle">Pending</text>
+
+            <line x1="24" y1="156" x2="736" y2="156" stroke="#efe3d1"/>
+            <text x="40" y="149">2026-06-30</text><text x="140" y="149">Holafly</text><text x="250" y="149" fill="#5c3317" font-weight="700">esimdeals</text><text x="400" y="149">$45.00</text><text x="490" y="149">$9.00</text>
+            <rect x="592" y="136" width="72" height="20" rx="10" fill="#eaf3e4"/><text x="628" y="150" font-size="11" fill="#3d6b31" text-anchor="middle">Locked</text>
+
+            <line x1="24" y1="190" x2="736" y2="190" stroke="#efe3d1"/>
+            <text x="40" y="183">2026-06-28</text><text x="140" y="183">Voye</text><text x="250" y="183" fill="#5c3317" font-weight="700">hotel_dan</text><text x="400" y="183">$19.00</text><text x="490" y="183">$1.90</text>
+            <rect x="592" y="170" width="72" height="20" rx="10" fill="#e2efdb"/><text x="628" y="184" font-size="11" fill="#2f5426" text-anchor="middle">Payable</text>
+
+            <text x="40" y="217">2026-06-25</text><text x="140" y="217">Airalo</text><text x="250" y="217" fill="#5c3317" font-weight="700">dest_jp</text><text x="400" y="217">$22.00</text><text x="490" y="217" fill="#b4472d">-$2.20</text>
+            <rect x="592" y="204" width="72" height="20" rx="10" fill="#fbe4de"/><text x="628" y="218" font-size="11" fill="#b4472d" text-anchor="middle">Reversed</text>
+          </g>
+          <text x="30" y="258" font-size="12" fill="#8a6a4a">Pending ← Locked ← Payable  (זרימת אישור העמלה) · Reversed = מכירה שבוטלה</text>
+          <!-- markers -->
+          <g><circle cx="628" cy="70" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="628" y="74.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">1</text></g>
+          <g><circle cx="278" cy="70" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="278" y="74.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">2</text></g>
+          <g><circle cx="700" cy="214" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="700" y="218.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">3</text></g>
+        </svg>
+        <figcaption>איור 4 · דוח Action Listing - כל מכירה כשורה, עם סטטוס ותיוג</figcaption>
+      </figure>
+      <div class="legend"><ol>
+        <li><b>עמודת Status</b> - הסטטוס של כל עמלה: ממתינה, נעולה, זמינה לתשלום.</li>
+        <li><b>עמודת SubId</b> - כאן רואים בדיוק מאיזה מקור הגיעה כל מכירה. תיוג נכון = דוח שימושי.</li>
+        <li><b>Reversed</b> - מכירה שבוטלה (החזר). העמלה יורדת. אחוז גבוה כאן דורש בדיקה.</li>
+      </ol></div>
+
+      <h3>מדדים שכדאי להסתכל עליהם</h3>
+      <ul>
+        <li><strong>Clicks</strong>: כמה גולשים לחצו על הקישורים שלך.</li>
+        <li><strong>Actions</strong>: כמה מהם הפכו למכירה / ליד.</li>
+        <li><strong>Conversion Rate</strong>: אחוז ההמרה (Actions חלקי Clicks). נמוך מדי = אולי הקישור שולח לעמוד לא רלוונטי.</li>
+        <li><strong>EPC</strong>: כמה כל קליק שווה לך. הכלי הכי טוב להשוות בין ספקים ולהחליט את מי לדחוף.</li>
+        <li><strong>Reversed</strong>: כמה עמלות בוטלו. אחוז גבוה = הרבה החזרים, כדאי לבדוק למה.</li>
+      </ul>
+      <div class="tip"><span class="t">💡 טיפ</span>
+        אפשר להגדיר <strong>התראות אימייל</strong> על אירועים (מכירה חדשה, שינוי בעמלה). בהתחלה, כדאי פשוט להיכנס פעם ביום לדוח <span class="ui">Action Listing</span> ולוודא שהמכירות שאתה מצפה להן באמת נרשמות עם ה-SubId הנכון.</div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10">
+      <h2><span class="num">10</span> שלב ז': תשלומים, איך מקבלים את הכסף</h2>
+      <p class="lead">זה החלק שבשבילו עשית הכל. Impact משלם ישירות לחשבון שלך.</p>
+
+      <h3>איך זה עובד</h3>
+      <ul>
+        <li><strong>מינימום למשיכה</strong>: היתרה חייבת להגיע לפחות ל-<strong>10$</strong> (או שווה ערך) כדי שאפשר יהיה למשוך.</li>
+        <li><strong>אמצעי תשלום</strong>: העברה בנקאית, או <strong>PayPal</strong> (זמינות ה-PayPal תלויה במדינה).</li>
+        <li><strong>לוח זמנים</strong>: אתה בוחר, או משיכה אוטומטית כשהיתרה חוצה סכום שהגדרת, או בתאריך קבוע בחודש (ה-1 או ה-15).</li>
+      </ul>
+
+      <h3>איפה מגדירים בנק</h3>
+      <div class="path" style="direction:ltr">User Profile (אייקון פרופיל) → Settings → Finance → Bank Account</div>
+      <p>הזן את פרטי הבנק או ה-PayPal ושמור. שם תבחר גם את תדירות התשלום האוטומטי.</p>
+
+      <figure class="fig">
+        <svg viewBox="0 0 760 380" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+          <rect x="10" y="10" width="740" height="360" rx="12" fill="#ffffff" stroke="#e0cdb5" stroke-width="1.5"/>
+          <text x="30" y="42" font-size="15" font-weight="700" fill="#5c3317">Settings ▸ Finance ▸ Bank Account</text>
+          <!-- payment method -->
+          <text x="30" y="76" font-size="12.5" fill="#8a6a4a">Payment method</text>
+          <rect x="30" y="84" width="150" height="38" rx="8" fill="#5c3317"/><text x="105" y="108" font-size="13" fill="#fff" text-anchor="middle">Bank transfer</text>
+          <rect x="192" y="84" width="110" height="38" rx="8" fill="#f0e3d0" stroke="#e0cdb5"/><text x="247" y="108" font-size="13" fill="#5c3317" text-anchor="middle">PayPal</text>
+          <!-- name -->
+          <text x="30" y="148" font-size="12.5" fill="#8a6a4a">Account holder name</text>
+          <rect x="30" y="156" width="400" height="40" rx="8" fill="#fbf6ee" stroke="#e0cdb5"/>
+          <text x="46" y="181" font-size="13" fill="#3b1f0d">ALON YOCHELMAN</text>
+          <text x="440" y="181" font-size="11.5" fill="#b4472d">⚠ אותיות אנגלית בלבד</text>
+          <!-- schedule -->
+          <text x="30" y="228" font-size="12.5" fill="#8a6a4a">Withdrawal schedule</text>
+          <circle cx="42" cy="250" r="7" fill="#fff" stroke="#5c3317" stroke-width="2"/><circle cx="42" cy="250" r="3.5" fill="#5c3317"/>
+          <text x="58" y="255" font-size="13" fill="#3b1f0d">When balance reaches</text>
+          <rect x="230" y="238" width="70" height="26" rx="6" fill="#fbf6ee" stroke="#e0cdb5"/><text x="265" y="256" font-size="12.5" fill="#3b1f0d" text-anchor="middle">$100</text>
+          <circle cx="42" cy="288" r="7" fill="#fff" stroke="#a08468" stroke-width="2"/>
+          <text x="58" y="293" font-size="13" fill="#3b1f0d">On a fixed day each month (1st / 15th)</text>
+          <!-- save -->
+          <rect x="30" y="316" width="120" height="40" rx="8" fill="#5c3317"/><text x="90" y="341" font-size="14" font-weight="600" fill="#fff" text-anchor="middle">Save</text>
+          <!-- markers -->
+          <g><circle cx="720" cy="34" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="720" y="38.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">1</text></g>
+          <g><circle cx="105" cy="84" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="105" y="88.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">2</text></g>
+          <g><circle cx="416" cy="156" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="416" y="160.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">3</text></g>
+          <g><circle cx="42" cy="250" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2" opacity="0.9"/><text x="42" y="254.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">4</text></g>
+        </svg>
+        <figcaption>איור 5 · הגדרת אמצעי תשלום (Settings ▸ Finance ▸ Bank Account)</figcaption>
+      </figure>
+      <div class="legend"><ol>
+        <li><b>המסלול בתפריט</b> - Settings ← Finance ← Bank Account. כאן מגדירים לאן הכסף מגיע.</li>
+        <li><b>אמצעי תשלום</b> - העברה בנקאית או PayPal (לפי המדינה).</li>
+        <li><b>שם בעל החשבון</b> - חובה באותיות אנגלית בלבד, אחרת התשלום נכשל בשקט.</li>
+        <li><b>לוח זמנים</b> - משיכה כשהיתרה חוצה סכום, או בתאריך קבוע בחודש.</li>
+      </ol></div>
+
+      <div class="warn"><span class="t">⚠ נקודות שחייבים לדעת לפני שמנסים למשוך</span>
+        <ul style="margin:6px 0 0">
+          <li><strong>רק אותיות באנגלית</strong> בפרטי הבנק. שם, כתובת, שם בנק, הכל בתווים לטיניים בלבד, אחרת התשלום ייכשל.</li>
+          <li><strong>הקפאה של 48 שעות</strong>: בכל פעם שאתה מעדכן פרטי בנק, Impact מקפיא משיכות ל-48 שעות מטעמי אבטחה.</li>
+          <li><strong>חובה טופס מס</strong> (סעיף 11) ו-<strong>2FA מופעל</strong> לפני שאפשר למשוך.</li>
+          <li><strong>דמי חוסר פעילות</strong>: אם במשך 6 חודשים אין תשלומים, מהחודש ה-7 עלולים לחייב דמי אחזקה חודשיים (כ-10$). לא רלוונטי כל עוד הכסף זורם, רק שתדע.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11">
+      <h2><span class="num">11</span> שלב ח': טופס המס, W-8BEN</h2>
+      <p class="lead">זה החסם הכי נפוץ שתוקע שותפים חדשים: בלי טופס מס תקין, לא משלמים לך. חדשות טובות, זה פשוט.</p>
+
+      <h3>איזה טופס אתה צריך</h3>
+      <p>אתה אזרח ישראלי (לא-אמריקאי) שעובד עם מותגים אמריקאים (Airalo וכו'). לכן:</p>
+      <table>
+        <tr><th>מי אתה</th><th>הטופס</th></tr>
+        <tr><td><strong>אדם פרטי, לא אמריקאי</strong> (הכי סביר עבורך)</td><td><strong>W-8BEN</strong></td></tr>
+        <tr><td><strong>חברה / ישות, לא אמריקאית</strong> (אם תפעל דרך חברה בע"מ)</td><td><strong>W-8BEN-E</strong></td></tr>
+        <tr><td>אדם/חברה אמריקאים</td><td>W-9 (לא רלוונטי לך)</td></tr>
+      </table>
+
+      <h3>איך ממלאים</h3>
+      <ol class="steps">
+        <li>לך אל <span class="path" style="direction:ltr">Settings → Finance → Tax</span> (מסמכי מס).</li>
+        <li>בחר <strong>W-8BEN</strong> ומלא: שם מלא, מדינת אזרחות (Israel), כתובת, ותאריך.</li>
+        <li>בשדה <strong>Foreign Tax ID</strong> אפשר להזין את מספר הזהות / תיק המס שלך בישראל.</li>
+        <li>אם יש סעיף על <strong>אמנת מס (Tax Treaty)</strong>, לישראל יש אמנה עם ארה"ב שמפחיתה ניכוי מס במקור. סמן את ישראל אם השדה מופיע.</li>
+        <li>חתום דיגיטלית (הקלדת שם) ושלח. הטופס תקף כמה שנים.</li>
+      </ol>
+
+      <figure class="fig">
+        <svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+          <rect x="10" y="10" width="740" height="340" rx="12" fill="#ffffff" stroke="#e0cdb5" stroke-width="1.5"/>
+          <text x="30" y="42" font-size="15" font-weight="700" fill="#5c3317">Settings ▸ Finance ▸ Tax Documents</text>
+          <rect x="30" y="56" width="300" height="34" rx="8" fill="#f3edfb" stroke="#d9c9ef"/>
+          <text x="46" y="78" font-size="13" font-weight="700" fill="#4a2c72">Form: W-8BEN (non-US individual)</text>
+          <!-- fields -->
+          <g font-size="12.5" fill="#8a6a4a">
+            <text x="30" y="120">Full name</text>
+            <text x="400" y="120">Country of citizenship</text>
+            <text x="30" y="184">Permanent residence address</text>
+            <text x="400" y="184">Foreign Tax ID (מס' ת"ז / תיק מס)</text>
+            <text x="30" y="248">Tax treaty country</text>
+          </g>
+          <rect x="30" y="128" width="340" height="38" rx="8" fill="#fbf6ee" stroke="#e0cdb5"/><text x="46" y="152" font-size="13" fill="#3b1f0d">Alon Yochelman</text>
+          <rect x="400" y="128" width="330" height="38" rx="8" fill="#fbf6ee" stroke="#e0cdb5"/><text x="416" y="152" font-size="13" fill="#3b1f0d">Israel</text>
+          <rect x="30" y="192" width="340" height="38" rx="8" fill="#fbf6ee" stroke="#e0cdb5"/><text x="46" y="216" font-size="13" fill="#3b1f0d">Tel Aviv, Israel</text>
+          <rect x="400" y="192" width="330" height="38" rx="8" fill="#fbf6ee" stroke="#e0cdb5"/><text x="416" y="216" font-size="13" fill="#3b1f0d">0__ ______</text>
+          <rect x="30" y="256" width="340" height="38" rx="8" fill="#fbf6ee" stroke="#e0cdb5"/><text x="46" y="280" font-size="13" fill="#3b1f0d">Israel  (US-Israel tax treaty)</text>
+          <!-- sign -->
+          <text x="400" y="248" font-size="12.5" fill="#8a6a4a">Signature (type your name)</text>
+          <rect x="400" y="256" width="200" height="38" rx="8" fill="#fbf6ee" stroke="#e0cdb5"/><text x="416" y="280" font-size="14" fill="#3b1f0d" font-style="italic">Alon Yochelman</text>
+          <rect x="612" y="256" width="118" height="38" rx="8" fill="#5c3317"/><text x="671" y="280" font-size="13" font-weight="600" fill="#fff" text-anchor="middle">Submit</text>
+          <!-- markers -->
+          <g><circle cx="330" cy="73" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="330" y="77.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">1</text></g>
+          <g><circle cx="416" cy="128" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="416" y="132.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">2</text></g>
+          <g><circle cx="416" cy="192" r="12.5" fill="#c9622f" stroke="#fff" stroke-width="2"/><text x="416" y="196.5" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">3</text></g>
+        </svg>
+        <figcaption>איור 6 · טופס W-8BEN למילוי (אזרח ישראלי, לא-אמריקאי)</figcaption>
+      </figure>
+      <div class="legend"><ol>
+        <li><b>סוג הטופס</b> - W-8BEN לאדם פרטי לא-אמריקאי. אם אתה חברה, בחר W-8BEN-E.</li>
+        <li><b>מדינת אזרחות</b> - Israel.</li>
+        <li><b>Foreign Tax ID</b> - כאן מזינים את מספר הזהות / תיק המס הישראלי שלך.</li>
+      </ol></div>
+
+      <div class="note"><span class="t">מתי זה נהיה חובה</span>
+        הדרישה לטופס מתחדדת כשההכנסה השנתית ממותגים אמריקאים עוברת סף מסוים. אבל <strong>עדיף למלא אותו מיד</strong>, כי בלעדיו המשיכה תיחסם בדיוק ברגע שתרצה למשוך. אל תשאיר את זה לרגע האחרון.</div>
+      <div class="warn"><span class="t">⚠ אינני יועץ מס</span>
+        המדריך מסביר איך למלא את הטופס בממשק. לגבי איך לדווח על ההכנסה בישראל ואמנת המס בפועל, כדאי להתייעץ עם רואה חשבון. Impact רק מנכה (או לא) מס במקור לפי הטופס.</div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12">
+      <h2><span class="num">12</span> הספקים שלך שעובדים דרך Impact</h2>
+      <p class="lead">מתוך רישום ה-affiliate של MOCA, אלה ספקי ה-eSIM שהתוכניות שלהם רצות על Impact.com.</p>
+      <table>
+        <tr><th>ספק</th><th>סטטוס אצלך</th><th>מה לבדוק ב-Impact</th></tr>
+        <tr><td><strong>Airalo</strong></td><td>הוגש 2026-06-12, ממתין/מאושר</td><td>ודא שהתוכנית מופיעה ב-<span class="ui">My Brands</span>, שלוף קישור מעקב, בדוק את גובה העמלה בחוזה.</td></tr>
+        <tr><td><strong>Holafly</strong></td><td>הוגש 2026-06-13</td><td>שים לב לתווים לא-לטיניים בטפסים (בזיכרון רשום שזה היה מקור לתקלות מילוי). מלא באנגלית בלבד.</td></tr>
+        <tr><td><strong>Voye</strong></td><td>הוגש 2026-06-13</td><td>עובד דרך Impact. בדוק אישור, ואז קישור מעקב + SubId.</td></tr>
+      </table>
+      <div class="tip"><span class="t">💡 עוד ספקים</span>
+        Saily ו-Maya לא בהכרח על Impact (Saily עובד עם קישור נפרד, Maya דרך פיד רשמי). כל ספק שאושר לך <em>יופיע ב-<span class="ui">My Brands</span></em>. אם ספק לא שם, סימן שעדיין לא אושרת אליו או שהוא לא רץ על Impact בכלל.</div>
+    </section>
+
+    <!-- 13 -->
+    <section id="s13">
+      <h2><span class="num">13</span> טעויות נפוצות של מתחילים</h2>
+      <ul>
+        <li><strong>לשכוח למלא טופס מס</strong>, ואז לגלות שהכסף תקוע בדיוק כשרוצים למשוך. מלא מראש.</li>
+        <li><strong>להשתמש בקישור בלי SubId</strong>, ואז אי אפשר לדעת איזה עמוד/מקור הביא מכירות. תמיד תייג.</li>
+        <li><strong>לשים עברית בפרטי הבנק</strong>, התשלום נכשל בשקט. אנגלית בלבד.</li>
+        <li><strong>לפרסם קישור לפני בדיקת קליק</strong>. תמיד תעשה קליק-בדיקה ותוודא שהוא נרשם ב-Reports.</li>
+        <li><strong>להתייאש מדחייה של מותג</strong>. זה שגרתי. אפשר להגיש שוב או לפנות ישירות.</li>
+        <li><strong>לבלבל בין Deep Link חסום למותר</strong>. אם מותג חוסם Deep Link, קישור לעמוד פנימי לא יעבוד, השתמש בקישור הרגיל.</li>
+        <li><strong>לצפות לכסף מיד</strong>. יש תקופת נעילה (Pending) עד שהעמלה הופכת ל-Payable. זה תקין.</li>
+      </ul>
+    </section>
+
+    <!-- 14 -->
+    <section id="s14">
+      <h2><span class="num">14</span> שאלות נפוצות</h2>
+      <h4>כמה זמן לוקח לקבל אישור למרקטפלייס?</h4>
+      <p>עד יומיים עסקים מרגע שהפרופיל והנכס מלאים.</p>
+      <h4>מה ההבדל בין Program ל-Brand?</h4>
+      <p>Brand הוא המותג. Program היא תוכנית שותפים ספציפית שלו. למותג אחד יכולות להיות כמה תוכניות (למשל לקהלים שונים), ואתה בוחר את הרלוונטית כשיוצרים קישור.</p>
+      <h4>מכירה נרשמה אבל אני לא רואה כסף, למה?</h4>
+      <p>כנראה היא ב-<strong>Pending</strong> (ממתינה לסיום תקופת הנעילה). היא תהפוך ל-Payable אחרי שהתקופה עוברת בלי ביטול.</p>
+      <h4>מה המינימום למשיכה?</h4>
+      <p>10$ (או שווה ערך). מתחת לזה הכסף מצטבר עד שתגיע לסף.</p>
+      <h4>אפשר PayPal?</h4>
+      <p>כן, בתלות במדינה. אחרת העברה בנקאית.</p>
+      <h4>איפה לומדים עוד באופן רשמי?</h4>
+      <p>ל-Impact יש אקדמיה חינמית עם קורסים והסמכה, וכן מרכז עזרה מפורט. קישורים בסוף המדריך.</p>
+    </section>
+
+    <!-- 15 -->
+    <section id="s15">
+      <h2><span class="num">15</span> קישורים רשמיים ולמידה נוספת</h2>
+      <ul>
+        <li><a href="https://app.impact.com" target="_blank">app.impact.com</a> - כניסה ל-Dashboard שלך</li>
+        <li><a href="https://help.impact.com/partner" target="_blank">מרכז העזרה לשותפים (I'm a Partner)</a> - התיעוד הרשמי, בחר תמיד את חלק ה-Partner</li>
+        <li><a href="https://pxa.impact.com" target="_blank">Partnerships Experience Academy</a> - קורסים חינמיים "Getting Started for Publishers" והסמכה</li>
+        <li><a href="https://help.impact.com/partner/what-would-you-like-to-learn-about/platform-features/tracking/tracking-links/create-and-manage-links/create-tracking-links" target="_blank">מדריך יצירת קישורי מעקב</a></li>
+        <li><a href="https://help.impact.com/partner/what-would-you-like-to-learn-about/platform-features/finance/payments-withdrawals-and-balance/how-do-partners-get-paid" target="_blank">איך שותפים מקבלים תשלום</a></li>
+        <li><a href="https://help.impact.com/partner/what-would-you-like-to-learn-about/platform-features/finance/finance-documents/electronic-tax-documents-for-partners-explained" target="_blank">טפסי מס לשותפים (W-8BEN)</a></li>
+      </ul>
+      <div class="tip"><span class="t">✅ סדר פעולות מומלץ לשבוע הראשון</span>
+        <ol style="margin:6px 0 0">
+          <li>השלם פרופיל + נכס מדיה + 2FA.</li>
+          <li>מלא טופס W-8BEN עכשיו (לא לחכות).</li>
+          <li>הגדר בנק/PayPal.</li>
+          <li>ודא ש-Airalo/Holafly/Voye מאושרים ומופיעים ב-My Brands.</li>
+          <li>צור קישור מעקב אחד עם SubId, עשה קליק-בדיקה, ותוודא שהוא נרשם ב-Reports.</li>
+          <li>חבר את הקישורים ל-<code>/go</code> ב-MOCA.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 16 -->
+    <section id="s16">
+      <h2><span class="num">16</span> צ'קליסט שבוע ראשון (להדפסה)</h2>
+      <p class="lead">רשימת פעולות מסודרת לפי סדר ביצוע. אפשר להדפיס את הדף הזה ולסמן ✓ תוך כדי. הריבועים ריקים בכוונה לסימון ידני.</p>
+
+      <div class="day">יום 1 · פתיחה והקמה</div>
+      <ul class="check">
+        <li>התחברות ל-<b>app.impact.com</b> ואימות שהחשבון פעיל<small>אם קיבלת הזמנה ממותג, ודא שאתה בחשבון ה-Partner הכללי</small></li>
+        <li>השלמת הפרופיל הציבורי (תיאור מי אתה ומה אתה מקדם)</li>
+        <li>הוספת נכס מדיה: mocaintel.com ו-esim.mocaintel.com<small>אמת בעלות אם התבקשת, זה מזרז אישור</small></li>
+        <li>הפעלת אימות דו-שלבי (2FA)<small>User Profile ← Edit Profile ← Basic Info · חובה לפני משיכה</small></li>
+      </ul>
+
+      <div class="day">יום 1-2 · מיסים ותשלום (לא לדחות!)</div>
+      <ul class="check">
+        <li>מילוי טופס <b>W-8BEN</b><small>Settings ← Finance ← Tax · מדינה: Israel · כולל Foreign Tax ID</small></li>
+        <li>הגדרת אמצעי תשלום (בנק / PayPal)<small>פרטי הבנק באותיות אנגלית בלבד</small></li>
+        <li>בחירת לוח זמנים למשיכה (סף סכום או תאריך קבוע)</li>
+      </ul>
+
+      <div class="day">יום 2-3 · הצטרפות למותגים</div>
+      <ul class="check">
+        <li>הגשת בקשה ל-<b>Airalo</b> (Discover ← Find Brands ← Apply)</li>
+        <li>הגשת בקשה ל-<b>Holafly</b><small>שים לב: מלא את כל הטפסים באנגלית, בלי תווים מיוחדים</small></li>
+        <li>הגשת בקשה ל-<b>Voye</b></li>
+        <li>בדיקה שהמותגים המאושרים מופיעים תחת <b>My Brands</b></li>
+      </ul>
+
+      <div class="day">יום 3-4 · קישורים ובדיקה</div>
+      <ul class="check">
+        <li>יצירת קישור מעקב ראשון עם <b>SubId</b> (למשל dest_usa)<small>תכנן קונבנציה קבועה לשמות המקורות</small></li>
+        <li>ביצוע <b>קליק-בדיקה</b> אמיתי דרך הקישור והגעה לעמוד הנכון</li>
+        <li>אימות ב-<b>Reports ← Action Listing</b> שהקליק נרשם עם ה-SubId הנכון</li>
+        <li>חיבור קישורי הבסיס של הספקים למנגנון <code>/go</code> ב-MOCA<small>ותיקון מקור הייחוס (src) לפני קמפיין</small></li>
+      </ul>
+
+      <div class="day">שוטף · אחרי שהכל רץ</div>
+      <ul class="check">
+        <li>כניסה יומית קצרה ל-Reports לוודא שהמכירות נרשמות</li>
+        <li>מעקב אחר סטטוס עמלות (Pending ← Payable) ואחוז Reversed</li>
+        <li>השוואת EPC בין הספקים כדי להחליט את מי לדחוף</li>
+        <li>משיכת הכסף כשעוברים את המינימום (10$)</li>
+      </ul>
+    </section>
+
+    <footer>
+      נכתב עבור MOCA · מבוסס על התיעוד הרשמי של impact.com (מרכז העזרה + Partnerships Experience Academy).<br>
+      השמות בממשק עשויים להשתנות מעט בעדכוני עיצוב, אבל ההיגיון והשלבים נשארים זהים.
+    </footer>
+  </main>
+
+  <nav class="toc">
+    <h4>תוכן העניינים</h4>
+    <ol>
+      <li><a href="#s1">מה זה Impact ולמה זה נוגע לך</a></li>
+      <li><a href="#s2">מילון מונחים</a></li>
+      <li><a href="#s3">כניסה ולוח הבקרה</a></li>
+      <li><a href="#s4">השלמת פרופיל ואישור</a></li>
+      <li><a href="#s5">מציאת מותגים והצטרפות</a></li>
+      <li><a href="#s6">להבין חוזה ועמלות</a></li>
+      <li><a href="#s7">יצירת קישור מעקב</a></li>
+      <li><a href="#s8">הטמעה ב-MOCA</a></li>
+      <li><a href="#s9">דוחות וביצועים</a></li>
+      <li><a href="#s10">תשלומים</a></li>
+      <li><a href="#s11">טופס מס W-8BEN</a></li>
+      <li><a href="#s12">הספקים שלך</a></li>
+      <li><a href="#s13">טעויות נפוצות</a></li>
+      <li><a href="#s14">שאלות נפוצות</a></li>
+      <li><a href="#s15">קישורים רשמיים</a></li>
+      <li><a href="#s16">צ'קליסט שבוע ראשון</a></li>
+    </ol>
+  </nav>
+
+</div>
+</body>
+</html>

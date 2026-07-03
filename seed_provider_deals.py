@@ -19,7 +19,7 @@ Fields:
 
 Sources folded in: seed_coupons.py, affiliateLinks.js, config.json affiliate
 registry, and the affiliate-outreach log (memory + Hotel/outreach/*). Snapshot
-as of 2026-07-02 — update as threads advance.
+as of 2026-07-03 — update as threads advance.
 """
 from db import init_db, upsert_provider_deal
 
@@ -38,14 +38,14 @@ DEALS = [
     },
     {
         "provider_id": "saily", "display_name": "Saily", "category": "global",
-        "outreach_status": "live", "outreach_last_at": "2026-06-16",
+        "outreach_status": "live", "outreach_last_at": "2026-07-03",
         "contact": "affiliate@sailymedia.com", "program_network": "TUNE (Nord)",
         "agreement_status": "live", "commission_pct": None,
         "commission_note": "קופון לקוח 10%; עמלת אפיליאייט דרך Nord (לא ננקב אחוז).",
         "coupon_note": "קוד MOCA = 10% הנחה, חי ומזכה אותנו. קודי צד-ג' הושבתו.",
         "has_tracking_link": True, "priority": "low",
-        "next_actions": "רשות: לחווט checkout deep-link ל-attribution נקי יותר.",
-        "notes": "Nord Security. מגבלת PPC: אין הצעות על מילות מפתח ממותגות.",
+        "next_actions": "בוצע 2026-07-03: checkout deep-link (planId + aff) + Sub-ID לכל מלון (aff_sub) לפי צוות ה-Affiliate של Saily. אין פעולה פתוחה.",
+        "notes": "Nord Security. מגבלת PPC: אין הצעות על מילות מפתח ממותגות. 2026-07-03: /go/saily מנתב דרך ה-checkout deep-link כשידוע plan token, ומעביר קוד מלון כ-aff_sub ל-attribution לכל מלון.",
     },
     {
         "provider_id": "alosim", "display_name": "aloSIM", "category": "global",
@@ -90,6 +90,18 @@ DEALS = [
         "has_tracking_link": True, "priority": "med",
         "next_actions": "לבקש קופון ממותג MOCA (כרגע רק DFB גנרי).",
         "notes": "מאושר 2026-06-30. רץ על Impact (sjv.io, אותו acct כמו Voye).",
+    },
+    {
+        "provider_id": "bytesim", "display_name": "ByteSIM", "category": "global",
+        "outreach_status": "live", "outreach_last_at": "2026-07-03",
+        "contact": "bytesim.com/affiliate-program (self-serve, referral_code 8F68HJS3KPDU)",
+        "program_network": "עצמאי (תוכנית פנימית, self-serve)",
+        "agreement_status": "live", "commission_pct": 10,
+        "commission_note": "עד 10% עמלה למכירה (תוכנית פנימית, הרשמה עצמית - ללא מו\"מ).",
+        "coupon_note": "קוד Moca מחובר. הנחת הלקוח מונחת 10% מכותרת התוכנית ('up to 10% per sale' = העמלה שלנו) - לאמת מול ByteSim שהקוד אכן מקנה הנחת לקוח.",
+        "has_tracking_link": True, "priority": "med",
+        "next_actions": "לאמת מול ByteSim את אחוז הנחת הלקוח בקוד Moca (כרגע מונח 10%); אם אין הנחת לקוח - להפוך is_active=False / להסיר את התווית. לפרוס dist מעודכן ל-Netlify.",
+        "notes": "נרשמנו לתוכנית האפיליאייט הפנימית 2026-07-03 (referral_code 8F68HJS3KPDU). לינק /go/bytesim + AFFILIATE_URLS.bytesim + קוד Moca חוברו. החליף את הפנייה הקרה שחזרה (support@bytesim.com bounced).",
     },
 
     # ══ IN DISCUSSION / PENDING (yellow) ══════════════════════════════════════
@@ -276,16 +288,6 @@ DEALS = [
         "coupon_note": "המייל חזר (bounced); צריך איש קשר תקין.",
         "priority": "low", "next_actions": "למצוא כתובת תקינה (החנות היא orbitesim.com).",
         "notes": "כבר ספק נסרק (REST API).",
-    },
-    {
-        "provider_id": "bytesim", "display_name": "ByteSIM", "category": "global",
-        "outreach_status": "contacted", "outreach_last_at": "2026-06-30",
-        "contact": "support@bytesim.com (bounced)", "program_network": "עצמאי",
-        "agreement_status": "none", "commission_pct": 10,
-        "commission_note": "10% / 30 יום (תוכנית פנימית).",
-        "coupon_note": "המייל חזר (bounced); צריך איש קשר תקין.",
-        "priority": "low", "next_actions": "הרשמה ב-bytesim.com/affiliate-program/sign-up.",
-        "notes": "כבר ספק נסרק.",
     },
     {
         "provider_id": "jetpack", "display_name": "Jetpac", "category": "global",

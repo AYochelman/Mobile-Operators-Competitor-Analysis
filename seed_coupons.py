@@ -173,6 +173,22 @@ COUPONS = [
         "source_url": "https://www.gooday.co.il/%D7%94%D7%98%D7%91%D7%95%D7%AA/Airalo",
         "notes": "Per-user single-use code, requires phone+email verification on Gooday. Max 4 codes/month per phone.",
     },
+
+    # ── ByteSim (in-house affiliate / personal-store program) ─────────────
+    # OUR OWN affiliate code, set up in the ByteSim affiliate dashboard
+    # (bytesim.com/affiliate-program, referral_code 8F68HJS3KPDU). Program
+    # headline is "Share & earn up to 10% per sale" — that 10% is OUR reward;
+    # ByteSim's UI does not expose a distinct customer-discount %, so the
+    # "10% הנחה" label below is ASSUMED from that headline and must be CONFIRMED
+    # with ByteSim (flip the value / set is_active=False if the code carries no
+    # customer discount). Tracking link wired at /go/bytesim + AFFILIATE_URLS.
+    {
+        "carrier": "bytesim",
+        "code": "Moca",
+        "discount_label": "10% הנחה",
+        "source_url": "https://bytesim.com/",
+        "notes": "MOCA's own ByteSim affiliate code (referral_code 8F68HJS3KPDU). 'up to 10% per sale' is our commission; customer discount % ASSUMED 10% from ByteSim headline — CONFIRM exact customer discount before relying on the label.",
+    },
 ]
 
 

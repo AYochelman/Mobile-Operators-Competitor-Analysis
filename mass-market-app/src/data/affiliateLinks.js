@@ -8,7 +8,7 @@
 // with a signed tracking link redirect with attribution; the rest fall back to the
 // provider homepage until their program link is wired.
 export const AFFILIATE_PROVIDERS = new Set([
-  'airalo', 'airalo_local', 'airalo_regional', 'holafly', 'saily', 'terminalesim', 'voye', 'yesim', 'alosim', 'seven_g', 'bcengi', 'maya', 'ubigi',
+  'airalo', 'airalo_local', 'airalo_regional', 'holafly', 'saily', 'terminalesim', 'voye', 'yesim', 'alosim', 'seven_g', 'bcengi', 'maya', 'ubigi', 'bytesim',
 ])
 
 export const AFFILIATE_URLS = {
@@ -25,6 +25,7 @@ export const AFFILIATE_URLS = {
   bcengi:          'https://bcengi.sjv.io/c/7447920/3242903/41060', // bcengi Impact tracking link (acct 7205658). 15% on Automated Refill + Online Purchase, 30-day. No MOCA coupon yet (generic DFB code only).
   maya:            'https://mayamobile.pxf.io/oNV1xn', // Maya Impact tracking link (acct 7205658, 15-20% comm) → deep-links to maya.net/esim/plans. MOCA10 coupon also attributes.
   ubigi:           'https://go.ubigi.com/MKgJG3', // Ubigi (Transatel/NTT) Impact tracking link (acct 7205658, 10% first purchase / 60-day) → deep-links to cellulardata.ubigi.com plans page.
+  bytesim:         'https://bytesim.com/affiliate-program/sell-product?source_type=sales_plugin_af&slt=sales_plugin_af&productPage=1&referral_code=8F68HJS3KPDU', // ByteSim in-house affiliate program (referral_code 8F68HJS3KPDU, "up to 10% per sale"). Personal-store sell link; coupon "Moca" also attributes.
 }
 
 export const affiliateUrlFor = (carrier) => AFFILIATE_URLS[carrier] || `https://www.${carrier}.com`
