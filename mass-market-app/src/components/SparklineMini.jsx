@@ -23,12 +23,20 @@ function buildPath(points, w, h, pad = 3) {
   return { d, trend: last < first - 0.01 ? 'down' : last > first + 0.01 ? 'up' : 'flat' }
 }
 
-export default function SparklineMini({ carrier, planName, planType, w = 68, h = 22 }) {
+export default function SparklineMini({ carrier, planName, planType, points, w = 68, h = 22 }) {
   const key = `${carrier}|${planType}|${planName}`
+  // `points` managed by the parent (dashboard batch fetch): array = data,
+  // null = no history. When `undefined`, the parent isn't managing this card
+  // (e.g. ComparePage) and we self-fetch as before.
+  const managed = points !== undefined
+  const managedPath = managed
+    ? (points && points.length >= 2 ? buildPath(points, w, h) : null)
+    : undefined
   const [path, setPath] = useState(() => _cache.has(key) ? _cache.get(key) : undefined)
   const ref = useRef(null)
 
   useEffect(() => {
+    if (managed) return  // parent supplies the series — never fetch
     if (!carrier || !planName || path !== undefined) return
     if (_cache.has(key)) { setPath(_cache.get(key)); return }
     if (_pending.has(key)) return
@@ -62,13 +70,14 @@ export default function SparklineMini({ carrier, planName, planType, w = 68, h =
     return () => obs?.disconnect()
   }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const stroke = path?.trend === 'down' ? '#10b981' : path?.trend === 'up' ? '#f87171' : '#d1d5db'
+  const effPath = managed ? managedPath : path
+  const stroke = effPath?.trend === 'down' ? '#10b981' : effPath?.trend === 'up' ? '#f87171' : '#d1d5db'
 
   return (
-    <div ref={ref} style={{ width: w, height: path ? h : 4, transition: 'height 0.15s' }}>
-      {path && (
+    <div ref={ref} style={{ width: w, height: effPath ? h : 4, transition: 'height 0.15s' }}>
+      {effPath && (
         <svg width={w} height={h} className="overflow-visible">
-          <path d={path.d} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={effPath.d} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}
     </div>

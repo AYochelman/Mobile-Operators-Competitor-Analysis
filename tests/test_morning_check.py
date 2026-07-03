@@ -19,7 +19,7 @@ def tmp_db(tmp_path):
 
 def test_recent_changes_summary_has_all_categories(tmp_db):
     summary = get_recent_changes_summary(db_path=tmp_db)
-    assert set(summary.keys()) == {"domestic", "abroad", "global", "content"}
+    assert set(summary.keys()) == {"domestic", "abroad", "global", "content", "resellers"}
     assert all(v == [] for v in summary.values())
 
 
@@ -54,7 +54,7 @@ def test_scrape_freshness_counts_and_timestamps(tmp_db):
          "data_gb": 100, "minutes": "unlimited", "extras": []},
     ], db_path=tmp_db)
     fresh = get_scrape_freshness(db_path=tmp_db)
-    assert set(fresh.keys()) == {"domestic", "abroad", "global", "content"}
+    assert set(fresh.keys()) == {"domestic", "abroad", "global", "content", "resellers"}
     partner = next(r for r in fresh["domestic"] if r["carrier"] == "partner")
     assert partner["count"] == 2
     assert partner["last_scraped"]  # populated by save_plans

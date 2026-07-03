@@ -19,7 +19,7 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                save_executive_summary, get_executive_summary, compute_executive_metrics, \
                save_social_sentiment, get_social_sentiment, \
                get_archive_plans, get_archive_banners, get_archive_date_range, \
-               get_history_changes, get_history_price_series, \
+               get_history_changes, get_history_price_series, get_all_price_series, \
                upsert_news_articles, get_news_articles, \
                log_affiliate_click, get_affiliate_stats, get_affiliate_attribution, \
                upsert_hotel, get_hotel, list_hotels, delete_hotel, \
@@ -27,7 +27,7 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                log_esim_event, get_esim_analytics, \
                get_esim_destinations, \
                save_hotel_lead, get_hotel_leads, \
-               log_audit, get_audit_log, \
+               log_audit, get_audit_log, count_refreshes, \
                log_user_activity, get_user_activity_overview, get_user_activity_summary, \
                get_user_activity_events, prune_user_activity, \
                create_workspace_invite, get_workspace_invite, use_workspace_invite, \
@@ -155,7 +155,12 @@ def add_security_headers(response):
         "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: https:; "
-        "connect-src 'self' https: wss:; "
+        # connect-src tightened from blanket https:/wss: to same-origin only —
+        # the Flask-served legacy dashboard fetches exclusively from /api/... on
+        # its own origin, so this blocks data exfiltration to arbitrary hosts if
+        # an XSS ever slipped past escHtml. (img-src keeps https: for the
+        # wikimedia/icons8 carrier logos; the React SPA on Netlify has its own CSP.)
+        "connect-src 'self'; "
         "font-src 'self' data:; "
         "frame-ancestors 'none'"
     )
@@ -644,12 +649,7 @@ def _check_refresh_quota():
         return True, 0, MONTHLY_REFRESH_LIMIT
     from datetime import datetime as _dt, timezone as _tz
     month_prefix = _dt.now(_tz.utc).strftime('%Y-%m')
-    entries = get_audit_log(limit=500, workspace_id=ws_id, db_path=_db_path())
-    used = sum(
-        1 for e in entries
-        if e['action'] == 'refresh_triggered'
-        and (e['created_at'] or '').startswith(month_prefix)
-    )
+    used = count_refreshes(ws_id, month_prefix, db_path=_db_path())
     return used < MONTHLY_REFRESH_LIMIT, used, MONTHLY_REFRESH_LIMIT
 
 
@@ -664,10 +664,7 @@ def _workspace_refresh_quota_for_email(email):
         return 0, MONTHLY_REFRESH_LIMIT, MONTHLY_REFRESH_LIMIT, False
     from datetime import datetime as _dt, timezone as _tz
     month_prefix = _dt.now(_tz.utc).strftime('%Y-%m')
-    entries = get_audit_log(limit=500, workspace_id=ws_id, db_path=_db_path())
-    used = sum(1 for e in entries
-               if e['action'] == 'refresh_triggered'
-               and (e['created_at'] or '').startswith(month_prefix))
+    used = count_refreshes(ws_id, month_prefix, db_path=_db_path())
     remaining = max(0, MONTHLY_REFRESH_LIMIT - used)
     return used, MONTHLY_REFRESH_LIMIT, remaining, False
 
@@ -702,10 +699,22 @@ def api_refresh_quota():
     return jsonify({'used': used, 'limit': limit, 'remaining': remaining, 'unlimited': unlimited})
 
 
+_config_cache = {"mtime": None, "data": None}
+
 def load_config():
+    # Hot path: called on every @require_api_key request, the /go affiliate redirect
+    # (up to 3× per hit), guest/esim beacons, etc. Re-reading + JSON-parsing the
+    # credentials file each time is wasted disk I/O. Cache by mtime so the settings
+    # endpoints that write config.json directly are still picked up immediately.
     try:
-        with open(CONFIG_PATH, encoding="utf-8") as f:
-            return json.load(f)
+        mtime = os.path.getmtime(CONFIG_PATH)
+        if _config_cache["mtime"] != mtime or _config_cache["data"] is None:
+            with open(CONFIG_PATH, encoding="utf-8") as f:
+                _config_cache["data"] = json.load(f)
+            _config_cache["mtime"] = mtime
+        # Shallow copy so a caller that mutates a top-level key (e.g. _get_api_key
+        # setting cfg["api_key"]) can't poison the shared cache between file writes.
+        return dict(_config_cache["data"])
     except FileNotFoundError:
         # Fallback to environment variables (for cloud deployment)
         return {
@@ -1491,7 +1500,9 @@ def affiliate_redirect(provider, plan_id=None):
     ip_hash = hmac.new(api_key.encode(), ip.encode(), hashlib.sha256).hexdigest()
     country = request.args.get("country")
     hotel   = request.args.get("hotel")
-    plan    = request.args.get("plan") or plan_id
+    # Cap the stored plan label (mirrors the src/campaign caps below) so a crafted
+    # ?plan=<huge string> can't bloat affiliate_clicks / guest_events.
+    plan    = (request.args.get("plan") or plan_id or "")[:120] or None
     dest    = request.args.get("dest")  # hotel destination (canonical Hebrew)
     # Attribution: `src` = traffic-source channel (e.g. 'esim' = the B2C compare
     # page); `campaign` = the specific post/video, forwarded from utm so we can see
@@ -1763,6 +1774,12 @@ def api_guest_qr(slug):
     base = (request.args.get("base") or "https://mocaintel.com").rstrip("/")
     url = f"{base}/guest/{slug}?via=qr"
     color = hotel.get("brand_primary") or "#5c3317"
+    # brand_primary is admin-set but never validated as a color; it's reflected
+    # verbatim into the SVG's fill="…". Restrict to a hex literal so a malformed
+    # value can't inject markup into the image/svg+xml response.
+    import re as _re
+    if not _re.fullmatch(r"#[0-9A-Fa-f]{3,8}", color):
+        color = "#5c3317"
     try:
         svg = _qr_svg(url, color=color)
     except Exception:
@@ -3535,14 +3552,14 @@ def api_get_coupons():
 
 
 @app.route("/api/coupons/all", methods=["GET"])
-@require_admin
+@require_api_key_or_super_admin
 def api_get_all_coupons():
     """Admin: every coupon row including inactive / expired."""
     return jsonify(get_all_coupons(db_path=_db_path()))
 
 
 @app.route("/api/coupons", methods=["POST"])
-@require_admin
+@require_api_key_or_super_admin
 def api_create_coupon():
     data = request.get_json(force=True) or {}
     cleaned, err = _validate_coupon_payload(data, partial=False)
@@ -3567,7 +3584,7 @@ def api_create_coupon():
 
 
 @app.route("/api/coupons/<int:coupon_id>", methods=["PATCH"])
-@require_admin
+@require_api_key_or_super_admin
 def api_update_coupon(coupon_id):
     data = request.get_json(force=True) or {}
     cleaned, err = _validate_coupon_payload(data, partial=True)
@@ -3582,7 +3599,7 @@ def api_update_coupon(coupon_id):
 
 
 @app.route("/api/coupons/<int:coupon_id>", methods=["DELETE"])
-@require_admin
+@require_api_key_or_super_admin
 def api_delete_coupon(coupon_id):
     deleted = delete_coupon(coupon_id, db_path=_db_path())
     if deleted == 0:
@@ -3742,8 +3759,9 @@ def api_chat():
             )
         lines.append("")
 
-        # Domestic plans
-        domestic = _filter_hidden_carrier(get_plans(db_path=_db_path()))
+        # Domestic plans — reuse the shared 5-min plan cache (same key the list
+        # endpoints use) instead of a full uncached DB read on every chat message.
+        domestic = _filter_hidden_carrier(_cached_plans('plans', lambda: get_plans(db_path=_db_path())))
         if domestic:
             lines.append("## חבילות ביתיות (ישראל)")
             for p in domestic:
@@ -3754,7 +3772,7 @@ def api_chat():
                 )
 
         # Abroad plans
-        abroad = _filter_hidden_carrier(get_abroad_plans(db_path=_db_path()))
+        abroad = _filter_hidden_carrier(_cached_plans('abroad_plans', lambda: get_abroad_plans(db_path=_db_path())))
         if abroad:
             lines.append("")
             lines.append("## חבילות חו\"ל")
@@ -3767,7 +3785,7 @@ def api_chat():
 
         # Global plans — 1 cheapest plan per carrier+destination, up to 40 dest per carrier
         from collections import defaultdict as _dd
-        _all_global = _filter_hidden_carrier(get_global_plans(db_path=_db_path()))
+        _all_global = _filter_hidden_carrier(_cached_plans('global_plans', lambda: get_global_plans(db_path=_db_path())))
         _by_carrier_dest = _dd(lambda: _dd(list))
         for _p in _all_global:
             _dest = (_p.get('extras') or [''])[0] or 'global'
@@ -5147,6 +5165,23 @@ def api_history_price_series():
         carrier, plan_type, plan_name, from_date, db_path=_db_path()
     )
     return jsonify({'series': series})
+
+
+@app.route('/api/history/price-series/batch')
+@limiter.limit('60 per minute')
+def api_history_price_series_batch():
+    """All plans' sparkline series for one tab in a single request — replaces the
+    per-card N+1 that hit /price-series once per PlanCard. Keyed carrier|plan_name."""
+    plan_type = request.args.get('plan_type', 'domestic')
+    from_date = request.args.get('from', '')
+    if plan_type not in ('domestic', 'abroad', 'global', 'content'):
+        return jsonify({'error': 'plan_type must be domestic/abroad/global/content'}), 400
+    data = get_all_price_series(plan_type, from_date or None, db_path=_db_path())
+    hidden = _hidden_carrier_for_request()
+    if hidden:
+        data = {k: v for k, v in data.items() if not k.startswith(hidden + '|')}
+    resp = jsonify({'series': data})
+    return _public_cache(resp, 300)
 
 
 @app.route('/api/history/analyze')

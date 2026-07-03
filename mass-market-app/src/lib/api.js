@@ -65,6 +65,12 @@ export const api = {
     if (fromDate)  p.append('from', fromDate)
     return fetchApi(`/api/history/price-series?${p}`)
   },
+  // All plans' sparkline series for one tab in a single request (carrier|plan_name → points).
+  getPriceSeriesBatch: (planType, fromDate = '') => {
+    const p = new URLSearchParams({ plan_type: planType })
+    if (fromDate) p.append('from', fromDate)
+    return fetchApi(`/api/history/price-series/batch?${p}`)
+  },
   analyzeHistory: (carrier, planType, fromDate = '', toDate = '') => {
     const p = new URLSearchParams({ carrier, plan_type: planType })
     if (fromDate) p.append('from', fromDate)

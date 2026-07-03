@@ -412,6 +412,7 @@ export default function DashboardPage() {
   const [visibleCount, setVisibleCount] = useState(50)
   const loadIdRef = useRef(0)  // incremented on every loadTab call; stale loads bail early
   const [trendMap, setTrendMap] = useState(new Map())   // carrier|plan_name → {pct_change}
+  const [sparkMap, setSparkMap] = useState(null)        // carrier|plan_name → points[] (batch sparkline data; null until loaded)
   const [compareMap, setCompareMap] = useState(new Map()) // key → {plan, planType}
   const [showCompareDrawer, setShowCompareDrawer] = useState(false)
   const [banners, setBanners] = useState([])
@@ -568,6 +569,25 @@ export default function DashboardPage() {
     return () => clearTimeout(timer)
   }, [])
 
+  // Batch-load all sparkline series for the current tab in ONE request (replaces
+  // the previous fetch-per-card N+1 in SparklineMini). Only the tabs that show a
+  // sparkline (domestic/abroad/global) need it; others get an empty map so cards
+  // render no line and issue no request.
+  useEffect(() => {
+    if (!['domestic', 'abroad', 'global'].includes(tab)) { setSparkMap(new Map()); return }
+    let cancelled = false
+    setSparkMap(null)
+    api.getPriceSeriesBatch(tab)
+      .then(res => {
+        if (cancelled) return
+        const map = new Map()
+        for (const [k, pts] of Object.entries(res?.series || {})) map.set(k, pts)
+        setSparkMap(map)
+      })
+      .catch(() => { if (!cancelled) setSparkMap(new Map()) })
+    return () => { cancelled = true }
+  }, [tab])
+
   const toggleCompare = useCallback((plan, planType) => {
     const key = `${plan.carrier}|${plan.plan_name}|${planType}`
     setCompareMap(prev => {
@@ -679,8 +699,10 @@ export default function DashboardPage() {
     return lookup
   }, [changes, tab])
 
-  // Filter + sort plans
-  const filteredPlans = useMemo(() => {
+  // Filter + sort plans — everything EXCEPT the personal "watched only" filter,
+  // which is applied downstream so toggling a star doesn't re-run this whole
+  // (regex-heavy) filter+sort pass over the full dataset.
+  const baseFilteredPlans = useMemo(() => {
     let result = plans[tab] || []
     const f = filters
 
@@ -775,14 +797,6 @@ export default function DashboardPage() {
       else if (f.days === '30+') result = result.filter(p => p.days && p.days > 30)
     }
 
-    if (onlyWatched) {
-      result = result.filter(p => isWatched({
-        carrier: p.carrier,
-        plan_name: p.plan_name || p.service || '',
-        plan_type: tab,
-      }))
-    }
-
     const ppgb = (p) => {
       const pr = Number(p.price)
       const gb = Number(p.data_gb)
@@ -797,7 +811,19 @@ export default function DashboardPage() {
     else if (f.sort === 'ppgb_desc') result = [...result].sort((a, b) => (ppgb(b) ?? 0) - (ppgb(a) ?? 0))
 
     return result
-  }, [plans, tab, filters, onlyWatched, watchItems, isWatched])
+  }, [plans, tab, filters])
+
+  // Apply the personal "watched only" filter downstream. When off, returns the
+  // base array unchanged (stable identity → displayItems doesn't recompute); a
+  // watchlist toggle then only re-runs this light filter, not the pipeline above.
+  const filteredPlans = useMemo(() => {
+    if (!onlyWatched) return baseFilteredPlans
+    return baseFilteredPlans.filter(p => isWatched({
+      carrier: p.carrier,
+      plan_name: p.plan_name || p.service || '',
+      plan_type: tab,
+    }))
+  }, [baseFilteredPlans, onlyWatched, watchItems, isWatched, tab])
 
   // Group plans into display items (GroupedPlanCard or PlanCard) for global tab
   const displayItems = useMemo(() => {
@@ -1643,6 +1669,7 @@ export default function DashboardPage() {
                   type={tab}
                   changeType={changeLookup[key]}
                   trendInfo={trendMap.get(key) || null}
+                  sparkPoints={sparkMap ? (sparkMap.get(key) || null) : null}
                   isInCompare={compareMap.has(compareKey)}
                   onCompareToggle={toggleCompare}
                   highlighted={highlightMatcher && (() => {

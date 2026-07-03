@@ -110,7 +110,6 @@ export default function MarketMoversWidget({ onMoverClick, visibleCarriers, tab 
               <MoverCard
                 mover={m}
                 onClick={onMoverClick}
-                visibleCarriers={visibleCarriers}
                 isAllowedCarrier={!visibleCarriers || visibleCarriers.length === 0 || visibleCarriers.includes(m.carrier)}
               />
             </div>

@@ -91,8 +91,12 @@ export function WatchlistProvider({ children }) {
     writeSeen(user, now)
   }, [user])
 
-  const keys = new Set(items.map(keyOf))
-  const isWatched = (plan) => keys.has(keyOf(plan))
+  // Memoized so `isWatched`'s identity is stable across unrelated provider
+  // re-renders (changes/lastSeen updates). DashboardPage's filteredPlans useMemo
+  // depends on isWatched — without this it re-ran the full filter+sort+regex
+  // pipeline on every provider render.
+  const keys = useMemo(() => new Set(items.map(keyOf)), [items])
+  const isWatched = useCallback((plan) => keys.has(keyOf(plan)), [keys])
 
   const toggle = async (plan) => {
     const payload = { carrier: plan.carrier, plan_name: plan.plan_name, plan_type: plan.plan_type }

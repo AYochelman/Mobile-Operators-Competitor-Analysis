@@ -197,6 +197,10 @@ def _connect(db_path=None):
     # when bulk inserts hold the writer lock for many seconds. Persists in the DB file.
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA synchronous=NORMAL")
+    # WAL still allows only ONE writer at a time. Without a busy_timeout, a second
+    # writer (e.g. an API POST while the 07:30 scrape is bulk-inserting) fails
+    # immediately with "database is locked" instead of waiting. 5s lets it retry.
+    conn.execute("PRAGMA busy_timeout=5000")
     return conn
 
 
@@ -596,6 +600,13 @@ def init_db(db_path=None):
             CREATE INDEX IF NOT EXISTS idx_plans_carrier ON plans(carrier);
             CREATE INDEX IF NOT EXISTS idx_global_plans_carrier ON global_plans(carrier);
             CREATE INDEX IF NOT EXISTS idx_abroad_plans_carrier ON abroad_plans(carrier);
+            -- The public B2C eSIM feed + hotel guest portals filter/group global_plans
+            -- by destination = json_extract(extras,'$[0]'). Without this expression
+            -- index every /api/esim/compare, /api/esim/destinations and /api/guest/<slug>
+            -- cache-miss full-scans + JSON-parses the whole table. SQLite uses an
+            -- expression index for both the `=` filter and the GROUP BY.
+            CREATE INDEX IF NOT EXISTS idx_global_plans_dest
+                ON global_plans(json_extract(extras, '$[0]'));
             -- changes tables are queried ORDER BY changed_at DESC LIMIT N — needs an index.
             CREATE INDEX IF NOT EXISTS idx_changes_changed_at ON changes(changed_at DESC);
             CREATE INDEX IF NOT EXISTS idx_abroad_changes_changed_at ON abroad_changes(changed_at DESC);
@@ -1689,8 +1700,16 @@ def save_plans(plans, db_path=None):
     try:
         _delete_stale_carrier_rows(conn, "plans", plans)
         now = datetime.now().isoformat()
-        for plan in plans:
-            conn.execute("""
+        # One executemany instead of N execute() round-trips — same single
+        # transaction/commit, but a much shorter writer-lock window.
+        rows = [(
+            plan["carrier"], plan["plan_name"], plan.get("price"),
+            plan.get("data_gb"), plan.get("minutes"),
+            json.dumps(plan.get("extras", []), ensure_ascii=False),
+            now, plan.get("url"),
+            plan.get("promo_price"), plan.get("promo_months")
+        ) for plan in plans]
+        conn.executemany("""
                 INSERT INTO plans (carrier, plan_name, price, data_gb, minutes, extras, scraped_at, url, promo_price, promo_months)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(carrier, plan_name) DO UPDATE SET
@@ -1702,13 +1721,7 @@ def save_plans(plans, db_path=None):
                     url          = excluded.url,
                     promo_price  = excluded.promo_price,
                     promo_months = excluded.promo_months
-            """, (
-                plan["carrier"], plan["plan_name"], plan.get("price"),
-                plan.get("data_gb"), plan.get("minutes"),
-                json.dumps(plan.get("extras", []), ensure_ascii=False),
-                now, plan.get("url"),
-                plan.get("promo_price"), plan.get("promo_months")
-            ))
+            """, rows)
         conn.commit()
     finally:
         conn.close()
@@ -1746,8 +1759,17 @@ def save_global_plans(plans, db_path=None):
     conn = _connect(db_path)
     try:
         now = datetime.now().isoformat()
-        for plan in plans:
-            conn.execute("""
+        # Batched: this is the heaviest writer (Terminal eSIM alone ≈2,500 rows),
+        # so collapsing per-row execute() into two executemany() calls cuts the
+        # writer-lock window that other writers (API POSTs, other scrapers) contend on.
+        rows = [(
+            plan["carrier"], plan["plan_name"], plan.get("price"),
+            plan.get("currency"), plan.get("original_price"),
+            plan.get("days"), plan.get("data_gb"), plan.get("minutes"),
+            plan.get("sms"), 1 if plan.get("esim", True) else 0,
+            json.dumps(_norm_extras(plan.get("extras", [])), ensure_ascii=False), now
+        ) for plan in plans]
+        conn.executemany("""
                 INSERT INTO global_plans
                   (carrier, plan_name, price, currency, original_price, days, data_gb, minutes, sms, esim, extras, scraped_at)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
@@ -1762,22 +1784,19 @@ def save_global_plans(plans, db_path=None):
                     esim           = excluded.esim,
                     extras         = excluded.extras,
                     scraped_at     = excluded.scraped_at
-            """, (
-                plan["carrier"], plan["plan_name"], plan.get("price"),
-                plan.get("currency"), plan.get("original_price"),
-                plan.get("days"), plan.get("data_gb"), plan.get("minutes"),
-                plan.get("sms"), 1 if plan.get("esim", True) else 0,
-                json.dumps(_norm_extras(plan.get("extras", [])), ensure_ascii=False), now
-            ))
-            ref = plan.get("plan_ref")
-            if ref:
-                conn.execute("""
+            """, rows)
+        ref_rows = [
+            (plan["carrier"], plan["plan_name"], plan["plan_ref"], now)
+            for plan in plans if plan.get("plan_ref")
+        ]
+        if ref_rows:
+            conn.executemany("""
                     INSERT INTO plan_refs (carrier, plan_name, plan_ref, updated_at)
                     VALUES (?,?,?,?)
                     ON CONFLICT(carrier, plan_name) DO UPDATE SET
                         plan_ref   = excluded.plan_ref,
                         updated_at = excluded.updated_at
-                """, (plan["carrier"], plan["plan_name"], ref, now))
+                """, ref_rows)
         conn.commit()
     finally:
         conn.close()
@@ -1861,8 +1880,15 @@ def save_abroad_plans(plans, db_path=None):
     try:
         _delete_stale_carrier_rows(conn, "abroad_plans", plans)
         now = datetime.now().isoformat()
-        for plan in plans:
-            conn.execute("""
+        rows = [(
+            plan["carrier"], plan["plan_name"], plan.get("price"),
+            plan.get("days"), plan.get("data_gb"), plan.get("minutes"),
+            plan.get("sms"),
+            json.dumps(plan.get("extras", []), ensure_ascii=False),
+            now,
+            plan.get("terms_url")
+        ) for plan in plans]
+        conn.executemany("""
                 INSERT INTO abroad_plans (carrier, plan_name, price, days, data_gb, minutes, sms, extras, scraped_at, terms_url)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(carrier, plan_name) DO UPDATE SET
@@ -1874,14 +1900,7 @@ def save_abroad_plans(plans, db_path=None):
                     extras     = excluded.extras,
                     scraped_at = excluded.scraped_at,
                     terms_url  = excluded.terms_url
-            """, (
-                plan["carrier"], plan["plan_name"], plan.get("price"),
-                plan.get("days"), plan.get("data_gb"), plan.get("minutes"),
-                plan.get("sms"),
-                json.dumps(plan.get("extras", []), ensure_ascii=False),
-                now,
-                plan.get("terms_url")
-            ))
+            """, rows)
         conn.commit()
     finally:
         conn.close()
@@ -2536,39 +2555,40 @@ def get_market_movers(days=7, limit=5, plan_types=None, db_path=None):
         types_iter = tuple(t for t in plan_types if t in valid_types) or valid_types
     else:
         types_iter = valid_types
-    for plan_type in types_iter:
-        table, name_col = _HISTORY_TABLE_MAP[plan_type]
-        conn = _connect(db_path)
-        try:
+    # One connection reused across all three change tables (was opened/closed per type).
+    conn = _connect(db_path)
+    try:
+        for plan_type in types_iter:
+            table, name_col = _HISTORY_TABLE_MAP[plan_type]
             rows = conn.execute(
                 f"SELECT carrier, {name_col}, old_val, new_val, changed_at "
                 f"FROM {table} WHERE change_type = 'price_change' AND changed_at >= ? "
                 f"ORDER BY changed_at DESC",
                 (since,)
             ).fetchall()
-        finally:
-            conn.close()
-        for carrier, pname, old_v, new_v, ts in rows:
-            try:
-                old_p = float(old_v)
-                new_p = float(new_v)
-            except (ValueError, TypeError):
-                continue
-            if old_p <= 0:
-                continue  # can't compute % against 0
-            pct = (new_p - old_p) / old_p * 100.0
-            if abs(pct) < 5.0:
-                continue  # filter out small/noise price changes
-            results.append({
-                'carrier':    carrier,
-                'plan_name':  pname,
-                'plan_type':  plan_type,
-                'old_price':  old_p,
-                'new_price':  new_p,
-                'pct_change': round(pct, 1),
-                'abs_pct':    abs(pct),
-                'changed_at': ts,
-            })
+            for carrier, pname, old_v, new_v, ts in rows:
+                try:
+                    old_p = float(old_v)
+                    new_p = float(new_v)
+                except (ValueError, TypeError):
+                    continue
+                if old_p <= 0:
+                    continue  # can't compute % against 0
+                pct = (new_p - old_p) / old_p * 100.0
+                if abs(pct) < 5.0:
+                    continue  # filter out small/noise price changes
+                results.append({
+                    'carrier':    carrier,
+                    'plan_name':  pname,
+                    'plan_type':  plan_type,
+                    'old_price':  old_p,
+                    'new_price':  new_p,
+                    'pct_change': round(pct, 1),
+                    'abs_pct':    abs(pct),
+                    'changed_at': ts,
+                })
+    finally:
+        conn.close()
     # Dedup by (carrier, plan_name) — keep the most recent event per plan
     seen = set()
     deduped = []
@@ -2648,6 +2668,56 @@ def get_history_price_series(carrier, plan_type='domestic', plan_name='', from_d
         except (ValueError, TypeError):
             continue
     return series
+
+
+def get_all_price_series(plan_type='domestic', from_date=None, db_path=None):
+    """Batch variant of get_history_price_series: the price-change point series
+    for EVERY plan of a type in ONE query, keyed by 'carrier|plan_name'. Powers
+    the dashboard sparklines with a single request instead of one fetch per card.
+
+    Returns { 'carrier|plan_name': [{date, price}, ...] } — only plans with >=2
+    points (i.e. that actually had a recorded price change) are included.
+    """
+    if plan_type not in _HISTORY_TABLE_MAP:
+        return {}
+    table, name_col = _HISTORY_TABLE_MAP[plan_type]
+    db_path = db_path or DB_PATH
+    conn = _connect(db_path)
+    try:
+        sql = (f"SELECT carrier, {name_col} AS plan_name, old_val, new_val, changed_at "
+               f"FROM {table} WHERE change_type = 'price_change'")
+        params = []
+        if from_date:
+            sql += ' AND changed_at >= ?'
+            params.append(from_date)
+        sql += ' ORDER BY changed_at ASC, id ASC'
+        rows = conn.execute(sql, params).fetchall()
+    finally:
+        conn.close()
+
+    events_by_key = {}
+    for carrier, pname, old_val, new_val, ts in rows:
+        events_by_key.setdefault(f"{carrier}|{pname}", []).append(
+            {'old': old_val, 'new': new_val, 'date': ts[:10]})
+
+    out = {}
+    for key, events in events_by_key.items():
+        try:
+            pts = []
+            prev_new = None
+            for e in events:
+                old = float(e['old'])
+                new = float(e['new'])
+                # Same discontinuity handling as get_history_price_series.
+                if prev_new is None or old != prev_new:
+                    pts.append({'date': e['date'], 'price': old})
+                pts.append({'date': e['date'], 'price': new})
+                prev_new = new
+            if len(pts) >= 2:
+                out[key] = pts
+        except (ValueError, TypeError):
+            continue
+    return out
 
 
 def create_workspace_invite(workspace_id, role='viewer', created_by=None, db_path=None):
@@ -2740,6 +2810,23 @@ def get_audit_log(limit=200, workspace_id=None, db_path=None):
              "workspace_id": r[4], "details": r[5], "created_at": r[6]}
             for r in rows
         ]
+    finally:
+        conn.close()
+
+
+def count_refreshes(workspace_id, month_prefix, db_path=None):
+    """COUNT of 'refresh_triggered' audit rows for a workspace in a given month
+    (created_at LIKE 'YYYY-MM%'). Backs the monthly manual-refresh quota — this
+    replaces pulling a capped 500-row audit slice into Python to count a handful,
+    which also could undercount once a workspace exceeded 500 audit rows in a month."""
+    conn = _connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) FROM audit_log WHERE action = 'refresh_triggered' "
+            "AND workspace_id = ? AND created_at LIKE ?",
+            (str(workspace_id), month_prefix + '%')
+        ).fetchone()
+        return row[0] if row else 0
     finally:
         conn.close()
 
@@ -3360,7 +3447,22 @@ def filter_undominated_reseller_plans(reseller_plans, db_path=None):
     if not reseller_plans:
         return []
     carriers_needed = {p["carrier"] for p in reseller_plans}
-    carrier_plans_by_id = {c: get_plans(carrier=c, db_path=db_path) for c in carriers_needed}
+    # One query for all needed carriers instead of a get_plans() per carrier
+    # (each of which opened its own connection and json.loads'd every extras blob).
+    # Dominance only needs price + data_gb, so fetch just those two columns.
+    carrier_plans_by_id = {}
+    if carriers_needed:
+        conn = _connect(db_path)
+        try:
+            placeholders = ",".join("?" * len(carriers_needed))
+            rows = conn.execute(
+                f"SELECT carrier, price, data_gb FROM plans WHERE carrier IN ({placeholders})",
+                tuple(carriers_needed)
+            ).fetchall()
+        finally:
+            conn.close()
+        for c, price, gb in rows:
+            carrier_plans_by_id.setdefault(c, []).append({"price": price, "data_gb": gb})
 
     def _gb(v):
         return float("inf") if v is None else v

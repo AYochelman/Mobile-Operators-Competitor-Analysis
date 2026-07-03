@@ -250,7 +250,7 @@ function formatDays(days, tt = (he) => he) {
   return `${days} ${tt('ימים', 'days')}`
 }
 
-function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo, isInCompare, onCompareToggle }) {
+function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo, isInCompare, onCompareToggle, sparkPoints }) {
   const [showCountries, setShowCountries] = useState(false)
   const [showApps, setShowApps] = useState(false)
   const [showAllExtras, setShowAllExtras] = useState(false)
@@ -495,7 +495,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
         )}
         {/* usa is seeded (no price history) — skip the per-card history fetch */}
         {!isContent && !isUsa && plan.plan_name && (
-          <SparklineMini carrier={carrier} planName={plan.plan_name} planType={type} />
+          <SparklineMini carrier={carrier} planName={plan.plan_name} planType={type} points={sparkPoints} />
         )}
       </div>
 

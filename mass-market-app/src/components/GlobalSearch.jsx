@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useDeferredValue } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
@@ -60,6 +60,9 @@ export default function GlobalSearch() {
   const { tt } = useLang()
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
+  // Input stays bound to `q` (responsive typing); the expensive full-catalog
+  // filtering below reads the deferred value so fast typing doesn't jank.
+  const deferredQ = useDeferredValue(q)
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [data, setData] = useState({ plans: [], news: [], workspaces: [] })
   const [loaded, setLoaded] = useState(false)
@@ -119,7 +122,7 @@ export default function GlobalSearch() {
   }), [isAdmin, isSuperAdmin, flags])
 
   const results = useMemo(() => {
-    const raw = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
+    const raw = deferredQ.trim().toLowerCase().split(/\s+/).filter(Boolean)
     if (raw.length === 0) return { pages: [], plans: [], news: [], workspaces: [] }
 
     // Extract numeric range tokens: <50 >30 50gb 50gb+
@@ -165,7 +168,7 @@ export default function GlobalSearch() {
       .slice(0, 5)
 
     return { pages: pageResults, plans: planResults, news: newsResults, workspaces: wsResults }
-  }, [q, data, visiblePages])
+  }, [deferredQ, data, visiblePages])
 
   const flatResults = useMemo(() => [
     ...results.pages.map(pg => ({ kind: 'page', item: pg })),
