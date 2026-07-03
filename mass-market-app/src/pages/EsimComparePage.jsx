@@ -403,6 +403,41 @@ export default function EsimComparePage() {
     return () => { html.dir = prevDir; html.lang = prevLang; document.title = prevTitle }
   }, [lang, dest, t.dir])
 
+  // SEO: this page ships the generic index.html <head>, whose canonical points at
+  // the site root - which makes Google treat /esim-deals (and the esim.mocaintel.com
+  // mirror) as a duplicate of the homepage and drop it. Rewrite the canonical to a
+  // self-referencing apex URL + set a page-specific description. Googlebot renders
+  // JS, so this is read. The canonical stays the base /esim-deals (no ?dest) so all
+  // destination variants consolidate onto one indexable URL. The prerendered
+  // esim.html shell already carries the same tags for the raw (pre-JS) HTML; this
+  // covers the SPA index.html shell (subdomain root, super-admin preview, etc.).
+  useEffect(() => {
+    const CANON = 'https://mocaintel.com/esim-deals'
+    const DESC = lang === 'he'
+      ? 'השוואת מחירי eSIM חינמית לטיול בחו"ל, בלי הרשמה. מוצאים את החבילה המשתלמת ביותר מתוך למעלה מ-30 ספקי eSIM גלובליים, מתעדכן פעמיים ביום.'
+      : 'Free eSIM price comparison for your trip abroad, no sign-up. Find the best-value plan across 30+ global eSIM providers, refreshed twice a day.'
+    const head = document.head
+
+    let canon = head.querySelector('link[rel="canonical"]')
+    const madeCanon = !canon
+    const prevHref = canon ? canon.getAttribute('href') : null
+    if (!canon) { canon = document.createElement('link'); canon.rel = 'canonical'; head.appendChild(canon) }
+    canon.setAttribute('href', CANON)
+
+    let desc = head.querySelector('meta[name="description"]')
+    const madeDesc = !desc
+    const prevDesc = desc ? desc.getAttribute('content') : null
+    if (!desc) { desc = document.createElement('meta'); desc.setAttribute('name', 'description'); head.appendChild(desc) }
+    desc.setAttribute('content', DESC)
+
+    return () => {
+      if (madeCanon) canon.remove()
+      else if (prevHref != null) canon.setAttribute('href', prevHref)
+      if (madeDesc) desc.remove()
+      else if (prevDesc != null) desc.setAttribute('content', prevDesc)
+    }
+  }, [lang])
+
   const switchLang = () => {
     const nl = t.otherLang
     setLang(nl)
