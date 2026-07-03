@@ -174,19 +174,21 @@ COUPONS = [
         "notes": "Per-user single-use code, requires phone+email verification on Gooday. Max 4 codes/month per phone.",
     },
 
-    # ── ByteSim (in-house affiliate / personal-store program) ─────────────
-    # OUR OWN affiliate code, set up in the ByteSim affiliate dashboard
-    # (bytesim.com/affiliate-program, referral_code 8F68HJS3KPDU). Program
-    # headline is "Share & earn up to 10% per sale" — UNCLEAR whether that 10%
-    # is the customer discount or OUR commission (ByteSim's UI exposes no
-    # customer-discount %), so NO discount_label is set: the pill shows just the
-    # code ("קוד: MOCA") with no %-off claim. Tracking link wired at
-    # /go/bytesim + AFFILIATE_URLS.
+    # ── ByteSim (in-house affiliate / personal-store program) — DISABLED ──
+    # DISABLED 2026-07-03: at ByteSim checkout the code "Moca"/"moca" shows as
+    # "Below coupon codes are unavailable" and applies NO discount (only their
+    # automatic 5% Summer Sale). Queried ByteSim (draft to service@bytesim.com)
+    # whether it's a real customer discount or referral-only. is_active=False so
+    # the coupon pill stops rendering; re-enable + add a discount_label % ONLY if
+    # ByteSim confirms a working customer discount. The affiliate LINK stays live
+    # (/go/bytesim + AFFILIATE_URLS, referral_code 8F68HJS3KPDU) — attribution is
+    # via the link, independent of this coupon.
     {
         "carrier": "bytesim",
         "code": "MOCA",
+        "is_active": False,
         "source_url": "https://bytesim.com/",
-        "notes": "MOCA's own ByteSim affiliate code (referral_code 8F68HJS3KPDU). No discount_label on purpose — the '10% per sale' figure may be OUR commission, not a customer discount. ByteSim's stored code case is 'Moca' (checkout is case-insensitive). Add a % only if ByteSim confirms a specific customer discount.",
+        "notes": "DISABLED 2026-07-03 — code shows 'unavailable' at ByteSim checkout (no customer discount applied). Pending ByteSim's reply on whether it discounts the customer or is referral-only. Re-enable + add a % only if they confirm a working customer discount.",
     },
 ]
 
