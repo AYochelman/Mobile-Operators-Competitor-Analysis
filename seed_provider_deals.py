@@ -99,7 +99,7 @@ DEALS = [
         "agreement_status": "live", "commission_pct": 10,
         "commission_note": "עד 10% עמלה למכירה (תוכנית פנימית, הרשמה עצמית - ללא מו\"מ).",
         "coupon_note": "קוד MOCA פעיל שוב 2026-07-03: 5% הנחת לקוח, מאומת ב-checkout (2.42$- על סאב-טוטל 48.35$). מצטבר על 5% מבצע קיץ האוטומטי שלהם. ByteSim אישרו שהמבצע נוסף אך תקלת אישור חסמה אותו, ותוקן. ה-attribution גם דרך הלינק (referral_code).",
-        "has_tracking_link": True, "priority": "med",
+        "has_tracking_link": True, "priority": "low",
         "next_actions": "אין - הקופון פעיל. תווית ה-5% נמשכת חי מ-/api/coupons (אין צורך בפריסת Netlify); מופיעה בעמוד הציבורי תוך ~5 דק' (client cache).",
         "notes": "נרשמנו לתוכנית האפיליאייט הפנימית 2026-07-03 (referral_code 8F68HJS3KPDU). לינק /go/bytesim + AFFILIATE_URLS.bytesim + קוד MOCA חוברו. החליף את הפנייה הקרה שחזרה (support@bytesim.com bounced).",
     },
