@@ -98,9 +98,9 @@ DEALS = [
         "program_network": "עצמאי (תוכנית פנימית, self-serve)",
         "agreement_status": "live", "commission_pct": 10,
         "commission_note": "עד 10% עמלה למכירה (תוכנית פנימית, הרשמה עצמית - ללא מו\"מ).",
-        "coupon_note": "קוד MOCA הושבת 2026-07-03 (is_active=False): ב-checkout של ByteSim הקוד מוצג כ'לא זמין' וללא הנחת לקוח (רק 5% מבצע קיץ אוטומטי שלהם), לכן התווית לא מוצגת. ה-attribution נשאר דרך הלינק (referral_code), לא תלוי בקופון.",
+        "coupon_note": "קוד MOCA פעיל שוב 2026-07-03: 5% הנחת לקוח, מאומת ב-checkout (2.42$- על סאב-טוטל 48.35$). מצטבר על 5% מבצע קיץ האוטומטי שלהם. ByteSim אישרו שהמבצע נוסף אך תקלת אישור חסמה אותו, ותוקן. ה-attribution גם דרך הלינק (referral_code).",
         "has_tracking_link": True, "priority": "med",
-        "next_actions": "ממתין לתשובת ByteSim (טיוטה ל-service@bytesim.com) אם הקוד מקנה הנחת לקוח או referral-only; אם מאושר - להפעיל מחדש + להוסיף discount_label ב-seed_coupons. לפרוס dist מעודכן ל-Netlify.",
+        "next_actions": "אין - הקופון פעיל. תווית ה-5% נמשכת חי מ-/api/coupons (אין צורך בפריסת Netlify); מופיעה בעמוד הציבורי תוך ~5 דק' (client cache).",
         "notes": "נרשמנו לתוכנית האפיליאייט הפנימית 2026-07-03 (referral_code 8F68HJS3KPDU). לינק /go/bytesim + AFFILIATE_URLS.bytesim + קוד MOCA חוברו. החליף את הפנייה הקרה שחזרה (support@bytesim.com bounced).",
     },
 

@@ -174,21 +174,21 @@ COUPONS = [
         "notes": "Per-user single-use code, requires phone+email verification on Gooday. Max 4 codes/month per phone.",
     },
 
-    # ── ByteSim (in-house affiliate / personal-store program) — DISABLED ──
-    # DISABLED 2026-07-03: at ByteSim checkout the code "Moca"/"moca" shows as
-    # "Below coupon codes are unavailable" and applies NO discount (only their
-    # automatic 5% Summer Sale). Queried ByteSim (draft to service@bytesim.com)
-    # whether it's a real customer discount or referral-only. is_active=False so
-    # the coupon pill stops rendering; re-enable + add a discount_label % ONLY if
-    # ByteSim confirms a working customer discount. The affiliate LINK stays live
-    # (/go/bytesim + AFFILIATE_URLS, referral_code 8F68HJS3KPDU) — attribution is
-    # via the link, independent of this coupon.
+    # ── ByteSim (in-house affiliate / personal-store program) ─────────────
+    # OUR OWN affiliate/personal-store code (referral_code 8F68HJS3KPDU). Was
+    # briefly disabled 2026-07-03 because "Moca" showed "unavailable" at checkout
+    # — ByteSim's team confirmed the promotion was added but an approval-process
+    # oversight blocked it (service@bytesim.com, 2026-07-03). RE-ENABLED same day
+    # after ByteSim fixed it and a fresh checkout applied the discount. Percentage
+    # derived from the working checkout: -$2.42 on a $48.35 subtotal (post the
+    # automatic 5% Summer Sale) = 5.0% customer discount, stacks on top of the
+    # Summer Sale. The affiliate LINK stays live too (/go/bytesim + AFFILIATE_URLS).
     {
         "carrier": "bytesim",
         "code": "MOCA",
-        "is_active": False,
+        "discount_label": "5% הנחה",
         "source_url": "https://bytesim.com/",
-        "notes": "DISABLED 2026-07-03 — code shows 'unavailable' at ByteSim checkout (no customer discount applied). Pending ByteSim's reply on whether it discounts the customer or is referral-only. Re-enable + add a % only if they confirm a working customer discount.",
+        "notes": "MOCA's own ByteSim affiliate/personal-store coupon (referral_code 8F68HJS3KPDU). 5% customer discount, verified live at checkout 2026-07-03 (-$2.42 on a $48.35 subtotal). Stacks on ByteSim's automatic 5% Summer Sale. Re-enabled after ByteSim fixed the approval-process oversight that had blocked it.",
     },
 ]
 
