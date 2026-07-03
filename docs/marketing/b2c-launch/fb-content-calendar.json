@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "reminder_channel": "telegram",
+    "post_time": "20:30",
+    "pipeline_low_threshold": 1,
+    "image_dir": "C:\\Users\\Alon\\Desktop",
+    "notes": "Source of truth for the MOCA Facebook posting pipeline. status = published | pending. fb_post_reminder.py reads this daily and pings Telegram when a pending post is due (or overdue), and warns when pending count <= pipeline_low_threshold so Claude generates the next 2 weeks."
+  },
+  "posts": [
+    {
+      "id": "post1", "date": "2026-07-01", "time": "20:30", "status": "published",
+      "title": "פתיחה", "image": "MOCA-post1-launch.png", "campaign": "fb_launch", "dest": null,
+      "link": "https://esim.mocaintel.com/?utm_source=facebook&utm_campaign=fb_launch",
+      "body": "🌍 השקנו משהו חינמי לכל מי שטס לחו״ל.\nMOCA משווה בין 30+ ספקי eSIM גלובליים ומראה לכם את החבילה הכי זולה ליעד שלכם. בלי הרשמה, בלי אפליקציה, ב-10 שניות.\n👇 בדקו לפני הטיול הבא\nesim.mocaintel.com\n#eSIM #טיול #רואמינג #טסים"
+    },
+    {
+      "id": "post2", "date": "2026-07-05", "time": "20:30", "status": "published",
+      "title": "פער מחירים", "image": "MOCA-post2-value.png", "campaign": "fb_pricegap", "dest": null,
+      "link": "https://esim.mocaintel.com/?utm_source=facebook&utm_campaign=fb_pricegap",
+      "body": "אותה חבילת eSIM ליפן:\nספק אחד, ₪140. ספק אחר, ₪35.\nאותה דאטה, אותו יעד, פער של פי 4. 🤯\nהמחיר הראשון שגוגל מראה כמעט אף פעם לא הזול ביותר. בנינו אתר חינמי שמשווה 30+ ספקים ומראה לכם בדיוק את הזול, בלי הרשמה.\nesim.mocaintel.com\n#eSIM #טיפיםלטיול #חופש #רואמינג"
+    },
+    {
+      "id": "post3", "date": "2026-07-02", "time": "20:30", "status": "published",
+      "title": "יעד: יוון", "image": "MOCA-post3-greece.png", "campaign": "fb_greece", "dest": "יוון",
+      "link": "https://esim.mocaintel.com/?dest=יוון&utm_source=facebook&utm_campaign=fb_greece",
+      "body": "טסים ליוון הקיץ? 🇬🇷\n5GB לגלישה שם מתחילים בכ-₪18, במקום עשרות שקלים ביום ברואמינג.\nMOCA משווה כ-30 ספקי eSIM ומראה לכם בדיוק את הזול ביותר ליוון, חינם וב-10 שניות.\nesim.mocaintel.com\n#יוון #eSIM #טיול #קיץ"
+    },
+    {
+      "id": "post4", "date": "2026-07-06", "time": "20:30", "status": "pending",
+      "title": "יעד: ארה״ב", "image": "MOCA-post4-usa.png", "campaign": "fb_usa", "dest": "ארצות הברית",
+      "link": "https://esim.mocaintel.com/?dest=ארצות הברית&utm_source=facebook&utm_campaign=fb_usa",
+      "body": "טסים לארה״ב? 🇺🇸\n5GB לגלישה שם מתחילים בכ-₪18, במקום עשרות שקלים ביום ברואמינג.\nMOCA משווה כ-30 ספקי eSIM ומראה לכם בדיוק את הזול ביותר לארה״ב, חינם וב-10 שניות. מתחברים כבר ברגע הנחיתה.\nesim.mocaintel.com\n#ארהב #eSIM #טיול #ניו_יורק"
+    },
+    {
+      "id": "post5", "date": "2026-07-08", "time": "20:30", "status": "pending",
+      "title": "יעד: תאילנד", "image": "MOCA-post5-thailand.png", "campaign": "fb_thailand", "dest": "תאילנד",
+      "link": "https://esim.mocaintel.com/?dest=תאילנד&utm_source=facebook&utm_campaign=fb_thailand",
+      "body": "טסים לתאילנד? 🇹🇭\n5GB לגלישה שם מתחילים בכ-₪17, במקום עשרות שקלים ביום ברואמינג.\nMOCA משווה כ-30 ספקי eSIM ומראה בדיוק את הזול ביותר לתאילנד, חינם וב-10 שניות. מתחברים כבר בנחיתה.\nesim.mocaintel.com\n#תאילנד #eSIM #טיול"
+    },
+    {
+      "id": "post6", "date": "2026-07-13", "time": "20:30", "status": "pending",
+      "title": "יעד: איטליה", "image": "MOCA-post6-italy.png", "campaign": "fb_italy", "dest": "איטליה",
+      "link": "https://esim.mocaintel.com/?dest=איטליה&utm_source=facebook&utm_campaign=fb_italy",
+      "body": "טסים לאיטליה? 🇮🇹\n5GB לגלישה מתחילים בכ-₪18, במקום עשרות שקלים ביום ברואמינג.\nMOCA משווה כ-30 ספקי eSIM ומראה בדיוק את הזול ביותר לאיטליה, חינם וב-10 שניות. מתחברים כבר בנחיתה.\nesim.mocaintel.com\n#איטליה #eSIM #טיול #רומא"
+    },
+    {
+      "id": "post7", "date": "2026-07-15", "time": "20:30", "status": "pending",
+      "title": "יעד: טורקיה", "image": "MOCA-post7-turkey.png", "campaign": "fb_turkey", "dest": "טורקיה",
+      "link": "https://esim.mocaintel.com/?dest=טורקיה&utm_source=facebook&utm_campaign=fb_turkey",
+      "body": "טסים לטורקיה? 🇹🇷\n5GB לגלישה מתחילים בכ-₪15, במקום עשרות שקלים ביום ברואמינג.\nMOCA משווה כ-30 ספקי eSIM ומראה בדיוק את הזול ביותר לטורקיה.\nesim.mocaintel.com\n#טורקיה #eSIM #טיול #איסטנבול"
+    }
+  ]
+}
