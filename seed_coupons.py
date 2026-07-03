@@ -137,26 +137,34 @@ COUPONS = [
     },
 
     # ── Holafly ───────────────────────────────────────────────────────────
+    # DISABLED 2026-07-03 — all three are THIRD-PARTY codes (adamandlinds,
+    # stephandpete, cybernews affiliates), so a competitor earns the commission,
+    # not us. We have NO active Holafly affiliate agreement (applied via Impact
+    # 06-13, no approval since), so these must not render. Re-enable ONLY with a
+    # MOCA-owned Holafly code once the Impact contract is live.
     {
         "carrier": "holafly",
         "code": "ADAMANDLINDS",
         "discount_label": "10% חודשי / 5% חבילה",
+        "is_active": False,
         "source_url": "https://www.adamandlinds.com/blog/holafly-discount-code-2026/",
-        "notes": "10% off monthly subscription plans, 5% off regional/destination eSIMs.",
+        "notes": "DISABLED 2026-07-03 — third-party (adamandlinds affiliate), credits a competitor, earns us nothing. No active MOCA Holafly deal.",
     },
     {
         "carrier": "holafly",
         "code": "STEPHANDPETE",
         "discount_label": "5% / 10% שנתי",
+        "is_active": False,
         "source_url": "https://stephandpete.co/blog/blog/holafly-march-2026-codes",
-        "notes": "5% on standard eSIMs, 10% on annual plans. Verified March 2026.",
+        "notes": "DISABLED 2026-07-03 — third-party (stephandpete affiliate), credits a competitor, earns us nothing. No active MOCA Holafly deal.",
     },
     {
         "carrier": "holafly",
         "code": "MYESIMNOW5",
         "discount_label": "5% הנחה",
+        "is_active": False,
         "source_url": "https://cybernews.com/esim-coupon-codes/holafly/",
-        "notes": "Backup 5% code from cybernews list.",
+        "notes": "DISABLED 2026-07-03 — third-party (cybernews list), credits a competitor, earns us nothing. No active MOCA Holafly deal.",
     },
 
     # ── Airalo via Gooday (external offer — per-user code) ────────────────
@@ -168,10 +176,11 @@ COUPONS = [
         "carrier": "airalo",
         "code": "GOODAY",  # synthetic — satisfies UNIQUE(carrier, code); not shown when external_offer_url is set
         "discount_label": "20% הנחה (קוד אישי)",
+        "is_active": False,
         "partner_name": "גודיי",
         "external_offer_url": "https://www.gooday.co.il/%D7%94%D7%98%D7%91%D7%95%D7%AA/Airalo",
         "source_url": "https://www.gooday.co.il/%D7%94%D7%98%D7%91%D7%95%D7%AA/Airalo",
-        "notes": "Per-user single-use code, requires phone+email verification on Gooday. Max 4 codes/month per phone.",
+        "notes": "DISABLED 2026-07-03 — Gooday's external link-out offer, not a MOCA-owned code, earns us nothing. Per-user single-use code via Gooday (phone+email verification, max 4/month).",
     },
 
     # ── ByteSim (in-house affiliate / personal-store program) ─────────────
