@@ -1407,6 +1407,51 @@ def _assemble_guest_deals(db_path=None, destination=None, include_local=True):
     return deals, providers, updated_at
 
 
+def _saily_sub_fragment(sub_id):
+    """URL-encoded `aff_sub=<Sub-ID>` fragment for a Saily placement (e.g. a hotel
+    property code), or '' when there's no Sub-ID. Per the Saily Affiliate Team
+    (2026-07-03), aff_sub is added to the go.saily.site tracking URL (before the
+    url= parameter); Tune records it with the click/conversion, giving per-hotel
+    attribution on Saily's side."""
+    if not sub_id:
+        return ""
+    from urllib.parse import quote
+    return "aff_sub=" + quote(str(sub_id)[:60], safe="")
+
+
+def _saily_attach_sub(url, sub_id):
+    """Attach an aff_sub Sub-ID to a bare go.saily.site tracking link (the generic
+    Saily fallback, which carries no url= deep-link). No-op for non-Saily URLs, an
+    empty Sub-ID, or a link that already has one."""
+    sub = _saily_sub_fragment(sub_id)
+    if not sub or "go.saily.site" not in url or "aff_sub=" in url:
+        return url
+    return url + ("&" if "?" in url else "?") + sub
+
+
+def _saily_checkout_url(plan_name, db_path=None, sub_id=None):
+    """Per-plan Saily checkout deep-link: route the click through the affiliate
+    tracker (go.saily.site) to saily.com/checkout for the exact plan, keeping
+    attribution. aff_id / aff_offer_id / aff_transaction_id stay as literal Saily
+    macros (the redirector fills them in). When sub_id is set (a hotel code) an
+    aff_sub Sub-ID is added to the go.saily.site URL for per-placement tracking.
+    Returns None when we have no checkout token for the plan, so /go falls back to
+    the generic tracking link."""
+    ref = get_plan_ref("saily", plan_name, db_path=db_path)
+    if not ref:
+        return None
+    from urllib.parse import quote
+    checkout = ("https://saily.com/checkout/?planId=" + ref +
+                "&aff_transaction_id={transaction_id}&aff_offer_id={offer_id}&aff_id={aff_id}")
+    base = (load_config().get("affiliate", {}).get("saily", {}).get("base_url")
+            or "https://go.saily.site/aff_c?offer_id=101&aff_id=14705")
+    sub = _saily_sub_fragment(sub_id)
+    if sub:
+        base += ("&" if "?" in base else "?") + sub
+    sep = "&" if "?" in base else "?"
+    return base + sep + "url=" + quote(checkout, safe="")
+
+
 @app.route("/go/<provider>")
 @app.route("/go/<provider>/<plan_id>")
 @limiter.limit("120 per minute")
@@ -1440,6 +1485,17 @@ def affiliate_redirect(provider, plan_id=None):
                         ip_hash=ip_hash, user_agent=request.headers.get("User-Agent"),
                         db_path=_db_path())
 
+    # Saily: deep-link straight to the plan's checkout (with attribution) when we
+    # have its token; otherwise fall through to the generic per-provider destination.
+    # A hotel guest-portal click carries its property code as a Sub-ID (aff_sub) so
+    # Saily/Tune attributes the conversion to that hotel (per Saily 2026-07-03).
+    if provider == "saily":
+        if plan:
+            deep = _saily_checkout_url(plan, db_path=_db_path(), sub_id=hotel)
+            if deep:
+                return redirect(deep, 302)
+        return redirect(_saily_attach_sub(
+            _guest_provider_dest(provider, destination=dest), hotel), 302)
     return redirect(_guest_provider_dest(provider, destination=dest), 302)
 
 
