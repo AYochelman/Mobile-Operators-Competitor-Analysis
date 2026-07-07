@@ -207,11 +207,12 @@ DEALS = [
     {
         "provider_id": "esimplus", "display_name": "eSIM Plus", "category": "global",
         "outreach_status": "contacted", "outreach_last_at": "2026-06-30",
-        "contact": "support.esim@appvillis.com", "program_network": "אין (הוצע להקים)",
+        "contact": "טלגרם (הפנייה מולם מתבצעת דרך הטלגרם) — support.esim@appvillis.com כגיבוי",
+        "program_network": "אין (הוצע להקים)",
         "agreement_status": "none", "commission_pct": None,
         "coupon_note": "פנייה קרה; אין תוכנית פומבית, הצענו להקים.",
-        "priority": "low", "next_actions": "מעקב.",
-        "notes": "Appvillis (ליטא). כבר ספק נסרק.",
+        "priority": "low", "next_actions": "הפנייה ל-eSIM Plus צריכה להתבצע דרך הטלגרם (לא במייל).",
+        "notes": "Appvillis (ליטא). כבר ספק נסרק. הפנייה מולם מתבצעת דרך הטלגרם.",
     },
     {
         "provider_id": "esim70", "display_name": "eSIM70", "category": "global",
