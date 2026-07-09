@@ -392,6 +392,7 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 | cloudflared.exe + cloudflared_watchdog.ps1 | **Cloudflare Tunnel** binary + watchdog: loops `cloudflared tunnel run moca` (config `~/.cloudflared/config.yml`: api.mocaintel.com → localhost:5000). The public ingress — replaced ngrok 2026-06-04. |
 | ngrok_watchdog.ps1 | (Task DISABLED 2026-06-04) loops `ngrok http 5000 --domain=…` — kept as a re-enable-able fallback. |
 | db_compress_and_prune.py | One-time DB maintenance: snapshot → zlib-compress archive_snapshots → delete global_changes flap noise → VACUUM (shrank DB 421→43MB). |
+| gen_dest_backgrounds.py + dest_bg_map.json | Destination background images for the /esim-deals trip wizard: one Gemini-generated landmark photo per live destination (config.json `gemini_api_key`, model gemini-2.5-flash-image) → `mass-market-app/public/dest-bg/<slug>.jpg`, then auto-rewrites the React manifest `src/data/destBg.js` (he string → path) from what exists on disk. Curation (region images shared by variants, combo-plan aliases, sub-national places, cruise ship) lives in dest_bg_map.json. Idempotent — delete a jpg to regenerate; rerun when new destinations appear. Needs Flask on :5000 + node. |
 
 ## Archive System
 
@@ -423,7 +424,7 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 
 ## Deployment
 
-- **Frontend**: Netlify, served at **https://mocaintel.com** (canonical; `www.mocaintel.com` 301-redirects to it; custom domain via Cloudflare DNS — the `lucent-kulfi-f037ad.netlify.app` subdomain still resolves) — drag `mass-market-app/dist` manually
+- **Frontend**: Netlify, served at **https://mocaintel.com** (canonical; `www.mocaintel.com` 301-redirects to it; custom domain via Cloudflare DNS — the `lucent-kulfi-f037ad.netlify.app` subdomain still resolves). **Deploy via Netlify CLI** (since 2026-07-09: CLI installed, logged in as Alon, `mass-market-app/` linked to site `39164e5d-2df9-4254-82e1-a1e9d825a240`): `cd mass-market-app && netlify deploy --prod --dir=dist`, then verify the live bundle hash matches dist (deploy-live skill). Manual drag of `mass-market-app/dist` remains the fallback.
 - **Backend**: Local Flask, exposed via **Cloudflare Tunnel** → https://api.mocaintel.com (cloudflared tunnel "moca", run by the **MOCA-Cloudflared** task / `scripts/cloudflared_watchdog.ps1`). ngrok retired 2026-06-04 (MOCA-Ngrok task disabled + kept as fallback; reserved domain still on the account)
 - **Auth**: Supabase (https://gmfefvjdmgzluwffzrzj.supabase.co)
 - **Code**: GitHub (https://github.com/AYochelman/Mobile-Operators-Competitor-Analysis)
@@ -454,4 +455,4 @@ When adding a new prerendered page: add an `entry-<x>.jsx` (SSR) + — if intera
 
 ## After Every Code Change
 
-Always run `npm run build` in `mass-market-app/` after any React/JS change. The `dist/` folder is deployed to Netlify manually by dragging. The build also regenerates the prerendered `/` and `/hotels` static pages — so a change to `LandingPage.jsx` / `HotelsLandingPage.jsx` (or their copy) only goes live after a rebuild + redeploy (see Deployment → Static prerendered marketing pages).
+Always run `npm run build` in `mass-market-app/` after any React/JS change. Deploy `dist/` with `netlify deploy --prod --dir=dist` from `mass-market-app/` (see the deploy-live skill; manual drag is the fallback). The build also regenerates the prerendered `/` and `/hotels` static pages — so a change to `LandingPage.jsx` / `HotelsLandingPage.jsx` (or their copy) only goes live after a rebuild + redeploy (see Deployment → Static prerendered marketing pages).

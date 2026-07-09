@@ -1,4 +1,6 @@
-.claude/
+# Ignore local Claude state (settings, launch config) but TRACK the project skills
+.claude/*
+!.claude/skills/
 .superpowers/
 design-handoff/
 data/*.db
@@ -44,3 +46,6 @@ scripts/cloudflared.exe
 /data/_*
 /data/cellcom_*
 /data/item_*.pdf
+
+# Local Netlify folder
+.netlify
