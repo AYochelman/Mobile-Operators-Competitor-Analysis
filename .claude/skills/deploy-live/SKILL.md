@@ -50,12 +50,12 @@ cd "D:\השוואת MASS MARKET\mass-market-app" && netlify deploy --prod --dir=
 ```
 
 - **`--no-build` is mandatory.** Without it the CLI runs its own build and injects the
-  Netlify DASHBOARD env vars into it - and the dashboard's `VITE_API_URL` is stale
-  (still the dead ngrok URL as of 2026-07-09; discovered when a CLI-built deploy
-  shipped a bundle pointing at a dead API for ~10 minutes). The local build with
-  `.env.production` is the correct one - upload it as-is. If the dashboard env vars
-  ever get fixed to match `.env.production`, this becomes belt-and-suspenders, not
-  optional.
+  Netlify DASHBOARD env vars instead of the local `.env.production`. That bit once:
+  the dashboard `VITE_API_URL` still held the dead ngrok URL, and the first CLI-built
+  deploy (2026-07-09) shipped a bundle pointing at a dead API for ~10 minutes until
+  the hash-verify step caught it. The dashboard var was fixed the same day (and
+  `VITE_DEV_AUTH` confirmed absent), but the local build stays the canonical
+  artifact - keep `--no-build` so a future dashboard drift can't ship silently.
 - If the folder isn't linked (fresh clone): `netlify link --id 39164e5d-2df9-4254-82e1-a1e9d825a240`.
 - If auth expired: `netlify login` (opens Alon's browser to approve).
 - CLI deploys also read `mass-market-app/netlify.toml` (headers/redirects), which is
