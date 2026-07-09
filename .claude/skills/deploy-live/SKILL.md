@@ -46,9 +46,16 @@ grep -o 'assets/main-[^"]*\.js' dist/index.html
 ## 3. Deploy
 
 ```bash
-cd "D:\השוואת MASS MARKET\mass-market-app" && netlify deploy --prod --dir=dist
+cd "D:\השוואת MASS MARKET\mass-market-app" && netlify deploy --prod --dir=dist --no-build
 ```
 
+- **`--no-build` is mandatory.** Without it the CLI runs its own build and injects the
+  Netlify DASHBOARD env vars into it - and the dashboard's `VITE_API_URL` is stale
+  (still the dead ngrok URL as of 2026-07-09; discovered when a CLI-built deploy
+  shipped a bundle pointing at a dead API for ~10 minutes). The local build with
+  `.env.production` is the correct one - upload it as-is. If the dashboard env vars
+  ever get fixed to match `.env.production`, this becomes belt-and-suspenders, not
+  optional.
 - If the folder isn't linked (fresh clone): `netlify link --id 39164e5d-2df9-4254-82e1-a1e9d825a240`.
 - If auth expired: `netlify login` (opens Alon's browser to approve).
 - CLI deploys also read `mass-market-app/netlify.toml` (headers/redirects), which is
@@ -64,7 +71,10 @@ curl -s https://mocaintel.com/home | grep -o 'assets/main-[^"]*\.js'
 ```
 
 Must equal the fingerprint from step 2. (Fetch `/home` or any SPA route - `/` serves
-the static landing.html, which has no main bundle.) Then spot-check what changed:
+the static landing.html, which has no main bundle.) A DIFFERENT hash than your dist
+means the CLI rebuilt with dashboard env vars (see step 3) - if so, also grep the
+live `assets/api-*.js` chunk for `ngrok` vs `api.mocaintel.com` before assuming the
+deploy is healthy. Then spot-check what changed:
 
 - Prerendered page changed → curl `/` / `/hotels` / `/esim-deals` and grep for the
   new copy.
