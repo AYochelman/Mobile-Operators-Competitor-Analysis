@@ -9,43 +9,9 @@ import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
 import { useCoupons } from '../hooks/useCoupons'
 import { AFFILIATE_PROVIDERS, AFFILIATE_URLS } from '../data/affiliateLinks'
 import { GLOBAL_LABELS, GLOBAL_COLORS } from '../data/carrierLabels'
+import { CARRIER_LOGOS } from './moca/carrierMeta'
 import { useLang } from '../hooks/useLanguage'
 import { localizeDest } from '../data/destI18n'
-
-const CARRIER_LOGOS = {
-  tuki:            '/logos/tuki.png',
-  airalo:          '/logos/airalo.png',
-  airalo_local:    '/logos/airalo.png',
-  airalo_regional: '/logos/airalo.png',
-  pelephone_global:'/logos/pelephone_global.png',
-  esimo:           '/logos/esimo.png',
-  simtlv:          '/logos/simtlv.png',
-  world8:          '/logos/world8.png',
-  xphone_global:   '/logos/xphone_global.png',
-  saily:           '/logos/saily.png',
-  holafly:         '/logos/holafly.png',
-  esimio:          '/logos/esimio.png',
-  sparks:          '/logos/sparks.png',
-  voye:            '/logos/voye.png',
-  yesim:           '/logos/yesim.png',
-  nomad:           '/logos/nomad.png',
-  ubigi:           '/logos/ubigi.png',
-  alosim:          '/logos/alosim.png',
-  orbit:           '/logos/orbit.png',
-  travelsim:       '/logos/travelsim.png',
-  gomoworld:       '/logos/gomoworld.png',
-  tasim:           '/logos/tasim.png',
-  maya:            '/logos/maya.png',
-  bcengi:          '/logos/bcengi.png',
-  esim70:          '/logos/esim70.png',
-  jetpack:         '/logos/jetpack.png',
-  breez:           '/logos/breez.png',
-  bytesim:         '/logos/bytesim.png',
-  besim:           '/logos/besim.png',
-  seven_g:         '/logos/seven_g.png',
-  bestconnect:     '/logos/bestconnect.png',
-  esimplus:        '/logos/esimplus.png',
-}
 
 // Custom logo sizes (base: 32px / w-8) — +50% = 48px
 const LOGO_SIZES = {

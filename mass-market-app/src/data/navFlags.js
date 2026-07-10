@@ -16,6 +16,7 @@ export const FLAG_FOR_PATH = {
   '/plans':             'hide_domestic',
   '/roaming':           'hide_abroad',
   '/esim':              'hide_global',
+  '/esim-banners':      'hide_global_banners',
   '/usa':               'hide_usa',
   '/resellers':         'hide_resellers',
   '/content':           'hide_content',
@@ -37,7 +38,7 @@ export const FLAG_FOR_PATH = {
 // primary section instead (priority order). '/preferences' is always available
 // (no flag) so this never returns nothing / loops.
 const HOME_FALLBACK_ORDER = [
-  '/plans', '/roaming', '/esim', '/usa', '/resellers', '/content',
+  '/plans', '/roaming', '/esim', '/esim-banners', '/usa', '/resellers', '/content',
   '/executive-summary', '/positioning', '/compare', '/ai-insights',
   '/news', '/social', '/banners', '/archive', '/history', '/alerts',
 ]

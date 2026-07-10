@@ -106,7 +106,7 @@ export default function LogoField({ value, onChange }) {
           {busy ? tt('מעלה…', 'Uploading…') : (isData ? tt('החלף קובץ', 'Replace file') : tt('או העלה קובץ מהמחשב', 'Or upload a file from your computer'))}
           <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif" onChange={pick} className="hidden" disabled={busy} />
         </label>
-        <span className="text-[11px] text-gray-400">PNG · SVG · JPG — {tt('יוקטן אוטומטית', 'auto-resized')}</span>
+        <span className="text-[11px] text-gray-400">PNG · SVG · JPG - {tt('יוקטן אוטומטית', 'auto-resized')}</span>
       </div>
       {err && <p className="text-xs text-red-600">{err}</p>}
     </div>

@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>MOCA — אבחון</title>
+<title>MOCA - אבחון</title>
 <style>
   body { font-family: 'Courier New', monospace; background: #f9f4ee; color: #2a2a2a;
          padding: 20px; margin: 0; }
@@ -21,7 +21,7 @@
 </style>
 </head>
 <body>
-  <h1>🔍 MOCA — אבחון מצב</h1>
+  <h1>🔍 MOCA - אבחון מצב</h1>
   <p style="font-size:13px;color:#666;">צלם את הדף הזה ושלח לקלוד.</p>
   <div id="results"></div>
   <button onclick="hardReset()">🧹 איפוס מלא + יציאה (לחזור ב-Ctrl+Shift+R)</button>
@@ -44,14 +44,14 @@ function row(k, v, cls='') {
     const regs = await navigator.serviceWorker.getRegistrations();
     sws = regs.map(reg => ({ scope: reg.scope, state: reg.active?.state, scriptURL: reg.active?.scriptURL }));
   }
-  row('Service Workers (' + sws.length + ')', sws.length === 0 ? 'אין — תקין' : sws, sws.length === 0 ? 'ok' : 'bad');
+  row('Service Workers (' + sws.length + ')', sws.length === 0 ? 'אין - תקין' : sws, sws.length === 0 ? 'ok' : 'bad');
 
   // 2. Caches
   let caches_ = [];
   if ('caches' in window) {
     caches_ = await caches.keys();
   }
-  row('Cache buckets (' + caches_.length + ')', caches_.length === 0 ? 'ריק — תקין' : caches_, caches_.length === 0 ? 'ok' : 'bad');
+  row('Cache buckets (' + caches_.length + ')', caches_.length === 0 ? 'ריק - תקין' : caches_, caches_.length === 0 ? 'ok' : 'bad');
 
   // 3. localStorage
   const ls = {};

@@ -44,7 +44,7 @@ export default function ScrapeProgressPanel() {
         {STAGE_ORDER.map(stage => {
           const ev = stageStatus[stage]
           let color = 'bg-gray-50 text-gray-300 border-gray-100'
-          let icon = '—'
+          let icon = '-'
           if (ev?.status === 'starting') { color = 'bg-amber-50 text-amber-700 border-amber-200'; icon = '⏳' }
           if (ev?.status === 'done')     { color = 'bg-emerald-50 text-emerald-700 border-emerald-200'; icon = '✓' }
           if (ev?.status === 'error')    { color = 'bg-red-50 text-red-700 border-red-200'; icon = '✗' }

@@ -16,7 +16,7 @@ const CARRIER_GRADIENT = {
 }
 
 function formatFullDate(iso) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   const d = new Date(iso)
   return d.toLocaleString('he-IL', {
     weekday: 'short',

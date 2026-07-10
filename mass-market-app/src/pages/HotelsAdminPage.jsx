@@ -128,7 +128,7 @@ export default function HotelsAdminPage() {
       <div className="flex items-center justify-between gap-3 flex-wrap mb-1">
         <div>
           <div className="text-xs font-extrabold tracking-widest text-[var(--color-moca-hot)] uppercase">Guest Connect</div>
-          <h1 className="text-2xl font-extrabold text-[var(--color-moca-dark)] font-[var(--font-display)]">{tt('פורטלי אורחים — מלונות', 'Guest portals — hotels')}</h1>
+          <h1 className="text-2xl font-extrabold text-[var(--color-moca-dark)] font-[var(--font-display)]">{tt('פורטלי אורחים - מלונות', 'Guest portals - hotels')}</h1>
         </div>
         <div className="flex gap-2">
           <a href="/hotels" target="_blank" rel="noopener"
@@ -184,7 +184,7 @@ export default function HotelsAdminPage() {
             {/* editor */}
             <div className="bg-white rounded-2xl border border-[var(--color-moca-border)] shadow-sm p-5">
               <h2 className="text-lg font-extrabold text-[var(--color-moca-dark)] mb-4">
-                {isNew ? tt('פורטל חדש', 'New portal') : `${tt('עריכה', 'Edit')} — ${form.name}`}
+                {isNew ? tt('פורטל חדש', 'New portal') : `${tt('עריכה', 'Edit')} - ${form.name}`}
               </h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label={tt('שם המלון / הרשת', 'Hotel / chain name')}>
@@ -194,7 +194,7 @@ export default function HotelsAdminPage() {
                   <input className="inp font-mono" disabled={!isNew} value={form.slug}
                     onChange={(e) => set('slug', slugify(e.target.value))} placeholder="coastline" />
                 </Field>
-                <Field label={tt('מדינת היעד — הפורטל יציג חבילות גלישה למדינה זו בלבד', 'Destination country — the portal will show data plans for this country only')} full>
+                <Field label={tt('מדינת היעד - הפורטל יציג חבילות גלישה למדינה זו בלבד', 'Destination country - the portal will show data plans for this country only')} full>
                   <select className="inp" value={form.country || 'ישראל'} onChange={(e) => set('country', e.target.value)}>
                     {form.country && !DEST_HE_SET.has(form.country) && (
                       <option value={form.country}>{`${form.country} · ${destLabel(form.country, 'en')}`}</option>

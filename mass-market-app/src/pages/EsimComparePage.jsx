@@ -3,8 +3,10 @@ import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { initTikTokPixel, trackTikTok } from '../lib/tiktokPixel'
 import { DEST_ISO_BY_HE, DEST_BY_HE, destLabel, destInHe } from '../data/hotelDestinations'
+import { DEST_BG_BY_HE } from '../data/destBg'
 import { PROVIDER_LOGOS } from '../data/providerLogos'
 import BoltMark from '../components/BoltMark'
+import { miniMarkup } from '../lib/miniMarkup'
 
 /* ════════════════════════════════════════════════════════════════════════
    MOCA eSIM — public B2C price-comparison page  (route: /esim-deals)
@@ -37,6 +39,28 @@ const POPULAR = [
 const CRUISE_HE = 'קרוז'
 const destName = (he, lang) => (he === CRUISE_HE ? (lang === 'he' ? 'קרוז' : 'Cruise') : destLabel(he, lang))
 
+// Destination hero background behind the trip wizard (public/dest-bg/*.jpg,
+// Gemini-generated). Manifest is auto-written by scripts/gen_dest_backgrounds.py.
+const destBg = (he) => DEST_BG_BY_HE[he] || null
+
+// Wizard background: decode the image off-DOM, then fade it in — avoids the
+// visible top-down paint of a large photo on slow mobile connections. The
+// actual network fetch usually started earlier (preloaded in parallel with the
+// deals API call), so by mount time this mostly hits the browser cache.
+function WizBg({ url, className = 'wiz-bg' }) {
+  const [shown, setShown] = useState(null)
+  useEffect(() => {
+    if (!url) { setShown(null); return undefined }
+    let alive = true
+    const im = new Image()
+    im.onload = () => { if (alive) setShown(url) }
+    im.src = url
+    return () => { alive = false }
+  }, [url])
+  if (!shown) return null
+  return <div className={className} key={shown} style={{ backgroundImage: `url(${shown})` }} aria-hidden="true" />
+}
+
 const T = {
   he: {
     dir: 'rtl', other: 'EN', otherLang: 'en',
@@ -58,6 +82,7 @@ const T = {
     qDays: 'לכמה זמן?',
     qData: 'כמה דאטה צריך?',
     topPicks: 'ההמלצות שלנו',
+    allProviders: 'רוצה ספק אחר?', byProvider: 'סינון לפי ספק', couponsOnly: 'רוצה עם קופון?',
     tripSummary: '{n} חבילות · {days} · {data}',
     allDeals: 'כל החבילות',
     helpTitle: 'פעם ראשונה עם eSIM?',
@@ -99,10 +124,11 @@ const T = {
     qDays: 'How long?',
     qData: 'How much data?',
     topPicks: 'Our picks',
+    allProviders: 'Want another provider?', byProvider: 'Filter by provider', couponsOnly: 'Want a coupon?',
     tripSummary: '{n} deals · {days} · {data}',
     allDeals: 'All deals',
     helpTitle: 'New to eSIM?',
-    h1b: 'Buy online — 2 minutes', h1s: 'No store, no queue. Pay by card and you’re done.',
+    h1b: 'Buy online - 2 minutes', h1s: 'No store, no queue. Pay by card and you’re done.',
     h2b: 'Scan the QR you get by email', h2s: 'Your phone installs the plan automatically.',
     h3b: 'Land connected', h3s: 'Keep WhatsApp and your home number active alongside.',
     compat: 'Works on iPhone XS and newer, Samsung Galaxy S20+, Google Pixel 3+. Install before you fly and you land already online.',
@@ -114,7 +140,7 @@ const T = {
     badges: ['BEST VALUE', 'CHEAPEST', 'MAX DATA', 'ALSO GREAT'],
     unlimited: 'Unlimited', daysU: 'days', dayU: 'day', get: 'Get this deal ↗', perGB: '/GB',
     perks: { instant: 'Instant eSIM', unlimited: 'Unlimited data' },
-    empty: 'No deals match this filter — try another option.',
+    empty: 'No deals match this filter - try another option.',
     emptyDest: 'No deals for this destination right now. Try another one.',
     loading: 'Loading the best deals…',
     couponLabel: 'Code {code} · {pct} off', couponNoPct: 'Discount code: {code}', couponCopy: 'copy', couponCopied: 'copied ✓',
@@ -125,7 +151,7 @@ const T = {
 const DATE_LOCALES = { en: 'en-GB', he: 'he-IL' }
 
 const CSS = `
-#esim-app{--c1:#5c3317;--c2:#c9622f;--bg:#f9f4ee;--cream:#f5ede0;--ink:#3b1f0d;--sub:#8a6a4a;--muted:#a08468;--line:#e0cdb5;--card:#fff;--down:#4a7c3f;--r:20px;
+#esim-app{--c1:#5c3317;--c2:#c9622f;--bg:#f9f4ee;--cream:#f5ede0;--ink:#3b1f0d;--sub:#8a6a4a;--muted:#a08468;--line:#e0cdb5;--card:#fff;--down:#4a7c3f;--coupon:#d1332e;--r:20px;
   font-family:'Assistant',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased}
 #esim-app *{box-sizing:border-box;margin:0;padding:0}
 #esim-app .page{max-width:560px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
@@ -146,7 +172,7 @@ const CSS = `
 @keyframes epulse{50%{box-shadow:0 0 0 6px rgba(127,217,155,.08)}}
 #esim-app main{padding:18px 16px 8px;display:flex;flex-direction:column;gap:20px;flex:1}
 #esim-app .card{background:var(--card);border-radius:var(--r);padding:18px;box-shadow:0 6px 24px rgba(70,45,20,.07)}
-#esim-app .sec{font-size:17px;font-weight:800;margin-bottom:12px}
+#esim-app .sec{font-size:17px;font-weight:700;margin-bottom:12px}
 #esim-app .picker{margin-top:-26px}
 #esim-app .picker h2{font-size:18px;font-weight:800;margin-bottom:3px}
 #esim-app .picker .psub{font-size:13px;color:var(--sub);font-weight:600;margin-bottom:14px}
@@ -169,22 +195,39 @@ const CSS = `
 #esim-app .pop{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:#fff;border-radius:999px;cursor:pointer;padding:8px 13px;font:inherit;font-size:13.5px;font-weight:700;color:var(--ink);transition:all .14s}
 #esim-app .pop:hover{border-color:var(--c2);background:var(--cream)}
 #esim-app .pop .flag{font-size:16px}
-#esim-app .dest-bar{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:var(--r);padding:14px 16px;box-shadow:0 6px 24px rgba(70,45,20,.07)}
+#esim-app .dest-bar{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:var(--r);padding:14px 16px;box-shadow:0 6px 24px rgba(70,45,20,.07);position:relative;overflow:hidden}
+#esim-app .dest-bar>:not(.bar-bg){position:relative;z-index:1}
+#esim-app .bar-bg{position:absolute;inset:-8px;background-size:cover;background-position:center 22%;opacity:.25;filter:blur(2.1px);pointer-events:none;animation:wizbg .6s ease}
 #esim-app .dest-bar .flag{font-size:30px;flex:none}
 #esim-app .flag-img{display:inline-block;vertical-align:middle;height:15px;width:auto;border-radius:2px;box-shadow:0 0 0 .5px rgba(0,0,0,.16)}
 #esim-app .res .flag-img{width:24px;height:auto;flex:none}
 #esim-app .pop .flag-img{height:13px}
 #esim-app .dest-bar .flag-img{height:24px;border-radius:4px;flex:none}
 #esim-app .dest-bar .dmeta{flex:1;min-width:0}
-#esim-app .dest-bar .dname{font-weight:800;font-size:18px}
+#esim-app .dest-bar .dname{font-weight:700;font-size:18px}
 #esim-app .dest-bar .dcount{font-size:12.5px;color:var(--sub);font-weight:600;margin-top:1px}
-#esim-app .dest-bar .changeb{border:1.4px solid var(--line);background:#fff;color:var(--c1);border-radius:11px;cursor:pointer;padding:8px 13px;font:inherit;font-weight:700;font-size:12.5px;white-space:nowrap}
+#esim-app .dest-bar .changeb{border:1.5px solid var(--line);background:rgba(255,255,255,.55);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);color:var(--c1);border-radius:14px;cursor:pointer;padding:8px 13px;font:inherit;font-weight:700;font-size:12.5px;white-space:nowrap;transition:all .15s}
 #esim-app .dest-bar .changeb:hover{border-color:var(--c2)}
 #esim-app .trip-sum{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--c1);background:color-mix(in srgb,var(--c1),#fff 90%);border:1px solid color-mix(in srgb,var(--c1),#fff 78%);padding:5px 11px;border-radius:999px;margin-bottom:12px}
+#esim-app .picks-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+#esim-app .picks-head .trip-sum{margin-bottom:0}
+#esim-app .picks-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#esim-app .cpill{display:inline-flex;align-items:center;gap:6px;border:1.5px solid color-mix(in srgb,var(--coupon),#fff 55%);background:color-mix(in srgb,var(--coupon),#fff 90%);color:color-mix(in srgb,var(--coupon),#000 15%);border-radius:999px;cursor:pointer;padding:6px 13px;font:inherit;font-size:12.5px;font-weight:800;white-space:nowrap;transition:all .15s}
+#esim-app .cpill:hover{border-color:var(--coupon)}
+#esim-app .cpill.on{background:var(--coupon);border-color:var(--coupon);color:#fff}
+#esim-app .cpill svg{width:14px;height:14px;flex:none}
+#esim-app .prov-select{position:relative;flex:none}
+#esim-app .prov-select select{appearance:none;-webkit-appearance:none;border:1.5px solid var(--line);background:#fff;color:var(--c1);border-radius:999px;padding-block:6px;padding-inline-start:13px;padding-inline-end:30px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;outline:none;max-width:180px;text-overflow:ellipsis;transition:border-color .15s}
+#esim-app .prov-select select:focus{border-color:var(--c2)}
+#esim-app .prov-select .chev{position:absolute;inset-inline-end:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted)}
+#esim-app .wizard{position:relative;overflow:hidden}
+#esim-app .wizard>:not(.wiz-bg){position:relative;z-index:1}
+#esim-app .wiz-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.4;pointer-events:none;animation:wizbg .6s ease}
+@keyframes wizbg{from{opacity:0}}
 #esim-app .wizard h2{font-size:16.5px;font-weight:800;margin-bottom:4px}
-#esim-app .wizard .q{font-size:13px;font-weight:700;color:var(--sub);margin:14px 0 8px}
+#esim-app .wizard .q{font-size:13px;font-weight:700;color:var(--c1);margin:14px 0 8px}
 #esim-app .chips{display:flex;gap:8px;flex-wrap:wrap}
-#esim-app .chip{border:1.5px solid var(--line);background:#fff;border-radius:14px;cursor:pointer;padding:9px 13px;font:inherit;font-size:13.5px;font-weight:700;color:var(--ink);transition:all .15s;flex:1 1 auto;text-align:center;min-width:74px}
+#esim-app .chip{border:1.5px solid var(--line);background:rgba(255,255,255,.55);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);border-radius:14px;cursor:pointer;padding:9px 13px;font:inherit;font-size:13.5px;font-weight:700;color:var(--ink);transition:all .15s;flex:1 1 auto;text-align:center;min-width:74px}
 #esim-app .chip small{display:block;font-size:10.5px;font-weight:600;color:var(--sub);margin-top:2px}
 #esim-app .chip.on{background:var(--c1);border-color:var(--c1);color:#fff}
 #esim-app .chip.on small{color:rgba(255,255,255,.78)}
@@ -217,7 +260,7 @@ const CSS = `
 #esim-app .fpill{border:1.5px solid var(--line);background:#fff;border-radius:999px;cursor:pointer;padding:6px 13px;font:inherit;font-size:12.5px;font-weight:700;color:var(--sub)}
 #esim-app .fpill.on{background:var(--ink);border-color:var(--ink);color:#fff}
 #esim-app .deal{background:var(--card);border-radius:16px;padding:13px 14px;margin-bottom:8px;box-shadow:0 3px 12px rgba(70,45,20,.05)}
-#esim-app .deal .get{margin-top:0;width:auto;padding:9px 15px;font-size:12.5px;border-radius:11px}
+#esim-app .deal .get{margin-top:0;width:100%;padding:10px 15px;font-size:13px;border-radius:11px}
 #esim-app .deal-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
 #esim-app .empty{padding:26px;text-align:center;color:var(--sub);font-weight:600;font-size:13.5px}
 #esim-app .esim-help h2{font-size:15.5px;font-weight:800;margin-bottom:12px}
@@ -239,7 +282,7 @@ const CSS = `
 @keyframes espin{to{transform:rotate(360deg)}}
 #esim-app .reveal{animation:efade .35s ease both}
 @keyframes efade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-#esim-app .coupon{display:flex;align-items:center;gap:8px;width:100%;margin-top:10px;border:1.5px dashed color-mix(in srgb,var(--c2),#fff 35%);background:color-mix(in srgb,var(--c2),#fff 90%);color:color-mix(in srgb,var(--c2),#000 32%);border-radius:12px;padding:8px 11px;font:inherit;font-weight:800;font-size:12.5px;cursor:pointer;text-align:start;transition:transform .12s}
+#esim-app .coupon{display:flex;align-items:center;gap:8px;width:100%;margin-top:10px;border:1.5px dashed color-mix(in srgb,var(--coupon),#fff 40%);background:color-mix(in srgb,var(--coupon),#fff 90%);color:color-mix(in srgb,var(--coupon),#000 18%);border-radius:12px;padding:8px 11px;font:inherit;font-weight:800;font-size:12.5px;cursor:pointer;text-align:start;transition:transform .12s}
 #esim-app .coupon:active{transform:scale(.99)}
 #esim-app .coupon svg{flex:none;width:15px;height:15px}
 #esim-app .coupon .ctxt{flex:1;min-width:0}
@@ -337,6 +380,8 @@ export default function EsimComparePage() {
   const [stay, setStay] = useState(7)
   const [dataNeed, setDataNeed] = useState(10)
   const [filter, setFilter] = useState('all')
+  const [providerFilter, setProviderFilter] = useState('all') // 'all' or a provider id
+  const [couponOnly, setCouponOnly] = useState(false)         // "עם קופון" pill toggle
   const resultsRef = useRef(null)
   // Campaign tag captured from the landing URL (utm), forwarded to /go on each
   // deal tap so a click is attributable to the specific post/video that drove it.
@@ -384,6 +429,11 @@ export default function EsimComparePage() {
     let alive = true
     setLoading(true)
     setData(null)
+    // Warm the wizard background in parallel with the API call — the wizard only
+    // mounts after deals arrive, so without this the image download would start
+    // serially after the fetch and visibly lag on mobile.
+    const bg = destBg(dest)
+    if (bg) { const im = new Image(); im.src = bg }
     api.getEsimCompare(dest)
       .then((d) => { if (alive) { setData(d); setLoading(false) } })
       .catch(() => { if (alive) { setData({ deals: [], providers: {}, coupons: {} }); setLoading(false) } })
@@ -448,6 +498,8 @@ export default function EsimComparePage() {
     setDest(he)
     setQuery('')
     setFilter('all')
+    setProviderFilter('all')
+    setCouponOnly(false)
     api.trackEsim({ type: 'destination_pick', sid, destination: he, src: acq.src, campaign, lang })
     const next = new URLSearchParams(params)
     next.set('dest', he)
@@ -459,6 +511,8 @@ export default function EsimComparePage() {
   const clearDest = () => {
     setDest(null)
     setData(null)
+    setProviderFilter('all')
+    setCouponOnly(false)
     const next = new URLSearchParams(params)
     next.delete('dest')
     setParams(next, { replace: true })
@@ -540,17 +594,66 @@ export default function EsimComparePage() {
     return bits
   }
 
-  const fitsTrip = (d) => {
-    if (d.days != null && d.days < stay) return false
+  // Provider dropdown options — every provider that carries a deal for this
+  // destination, deduped by display LABEL (so alias ids like airalo_local /
+  // airalo_regional collapse into one "Airalo" option) + sorted. Built from the
+  // full deal set so the list stays stable as the user changes stay/data.
+  const provLabel = (d) => providers[d.provider]?.label || d.provider
+  // A deal "has a coupon" only when a copyable code exists — mirrors <CouponPill>,
+  // which renders no pill for link-out (external_offer_url) coupons, so those don't
+  // count here either. Keeps the "ספקים עם קופון" filter == what shows a coupon pill.
+  const hasCoupon = (d) => { const c = coupons[d.provider]; return !!(c && c.code && !c.external_offer_url) }
+  const anyCoupon = useMemo(() => deals.some(hasCoupon), [deals, coupons]) // eslint-disable-line react-hooks/exhaustive-deps
+  const providerOpts = useMemo(() => {
+    const seen = new Set()
+    for (const d of deals) seen.add(provLabel(d))
+    return [...seen].sort((a, b) => a.localeCompare(b, lang === 'he' ? 'he' : 'en'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deals, providers, lang])
+
+  // Deals scoped to the chosen provider label and/or the "עם קופון" pill. Both
+  // filters combine (AND) and feed picks + list, so the coupon toggle narrows the
+  // whole view (not just the list). Either off = no-op.
+  const scopedDeals = useMemo(
+    () => {
+      let rows = deals
+      if (providerFilter !== 'all') rows = rows.filter((d) => provLabel(d) === providerFilter)
+      if (couponOnly) rows = rows.filter(hasCoupon)
+      return rows
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [deals, providers, coupons, providerFilter, couponOnly],
+  )
+
+  // Upper bound of the chosen duration tier = the NEXT chip's value (top tier is
+  // open-ended). Derived from t.days so it stays in sync with the wizard chips.
+  const stayUpper = useMemo(() => {
+    const vals = t.days.map((o) => o.v).filter((v) => typeof v === 'number')
+    const i = vals.indexOf(stay)
+    return i >= 0 && i < vals.length - 1 ? vals[i + 1] : Infinity
+  }, [t, stay])
+
+  const fitsData = (d) => {
     if (dataNeed === 'unl') return d.gb == null || d.gb >= 50
     return d.gb == null || d.gb >= dataNeed
   }
-  const eligible = useMemo(() => deals.filter(fitsTrip), [deals, stay, dataNeed]) // eslint-disable-line react-hooks/exhaustive-deps
+  const eligible = useMemo(() => {
+    const byData = scopedDeals.filter(fitsData)
+    // Duration is banded to the selected tier: "week" (7) shows plans of 7-13 days,
+    // NOT 14/30-day plans (those belong to the "2 weeks" / "month" tiers). Plans
+    // with no day info always pass. A plan valid for exactly `stay` days still fits.
+    const banded = byData.filter((d) => d.days == null || (d.days >= stay && d.days < stayUpper))
+    if (banded.length) return banded
+    // Fallback: this destination has nothing in the exact band, so keep the
+    // coverage guarantee ("at least as long as the trip") rather than show an
+    // empty result when only longer plans exist.
+    return byData.filter((d) => d.days == null || d.days >= stay)
+  }, [scopedDeals, stay, dataNeed, stayUpper]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const picks = useMemo(() => {
     if (!eligible.length) return []
     const need = dataNeed === 'unl' ? null : dataNeed
-    const idx = (d) => deals.indexOf(d)
+    const idx = (d) => scopedDeals.indexOf(d)
     const fit = (d) => ils(d)
       + (d.gb == null && need != null ? 14 : 0)
       + Math.max(0, (d.days || stay) - stay) * 0.12
@@ -564,9 +667,9 @@ export default function EsimComparePage() {
     add(byFit[0], 0); add(byPrice[0], 1); add(byData[0], 2)
     for (const d of byFit) { if (winners.size >= 3) break; const k = idx(d); if (!winners.has(k)) winners.set(k, [3]) }
     return [...winners.entries()]
-      .map(([k, badges]) => ({ d: deals[k], badges }))
+      .map(([k, badges]) => ({ d: scopedDeals[k], badges }))
       .sort((a, b) => Math.min(...a.badges) - Math.min(...b.badges))
-  }, [eligible, deals, stay, dataNeed])
+  }, [eligible, scopedDeals, stay, dataNeed])
 
   const list = useMemo(() => {
     let rows = [...eligible]
@@ -688,6 +791,7 @@ export default function EsimComparePage() {
             </section>
           ) : (
             <section className="dest-bar reveal" ref={resultsRef}>
+              <WizBg url={destBg(dest)} className="bar-bg" />
               <Flag he={dest} />
               <div className="dmeta">
                 <div className="dname"><bdi>{destName(dest, lang)}</bdi></div>
@@ -709,6 +813,7 @@ export default function EsimComparePage() {
           {dest && !loading && deals.length > 0 && (
             <>
               <section className="card wizard reveal">
+                <WizBg url={destBg(dest)} />
                 <h2>{t.wizTitle}</h2>
                 <div className="q">{t.qDays}</div>
                 <div className="chips">
@@ -729,7 +834,37 @@ export default function EsimComparePage() {
 
               <section className="reveal">
                 <h2 className="sec" style={{ marginBottom: 6 }}>{t.topPicks}</h2>
-                <div className="trip-sum">{tripSummary}</div>
+                <div className="picks-head">
+                  <div className="trip-sum">{tripSummary}</div>
+                  {(anyCoupon || providerOpts.length > 1) && (
+                    <div className="picks-filters">
+                      {anyCoupon && (
+                        <button
+                          type="button"
+                          className={`cpill${couponOnly ? ' on' : ''}`}
+                          onClick={() => setCouponOnly((v) => !v)}
+                          aria-pressed={couponOnly}
+                          title={t.couponsOnly}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4" />
+                            <path d="M15 6v12" />
+                          </svg>
+                          {t.couponsOnly}
+                        </button>
+                      )}
+                      {providerOpts.length > 1 && (
+                        <div className="prov-select">
+                          <select value={providerFilter} onChange={(e) => setProviderFilter(e.target.value)} aria-label={t.byProvider}>
+                            <option value="all">{t.allProviders}</option>
+                            {providerOpts.map((label) => <option key={label} value={label}>{label}</option>)}
+                          </select>
+                          <svg className="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 {picks.length ? picks.map(({ d, badges }, i) => (
                   <div className={`pick${i === 0 ? ' first' : ''}`} key={i}>
                     {badges.map((b) => <span className={`badge ${cls[b]}`} key={b}>{t.badges[b]}</span>)}
@@ -752,7 +887,6 @@ export default function EsimComparePage() {
                   <div className="deal" key={i}>
                     <DealCore d={d} />
                     <div className="deal-bottom">
-                      <span className="tag">{d.form === 'esim' ? 'eSIM' : 'SIM'}</span>
                       <button type="button" className="get" onClick={() => openDeal(d)}>{t.get}</button>
                     </div>
                   </div>
@@ -770,7 +904,7 @@ export default function EsimComparePage() {
             <div className="compat">{t.compat}</div>
           </section>
 
-          <div className="trust" dangerouslySetInnerHTML={{ __html: t.trust }} />
+          <div className="trust">{miniMarkup(t.trust)}</div>
         </main>
 
         <footer>

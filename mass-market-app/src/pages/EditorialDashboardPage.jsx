@@ -384,7 +384,7 @@ function ChangeFeed({ changes, onItemClick }) {
                   {c.change_type === 'new_plan' && tt('מסלול חדש', 'New plan')}
                   {c.change_type === 'removed_plan' && tt('הוסר', 'Removed')}
                   {c.change_type === 'extras_change' && tt('שינוי הטבות', 'Benefits change')}
-                  {c.change_type === 'details_change' && `${tt('שינוי פרטים', 'Details change')} — ${c.old_val} ← ${c.new_val}`}
+                  {c.change_type === 'details_change' && `${tt('שינוי פרטים', 'Details change')} - ${c.old_val} ← ${c.new_val}`}
                   <span className="md:hidden" style={{ marginInlineStart: 6, opacity: 0.7 }}>· {fmtAgo(c.changed_at, tt)}</span>
                 </div>
                 {c.change_type === 'extras_change' && <BenefitDiffRows diff={diff} />}
@@ -526,7 +526,7 @@ function OursPinned({ carrierId, isAdmin, isSuperAdmin, onOpenCarrierModal }) {
       ? () => onOpenCarrierModal && onOpenCarrierModal()
       : () => navigate('/workspace/settings')
     const titleText = isSuperAdmin
-      ? tt('בחר את הספק שלי — נשמר ל-workspace.mvno_carrier', 'Choose my carrier — saved to workspace.mvno_carrier')
+      ? tt('בחר את הספק שלי - נשמר ל-workspace.mvno_carrier', 'Choose my carrier - saved to workspace.mvno_carrier')
       : tt('הגדר את הספק שלי בעמוד מיתוג (דורש super_admin)', 'Set my carrier on the branding page (requires super_admin)')
     return (
       <button
@@ -642,7 +642,7 @@ export default function EditorialDashboardPage() {
           />
           <KpiCard
             label={tt('מחיר ממוצע', 'Average price')}
-            value={kpis.avgPrice != null ? `${kpis.avgPrice}₪` : '—'}
+            value={kpis.avgPrice != null ? `${kpis.avgPrice}₪` : '-'}
             delta={kpis.avgPriceDelta}
             neutral={kpis.avgPriceDelta == null}
           />
@@ -659,7 +659,7 @@ export default function EditorialDashboardPage() {
               accent={kpis.oursVsMarketPct > 0 ? 'var(--color-moca-up)' : 'var(--color-moca-down)'}
             />
           ) : (
-            <KpiCard label={tt('ספק שלך', 'Your carrier')} value="—" neutral note={tt('הגדר workspace.mvno_carrier', 'Set workspace.mvno_carrier')} />
+            <KpiCard label={tt('ספק שלך', 'Your carrier')} value="-" neutral note={tt('הגדר workspace.mvno_carrier', 'Set workspace.mvno_carrier')} />
           )}
         </div>
 

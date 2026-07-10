@@ -10,26 +10,54 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/icon-180.png" />
     <link rel="manifest" href="/manifest.json" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Fonts loaded non-render-blocking (media=print → onload swap) so they don't
-         delay FCP/LCP (~1.45s of render-blocking on mobile). display=optional means
-         no late swap → no layout shift (the hero stats row was shifting on font swap). -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=optional" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=optional" media="print" onload="this.media='all'" />
-    <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=optional" />
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=optional" />
-    </noscript>
-    <title>MOCA — מודיעין תחרותי לשוק הסלולר</title>
-    <meta name="description" content="MOCA — מערכת מודיעין תחרותי שעוקבת אוטומטית אחרי כל שוק הסלולר הישראלי פעמיים ביום: מחירים, קמפיינים, eSIM גלובלי ונדידה — ושולחת התראה ברגע שמתחרה זז." />
+    <!-- Self-hosted Assistant (same-origin). The Hebrew subset is preloaded so the
+         font is ready before first paint. Previously Assistant loaded from Google Fonts
+         with display=optional behind a deferred (media=print) link, so on a fresh load
+         it often was NOT applied at paint and the page stayed on the system fallback for
+         the whole session; on some devices the bold Hebrew headings fell back to a serif
+         system font. Preload + display:swap (in fonts.css) makes Assistant load reliably. -->
+    <link rel="preload" href="/fonts/assistant-hebrew.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <title>MOCA - מודיעין תחרותי לשוק הסלולר</title>
+    <meta name="description" content="MOCA - מערכת מודיעין תחרותי שעוקבת אוטומטית אחרי כל שוק הסלולר הישראלי פעמיים ביום: מחירים, קמפיינים, eSIM גלובלי ונדידה - ושולחת התראה ברגע שמתחרה זז." />
     <link rel="canonical" href="https://mocaintel.com/" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="MOCA — מודיעין תחרותי לשוק הסלולר" />
-    <meta property="og:description" content="עוקב אוטומטית אחרי כל השוק — 10 מפעילים + למעלה מ-30 ספקי eSIM, פעמיים ביום — ושולח התראה ברגע שמתחרה מזיז מחיר או משיק קמפיין." />
+    <meta property="og:title" content="MOCA - מודיעין תחרותי לשוק הסלולר" />
+    <meta property="og:description" content="עוקב אוטומטית אחרי כל השוק - 10 מפעילים + למעלה מ-30 ספקי eSIM, פעמיים ביום - ושולח התראה ברגע שמתחרה מזיז מחיר או משיק קמפיין." />
     <meta property="og:url" content="https://mocaintel.com/" />
-    <meta property="og:image" content="https://mocaintel.com/icons/icon-512.png" />
+    <meta property="og:image" content="https://mocaintel.com/og/og-home.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="MOCA - מודיעין תחרותי לשוק הסלולר" />
+    <meta property="og:site_name" content="MOCA" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MOCA - מודיעין תחרותי לשוק הסלולר" />
+    <meta name="twitter:description" content="עוקב אוטומטית אחרי כל השוק - 10 מפעילים + למעלה מ-30 ספקי eSIM, פעמיים ביום - ושולח התראה ברגע שמתחרה מזיז מחיר או משיק קמפיין." />
+    <meta name="twitter:image" content="https://mocaintel.com/og/og-home.png" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://mocaintel.com/#org",
+          "name": "MOCA",
+          "alternateName": "Mobile Operators Competitor Analysis",
+          "url": "https://mocaintel.com/",
+          "logo": "https://mocaintel.com/icons/icon-512.png",
+          "description": "מערכת מודיעין תחרותי לשוק הסלולר הישראלי - מעקב מחירים, קמפיינים, נדידה ו-eSIM גלובלי בזמן אמת."
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://mocaintel.com/#website",
+          "url": "https://mocaintel.com/",
+          "name": "MOCA",
+          "inLanguage": "he-IL",
+          "publisher": { "@id": "https://mocaintel.com/#org" }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

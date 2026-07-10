@@ -315,8 +315,8 @@ export default function PositioningPage() {
       {/* Page identity is owned by the Topbar — only the helper subtitle stays. */}
       <p className="text-xs text-gray-400 mb-5 text-right">
         {domain === 'abroad'
-          ? tt('פיזור חבילות חו"ל לפי ספק ונפח גלישה — אתר את ה-white space', 'Distribution of roaming plans by provider and data volume — find the white space')
-          : tt('פיזור חבילות סלולר לפי ספק וקטגוריה — אתר את ה-white space', 'Distribution of cellular plans by provider and category — find the white space')}
+          ? tt('פיזור חבילות חו"ל לפי ספק ונפח גלישה - אתר את ה-white space', 'Distribution of roaming plans by provider and data volume - find the white space')
+          : tt('פיזור חבילות סלולר לפי ספק וקטגוריה - אתר את ה-white space', 'Distribution of cellular plans by provider and category - find the white space')}
       </p>
 
       {/* Domain tabs — בארץ / חו"ל */}
@@ -442,7 +442,7 @@ export default function PositioningPage() {
               <ul className="space-y-1.5">
                 {whiteSpaces.slice(0, 5).map((ws, i) => (
                   <li key={i} className="text-xs text-amber-800">
-                    <strong>{bucketLabel(ws.bucket)}</strong> —
+                    <strong>{bucketLabel(ws.bucket)}</strong> -
                     <span className="text-amber-700 mx-1">{tt('חסר אצל:', 'Missing from:')}</span>
                     {ws.carriers.map(c => c.label).join(', ')}
                   </li>

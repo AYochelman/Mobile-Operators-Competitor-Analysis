@@ -16,6 +16,8 @@ export const PROVIDER_LOGOS = {
   // global eSIM providers
   tuki:             '/logos/tuki-icon.png', // square icon (tuki.png is a wide wordmark)
   terminalesim:     '/logos/terminalesim.png',
+  gigsky:           '/logos/gigsky.png', // square GS monogram icon
+
   airalo:           '/logos/airalo.png',
   airalo_local:     '/logos/airalo.png',
   airalo_regional:  '/logos/airalo.png',

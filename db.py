@@ -932,6 +932,12 @@ _CRUISE_DEST_HE = "קרוז"  # קרוז — synthetic B2C cruise destination
 _CRUISE_SOURCE_DESTS = (
     "גלובלי ושייט",   # Maya — unlimited global + cruise tiers
     "קרוז בספינה",     # VOYE — cruise at sea
+    "קרוז - אמריקה וקריביים",  # GigSky cruise buckets ↓
+    "קרוז - אסיה פסיפיק",
+    "קרוז - אירופה",
+    "קרוז - עולמי",
+    "קרוז - המזרח התיכון",
+    "קרוז - בים בלבד",
 )
 
 _HOTEL_COLS = ("slug", "name", "tagline", "brand_primary", "brand_secondary",

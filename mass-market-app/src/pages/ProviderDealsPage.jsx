@@ -37,13 +37,13 @@ const FILTERS = [
 ]
 
 function fmtDate(iso) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   try {
     return new Date(iso).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: '2-digit' })
   } catch { return iso }
 }
 function fmtRelative(iso) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   try {
     const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
     if (min < 1)  return 'הרגע'
@@ -227,7 +227,7 @@ export default function ProviderDealsPage() {
         <StatCard label="פנינו" value={summary.contacted} sub={`מתוך ${summary.total}`} />
         <StatCard label="קופון חי" value={summary.coupons} sub="שלנו, מזכה" accent={GREEN} />
         <StatCard label="הסכם סגור" value={summary.signed} accent={GREEN} />
-        <StatCard label="עמלה ממוצעת" value={summary.avgComm != null ? `${summary.avgComm}%` : '—'} sub="בעסקאות חיות" />
+        <StatCard label="עמלה ממוצעת" value={summary.avgComm != null ? `${summary.avgComm}%` : '-'} sub="בעסקאות חיות" />
         <StatCard label="דורש פעולה" value={summary.action} accent={summary.action ? AMBER : undefined} />
         <StatCard label="דליפות" value={summary.leaks} sub="ממומן אך 0₪" accent={summary.leaks ? RED : GREEN} />
       </div>
@@ -287,7 +287,7 @@ export default function ProviderDealsPage() {
                           {d.display_name}
                           {d.is_israeli && <span title="ישראלי">🇮🇱</span>}
                         </div>
-                        <div className="text-[11px]" style={{ color: MUTED }}>{d.program_network || '—'}</div>
+                        <div className="text-[11px]" style={{ color: MUTED }}>{d.program_network || '-'}</div>
                       </td>
                       {/* Outreach */}
                       <td className="px-3 py-2.5 text-start">
@@ -300,7 +300,7 @@ export default function ProviderDealsPage() {
                       <td className="px-3 py-2.5 text-start">
                         <Pill label={a.label} color={a.color} />
                         <div className="text-[11px] mt-0.5 tnum" style={{ color: 'var(--color-moca-sub)' }}>
-                          {typeof d.commission_pct === 'number' ? `${d.commission_pct}%` : (d.commission_note ? '' : '—')}
+                          {typeof d.commission_pct === 'number' ? `${d.commission_pct}%` : (d.commission_note ? '' : '-')}
                           {d.commission_note && <span> {d.commission_note.length > 28 ? d.commission_note.slice(0, 28) + '…' : d.commission_note}</span>}
                         </div>
                       </td>
@@ -312,7 +312,7 @@ export default function ProviderDealsPage() {
                       <td className="px-3 py-2.5 text-center"><Pill label={p.label} color={p.color} /></td>
                       {/* Next action */}
                       <td className="px-3 py-2.5 text-start text-xs max-w-[280px]" style={{ color: 'var(--color-moca-text)' }}>
-                        <div className="line-clamp-2" title={d.next_actions}>{d.next_actions || '—'}</div>
+                        <div className="line-clamp-2" title={d.next_actions}>{d.next_actions || '-'}</div>
                       </td>
                     </tr>
                   )
@@ -346,7 +346,7 @@ export default function ProviderDealsPage() {
                   {openDeal.is_israeli && <span>🇮🇱</span>}
                   {openDeal.is_leak && <Pill label="דליפה" color={RED} solid />}
                 </div>
-                <div className="text-xs mt-0.5" style={{ color: MUTED }}>{openDeal.program_network || '—'}</div>
+                <div className="text-xs mt-0.5" style={{ color: MUTED }}>{openDeal.program_network || '-'}</div>
               </div>
               <button onClick={() => setOpen(null)} className="text-2xl leading-none px-2" style={{ color: MUTED }} aria-label="סגור">×</button>
             </div>
@@ -362,7 +362,7 @@ export default function ProviderDealsPage() {
                 <Field label="עמלה שלנו">
                   <span style={{ color: 'var(--color-moca-text)' }}>
                     {typeof openDeal.commission_pct === 'number' ? `${openDeal.commission_pct}%` : ''}
-                    {openDeal.commission_note ? ` ${openDeal.commission_note}` : (typeof openDeal.commission_pct !== 'number' ? '—' : '')}
+                    {openDeal.commission_note ? ` ${openDeal.commission_note}` : (typeof openDeal.commission_pct !== 'number' ? '-' : '')}
                   </span>
                 </Field>
                 <Field label="קליקים (30 יום)">
@@ -383,7 +383,7 @@ export default function ProviderDealsPage() {
               </Field>
 
               <Field label="פעולה נדרשת" block>
-                <p style={{ color: 'var(--color-moca-text)' }}>{openDeal.next_actions || '—'}</p>
+                <p style={{ color: 'var(--color-moca-text)' }}>{openDeal.next_actions || '-'}</p>
               </Field>
 
               {openDeal.contact && (

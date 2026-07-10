@@ -363,6 +363,9 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         {visible('/esim') && (
           <NavItem to="/esim" icon={Icons.esim} label={tt('eSIM גלובלי', 'Global eSIM')} isActive={isPath('/esim')} onAfterNav={afterNav} />
         )}
+        {visible('/esim-banners') && (
+          <NavItem to="/esim-banners" icon={Icons.banners} label={tt('באנרים גלובליים', 'Global banners')} isActive={isPath('/esim-banners')} onAfterNav={afterNav} />
+        )}
         {visible('/usa') && (
           <NavItem to="/usa" icon={Icons.usa} label={tt('נוחתים בארה״ב', 'USA')} isActive={isPath('/usa')} onAfterNav={afterNav} />
         )}
@@ -384,16 +387,8 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
           onClick={openSearch}
           onAfterNav={afterNav}
         />
-        {isSuperAdmin && (
-          <NavItem
-            to="/usage"
-            icon={Icons.usage}
-            label={tt('שימוש ב-Claude', 'Claude usage')}
-            isActive={isPath('/usage')}
-            onAfterNav={afterNav}
-          />
-        )}
-        {/* פעילות משתמשים moved to הגדרות מערכת → ניהול משתמשים tab;
+        {/* "שימוש ב-Claude" (/usage) moved to the profile menu (under סטטוס ספקים).
+            פעילות משתמשים moved to הגדרות מערכת → ניהול משתמשים tab;
             פורטלי אורחים + eSIM (B2C) dashboard/page moved to the profile menu. */}
       </nav>
     </>

@@ -168,7 +168,7 @@ function SummarySection({ data, onRefresh, refreshing, isAdmin }) {
           <div className="text-sm font-bold">
             {metrics.most_aggressive?.changes > 0
               ? carrierName(metrics.most_aggressive?.carrier)
-              : '—'}
+              : '-'}
           </div>
           <div className="text-[10px] opacity-70 mt-1">
             {metrics.most_aggressive?.changes > 0

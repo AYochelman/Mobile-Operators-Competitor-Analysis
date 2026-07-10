@@ -168,7 +168,7 @@ export function getCountriesForAbroadPlan(plan) {
     // Check specific plans first
     const specific = PELEPHONE_SPECIFIC.find(r => name.includes(r.match));
     if (specific) {
-      return { title: `פלאפון — ${specific.title}`, countries: specific.countries };
+      return { title: `פלאפון - ${specific.title}`, countries: specific.countries };
     }
     return { title: 'פלאפון', countries: COUNTRIES_PELEPHONE };
   }
@@ -184,7 +184,7 @@ export function getCountriesForAbroadPlan(plan) {
   if (carrier === 'golan') {
     const specific = GOLAN_SPECIFIC.find(r => name.includes(r.match));
     if (specific) {
-      return { title: `גולן טלקום — ${specific.title}`, countries: specific.countries };
+      return { title: `גולן טלקום - ${specific.title}`, countries: specific.countries };
     }
     return { title: 'גולן טלקום', countries: COUNTRIES_GOLAN };
   }

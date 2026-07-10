@@ -152,8 +152,6 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
               <button onClick={() => go('/admin/hotels')} className={itemCls}>{tt('פורטלי אורחים', 'Guest portals')}</button>
               <div className="h-px bg-moca-border/30 my-1" />
               <div className="px-3 pt-1 pb-0.5 text-[10px] font-bold text-moca-muted uppercase tracking-wide">B2C</div>
-              <button onClick={() => go('/admin/esim')} className={itemCls}>{tt('דשבורד eSIM (B2C)', 'eSIM dashboard (B2C)')}</button>
-              <button onClick={() => go('/admin/deals')} className={itemCls}>{tt('סטטוס ספקים', 'Provider status')}</button>
               <button
                 onClick={() => { setOpen(false); window.open('/esim-deals', '_blank', 'noopener') }}
                 className={itemCls}
@@ -161,6 +159,9 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
                 <span>{tt('עמוד eSIM (B2C)', 'eSIM page (B2C)')}</span>
                 <span className="opacity-50">↗</span>
               </button>
+              <button onClick={() => go('/admin/esim')} className={itemCls}>{tt('דשבורד eSIM (B2C)', 'eSIM dashboard (B2C)')}</button>
+              <button onClick={() => go('/admin/deals')} className={itemCls}>{tt('סטטוס ספקים', 'Provider status')}</button>
+              <button onClick={() => go('/usage')} className={itemCls}>{tt('שימוש ב-Claude', 'Claude usage')}</button>
             </>
           )}
           <div className="h-px bg-moca-border/30 my-1" />

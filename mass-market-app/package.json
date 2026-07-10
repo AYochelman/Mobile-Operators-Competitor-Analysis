@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && vite build --ssr src/entry-landing.jsx --outDir dist-ssr && node scripts/prerender-landing.mjs && vite build --ssr src/entry-hotels.jsx --outDir dist-ssr-hotels && node scripts/prerender-hotels.mjs && node scripts/prerender-esim.mjs",
+    "build": "vite build && vite build --ssr src/entry-landing.jsx --outDir dist-ssr && node scripts/prerender-landing.mjs && vite build --ssr src/entry-hotels.jsx --outDir dist-ssr-hotels && node scripts/prerender-hotels.mjs && node scripts/prerender-esim.mjs && node scripts/stamp-sitemap.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -16,7 +16,7 @@
     "react-is": "^19.2.6",
     "react-router-dom": "^7.14.0",
     "recharts": "^3.8.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

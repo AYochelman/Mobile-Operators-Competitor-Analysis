@@ -118,13 +118,13 @@ function Badge({ change }) {
 }
 
 function Delta({ change }) {
-  if (change.change_type !== 'price_change') return <span>—</span>
+  if (change.change_type !== 'price_change') return <span>-</span>
   try {
     const d = parseFloat(change.new_val) - parseFloat(change.old_val)
     const cls = d > 0 ? 'text-red-600 font-semibold' : 'text-green-600 font-semibold'
     return <span className={cls}>{d > 0 ? '+' : ''}₪{d.toFixed(0)}</span>
   } catch {
-    return <span>—</span>
+    return <span>-</span>
   }
 }
 
@@ -468,8 +468,8 @@ export default function HistoryTab() {
                         <td className="py-2 px-2 text-xs text-moca-muted whitespace-nowrap">{c.changed_at?.slice(0, 10)}</td>
                         <td className="py-2 px-2 font-medium">{c.plan_name}</td>
                         <td className="py-2 px-2 whitespace-nowrap"><Badge change={c} /></td>
-                        <td className="py-2 px-2 text-xs line-through text-moca-muted whitespace-nowrap">{c.old_val ? `₪${c.old_val}` : '—'}</td>
-                        <td className="py-2 px-2 font-semibold whitespace-nowrap">{c.new_val ? `₪${c.new_val}` : '—'}</td>
+                        <td className="py-2 px-2 text-xs line-through text-moca-muted whitespace-nowrap">{c.old_val ? `₪${c.old_val}` : '-'}</td>
+                        <td className="py-2 px-2 font-semibold whitespace-nowrap">{c.new_val ? `₪${c.new_val}` : '-'}</td>
                         <td className="py-2 px-2 whitespace-nowrap"><Delta change={c} /></td>
                       </tr>
                     ))}

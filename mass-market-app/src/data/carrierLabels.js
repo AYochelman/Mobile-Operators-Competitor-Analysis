@@ -74,6 +74,7 @@ export const GLOBAL_PROVIDERS_REGISTRY = [
   { id: 'esim70',           label: 'eSIM70',       color: 'emerald', chartColor: '#10b981', israeli: false },
   { id: 'esimo',            label: 'eSIMo',        color: 'purple',  chartColor: '#a855f7', israeli: false },
   { id: 'terminalesim',     label: 'Terminal eSIM', color: 'green',  chartColor: '#22c55e', israeli: true },
+  { id: 'gigsky',           label: 'GigSky',       color: 'blue',    chartColor: '#2b4c9b', israeli: false },
   { id: 'pelephone_global', label: 'GlobalSIM',    color: 'blue',    chartColor: '#2196f3', israeli: true },
   { id: 'gomoworld',        label: 'GoMoWorld',    color: 'cyan',    chartColor: '#0891b2', israeli: false },
   { id: 'holafly',          label: 'Holafly',      color: 'orange',  chartColor: '#ea580c', israeli: false },

@@ -145,7 +145,7 @@ export default function EsimAnalyticsPage() {
             title={tt('לפי קמפיין (פוסט / סרטון)', 'By campaign (post / video)')} head={[tt('קמפיין', 'Campaign'), tt('צפיות', 'Views'), tt('קליקים', 'Clicks'), tt('המרה', 'Conversion')]}
             empty={tt('אין עדיין תנועה מתויגת. הוסיפו ?campaign=… לקישורים בפוסטים כדי לראות איזה תוכן עבד.', 'No tagged traffic yet. Add ?campaign=… to your post links to see which content performed.')}
             rows={(data.by_campaign || []).map(r => {
-              const cv = r.views ? `${Math.round((r.clicks / r.views) * 1000) / 10}%` : '—'
+              const cv = r.views ? `${Math.round((r.clicks / r.views) * 1000) / 10}%` : '-'
               return (
                 <tr key={r.campaign} className="bg-gray-50">
                   <td className="px-3 py-2 rounded-r-lg font-medium"><bdi>{r.campaign}</bdi></td>

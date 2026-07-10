@@ -43,13 +43,14 @@ import {
   BESTCONNECT_REGION_MAP,
   ESIMPLUS_REGION_MAP,
   SEVEN_G_REGION_MAP,
+  GIGSKY_REGION_MAP,
 } from '../data/globalCountries'
 
 // Carriers where one plan covers many countries (zone/global plans)
 const MULTI_COUNTRY_CARRIERS = new Set([
   'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
   'pelephone_global', 'esimo', 'terminalesim', 'gomoworld', 'maya', 'besim',
-  'bestconnect', 'esimplus', 'seven_g',
+  'bestconnect', 'esimplus', 'seven_g', 'gigsky',
 ])
 
 const TERMINAL_REGION_MAP = {
@@ -113,6 +114,12 @@ function getPlanCoverage(plan) {
   }
   if (carrier === 'bestconnect') return BESTCONNECT_REGION_MAP[dest] || null
   if (carrier === 'esimplus') return ESIMPLUS_REGION_MAP[dest] || null
+  if (carrier === 'gigsky') {
+    // Regional + global bundles expand to their coverage list. Per-country plans
+    // and cruise labels ("קרוז - …") aren't keys → null → extras[0] equality /
+    // unified cruise filter handle them.
+    return GIGSKY_REGION_MAP[dest] || null
+  }
   if (carrier === 'seven_g') {
     // plan_name first segment is the English region name (e.g. "Asia (12 areas)")
     const regionName = (name || '').split(' – ')[0]?.trim() || ''
@@ -656,6 +663,7 @@ export default function DashboardPage() {
         setChanges(prev => ({ ...prev, global: c }))
       } else if (t === 'resellers' && plans.resellers.length === 0) {
         const p = await api.getResellerPlans()
+        if (id !== loadIdRef.current) return
         // Tag each plan with its underlying carrier label and reseller name in extras for PlanCard rendering
         const enriched = p.map(plan => {
           const reseller = RESELLERS.find(r => r.id === plan.reseller_id)
@@ -670,14 +678,17 @@ export default function DashboardPage() {
         setPlans(prev => ({ ...prev, usa: p }))
       } else if (t === 'content' && plans.content.length === 0) {
         const p = await api.getContentPlans()
+        if (id !== loadIdRef.current) return
         setPlans(prev => ({ ...prev, content: p }))
       } else if (t === 'banners' && !bannersLoaded) {
         const data = await api.getBanners()
+        if (id !== loadIdRef.current) return
         setBanners(data)
         setBannersLoaded(true)
       }
       if (t === 'banners' && !storeBannersLoaded) {
         const data = await api.getStoreBanners()
+        if (id !== loadIdRef.current) return
         setStoreBanners(data)
         setStoreBannersLoaded(true)
       }
@@ -881,7 +892,7 @@ export default function DashboardPage() {
           destination = parts.slice(0, -2).join(' – ') || unique[0].extras[0]
         } else if (unique[0].carrier === 'airalo') {
           const isPlus = (unique[0].plan_name || '').includes('Discover+')
-          const opLabel = isPlus ? 'Airalo Discover+ — דאטה ושיחות' : 'Airalo Discover — דאטה'
+          const opLabel = isPlus ? 'Airalo Discover+ - דאטה ושיחות' : 'Airalo Discover - דאטה'
           destination = `${opLabel} (${unique[0].extras[0]})`
         } else {
           destination = unique[0].extras[0]
@@ -1738,7 +1749,7 @@ export default function DashboardPage() {
 
           {bannersLoaded && banners.length === 0 && (
             <div className="text-center text-moca-muted py-16 text-sm">
-              {tt('אין באנרים זמינים עדיין — הם יצולמו בשעה 08:00', 'No banners available yet — they will be captured at 08:00')}
+              {tt('אין באנרים זמינים עדיין - הם יצולמו בשעה 08:00', 'No banners available yet - they will be captured at 08:00')}
             </div>
           )}
 
@@ -1793,9 +1804,21 @@ export default function DashboardPage() {
       )}
 
       {!loading && filteredPlans.length === 0 && tab !== 'banners' && tab !== 'history' && tab !== 'news' && (
-        <div className="text-center py-20 text-gray-400">
-          <p className="text-3xl mb-3 opacity-40">&#128269;</p>
-          <p className="text-sm">{tt('לא נמצאו חבילות בסינון הנוכחי', 'No plans found for the current filters')}</p>
+        <div className="text-center py-20 animate-fade-in">
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-moca-cream border border-moca-sand grid place-items-center">
+            <svg width="24" height="23" viewBox="0 0 48 46" fill="none" aria-hidden="true">
+              <path fill="var(--color-moca-bolt)" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"/>
+            </svg>
+          </div>
+          <p className="font-display text-lg font-bold text-moca-dark mt-4">{tt('אין חבילות שתואמות', 'No matching plans')}</p>
+          <p className="text-sm text-moca-sub mt-1">{tt('נסו להרחיב את טווח המחיר או להסיר סינון', 'Try widening the price range or clearing a filter')}</p>
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="inline-flex items-center gap-1.5 mt-4 text-[13px] font-semibold text-white bg-moca-bolt rounded-lg px-4 py-2 transition-colors hover:bg-[#7a4520]"
+          >
+            {tt('איפוס סינון', 'Reset filters')}
+          </button>
         </div>
       )}
 
@@ -1847,6 +1870,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => {
                     const win = window.open('', '_blank')
+                    if (!win) { alert(tt('חלון ההדפסה נחסם. אפשרו חלונות קופצים ונסו שוב.', 'The print window was blocked - allow pop-ups and try again.')); return }
                     const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom', tuki: 'Tuki', terminalesim: 'Terminal eSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', voye: 'VOYE', orbit: 'Orbit', travelsim: 'Travel Sim' }
                     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
                     const getExtras = (plan) => {
@@ -1860,7 +1884,7 @@ export default function DashboardPage() {
                       if (marker) return marker.slice('__info__|'.length)
                       return plan.plan_info || null
                     }
-                    const html = `<html dir="rtl"><head><meta charset="utf-8"><title>השוואת חבילות — MOCA</title>
+                    const html = `<html dir="rtl"><head><meta charset="utf-8"><title>השוואת חבילות - MOCA</title>
 <style>body{font-family:Arial,sans-serif;padding:24px;direction:rtl;background:#f9f4ee;color:#1a1a1a}
 h1{font-size:20px;font-weight:700;margin-bottom:20px;color:#5c3317}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
@@ -1875,7 +1899,7 @@ h1{font-size:20px;font-weight:700;margin-bottom:20px;color:#5c3317}
 .plan-info{margin-top:10px;padding-top:10px;border-top:1px solid #f0e8dc;font-size:11px;color:#666;line-height:1.5;white-space:pre-line}
 .plan-info-title{font-size:10px;font-weight:600;color:#5c3317;margin-bottom:4px;text-transform:uppercase}
 @media print{body{background:white}.card{break-inside:avoid}}</style></head><body>
-<h1>השוואת חבילות — MOCA</h1>
+<h1>השוואת חבילות - MOCA</h1>
 <div class="grid">
 ${[...compareMap.values()].map(({ plan, planType }) => {
   const extras = getExtras(plan)

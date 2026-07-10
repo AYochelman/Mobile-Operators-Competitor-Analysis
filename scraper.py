@@ -7127,6 +7127,163 @@ def scrape_tasim_global(_page=None, usd_rate=None):
     return plans
 
 
+# ── GigSky eSIM ──────────────────────────────────────────────────────────────
+# Pure HTTP, no Playwright: GigSky exposes its ENTIRE catalog as one static JSON
+# on their CDN (the same file the site's plan picker fetches):
+#   https://cdn-prod.gigsky.com/planBundle/...2-plan-bundle-ext.json
+# 180 "plan bundles" split by planBundleType into COUNTRY / REGIONAL / WORLD
+# (WORLD = the global "World Plan" tiers + the "Cruise + …" packages + ferries).
+# Each bundle carries a `plans` array; each plan has dataLimitInKB (0 = unlimited),
+# validityPeriodInDays and a `prices` array aligned to currencyCodes — USD is the
+# index we bill on. Destinations resolve to canonical Hebrew by reusing the
+# existing ESIMO_CODE_TO_HEBREW (ISO alpha-2 → Hebrew) so we don't hand-maintain
+# 157 country names; only the handful of multi-code / non-ESIMO bundles need an
+# override below.
+GIGSKY_PLAN_BUNDLE_URL = (
+    "https://cdn-prod.gigsky.com/planBundle/"
+    "includeSponsorPlans=false&simType=ACME_GSMA_ESIM_V2&includePlanVariants=true"
+    "&lang=en&version=2-plan-bundle-ext.json"
+)
+# COUNTRY bundles whose countryCodes[0] is NOT the primary country → force the code.
+GIGSKY_NAME_TO_CODE = {
+    "United States": "US", "Israel": "IL", "Fiji": "FJ",
+    "Vanuatu": "VU", "Mayotte": "YT", "Réunion": "RE",
+}
+# COUNTRY bundles that are not real travel destinations (offshore rigs / inflight) or
+# politically redundant (Palestine == Israel coverage on GigSky) → not ingested.
+GIGSKY_COUNTRY_SKIP = {
+    "North Sea - Offshore", "Gulf of Mexico - Offshore", "Inflight", "Palestine",
+}
+# Codes GigSky uses that ESIMO_CODE_TO_HEBREW lacks.
+GIGSKY_CODE_EXTRA = {
+    "AO": "אנגולה",              # Angola
+    "PF": "פולינזיה הצרפתית",  # French Polynesia
+    "CI": "חוף השנהב",  # Ivory Coast
+    "SX": "סינט מארטן",  # Sint Maarten
+    "XK": "קוסובו",              # Kosovo
+}
+GIGSKY_REGION_TO_HEBREW = {
+    "Caribbean":        "קריביים",
+    "Middle East":      "המזרח התיכון",
+    "North America":    "צפון אמריקה",
+    "Africa":           "אפריקה",
+    "Latin America":    "אמריקה הלטינית",
+    "Europe":           "אירופה",
+    "Asia Pacific":     "אסיה פסיפיק",
+    "Dutch Caribbean":  "האיים הקריביים ההולנדיים",
+    "French Caribbean": "האנטילים הצרפתיים",
+}
+# WORLD bundles → global tiers collapse to "גלובלי"; cruise packages become a
+# "קרוז - <region>" label (the "קרוז" prefix drives isCruiseDest + the B2C cruise
+# fold, see db._CRUISE_SOURCE_DESTS). Ferries are not ingested (value None).
+GIGSKY_WORLD_TO_HEBREW = {
+    "World Plan":                   "גלובלי",
+    "World Plan Lite":              "גלובלי",
+    "Cruise + Americas/Caribbean":  "קרוז - אמריקה וקריביים",
+    "Cruise + Asia Pacific":        "קרוז - אסיה פסיפיק",
+    "Cruise + Europe":              "קרוז - אירופה",
+    "Cruise + World":               "קרוז - עולמי",
+    "Cruise + Middle East":         "קרוז - המזרח התיכון",
+    "Cruise - At Sea Only":         "קרוז - בים בלבד",
+    "European Ferries":             None,
+    "Europe Ferries + Land":        None,
+}
+
+
+def _gigsky_dest_hebrew(bundle):
+    """Canonical Hebrew destination for a GigSky plan bundle (None → skip)."""
+    btype = bundle.get("planBundleType")
+    name = bundle.get("planBundleName", "")
+    if btype == "REGIONAL":
+        return GIGSKY_REGION_TO_HEBREW.get(name)
+    if btype == "WORLD":
+        return GIGSKY_WORLD_TO_HEBREW.get(name)
+    # COUNTRY
+    if name in GIGSKY_COUNTRY_SKIP:
+        return None
+    code = GIGSKY_NAME_TO_CODE.get(name) or (bundle.get("countryCodes") or [None])[0]
+    return ESIMO_CODE_TO_HEBREW.get(code) or GIGSKY_CODE_EXTRA.get(code)
+
+
+def _gigsky_gb_str(data_gb):
+    if data_gb is None:
+        return "בלתי מוגבל"  # בלתי מוגבל
+    if data_gb >= 1:
+        return f"{int(data_gb)}GB" if data_gb == int(data_gb) else f"{data_gb:g}GB"
+    return f"{round(data_gb * 1024)}MB"
+
+
+def scrape_gigsky_global(_page=None, usd_rate=None):
+    """Scrape the full GigSky eSIM catalog (countries + regions + global + cruise).
+
+    Pure HTTP — one CDN JSON (GIGSKY_PLAN_BUNDLE_URL) holds every plan bundle.
+    Skips free trials (freePlan), the recurring "GigSky One" subscription bundles,
+    offshore/inflight/Palestine, and ferry bundles. USD is the billed currency.
+    """
+    import requests
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    try:
+        r = requests.get(
+            GIGSKY_PLAN_BUNDLE_URL,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"},
+            timeout=40,
+        )
+        r.raise_for_status()
+        payload = r.json() or {}
+    except Exception as exc:
+        logger.warning(f"GigSky scraper failed: {exc}")
+        return []
+
+    currencies = payload.get("currencyCodes") or []
+    try:
+        usd_idx = currencies.index("USD")
+    except ValueError:
+        usd_idx = 5  # BRL,CAD,EUR,GBP,JPY,USD
+    unlimited_note = "גלישה יומית ללא הגבלה"  # גלישה יומית ללא הגבלה
+
+    plans, seen = [], set()
+    for bundle in payload.get("list") or []:
+        if bundle.get("isRecurringPlan"):
+            continue
+        dest = _gigsky_dest_hebrew(bundle)
+        if not dest:
+            continue
+        for p in bundle.get("plans") or []:
+            if p.get("freePlan"):
+                continue
+            prices = p.get("prices") or []
+            usd = prices[usd_idx] if usd_idx < len(prices) else None
+            try:
+                usd = float(usd)
+            except (TypeError, ValueError):
+                continue
+            if usd <= 0:
+                continue
+            kb = p.get("dataLimitInKB") or 0
+            unlimited = (p.get("chargingType") == "UNLIMITED") or kb == 0
+            data_gb = None if unlimited else round(kb / 1048576, 4)
+            try:
+                days = int(p.get("validityPeriodInDays"))
+            except (TypeError, ValueError):
+                continue
+            g = _gigsky_gb_str(data_gb)
+            day_unit = "יום" if days == 1 else "ימים"  # יום / ימים
+            plan_name = f"{dest} – {g} – {days} {day_unit}"
+            if plan_name in seen:      # guard UNIQUE(carrier, plan_name)
+                continue
+            seen.add(plan_name)
+            extras = [dest]
+            if unlimited:
+                extras.append(unlimited_note)
+            plans.append(_make_global_plan(
+                "gigsky", plan_name, round(usd * usd_rate, 2), "USD", usd,
+                data_gb=data_gb, days=days, esim=True, extras=extras,
+            ))
+    logger.info(f"GigSky: {len(plans)} plans")
+    return plans
+
+
 # ── Maya Mobile eSIM ─────────────────────────────────────────────────────────
 MAYA_SLUG_TO_HEBREW = {
     # Global & regions
@@ -8240,6 +8397,228 @@ BREEZ_EN_TO_HEBREW = {
     "Asia": "\u05d0\u05e1\u05d9\u05d4",
     "Global": "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9",
     "Africa": "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
+}
+
+# English product title -> Shopify product handle (breezesim.com/products/<handle>),
+# from the same country-bundles + regional-bundles collections the scraper reads. Used
+# by app.py to build per-destination affiliate deep-links (/go/breez?dest=...) with the
+# UpPromote sca_ref param. Format verified via the dashboard "Get product link" tool
+# 2026-07-06 (it emits exactly /products/<handle>?sca_ref=<tag>). Regenerate when Breeze
+# changes its catalog (scratchpad breez_en_handles.py: fetch collections, map title->handle).
+BREEZ_EN_TO_HANDLE = {
+    "Africa": "esimg_raf_v2",
+    "Albania": "esimg_al_v2",
+    "Algeria": "esimg_dz_v2",
+    "Andorra": "esimg_ad_v2",
+    "Anguilla": "esimg_ai_v2",
+    "Antigua And Barbuda": "esimg_ag_v2",
+    "Argentina": "esim-argentina",
+    "Armenia": "esimg_am_v2",
+    "Aruba": "esim-aruba",
+    "Asia": "esim-asia",
+    "Australia": "esim-australia",
+    "Austria": "esimg_at_v2",
+    "Azerbaijan": "esimg_az_v2",
+    "Bahamas": "esim-bahamas",
+    "Bahrain": "esimg_bh_v2",
+    "Balkans": "esim-balkans",
+    "Bangladesh": "esimg_bd_v2",
+    "Barbados": "esimg_bb_v2",
+    "Belarus": "esimg_by_v2",
+    "Belgium": "esimg_be_v2",
+    "Benin": "esimg_bj_v2",
+    "Bermuda": "esim-bermuda",
+    "Bolivia": "esimg_bo_v2",
+    "Bonaire, saint Eustatius and Saba": "esim-bonaire-saint-eustatius-and-saba",
+    "Bosnia And Herzegovina": "esimg_ba_v2",
+    "Botswana": "esimg_bw_v2",
+    "Brazil": "esim-brazil",
+    "Brunei": "esimg_bn_v2",
+    "Bulgaria": "esimg_bg_v2",
+    "Burkina Faso": "esimg_bf_v2",
+    "CENAM": "esim-cenam",
+    "CIS": "esim-cis-region",
+    "Cambodia": "esimg_kh_v2",
+    "Cameroon": "esimg_cm_v2",
+    "Canada": "esim-canada",
+    "Canary Islands": "esimg_ic_v2",
+    "Cape Verde": "esim-cape-verde",
+    "Caribbean": "esim-caribbean",
+    "Cayman Islands": "esimg_ky_v2",
+    "Central African Republic": "esimg_cf_v2",
+    "Chad": "esimg_td_v2",
+    "Chile": "esimg_cl_v2",
+    "China": "esim-china",
+    "Colombia": "esim-colombia",
+    "Congo": "esimg_cg_v2",
+    "Congo-the Democratic Republic of the": "esimg_cd_v2",
+    "Costa Rica": "esim-costa-rica",
+    "Croatia": "esimg_hr_v2",
+    "Cuba": "esim-cuba",
+    "Curacao": "esim-curacao",
+    "Cyprus": "esimg_cy_v2",
+    "Czech Republic": "esimg_cz_v2",
+    "Denmark": "esimg_dk_v2",
+    "Dominica": "esimg_dm_v2",
+    "Dominican Republic": "esim-dominican-republic",
+    "EU+": "esim-europe",
+    "Ecuador": "esimg_ec_v2",
+    "Egypt": "esim-egypt",
+    "El Salvador": "esimg_sv_v2",
+    "Estonia": "esimg_ee_v2",
+    "Ethiopia": "esim-ethiopia",
+    "Europe Lite": "esim-europe-lite",
+    "Faroe Islands": "esimg_fo_v2",
+    "Fiji": "esimg_fj_v2",
+    "Finland": "esimg_fi_v2",
+    "France": "esim-france",
+    "French Guiana": "esimg_gf_v2",
+    "Gabon": "esimg_ga_v2",
+    "Georgia": "esimg_ge_v2",
+    "Germany": "esim-germany",
+    "Ghana": "esimg_gh_v2",
+    "Gibraltar": "esimg_gi_v2",
+    "Global": "esim-global",
+    "Greece": "esim-greece",
+    "Greenland": "esimg_gl_v2",
+    "Grenada": "esimg_gd_v2",
+    "Guadeloupe": "esimg_gp_v2",
+    "Guam": "esimg_gu_v2",
+    "Guatemala": "esimg_gt_v2",
+    "Guernsey": "esimg_gg_v2",
+    "Guinea": "esimg_gn_v2",
+    "Guinea-Bissau": "esimg_gw_v2",
+    "Guyana": "esimg_gy_v2",
+    "Haiti": "esim-haiti",
+    "Hawaii": "esim-hawaii",
+    "Honduras": "esimg_hn_v2",
+    "Hong Kong": "esim-hong-kong",
+    "Hungary": "esim-hungary",
+    "Iceland": "esimg_is_v2",
+    "India": "esim-india",
+    "Indonesia": "esimg_id_v2",
+    "Iran-Islamic Republic of": "esimg_ir_v2",
+    "Ireland": "esim-ireland",
+    "Isle of Man": "esimg_im_v2",
+    "Israel": "esimg_il_v2",
+    "Italy": "esim-italy",
+    "Ivory Coast": "esimg_ci_v2",
+    "Jamaica": "esimg_jm_v2",
+    "Japan": "esim-japan",
+    "Jersey": "esimg_je_v2",
+    "Jordan": "esimg_jo_v2",
+    "Kazakhstan": "esimg_kz_v2",
+    "Kenya": "esimg_ke_v2",
+    "Korea Republic of": "esim-south-korea",
+    "Kyrgyzstan": "esimg_kg_v2",
+    "Laos": "esimg_la_v2",
+    "Latvia": "esimg_lv_v2",
+    "Lesotho": "esimg_ls_v2",
+    "Liberia": "esimg_lr_v2",
+    "Liechtenstein": "esimg_li_v2",
+    "Lithuania": "esimg_lt_v2",
+    "Luxembourg": "esimg_lu_v2",
+    "Macao": "esimg_mo_v2",
+    "Madagascar": "esimg_mg_v2",
+    "Malawi": "esimg_mw_v2",
+    "Malaysia": "esimg_my_v2",
+    "Mali": "esimg_ml_v2",
+    "Malta": "esimg_mt_v2",
+    "Martinique": "esimg_mq_v2",
+    "Mauritania": "esimg_mr_v2",
+    "Mauritius": "esimg_mu_v2",
+    "Mayotte": "esimg_yt_v2",
+    "Mexico": "esim-mexico",
+    "Middle East": "esimg_rme_v2",
+    "Middle East and North Africa": "esim-middle-east-and-north-africa",
+    "Moldova": "esimg_md_v2",
+    "Monaco": "esimg_mc_v2",
+    "Mongolia": "esimg_mn_v2",
+    "Montenegro": "esimg_me_v2",
+    "Montserrat": "esimg_ms_v2",
+    "Morocco": "esim-morocco",
+    "Mozambique": "esimg_mz_v2",
+    "Namibia": "esimg_na_v2",
+    "Nauru": "esimg_nr_v2",
+    "Netherlands": "esim-netherlands",
+    "Netherlands Antilles": "esim-netherlands-antilles",
+    "New Zealand": "esimg_nz_v2",
+    "Nicaragua": "esimg_ni_v2",
+    "Niger": "esimg_ne_v2",
+    "Nigeria": "esimg_ng_v2",
+    "North America": "esim-north-america",
+    "North Macedonia": "esimg_mk_v2",
+    "Northern Cyprus": "esim-northern-cyprus",
+    "Norway": "esimg_no_v2",
+    "Oman": "esimg_om_v2",
+    "Pakistan": "esimg_pk_v2",
+    "Palestine": "esimg_ps_v2",
+    "Panama": "esim-panama",
+    "Papua New Guinea": "esimg_pg_v2",
+    "Paraguay": "esimg_py_v2",
+    "Peru": "esim-peru",
+    "Philippines": "esim-philippines",
+    "Poland": "esimg_pl_v2",
+    "Portugal": "esim-portugal",
+    "Puerto Rico": "esim-puerto-rico",
+    "Qatar": "esimg_qa_v2",
+    "Reunion": "esimg_re_v2",
+    "Romania": "esimg_ro_v2",
+    "Russian Federation": "esimg_ru_v2",
+    "Rwanda": "esimg_rw_v2",
+    "Saint Barthelemy": "esimg_bl_v2",
+    "Saint Kitts And Nevis": "esimg_kn_v2",
+    "Saint Lucia": "esim-saint-lucia",
+    "Saint Martin": "esimg_mf_v2",
+    "Saint Vincent And The Grenadines": "esimg_vc_v2",
+    "Samoa": "esimg_eh_v2",
+    "Saudi Arabia": "esim-saudi-arabia",
+    "Senegal": "esimg_sn_v2",
+    "Serbia": "esimg_rs_v2",
+    "Seychelles": "esim-seychelles",
+    "Singapore": "esimg_sg_v2",
+    "Slovakia": "esimg_sk_v2",
+    "Slovenia": "esimg_si_v2",
+    "South Africa": "esim-south-africa",
+    "South America": "esim-south-america",
+    "Spain": "esim-spain",
+    "Sri Lanka": "esimg_lk_v2",
+    "Sudan": "esimg_sd_v2",
+    "Suriname": "esimg_sr_v2",
+    "Swaziland": "esimg_sz_v2",
+    "Sweden": "esimg_se_v2",
+    "Switzerland": "esim-switzerland",
+    "Taiwan-Province of China": "esim-taiwan",
+    "Tajikistan": "esimg_tj_v2",
+    "Tanzania, United Republic of": "esim-tanzania",
+    "Thailand": "esim-thailand",
+    "Togo": "esim-togo",
+    "Tonga": "esimg_to_v2",
+    "Trinidad And Tobago": "esimg_tt_v2",
+    "Tunisia": "esim-tunisia",
+    "Turkey": "esim-turkey",
+    "Turks And Caicos Islands": "esimg_tc_v2",
+    "Uganda": "esimg_ug_v2",
+    "Ukraine": "esimg_ua_v2",
+    "United Arab Emirates": "esim-united-arab-emirates",
+    "United Kingdom": "esim-united-kingdom",
+    "United States of America": "esim-usa",
+    "Uruguay": "esimg_uy_v2",
+    "Uzbekistan": "esimg_uz_v2",
+    "Vanuatu": "esim-vanuatu",
+    "Vatican City": "esimg_va_v2",
+    "VietNam": "esim-vietnam",
+    "Virgin Islands - British": "esimg_vg_v2",
+    "Virgin Islands - United States": "esim-virgin-islands-us",
+    "Zambia": "esimg_zm_v2",
+}
+
+# Hebrew destination -> Shopify handle, composed from the two maps above so the
+# /go/breez deep-link layer can key on the canonical Hebrew ?dest= value.
+BREEZ_HEB_TO_HANDLE = {
+    BREEZ_EN_TO_HEBREW[_en]: _h
+    for _en, _h in BREEZ_EN_TO_HANDLE.items()
+    if _en in BREEZ_EN_TO_HEBREW
 }
 
 
@@ -9524,6 +9903,7 @@ def scrape_all_global():
         ("scrape_travelsim",           scrape_travelsim),
         ("scrape_gomoworld_global",    lambda: scrape_gomoworld_global(gbp_rate=gbp_rate)),
         ("scrape_tasim_global",        lambda: scrape_tasim_global(usd_rate=usd_rate)),
+        ("scrape_gigsky_global",       lambda: scrape_gigsky_global(usd_rate=usd_rate)),  # pure HTTP, no Playwright
         ("scrape_maya_global",         lambda: scrape_maya_global(usd_rate=usd_rate)),
         ("scrape_bcengi_global",       lambda: scrape_bcengi_global(usd_rate=usd_rate)),
         ("scrape_esim70_global",        lambda: scrape_esim70_global(eur_rate=eur_rate)),
@@ -10098,6 +10478,246 @@ def _dismiss_popups(page) -> None:
     page.wait_for_timeout(500)
 
 
+# International eSIM provider sites stack a GDPR cookie-consent banner (OneTrust /
+# Cookiebot / Osano / CookieYes / Iubenda / Usercentrics / Quantcast …) AND often a
+# marketing / newsletter modal — neither of which _dismiss_popups (tuned for Israeli
+# carriers, clicks only ONE button on purpose) reliably clears. Accepting the cookie
+# banner is the cleanest dismissal (it's what a real visitor does) and leaves the
+# hero — the "main banner" — fully visible. Kept SEPARATE from _dismiss_popups so the
+# domestic scrapers' careful single-click behavior is untouched.
+_GLOBAL_POPUP_DISMISS_JS = r"""
+() => {
+  let clicked = 0, hidden = 0;
+
+  // 1) Click well-known consent "accept all" / modal-close controls by id/class.
+  const clickSels = [
+    '#onetrust-accept-btn-handler',
+    '#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll',
+    '#CybotCookiebotDialogBodyButtonAccept',
+    '.osano-cm-accept-all', '.osano-cm-accept',
+    '.cky-btn-accept', '[data-cky-tag="accept-button"]',
+    '.iubenda-cs-accept-btn',
+    '#uc-btn-accept-banner', '[data-testid="uc-accept-all-button"]',
+    '.cc-allow', '.cc-dismiss',
+    '.cookie-accept', '#acceptCookies', '#cookie-accept', '#cookieAccept',
+    '.termly-styles-buttonPrimary',
+    '#hs-eu-confirmation-button',
+    '.qc-cmp2-summary-buttons button[mode="primary"]',
+    'button[aria-label="Accept all"]', 'button[aria-label="Accept"]',
+    '[aria-label="Close"]', '[aria-label="close"]', '[aria-label="Dismiss"]',
+    '.modal-close', '.popup-close', '.close-btn', '.btn-close', '[data-dismiss="modal"]',
+  ];
+  for (const s of clickSels) {
+    document.querySelectorAll(s).forEach(el => {
+      try { const r = el.getBoundingClientRect(); if (r.width && r.height) { el.click(); clicked++; } } catch (e) {}
+    });
+  }
+
+  // 2) Click buttons/links by their TEXT (frameworks without stable ids). Kept
+  //    consent-specific + short so we never hit a hero CTA (e.g. "Buy", "Continue").
+  const wantText = ['accept all','accept cookies','accept','allow all','allow cookies',
+    'i agree','agree','got it','אני מסכים','מאשר','אישור','קבל','סגור'];
+  document.querySelectorAll('button, a, [role="button"]').forEach(el => {
+    const t = (el.innerText || el.textContent || '').trim().toLowerCase();
+    if (!t || t.length > 20) return;
+    if (wantText.includes(t)) { try { el.click(); clicked++; } catch (e) {} }
+  });
+
+  // 3) Force-hide known consent-SDK / overlay containers that survive clicking,
+  //    plus the Israeli Adoric marketing wrappers (some .co.il global providers).
+  const hideSels = [
+    '#onetrust-consent-sdk', '#onetrust-banner-sdk',
+    '#CybotCookiebotDialog', '.CybotCookiebotDialog', '#CybotCookiebotDialogBodyUnderlay',
+    '.osano-cm-window', '.osano-cm-dialog',
+    '.cky-consent-container', '.cky-overlay', '.cky-modal',
+    '.iubenda-cs-container', '#iubenda-cs-banner',
+    '#usercentrics-root', '#uc-center-container', '#usercentrics-cmp-ui',
+    '[id*="usercentrics"]', 'usercentrics-root', 'usercentrics-cmp-ui',
+    '#axeptio_overlay', '.axeptio_mount', '[class*="axeptio"]', '#axeptio_main_button',
+    '.termly-consent-banner', '#hs-eu-cookie-confirmation',
+    '.qc-cmp2-container', '#qc-cmp2-container',
+    '.cc-window', '#gdpr-cookie-message', '#gdpr-cookie-notice',
+    '[class*="cookie-consent"]', '[id*="cookie-consent"]', '[class*="CookieConsent"]',
+    'div[class*="__ADORIC__"]', '[id^="adoric_smartbox"]',
+  ];
+  for (const s of hideSels) {
+    document.querySelectorAll(s).forEach(el => { el.style.setProperty('display','none','important'); hidden++; });
+  }
+
+  // 4) Hide common backdrop/overlay wrappers by class so the dimming layer behind a
+  //    modal doesn't leave the screenshot darkened. NB: match SPECIFIC backdrop
+  //    classes — a bare [class*="backdrop"] wrongly hits Tailwind's `backdrop-blur`
+  //    utility (used on sticky headers), which nuked real nav bars.
+  const overlaySels = ['.modal-backdrop', '.modal-overlay', '[class*="modal-backdrop"]',
+    '[class*="ModalBackdrop"]', '.cdk-overlay-backdrop', '.MuiBackdrop-root',
+    '.ReactModal__Overlay', '.fancybox-container', '.fancybox__backdrop',
+    '[class*="overlay"][class*="open"]', '[class*="Overlay"][class*="open"]'];
+  for (const s of overlaySels) {
+    document.querySelectorAll(s).forEach(el => { el.style.setProperty('display','none','important'); hidden++; });
+  }
+
+  // 5) General overlay/modal killer: any fixed/sticky element with a high z-index
+  //    that either covers most of the viewport (backdrop / full-screen modal) or sits
+  //    as a large centered box (cookie / language / newsletter dialog). Hero content
+  //    is never position:fixed, and sticky top nav / slim footers are excluded, so
+  //    this removes the popup without touching the banner.
+  const vw = innerWidth, vh = innerHeight;
+  document.querySelectorAll('body *').forEach(el => {
+    const cs = getComputedStyle(el);
+    if (cs.position !== 'fixed' && cs.position !== 'sticky') return;
+    if ((parseInt(cs.zIndex, 10) || 0) < 100) return;
+    const r = el.getBoundingClientRect();
+    if (r.width < 60 || r.height < 60) return;
+    if (r.top <= 2 && r.height <= vh * 0.2) return;            // sticky top nav — keep
+    if (r.bottom >= vh - 2 && r.height <= vh * 0.15) return;   // slim sticky footer — keep
+    const coversMost  = r.width >= vw * 0.85 && r.height >= vh * 0.85;
+    const centeredBox = r.width >= vw * 0.3 && r.height >= vh * 0.25 &&
+                        r.top > vh * 0.02 && r.top < vh * 0.6;
+    const cls = ((el.className && el.className.toString ? el.className.toString() : '') + ' ' + (el.id || '')).toLowerCase();
+    const looksOverlay = /(overlay|backdrop|modal|popup|lightbox|dialog|drawer|cookie|consent|lang|newsletter|subscribe)/.test(cls)
+      || /rgba\(0,\s*0,\s*0/.test(cs.backgroundColor)
+      || !!el.querySelector('[role="dialog"], [class*="modal"], [class*="popup"], [class*="lightbox"]');
+    if ((coversMost && looksOverlay) || centeredBox) {
+      el.style.setProperty('display','none','important'); hidden++;
+    }
+  });
+
+  // 5b) Shadow-DOM consent (Usercentrics v2 et al. render the banner inside a
+  //     custom-element shadow root, so the light-DOM button/text passes miss it).
+  document.querySelectorAll('*').forEach(el => {
+    const sr = el.shadowRoot;
+    if (!sr) return;
+    sr.querySelectorAll('button, [role="button"]').forEach(b => {
+      const t = (b.innerText || b.textContent || '').trim().toLowerCase();
+      if (b.getAttribute && b.getAttribute('data-testid') === 'uc-accept-all-button') { try { b.click(); clicked++; } catch (e) {} return; }
+      if (['accept all','accept cookies','accept','allow all','agree','i agree','ok','got it','אני מסכים','מאשר','אישור','קבל'].includes(t)) {
+        try { b.click(); clicked++; } catch (e) {}
+      }
+    });
+    const hostId = ((el.id || '') + ' ' + (el.tagName || '')).toLowerCase();
+    if (/usercentrics|consent|cookie|cmp|gdpr/.test(hostId)) { el.style.setProperty('display','none','important'); hidden++; }
+  });
+
+  // 6) Consent-text pass: cookie banners are often bottom-anchored (top > 60%, so
+  //    the geometry rules above miss them). Hide any fixed/sticky/absolute strip whose
+  //    text (or class/id) is clearly a cookie/consent notice — EN or HE (Israeli
+  //    providers like GlobalSIM show a Hebrew "שימוש ב-Cookies … מדיניות הפרטיות" bar).
+  //    The nav/header guard means a sticky menu that merely links to a cookie policy
+  //    is never nuked.
+  document.querySelectorAll('div,section,aside,footer').forEach(el => {
+    if (el.tagName === 'HEADER' || el.querySelector('nav, header')) return;
+    const cs = getComputedStyle(el);
+    if (!['fixed','sticky','absolute'].includes(cs.position)) return;
+    const r = el.getBoundingClientRect();
+    if (r.height > vh * 0.7 || r.width < vw * 0.3 || r.width < 200) return;  // strip, not whole page
+    const low = (el.innerText || '').slice(0, 600).toLowerCase();
+    const clsid = ((el.className && el.className.toString ? el.className.toString() : '') + ' ' + (el.id || '')).toLowerCase();
+    const cookieTok = low.includes('cookie') || low.includes('עוגיות') || low.includes('קוקיז')
+      || /(cookie|consent|gdpr)/.test(clsid);
+    const consentWord = /(accept|consent|agree|continue|got it|confirm|understood|\bok\b|manage|policy|settings|allow|preferences)/.test(low)
+      || /(מדיניות|פרטיות|מסכים|אישור|לאשר|הסכמה|שימוש ב)/.test(low);
+    const isConsent = low.includes('we use cookies') || low.includes('uses cookies') ||
+      low.includes('gdpr') || (cookieTok && consentWord);
+    if (isConsent) { el.style.setProperty('display','none','important'); hidden++; }
+  });
+
+  // 7) Restore scroll that popups commonly lock so the hero renders normally.
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  return { clicked, hidden };
+}
+"""
+
+
+def _dismiss_global_popups(page) -> None:
+    """Aggressively clear cookie-consent + marketing popups on international
+    provider sites so the screenshot shows only the hero banner."""
+    try:
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(300)
+    except Exception:
+        pass
+    # Two main-document passes — a 2nd modal often appears only after the consent
+    # banner is accepted/closed.
+    for _ in range(2):
+        try:
+            res = page.evaluate(_GLOBAL_POPUP_DISMISS_JS)
+            if res and (res.get("clicked") or res.get("hidden")):
+                logger.info("Global popup dismiss: clicked=%s hidden=%s",
+                            res.get("clicked"), res.get("hidden"))
+        except Exception:
+            pass
+        page.wait_for_timeout(500)
+    # Iframe-based consent (Quantcast / TrustArc / some Cookiebot render in an iframe).
+    for fr in page.frames:
+        for sel in ("#onetrust-accept-btn-handler",
+                    "#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll",
+                    "button[aria-label='Accept all']",
+                    ".qc-cmp2-summary-buttons button[mode='primary']"):
+            try:
+                loc = fr.locator(sel).first
+                if loc.is_visible(timeout=200):
+                    loc.click(timeout=500)
+                    page.wait_for_timeout(300)
+            except Exception:
+                continue
+    # Final late pass — some banners (Axeptio, a few Hebrew bars) inject a second or
+    # two after load, after the passes above already ran.
+    page.wait_for_timeout(1300)
+    try:
+        page.evaluate(_GLOBAL_POPUP_DISMISS_JS)
+    except Exception:
+        pass
+    page.wait_for_timeout(400)
+
+
+# Persistent consent-hider — installed as an init script so it runs on every page
+# load and keeps HIDING (not clicking) known consent containers + fixed cookie-text
+# strips on a 500ms interval for ~15s. Timing-independent: a banner injected 8-12s
+# after load (e.g. TravelSim's Hebrew bar, which isn't in the DOM even at 9s) is
+# removed within half a second of appearing, regardless of when the one-shot
+# dismissal passes ran. Only hides consent-shaped elements, never navs/heroes.
+_PERSISTENT_CONSENT_HIDER_JS = r"""
+(() => {
+  const SELS = [
+    '#onetrust-consent-sdk','#onetrust-banner-sdk','#CybotCookiebotDialog','.CybotCookiebotDialog',
+    '#CybotCookiebotDialogBodyUnderlay','.osano-cm-window','.osano-cm-dialog','.cky-consent-container',
+    '.cky-overlay','.cky-modal','.iubenda-cs-container','#iubenda-cs-banner','#usercentrics-root',
+    '#usercentrics-cmp-ui','[id*="usercentrics"]','usercentrics-root','usercentrics-cmp-ui',
+    '#axeptio_overlay','.axeptio_mount','[class*="axeptio"]','#axeptio_main_button','.termly-consent-banner',
+    '#hs-eu-cookie-confirmation','.qc-cmp2-container','#qc-cmp2-container','.cc-window','#gdpr-cookie-message',
+    '#gdpr-cookie-notice','[class*="cookie-consent"]','[id*="cookie-consent"]','[class*="CookieConsent"]',
+    'div[class*="__ADORIC__"]','[id^="adoric_smartbox"]'
+  ];
+  const hide = () => {
+    for (const s of SELS) { try { document.querySelectorAll(s).forEach(el => el.style.setProperty('display','none','important')); } catch (e) {} }
+    if (!document.body) return;
+    const vw = innerWidth, vh = innerHeight;
+    document.querySelectorAll('div,section,aside,footer').forEach(el => {
+      if (el.tagName === 'HEADER' || el.querySelector('nav, header')) return;
+      const cs = getComputedStyle(el);
+      if (!['fixed','sticky','absolute'].includes(cs.position)) return;
+      const r = el.getBoundingClientRect();
+      if (r.height > vh * 0.7 || r.width < vw * 0.3 || r.width < 200) return;
+      const low = (el.innerText || '').slice(0, 600).toLowerCase();
+      const clsid = ((el.className && el.className.toString ? el.className.toString() : '') + ' ' + (el.id || '')).toLowerCase();
+      const cookieTok = low.includes('cookie') || low.includes('עוגיות') || low.includes('קוקיז') || /(cookie|consent|gdpr)/.test(clsid);
+      const consentWord = /(accept|consent|agree|continue|got it|confirm|understood|\bok\b|manage|policy|settings|allow|preferences)/.test(low)
+        || /(מדיניות|פרטיות|מסכים|אישור|לאשר|הסכמה|שימוש ב)/.test(low);
+      if (low.includes('we use cookies') || low.includes('uses cookies') || low.includes('gdpr') || (cookieTok && consentWord)) {
+        el.style.setProperty('display','none','important');
+      }
+    });
+    document.documentElement.style.overflow = ''; document.body.style.overflow = '';
+  };
+  let n = 0;
+  const iv = setInterval(() => { try { hide(); } catch (e) {} if (++n > 30) clearInterval(iv); }, 500);
+  try { hide(); } catch (e) {}
+})();
+"""
+
+
 CARRIER_HOMEPAGE_URLS = {
     "partner":   "https://www.partner.net.il",
     "pelephone": "https://www.pelephone.co.il",
@@ -10356,4 +10976,194 @@ def scrape_carrier_store_banners(output_dir: str) -> list[dict]:
         finally:
             browser.close()
 
+    return results
+
+
+# ── Global eSIM provider homepage banners ───────────────────────────────────
+# Screenshot the MAIN (homepage) banner of every global eSIM provider once per
+# capture, exactly like the domestic carrier banners. Files are saved as
+# {provider}_global.png in the same data/banners/ folder. URLs are the provider's
+# clean homepage root (the "main banner"), NOT an Israel deep-link — mirror of
+# app.py's GLOBAL_PROVIDERS_REGISTRY / _GUEST_PROVIDER_META ids.
+GLOBAL_BANNER_URLS = {
+    "seven_g":          "https://7g.app",
+    "world8":           "https://world8.co.il",
+    "airalo":           "https://www.airalo.com",
+    "bcengi":           "https://www.bcengi.com",
+    "besim":            "https://besim.co.il",
+    "bestconnect":      "https://bestconnect.online",
+    "bnesim":           "https://www.bnesim.com",
+    "breez":            "https://breezesim.com",
+    "bytesim":          "https://bytesim.com",
+    "esimplus":         "https://esimplus.me",
+    "esimio":           "https://esim.io",
+    "esim70":           "https://esim70.com",
+    "esimo":            "https://esimo.io",
+    "terminalesim":     "https://terminalesim.com",
+    "gigsky":           "https://www.gigsky.com",
+    "pelephone_global": "https://www.pelephone.co.il/digitalsite/heb/abroad/global-sim/",
+    "gomoworld":        "https://www.gomoworld.com",
+    "holafly":          "https://esim.holafly.com",
+    "jetpack":          "https://www.jetpacglobal.com",
+    "maya":             "https://maya.net",
+    "orbit":            "https://orbitmobile.com",
+    "saily":            "https://saily.com",
+    "simtlv":           "https://simtlv.co.il",
+    "sparks":           "https://www.sparks.travel",
+    "tasim":            "https://tasim.us",
+    "travelsim":        "https://travelsimobile.co.il",
+    "tuki":             "https://tuki-esim.co.il",
+    "voye":             "https://voyeglobal.com",
+    "xphone_global":    "https://www.xphone.co.il",
+    "yesim":            "https://yesim.app",
+    "nomad":            "https://www.nomadesim.com",
+    "ubigi":            "https://www.ubigi.com",
+    "alosim":           "https://alosim.com",
+}
+
+
+# "Banner changed" (freshness) tracking. We store a small perceptual average-hash
+# (aHash) per provider in a JSON sidecar; when a fresh capture's aHash drifts past a
+# threshold from the stored one, the provider changed its homepage campaign and we
+# stamp changed_at=now. A perceptual hash (not sha256) is used so minor rendering
+# noise — antialiasing, a blinking cursor — doesn't trigger a false "changed".
+_GLOBAL_BANNER_STATE_FILE = "_global_banner_state.json"
+_BANNER_CHANGE_THRESHOLD = 18   # aHash bits (out of 256) that must differ = a real change
+
+
+def _banner_ahash(path: str):
+    """16x16 grayscale average-hash → 256-char bit string (None on failure)."""
+    try:
+        from PIL import Image
+        img = Image.open(path).convert("L").resize((16, 16))
+        px = list(img.getdata())
+        avg = sum(px) / len(px)
+        return "".join("1" if p >= avg else "0" for p in px)
+    except Exception as exc:
+        logger.warning("aHash failed for %s: %s", path, exc)
+        return None
+
+
+def _ahash_distance(a: str, b: str) -> int:
+    if not a or not b or len(a) != len(b):
+        return 999
+    return sum(1 for x, y in zip(a, b) if x != y)
+
+
+def _load_global_banner_state(output_dir: str) -> dict:
+    import json
+    try:
+        with open(os.path.join(output_dir, _GLOBAL_BANNER_STATE_FILE), "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _save_global_banner_state(output_dir: str, state: dict) -> None:
+    import json
+    try:
+        with open(os.path.join(output_dir, _GLOBAL_BANNER_STATE_FILE), "w", encoding="utf-8") as f:
+            json.dump(state, f)
+    except Exception as exc:
+        logger.warning("Could not write global banner state: %s", exc)
+
+
+def scrape_global_provider_banners(output_dir: str) -> list[dict]:
+    """
+    Navigate to each global eSIM provider's homepage and save a 1280x720 PNG.
+    Files are saved as {provider}_global.png in output_dir.
+    Returns a list of dicts: { carrier, scraped_at, success }.
+
+    Mirrors scrape_carrier_store_banners: 2 attempts, error-page detection,
+    min-size guard, atomic replace — so a failed capture preserves the previous
+    good screenshot instead of overwriting it with a blank/consent page. On each
+    successful capture it also updates the perceptual-hash state so the API can
+    flag which banners changed their campaign (freshness badge).
+    """
+    _ensure_event_loop()
+    results = []
+    os.makedirs(output_dir, exist_ok=True)
+    state = _load_global_banner_state(output_dir)
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"],
+        )
+        try:
+            context = browser.new_context(
+                viewport={"width": 1280, "height": 720},
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+                ignore_https_errors=True,
+            )
+            # Persistent hider catches late-injected consent banners regardless of
+            # the one-shot dismissal timing.
+            context.add_init_script(_PERSISTENT_CONSENT_HIDER_JS)
+
+            for provider, url in GLOBAL_BANNER_URLS.items():
+                out_path = os.path.join(output_dir, f"{provider}_global.png")
+                scraped_at = datetime.now(timezone.utc).isoformat()
+                success = False
+                last_reason = ""
+                for attempt in (1, 2):
+                    page = context.new_page()
+                    try:
+                        page.goto(url, timeout=30000, wait_until="domcontentloaded")
+                        # Global SPA sites render hero + consent banners with a delay.
+                        page.wait_for_timeout(4000)
+                        is_err, reason = _is_error_page(page)
+                        if is_err:
+                            last_reason = f"attempt {attempt}: {reason}"
+                            logger.warning("Global banner %s: skipping bad page (%s)", provider, last_reason)
+                            if attempt == 1:
+                                page.wait_for_timeout(3000)
+                            continue
+                        # International cookie-consent + marketing popups need the
+                        # aggressive dismissal, not the Israeli-tuned _dismiss_popups.
+                        _dismiss_global_popups(page)
+                        tmp_path = out_path + ".new.png"
+                        page.screenshot(path=tmp_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
+                        file_size = os.path.getsize(tmp_path) if os.path.exists(tmp_path) else 0
+                        if file_size < _MIN_BANNER_FILE_BYTES:
+                            last_reason = f"attempt {attempt}: screenshot too small ({file_size} bytes)"
+                            logger.warning("Global banner %s: %s", provider, last_reason)
+                            try:
+                                os.remove(tmp_path)
+                            except Exception:
+                                pass
+                            continue
+                        os.replace(tmp_path, out_path)
+                        success = True
+                        logger.info("Global banner screenshot saved: %s (%d bytes)", out_path, file_size)
+                        # ── Freshness tracking: mark changed_at when the campaign drifts.
+                        new_h = _banner_ahash(out_path)
+                        prev = state.get(provider) or {}
+                        prev_h = prev.get("hash")
+                        if not prev_h or new_h is None:
+                            # First-ever baseline (or hash failure) — record, don't flag.
+                            changed_at = prev.get("changed_at")
+                        elif _ahash_distance(new_h, prev_h) > _BANNER_CHANGE_THRESHOLD:
+                            changed_at = datetime.now(timezone.utc).isoformat()
+                            logger.info("Global banner CHANGED: %s", provider)
+                        else:
+                            changed_at = prev.get("changed_at")
+                        state[provider] = {"hash": new_h or prev_h, "changed_at": changed_at}
+                        break
+                    except Exception as exc:
+                        last_reason = f"attempt {attempt}: {exc}"
+                        logger.warning("Global banner attempt %d failed for %s: %s", attempt, provider, exc)
+                    finally:
+                        page.close()
+                if not success:
+                    logger.warning("Global banner FAILED for %s after retries; previous banner preserved (%s)",
+                                   provider, last_reason)
+                results.append({"carrier": provider, "scraped_at": scraped_at, "success": success})
+        finally:
+            browser.close()
+
+    _save_global_banner_state(output_dir, state)
     return results

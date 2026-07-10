@@ -14,6 +14,7 @@ export const ROUTE_META = [
   { match: '/plans',             kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'השוואת מסלולים',       en: 'Plan comparison' } },
   { match: '/roaming',           kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'חו״ל · Roaming',       en: 'Roaming' } },
   { match: '/esim',              kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'eSIM גלובלי',          en: 'Global eSIM' } },
+  { match: '/esim-banners',      kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'באנרים גלובליים',      en: 'Global banners' } },
   { match: '/usa',               kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'נוחתים בארה״ב',        en: 'Landing in the USA' } },
   { match: '/resellers',         kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'משווקים',              en: 'Resellers' } },
   { match: '/content',           kicker: { he: 'מסלולים',      en: 'Plans' },         title: { he: 'שירותי תוכן',          en: 'Content services' } },

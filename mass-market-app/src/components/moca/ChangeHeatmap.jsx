@@ -52,7 +52,7 @@ function buildTooltip(changes, day, tt) {
     const label = changeTypeLabel(c, tt)
     const price = changePriceText(c)
     const name = c.plan_name || ''
-    lines.push(`• ${label}${price ? ' ' + price : ''} — ${name}`)
+    lines.push(`• ${label}${price ? ' ' + price : ''} - ${name}`)
   }
   if (changes.length > 10) lines.push(`+ ${changes.length - 10} ${tt('נוספים', 'more')}`)
   return lines.join('\n')

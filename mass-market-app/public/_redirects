@@ -1,5 +1,12 @@
 # Netlify routing (read from dist/_redirects — works with manual drag-deploy,
 # unlike netlify.toml which lives outside dist/).
+#
+# Safety net: route ANY /go/* affiliate click to the Flask redirect on the API
+# host — even a stale RELATIVE /go/<provider> link from an old cached PWA bundle
+# (empty API_BASE) that would otherwise land on the apex/subdomain SPA and 404.
+# Must be FIRST — path-only, so it matches every host (apex + esim.mocaintel.com)
+# before the host/SPA rules below. Netlify appends the incoming query string.
+/go/*        https://api.mocaintel.com/go/:splat   302!
 # "/" serves the pure-static prerendered marketing page (instant paint, no SPA
 # boot); "/hotels" serves the prerendered+hydrated Guest Connect marketing page;
 # every other path falls through to the SPA (index.html).

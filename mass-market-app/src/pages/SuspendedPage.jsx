@@ -58,7 +58,7 @@ export default function SuspendedPage() {
             {isTrialExpired ? (
               <>{tt('תקופת הפיילוט של', 'The pilot period for')} <strong>{name}</strong> {tt('הגיעה לסיומה. צרו קשר כדי לחדש את הגישה או לעבור למנוי מלא.', 'has ended. Contact us to renew access or move to a full subscription.')}</>
             ) : (
-              <>{tt('הגישה של', 'Access for')} <strong>{name}</strong> {tt('ל-MOCA הושהתה זמנית. אם לדעתך זו טעות או שברצונך לחדש את המנוי — פנה אלינו.', 'to MOCA has been temporarily suspended. If you think this is a mistake or you want to renew the subscription, contact us.')}</>
+              <>{tt('הגישה של', 'Access for')} <strong>{name}</strong> {tt('ל-MOCA הושהתה זמנית. אם לדעתך זו טעות או שברצונך לחדש את המנוי - פנה אלינו.', 'to MOCA has been temporarily suspended. If you think this is a mistake or you want to renew the subscription, contact us.')}</>
             )}
           </p>
 
@@ -105,7 +105,7 @@ export default function SuspendedPage() {
         </div>
 
         <p className="text-[10px] text-moca-muted mt-6">
-          MOCA — Mobile Operators Competitor Analysis
+          MOCA - Mobile Operators Competitor Analysis
         </p>
       </div>
     </div>

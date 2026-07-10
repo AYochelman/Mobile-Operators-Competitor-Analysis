@@ -446,32 +446,32 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
 
       {/* Plan name */}
       {!isContent && (
-        <h3 className="text-[13px] font-semibold text-gray-800 mb-3 leading-relaxed flex items-center gap-1.5 flex-wrap">
+        <h3 className="text-[14px] font-semibold text-moca-dark mb-3 leading-relaxed flex items-center gap-1.5 flex-wrap">
           <span>{
             (plan.plan_name || '').split(' – ').map((part, i) => (
-              <span key={i}>{i > 0 && <span className="text-gray-300"> - </span>}<bdi>{part}</bdi></span>
+              <span key={i}>{i > 0 && <span className="text-moca-muted"> - </span>}<bdi>{part}</bdi></span>
             ))
           }</span>
           {supports5G && !nameHas5G && !isPriority5G && (
-            <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold rounded bg-purple-100 text-purple-700 leading-none tracking-wide">5G</span>
+            <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded-full bg-[#efe6d6] text-moca-bolt leading-none tracking-wide">5G</span>
           )}
         </h3>
       )}
       {/* Service name for content plans */}
       {isContent && plan.service && (
-        <h3 className="text-[13px] font-semibold text-gray-800 mb-3 leading-relaxed">{plan.service}</h3>
+        <h3 className="text-[14px] font-semibold text-moca-dark mb-3 leading-relaxed">{plan.service}</h3>
       )}
 
       {/* Price */}
       <div className="mb-3 text-right">
         <div className="flex items-baseline gap-2 justify-start">
-          <div className="text-3xl font-bold text-gray-900 tracking-tight">{String(plan.price).startsWith('₪') ? plan.price : `₪${plan.price}`}</div>
+          <div className="text-[32px] font-bold text-moca-bolt tracking-tight leading-none">{String(plan.price).startsWith('₪') ? plan.price : `₪${plan.price}`}</div>
           {!isContent && !isUsa && plan.plan_name && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setShowPriceHistory(true) }}
               title={tt('היסטוריית מחיר', 'Price history')}
-              className="text-gray-300 hover:text-moca-bolt transition-colors p-1 -m-1"
+              className="text-moca-muted hover:text-moca-bolt transition-colors p-1 -m-1"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
@@ -481,7 +481,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
           )}
         </div>
         {(isGlobal || isUsa) && plan.original_price && plan.currency && plan.currency !== 'ILS' && (
-          <div className="text-[11px] text-gray-400 mt-0.5" dir="ltr">{plan.currency} {({'USD':'$','GBP':'£','EUR':'€','AUD':'A$','CAD':'C$','JPY':'¥','CHF':'CHF ','NZD':'NZ$'})[plan.currency] || '$'}{plan.original_price}</div>
+          <div className="text-[11px] text-moca-muted mt-0.5" dir="ltr">{plan.currency} {({'USD':'$','GBP':'£','EUR':'€','AUD':'A$','CAD':'C$','JPY':'¥','CHF':'CHF ','NZD':'NZ$'})[plan.currency] || '$'}{plan.original_price}</div>
         )}
         {plan.promo_price != null && plan.promo_months != null && (
           <div className="text-[11px] text-moca-bolt font-medium mt-0.5">
@@ -489,7 +489,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
           </div>
         )}
         {!isContent && Number(plan.price) > 0 && Number(plan.data_gb) > 0 && (
-          <div className="text-[10px] text-gray-400 mt-0.5" dir="ltr">
+          <div className="text-[11px] text-moca-muted mt-1 font-medium" dir="ltr">
             ₪{(Number(plan.price) / Number(plan.data_gb)).toFixed(2)}/GB
           </div>
         )}
@@ -501,16 +501,16 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
 
       {/* Info line — dot separated */}
       {infoParts.length > 0 && (
-        <p className="text-sm text-gray-500 mb-3">
+        <p className="text-sm text-moca-sub mb-3">
           {infoParts.map((part, i) => (
-            <span key={i}>{i > 0 && <span className="mx-1.5 text-gray-300">·</span>}<bdi>{part}</bdi></span>
+            <span key={i}>{i > 0 && <span className="mx-1.5 text-moca-muted">·</span>}<bdi>{part}</bdi></span>
           ))}
         </p>
       )}
 
       {/* Content-specific fields */}
       {isContent && plan.free_trial && !['ללא תקופת חינם', '—', ''].includes(plan.free_trial) && (
-        <p className="text-xs text-gray-500 mb-2 flex items-center gap-1 justify-start">
+        <p className="text-xs text-moca-sub mb-2 flex items-center gap-1 justify-start">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 text-moca-bolt shrink-0">
             <path fillRule="evenodd" d="M4.5 2A2.5 2.5 0 0 0 2 4.5v2.878a2.5 2.5 0 0 0 .732 1.768l5.5 5.5a2.5 2.5 0 0 0 3.536 0l2.878-2.878a2.5 2.5 0 0 0 0-3.536l-5.5-5.5A2.5 2.5 0 0 0 7.378 2H4.5ZM5 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
           </svg>
@@ -518,22 +518,22 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
         </p>
       )}
       {isContent && plan.note && (
-        <p className="text-[11px] text-gray-400 mb-2 text-right">{plan.note}</p>
+        <p className="text-[11px] text-moca-sub mb-2 text-right">{plan.note}</p>
       )}
 
       {/* Extras */}
       {extras.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+        <div className="mt-3 pt-3 border-t border-moca-sand/50 space-y-1">
           {visibleExtras.map((extra, i) => (
-            <div key={i} className="text-[11px] text-gray-400 flex items-start gap-1.5">
-              <span className="text-gray-300 mt-px shrink-0">&#10022;</span>
+            <div key={i} className="text-[11px] text-moca-sub flex items-start gap-1.5">
+              <span className="text-moca-muted mt-px shrink-0">&#10022;</span>
               <span>{(isGlobal || isAbroad || isUsa) ? localizeDest(extra, lang) : extra}</span>
             </div>
           ))}
           {hiddenCount > 0 && !showAllExtras && (
             <button
               onClick={() => setShowAllExtras(true)}
-              className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-[11px] text-moca-sub hover:text-moca-bolt transition-colors"
             >
               +{hiddenCount} {tt('נוספים', 'more')}
             </button>
@@ -543,11 +543,11 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
 
       {/* Country / Apps links */}
       {(countryData || appsData) && (
-        <div className="mt-3 pt-2 border-t border-gray-50 flex items-center gap-3">
+        <div className="mt-3 pt-2 border-t border-moca-sand/40 flex items-center gap-3">
           {countryData && (
             <button
               onClick={() => setShowCountries(true)}
-              className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-[11px] text-moca-sub hover:text-moca-bolt transition-colors"
             >
               {tt('מדינות', 'Countries')} ({countryData.countries.length}) &larr;
             </button>
@@ -555,7 +555,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
           {appsData && (
             <button
               onClick={() => setShowApps(true)}
-              className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-[11px] text-moca-sub hover:text-moca-bolt transition-colors"
             >
               {tt('אפליקציות', 'Apps')} &larr;
             </button>
@@ -632,7 +632,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               <button
                 type="button"
                 onClick={copyCoupon}
-                title={`${tt('לחץ להעתקה — בדקו בקופה של', 'Click to copy — check at checkout of')} ${providerLabel}`}
+                title={`${tt('לחץ להעתקה - בדקו בקופה של', 'Click to copy - check at checkout of')} ${providerLabel}`}
                 className="w-full flex items-center justify-center gap-1.5 mb-2 text-[11px] font-medium text-moca-bolt bg-[#fff4d6] border border-[#e8c97a]/60 rounded-lg py-1.5 px-2 transition-colors hover:bg-[#ffe9a8]"
               >
                 <span aria-hidden="true">🎟</span>
@@ -724,7 +724,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
         )}
 
         {/* Action icon strip — equal spacing across visible icons */}
-        <div className="flex items-center justify-around pt-2 mt-2 border-t border-gray-100">
+        <div className="flex items-center justify-around pt-2 mt-2 border-t border-moca-sand/50">
           {/* Compare toggle (or content URL fallback) */}
           {!isContent && onCompareToggle ? (
             <button
@@ -732,7 +732,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               onClick={(e) => { e.stopPropagation(); onCompareToggle(plan, type) }}
               title={isInCompare ? tt('הסר מהשוואה', 'Remove from comparison') : tt('הוסף להשוואה', 'Add to comparison')}
               className={`p-1 rounded transition-all ${
-                isInCompare ? 'text-blue-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-blue-400'
+                isInCompare ? 'text-blue-500' : 'text-moca-muted group-hover:text-moca-sub hover:text-blue-400'
               }`}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill={isInCompare ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -745,7 +745,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               href={contentUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1 text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt transition-colors"
+              className="p-1 text-moca-muted group-hover:text-moca-sub hover:text-moca-bolt transition-colors"
               onClick={(e) => e.stopPropagation()}
               title={tt('לאתר הספק', 'To provider site')}
             >
@@ -764,7 +764,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               onClick={(e) => { e.stopPropagation(); setShowAnnotations(true) }}
               title={annotationCount > 0 ? `${annotationCount} ${tt('הערות צוות', 'team notes')}` : tt('הוסף הערה', 'Add a note')}
               className={`relative p-1 transition-all ${
-                annotationCount > 0 ? 'text-moca-bolt' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
+                annotationCount > 0 ? 'text-moca-bolt' : 'text-moca-muted group-hover:text-moca-sub hover:text-moca-bolt'
               }`}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill={annotationCount > 0 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -785,7 +785,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               onClick={handleShare}
               title={tt('שתף חבילה', 'Share plan')}
               className={`p-1 transition-all ${
-                copied ? 'text-emerald-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-moca-bolt'
+                copied ? 'text-emerald-500' : 'text-moca-muted group-hover:text-moca-sub hover:text-moca-bolt'
               }`}
             >
               {copied ? (
@@ -809,7 +809,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
               onClick={(e) => { e.stopPropagation(); toggleWatch(watchKey) }}
               title={watched ? tt('הסר מהמעקב', 'Remove from watchlist') : tt('הוסף למעקב', 'Add to watchlist')}
               className={`p-1 transition-all ${
-                watched ? 'text-amber-400 hover:text-amber-500' : 'text-gray-300 group-hover:text-gray-400 hover:text-amber-400'
+                watched ? 'text-amber-400 hover:text-amber-500' : 'text-moca-muted group-hover:text-moca-sub hover:text-amber-400'
               }`}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill={watched ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -861,7 +861,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
       )}
       {planInfo && (
         <Modal open={showPlanInfo} onClose={() => setShowPlanInfo(false)} title={planInfoLabel === 'עיקרי התוכנית' ? tt('עיקרי התוכנית', 'Plan highlights') : tt('מידע נוסף על התוכנית', 'More plan information')} maxWidth="max-w-md">
-          <div className="space-y-2 text-sm text-gray-700 leading-relaxed text-right">
+          <div className="space-y-2 text-sm text-moca-text leading-relaxed text-right">
             {planInfo.split('\n').map(l => l.trim()).filter(Boolean).map((line, i) => {
               // "label|https://..." lines render as a clickable link (e.g. terms PDF)
               const sep = line.indexOf('|')

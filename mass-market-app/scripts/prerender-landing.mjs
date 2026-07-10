@@ -24,18 +24,18 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distIndex = resolve(root, 'dist/index.html')
 const ssrEntry = resolve(root, 'dist-ssr/entry-landing.js')
 
-const TITLE_HE = 'MOCA — מודיעין תחרותי לשוק הסלולר'
-const TITLE_EN = 'MOCA — Competitive Intelligence for Mobile Operators'
+const TITLE_HE = 'MOCA - מודיעין תחרותי לשוק הסלולר'
+const TITLE_EN = 'MOCA - Competitive Intelligence for Mobile Operators'
 
-if (!existsSync(ssrEntry)) throw new Error('prerender: missing ' + ssrEntry + ' — run the --ssr build first')
-if (!existsSync(distIndex)) throw new Error('prerender: missing ' + distIndex + ' — run the client build first')
+if (!existsSync(ssrEntry)) throw new Error('prerender: missing ' + ssrEntry + ' - run the --ssr build first')
+if (!existsSync(distIndex)) throw new Error('prerender: missing ' + distIndex + ' - run the client build first')
 
 // 1. render the landing component to a static HTML string — once per language
 const { render } = await import(pathToFileURL(ssrEntry).href)
 const heMarkup = render('he')
 const enMarkup = render('en')
 if (!/<h1/.test(heMarkup) || !/<h1/.test(enMarkup)) {
-  throw new Error('prerender: a rendered landing has no <h1> — render() likely failed')
+  throw new Error('prerender: a rendered landing has no <h1> - render() likely failed')
 }
 // Both copies live in the DOM; CSS (below) shows only the active one. The Hebrew
 // copy is the default/no-JS view, so it must render first and stay visible
@@ -71,7 +71,7 @@ head = head
 if (!/\/fonts\/fonts\.css/.test(head)) throw new Error('prerender: failed to inject self-hosted fonts.css link')
 
 if (!/<link[^>]*rel="stylesheet"[^>]*\/assets\/[^">]*\.css/.test(head)) {
-  throw new Error('prerender: app CSS <link> missing from head — landing would be unstyled')
+  throw new Error('prerender: app CSS <link> missing from head - landing would be unstyled')
 }
 
 // 3. logged-in visitors who land on "/" get bounced into the app (the SPA home)

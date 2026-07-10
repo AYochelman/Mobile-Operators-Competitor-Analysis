@@ -194,7 +194,7 @@ def require_api_key(f):
     def decorated(*args, **kwargs):
         provided = request.headers.get("X-API-Key")
         expected = _get_api_key()
-        if not provided or provided != expected:
+        if not provided or not hmac.compare_digest(provided, expected):
             return jsonify({"error": "Unauthorized — API key required"}), 401
         return f(*args, **kwargs)
     return decorated
@@ -599,7 +599,7 @@ def require_api_key_or_query(f):
     def decorated(*args, **kwargs):
         provided = request.headers.get("X-API-Key") or request.args.get("api_key")
         expected = _get_api_key()
-        if not provided or provided != expected:
+        if not provided or not hmac.compare_digest(provided, expected):
             return jsonify({"error": "Unauthorized — API key required"}), 401
         return f(*args, **kwargs)
     return decorated
@@ -824,12 +824,19 @@ def _verify_supabase_jwt(token: str):
             logger.warning(f"Unsupported JWT algorithm: {alg}")
             return None
 
-        # Check expiry — allow up to 4-hour grace period for clock skew.
-        # Production servers have correct clocks so this never triggers there.
-        # Local dev on Windows can drift significantly (seen: +2h) which would
-        # cause every fresh JWT to appear expired without this leeway.
+        # Check expiry with a bounded grace period for clock skew. The backend
+        # runs on a Windows box whose clock can drift (seen: +2h) and whose
+        # w32time NTP sync is not always running, so a fresh JWT can look expired
+        # without some leeway. But a large grace also extends the replay window
+        # for a stolen/logged-out token, so keep it as small as the drift allows
+        # and make it tunable: enable Windows time sync, then drop this to ~300s.
+        # config.json:jwt_exp_grace_seconds overrides the default (2h, down from 4h).
+        try:
+            _grace = int(load_config().get('jwt_exp_grace_seconds', 7200))
+        except (TypeError, ValueError):
+            _grace = 7200
         exp = payload.get('exp')
-        if exp is not None and _time.time() > exp + 14400:
+        if exp is not None and _time.time() > exp + max(0, _grace):
             logger.warning("JWT has expired (beyond grace period)")
             return None
 
@@ -1065,8 +1072,9 @@ _GUEST_PROVIDER_META = {
     # feed can emit to have a label + domain, else the chip is bare + /go dead-ends).
     "tuki":             {"label": "Tuki",          "color": "#6c2bd9", "domain": "tuki-esim.co.il"},
     "terminalesim":     {"label": "Terminal eSIM", "color": "#1a73e8", "domain": "terminalesim.com"},
+    "gigsky":           {"label": "GigSky",        "color": "#2b4c9b", "domain": "gigsky.com",       "url": "https://www.gigsky.com"},
     "airalo_regional":  {"label": "Airalo",        "color": "#ff5963", "domain": "airalo.com"},
-    "pelephone_global": {"label": "GlobalSIM",     "color": "#e3001b", "domain": "pelephone.co.il"},
+    "pelephone_global": {"label": "GlobalSIM",     "color": "#e3001b", "domain": "pelephone.co.il", "url": "https://www.pelephone.co.il/digitalsite/heb/abroad/global-sim/"},
     "world8":           {"label": "8 World",       "color": "#00a3a3", "domain": "world8.co.il"},
     "xphone_global":    {"label": "XPhone Global", "color": "#00857a", "domain": "xphone.co.il"},
     "travelsim":        {"label": "Travel Sim",    "color": "#f59e0b", "domain": "travelsimobile.co.il"},
@@ -1581,6 +1589,225 @@ def _ubigi_deeplink_url(dest):
     return _UBIGI_DEST_DEEPLINKS.get((dest or "").strip())
 
 
+# Breeze (UpPromote/Shopify) — unlike Voye/Ubigi (Impact TrackingLinks generated one
+# per URL), Breeze attributes via a single `sca_ref` query param that works on ANY store
+# page, so a per-destination deep link is just the country's product page + ?sca_ref=.
+# The Hebrew dest -> Shopify handle map lives in scraper.BREEZ_HEB_TO_HANDLE (co-located
+# with the scraper that reads those same product collections). Format confirmed via the
+# dashboard "Get product link" tool 2026-07-06: it emits /products/<handle>?sca_ref=<tag>.
+# UpPromote also supports an optional `sca_source` sub-tag (the "Get link with source"
+# feature) — we ride the traffic channel (hotel > src) on it for per-placement reporting.
+_BREEZ_HEB_TO_HANDLE = None  # lazily imported from scraper
+
+
+def _breez_deeplink_url(dest=None, src=None, hotel=None):
+    """Breeze per-destination Shopify product deep-link with UpPromote sca_ref
+    attribution (+ optional sca_source = hotel/src for per-placement tracking). Falls
+    back to the configured homepage tracking link when the destination has no known
+    product handle, so every breez click stays attributed. Returns None only when breez
+    isn't configured at all (so /go drops to the generic path)."""
+    global _BREEZ_HEB_TO_HANDLE
+    aff = load_config().get("affiliate", {}).get("breez", {}) or {}
+    ref, base = aff.get("tag"), aff.get("base_url")
+    if not ref and not base:
+        return None
+    if _BREEZ_HEB_TO_HANDLE is None:
+        try:
+            from scraper import BREEZ_HEB_TO_HANDLE
+            _BREEZ_HEB_TO_HANDLE = BREEZ_HEB_TO_HANDLE
+        except Exception:
+            _BREEZ_HEB_TO_HANDLE = {}
+    handle = _BREEZ_HEB_TO_HANDLE.get((dest or "").strip())
+    if handle and ref:
+        url = "https://breezesim.com/products/{}?sca_ref={}".format(handle, ref)
+    else:
+        url = base or "https://breezesim.com?sca_ref={}".format(ref)
+    source = (hotel or src or "").strip()
+    if source:
+        from urllib.parse import quote
+        url += ("&" if "?" in url else "?") + "sca_source=" + quote(source[:60], safe="")
+    return url
+
+
+# Bcengi has NO per-destination pages (verified via sitemap 2026-07-04: a single
+# /travelpass/pricing page covers all 200+ countries), so per-destination Impact
+# TrackingLinks à la Voye/Ubigi would all land on the same page. Instead, the
+# destination rides on Impact's standard SubId click parameters appended to the
+# one tracking link (config.json affiliate.bcengi.base_url): subId1 = destination
+# (English slug), subId2 = traffic source (src), subId3 = hotel code. Impact
+# records SubIds per click/conversion, so reporting can be segmented per
+# destination without separate links.
+_BCENGI_HEB_TO_EN = None  # lazily inverted from scraper.BCENGI_EN_TO_HEB
+
+
+def _bcengi_subid_url(dest=None, src=None, hotel=None):
+    """The Bcengi Impact tracking link with per-click SubIds attached, or None
+    when no tracking link is configured (so /go falls back to the generic path)."""
+    global _BCENGI_HEB_TO_EN
+    base = (load_config().get("affiliate", {}).get("bcengi", {}) or {}).get("base_url")
+    if not base:
+        return None
+    if _BCENGI_HEB_TO_EN is None:
+        try:
+            from scraper import BCENGI_EN_TO_HEB
+            _BCENGI_HEB_TO_EN = {heb: en for en, heb in BCENGI_EN_TO_HEB.items()}
+        except Exception:
+            _BCENGI_HEB_TO_EN = {}
+    from urllib.parse import quote
+    params = []
+    d = (dest or "").strip()
+    if d:
+        en = _BCENGI_HEB_TO_EN.get(d, d)
+        params.append("subId1=" + quote(en.lower().replace(" ", "-")[:60], safe="-"))
+    if src:
+        params.append("subId2=" + quote(str(src)[:40], safe=""))
+    if hotel:
+        params.append("subId3=" + quote(str(hotel)[:60], safe=""))
+    if not params:
+        return base
+    return base + ("&" if "?" in base else "?") + "&".join(params)
+
+
+# Orbit Mobile has NO per-destination pages either (verified live 2026-07-08: the
+# orbitmobile.com store is a SPA where picking a country expands an inline accordion —
+# the URL stays /en/plans/top-destinations, so per-destination Impact TrackingLinks à
+# la Voye/Ubigi would all land on the same page). So the destination rides on Impact's
+# standard SubId click parameters appended to the one tracking link (config.json
+# affiliate.orbit.base_url): subId1 = destination (English slug), subId2 = traffic
+# source (src), subId3 = hotel code. Impact records SubIds per click/conversion, so
+# reporting segments per destination without separate links.
+_ORBIT_HEB_TO_EN = None  # lazily inverted from scraper.ORBIT_NAME_TO_HEBREW
+
+
+def _orbit_subid_url(dest=None, src=None, hotel=None):
+    """The Orbit Impact tracking link with per-click SubIds attached, or None when no
+    tracking link is configured (so /go falls back to the generic path)."""
+    global _ORBIT_HEB_TO_EN
+    base = (load_config().get("affiliate", {}).get("orbit", {}) or {}).get("base_url")
+    if not base:
+        return None
+    if _ORBIT_HEB_TO_EN is None:
+        try:
+            from scraper import ORBIT_NAME_TO_HEBREW
+            inv = {}
+            for en, heb in ORBIT_NAME_TO_HEBREW.items():
+                if heb:
+                    inv.setdefault(heb, en)
+            _ORBIT_HEB_TO_EN = inv
+        except Exception:
+            _ORBIT_HEB_TO_EN = {}
+    from urllib.parse import quote
+    params = []
+    d = (dest or "").strip()
+    if d:
+        en = _ORBIT_HEB_TO_EN.get(d, d)
+        params.append("subId1=" + quote(en.lower().replace(" ", "-")[:60], safe="-"))
+    if src:
+        params.append("subId2=" + quote(str(src)[:40], safe=""))
+    if hotel:
+        params.append("subId3=" + quote(str(hotel)[:60], safe=""))
+    if not params:
+        return base
+    return base + ("&" if "?" in base else "?") + "&".join(params)
+
+
+# GigSky (Everflow network, per Alex Dufort / GigSky 2026-07-06). Per-destination
+# deep links to specific country/plan pages were "just launched" on GigSky's side
+# but the URL format is pending documentation, so until then a /go/gigsky click
+# lands on the configured Everflow tracking link (config.json affiliate.gigsky.
+# base_url) with the viewed destination + traffic source + hotel carried as
+# Everflow Sub-IDs: sub1 = destination (ISO code), sub2 = src, sub5 = hotel.
+# Everflow records Sub-IDs per click/conversion, so reporting is segmented per
+# destination/placement without separate links. Returns None when no tracking
+# link is configured yet (so /go falls back to the generic gigsky.com dest).
+_GIGSKY_HEB_TO_CODE = None  # lazily inverted from scraper code→Hebrew maps
+
+
+def _gigsky_deeplink_url(dest=None, src=None, hotel=None):
+    """The GigSky Everflow tracking link with per-click Sub-IDs attached, or None
+    when no tracking link is configured (so /go falls back to the generic path)."""
+    global _GIGSKY_HEB_TO_CODE
+    base = (load_config().get("affiliate", {}).get("gigsky", {}) or {}).get("base_url")
+    if not base:
+        return None
+    if _GIGSKY_HEB_TO_CODE is None:
+        try:
+            from scraper import ESIMO_CODE_TO_HEBREW, GIGSKY_CODE_EXTRA
+            inv = {}
+            for code, heb in {**ESIMO_CODE_TO_HEBREW, **GIGSKY_CODE_EXTRA}.items():
+                if heb:
+                    inv.setdefault(heb, code)
+            _GIGSKY_HEB_TO_CODE = inv
+        except Exception:
+            _GIGSKY_HEB_TO_CODE = {}
+    from urllib.parse import quote
+    params = []
+    d = (dest or "").strip()
+    if d:
+        code = _GIGSKY_HEB_TO_CODE.get(d, d)
+        params.append("sub1=" + quote(str(code)[:60], safe=""))
+    if src:
+        params.append("sub2=" + quote(str(src)[:40], safe=""))
+    if hotel:
+        params.append("sub5=" + quote(str(hotel)[:60], safe=""))
+    if not params:
+        return base
+    return base + ("&" if "?" in base else "?") + "&".join(params)
+
+
+# GoMoWorld (Puremium/HasOffers, offer 23, Affiliate ID 1968). The default tracking
+# link (config.json affiliate.gomoworld.base_url) lands on gomoworld.com's homepage.
+# For a per-destination deep link we ride Puremium's `url=` redirect override: the
+# aff_c tracker URL-decodes the url= value and fills the {transaction_id}/
+# {affiliate_id} macros inside it (verified 2026-07-06), so the click stays fully
+# attributed (this is a Server-Postback-with-Transaction-ID offer) while landing
+# straight on the country page. We rebuild the exact querystring Puremium appends to
+# its own default landing — utm_source=puremium, affiliate={affiliate_id},
+# transaction_id={transaction_id}, promocode=MOCA — so the MOCA 10% code is
+# auto-applied on the destination page too. Hebrew dest -> English destination slug
+# comes from scraper.GOMOWORLD_SLUG_TO_HEBREW (the same map the scraper reads
+# gomoworld.com/en/destinations/<slug> from). Unmapped dests return None so /go
+# falls back to the generic config link.
+_GOMOWORLD_HEB_TO_SLUG = None  # lazily inverted from scraper.GOMOWORLD_SLUG_TO_HEBREW
+
+
+def _gomoworld_deeplink_url(dest=None, src=None, hotel=None):
+    """GoMoWorld per-destination deep link via Puremium's url= override — fully
+    attributed (transaction_id macro) with the MOCA promo code auto-applied. Returns
+    None when the destination is unknown or no tracking link is configured, so /go
+    falls back to the generic config link."""
+    global _GOMOWORLD_HEB_TO_SLUG
+    aff = load_config().get("affiliate", {}).get("gomoworld", {}) or {}
+    aff_id = aff.get("tag")
+    if not aff_id:
+        return None
+    if _GOMOWORLD_HEB_TO_SLUG is None:
+        try:
+            from scraper import GOMOWORLD_SLUG_TO_HEBREW
+            inv = {}
+            for slug, heb in GOMOWORLD_SLUG_TO_HEBREW.items():
+                if heb:
+                    inv.setdefault(heb, slug)
+            _GOMOWORLD_HEB_TO_SLUG = inv
+        except Exception:
+            _GOMOWORLD_HEB_TO_SLUG = {}
+    slug = _GOMOWORLD_HEB_TO_SLUG.get((dest or "").strip())
+    if not slug:
+        return None
+    from urllib.parse import quote
+    landing = (
+        "https://www.gomoworld.com/en/destinations/{}"
+        "?utm_source=puremium&affiliate={{affiliate_id}}"
+        "&transaction_id={{transaction_id}}&promocode=MOCA"
+    ).format(slug)
+    link = "https://www.puremium1.com/aff_c?offer_id=23&aff_id={}&url={}".format(
+        aff_id, quote(landing, safe=""))
+    source = (hotel or src or "").strip()
+    if source:  # per-placement reporting on Puremium's Sub-ID
+        link += "&aff_sub=" + quote(source[:60], safe="")
+    return link
+
+
 @app.route("/go/<provider>")
 @app.route("/go/<provider>/<plan_id>")
 @limiter.limit("120 per minute")
@@ -1642,6 +1869,43 @@ def affiliate_redirect(provider, plan_id=None):
             return redirect(deep, 302)
     if provider == "ubigi" and dest:
         deep = _ubigi_deeplink_url(dest)
+        if deep:
+            return redirect(deep, 302)
+    # Breeze: deep-link to the viewed destination's Shopify product page carrying the
+    # UpPromote sca_ref (+ optional sca_source = hotel/src); unknown destinations fall
+    # back to the configured homepage tracking link (both attributed).
+    if provider == "breez":
+        deep = _breez_deeplink_url(dest=dest, src=src, hotel=hotel)
+        if deep:
+            return redirect(deep, 302)
+    # Bcengi: no per-destination pages exist on bcengi.com, so the destination is
+    # attached to the single Impact tracking link as subId1 (+ subId2=src,
+    # subId3=hotel) for per-destination attribution in Impact reporting.
+    if provider == "bcengi":
+        deep = _bcengi_subid_url(dest=dest, src=src, hotel=hotel)
+        if deep:
+            return redirect(deep, 302)
+    # Orbit: no per-destination pages (orbitmobile.com is a SPA accordion), so the
+    # destination rides on Impact SubIds (subId1=dest, subId2=src, subId3=hotel)
+    # appended to the single tracking link for per-destination reporting. Falls
+    # through to the generic config link when Orbit isn't configured.
+    if provider == "orbit":
+        deep = _orbit_subid_url(dest=dest, src=src, hotel=hotel)
+        if deep:
+            return redirect(deep, 302)
+    # GigSky: Everflow network. Per-destination deep-link format is pending from
+    # GigSky; until then the click lands on the configured Everflow tracking link
+    # with destination/src/hotel as Sub-IDs (sub1/sub2/sub5). Falls through to the
+    # generic gigsky.com destination while no tracking link is configured yet.
+    if provider == "gigsky":
+        deep = _gigsky_deeplink_url(dest=dest, src=src, hotel=hotel)
+        if deep:
+            return redirect(deep, 302)
+    # GoMoWorld: per-destination deep-link via Puremium's url= override (the
+    # macro-filled transaction_id keeps attribution intact) with the MOCA code
+    # auto-applied; unknown destinations fall through to the generic homepage link.
+    if provider == "gomoworld":
+        deep = _gomoworld_deeplink_url(dest=dest, src=src, hotel=hotel)
         if deep:
             return redirect(deep, 302)
     return redirect(_guest_provider_dest(provider, destination=dest), 302)
@@ -2120,13 +2384,23 @@ def _scrape_emit(stage, status='running', count=None, message=None):
 
 
 def _scrape_start():
+    """Atomically claim the single-scrape slot. Returns True if acquired, or
+    False if a full scrape (manual OR scheduled) is already running — both the
+    /api/scrape-all-now handler and the scheduled run_scrape_job share this flag,
+    so a manual refresh can't run on top of the 07:30/17:00 scheduled scrape (two
+    Playwright passes at once would double the load on the single box and let a
+    half-written DB state emit spurious price_change/removed_plan events). Release
+    with _scrape_finish()."""
     with _scrape_lock:
+        if _scrape_progress.get('active'):
+            return False
         _scrape_progress['log'] = []
         _scrape_progress['active'] = True
         _scrape_progress['started_at'] = datetime.now(timezone.utc).isoformat()
         _scrape_progress['completed_at'] = None
     with _scrape_signal:
         _scrape_signal.notify_all()
+    return True
 
 
 def _scrape_finish(error=None):
@@ -2215,7 +2489,8 @@ def api_scrape_all_now():
     ok, used, limit = _check_refresh_quota()
     if not ok:
         return jsonify({"error": f"מכסת הרענון החודשית הגיעה לסיום ({used}/{limit}). מחכים לחודש הבא.", "quota_used": used, "quota_limit": limit}), 429
-    _scrape_start()
+    if not _scrape_start():
+        return jsonify({"error": "סריקה כבר רצה כרגע. נסו שוב בעוד כמה דקות.", "scrape_active": True}), 409
     try:
         import scraper as sc
         from db import save_plans, save_changes, save_abroad_plans, save_abroad_changes, \
@@ -2309,15 +2584,20 @@ def api_scrape_all_now():
         # ── Banners (homepage + e-store screenshots) ───────────────────────
         _scrape_emit('banners', 'starting', message='מצלם באנרים')
         banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
-        from scraper import scrape_carrier_banners, scrape_carrier_store_banners
+        from scraper import (scrape_carrier_banners, scrape_carrier_store_banners,
+                             scrape_global_provider_banners)
         banner_results = scrape_carrier_banners(banners_dir)
         store_results  = scrape_carrier_store_banners(banners_dir)
+        global_results = scrape_global_provider_banners(banners_dir)
+        from scraper import GLOBAL_BANNER_URLS as _GBU
         arc.archive_all_banners(banners_dir, list(CARRIER_DISPLAY.keys()), list(CARRIER_STORE_DISPLAY.keys()))
+        arc.archive_all_global_banners(banners_dir, list(_GBU.keys()))
         results["banners"] = {
             "homepage": sum(1 for r in banner_results if r["success"]),
             "store":    sum(1 for r in store_results  if r["success"]),
+            "global":   sum(1 for r in global_results if r["success"]),
         }
-        _scrape_emit('banners', 'done', count=results['banners']['homepage'] + results['banners']['store'])
+        _scrape_emit('banners', 'done', count=results['banners']['homepage'] + results['banners']['store'] + results['banners']['global'])
 
         _invalidate_plan_cache()
         results["status"] = "ok"
@@ -2382,6 +2662,7 @@ _HISTORY_CARRIER_NAMES = {
     'neptucom': 'Neptucom',
     'tuki': 'Tuki',
     'terminalesim': 'Terminal eSIM',
+    'gigsky': 'GigSky',
     'airalo': 'Airalo',
     'pelephone_global': 'GlobalSIM',
     'esimo': 'eSIMo',
@@ -2407,6 +2688,7 @@ _HISTORY_CARRIER_NAMES = {
     'bestconnect': 'Best Connect',
     'bnesim': 'BNESIM',
     'esimplus': 'eSIM Plus',
+    'bcengi': 'Bcengi',
     'yesim': 'Yesim', 'nomad': 'Nomad', 'ubigi': 'Ubigi', 'alosim': 'aloSIM',
 }
 _HISTORY_TYPE_NAMES = {
@@ -3111,6 +3393,58 @@ def api_store_banners():
             "color":      meta["color"],
             "image_url":  image_url,
             "scraped_at": scraped_at,
+        })
+    return _public_cache(jsonify(_filter_hidden_carrier(result)), 600)
+
+
+@app.route("/api/global-banners")
+@limiter.limit("60 per minute")
+def api_global_banners():
+    """Return metadata for global eSIM provider homepage banner screenshots.
+
+    Providers + homepage URLs come from scraper.GLOBAL_BANNER_URLS; display
+    name/color come from _GUEST_PROVIDER_META (same source that drives the
+    provider chips). Files are {provider}_global.png in data/banners/.
+    """
+    from scraper import GLOBAL_BANNER_URLS
+    banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
+    # Freshness state (provider -> {hash, changed_at}) written by the scraper.
+    state = {}
+    try:
+        with open(os.path.join(banners_dir, "_global_banner_state.json"), "r", encoding="utf-8") as f:
+            state = json.load(f)
+    except Exception:
+        state = {}
+    now = datetime.now(timezone.utc)
+    result = []
+    for provider, url in GLOBAL_BANNER_URLS.items():
+        meta = _GUEST_PROVIDER_META.get(provider, {})
+        png_path = os.path.join(banners_dir, f"{provider}_global.png")
+        scraped_at = None
+        image_url = None
+        if os.path.exists(png_path):
+            mtime = os.path.getmtime(png_path)
+            scraped_at = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
+            image_url = f"/banners/{provider}_global.png?v={int(mtime)}"
+        # changed_at = last time the homepage campaign visibly changed (perceptual
+        # hash drift). changed_recently drives the "התעדכן" freshness badge.
+        changed_at = (state.get(provider) or {}).get("changed_at")
+        changed_recently = False
+        if changed_at:
+            try:
+                changed_recently = (now - datetime.fromisoformat(changed_at)).total_seconds() <= 48 * 3600
+            except Exception:
+                changed_recently = False
+        result.append({
+            "carrier":    provider,
+            "name":       meta.get("label") or provider,
+            "url":        meta.get("url") or (f"https://{meta['domain']}" if meta.get("domain") else url),
+            "color":      meta.get("color") or "#8a6a4a",
+            "image_url":  image_url,
+            "scraped_at": scraped_at,
+            "changed_at": changed_at,
+            "changed_recently": changed_recently,
+            "changed_today": changed_recently,
         })
     return _public_cache(jsonify(_filter_hidden_carrier(result)), 600)
 
@@ -3825,7 +4159,7 @@ def api_chat():
             'wecom': 'We-Com', 'neptucom': 'Neptucom', 'golan': 'גולן טלקום',
             'rami_levy': 'רמי לוי תקשורת',
             # Global eSIM
-            'tuki': 'Tuki', 'terminalesim': 'Terminal eSIM',
+            'tuki': 'Tuki', 'terminalesim': 'Terminal eSIM', 'gigsky': 'GigSky',
             'airalo': 'Airalo', 'airalo_local': 'Airalo', 'airalo_regional': 'Airalo',
             'pelephone_global': 'GlobalSIM', 'esimo': 'eSIMo', 'simtlv': 'SimTLV',
             'world8': '8 World', 'xphone_global': 'XPhone Global', 'saily': 'Saily',
@@ -5293,10 +5627,17 @@ def api_history_price_series_batch():
 
 
 @app.route('/api/history/analyze')
+@require_auth
 @limiter.limit('10 per minute')
+@limiter.limit(_chat_daily_limit, key_func=_chat_user_key)
 def api_history_analyze():
     """AI analysis of historical price changes for a carrier using Claude Haiku.
-    Rate-limited to 10/min (vs 60/min for other history routes) due to Anthropic API cost.
+
+    Auth: @require_auth (logged-in user or server API key) — this endpoint spends
+    real Anthropic USD, so it must not be anonymously reachable. It's only called
+    from the login-gated History tab, so gating it does not affect public pages.
+    Rate limits: 10/min (per user/IP) PLUS the same per-user daily cap as /api/chat
+    (_chat_daily_limit), so a single authenticated user can't drive unbounded spend.
     Note: to_date is not forwarded to get_history_price_series (unsupported by that function).
     """
     carrier   = request.args.get('carrier', '')
@@ -5895,16 +6236,25 @@ if __name__ == "__main__":
         def _broadcast_workspace_slack(changes_list, plan_type_label, lang="he"):
             if not changes_list:
                 return 0
+            conn = None
             try:
                 from notifier import send_slack, _carrier_name
                 conn = _supabase_conn()
                 cur = conn.cursor()
                 cur.execute("SELECT name, mvno_carrier, brand_config FROM public.workspaces WHERE active IS NOT FALSE")
                 rows = cur.fetchall()
-                conn.close()
             except Exception as exc:
                 logger.warning(f"slack broadcast: workspace fetch failed: {exc}")
                 return 0
+            finally:
+                # Always release the Supabase connection — the happy-path close()
+                # used to be skipped on any execute/fetch error, slowly exhausting
+                # the Postgres pool (this runs on every scheduled + manual scrape).
+                if conn is not None:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
             sent = 0
             import json as _json
             for ws_name, mvno, bc in rows:
@@ -6067,17 +6417,22 @@ if __name__ == "__main__":
             # each schedule_times slot (07:30 / 17:00). The previous standalone
             # 08:00 job was removed; /api/scrape-all-now still captures banners.
             try:
-                from scraper import scrape_carrier_banners, scrape_carrier_store_banners
+                from scraper import (scrape_carrier_banners, scrape_carrier_store_banners,
+                                      scrape_global_provider_banners, GLOBAL_BANNER_URLS)
                 banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
-                home_results  = scrape_carrier_banners(banners_dir)
-                store_results = scrape_carrier_store_banners(banners_dir)
-                ok_home  = sum(1 for r in home_results  if r["success"])
-                ok_store = sum(1 for r in store_results if r["success"])
-                logger.info("Banner screenshots: %d/%d homepage, %d/%d e-store",
-                            ok_home, len(home_results), ok_store, len(store_results))
+                home_results   = scrape_carrier_banners(banners_dir)
+                store_results  = scrape_carrier_store_banners(banners_dir)
+                global_results = scrape_global_provider_banners(banners_dir)
+                ok_home   = sum(1 for r in home_results   if r["success"])
+                ok_store  = sum(1 for r in store_results  if r["success"])
+                ok_global = sum(1 for r in global_results if r["success"])
+                logger.info("Banner screenshots: %d/%d homepage, %d/%d e-store, %d/%d global",
+                            ok_home, len(home_results), ok_store, len(store_results),
+                            ok_global, len(global_results))
                 arc.archive_all_banners(banners_dir,
                                         list(CARRIER_DISPLAY.keys()),
                                         list(CARRIER_STORE_DISPLAY.keys()))
+                arc.archive_all_global_banners(banners_dir, list(GLOBAL_BANNER_URLS.keys()))
             except Exception as be:
                 logger.error(f"Banner capture failed in scheduled scrape: {be}", exc_info=True)
 
@@ -6192,10 +6547,24 @@ if __name__ == "__main__":
     # the host is briefly throttled (Win11 modern standby, IO storms, etc).
     # coalesce=True collapses any backlog into a single late run.
     _job_defaults = {"misfire_grace_time": 3600, "coalesce": True}
+
+    def _run_scrape_job_guarded():
+        # Claim the shared single-scrape slot so a scheduled run never overlaps a
+        # manual /api/scrape-all-now (or vice versa) — two Playwright passes on the
+        # one box double the load and can interleave DB writes into spurious change
+        # events. APScheduler's max_instances already blocks scheduled-vs-scheduled.
+        if not _scrape_start():
+            logger.warning("scheduled scrape skipped — a scrape is already running")
+            return
+        try:
+            run_scrape_job()
+        finally:
+            _scrape_finish()
+
     scheduler = BackgroundScheduler()
     for time_str in config.get("schedule_times", ["10:00", "16:00"]):
         hour, minute = map(int, time_str.split(":"))
-        scheduler.add_job(run_scrape_job, "cron", hour=hour, minute=minute, **_job_defaults)
+        scheduler.add_job(_run_scrape_job_guarded, "cron", hour=hour, minute=minute, **_job_defaults)
     report_time = config.get("email_report_time", "09:00")
     rh, rm = map(int, report_time.split(":"))
     scheduler.add_job(run_email_report_job, "cron", hour=rh, minute=rm, **_job_defaults)

@@ -47,7 +47,7 @@ export default function WorkspaceBrandingPage() {
     setSlackTestStatus({ loading: true })
     try {
       const res = await api.testSlackWebhook(form.slack_webhook_url)
-      setSlackTestStatus(res.ok ? { success: true } : { error: tt('Slack webhook נכשל — בדוק את ה-URL', 'Slack webhook failed — check the URL') })
+      setSlackTestStatus(res.ok ? { success: true } : { error: tt('Slack webhook נכשל - בדוק את ה-URL', 'Slack webhook failed - check the URL') })
     } catch (err) {
       setSlackTestStatus({ error: err.message })
     }

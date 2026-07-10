@@ -18,7 +18,7 @@ const CARRIER_GRADIENT = {
 }
 
 function formatDate(iso) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   const d = new Date(iso)
   return d.toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
@@ -75,6 +75,26 @@ export default function BannerTile({ banner, onClick }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
+      {banner.changed_recently && (
+        <span
+          style={{
+            position: 'absolute',
+            top: 8,
+            insetInlineStart: 8,
+            zIndex: 2,
+            background: 'var(--color-moca-hot)',
+            color: '#fff',
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: 0.3,
+            padding: '3px 8px',
+            borderRadius: 999,
+            boxShadow: '0 1px 5px rgba(0,0,0,0.28)',
+          }}
+        >
+          {tt('התעדכן', 'Updated')}
+        </span>
+      )}
       <div
         style={{
           width: '100%',

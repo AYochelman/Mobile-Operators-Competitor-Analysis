@@ -165,20 +165,20 @@ const CompetitorRow = memo(function CompetitorRow({ row, isOurs, oursAvg, onRowC
           <Sparkline data={sparkData} color={sparkColor} w={110} h={26} fill strokeWidth={1.6} />
         ) : (
           <span style={{ fontSize: 10, color: 'var(--color-moca-muted)' }}>
-            {trend === undefined ? '…' : '—'}
+            {trend === undefined ? '…' : '-'}
           </span>
         )}
       </div>
 
       {/* Min price — desktop only */}
       <div className="tnum hidden md:block" style={{ textAlign: 'left', fontSize: 13, color: 'var(--color-moca-sub)', alignSelf: 'center', direction: 'ltr' }}>
-        {row.min != null ? `${row.min}₪` : '—'}
+        {row.min != null ? `${row.min}₪` : '-'}
       </div>
 
       {/* Avg price */}
       <div className="tnum" style={{ textAlign: 'left', alignSelf: 'center' }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-moca-dark)', direction: 'ltr', letterSpacing: -0.2 }}>
-          {row.avg != null ? `${row.avg}₪` : '—'}
+          {row.avg != null ? `${row.avg}₪` : '-'}
         </div>
         {row.netDelta24h !== 0 && (
           <div style={{ marginTop: 2 }}>
@@ -203,7 +203,7 @@ function PositionLabel({ row, oursAvg }) {
   const { tt } = useLang()
   if (oursAvg == null || row.avg == null || row.carrier === undefined) return null
   if (row.avg === oursAvg) {
-    return <span style={{ color: 'var(--color-moca-muted)' }}>—</span>
+    return <span style={{ color: 'var(--color-moca-muted)' }}>-</span>
   }
   const diff = oursAvg - row.avg // positive = competitor is cheaper than us = bad for us
   const cheaper = diff > 0
@@ -234,7 +234,7 @@ export default function CompetitorBoard({
   const resolvedTitle = title != null ? title : tt('סקירה תחרותית', 'Competitive overview')
   const resolvedSubtitle = subtitle != null
     ? subtitle
-    : tt('תמונת מצב לפי מתחרה — מבוסס על המסלולים שכרגע על המסך', 'Snapshot by competitor — based on the plans currently on screen')
+    : tt('תמונת מצב לפי מתחרה - מבוסס על המסלולים שכרגע על המסך', 'Snapshot by competitor - based on the plans currently on screen')
   const snapshots = useMemo(
     () => buildSnapshots(plans, carrierIds, changes),
     [plans, carrierIds, changes],

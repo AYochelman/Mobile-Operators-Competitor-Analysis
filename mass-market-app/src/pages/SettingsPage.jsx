@@ -10,8 +10,8 @@ import { useScrape } from '../hooks/useScrape'
 import { refreshCoupons } from '../hooks/useCoupons'
 import { useLang } from '../hooks/useLanguage'
 
-const AFFILIATE_COMMISSION = { airalo: 0.10, holafly: 0.12, saily: 0.10, terminalesim: 0.10 }
-const AFFILIATE_AVG_ORDER  = { airalo: 18,   holafly: 20,   saily: 16,   terminalesim: 15   }
+const AFFILIATE_COMMISSION = { airalo: 0.10, holafly: 0.12, saily: 0.10, terminalesim: 0.10, breez: 0.20, orbit: 0.20 }
+const AFFILIATE_AVG_ORDER  = { airalo: 18,   holafly: 20,   saily: 16,   terminalesim: 15,   breez: 15   }
 
 export default function SettingsPage() {
   const { isAdmin, isSuperAdmin, user } = useAuth()
@@ -372,7 +372,7 @@ export default function SettingsPage() {
             <div className="bg-white rounded-xl border border-gray-200 p-4">
               <h2 className="font-bold text-sm mb-1">{tt('שפת ההתראות', 'Notification language')}</h2>
               <p className="text-xs text-gray-400 mb-3">
-                {tt('השפה של הודעות השינויים בכל הערוצים — Telegram · WhatsApp · Web Push · Slack ותקציר הבוקר. שמות החבילות הנסרקות נשארים בשפת המקור.', 'The language of change notifications across all channels — Telegram · WhatsApp · Web Push · Slack and the morning digest. Scraped plan names stay in their original language.')}
+                {tt('השפה של הודעות השינויים בכל הערוצים - Telegram · WhatsApp · Web Push · Slack ותקציר הבוקר. שמות החבילות הנסרקות נשארים בשפת המקור.', 'The language of change notifications across all channels - Telegram · WhatsApp · Web Push · Slack and the morning digest. Scraped plan names stay in their original language.')}
               </p>
               <div className="inline-flex rounded-full border border-[#d4bfa8] overflow-hidden">
                 {[['he', 'עברית'], ['en', 'English']].map(([code, label]) => (
@@ -492,7 +492,7 @@ export default function SettingsPage() {
                       <td className="py-2.5 text-center text-xs text-moca-sub whitespace-nowrap" dir="ltr">
                         {u.last_sign_in_at
                           ? new Date(u.last_sign_in_at).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
-                          : '—'}
+                          : '-'}
                       </td>
                       <td className="py-2.5 pl-1">
                         <div className="flex items-center gap-1.5 justify-end">
@@ -643,7 +643,7 @@ export default function SettingsPage() {
       {activeTab === 'coupons' && (
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="font-bold text-sm">{tt('קופונים — קודי הנחה לספקים גלובליים', 'Coupons — discount codes for global providers')}</h2>
+            <h2 className="font-bold text-sm">{tt('קופונים - קודי הנחה לספקים גלובליים', 'Coupons - discount codes for global providers')}</h2>
             <Button size="sm" onClick={() => openCouponForm(null)} disabled={!!editingCoupon}>
               {tt('הוספת קופון', 'Add coupon')}
             </Button>
@@ -706,7 +706,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="sm:col-span-2 pt-2 border-t border-gray-200">
                   <p className="text-xs text-gray-500 mb-2">
-                    <strong>{tt('הצעה חיצונית', 'External offer')}</strong> {tt('— כשהשדות למטה מלאים, התג בכרטיס מתחלף לקישור-יציאה במקום קוד להעתקה (לדוגמה:', '— when the fields below are filled, the tag on the card becomes an exit link instead of a copyable code (e.g.')} <span className="font-mono">https://www.gooday.co.il/.../Airalo</span> {tt('שמייצר קוד אישי למשתמש).', 'which generates a personal code for the user).')}
+                    <strong>{tt('הצעה חיצונית', 'External offer')}</strong> {tt('- כשהשדות למטה מלאים, התג בכרטיס מתחלף לקישור-יציאה במקום קוד להעתקה (לדוגמה:', '- when the fields below are filled, the tag on the card becomes an exit link instead of a copyable code (e.g.')} <span className="font-mono">https://www.gooday.co.il/.../Airalo</span> {tt('שמייצר קוד אישי למשתמש).', 'which generates a personal code for the user).')}
                   </p>
                 </div>
                 <div>
@@ -779,7 +779,7 @@ export default function SettingsPage() {
                           </span>
                         )}
                       </td>
-                      <td className="py-2 text-xs">{row.discount_label || '—'}</td>
+                      <td className="py-2 text-xs">{row.discount_label || '-'}</td>
                       <td className="py-2 text-xs" dir="ltr">{row.expires_at || '∞'}</td>
                       <td className="py-2">
                         <button onClick={() => handleToggleCouponActive(row)}

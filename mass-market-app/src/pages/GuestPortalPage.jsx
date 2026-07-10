@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { destLabel, destInHe } from '../data/hotelDestinations'
 import { PROVIDER_LOGOS } from '../data/providerLogos'
+import { miniMarkup } from '../lib/miniMarkup'
 
 /* ════════════════════════════════════════════════════════════════════════
    MOCA Guest Connect — public guest portal  (route: /guest/:slug)
@@ -23,7 +24,7 @@ const fmtNum = (n) => {
 const T = {
   en: {
     heroTitle: 'Stay connected in {country}',
-    sub: 'The best SIM & eSIM deals for your trip — compared live, picked for you.',
+    sub: 'The best SIM & eSIM deals for your trip - compared live, picked for you.',
     updated: 'Prices updated',
     wizTitle: 'Find your plan in 10 seconds',
     qDays: 'How long are you staying?',
@@ -32,7 +33,7 @@ const T = {
     tripSummary: '{n} deals for your trip · {days} · {data}',
     allDeals: 'All deals',
     helpTitle: 'New to eSIM?',
-    h1b: 'Buy online — takes 2 minutes', h1s: "No store, no queue. Pay by card and you're done.",
+    h1b: 'Buy online - takes 2 minutes', h1s: "No store, no queue. Pay by card and you're done.",
     h2b: 'Scan the QR code you get by email', h2s: 'Your phone installs the plan automatically.',
     h3b: 'Stay reachable', h3s: 'Keep WhatsApp and your home number active alongside.',
     compat: 'Works on iPhone XS and newer, Samsung Galaxy S20+, Google Pixel 3+. Prefer a physical SIM with an Israeli number? Filter for “Local SIM” above.',
@@ -47,14 +48,14 @@ const T = {
     unlimited: 'Unlimited', daysU: 'days', dayU: 'day', get: 'Get this deal ↗', perGB: '/GB',
     esimTag: 'Global eSIM', localTag: 'Israeli carrier',
     perks: { instant: 'Instant eSIM', unlimited: 'Unlimited data', app: 'App support', hotspot: 'Hotspot', ilNumber: 'Israeli number', calls: 'Calls included', intlMin: 'Intl. minutes', airport: 'Airport pickup' },
-    empty: 'No deals match this filter for your trip — try another option.',
+    empty: 'No deals match this filter for your trip - try another option.',
     notFound: 'This guest portal is not available.',
     loading: 'Loading the best deals…',
     couponLabel: 'Code {code} · {pct} off', couponNoPct: 'Discount code: {code}', couponCopy: 'copy', couponCopied: 'copied ✓',
   },
   he: {
     heroTitle: 'להישאר מחוברים {inCountry}',
-    sub: 'חבילות ה-eSIM והסים המשתלמות ביותר לטיול — בהשוואה חיה, מותאם אישית.',
+    sub: 'חבילות ה-eSIM והסים המשתלמות ביותר לטיול - בהשוואה חיה, מותאם אישית.',
     updated: 'המחירים עודכנו',
     wizTitle: 'מציאת חבילה ב-10 שניות',
     qDays: 'כמה זמן נשארים {inCountry}?',
@@ -63,7 +64,7 @@ const T = {
     tripSummary: '{n} חבילות מתאימות · {days} · {data}',
     allDeals: 'כל החבילות',
     helpTitle: 'פעם ראשונה עם eSIM?',
-    h1b: 'רוכשים אונליין — לוקח 2 דקות', h1s: 'בלי חנות ובלי תור. משלמים בכרטיס וזהו.',
+    h1b: 'רוכשים אונליין - לוקח 2 דקות', h1s: 'בלי חנות ובלי תור. משלמים בכרטיס וזהו.',
     h2b: 'סורקים את ה-QR שמגיע למייל', h2s: 'הטלפון מתקין את החבילה אוטומטית.',
     h3b: 'נשארים זמינים', h3s: 'וואטסאפ והמספר מהבית ממשיכים לעבוד במקביל.',
     compat: 'עובד באייפון XS ומעלה, גלקסי S20 ומעלה, פיקסל 3 ומעלה. מעדיפים סים פיזי עם מספר ישראלי? סננו לפי ״סים מקומי״ למעלה.',
@@ -78,14 +79,14 @@ const T = {
     unlimited: 'ללא הגבלה', daysU: 'ימים', dayU: 'יום', get: 'לרכישת החבילה ↗', perGB: '/GB',
     esimTag: 'eSIM גלובלי', localTag: 'מפעיל ישראלי',
     perks: { instant: 'eSIM מיידי', unlimited: 'דאטה ללא הגבלה', app: 'תמיכה באפליקציה', hotspot: 'שיתוף רשת', ilNumber: 'מספר ישראלי', calls: 'שיחות כלולות', intlMin: 'דקות לחו״ל', airport: 'איסוף בשדה' },
-    empty: 'אין חבילות שמתאימות לסינון הזה — נסו אפשרות אחרת.',
+    empty: 'אין חבילות שמתאימות לסינון הזה - נסו אפשרות אחרת.',
     notFound: 'פורטל האורח הזה אינו זמין.',
     loading: 'טוענים את ההצעות המשתלמות…',
     couponLabel: 'קוד {code} · {pct} הנחה', couponNoPct: 'קוד הנחה: {code}', couponCopy: 'העתקה', couponCopied: 'הועתק ✓',
   },
   fr: {
     heroTitle: 'Restez connecté en {country}',
-    sub: 'Les meilleures offres SIM et eSIM pour votre séjour — comparées en direct, choisies pour vous.',
+    sub: 'Les meilleures offres SIM et eSIM pour votre séjour - comparées en direct, choisies pour vous.',
     updated: 'Prix mis à jour',
     wizTitle: 'Trouvez votre forfait en 10 secondes',
     qDays: 'Combien de temps restez-vous ?',
@@ -94,7 +95,7 @@ const T = {
     tripSummary: '{n} offres pour votre voyage · {days} · {data}',
     allDeals: 'Toutes les offres',
     helpTitle: 'Première fois avec une eSIM ?',
-    h1b: 'Achat en ligne — 2 minutes', h1s: 'Pas de boutique, pas de file d’attente. Payez par carte et c’est fait.',
+    h1b: 'Achat en ligne - 2 minutes', h1s: 'Pas de boutique, pas de file d’attente. Payez par carte et c’est fait.',
     h2b: 'Scannez le QR reçu par e-mail', h2s: 'Votre téléphone installe le forfait automatiquement.',
     h3b: 'Restez joignable', h3s: 'Gardez WhatsApp et votre numéro habituel actifs en parallèle.',
     compat: 'Compatible iPhone XS et plus récent, Samsung Galaxy S20+, Google Pixel 3+. Vous préférez une SIM physique avec un numéro israélien ? Filtrez par « SIM locale » ci-dessus.',
@@ -109,14 +110,14 @@ const T = {
     unlimited: 'Illimité', daysU: 'jours', dayU: 'jour', get: 'Choisir cette offre ↗', perGB: '/Go',
     esimTag: 'eSIM mondiale', localTag: 'Opérateur israélien',
     perks: { instant: 'eSIM instantanée', unlimited: 'Données illimitées', app: 'Appli dédiée', hotspot: 'Partage de connexion', ilNumber: 'Numéro israélien', calls: 'Appels inclus', intlMin: 'Minutes internationales', airport: 'Retrait à l’aéroport' },
-    empty: 'Aucune offre ne correspond à ce filtre pour votre voyage — essayez une autre option.',
+    empty: 'Aucune offre ne correspond à ce filtre pour votre voyage - essayez une autre option.',
     notFound: 'Ce portail invité n’est pas disponible.',
     loading: 'Chargement des meilleures offres…',
     couponLabel: 'Code {code} · {pct} de réduction', couponNoPct: 'Code promo : {code}', couponCopy: 'copier', couponCopied: 'copié ✓',
   },
   ru: {
     heroTitle: 'Оставайтесь на связи в {country}',
-    sub: 'Лучшие предложения SIM и eSIM для вашей поездки — сравнение в реальном времени, подобрано для вас.',
+    sub: 'Лучшие предложения SIM и eSIM для вашей поездки - сравнение в реальном времени, подобрано для вас.',
     updated: 'Цены обновлены',
     wizTitle: 'Подберите тариф за 10 секунд',
     qDays: 'Сколько вы пробудете?',
@@ -125,11 +126,11 @@ const T = {
     tripSummary: '{n} предложений для поездки · {days} · {data}',
     allDeals: 'Все предложения',
     helpTitle: 'Впервые с eSIM?',
-    h1b: 'Покупка онлайн — 2 минуты', h1s: 'Без магазина и очереди. Оплатите картой — и готово.',
+    h1b: 'Покупка онлайн - 2 минуты', h1s: 'Без магазина и очереди. Оплатите картой - и готово.',
     h2b: 'Отсканируйте QR-код из письма', h2s: 'Телефон установит тариф автоматически.',
     h3b: 'Оставайтесь на связи', h3s: 'WhatsApp и ваш домашний номер продолжают работать одновременно.',
     compat: 'Работает на iPhone XS и новее, Samsung Galaxy S20+, Google Pixel 3+. Предпочитаете физическую SIM с израильским номером? Выберите фильтр «Местная SIM» выше.',
-    compatAbroad: 'Работает на iPhone XS и новее, Samsung Galaxy S20+, Google Pixel 3+. Установите eSIM до вылета — и приземлитесь уже на связи.',
+    compatAbroad: 'Работает на iPhone XS и новее, Samsung Galaxy S20+, Google Pixel 3+. Установите eSIM до вылета - и приземлитесь уже на связи.',
     trust: 'Сравнение по <b>27 мировым операторам eSIM</b> и <b>10 израильским операторам</b><br>Обновляется дважды в день аналитикой MOCA',
     trustAbroad: 'Сравнение по <b>27 мировым операторам eSIM</b><br>Обновляется дважды в день аналитикой MOCA',
     disclaim: 'Образец актуальных рыночных цен. Итоговая цена указана на странице поставщика.',
@@ -140,7 +141,7 @@ const T = {
     unlimited: 'Безлимит', daysU: 'дн.', dayU: 'день', get: 'Выбрать тариф ↗', perGB: '/ГБ',
     esimTag: 'Глобальная eSIM', localTag: 'Израильский оператор',
     perks: { instant: 'eSIM сразу', unlimited: 'Безлимитный трафик', app: 'Поддержка в приложении', hotspot: 'Точка доступа', ilNumber: 'Израильский номер', calls: 'Звонки включены', intlMin: 'Межд. минуты', airport: 'Получение в аэропорту' },
-    empty: 'Нет предложений по этому фильтру для вашей поездки — попробуйте другой вариант.',
+    empty: 'Нет предложений по этому фильтру для вашей поездки - попробуйте другой вариант.',
     notFound: 'Этот гостевой портал недоступен.',
     loading: 'Загружаем лучшие предложения…',
     couponLabel: 'Промокод {code} · −{pct}', couponNoPct: 'Промокод: {code}', couponCopy: 'копировать', couponCopied: 'скопировано ✓',
@@ -563,7 +564,7 @@ export default function GuestPortalPage() {
             <div className="compat">{isIsrael ? t.compat : t.compatAbroad}</div>
           </section>
 
-          <div className="trust" dangerouslySetInnerHTML={{ __html: isIsrael ? t.trust : t.trustAbroad }} />
+          <div className="trust">{miniMarkup(isIsrael ? t.trust : t.trustAbroad)}</div>
         </main>
 
         <footer>

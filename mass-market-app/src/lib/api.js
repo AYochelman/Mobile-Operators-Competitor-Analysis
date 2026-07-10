@@ -51,6 +51,7 @@ export const api = {
   getContentChanges:() => fetchApi('/api/content-changes'),
   getBanners:      () => fetchApi('/api/banners'),
   getStoreBanners: () => fetchApi('/api/store-banners'),
+  getGlobalBanners:() => fetchApi('/api/global-banners'),
   getArchive:      (carrier, date) => fetchApi(`/api/archive?carrier=${encodeURIComponent(carrier)}&date=${encodeURIComponent(date)}`),
   getArchiveDateRange: () => fetchApi('/api/archive/date-range'),
   getHistoryChanges: (carrier, planType, fromDate = '', toDate = '') => {

@@ -3,9 +3,9 @@ import { api } from '../lib/api'
 import { useLang } from '../hooks/useLanguage'
 
 function timeAgo(iso, tt) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   const diff = Date.now() - new Date(iso).getTime()
-  if (isNaN(diff) || diff < 0) return '—'
+  if (isNaN(diff) || diff < 0) return '-'
   const m = Math.round(diff / 60000)
   if (m < 1)    return tt('זה עתה', 'just now')
   if (m < 60)   return tt(`לפני ${m} דק׳`, `${m} min ago`)
@@ -62,12 +62,12 @@ export default function HealthWidget() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat label={tt('סריקה אחרונה', 'Last scrape')}       value={timeAgo(h?.last_scrape, tt)}       warn={scrapeWarn} />
         <Stat label={tt("דייג'סט אחרון", 'Last digest')}     value={timeAgo(h?.last_digest_sent, tt)} />
-        <Stat label={tt('גודל DB', 'DB size')}           value={h?.db_size_mb != null ? `${h.db_size_mb} MB` : '—'} />
-        <Stat label={tt('עבודות מתוזמנות', 'Scheduled jobs')}    value={h?.scheduled_jobs ?? '—'} />
+        <Stat label={tt('גודל DB', 'DB size')}           value={h?.db_size_mb != null ? `${h.db_size_mb} MB` : '-'} />
+        <Stat label={tt('עבודות מתוזמנות', 'Scheduled jobs')}    value={h?.scheduled_jobs ?? '-'} />
         <Stat label="Workspaces"        value={`${h?.workspaces_active ?? 0} / ${h?.workspaces_total ?? 0}`} />
-        <Stat label={tt('סה״כ חבילות', 'Total plans')}       value={plansSum ?? '—'} />
-        <Stat label={tt('חבילות סלולר', 'Cellular plans')}      value={h?.plans_count?.domestic ?? '—'} />
-        <Stat label={tt('חבילות גלובלי', 'Global plans')}     value={h?.plans_count?.global ?? '—'} />
+        <Stat label={tt('סה״כ חבילות', 'Total plans')}       value={plansSum ?? '-'} />
+        <Stat label={tt('חבילות סלולר', 'Cellular plans')}      value={h?.plans_count?.domestic ?? '-'} />
+        <Stat label={tt('חבילות גלובלי', 'Global plans')}     value={h?.plans_count?.global ?? '-'} />
       </div>
     </div>
   )

@@ -48,7 +48,7 @@ function PlanRow({ plan, isContent }) {
             textOverflow: 'ellipsis',
           }}
         >
-          {plan.plan_name || plan.service || '—'}
+          {plan.plan_name || plan.service || '-'}
         </div>
         {!isContent && (plan.data_gb != null || plan.minutes || plan.days) && (
           <div style={{ fontSize: 11, color: 'var(--color-moca-muted)', marginTop: 2 }}>
@@ -70,7 +70,7 @@ function PlanRow({ plan, isContent }) {
           textAlign: 'left',
         }}
       >
-        {plan.price != null ? `${plan.price}${plan.currency && plan.currency !== 'ILS' ? plan.currency : '₪'}` : '—'}
+        {plan.price != null ? `${plan.price}${plan.currency && plan.currency !== 'ILS' ? plan.currency : '₪'}` : '-'}
       </div>
     </div>
   )

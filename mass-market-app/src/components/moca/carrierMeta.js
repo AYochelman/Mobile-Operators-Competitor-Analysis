@@ -61,6 +61,7 @@ export const CARRIER_LOGOS = {
   // Global eSIM
   tuki:             '/logos/tuki.png',
   terminalesim:     '/logos/terminalesim.png',
+  gigsky:           '/logos/gigsky.png',
   airalo:           '/logos/airalo.png',
   airalo_local:     '/logos/airalo.png',
   airalo_regional:  '/logos/airalo.png',

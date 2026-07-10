@@ -19,8 +19,11 @@
   --color-moca-down:   #4a7c3f;  /* price down = good for us */
   --color-moca-hot:    #c9622f;  /* attention, NEW tags */
 
-  /* Type families (utility classes: font-display, font-body) */
-  --font-display: 'Frank Ruhl Libre', 'Assistant', system-ui, serif;
+  /* Type families (utility classes: font-display, font-body).
+     font-display now maps to Assistant too: the serif (Frank Ruhl Libre) was
+     retired app-wide 2026-07-06. The var is kept so existing font-display usages
+     keep working, they just render in the sans body font now. */
+  --font-display: 'Assistant', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-body:    'Assistant', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 

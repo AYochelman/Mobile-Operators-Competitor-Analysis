@@ -148,7 +148,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
 
             {hiddenCount > 0 && (
               <p className="px-2.5 py-2 text-[11px] text-gray-400 text-center border-t border-gray-100">
-                {tt('ועוד ', '')}{hiddenCount.toLocaleString('he-IL')}{tt(' תוצאות — חפש לצמצום', ' more results — search to narrow')}
+                {tt('ועוד ', '')}{hiddenCount.toLocaleString('he-IL')}{tt(' תוצאות - חפש לצמצום', ' more results - search to narrow')}
               </p>
             )}
 
