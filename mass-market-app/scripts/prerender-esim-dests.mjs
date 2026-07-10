@@ -32,7 +32,9 @@ const todayHe = new Intl.DateTimeFormat('he-IL', { day: 'numeric', month: 'long'
 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const jsonLd = obj => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, '\\u003c')}</script>`
-const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+// NFD-normalize first so diacritics don't punch holes in slugs (Türkiye ->
+// turkiye, Curaçao -> curacao) - otherwise they'd become t-rkiye / cura-ao.
+const slugify = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
 
 function destSlug(he) {

@@ -103,6 +103,8 @@ const COPY = {
     pilotCta: 'קביעת פגישה ←',
     pilotNote: 'בוחרים שעה פנויה - ישר ביומן, אישור מיידי',
     footer: 'MOCA · Mobile Operators Competitor Analysis · מודיעין תחרותי לשוק הסלולר הישראלי',
+    esimLinks: 'מדריכי eSIM לחו"ל לפי יעד',
+    esimLive: 'השוואת eSIM חיה',
   },
   en: {
     dir: 'ltr',
@@ -165,6 +167,8 @@ const COPY = {
     pilotCta: 'Book a meeting →',
     pilotNote: 'Pick an open slot - straight into the calendar, instant confirmation',
     footer: 'MOCA · Mobile Operators Competitor Analysis · Competitive intelligence for the Israeli mobile market',
+    esimLinks: 'eSIM guides by destination',
+    esimLive: 'Live eSIM comparison',
   },
 }
 
@@ -388,6 +392,12 @@ export default function LandingPage({ forceLang }) {
 
       {/* ── Footer ── */}
       <footer className="py-7 text-center text-moca-muted text-[13px]">
+        {/* Homepage → static eSIM cluster: the strongest internal crawl path on the site */}
+        <div className="pb-2">
+          <a href="/esim/destinations/" className="underline">{t.esimLinks}</a>
+          {' · '}
+          <a href="/esim-deals" className="underline">{t.esimLive}</a>
+        </div>
         {t.footer}
       </footer>
     </div>

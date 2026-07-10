@@ -910,6 +910,12 @@ export default function EsimComparePage() {
         <footer>
           <div className="freepill">{t.poweredFree}</div>
           <div className="powered">Powered by <b>MOCA</b> ⚡ Market Intelligence</div>
+          {/* Crawlable path from this indexed page into the static /esim/<dest>/ cluster */}
+          <div style={{ margin: '10px 0', fontSize: 13 }}>
+            <a href="/esim/destinations/">מדריכי eSIM לפי יעד</a>
+            {' · '}
+            <a href="/esim/greece/">יוון</a> · <a href="/esim/japan/">יפן</a> · <a href="/esim/thailand/">תאילנד</a> · <a href="/esim/united-states/">ארה"ב</a> · <a href="/esim/italy/">איטליה</a>
+          </div>
           <div className="disclaim">{t.disclaim}</div>
         </footer>
       </div>
