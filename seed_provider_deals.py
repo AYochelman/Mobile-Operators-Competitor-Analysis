@@ -27,26 +27,26 @@ DEALS = [
     # ══ LIVE & EARNING (green) ════════════════════════════════════════════════
     {
         "provider_id": "gomoworld", "display_name": "GoMoWorld", "category": "global",
-        "outreach_status": "live", "outreach_last_at": "2026-07-06",
+        "outreach_status": "live", "outreach_last_at": "2026-07-10",
         "contact": "Rana Doula (Partnership Manager, Puremium) rdoula@puremium.com / team@puremium.com; login my.puremium.com (Affiliate ID 1968)",
         "program_network": "Puremium SAS (פלטפורמת HasOffers/TUNE)",
         "agreement_status": "live", "commission_pct": 15,
         "commission_note": "15% עמלה על כל המרה ראשונה (Rana אישרה בכתב 06/07). חלון cookie 30 יום ללינק המעקב; לקוד עצמו אין חלון (חל ב-checkout). תשלום ב-EUR. Offer 23 עולמי, תוקף עד 06/2028.",
         "coupon_note": "קוד MOCA = 10% הנחת לקוח, חי ומזכה אותנו (Rana אישרה 06/07; מוזן ב-seed_coupons, חי ב-/api/coupons).",
         "has_tracking_link": True, "priority": "low",
-        "next_actions": "אין חובה. רשות (בצד שלנו): deep-links פר-יעד (Rana שלחה מדריך; מנגנון url_id בממשק - ליצור לינק per-dest ולמפות ב-app.py כמו Voye/Breeze) + Sub-ID פר-מלון (aff_sub5). ממתינים מ-Rana: נכסי מותג (לוגו/באנרים) - בקשה נשלחה 06/07.",
-        "notes": "eircom Limited (eir, אירלנד). כבר ספק נסרק. תוכנית השותפים מנוהלת ע\"י Puremium (פריז) על HasOffers/TUNE. 03/07 הרשמה, 06/07 אושר + אלון התחבר + חובר LIVE: config.json affiliate.gomoworld + affiliateLinks.js (Affiliate ID 1968, לינק 'https://www.puremium1.com/aff_c?offer_id=23&aff_id=1968'), /go/gomoworld 302 מאומת, build+Netlify עלו (כפתור חי), קופון MOCA 10% נזרע וחי. Rana נתנה גם לינקים ENG/FR עם aff_sub5=MOCA ו-url_id (עמוד יעדים). 06/07: אלון שלח תשובה ל-Rana שמאשרת את התנאים (15%/10%/30 יום) + ביקש נכסי מותג.",
+        "next_actions": "ממתינים לתשובה על בקשת הקישור (עמוד שותפים/בלוג, מייל 10/07; אם שקט עד ~17/07 - תזכורת). רשות (בצד שלנו): deep-links פר-יעד (Rana שלחה מדריך; מנגנון url_id בממשק - ליצור לינק per-dest ולמפות ב-app.py כמו Voye/Breeze) + Sub-ID פר-מלון (aff_sub5). ממתינים מ-Rana: נכסי מותג (לוגו/באנרים) - בקשה נשלחה 06/07.",
+        "notes": "eircom Limited (eir, אירלנד). כבר ספק נסרק. תוכנית השותפים מנוהלת ע\"י Puremium (פריז) על HasOffers/TUNE. 03/07 הרשמה, 06/07 אושר + אלון התחבר + חובר LIVE: config.json affiliate.gomoworld + affiliateLinks.js (Affiliate ID 1968, לינק 'https://www.puremium1.com/aff_c?offer_id=23&aff_id=1968'), /go/gomoworld 302 מאומת, build+Netlify עלו (כפתור חי), קופון MOCA 10% נזרע וחי. Rana נתנה גם לינקים ENG/FR עם aff_sub5=MOCA ו-url_id (עמוד יעדים). 06/07: אלון שלח תשובה ל-Rana שמאשרת את התנאים (15%/10%/30 יום) + ביקש נכסי מותג. 10/07: נשלח מייל בקשת-קישור (אזכור MOCA בעמוד השותפים/בלוג) במסגרת מהלך ה-SEO של עמודי היעדים.",
     },
     {
         "provider_id": "voye", "display_name": "Voye Global", "category": "global",
-        "outreach_status": "live", "outreach_last_at": "2026-06-22",
+        "outreach_status": "live", "outreach_last_at": "2026-07-10",
         "contact": "collab@voyeglobal.com", "program_network": "Impact",
         "agreement_status": "live", "commission_pct": 15,
         "commission_note": "15% עמלה, Last-Click 30 יום (Impact acct 7205658)",
         "coupon_note": "קוד MOCA = 15% הנחת לקוח, חי ומזכה אותנו.",
         "has_tracking_link": True, "priority": "low",
-        "next_actions": "לעדכן את Voye ש-live; ממתינים לקריאייטיבים (לוגו/באנרים) מהם.",
-        "notes": "מאושר ופעיל מ-2026-06-15. לינק /go/voye מחובר. Deep-links פר-יעד (03/07): נוצרו ב-Impact 16 TrackingLinks ליעדים המובילים (voyeglobal.com/he/esim/<country>/) וחוברו ב-app.py (_VOYE_DEST_DEEPLINKS, מפתח לפי dest); /go/voye?dest= מוביל לעמוד המדינה עם attribution, שאר היעדים נופלים ללינק הגנרי. מכסה B2C + מלונות. מאומת 16/16.",
+        "next_actions": "ממתינים לתשובה על בקשת הקישור (עמוד שותפים, מייל 10/07) + לקריאייטיבים; אם שקט עד ~17/07 - תזכורת.",
+        "notes": "מאושר ופעיל מ-2026-06-15. לינק /go/voye מחובר. Deep-links פר-יעד (03/07): נוצרו ב-Impact 16 TrackingLinks ליעדים המובילים (voyeglobal.com/he/esim/<country>/) וחוברו ב-app.py (_VOYE_DEST_DEEPLINKS, מפתח לפי dest); /go/voye?dest= מוביל לעמוד המדינה עם attribution, שאר היעדים נופלים ללינק הגנרי. מכסה B2C + מלונות. מאומת 16/16. 10/07: נשלח מייל בקשת-קישור + עדכון על עמודי היעדים החדשים + תזכורת קריאייטיבים.",
     },
     {
         "provider_id": "orbit", "display_name": "Orbit", "category": "global",
@@ -61,14 +61,14 @@ DEALS = [
     },
     {
         "provider_id": "saily", "display_name": "Saily", "category": "global",
-        "outreach_status": "live", "outreach_last_at": "2026-07-03",
+        "outreach_status": "live", "outreach_last_at": "2026-07-10",
         "contact": "affiliate@sailymedia.com", "program_network": "TUNE (Nord)",
         "agreement_status": "live", "commission_pct": None,
         "commission_note": "קופון לקוח 10%; עמלת אפיליאייט דרך Nord (לא ננקב אחוז).",
         "coupon_note": "קוד MOCA = 10% הנחה, חי ומזכה אותנו. קודי צד-ג' הושבתו.",
         "has_tracking_link": True, "priority": "low",
-        "next_actions": "בוצע 2026-07-03: checkout deep-link (planId + aff) + Sub-ID לכל מלון (aff_sub) לפי צוות ה-Affiliate של Saily. אין פעולה פתוחה.",
-        "notes": "Nord Security. מגבלת PPC: אין הצעות על מילות מפתח ממותגות. 2026-07-03: /go/saily מנתב דרך ה-checkout deep-link כשידוע plan token, ומעביר קוד מלון כ-aff_sub ל-attribution לכל מלון.",
+        "next_actions": "ממתינים לתשובה על בקשת הקישור (עמוד שותפים/spotlight, מייל 10/07); אם שקט עד ~17/07 - תזכורת.",
+        "notes": "Nord Security. מגבלת PPC: אין הצעות על מילות מפתח ממותגות. 2026-07-03: /go/saily מנתב דרך ה-checkout deep-link כשידוע plan token, ומעביר קוד מלון כ-aff_sub ל-attribution לכל מלון. 10/07: נשלח מייל בקשת-קישור (עמוד שותפים) במסגרת מהלך ה-SEO; הודגש שאין הפרת מדיניות ה-PPC.",
     },
     {
         "provider_id": "alosim", "display_name": "aloSIM", "category": "global",
@@ -105,17 +105,18 @@ DEALS = [
     },
     {
         "provider_id": "bcengi", "display_name": "BCengi", "category": "global",
-        "outreach_status": "approved", "outreach_last_at": "2026-06-30",
+        "outreach_status": "approved", "outreach_last_at": "2026-07-10",
         "contact": "support@bcengi.com", "program_network": "Impact",
         "agreement_status": "live", "commission_pct": 15,
         "commission_note": "15% עמלה על Refill + רכישה אונליין, 30 יום.",
         "coupon_note": "אין קוד MOCA ייעודי - יש רק קוד גנרי (DFB) שלא מזכה אותנו ספציפית.",
         "has_tracking_link": True, "priority": "med",
-        "next_actions": "לבקש קופון ממותג MOCA (כרגע רק DFB גנרי).",
+        "next_actions": "ממתינים לתשובה על בקשת הקישור (מייל 10/07; אם שקט עד ~17/07 - תזכורת) + לבקש קופון ממותג MOCA (כרגע רק DFB גנרי).",
         "notes": "מאושר 2026-06-30. רץ על Impact (sjv.io, אותו acct כמו Voye). "
                  "מעקב פר-יעד נכנס 2026-07-04: לאתר אין דפי יעד (עמוד תמחור אחד), "
                  "אז /go/bcengi מצרף SubIds ללינק היחיד (subId1=יעד, subId2=מקור, "
-                 "subId3=מלון) - דיווח פר-יעד בדוחות Impact בלי לינקים נפרדים.",
+                 "subId3=מלון) - דיווח פר-יעד בדוחות Impact בלי לינקים נפרדים. "
+                 "10/07: נשלח מייל בקשת-קישור (עמוד שותפים/בלוג) במסגרת מהלך ה-SEO.",
     },
     {
         "provider_id": "bytesim", "display_name": "ByteSIM", "category": "global",
@@ -143,14 +144,14 @@ DEALS = [
 
     {
         "provider_id": "breez", "display_name": "Breeze", "category": "global",
-        "outreach_status": "live", "outreach_last_at": "2026-07-06",
+        "outreach_status": "live", "outreach_last_at": "2026-07-10",
         "contact": "affiliates@breezesim.com", "program_network": "UpPromote",
         "agreement_status": "live", "commission_pct": 20,
         "commission_note": "תוכנית Default פעילה: 20.00% קבוע, Lifetime=Yes (כל הזמנה כולל חידושים+טופ-אפים, cookie 30 יום). מאומת בדשבורד 06/07 (Program details); טבלת product-commission ריקה = אין חריגות פר-מוצר. תשלום ב-28 לחודש דרך BACS/PayPal, BACS מינימום $250. יש 2 חלופות בתוכנית: 10%עמלה+10%הנחת-לקוח, או 0%עמלה+20%הנחה - אנחנו על ה-20% (הכי משתלם לאתר השוואה).",
         "coupon_note": "אין קופון קבוע. קודי קופון לשותפים מופיעים בדשבורד רק כש-Breeze מריצה מבצע עונתי - לבדוק תקופתית ולהזין ב-seed_coupons כשקיים.",
         "has_tracking_link": True, "priority": "low",
-        "next_actions": "אין פעולה פתוחה. אזהרה: אסור להצביע מודעות בתשלום (טיקטוק/גוגל) ישירות על לינק ה-sca_ref - חייב לנתב דרך עמוד ממותג משלנו (esim.mocaintel.com), אחרת השהיית חשבון; MOCA כבר תואם. אופציונלי: API catalogue לבקשה; להגדיר PayPal ב-Settings>Payment.",
-        "notes": "כבר ספק נסרק. פנייה קרה 30/06 ללא מענה; 05/07 הוגשה בקשה דרך טופס התוכנית והתקבל לינק tracking (breezesim.com?sca_ref=11756847.LeXawwdfKwAOA, אומת בדשבורד). חווט 05/07: affiliateLinks.js + config.affiliate.breez; /go/breez מאומת 302. גייד רשמי נקרא 06/07. deep-links פר-יעד חוברו 06/07: 205 עמודי מוצר Shopify (scraper.BREEZ_HEB_TO_HANDLE + _breez_deeplink_url ב-app.py), /go/breez?dest= מנתב לעמוד המדינה עם sca_ref (+sca_source=hotel/src) - עובד ב-B2C ובפורטל המלונות ללא rebuild. שתי רשתות UpPromote(שלנו)+AWIN; חינם, לא-בלעדי; דף נחיתה ממותג ל->5,000 ביקורים/חודש.",
+        "next_actions": "ממתינים לתשובה על בקשת הקישור (עמוד שותפים/בלוג, מייל 10/07; אם שקט עד ~17/07 - תזכורת). אזהרה: אסור להצביע מודעות בתשלום (טיקטוק/גוגל) ישירות על לינק ה-sca_ref - חייב לנתב דרך עמוד ממותג משלנו (esim.mocaintel.com), אחרת השהיית חשבון; MOCA כבר תואם. אופציונלי: API catalogue לבקשה; להגדיר PayPal ב-Settings>Payment.",
+        "notes": "כבר ספק נסרק. פנייה קרה 30/06 ללא מענה; 05/07 הוגשה בקשה דרך טופס התוכנית והתקבל לינק tracking (breezesim.com?sca_ref=11756847.LeXawwdfKwAOA, אומת בדשבורד). חווט 05/07: affiliateLinks.js + config.affiliate.breez; /go/breez מאומת 302. גייד רשמי נקרא 06/07. deep-links פר-יעד חוברו 06/07: 205 עמודי מוצר Shopify (scraper.BREEZ_HEB_TO_HANDLE + _breez_deeplink_url ב-app.py), /go/breez?dest= מנתב לעמוד המדינה עם sca_ref (+sca_source=hotel/src) - עובד ב-B2C ובפורטל המלונות ללא rebuild. שתי רשתות UpPromote(שלנו)+AWIN; חינם, לא-בלעדי; דף נחיתה ממותג ל->5,000 ביקורים/חודש. 10/07: נשלח מייל בקשת-קישור (עמוד שותפים/בלוג) במסגרת מהלך ה-SEO.",
     },
 
     # ══ IN DISCUSSION / PENDING (yellow) ══════════════════════════════════════
@@ -171,10 +172,10 @@ DEALS = [
         "contact": "cynthia.razafindrakoto@transatel.com", "program_network": "Impact",
         "agreement_status": "live", "commission_pct": 10,
         "commission_note": "10% על רכישה ראשונה, cookie 60 יום (Impact acct 7205658).",
-        "coupon_note": "לינק tracking חי ומזכה אותנו (/go/ubigi מאומת 302 → MKgJG3). קוד MOCA עדיין בהקמה אצל Cynthia.",
+        "coupon_note": "קוד MOCA חי (10% הנחה ללקוח חדש, 60 יום עמלה) - אושר במייל מ-Cynthia 2026-07-09, נזרע ב-seed_coupons (#303). לינק tracking עודכן ל-go.ubigi.com/5kqGL1 (הלינק הרשמי שסיפקה Cynthia, מחליף את MKgJG3 שנוצר עצמאית) - /go/ubigi מאומת 302.",
         "has_tracking_link": True, "priority": "med",
-        "next_actions": "אומת 2026-07-03 (מייל Impact 'tracking value' + /go/ubigi חי). נותר רק קוד הקופון MOCA מ-Cynthia → להזין ב-seed_coupons כשמגיע.",
-        "notes": "כבר ספק נסרק. Sub-ID לכל מלון + deep links אושרו כאפשריים. לינק שני (go.ubigi.com/vDWBGO) נוצר 07-03 = כפול (אותו acct 7205658); נשאר MKgJG3. Deep-links פר-יעד (03/07): נוצרו ב-Impact 14 TrackingLinks ליעדים המובילים (cellulardata.ubigi.com/...?destination=<iso3>) וחוברו ב-app.py (_UBIGI_DEST_DEEPLINKS, מפתח לפי dest); /go/ubigi?dest= מוביל לעמוד היעד עם attribution (utm_source=7205658), שאר היעדים נופלים ללינק הגנרי. מאומת 14/14.",
+        "next_actions": "הושלם - קופון + לינק רשמי חוברו ואומתו 2026-07-10. אין פעולה פתוחה.",
+        "notes": "כבר ספק נסרק. Sub-ID לכל מלון + deep links אושרו כאפשריים (מייל Cynthia 07-09: Shared ID field ב-Impact). לינק שני (go.ubigi.com/vDWBGO) נוצר 07-03 = כפול (אותו acct 7205658); הוחלף 07-10 בלינק הרשמי 5kqGL1 שסיפקה Cynthia ישירות. Deep-links פר-יעד (03/07): נוצרו ב-Impact 14 TrackingLinks ליעדים המובילים (cellulardata.ubigi.com/...?destination=<iso3>) וחוברו ב-app.py (_UBIGI_DEST_DEEPLINKS, מפתח לפי dest); /go/ubigi?dest= מוביל לעמוד היעד עם attribution (utm_source=7205658), שאר היעדים נופלים ללינק הגנרי. מאומת 14/14. הורחב 07-10 ב-3 יעדים נוספים (אירופה MKkqe2, קנדה DWq6xa, גלובלי L05LkL - נוצרו ב-Impact Create-a-Link, מאומתים 302 עם utm_source=7205658), עכשיו 17/17 בכיסוי מלא כמו Voye. מייל 07-09 גם צירף לוגו (שחור/לבן) - שחור חובר 07-10 (public/logos/ubigi.svg, providerLogos.js + carrierMeta.js, גודל אייקון בכרטיסיות הוגדל 15% ל-37px). ה-'API docs' שצורף הוא לא API עצמאי של Ubigi - זה מדריך ליצירת access token ל-Impact Product Catalog API (מוגבל 200 מוצרים/קריאה, catalog ID 19558 EN/USD); scrape_ubigi_global שלנו כבר סורק ישירות מול ה-WooCommerce Store API הציבורי של cellulardata.ubigi.com בלי אימות ובלי הגבלת עמוד, אז זה לא משפר את הסריקה. ערך אפשרי עתידי: ה-Impact catalog כולל URLs עם attribution מובנה לכל מוצר, מה שיכול להחליף את ה-14 deep-links הידניים בכיסוי מלא - לא דחוף, טעון הקמת access token.",
     },
     {
         "provider_id": "yesim", "display_name": "Yesim", "category": "global",
@@ -222,14 +223,14 @@ DEALS = [
     },
     {
         "provider_id": "esimio", "display_name": "eSIM.io", "category": "global",
-        "outreach_status": "contacted", "outreach_last_at": "2026-07-01",
-        "contact": "info@esim.io (Desk360 #91126)", "program_network": "לא ידוע",
+        "outreach_status": "contacted", "outreach_last_at": "2026-07-10",
+        "contact": "info@esim.io (Desk360 #91126 + טופס אתר 10/07)", "program_network": "לא ידוע",
         "agreement_status": "pending", "commission_pct": None,
         "commission_note": "טרם נמסרו תנאים.",
-        "coupon_note": "טופס שותפות (Google Form) הוגש; ממתין לתשובת partnerships.",
+        "coupon_note": "טופס שותפות (Google Form) הוגש 01/07; ממתין לתשובת partnerships.",
         "has_tracking_link": False, "priority": "low",
-        "next_actions": "להמתין לתשובת צוות השותפויות.",
-        "notes": "כבר ספק נסרק.",
+        "next_actions": "להמתין לתשובת צוות השותפויות; אם שקט עד ~24/07 - תזכורת נוספת.",
+        "notes": "כבר ספק נסרק. 01/07 טופס Google Form הוגש (Desk360 #91126). 10/07 פנייה נוספת דרך טופס יצירת קשר באתר (Subject: Affiliate program) - נשלחה בהצלחה.",
     },
 
     # ══ COLD OUTREACH SENT — awaiting reply (2026-06-30 batch) ════════════════
