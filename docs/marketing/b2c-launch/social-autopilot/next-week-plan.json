@@ -1,0 +1,69 @@
+{
+  "week_of": "2026-07-09",
+  "directives": [
+    "First run: no historical performance data yet. Establish a consistent baseline of 8 posts this week so next week's routine can compare.",
+    "Summer is peak travel season for Israelis (July-August). Focus topics on popular summer destinations (Greece, Italy, USA, Thailand) and the savings angle vs carrier roaming packages.",
+    "Every link to the site must carry utm_source and utm_campaign (never src=esim). Target is esim.mocaintel.com with tracking params per post.",
+    "Hebrew copy: every line including hashtags must open with a Hebrew word so RTL does not scramble it.",
+    "TikTok videos: strong hook in the first second, keep all text (captions, CTA, end-card URL) in the center safe zone.",
+    "Prefer carousels on Instagram (destination guides / myth-busting) and a single bold-message image on Facebook."
+  ],
+  "slots": [
+    {
+      "network": "facebook",
+      "datetime_local": "2026-07-14T12:30",
+      "format": "image",
+      "topic": "השוואת מחירי eSIM ליעדי קיץ באירופה (יוון/איטליה)",
+      "notes": "תמונה בודדת עם מסר חד: כמה חוסכים מול חבילת גלישה של המפעיל. קישור עם utm_source=facebook&utm_campaign=summer_eu."
+    },
+    {
+      "network": "facebook",
+      "datetime_local": "2026-07-15T12:30",
+      "format": "image",
+      "topic": "כמה חוסכים עם eSIM מול רומינג של המפעיל",
+      "notes": "זווית חיסכון בכסף, מספר גדול ובולט. קישור utm_source=facebook&utm_campaign=savings."
+    },
+    {
+      "network": "facebook",
+      "datetime_local": "2026-07-16T12:30",
+      "format": "image",
+      "topic": "מדריך קצר: איך eSIM עובד ולמה זה פשוט",
+      "notes": "הסבר בשלושה שלבים, מסיר חשש למשתמשים חדשים. קישור utm_source=facebook&utm_campaign=howto."
+    },
+    {
+      "network": "instagram",
+      "datetime_local": "2026-07-14T20:30",
+      "format": "carousel",
+      "topic": "5 יעדי קיץ חמים והחבילה הזולה ביותר לכל אחד",
+      "notes": "קרוסלה: שקופית פתיחה + שקופית לכל יעד. קישור בביו utm_source=instagram&utm_campaign=summer_top5."
+    },
+    {
+      "network": "instagram",
+      "datetime_local": "2026-07-15T20:30",
+      "format": "carousel",
+      "topic": "מיתוסים על eSIM שכדאי לשכוח",
+      "notes": "קרוסלת ניפוץ מיתוסים, שקופית סיום עם CTA. קישור utm_source=instagram&utm_campaign=myths."
+    },
+    {
+      "network": "instagram",
+      "datetime_local": "2026-07-16T20:30",
+      "format": "image",
+      "topic": "תמונה בודדת: כמה כסף נשאר לך בארנק כשלא משלמים על רומינג",
+      "notes": "מסר חיסכון חד, ויזואל נקי. קישור utm_source=instagram&utm_campaign=savings."
+    },
+    {
+      "network": "tiktok",
+      "datetime_local": "2026-07-10T20:00",
+      "format": "video",
+      "topic": "סרטון קצר: אל תנחתו בחו\"ל בלי eSIM",
+      "notes": "וו חזק בשנייה הראשונה, כל הטקסט במרכז המסך. קישור בביו utm_source=tiktok&utm_campaign=dontland."
+    },
+    {
+      "network": "tiktok",
+      "datetime_local": "2026-07-11T21:00",
+      "format": "video",
+      "topic": "סרטון קצר: השוואת מחירים ב-30 שניות",
+      "notes": "דמו מהיר של האתר, כרטיס סיום עם URL במרכז. קישור utm_source=tiktok&utm_campaign=compare30s."
+    }
+  ]
+}
