@@ -16,6 +16,12 @@ export default defineConfig({
       manifest: false, // public/manifest.json is served manually
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg}'],
+        // Returning visitors carry this SW, whose default navigateFallback serves
+        // the precached SPA index.html for ANY navigation - which 404s the static
+        // prerendered /esim/<dest>/ pages (no SPA route) and would swallow /go/
+        // redirects. Let those hit the network. (/esim-deals starts with "/esim-",
+        // not "/esim/", so it deliberately stays on the SPA fallback.)
+        navigateFallbackDenylist: [/^\/esim\//, /^\/go\//],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
