@@ -19,6 +19,14 @@ const URLS = [
   'https://mocaintel.com/llms.txt',
 ]
 
+// Programmatic destination pages (dist/esim-pages.json is written by
+// prerender-esim-dests.mjs at build time) - ping them too when present.
+try {
+  const { readFileSync } = await import('node:fs')
+  const manifest = JSON.parse(readFileSync('dist/esim-pages.json', 'utf8'))
+  URLS.push(...manifest.urls.filter(u => !URLS.includes(u)))
+} catch { /* no manifest in this build - ping the base list only */ }
+
 const res = await fetch('https://api.indexnow.org/indexnow', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json; charset=utf-8' },
