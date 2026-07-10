@@ -49,6 +49,17 @@ DEALS = [
         "notes": "מאושר ופעיל מ-2026-06-15. לינק /go/voye מחובר. Deep-links פר-יעד (03/07): נוצרו ב-Impact 16 TrackingLinks ליעדים המובילים (voyeglobal.com/he/esim/<country>/) וחוברו ב-app.py (_VOYE_DEST_DEEPLINKS, מפתח לפי dest); /go/voye?dest= מוביל לעמוד המדינה עם attribution, שאר היעדים נופלים ללינק הגנרי. מכסה B2C + מלונות. מאומת 16/16.",
     },
     {
+        "provider_id": "orbit", "display_name": "Orbit", "category": "global",
+        "outreach_status": "live", "outreach_last_at": "2026-07-08",
+        "contact": "Impact (brand Orbit Mobile 32966 / Orbit Mobile Limited 6117688)", "program_network": "Impact",
+        "agreement_status": "live", "commission_pct": 20,
+        "commission_note": "20% עמלה, ייחוס קליק 30 יום (Impact acct 7205658, brand Orbit Mobile). קודם סומן FirstPromoter 15-22% - בפועל רץ על Impact.",
+        "coupon_note": "אין קוד MOCA עדיין - לבקש מ-Orbit. ייחוס עובד דרך לינק ה-tracking.",
+        "has_tracking_link": True, "priority": "med",
+        "next_actions": "חובר 08/07: לינק Impact https://orbitmobile.sjv.io/k4kN50 ב-config.json affiliate.orbit + affiliateLinks.js; /go/orbit 302 מאומת (הבסיס חי מיד). deep-links פר-מדינה לא אפשריים (ל-orbitmobile.com אין עמודי מדינה - SPA accordion, ה-URL לא משתנה), אז במקום זה חובר SubId פר-יעד (subId1=יעד, subId2=src, subId3=hotel) ל-app.py כמו bcengi - דיווח פר-יעד ב-Impact. פתוח: (1) אתחול Flask מורשה (restart_flask.bat כ-admin) כדי שברנץ ה-SubId ייכנס לתוקף - כרגע קונסולת watchdog תקועה elevated (PID ישן) מריצה קוד ישן על :5000, (2) Alon לגרור dist ל-Netlify לכפתור בדשבורד, (3) לבקש קוד קופון MOCA מ-Orbit.",
+        "notes": "כבר ספק נסרק (REST API, be.orbitmobile.com, 195 מדינות + 9 zones). מצטרפים דרך Impact (brand Orbit Mobile), לא FirstPromoter. האתר הנכון orbitmobile.com. 03/07 בקשת הצטרפות הוגשה. 08/07: Orbit אישרו (מייל Impact 'You're All Set - Let's Launch' + ערכת Affiliate Toolkit ב-Google Drive) → לינק נוצר ב-Impact 'Create a link' וחובר LIVE (backend מזכה מיד, load_config לפי mtime). /go/orbit מוביל דרך acct 7205658 לדף הבית orbitmobile.com. 08/07 נבדק חי: orbitmobile.com הוא SPA שבו בחירת מדינה פותחת accordion באותו עמוד (URL נשאר /en/plans/top-destinations) - אין עמוד ייעודי למדינה, לכן deep-links פר-מדינה בסגנון Voye/Ubigi לא רלוונטיים; במקום זה _orbit_subid_url מצרף SubId פר-יעד לדיווח. B2C /esim-deals + פורטלי מלונות כבר מעבירים dest ל-/go גנרית.",
+    },
+    {
         "provider_id": "saily", "display_name": "Saily", "category": "global",
         "outreach_status": "live", "outreach_last_at": "2026-07-03",
         "contact": "affiliate@sailymedia.com", "program_network": "TUNE (Nord)",
@@ -302,17 +313,6 @@ DEALS = [
 
     # ── bounced / need a valid contact ──
     {
-        "provider_id": "orbit", "display_name": "Orbit", "category": "global",
-        "outreach_status": "in_discussion", "outreach_last_at": "2026-07-03",
-        "contact": "Impact (brand Orbit Mobile 32966 / Orbit Mobile Limited)", "program_network": "Impact",
-        "agreement_status": "pending", "commission_pct": 20,
-        "commission_note": "20% עמלה, ייחוס קליק 30 יום (Impact, brand Orbit Mobile). קודם סומן FirstPromoter 15-22% - בפועל רץ על Impact.",
-        "coupon_note": "בקשת הצטרפות הוגשה ב-Impact 2026-07-03, ממתין לאישור Orbit. אין קוד עדיין.",
-        "has_tracking_link": False, "priority": "med",
-        "next_actions": "להמתין לאישור Orbit ב-Impact; כשמאושר - לייצר לינק tracking (כמו Voye/Maya) לחווט + לבקש קוד MOCA.",
-        "notes": "כבר ספק נסרק (REST API). מצטרפים דרך Impact (brand Orbit Mobile), לא FirstPromoter. האתר הנכון orbitmobile.com. כפתור Withdraw = הבקשה ממתינה, אין שלב חתימה נפרד.",
-    },
-    {
         "provider_id": "jetpack", "display_name": "Jetpac", "category": "global",
         "outreach_status": "contacted", "outreach_last_at": "2026-06-30",
         "contact": "טופס Jetffiliate באתר", "program_network": "עצמאי",
@@ -368,14 +368,14 @@ DEALS = [
     },
     {
         "provider_id": "gigsky", "display_name": "GigSky", "category": "global",
-        "outreach_status": "live", "outreach_last_at": "2026-07-06",
+        "outreach_status": "live", "outreach_last_at": "2026-07-08",
         "contact": "Alex Dufort (Head of Partnerships)", "program_network": "Everflow",
         "agreement_status": "live", "commission_pct": 15,
         "commission_note": "15% revshare על רכישות; בנוסף CPA: GigSky One $25, VISA benefit $4, תוכנית חינם $3.",
         "coupon_note": "קוד MOCA15 (15% הנחה) אושר ופעיל (Alex, 06/07). Sub-ID נתמך דרך תיבת ה-vanity ב-Everflow.",
         "has_tracking_link": True, "priority": "med",
-        "next_actions": "לבקש מ-Alex את מסמך פורמט ה-deep-link ליעדים (Everflow URL override); אז נחליף את sub1 בנחיתה ישירה על עמוד המדינה כמו Voye/Ubigi.",
-        "notes": "ספק נסרק (1698 חבילות, מופיע בהשוואת eSIM). קופון MOCA15 הוטמע (seed_coupons.py). לינק Everflow חובר 06/07 (plans.gigsky.com/273MKQ4/2CTPL/, aff 273MKQ4 offer 2CTPL); /go/gigsky מצרף sub1=יעד(ISO)/sub2=src/sub5=hotel, מאומת חי. גישה לתיקיית assets אושרה 06/07. פתוח: להשלים Billing ב-Everflow (Company Settings) כדי שהעמלות יהיו ניתנות לתשלום.",
+        "next_actions": "מסמך ה-deep-link התקבל 08/07. פתוח (בצד שלנו): להטמיע נחיתה פר-מדינה - gigskyapp://home/explore?serviceRegionId=<ISO>&category=Countries עטוף ב-Singular smart-link (gigsky.sng.link/Euypu/<id>) - ולוודא ששמירת ה-attribution ב-Everflow נשמרת (url override / הפניית לינק Everflow ל-sng.link עם המאקרו). לשים לב: זה deep-link לאפליקציה (לא web), לברר עם Alex fallback ל-web/דסקטופ. להשלים Billing ב-Everflow.",
+        "notes": "ספק נסרק (1698 חבילות, מופיע בהשוואת eSIM). קופון MOCA15 הוטמע (seed_coupons.py). לינק Everflow חובר 06/07 (plans.gigsky.com/273MKQ4/2CTPL/, aff 273MKQ4 offer 2CTPL); /go/gigsky מצרף sub1=יעד(ISO)/sub2=src/sub5=hotel, מאומת חי. גישה לתיקיית assets אושרה 06/07. פתוח: להשלים Billing ב-Everflow (Company Settings). 08/07: Alex שיתף Google Doc 'how to Deeplink capability'. הפורמט = Singular smart-link https://gigsky.sng.link/Euypu/<id>?_dl=<urlencoded gigskyapp://...>&_forward_params=2&_smtype=3; מדינה = gigskyapp://home/explore?serviceRegionId=<CountryCode>&category=Countries (serviceRegionId=קוד ISO למדינה; PlanBundleId לאזורי/עולמי). Everflow מזריק מאקרו דינמי (affiliate_id/transaction_id/offer_id) בתוך ה-sng.link. 10/07: נסגר פער בפרונט - gigsky היה חסר ב-affiliateLinks.js (AFFILIATE_PROVIDERS+AFFILIATE_URLS), כך שכפתור הרכישה בכרטיס הדשבורד נפל ל-gigsky.com ללא attribution (דלף רק בדשבורד; B2C/‏go תמיד עבד). נוסף, נבנה ונפרס לאוויר (fingerprint main-Djz6BYUq.js, chunk PlanCard-BrtWeYZJ.js מאומת חי).",
     },
 ]
 
