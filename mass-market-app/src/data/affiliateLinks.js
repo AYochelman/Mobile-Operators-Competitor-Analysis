@@ -7,15 +7,19 @@
 // A provider in AFFILIATE_PROVIDERS renders a "רכישה / דרך MOCA" button. Providers
 // with a signed tracking link redirect with attribution; the rest fall back to the
 // provider homepage until their program link is wired.
+// NB: `holafly` is deliberately NOT here — we have NO active Holafly affiliate
+// agreement (applied via Impact 2026-06-13, no approval since). Its old entry
+// pointed the "רכישה דרך MOCA" button at the bare homepage with no attribution
+// (a leak: looked monetized, earned $0). Re-add ONLY once a real Holafly
+// tracking link is wired (then also un-comment config.json affiliate.holafly).
 export const AFFILIATE_PROVIDERS = new Set([
-  'airalo', 'airalo_local', 'airalo_regional', 'holafly', 'saily', 'terminalesim', 'voye', 'yesim', 'alosim', 'seven_g', 'bcengi', 'maya', 'ubigi', 'bytesim', 'breez', 'gigsky', 'gomoworld', 'orbit',
+  'airalo', 'airalo_local', 'airalo_regional', 'saily', 'terminalesim', 'voye', 'yesim', 'alosim', 'seven_g', 'bcengi', 'maya', 'ubigi', 'bytesim', 'breez', 'gigsky', 'gomoworld', 'orbit',
 ])
 
 export const AFFILIATE_URLS = {
   airalo:          'https://www.airalo.com',
   airalo_local:    'https://www.airalo.com',
   airalo_regional: 'https://www.airalo.com',
-  holafly:         'https://esim.holafly.com',
   saily:           'https://go.saily.site/aff_c?offer_id=101&aff_id=14705', // Saily affiliate tracking (offer_id 101, aff_id 14705)
   terminalesim:    'https://terminalesim.com',
   voye:            'https://voyeglobalconnectivity.pxf.io/AgB9dx', // Voye Impact tracking (acct 7205658, 15% / 30-day) → deep-links to voyeglobal.com/he Hebrew landing
