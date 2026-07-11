@@ -21,7 +21,7 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                get_archive_plans, get_archive_banners, get_archive_date_range, \
                get_history_changes, get_history_price_series, get_all_price_series, \
                upsert_news_articles, get_news_articles, \
-               log_affiliate_click, get_affiliate_stats, get_affiliate_attribution, \
+               log_affiliate_click, get_affiliate_stats, get_affiliate_attribution, is_bot_ua, \
                upsert_hotel, get_hotel, list_hotels, delete_hotel, \
                log_guest_event, get_guest_analytics, get_esim_deals_for_destination, \
                log_esim_event, get_esim_analytics, \
@@ -117,8 +117,25 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 # Skips already-compressed mimetypes (image/*, video/*) automatically.
 Compress(app)
 
-# Rate limiting
-limiter = Limiter(get_remote_address, app=app, default_limits=["200 per minute"], storage_uri="memory://")
+
+def _client_ip():
+    """Real client IP behind the Cloudflare Tunnel. cloudflared terminates the
+    public TLS connection and forwards the origin IP in CF-Connecting-IP (and
+    X-Forwarded-For); Flask's request.remote_addr is just the tunnel's local peer
+    (127.0.0.1), so WITHOUT this every public visitor collapses to one address —
+    breaking per-client rate limiting and any bot/human IP analysis. Falls back to
+    remote_addr for direct localhost/LAN access. Trusting the header is safe because
+    the only public ingress is the tunnel from localhost (Flask binds 127.0.0.1)."""
+    hdr = request.headers
+    return (hdr.get("CF-Connecting-IP")
+            or hdr.get("X-Forwarded-For", "").split(",")[0].strip()
+            or request.remote_addr
+            or "")
+
+
+# Rate limiting — keyed on the real client IP (see _client_ip) so limits are
+# per-visitor, not one global bucket for all tunnel traffic.
+limiter = Limiter(_client_ip, app=app, default_limits=["200 per minute"], storage_uri="memory://")
 
 
 def _public_cache(resp, max_age):
@@ -1812,7 +1829,8 @@ def _gomoworld_deeplink_url(dest=None, src=None, hotel=None):
 @app.route("/go/<provider>/<plan_id>")
 @limiter.limit("120 per minute")
 def affiliate_redirect(provider, plan_id=None):
-    ip      = request.remote_addr or ""
+    ip      = _client_ip()
+    ua      = request.headers.get("User-Agent", "")
     cfg     = load_config()
     api_key = cfg.get("api_key", "")
     ip_hash = hmac.new(api_key.encode(), ip.encode(), hashlib.sha256).hexdigest()
@@ -1829,11 +1847,24 @@ def affiliate_redirect(provider, plan_id=None):
     campaign = (request.args.get("campaign") or request.args.get("utm_campaign")
                 or request.args.get("utm_source") or "").strip()[:80] or None
 
+    # Bot/crawler gate. robots.txt Disallows /go/ and the buttons are rel="sponsored
+    # nofollow", but non-compliant crawlers ignore both and hammer the redirect (a
+    # single crawler fired 1,295 junk /go hits across the /esim/<dest>/ SEO pages on
+    # 2026-07-10). Following the redirect would register those junk clicks in the
+    # affiliate networks (Impact/Everflow), inflating clicks + tanking conversion
+    # ratios and risking an invalid-traffic flag. So: log the hit (is_bot=1, for
+    # visibility) but STOP here — no affiliate redirect, no hotel attribution.
+    bot = is_bot_ua(ua)
     try:
         log_affiliate_click(provider, plan_id=plan, country=country, ip_hash=ip_hash,
-                            src=src, campaign=campaign, db_path=_db_path())
+                            src=src, campaign=campaign, user_agent=ua, is_bot=bot,
+                            db_path=_db_path())
     except Exception:
         app.logger.warning("affiliate click log failed", exc_info=True)
+
+    if bot:
+        return ("bot traffic not permitted on affiliate links", 403,
+                {"X-Robots-Tag": "noindex, nofollow"})
 
     # Per-hotel attribution: a click from a hotel's guest portal earns the hotel.
     if hotel:
@@ -2041,7 +2072,7 @@ def api_esim_analytics():
 # ════════════════════════════════════════════════════════════════════════════
 
 def _guest_ip_hash():
-    ip = request.remote_addr or ""
+    ip = _client_ip() or ""
     api_key = load_config().get("api_key", "")
     return hmac.new(api_key.encode(), ip.encode(), hashlib.sha256).hexdigest()
 
