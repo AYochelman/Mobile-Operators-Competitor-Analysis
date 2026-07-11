@@ -41,13 +41,14 @@ const EVENT_LABELS_EN = {
   export:            'Excel export',
 }
 
-// pathname → Hebrew page name (reuse the Topbar route map)
+// pathname → page name (reuse the Topbar route map), resolved per active UI language
 const PATH_LABELS = ROUTE_META.reduce((m, r) => { m[r.match] = r.title; return m }, {})
-function pageLabel(path) {
+function pageLabel(path, lang = 'he') {
   if (!path) return '-'
-  if (PATH_LABELS[path]) return PATH_LABELS[path]
+  const pick = (title) => (title ? (title[lang] != null ? title[lang] : title.he) : null)
+  if (PATH_LABELS[path]) return pick(PATH_LABELS[path])
   const base = path.split('?')[0].split('#')[0]
-  return PATH_LABELS[base] || path
+  return pick(PATH_LABELS[base]) || path
 }
 
 function detailSummary(details, tt = (he) => he) {
@@ -502,7 +503,7 @@ export default function UserActivityPage() {
               {summary.top_pages.map((p) => (
                 <tr key={p.path} className="border-t border-moca-border first:border-t-0">
                   <td className="px-4 py-2.5 text-start" style={{ color: 'var(--color-moca-text)' }}>
-                    {pageLabel(p.path)}
+                    {pageLabel(p.path, lang)}
                   </td>
                   <td className="px-4 py-2.5 text-start text-xs" style={{ color: 'var(--color-moca-muted)' }}>
                     {p.path}
@@ -611,7 +612,7 @@ export default function UserActivityPage() {
               ) : (
                 <ul>
                   {events.map((ev) => {
-                    const sub = ev.event_type === 'page_view' ? pageLabel(ev.path) : detailSummary(ev.details, tt)
+                    const sub = ev.event_type === 'page_view' ? pageLabel(ev.path, lang) : detailSummary(ev.details, tt)
                     return (
                       <li key={ev.id} className="flex items-center justify-between gap-3 px-5 py-2.5 border-b border-moca-border last:border-b-0">
                         <div className="min-w-0">
