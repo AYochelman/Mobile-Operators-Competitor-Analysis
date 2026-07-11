@@ -5525,6 +5525,27 @@ def api_history_changes():
     return jsonify({'changes': changes, 'summary': summary})
 
 
+@app.route('/robots.txt')
+@limiter.exempt
+def robots_txt():
+    """robots.txt for the API host (api.mocaintel.com). The frontend's robots.txt
+    (Netlify) Disallows /go/, but the prerendered /esim/<dest>/ SEO pages link the
+    deal buttons ABSOLUTELY to api.mocaintel.com/go/... — a different host, where
+    (until 2026-07-11) the only robots.txt was Cloudflare's auto-generated one
+    (User-agent: * → Allow: /). Result: a perfectly compliant crawler
+    (Claude-SearchBot) followed ~1,295 /go links off the SEO pages on launch day.
+    Cloudflare's managed robots.txt prepends its content-signal block to whatever
+    the origin serves, so these directives ride along with it."""
+    body = (
+        "User-agent: *\n"
+        "Disallow: /go/\n"          # affiliate redirects — clicks pollute attribution
+        "Disallow: /api/\n"         # JSON endpoints — nothing indexable
+        "Disallow: /banners/\n"     # screenshot PNGs for the internal dashboard
+    )
+    return body, 200, {"Content-Type": "text/plain; charset=utf-8",
+                       "Cache-Control": "public, max-age=3600"}
+
+
 @app.route('/api/ping')
 @limiter.exempt
 def api_ping():
