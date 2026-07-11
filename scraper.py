@@ -393,55 +393,90 @@ _WECOM_FAIR_USE_GB = 10000
 _WECOM_OVERSEAS_RATES_URL = "https://we-com.co.il/price-list-for-overseas-customers/"
 
 
-def _wecom_wefly_popup_info(page, post_id, listing_id=None):
-    """Return the wefly package's "פרטי החבילה" details as a cleaned
-    "__info__|<lines>" extra (or None on failure).
+def _wecom_fetch_html(url):
+    """Fetch a We-Com page over plain HTTP with a browser UA.
 
-    We-Com's roaming cards all open ONE JetEngine-dynamic JetPopup (jet-popup-14068)
-    whose body is rendered per the clicked card's postId. Rather than drive the JS popup
-    (which is blocked by a page-load marketing overlay), we replay its admin-ajax call
-    (action=jet_popup_get_content) directly with that postId. PlanCard renders the result
-    as the in-card "תנאי התוכנית" modal; the call-rates line becomes a clickable
-    "label|url" link.
+    The 2026-07 site redesign renders all plan cards server-side as
+    <article class="tier-card"> blocks (custom "wecom-theme"), so the wecom
+    scrapers no longer need Playwright at all.
     """
-    import html as _html
-    try:
-        resp = page.request.post(
-            "https://we-com.co.il/wp-admin/admin-ajax.php",
-            form={
-                "action": "jet_popup_get_content",
-                "data[forceLoad]": "true",
-                "data[customContent]": "",
-                "data[popupId]": "jet-popup-14068",
-                "data[isJetEngine]": "true",
-                "data[listingSource]": "posts",
-                "data[listingId]": listing_id or "27979",
-                "data[queryId]": "",
-                "data[postId]": str(post_id),
-                "data[popup_id]": "14068",
-                "data[page_url]": "https://we-com.co.il/roaming/",
-            },
-        )
-        html_body = ((resp.json().get("content") or {}).get("content")) or ""
-    except Exception as e:
-        logging.warning("wecom wefly popup fetch failed (post %s): %s", post_id, e)
+    import requests
+    r = requests.get(url, headers={"User-Agent": _WECOM_UA}, timeout=30)
+    r.raise_for_status()
+    return r.text
+
+
+def _wecom_text_lines(chunk):
+    """HTML chunk -> clean, whitespace-normalized text lines."""
+    txt = re.sub(r'(?is)<(script|style)[^>]*>.*?</\1>', '', chunk)
+    txt = re.sub(r'(?i)<br\s*/?>', '\n', txt)
+    txt = re.sub(r'(?s)<[^>]+>', '\n', txt)
+    txt = _html_unescape(txt)
+    lines = []
+    for raw in txt.split('\n'):
+        ln = re.sub(r'[\s ]+', ' ', raw).strip()
+        if ln:
+            lines.append(ln)
+    return lines
+
+
+def _wecom_tier_cards(page_html):
+    """Split page HTML into its <article class="tier-card"> blocks (2026-07 design)."""
+    return [chunk.split('</article>')[0]
+            for chunk in re.split(r'<article class="tier-card[^"]*">', page_html)[1:]]
+
+
+def _wecom_card_name(card_html):
+    """The card's display name = first line of the tier-card__sub-headline element."""
+    m = re.search(r'class="tier-card__sub-headline">(.*?)</p>', card_html, re.S)
+    if not m:
         return None
-    if not html_body:
+    lines = _wecom_text_lines(m.group(1))
+    return lines[0] if lines else None
+
+
+def _wecom_card_price(card_html):
+    """Parse the tier-card__price-plain element ("29.90 ₪ לחודש" / "₪499")."""
+    m = re.search(r'class="tier-card__price-plain">(.*?)</p>', card_html, re.S)
+    if not m:
         return None
-    # Capture the overseas call-rates link before stripping tags.
+    pm = re.search(r'(\d+(?:\.\d+)?)', re.sub(r'(?s)<[^>]+>', ' ', m.group(1)))
+    if not pm:
+        return None
+    v = float(pm.group(1))
+    return int(v) if v == int(v) else v
+
+
+# Card lines that are navigation/CTA noise, never plan facts.
+_WECOM_CARD_NOISE = {
+    'השארת פרטים', 'הצטרפות דרך נציג', 'הצטרפות אונליין', 'פרטי החבילה',
+    'סגירה', 'לרכישה', 'לרשימת המדינות', 'לעיקרי התוכנית', 'למחירון',
+    'בארץ:', 'בחו"ל:', 'בחו״ל:',
+}
+
+
+def _wecom_popup_info(page_html, popup_id):
+    """Return a roaming card's "פרטי החבילה" popup as a "__info__|<lines>" extra.
+
+    Since the 2026-07 redesign the popup bodies are inline in the page HTML
+    (<div class="wecom-popup wecom-popup--plan" id="wecom-popup-N">), replacing
+    the old JetEngine admin-ajax fetch. PlanCard renders the result as the
+    in-card "תנאי התוכנית" modal (abroad has no url column, so this is the only
+    terms affordance); the call-rates line becomes a clickable "label|url" link.
+    """
+    m = re.search(
+        r'id="%s".*?class="wecom-popup__content">(.*?)</div>\s*</div>\s*</div>' % re.escape(popup_id),
+        page_html, re.S)
+    if not m:
+        return None
+    body = re.sub(r'(?s)<div class="popup-plan-title">.*?</div>', '', m.group(1))
     rate_url = _WECOM_OVERSEAS_RATES_URL
-    m = re.search(r'href="([^"]*price-list[^"]*)"', html_body)
-    if m:
-        rate_url = m.group(1)
-    text = re.sub(r'(?is)<(script|style)[^>]*>.*?</\1>', '', html_body)
-    text = re.sub(r'(?i)<br\s*/?>', '\n', text)
-    text = re.sub(r'(?i)</(p|div|li|h[1-6]|tr)>', '\n', text)
-    text = re.sub(r'(?s)<[^>]+>', '', text)
-    text = _html.unescape(text)
+    href = re.search(r'href="([^"]*price-list[^"]*)"', body)
+    if href:
+        rate_url = _html_unescape(href.group(1))
     lines, seen = [], set()
-    for raw in text.split('\n'):
-        ln = raw.strip()
-        if not ln or ln in seen:
+    for ln in _wecom_text_lines(body):
+        if ln in seen:
             continue
         seen.add(ln)
         if ln.lower().startswith('wefly'):        # bare plan-name heading — the card already shows it
@@ -454,145 +489,65 @@ def _wecom_wefly_popup_info(page, post_id, listing_id=None):
     return ('__info__|' + '\n'.join(lines)) if lines else None
 
 
-def _scrape_wecom_page(page, url, name_prefix, already_navigated=False):
-    """Helper: navigate to url (unless already_navigated), find headings starting with name_prefix, parse cards."""
-    if not already_navigated:
-        page.goto(url, timeout=30000, wait_until="networkidle")
-        page.wait_for_timeout(2000)
+def _wecom_card_extras(front_lines, skip_name=None, cap=8):
+    """Meaningful card-front lines only (skip CTAs, price fragments, bare numbers)."""
+    extras, seen = [], set()
+    for ln in front_lines:
+        if (ln == skip_name or ln in _WECOM_CARD_NOISE or ln in seen or len(ln) <= 2
+                or '₪' in ln or 'לחודש' in ln or re.match(r'^[\d.,]+$', ln)):
+            continue
+        seen.add(ln)
+        extras.append(ln)
+        if len(extras) >= cap:
+            break
+    return extras
+
+
+def scrape_wecom(_page=None):
+    """Scrape We-Com domestic plans (pure HTTP, 2026-07 tier-card design).
+
+    The redesign renamed the rate card to Hebrew display names (חבילה משפחתית,
+    חבילה בסיסית, גלישה חופשית 5G, חו״ל כלול 5G); the legacy wecom* product names
+    survive only in the terms-PDF filenames (wecomFREE-Family-V3.pdf, ...), which
+    we keep as the plan's url ("עיקרי התוכנית").
+    """
+    page_html = _wecom_fetch_html("https://we-com.co.il/cellular-packages/")
     plans = []
-
-    for h_el in page.query_selector_all('.elementor-heading-title, h2, h3, h4'):
-        name = h_el.inner_text().strip()
-        if not name.lower().startswith(name_prefix):
+    for card in _wecom_tier_cards(page_html):
+        name = _wecom_card_name(card)
+        price = _wecom_card_price(card)
+        if not name or price is None:
             continue
 
-        block_text = h_el.evaluate(r"""el => {
-            let p = el;
-            for (let i = 0; i < 12; i++) {
-                p = p.parentElement;
-                if (!p) break;
-                const t = (p.innerText || '').trim();
-                if ((t.includes('\u20aa') || /\d+\.\d+/.test(t)) && t.length > 20 && t.length < 3000) return t;
-            }
-            return '';
-        }""")
+        pdf_m = re.search(r'href="([^"]+\.pdf)"', card)
+        plan_url = _html_unescape(pdf_m.group(1)) if pdf_m else None
 
-        if not block_text:
-            continue
+        # Card front only (headline + bullets + note) — the collapsible
+        # "פרטי החבילה" section repeats the same facts in long form and the
+        # terms PDF already carries the fine print.
+        front_lines = _wecom_text_lines(card.split('<div class="tier-card__details')[0])
+        front_text = '\n'.join(front_lines)
 
-        # Extract PDF terms link from the heading's ancestor block
-        plan_url = h_el.evaluate(r"""el => {
-            let p = el;
-            for (let i = 0; i < 15; i++) {
-                p = p.parentElement;
-                if (!p) break;
-                const a = p.querySelector('a[href*=".pdf"]');
-                if (a) return a.href;
-            }
-            return null;
-        }""")
-
-        # Parse price: on We-Com the price appears BEFORE ₪ (e.g. "29.90\n₪\nלחודש")
-        price_m = re.search(r'(\d+(?:\.\d+)?)\s*\n\s*\u20aa', block_text)
-        if not price_m:
-            price_m = re.search(r'\u20aa\s*(\d+(?:\.\d+)?)', block_text)
-        if price_m:
-            v = float(price_m.group(1))
-            price = int(v) if v == int(v) else v
+        # Domestic GB (see _WECOM_FAIR_USE_GB above for the data model):
+        #  1) explicit cap on the card, e.g. "150GB גלישה בארץ בדור 4" — anchored on
+        #     בארץ so a roaming figure ("5GB גלישה בחו״ל") is never grabbed;
+        #  2) unlimited-marketed "גלישה חופשית" → fair-use ceiling;
+        #  3) otherwise unknown.
+        gb_m = re.search(r'(\d[\d,]*)\s*GB[^\n]*?בארץ', front_text)
+        if gb_m:
+            gb = int(gb_m.group(1).replace(',', ''))
+        elif 'חופשית' in front_text:
+            gb = _WECOM_FAIR_USE_GB
         else:
-            price = None
+            gb = None
 
-        if name_prefix == 'wefly':
-            # Abroad plans: parse GB and days from block
-            gb   = _parse_gb(block_text)
-            days = _parse_days(block_text)
+        minutes_m = re.search(r'([\d,]+)\s*דקות', front_text)
+        minutes = int(minutes_m.group(1).replace(',', '')) if minutes_m else None
 
-            # Extras: meaningful lines only (skip noise and redundant lines)
-            extras = []
-            for line in block_text.split('\n'):
-                line = line.strip()
-                if (line and line != name
-                        and '\u20aa' not in line
-                        and 'לחודש' not in line
-                        and 'אונליין' not in line
-                        and 'פרטי' not in line
-                        and 'רשימת' not in line
-                        and not re.match(r'^[\d.,\s]+(?:GB|MB)?$', line, re.IGNORECASE)  # skip bare GB numbers
-                        and not re.match(r'^[\d.,]+$', line)):
-                    extras.append(line)
-            seen_e, clean_extras = set(), []
-            for e in extras:
-                if e not in seen_e and len(e) > 2:
-                    seen_e.add(e); clean_extras.append(e)
-                if len(clean_extras) >= 4: break
-
-            # "פרטי החבילה" details — read this card's JetEngine postId and fetch the
-            # popup body (see _wecom_wefly_popup_info), surfaced as the "תנאי התוכנית" modal.
-            ids = h_el.evaluate(r"""el => {
-                let p = el, postId = null, listingId = null;
-                for (let i = 0; i < 16 && p; i++) {
-                    p = p.parentElement; if (!p) break;
-                    if (!postId && p.dataset && p.dataset.postId) postId = p.dataset.postId;
-                    if (!listingId && p.getAttribute && p.getAttribute('data-listing-id')) listingId = p.getAttribute('data-listing-id');
-                }
-                return { postId: postId, listingId: listingId };
-            }""")
-            if ids and ids.get("postId"):
-                info = _wecom_wefly_popup_info(page, ids["postId"], ids.get("listingId"))
-                if info:
-                    clean_extras.append(info)
-
-            plans.append({"carrier": "wecom", "plan_name": name, "price": price,
-                          "days": days, "data_gb": gb, "minutes": None, "sms": None,
-                          "extras": clean_extras, "url": plan_url})
-        else:
-            # Domestic GB. See _WECOM_FAIR_USE_GB above for the data model.
-            #  1) explicit cap printed on the card, e.g. "150GB גלישה בארץ". Anchor on
-            #     בארץ so we never grab a roaming figure (Global 5G's "5GB גלישה בחו״ל").
-            #  2) otherwise, an unlimited-marketed "גלישה חופשית" plan → fair-use ceiling.
-            #  3) otherwise unknown → None.
-            gb_m = re.search(r'(\d[\d,]*)\s*GB[^\n]*?בארץ', block_text)
-            if gb_m:
-                gb = int(gb_m.group(1).replace(',', ''))
-            elif 'חופשית' in block_text:
-                gb = _WECOM_FAIR_USE_GB
-            else:
-                gb = None
-
-            # Parse minutes from "X,000 דקות" line
-            minutes_m = re.search(r'([\d,]+)\s*דקות', block_text)
-            minutes = int(minutes_m.group(1).replace(',', '')) if minutes_m else None
-
-            # Extract extras: include useful bullets from both בארץ and בחו"ל sections
-            SKIP_DOMESTIC = {'בארץ:', 'בחו"ל:', 'בחו״ל:', 'השארת פרטים', 'הצטרפות אונליין >',
-                             'פרטי החבילה', 'לרשימת המדינות', 'מחירון שיחות והודעות',
-                             'מכשירים הנתמכים ב-5G', 'מכשירים הנתמכים ב5G'}
-            extras = []
-            for line in block_text.split('\n'):
-                line = line.strip()
-                if not line or line == name:
-                    continue
-                # Footnote lines (starting with *): strip prefix and include as condition note
-                if re.match(r'^\*', line):
-                    note = line.lstrip('* ').strip()
-                    if note and len(note) > 2:
-                        extras.append('* ' + note)
-                    continue
-                # Skip noisy/navigation lines
-                if ('\u20aa' in line or 'לחודש' in line or line in SKIP_DOMESTIC
-                        or 'אונליין' in line or 'פרטי' in line or 'מכשירים' in line
-                        or 'מחירון' in line or 'רשימת' in line
-                        or re.match(r'^[\d.,]+$', line)):
-                    continue
-                extras.append(line)
-            seen_e, clean_extras = set(), []
-            for e in extras:
-                if e not in seen_e and len(e) > 2:
-                    seen_e.add(e); clean_extras.append(e)
-                if len(clean_extras) >= 8: break
-
-            plans.append({"carrier": "wecom", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": minutes, "extras": clean_extras, "url": plan_url})
+        plans.append({"carrier": "wecom", "plan_name": name, "price": price,
+                      "data_gb": gb, "minutes": minutes,
+                      "extras": _wecom_card_extras(front_lines, skip_name=name),
+                      "url": plan_url})
 
     seen_names, deduped = set(), []
     for p in plans:
@@ -601,41 +556,46 @@ def _scrape_wecom_page(page, url, name_prefix, already_navigated=False):
     return deduped
 
 
-def scrape_wecom(_page=None):
-    """Scrape We-Com domestic plans. Uses own fresh session with UA."""
-    from playwright.sync_api import sync_playwright as _sp
-    with _sp() as pw:
-        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-        page = browser.new_page(user_agent=_WECOM_UA)
-        try:
-            return _scrape_wecom_page(page, "https://we-com.co.il/cellular-packages/", "wecom")
-        finally:
-            browser.close()
-
-
 def scrape_wecom_abroad(_page=None):
-    """Scrape We-Com abroad (wefly) packages. Uses own fresh session with UA."""
-    from playwright.sync_api import sync_playwright as _sp
-    with _sp() as pw:
-        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-        page = browser.new_page(user_agent=_WECOM_UA)
-        try:
-            # Click "show more" to reveal all packages
-            page.goto("https://we-com.co.il/roaming/", timeout=30000, wait_until="networkidle")
-            page.wait_for_timeout(2000)
-            for btn in page.query_selector_all("a, button"):
-                txt = (btn.inner_text() or "").strip()
-                if "נוספות" in txt or "עוד חבילות" in txt or "לצפייה" in txt:
-                    try:
-                        btn.scroll_into_view_if_needed()
-                        btn.click()
-                        page.wait_for_timeout(1500)
-                    except Exception:
-                        pass
-                    break
-            return _scrape_wecom_page(page, "https://we-com.co.il/roaming/", "wefly", already_navigated=True)
-        finally:
-            browser.close()
+    """Scrape We-Com abroad (wefly) packages (pure HTTP, 2026-07 tier-card design).
+
+    The card headlines are now Hebrew ("70GB גלישה בחו\"ל") but the product brand
+    is still wefly (popup titles + FAQ), so plan_name keeps the legacy
+    wefly{N}GB[Family] keys — preserving price-history/change continuity.
+    """
+    page_html = _wecom_fetch_html("https://we-com.co.il/roaming/")
+    plans = []
+    for card in _wecom_tier_cards(page_html):
+        headline = _wecom_card_name(card)
+        if not headline or 'בחו' not in headline:
+            continue
+        gb_m = re.search(r'(\d+)\s*GB', headline)
+        if not gb_m:
+            continue
+        gb = int(gb_m.group(1))
+        name = "wefly%dGB%s" % (gb, "Family" if 'משפחתית' in headline else "")
+
+        price = _wecom_card_price(card)
+        # Card front = everything before the פרטי החבילה / לרשימת המדינות links row.
+        front_lines = _wecom_text_lines(card.split('<div class="tier-card__links')[0])
+        days = _parse_days('\n'.join(front_lines))
+        extras = _wecom_card_extras(front_lines)
+
+        pop_m = re.search(r'href="#(wecom-popup-\d+)"[^>]*>\s*פרטי החבילה', card)
+        if pop_m:
+            info = _wecom_popup_info(page_html, pop_m.group(1))
+            if info:
+                extras.append(info)
+
+        plans.append({"carrier": "wecom", "plan_name": name, "price": price,
+                      "days": days, "data_gb": gb, "minutes": None, "sms": None,
+                      "extras": extras})
+
+    seen_names, deduped = set(), []
+    for p in plans:
+        if p["plan_name"] not in seen_names:
+            seen_names.add(p["plan_name"]); deduped.append(p)
+    return deduped
 
 
 def scrape_neptucom(_page=None):
