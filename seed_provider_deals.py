@@ -157,14 +157,14 @@ DEALS = [
     # ══ IN DISCUSSION / PENDING (yellow) ══════════════════════════════════════
     {
         "provider_id": "airalo", "display_name": "Airalo", "category": "global",
-        "outreach_status": "in_discussion", "outreach_last_at": "2026-07-05",
+        "outreach_status": "in_discussion", "outreach_last_at": "2026-07-10",
         "contact": "growth@airalo.com (Affiliate); guy.dor@airalo.com (Partnerships)", "program_network": "Impact / ישיר",
         "agreement_status": "pending", "commission_pct": 15,
         "commission_note": "15% עמלה, cookie 30 יום (מודל Reseller Link).",
         "coupon_note": "קוד GOODAY = קוד אישי דרך Gooday (מזכה את Gooday, לא אותנו). אין קוד MOCA; לינק Impact נדחה (Brand alignment); הבקשה הועברה לצוות ה-growth/affiliate.",
         "has_tracking_link": False, "is_leak": True, "priority": "high",
-        "next_actions": "ממתינים לתשובת growth@airalo.com (מייל נשלח 05/07: אישור בקשת Impact + deep links + Sub-ID למלונות + נכסי מותג). אם שקט עד ~12/07 - תזכורת ל-growth@ או בדיקת סטטוס בדשבורד Impact (acct 7205658).",
-        "notes": "מופיע כממומן (כפתור רכישה) אך הלינק הוא דף הבית ללא tracking - כרגע לא מזכה. ציר זמן: בקשת partners.airalo.com (מס' 16367) נסגרה 24/06 בסיבה 'Interested in Affiliate' (ניתוב למסלול אפיליאייט, לא דחייה עניינית); Guy ענה 05/07 בלי הפניה חמה - ביקש לפנות ישירות ל-growth@airalo.com; תשובה נשלחה 05/07 באותו שרשור (To growth@, CC Guy) עם כל ההקשר.",
+        "next_actions": "תזכורת נשלחה 10/07 ל-growth@airalo.com (CC Guy) על המייל מ-05/07 (אישור בקשת Impact + deep links + Sub-ID למלונות + נכסי מותג). ממתינים לתשובה; אם שקט עד ~17/07 - תזכורת נוספת או בדיקת סטטוס בדשבורד Impact (acct 7205658).",
+        "notes": "מופיע כממומן (כפתור רכישה) אך הלינק הוא דף הבית ללא tracking - כרגע לא מזכה. ציר זמן: בקשת partners.airalo.com (מס' 16367) נסגרה 24/06 בסיבה 'Interested in Affiliate' (ניתוב למסלול אפיליאייט, לא דחייה עניינית); Guy ענה 05/07 בלי הפניה חמה - ביקש לפנות ישירות ל-growth@airalo.com; תשובה נשלחה 05/07 באותו שרשור (To growth@, CC Guy) עם כל ההקשר; תזכורת נשלחה 10/07 (To growth@, CC Guy) - עדיין אין מענה.",
     },
     {
         "provider_id": "ubigi", "display_name": "Ubigi", "category": "global",
