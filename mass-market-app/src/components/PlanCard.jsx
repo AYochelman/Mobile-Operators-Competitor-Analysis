@@ -114,6 +114,7 @@ const LOGO_SIZES = {
   maya:             '43px',
   bytesim:          '58px',
   besim:            '52px',
+  ubigi:            '37px',
 }
 
 // Wide logos: separate width override (height stays at LOGO_SIZES default 32px)
