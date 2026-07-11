@@ -1,8 +1,39 @@
 import sqlite3
 import json
 import os
+import re
 import zlib
 from datetime import datetime, timezone, timedelta
+
+# Bot / crawler User-Agent signature. Non-compliant crawlers ignore robots.txt
+# (Disallow: /go/) and rel="sponsored nofollow", hammering the affiliate redirect
+# and polluting the click log (a single crawler fired 1,295 junk /go hits across
+# the new /esim/<dest>/ SEO pages on 2026-07-10). `is_bot_ua` flags those so the
+# /go route can block them AND the attribution reports can exclude them. The bare
+# "bot" token catches the vast majority (Googlebot/Bingbot/AhrefsBot/…); the rest
+# cover UA strings that omit it (scrapers, HTTP libraries, headless browsers,
+# link-preview + uptime fetchers).
+_BOT_UA_RE = re.compile(
+    r"bot\b|bot/|crawl|spider|slurp|mediapartners|adsbot|bingpreview|"
+    r"facebookexternalhit|facebot|embedly|quora|whatsapp|telegram|discord|"
+    r"slackbot|twitterbot|linkedinbot|pinterest|redditbot|applebot|yandex|"
+    r"baidu|sogou|exabot|ahrefs|semrush|mj12|dotbot|petalbot|bytespider|"
+    r"dataforseo|gptbot|oai-searchbot|chatgpt|claudebot|claude-user|ccbot|"
+    r"perplexity|amazonbot|google-extended|python-requests|python-urllib|"
+    r"curl/|wget|scrapy|headlesschrome|phantomjs|go-http-client|axios|"
+    r"node-fetch|okhttp|java/|libwww|apache-httpclient|guzzle|lighthouse|"
+    r"uptimerobot|pingdom|statuscake|monitoring|site24x7",
+    re.I,
+)
+
+
+def is_bot_ua(ua):
+    """True if the User-Agent looks like a bot/crawler/HTTP-library, not a human
+    browser. Empty/absent UA is NOT treated as a bot (real browsers always send
+    one, but so do some privacy tools — we don't want to over-block)."""
+    if not ua:
+        return False
+    return bool(_BOT_UA_RE.search(ua))
 
 # Canonical Hebrew country/destination names — applied before every global plan save
 _DEST_NORM = {
@@ -389,10 +420,17 @@ def init_db(db_path=None):
                 clicked_at TEXT NOT NULL,
                 ip_hash    TEXT,
                 src        TEXT,
-                campaign   TEXT
+                campaign   TEXT,
+                user_agent TEXT,
+                is_bot     INTEGER DEFAULT 0
             );
             CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_at
                 ON affiliate_clicks(clicked_at);
+            -- NB: idx_affiliate_clicks_bot is deliberately NOT created here — on a
+            -- DB whose affiliate_clicks predates the is_bot column this whole
+            -- executescript would die with "no such column: is_bot" before the
+            -- ALTER migration below ever runs (bit seed_coupons.py 2026-07-11).
+            -- The migration block adds the column and then creates that index.
             -- Anonymous traffic events for the public B2C eSIM compare page
             -- (page views + destination picks). NO PII — ip is hashed, sid is a
             -- random per-browser-session token (not an identity). Powers the B2C
@@ -720,6 +758,23 @@ def init_db(db_path=None):
                 conn.commit()
             except Exception:
                 pass  # column already exists
+        # Migration: bot detection on affiliate clicks. `user_agent` = the raw UA
+        # (capped) so a click can be attributed to a human vs a crawler after the
+        # fact; `is_bot` = 1 when the /go route flagged the UA as a bot (see
+        # is_bot_ua). Attribution reports exclude is_bot=1 so a crawler storm can't
+        # masquerade as real traffic. Legacy rows default to 0 (ADD COLUMN default).
+        for col, sql in (("user_agent", "TEXT"), ("is_bot", "INTEGER DEFAULT 0")):
+            try:
+                conn.execute(f"ALTER TABLE affiliate_clicks ADD COLUMN {col} {sql}")
+                conn.commit()
+            except Exception:
+                pass  # column already exists
+        try:
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_bot "
+                         "ON affiliate_clicks(is_bot)")
+            conn.commit()
+        except Exception:
+            pass
         # Migration: terms_url on abroad_plans — the roaming card's "עיקרי התוכנית"
         # PDF. Populated per scrape (e.g. Cellcom's policiesEpi from its abroad API),
         # surfaced by PlanCard's details link with the hardcoded map as a fallback.
@@ -781,15 +836,20 @@ def get_news_articles(carrier=None, limit=200, db_path=None):
 
 
 def log_affiliate_click(provider, plan_id=None, country=None, ip_hash=None,
-                        src=None, campaign=None, db_path=None):
+                        src=None, campaign=None, user_agent=None, is_bot=None,
+                        db_path=None):
+    if is_bot is None:                       # infer from UA when caller didn't decide
+        is_bot = is_bot_ua(user_agent)
     conn = _connect(db_path)
     try:
         conn.execute(
             """INSERT INTO affiliate_clicks
-                   (provider, plan_id, country, clicked_at, ip_hash, src, campaign)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                   (provider, plan_id, country, clicked_at, ip_hash, src, campaign,
+                    user_agent, is_bot)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (provider, plan_id, country, datetime.now(timezone.utc).isoformat(),
-             ip_hash, src, campaign)
+             ip_hash, src, campaign, (user_agent or "")[:300] or None,
+             1 if is_bot else 0)
         )
         conn.commit()
     finally:
@@ -803,7 +863,7 @@ def get_affiliate_stats(days=30, db_path=None):
         rows = conn.execute(
             """SELECT provider, date(clicked_at) AS date, COUNT(*) AS clicks
                FROM affiliate_clicks
-               WHERE clicked_at >= ?
+               WHERE clicked_at >= ? AND COALESCE(is_bot, 0) = 0
                GROUP BY provider, date(clicked_at)
                ORDER BY date DESC, clicks DESC""",
             (cutoff,)
@@ -818,13 +878,15 @@ def get_affiliate_attribution(days=30, db_path=None):
     (the specific post/video, from utm). Lets us see WHICH channel/content drove
     the clicks — separate from get_affiliate_stats so its provider/date shape
     (consumed by SettingsPage) stays unchanged. Legacy rows have NULL src/campaign,
-    surfaced as 'ללא תיוג' / 'untagged' so they're still counted."""
+    surfaced as 'ללא תיוג' / 'untagged' so they're still counted. Bot/crawler
+    clicks (is_bot=1) are excluded so a crawler storm can't masquerade as real
+    traffic; the count that WAS filtered is returned as `bot_clicks`."""
     conn = _connect(db_path)
     try:
         cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         by_source = conn.execute(
             """SELECT COALESCE(NULLIF(src, ''), '—') AS src, COUNT(*) AS clicks
-               FROM affiliate_clicks WHERE clicked_at >= ?
+               FROM affiliate_clicks WHERE clicked_at >= ? AND COALESCE(is_bot,0) = 0
                GROUP BY src ORDER BY clicks DESC""",
             (cutoff,)
         ).fetchall()
@@ -832,13 +894,19 @@ def get_affiliate_attribution(days=30, db_path=None):
             """SELECT COALESCE(NULLIF(campaign, ''), '—') AS campaign,
                       COALESCE(NULLIF(src, ''), '—') AS src, COUNT(*) AS clicks
                FROM affiliate_clicks
-               WHERE clicked_at >= ? AND campaign IS NOT NULL AND campaign != ''
+               WHERE clicked_at >= ? AND COALESCE(is_bot,0) = 0
+                 AND campaign IS NOT NULL AND campaign != ''
                GROUP BY campaign, src ORDER BY clicks DESC""",
             (cutoff,)
         ).fetchall()
+        bot_clicks = conn.execute(
+            "SELECT COUNT(*) FROM affiliate_clicks "
+            "WHERE clicked_at >= ? AND is_bot = 1", (cutoff,)
+        ).fetchone()[0]
         return {
             "by_source":   [{"src": r[0], "clicks": r[1]} for r in by_source],
             "by_campaign": [{"campaign": r[0], "src": r[1], "clicks": r[2]} for r in by_campaign],
+            "bot_clicks":  bot_clicks,
         }
     finally:
         conn.close()
@@ -879,20 +947,26 @@ def get_esim_analytics(days=30, db_path=None):
             cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
             ev_time, cl_time, pev, pcl = " AND created_at >= ?", " AND clicked_at >= ?", [cutoff], [cutoff]
 
+        # Human deal clicks only — bot/crawler /go hits (is_bot=1) are excluded from
+        # every clicks aggregate so the funnel reflects real traffic. The filtered
+        # count is surfaced separately as totals.bot_clicks for transparency.
+        nobot = " AND COALESCE(is_bot,0) = 0"
+
         one  = lambda sql, p=(): (conn.execute(sql, p).fetchone() or [0])[0]
         rows = lambda sql, p=(): conn.execute(sql, p).fetchall()
 
         views    = one(f"SELECT COUNT(*) FROM esim_events WHERE event_type='page_view'{ev_time}", pev)
         sessions = one(f"SELECT COUNT(DISTINCT sid) FROM esim_events WHERE event_type='page_view' AND sid IS NOT NULL{ev_time}", pev)
         picks    = one(f"SELECT COUNT(*) FROM esim_events WHERE event_type='destination_pick'{ev_time}", pev)
-        clicks   = one(f"SELECT COUNT(*) FROM affiliate_clicks WHERE src='esim'{cl_time}", pcl)
+        clicks   = one(f"SELECT COUNT(*) FROM affiliate_clicks WHERE src='esim'{nobot}{cl_time}", pcl)
+        bot_clicks = one(f"SELECT COUNT(*) FROM affiliate_clicks WHERE src='esim' AND is_bot=1{cl_time}", pcl)
 
         v_day = dict(rows(f"SELECT date(created_at), COUNT(*) FROM esim_events WHERE event_type='page_view'{ev_time} GROUP BY 1", pev))
-        c_day = dict(rows(f"SELECT date(clicked_at), COUNT(*) FROM affiliate_clicks WHERE src='esim'{cl_time} GROUP BY 1", pcl))
+        c_day = dict(rows(f"SELECT date(clicked_at), COUNT(*) FROM affiliate_clicks WHERE src='esim'{nobot}{cl_time} GROUP BY 1", pcl))
         by_day = [{"date": d, "views": v_day.get(d, 0), "clicks": c_day.get(d, 0)} for d in sorted(set(v_day) | set(c_day))]
 
         d_pick  = dict(rows(f"SELECT destination, COUNT(*) FROM esim_events WHERE event_type='destination_pick' AND destination IS NOT NULL{ev_time} GROUP BY destination", pev))
-        d_click = dict(rows(f"SELECT country, COUNT(*) FROM affiliate_clicks WHERE src='esim' AND country IS NOT NULL{cl_time} GROUP BY country", pcl))
+        d_click = dict(rows(f"SELECT country, COUNT(*) FROM affiliate_clicks WHERE src='esim' AND country IS NOT NULL{nobot}{cl_time} GROUP BY country", pcl))
         top_destinations = sorted(
             [{"destination": k, "picks": d_pick.get(k, 0), "clicks": d_click.get(k, 0)} for k in (set(d_pick) | set(d_click))],
             key=lambda r: r["picks"] + r["clicks"], reverse=True)[:12]
@@ -901,14 +975,14 @@ def get_esim_analytics(days=30, db_path=None):
             f"SELECT COALESCE(NULLIF(src,''),'—'), COUNT(*) FROM esim_events WHERE event_type='page_view'{ev_time} GROUP BY 1 ORDER BY 2 DESC", pev)][:12]
 
         c_views  = dict(rows(f"SELECT campaign, COUNT(*) FROM esim_events WHERE event_type='page_view' AND campaign IS NOT NULL AND campaign!=''{ev_time} GROUP BY campaign", pev))
-        c_clicks = dict(rows(f"SELECT campaign, COUNT(*) FROM affiliate_clicks WHERE src='esim' AND campaign IS NOT NULL AND campaign!=''{cl_time} GROUP BY campaign", pcl))
+        c_clicks = dict(rows(f"SELECT campaign, COUNT(*) FROM affiliate_clicks WHERE src='esim' AND campaign IS NOT NULL AND campaign!=''{nobot}{cl_time} GROUP BY campaign", pcl))
         by_campaign = sorted(
             [{"campaign": k, "views": c_views.get(k, 0), "clicks": c_clicks.get(k, 0)} for k in (set(c_views) | set(c_clicks))],
             key=lambda r: r["views"] + r["clicks"], reverse=True)[:15]
 
         conv = round(clicks / views * 100, 1) if views else 0.0
         return {
-            "totals": {"views": views, "sessions": sessions, "picks": picks, "clicks": clicks, "conversion": conv},
+            "totals": {"views": views, "sessions": sessions, "picks": picks, "clicks": clicks, "conversion": conv, "bot_clicks": bot_clicks},
             "by_day": by_day,
             "top_destinations": top_destinations,
             "by_source": by_source,
