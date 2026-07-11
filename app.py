@@ -1593,6 +1593,9 @@ _UBIGI_DEST_DEEPLINKS = {
     "טורקיה":           "https://go.ubigi.com/5kKWq9",
     "הולנד":            "https://go.ubigi.com/k4Vykn",
     "גאורגיה":          "https://go.ubigi.com/ena3QD",
+    "אירופה":           "https://go.ubigi.com/MKkqe2",
+    "קנדה":             "https://go.ubigi.com/DWq6xa",
+    "גלובלי":           "https://go.ubigi.com/L05LkL",
 }
 
 

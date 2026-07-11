@@ -212,6 +212,21 @@ COUPONS = [
         "notes": "MOCA's own GigSky affiliate coupon (Everflow network). 15% customer discount; earns MOCA 15% revshare on purchases (+ CPA: GigSky One $25 / VISA benefit $4 / free plan $3). Created & confirmed live by Alex Dufort (Head of Partnerships) 2026-07-06. Sub-IDs supported via Everflow; per-destination deep-link format pending from GigSky.",
     },
 
+    # ── Ubigi (Transatel/NTT, Impact) ────────────────────────────────────
+    # OUR OWN affiliate code (Impact acct 7205658). Cynthia Razafindrakoto
+    # (Ubigi Affiliate Marketing Manager) confirmed code "MOCA" active for 10%
+    # off new customers in her 2026-07-09 email, alongside a fresh tracking
+    # link (go.ubigi.com/5kqGL1, replacing the earlier self-generated one) and
+    # confirmation that per-hotel Sub-ID attribution works via Impact's Shared
+    # ID field.
+    {
+        "carrier": "ubigi",
+        "code": "MOCA",
+        "discount_label": "10% הנחה",
+        "source_url": "https://cellulardata.ubigi.com/",
+        "notes": "MOCA's own affiliate coupon (Impact acct 7205658). Confirmed live for 10% off new customers by Cynthia Razafindrakoto / Ubigi 2026-07-09. Earns 10% commission on first purchase, 60-day cookie.",
+    },
+
     # ── ByteSim (in-house affiliate / personal-store program) ─────────────
     # OUR OWN affiliate/personal-store code (referral_code 8F68HJS3KPDU). Was
     # briefly disabled 2026-07-03 because "Moca" showed "unavailable" at checkout
