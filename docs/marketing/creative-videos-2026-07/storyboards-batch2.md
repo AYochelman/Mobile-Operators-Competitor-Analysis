@@ -33,15 +33,23 @@ A long printed receipt of a roaming bill; the number gets slashed and a big savi
 | 6b | The cut | The long receipt is sharply cut and most of it falls away leaving only a small short slip, a smartphone lies beside it on the table with a glowing clean screen, a burst of soft green light pulses over the remaining small slip suggesting big savings, satisfying resolution, cinematic lighting, photorealistic commercial style, 4k, no text, no numbers, no logos |
 
 ## Status
-- [ ] 4a
-- [ ] 4b
-- [ ] 5a
-- [ ] 5b
-- [ ] 5c
-- [ ] 6a
-- [ ] 6b
-- [ ] concat v4_final (4a+4b), v5_final (5a+5b+5c), v6_final (6a+6b)
-- [ ] watermark each final: `./apply_watermark.sh v4_final.mp4` etc -> v*_final_wm.mp4 (the deliverable)
+- [x] 4a
+- [x] 4b
+- [x] 5a
+- [x] 5b
+- [x] 5c
+- [ ] 6a  (blocked - see gotcha)
+- [ ] 6b  (blocked - see gotcha)
+- [x] concat v4_final (4a+4b) -> done/v4_compare_all_wm.mp4
+- [x] concat v5_final (5a+5b+5c) -> done/v5_split_screen_wm.mp4
+- [ ] v6_final (6a+6b) - NOT done, video 6 remaining
+
+## GEMINI UI GOTCHAS (2026-07-12, learned the hard way)
+1. MODEL: composer defaults to "3.1 Flash-Lite" which HANGS on video / refuses. Switch the model dropdown to "3.5 Flash" before every video prompt.
+2. VIDEO MODE: the centered "Describe your video" composer often silently GENERATES IMAGES, not video. The ONLY reliable video mode is the "Create videos" gallery composer that shows a "Videos" chip next to the + AND an aspect-ratio pill (Landscape/Portrait). To reach it: click sidebar Images, then Videos (the Images->Videos toggle loads the video composer). If it resets to "Ask Gemini", repeat.
+3. INTERMITTENT REFUSAL: "I can't make that type of video" fires randomly on totally benign prompts (esp. "close-up on a person's face"). Reword (scene-focused, drop "close-up on face") and resubmit - it usually works 2nd try.
+4. STUCK STOP BUTTON: after a clip renders, the composer often shows a filled-square "stop" button and won't accept new text. Click it once to free the composer (turns into the blue send arrow), then type.
+5. On 2026-07-12 the video composer became so flaky that every click on the text field / aspect pill reset it to general chat - video 6 (6a/6b) could not be completed. Retry when the UI stabilizes, or generate 6a/6b manually and drop into incoming/.
 
 ## Caption / hook notes for later (Hebrew overlays, added in edit)
 - V4: hook "בדקתי את כל ספקי ה-eSIM בשבילך" / CTA "מצא הזול ביותר - esim.mocaintel.com"

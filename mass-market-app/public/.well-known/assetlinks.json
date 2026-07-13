@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.mocaintel.esim",
+      "sha256_cert_fingerprints": [
+        "6A:E9:FD:1A:7F:2B:4A:1B:41:01:15:55:60:89:3C:75:8E:55:E6:23:4F:F2:7E:18:C6:D5:57:FF:0F:0A:6F:3C"
+      ]
+    }
+  }
+]

@@ -17,6 +17,8 @@ export const PROVIDER_LOGOS = {
   tuki:             '/logos/tuki-icon.png', // square icon (tuki.png is a wide wordmark)
   terminalesim:     '/logos/terminalesim.png',
   gigsky:           '/logos/gigsky.png', // square GS monogram icon
+  esimgenius:       '/logos/esimgenius.png',
+  nisim:            '/logos/nisim.png',
 
   airalo:           '/logos/airalo.png',
   airalo_local:     '/logos/airalo.png',

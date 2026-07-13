@@ -14,7 +14,7 @@ import {
   AIRALO_DISCOVER, AIRALO_REGION_MAP, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
   PELEPHONE_GLOBAL_COUNTRIES, ESIMO_COUNTRIES, WORLD8_WORLDWIDE, WORLD8_EUROPE_USA,
   XPHONE_EUROPE, XPHONE_WORLD, ORBIT_COUNTRIES, TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
-  GIGSKY_GLOBAL,
+  GIGSKY_GLOBAL, ESIMGENIUS_GLOBAL,
   getCountriesForPlan
 } from '../data/globalCountries'
 import { GLOBAL_PROVIDERS_WITH_COLOR } from '../data/carrierLabels'
@@ -206,6 +206,7 @@ export default function ComparePage() {
     orbit: ORBIT_COUNTRIES,
     travelsim: [...new Set([...TRAVELSIM_GLOBAL, ...TRAVELSIM_USA, ...TRAVELSIM_ME])],
     gigsky: GIGSKY_GLOBAL,
+    esimgenius: ESIMGENIUS_GLOBAL,
   }), [])
 
   // Build complete country → carriers mapping

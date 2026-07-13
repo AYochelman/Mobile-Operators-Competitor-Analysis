@@ -49,3 +49,14 @@ scripts/cloudflared.exe
 
 # Local Netlify folder
 .netlify
+
+# TWA (Google Play) - signing key + credentials must NEVER be committed
+twa/android.keystore
+twa/.keystore-pass
+twa/app/
+twa/build/
+twa/gradle*
+twa/*.apk
+twa/*.aab
+twa/*.idsig
+twa/node_modules/

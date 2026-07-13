@@ -1076,6 +1076,8 @@ _GUEST_PROVIDER_META = {
     "gomoworld":   {"label": "GoMoWorld",    "color": "#00a86b", "domain": "gomoworld.com",    "url": "https://www.gomoworld.com"},
     "bcengi":      {"label": "BCengi",       "color": "#555c66", "domain": "bcengi.com",        "url": "https://www.bcengi.com"},
     "esim70":      {"label": "eSIM70",       "color": "#1f6feb", "domain": "esim70.com",       "url": "https://esim70.com"},
+    "esimgenius":  {"label": "eSIM Genius",  "color": "#7c3aed", "domain": "esimgenius.ai",    "url": "https://esimgenius.ai"},
+    "nisim":       {"label": "Nisim eSIM",   "color": "#252551", "domain": "nisim-esim.co.il", "url": "https://www.nisim-esim.co.il"},
     "jetpack":     {"label": "Jetpac",       "color": "#7b2ff7", "domain": "jetpacglobal.com", "url": "https://www.jetpacglobal.com"},
     "breez":       {"label": "Breeze",       "color": "#19b3c7", "domain": "breezesim.com",    "url": "https://breezesim.com"},
     "bytesim":     {"label": "ByteSIM",      "color": "#34495e", "domain": "bytesim.com",      "url": "https://bytesim.com"},
@@ -2039,7 +2041,7 @@ def api_esim_event():
     Deal clicks are logged separately by the /go redirect (src='esim')."""
     body = request.get_json(silent=True) or {}
     etype = (body.get("type") or "").strip()
-    if etype not in ("page_view", "destination_pick"):
+    if etype not in ("page_view", "destination_pick", "pwa_install"):
         return jsonify({"ok": False}), 400
     log_esim_event(
         etype,
@@ -2053,6 +2055,55 @@ def api_esim_event():
         db_path=_db_path(),
     )
     return jsonify({"ok": True})
+
+
+@app.route("/api/esim/push/subscribe", methods=["POST"])
+@limiter.limit("10 per minute")
+def api_esim_push_subscribe():
+    """Public (no auth): destination price-drop alert from the B2C eSIM page.
+    Body: { subscription: {endpoint, keys:{p256dh,auth}}, destination, lang }.
+    One alert per device — re-subscribing moves the alert to the new destination.
+    The baseline is the destination's current cheapest TRIP-SIZED ₪ price
+    (db.get_esim_alert_floor), so the first push only fires on a genuine
+    post-subscribe drop (see notify_esim_price_drops)."""
+    from db import save_esim_push_subscription
+    body = request.get_json(silent=True) or {}
+    sub = body.get("subscription") or {}
+    endpoint = (sub.get("endpoint") or "").strip()
+    keys = sub.get("keys") or {}
+    p256dh, auth = keys.get("p256dh"), keys.get("auth")
+    destination = (body.get("destination") or "").strip()
+    lang = body.get("lang") if body.get("lang") in ("he", "en") else "he"
+    if not all([endpoint, p256dh, auth, destination]) or len(destination) > 80:
+        return jsonify({"error": "missing fields"}), 400
+    if not endpoint.startswith("https://"):
+        return jsonify({"error": "bad endpoint"}), 400
+    # Only destinations that actually carry live deals are subscribable (also
+    # blocks junk rows from hand-crafted requests).
+    live = {d["destination"] for d in get_esim_destinations(db_path=_db_path())}
+    if destination not in live:
+        return jsonify({"error": "unknown destination"}), 400
+    from db import get_esim_alert_floor
+    baseline = get_esim_alert_floor(destination, db_path=_db_path())
+    save_esim_push_subscription(endpoint, p256dh, auth, destination, lang=lang,
+                                baseline_price=baseline, db_path=_db_path())
+    log_esim_event("push_subscribe", sid=body.get("sid"), destination=destination,
+                   src=(body.get("src") or None), campaign=(body.get("campaign") or None),
+                   lang=lang, ip_hash=_guest_ip_hash(), db_path=_db_path())
+    return jsonify({"status": "subscribed", "baseline": baseline}), 201
+
+
+@app.route("/api/esim/push/unsubscribe", methods=["DELETE", "POST"])
+@limiter.limit("10 per minute")
+def api_esim_push_unsubscribe():
+    """Public: remove a B2C price-drop subscription by its push endpoint."""
+    from db import delete_esim_push_subscription
+    body = request.get_json(silent=True) or {}
+    endpoint = (body.get("endpoint") or "").strip()
+    if not endpoint:
+        return jsonify({"error": "missing endpoint"}), 400
+    deleted = delete_esim_push_subscription(endpoint, db_path=_db_path())
+    return jsonify({"status": "unsubscribed", "deleted": deleted}), 200
 
 
 @app.route("/api/esim/analytics")
@@ -2339,6 +2390,13 @@ def api_scrape_global_now():
                 save_global_changes(changes, db_path=_db_path())
         save_global_plans(new_plans, db_path=_db_path())
         arc.archive_global_plans(new_plans)
+        # B2C destination price-drop pushes — state-based (baseline vs current min),
+        # so it must run after save_global_plans on EVERY global scrape path.
+        try:
+            from notifier import notify_esim_price_drops
+            notify_esim_price_drops(load_config(), db_path=_db_path())
+        except Exception as e:
+            logger.warning(f"esim price-drop push failed: {e}")
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-global-now failed: {e}", exc_info=True)
@@ -2590,6 +2648,11 @@ def api_scrape_all_now():
             if ch_global:
                 save_global_changes(ch_global, db_path=_db_path())
         save_global_plans(new_global, db_path=_db_path())
+        try:
+            from notifier import notify_esim_price_drops
+            notify_esim_price_drops(load_config(), db_path=_db_path())
+        except Exception as e:
+            logger.warning(f"esim price-drop push failed: {e}")
         results["global"] = {"plans": len(new_global), "changes": len(ch_global)}
         _scrape_emit('global', 'done', count=len(new_global), message=f'{len(new_global)} חבילות, {len(ch_global)} שינויים')
 
@@ -2697,6 +2760,8 @@ _HISTORY_CARRIER_NAMES = {
     'tuki': 'Tuki',
     'terminalesim': 'Terminal eSIM',
     'gigsky': 'GigSky',
+    'esimgenius': 'eSIM Genius',
+    'nisim': 'Nisim eSIM',
     'airalo': 'Airalo',
     'pelephone_global': 'GlobalSIM',
     'esimo': 'eSIMo',
@@ -4194,6 +4259,7 @@ def api_chat():
             'rami_levy': 'רמי לוי תקשורת',
             # Global eSIM
             'tuki': 'Tuki', 'terminalesim': 'Terminal eSIM', 'gigsky': 'GigSky',
+            'esimgenius': 'eSIM Genius', 'nisim': 'Nisim eSIM',
             'airalo': 'Airalo', 'airalo_local': 'Airalo', 'airalo_regional': 'Airalo',
             'pelephone_global': 'GlobalSIM', 'esimo': 'eSIMo', 'simtlv': 'SimTLV',
             'world8': '8 World', 'xphone_global': 'XPhone Global', 'saily': 'Saily',
@@ -6207,7 +6273,8 @@ if __name__ == "__main__":
     from change_detector import detect_changes
     from notifier import (format_message, format_abroad_message, format_global_message,
                           format_content_message, send_notification, send_whatsapp,
-                          send_email_report, send_push_notifications, alert_missing_terms)
+                          send_email_report, send_push_notifications, alert_missing_terms,
+                          notify_esim_price_drops)
     from excel_report import build_excel_report
     import scraper
 
@@ -6416,6 +6483,10 @@ if __name__ == "__main__":
                 # Drop global new/removed churn (per-country scrape flapping); keep price/extras/details.
                 global_changes = [c for c in global_changes if c["change_type"] not in ("new_plan", "removed_plan")]
             save_global_plans(new_global)
+            try:
+                notify_esim_price_drops(config)
+            except Exception as e:
+                logger.warning(f"esim price-drop push failed: {e}")
             fresh_global = filter_already_notified(global_changes, 'global_changes')
             if fresh_global:
                 if existing_global_ch:

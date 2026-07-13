@@ -76,6 +76,14 @@ swap(
   'canonical',
 )
 
+// PWA identity: the generic /manifest.json is the B2B dashboard app (start_url
+// "/", name MOCA). Installing from /esim-deals (or esim.mocaintel.com) must
+// produce the CONSUMER app — its own name/icon label, start_url back to
+// /esim-deals with pwa attribution, id "/esim-deals" so Chrome treats it as a
+// separate installable app from the dashboard PWA.
+swap(/<link rel="manifest"[^>]*>/, `<link rel="manifest" href="/esim-manifest.webmanifest" />`, 'manifest link')
+swap(/<meta name="apple-mobile-web-app-title"[^>]*>/, `<meta name="apple-mobile-web-app-title" content="MOCA eSIM" />`, 'apple-mobile-web-app-title')
+
 // Page-specific share image + Twitter card (index.html's default points at the
 // home card / home copy — override for the eSIM page).
 swap(/<meta property="og:image" content="[^"]*"\s*\/>/, `<meta property="og:image" content="${OG_IMG}" />`, 'og:image')

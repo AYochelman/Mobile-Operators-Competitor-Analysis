@@ -140,7 +140,7 @@ ${schemas.map(jsonLd).join('\n')}
 <header class="top"><div class="wrap"><a class="brand" href="/">MOCA<span>.</span></a><a href="/esim-deals" style="font-size:14px">להשוואה האינטראקטיבית ←</a></div></header>
 <div class="wrap">
 ${body}
-<footer>המחירים נאספים אוטומטית מאתרי הספקים ועודכנו לאחרונה ב-${todayHe}. חלק מהקישורים הם קישורי שותפים - המחיר עבורכם זהה, ואנחנו עשויים לקבל עמלה שמממנת את ההשוואה. MOCA - השוואת eSIM וסלולר · <a href="/esim/destinations/">כל היעדים</a> · <a href="/esim-deals">השוואה חיה</a></footer>
+<footer>המחירים נאספים אוטומטית מאתרי הספקים ועודכנו לאחרונה ב-${todayHe}. חלק מהקישורים הם קישורי שותפים - המחיר עבורכם זהה, ואנחנו עשויים לקבל עמלה שמממנת את ההשוואה. MOCA - השוואת eSIM וסלולר · <a href="/esim/destinations/">כל היעדים</a> · <a href="/esim-deals">השוואה חיה</a> · <a href="/privacy">מדיניות פרטיות</a> · <a href="/terms">תנאי שימוש</a></footer>
 </div>
 </body>
 </html>`

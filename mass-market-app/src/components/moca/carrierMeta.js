@@ -62,6 +62,8 @@ export const CARRIER_LOGOS = {
   tuki:             '/logos/tuki.png',
   terminalesim:     '/logos/terminalesim.png',
   gigsky:           '/logos/gigsky.png',
+  esimgenius:       '/logos/esimgenius.png',
+  nisim:            '/logos/nisim.png',
   airalo:           '/logos/airalo.png',
   airalo_local:     '/logos/airalo.png',
   airalo_regional:  '/logos/airalo.png',

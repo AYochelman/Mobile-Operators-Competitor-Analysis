@@ -103,6 +103,19 @@ const T = {
     loading: 'טוענים את ההצעות המשתלמות…',
     couponLabel: 'קוד {code} · {pct} הנחה', couponNoPct: 'קוד הנחה: {code}', couponCopy: 'העתקה', couponCopied: 'הועתק ✓',
     poweredFree: 'חינם תמיד · ללא הרשמה',
+    alertTitle: 'לקבל התראה כשהמחיר ל{country} יורד?',
+    alertSub: 'נשלח התראה כשמופיעה חבילה זולה יותר. התראה אחת לכל מכשיר, בלי ספאם.',
+    alertBtn: 'הפעלת התראה', alertBusy: 'רק רגע…',
+    alertOn: 'התראת מחיר פעילה ל{country}',
+    alertOnSub: 'נעדכן ברגע שהמחיר יורד. אפשר לבטל בכל רגע.',
+    alertOff: 'ביטול',
+    alertDenied: 'ההתראות חסומות בדפדפן הזה - צריך לאפשר אותן בהגדרות האתר ולנסות שוב.',
+    alertErr: 'לא הצלחנו להפעיל את ההתראה. נסו שוב בעוד רגע.',
+    installTitle: 'MOCA eSIM על מסך הבית',
+    installSub: 'גישה מהירה להשוואה בטיול הבא, כולל התראות מחיר.',
+    installBtn: 'הוספה למסך הבית',
+    installIos: 'בספארי: כפתור השיתוף ואז "הוספה למסך הבית". האפליקציה המותקנת יכולה גם לקבל התראות.',
+    privacyL: 'מדיניות פרטיות', termsL: 'תנאי שימוש',
   },
   en: {
     dir: 'ltr', other: 'עב', otherLang: 'he',
@@ -145,6 +158,19 @@ const T = {
     loading: 'Loading the best deals…',
     couponLabel: 'Code {code} · {pct} off', couponNoPct: 'Discount code: {code}', couponCopy: 'copy', couponCopied: 'copied ✓',
     poweredFree: 'Always free · no sign-up',
+    alertTitle: 'Get an alert when {country} prices drop?',
+    alertSub: 'We notify you when a cheaper plan appears. One alert per device, no spam.',
+    alertBtn: 'Enable alert', alertBusy: 'One sec…',
+    alertOn: 'Price alert active for {country}',
+    alertOnSub: 'We ping you the moment prices drop. Cancel anytime.',
+    alertOff: 'Cancel',
+    alertDenied: 'Notifications are blocked in this browser - allow them in site settings and try again.',
+    alertErr: 'Could not enable the alert. Try again in a moment.',
+    installTitle: 'MOCA eSIM on your home screen',
+    installSub: 'Quick access on your next trip, price alerts included.',
+    installBtn: 'Add to home screen',
+    installIos: 'In Safari: tap Share, then "Add to Home Screen". The installed app can also receive alerts.',
+    privacyL: 'Privacy policy', termsL: 'Terms of use',
   },
 }
 
@@ -287,6 +313,17 @@ const CSS = `
 #esim-app .coupon svg{flex:none;width:15px;height:15px}
 #esim-app .coupon .ctxt{flex:1;min-width:0}
 #esim-app .coupon .ccopy{font-size:10.5px;font-weight:700;background:#fff;border-radius:8px;padding:3px 8px;white-space:nowrap}
+#esim-app .alertcard{display:flex;align-items:center;gap:12px;position:relative}
+#esim-app .alert-ic{width:42px;height:42px;border-radius:13px;background:color-mix(in srgb,var(--c2),#fff 82%);color:var(--c2);display:flex;align-items:center;justify-content:center;flex:none}
+#esim-app .alert-ic.ok{background:#e3f3e9;color:#246b43}
+#esim-app .alert-tx{flex:1;min-width:0}
+#esim-app .alert-tx b{display:block;font-size:14px;line-height:1.35}
+#esim-app .alert-tx span{display:block;font-size:12.5px;color:var(--sub);line-height:1.45;margin-top:2px}
+#esim-app .alert-btn{border:0;border-radius:12px;background:var(--c1);color:#fff;font:inherit;font-weight:800;font-size:12.5px;padding:10px 14px;cursor:pointer;white-space:nowrap;transition:opacity .12s}
+#esim-app .alert-btn:hover{opacity:.94}
+#esim-app .alert-btn:disabled{opacity:.6;cursor:default}
+#esim-app .alert-off{border:1.5px solid var(--line);background:#fff;color:var(--sub);border-radius:12px;font:inherit;font-weight:700;font-size:12px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+#esim-app .dismiss-x{position:absolute;top:6px;inset-inline-end:8px;border:0;background:none;color:var(--muted);font-size:13px;cursor:pointer;padding:4px 6px;line-height:1}
 `
 
 // Real flag image (flagcdn.com SVG) keyed by the destination's ISO code. Emoji
@@ -362,6 +399,141 @@ function _initParam(key) {
   try { return new URLSearchParams(window.location.search).get(key) } catch { return null }
 }
 
+/* ── PWA install + destination price-drop push ─────────────────────────────
+   Web-push support: iOS Safari only exposes PushManager to INSTALLED PWAs, so
+   in the plain browser the alert card simply hides itself (the install card
+   is the iOS path to alerts). The SW itself is registered by vite-plugin-pwa
+   (registerSW.js in the built shell); push display lives in public/push-sw.js. */
+const PUSH_SUPPORTED = typeof window !== 'undefined' &&
+  'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+const IS_IOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
+const IS_STANDALONE = typeof window !== 'undefined' &&
+  (window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true)
+
+function urlB64ToUint8Array(s) {
+  const pad = '='.repeat((4 - (s.length % 4)) % 4)
+  const b64 = (s + pad).replace(/-/g, '+').replace(/_/g, '/')
+  const raw = window.atob(b64)
+  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)))
+}
+
+const BellIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+  </svg>
+)
+
+// "עדכנו אותי כשהמחיר יורד" — one destination alert per device. Subscribing while
+// an alert exists for another destination MOVES it (server UPSERTs by endpoint).
+function PriceAlertCard({ dest, lang, t, meta }) {
+  const [status, setStatus] = useState('idle') // idle | busy | on | denied | error
+  useEffect(() => {
+    let alive = true
+    setStatus('idle')
+    if (!PUSH_SUPPORTED) return undefined
+    try {
+      if (localStorage.getItem('esim_push_dest') === dest && Notification.permission === 'granted') {
+        navigator.serviceWorker.getRegistration()
+          .then((reg) => reg && reg.pushManager.getSubscription())
+          .then((sub) => { if (alive && sub) setStatus('on') })
+          .catch(() => {})
+      }
+    } catch { /* ignore */ }
+    return () => { alive = false }
+  }, [dest])
+
+  if (!PUSH_SUPPORTED) return null
+
+  const subscribe = async () => {
+    setStatus('busy')
+    try {
+      const perm = await Notification.requestPermission()
+      if (perm !== 'granted') { setStatus('denied'); return }
+      // getRegistration (not .ready): in dev no SW is registered and .ready
+      // would hang forever — fail fast into the error state instead.
+      const reg = await navigator.serviceWorker.getRegistration()
+      if (!reg) throw new Error('no service worker')
+      let sub = await reg.pushManager.getSubscription()
+      if (!sub) {
+        const { publicKey } = await api.getVapidKey()
+        if (!publicKey) throw new Error('no vapid key')
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlB64ToUint8Array(publicKey),
+        })
+      }
+      await api.esimPushSubscribe(sub.toJSON(), dest, lang, meta)
+      try { localStorage.setItem('esim_push_dest', dest) } catch { /* ignore */ }
+      setStatus('on')
+    } catch { setStatus('error') }
+  }
+
+  const unsubscribe = async () => {
+    setStatus('busy')
+    try {
+      const reg = await navigator.serviceWorker.getRegistration()
+      const sub = reg && await reg.pushManager.getSubscription()
+      if (sub) {
+        await api.esimPushUnsubscribe(sub.endpoint).catch(() => {})
+        await sub.unsubscribe().catch(() => {})
+      }
+    } catch { /* ignore */ }
+    try { localStorage.removeItem('esim_push_dest') } catch { /* ignore */ }
+    setStatus('idle')
+  }
+
+  const name = destName(dest, lang)
+  if (status === 'on') {
+    return (
+      <section className="card alertcard reveal">
+        <div className="alert-ic ok"><BellIcon /></div>
+        <div className="alert-tx">
+          <b>{t.alertOn.replace('{country}', name)}</b>
+          <span>{t.alertOnSub}</span>
+        </div>
+        <button type="button" className="alert-off" onClick={unsubscribe}>{t.alertOff}</button>
+      </section>
+    )
+  }
+  return (
+    <section className="card alertcard reveal">
+      <div className="alert-ic"><BellIcon /></div>
+      <div className="alert-tx">
+        <b>{t.alertTitle.replace('{country}', name)}</b>
+        <span>{status === 'denied' ? t.alertDenied : status === 'error' ? t.alertErr : t.alertSub}</span>
+      </div>
+      <button type="button" className="alert-btn" onClick={subscribe} disabled={status === 'busy'}>
+        {status === 'busy' ? t.alertBusy : t.alertBtn}
+      </button>
+    </section>
+  )
+}
+
+// Install-to-home-screen card. Android/Chrome: native beforeinstallprompt flow.
+// iOS: no prompt API — the button reveals the share-sheet instructions instead.
+function InstallCard({ t, canPrompt, onPrompt, onDismiss }) {
+  const [iosOpen, setIosOpen] = useState(false)
+  return (
+    <section className="card alertcard reveal">
+      <button type="button" className="dismiss-x" onClick={onDismiss} aria-label="close">✕</button>
+      <div className="alert-ic">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="5" y="2" width="14" height="20" rx="2" /><path d="M12 18h.01" />
+        </svg>
+      </div>
+      <div className="alert-tx">
+        <b>{t.installTitle}</b>
+        <span>{iosOpen ? t.installIos : t.installSub}</span>
+      </div>
+      {(canPrompt || !iosOpen) && (
+        <button type="button" className="alert-btn" onClick={canPrompt ? onPrompt : () => setIosOpen(true)}>
+          {t.installBtn}
+        </button>
+      )}
+    </section>
+  )
+}
+
 export default function EsimComparePage() {
   const [params, setParams] = useSearchParams()
   // Language + destination are derived from the URL (?lang / ?dest) or stored
@@ -401,6 +573,15 @@ export default function EsimComparePage() {
     return { src: _initParam('utm_source') || ref || 'direct', referrer: ref }
   }, [])
   const viewedRef = useRef(false)
+  // PWA install: Android/Chrome hands us a deferred beforeinstallprompt event;
+  // iOS never fires it (the card falls back to share-sheet instructions there).
+  const [installEvt, setInstallEvt] = useState(null)
+  const [installed, setInstalled] = useState(() => {
+    try { return IS_STANDALONE || localStorage.getItem('esim_pwa_installed') === '1' } catch { return IS_STANDALONE }
+  })
+  const [installDismissed, setInstallDismissed] = useState(() => {
+    try { return Date.now() - Number(localStorage.getItem('esim_install_dismissed') || 0) < 30 * 864e5 } catch { return false }
+  })
 
   const t = T[lang] || T.he
 
@@ -409,6 +590,24 @@ export default function EsimComparePage() {
     let alive = true
     api.getEsimDestinations().then((list) => { if (alive) setDestList(Array.isArray(list) ? list : []) }).catch(() => {})
     return () => { alive = false }
+  }, [])
+
+  // Capture the deferred install prompt + record real installs (pwa_install
+  // beacon feeds the app-vs-web measurement gate for the mobile-app rollout).
+  useEffect(() => {
+    const onBip = (e) => { e.preventDefault(); setInstallEvt(e) }
+    const onInstalled = () => {
+      setInstalled(true)
+      try { localStorage.setItem('esim_pwa_installed', '1') } catch { /* ignore */ }
+      api.trackEsim({ type: 'pwa_install', sid, src: acq.src, campaign })
+    }
+    window.addEventListener('beforeinstallprompt', onBip)
+    window.addEventListener('appinstalled', onInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBip)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Anonymous page-view beacon, once per mount (ref-guarded against StrictMode).
@@ -685,6 +884,23 @@ export default function EsimComparePage() {
     return t.tripSummary.replace('{n}', String(eligible.length)).replace('{days}', stayLabel).replace('{data}', dataLabel)
   }, [t, stay, dataNeed, eligible.length])
 
+  const promptInstall = async () => {
+    const e = installEvt
+    if (!e) return
+    setInstallEvt(null)
+    try {
+      e.prompt()
+      const choice = await e.userChoice
+      // Refusal counts as a 30-day dismissal — don't nag on the next visit.
+      if (!choice || choice.outcome !== 'accepted') dismissInstall()
+    } catch { /* ignore */ }
+  }
+  const dismissInstall = () => {
+    setInstallDismissed(true)
+    try { localStorage.setItem('esim_install_dismissed', String(Date.now())) } catch { /* ignore */ }
+  }
+  const showInstall = !installed && !installDismissed && (!!installEvt || (IS_IOS && !IS_STANDALONE))
+
   const openDeal = (d) => {
     // TikTok conversion signal: the affiliate tap is the money event. No-op
     // unless the pixel is configured. Lets the campaign optimize toward clicks.
@@ -892,6 +1108,14 @@ export default function EsimComparePage() {
                   </div>
                 )) : <div className="card empty">{t.empty}</div>}
               </section>
+
+              {/* Engagement-gated (destination chosen + deals on screen): price-drop
+                  alert + add-to-home-screen. Order matters — the alert is the value
+                  hook, the install card rides on it. */}
+              <PriceAlertCard dest={dest} lang={lang} t={t} meta={{ sid, src: acq.src, campaign }} />
+              {showInstall && (
+                <InstallCard t={t} canPrompt={!!installEvt} onPrompt={promptInstall} onDismiss={dismissInstall} />
+              )}
             </>
           )}
 
@@ -917,6 +1141,13 @@ export default function EsimComparePage() {
             <a href="/esim/greece/">יוון</a> · <a href="/esim/japan/">יפן</a> · <a href="/esim/thailand/">תאילנד</a> · <a href="/esim/united-states/">ארה"ב</a> · <a href="/esim/italy/">איטליה</a>
           </div>
           <div className="disclaim">{t.disclaim}</div>
+          {/* Store-compliance links (Google Play requires a public privacy-policy
+              URL). Relative — /privacy and /terms are routed on both hosts. */}
+          <div style={{ marginTop: 10, fontSize: 12 }}>
+            <a href={`/privacy${lang === 'en' ? '?lang=en' : ''}`}>{t.privacyL}</a>
+            {' · '}
+            <a href={`/terms${lang === 'en' ? '?lang=en' : ''}`}>{t.termsL}</a>
+          </div>
         </footer>
       </div>
     </div>

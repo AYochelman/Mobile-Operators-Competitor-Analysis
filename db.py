@@ -270,6 +270,17 @@ def init_db(db_path=None):
                 user_email TEXT,
                 created_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS esim_push_subscriptions (
+                id               INTEGER PRIMARY KEY,
+                endpoint         TEXT NOT NULL UNIQUE,
+                p256dh           TEXT NOT NULL,
+                auth             TEXT NOT NULL,
+                destination      TEXT NOT NULL,
+                lang             TEXT DEFAULT 'he',
+                baseline_price   REAL,
+                created_at       TEXT NOT NULL,
+                last_notified_at TEXT
+            );
             CREATE TABLE IF NOT EXISTS abroad_changes (
                 id          INTEGER PRIMARY KEY,
                 carrier     TEXT NOT NULL,
@@ -1235,6 +1246,21 @@ def get_israel_esim_deals(db_path=None):
     return get_esim_deals_for_destination(_ISRAEL_HE, db_path=db_path)
 
 
+def get_esim_alert_floor(destination, db_path=None):
+    """The ₪ price the B2C price-drop alerts track: cheapest TRIP-SIZED deal for
+    the destination (≥5GB or unlimited, ≥7 days or no day info). The absolute
+    catalog min is a ~₪1 daily/100MB package whose moves are meaningless to a
+    traveler — and sits below the alert threshold anyway. Falls back to the
+    overall min when no deal matches the filter (tiny destinations)."""
+    deals = get_esim_deals_for_destination(destination, db_path=db_path)
+    prices = [d["price"] for d in deals if d.get("price")
+              and (d.get("data_gb") is None or d["data_gb"] >= 5)
+              and (d.get("days") is None or d["days"] >= 7)]
+    if not prices:
+        prices = [d["price"] for d in deals if d.get("price")]
+    return min(prices) if prices else None
+
+
 def get_esim_destinations(db_path=None):
     """Distinct destinations (extras[0]) that currently carry live global-eSIM
     deals, each with a deal count + cheapest price. Powers the public consumer
@@ -2117,6 +2143,74 @@ def get_push_subscriptions(user_email=None, db_path=None):
             {"endpoint": r[0], "keys": {"p256dh": r[1], "auth": r[2]}, "hidden_carrier": r[3]}
             for r in rows
         ]
+    finally:
+        conn.close()
+
+
+# ── Public B2C eSIM price-drop push subscriptions (/esim-deals) ─────────────
+
+def save_esim_push_subscription(endpoint, p256dh, auth, destination, lang="he",
+                                baseline_price=None, db_path=None):
+    """UPSERT by endpoint — re-subscribing from the same browser with a new
+    destination MOVES the alert (one destination alert per device)."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO esim_push_subscriptions "
+            "(endpoint, p256dh, auth, destination, lang, baseline_price, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(endpoint) DO UPDATE SET "
+            "p256dh=excluded.p256dh, auth=excluded.auth, destination=excluded.destination, "
+            "lang=excluded.lang, baseline_price=excluded.baseline_price, last_notified_at=NULL",
+            (endpoint, p256dh, auth, destination, lang, baseline_price,
+             datetime.now().isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def delete_esim_push_subscription(endpoint, db_path=None):
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute("DELETE FROM esim_push_subscriptions WHERE endpoint=?", (endpoint,))
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
+def get_esim_push_subscriptions(db_path=None):
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT endpoint, p256dh, auth, destination, lang, baseline_price "
+            "FROM esim_push_subscriptions"
+        ).fetchall()
+        return [
+            {"endpoint": r[0], "keys": {"p256dh": r[1], "auth": r[2]},
+             "destination": r[3], "lang": r[4] or "he", "baseline_price": r[5]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def update_esim_push_baseline(endpoint, price, notified=False, db_path=None):
+    """Move a subscription's price baseline. notified=True also stamps
+    last_notified_at (a push was actually sent for this move)."""
+    conn = _connect(db_path)
+    try:
+        if notified:
+            conn.execute(
+                "UPDATE esim_push_subscriptions SET baseline_price=?, last_notified_at=? "
+                "WHERE endpoint=?",
+                (price, datetime.now().isoformat(), endpoint))
+        else:
+            conn.execute(
+                "UPDATE esim_push_subscriptions SET baseline_price=? WHERE endpoint=?",
+                (price, endpoint))
+        conn.commit()
     finally:
         conn.close()
 

@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "postizPostId": "cmrdfx9g100dqlk0yycwyajkr",
     "network": "facebook",
@@ -70,5 +70,75 @@
     "format": "video",
     "caption_first_line": "כולם מפרסמים חבילות eSIM, אף אחד לא אומר מה הכי זול 🤔",
     "link": "https://esim.mocaintel.com/?utm_source=tiktok&utm_campaign=compare30s"
+  },
+  {
+    "postizPostId": "cmrhg85k70pxelk0ykr5n0ct6",
+    "network": "instagram",
+    "scheduled_for": "2026-07-12T20:30",
+    "topic": "יעד קפריסין - eSIM זול מול רואמינג",
+    "format": "image",
+    "caption_first_line": "טסים לקפריסין הקיץ? 🇨🇾",
+    "link": "https://esim.mocaintel.com/?lang=he&utm_source=instagram&utm_campaign=ig_cyprus&dest=%D7%A7%D7%A4%D7%A8%D7%99%D7%A1%D7%99%D7%9F",
+    "media_source": "gemini"
+  },
+  {
+    "postizPostId": "cmrhg87qg0pxglk0yngk7p99z",
+    "network": "facebook",
+    "scheduled_for": "2026-07-13T12:30",
+    "topic": "יעד תאילנד - eSIM זול מול רואמינג",
+    "format": "image",
+    "caption_first_line": "טסים לתאילנד? 🇹🇭",
+    "link": "https://esim.mocaintel.com/?lang=he&utm_source=facebook&utm_campaign=fb_thailand&dest=%D7%AA%D7%90%D7%99%D7%9C%D7%A0%D7%93",
+    "media_source": "gemini"
+  },
+  {
+    "postizPostId": "cmrhg89wz0g31k90yqxhv7jr6",
+    "network": "instagram",
+    "scheduled_for": "2026-07-13T20:30",
+    "topic": "קרוסלה: יעדי קיץ והחבילה הזולה לכל אחד",
+    "format": "carousel",
+    "caption_first_line": "יעדי הקיץ הכי מבוקשים, וכמה באמת צריך לשלם על גלישה בכל אחד. 🌍",
+    "link": "https://esim.mocaintel.com/?lang=he&utm_source=instagram&utm_campaign=ig_summer_guide",
+    "media_source": "gemini"
+  },
+  {
+    "postizPostId": "cmrhg8c4n0pxilk0y3d0wsa95",
+    "network": "tiktok",
+    "scheduled_for": "2026-07-17T20:00",
+    "topic": "וידאו: כמה עולה גלישה בחול מול eSIM",
+    "format": "video",
+    "caption_first_line": "כמה באמת עולה לכם גלישה בחו\"ל? 🤯",
+    "link": "https://esim.mocaintel.com/?lang=he&utm_source=tiktok&utm_campaign=tt_roaming_cost",
+    "media_source": "veo"
+  },
+  {
+    "postizPostId": "cmrhg8e7p0pxjlk0y14zsrtse",
+    "network": "facebook",
+    "scheduled_for": "2026-07-17T20:30",
+    "topic": "Reel קרוס-פוסט: כמה עולה גלישה בחול מול eSIM",
+    "format": "video",
+    "caption_first_line": "כמה באמת עולה גלישה בחו\"ל? 🤯",
+    "link": "https://esim.mocaintel.com/?lang=he&utm_source=facebook&utm_campaign=fb_roaming_cost",
+    "media_source": "veo"
+  },
+  {
+    "postizPostId": "cmrhg8gd20g35k90yzo6dwke9",
+    "network": "tiktok",
+    "scheduled_for": "2026-07-18T21:00",
+    "topic": "וידאו: נוחתים מחוברים / איך eSIM עובד",
+    "format": "video",
+    "caption_first_line": "נוחתים בחו\"ל והטלפון כבר עובד ✈️",
+    "link": "https://esim.mocaintel.com/?lang=he&utm_source=tiktok&utm_campaign=tt_compare30s_v2",
+    "media_source": "veo"
+  },
+  {
+    "postizPostId": "cmrhg8ihq0pxmlk0y86j0354y",
+    "network": "facebook",
+    "scheduled_for": "2026-07-18T21:30",
+    "topic": "Reel קרוס-פוסט: נוחתים מחוברים / איך eSIM עובד",
+    "format": "video",
+    "caption_first_line": "נוחתים בחו\"ל והטלפון כבר מחובר ✈️",
+    "link": "https://esim.mocaintel.com/?lang=he&utm_source=facebook&utm_campaign=fb_compare30s",
+    "media_source": "veo"
   }
 ]

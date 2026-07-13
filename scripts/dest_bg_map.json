@@ -159,6 +159,15 @@
     "פלורידה": { "slug": "florida", "en": "Florida, USA" },
     "דובאי": { "slug": "dubai", "en": "Dubai, UAE" },
     "טורונטו": { "slug": "toronto", "en": "Toronto, Canada" },
-    "הליפקס": { "slug": "halifax", "en": "Halifax, Nova Scotia, Canada" }
+    "הליפקס": { "slug": "halifax", "en": "Halifax, Nova Scotia, Canada" },
+    "קורפו": { "slug": "corfu", "en": "Corfu island, Greece (old town and coastline)" },
+    "כרתים": { "slug": "crete", "en": "Crete, Greece (Balos lagoon)" },
+    "רודוס": { "slug": "rhodes", "en": "Rhodes old town harbour, Greece" },
+    "האיים הקיקלדיים": { "slug": "cyclades", "en": "the Cyclades islands, Greece (Santorini blue domes)" },
+    "סיציליה": { "slug": "sicily", "en": "Sicily, Italy (Taormina coast with Mount Etna)" },
+    "סרדיניה": { "slug": "sardinia", "en": "Sardinia, Italy (Costa Smeralda beach)" },
+    "ויילס": { "slug": "wales", "en": "Wales, UK (Snowdonia mountains and a medieval castle)" },
+    "האיים הבלאריים": { "slug": "balearic-islands", "en": "the Balearic Islands, Spain (Mallorca cove)" },
+    "סן פייר ומיקלון": { "slug": "saint-pierre-miquelon", "en": "Saint-Pierre and Miquelon (colorful harbour houses)" }
   }
 }

@@ -306,9 +306,18 @@ export const api = {
     if (campaign) p.set('campaign', campaign)  // which post/video drove this click
     return `${API_BASE}/go/${encodeURIComponent(provider)}?${p.toString()}`
   },
-  // Anonymous traffic beacon for the B2C page (page_view / destination_pick). Fire-and-forget.
+  // Anonymous traffic beacon for the B2C page (page_view / destination_pick / pwa_install). Fire-and-forget.
   trackEsim: (payload) =>
     fetchApi('/api/esim/event', { method: 'POST', body: JSON.stringify(payload), keepalive: true }).catch(() => {}),
+  // Destination price-drop web-push alert (public, no auth). One alert per device —
+  // re-subscribing moves it to the new destination.
+  esimPushSubscribe: (subscription, destination, lang, extra = {}) =>
+    fetchApi('/api/esim/push/subscribe', {
+      method: 'POST',
+      body: JSON.stringify({ subscription, destination, lang, ...extra }),
+    }),
+  esimPushUnsubscribe: (endpoint) =>
+    fetchApi('/api/esim/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
   // B2C traffic dashboard data (admin only). days=0 = lifetime.
   getEsimAnalytics: (days = 30) => fetchApi(`/api/esim/analytics?days=${days}`),
 

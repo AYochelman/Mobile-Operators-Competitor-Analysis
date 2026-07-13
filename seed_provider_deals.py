@@ -378,6 +378,27 @@ DEALS = [
         "next_actions": "מסמך ה-deep-link התקבל 08/07. פתוח (בצד שלנו): להטמיע נחיתה פר-מדינה - gigskyapp://home/explore?serviceRegionId=<ISO>&category=Countries עטוף ב-Singular smart-link (gigsky.sng.link/Euypu/<id>) - ולוודא ששמירת ה-attribution ב-Everflow נשמרת (url override / הפניית לינק Everflow ל-sng.link עם המאקרו). לשים לב: זה deep-link לאפליקציה (לא web), לברר עם Alex fallback ל-web/דסקטופ. להשלים Billing ב-Everflow.",
         "notes": "ספק נסרק (1698 חבילות, מופיע בהשוואת eSIM). קופון MOCA15 הוטמע (seed_coupons.py). לינק Everflow חובר 06/07 (plans.gigsky.com/273MKQ4/2CTPL/, aff 273MKQ4 offer 2CTPL); /go/gigsky מצרף sub1=יעד(ISO)/sub2=src/sub5=hotel, מאומת חי. גישה לתיקיית assets אושרה 06/07. פתוח: להשלים Billing ב-Everflow (Company Settings). 08/07: Alex שיתף Google Doc 'how to Deeplink capability'. הפורמט = Singular smart-link https://gigsky.sng.link/Euypu/<id>?_dl=<urlencoded gigskyapp://...>&_forward_params=2&_smtype=3; מדינה = gigskyapp://home/explore?serviceRegionId=<CountryCode>&category=Countries (serviceRegionId=קוד ISO למדינה; PlanBundleId לאזורי/עולמי). Everflow מזריק מאקרו דינמי (affiliate_id/transaction_id/offer_id) בתוך ה-sng.link. 10/07: נסגר פער בפרונט - gigsky היה חסר ב-affiliateLinks.js (AFFILIATE_PROVIDERS+AFFILIATE_URLS), כך שכפתור הרכישה בכרטיס הדשבורד נפל ל-gigsky.com ללא attribution (דלף רק בדשבורד; B2C/‏go תמיד עבד). נוסף, נבנה ונפרס לאוויר (fingerprint main-Djz6BYUq.js, chunk PlanCard-BrtWeYZJ.js מאומת חי).",
     },
+    {
+        "provider_id": "nisim", "display_name": "Nisim eSIM", "category": "global",
+        "is_israeli": True,
+        "outreach_status": "contacted", "outreach_last_at": "2026-07-11",
+        "contact": "טופס יצירת קשר באתר (nisim-esim.co.il/צור-קשר); אין מייל פומבי. וואטסאפ עסקי: 054-5051525, טלפון: 073-4730730",
+        "agreement_status": "none",
+        "coupon_note": "אין קופון. תוכנית שותפים בבירור (נשאל בפנייה).",
+        "has_tracking_link": False, "priority": "med",
+        "next_actions": "נשלחה פניית שיתוף פעולה דרך טופס יצירת הקשר (11/07, אושר 'השליחה בוצעה בהצלחה') - להמתין לחזרה במייל/טלפון; אם שקט עד ~20/07, פנייה בוואטסאפ העסקי.",
+        "notes": "ספק ישראלי (נוסף 11/07/2026): חנות WooCommerce, ~489 חבילות ILS, ~90 מדינות + 11 מוצרים אזוריים/גלובליים (סריקת Store API טהורה, כולל וריאציות עם תוויות עברית 'ימים:'). מסונן: מוצרי TEST + מבצעי משפחה מרובי-קווים. כתובת: אריאל שרון 4, גבעתיים.",
+    },
+    {
+        "provider_id": "esimgenius", "display_name": "eSIM Genius", "category": "global",
+        "outreach_status": "contacted", "outreach_last_at": "2026-07-11",
+        "contact": "hello@esimgenius.ai",
+        "agreement_status": "none",
+        "coupon_note": "אין קופון. תוכנית שותפים בבירור (נשאל במייל).",
+        "has_tracking_link": False, "priority": "med",
+        "next_actions": "מייל היכרות נשלח ל-hello@esimgenius.ai (11/07) - שיתוף פעולה / לינק מעקב / קופון MOCA. להמתין לתשובה; אם שקט עד ~18/07, מייל תזכורת.",
+        "notes": "ספק נסרק (נוסף 11/07/2026): ~2,580 חבילות, ~180 מדינות + 5 חבילות אזוריות/גלובליות (esimgenius.ai, Next.js, סריקת HTTP טהורה מה-RSC). מחירים בדולר, כולל מסלולי ללא הגבלה. אין עמוד עברית ייעודי אבל האתר מתורגם (he/). אתר חדש יחסית (sitemap מ-06/2026).",
+    },
 ]
 
 

@@ -44,13 +44,14 @@ import {
   ESIMPLUS_REGION_MAP,
   SEVEN_G_REGION_MAP,
   GIGSKY_REGION_MAP,
+  ESIMGENIUS_REGION_MAP,
 } from '../data/globalCountries'
 
 // Carriers where one plan covers many countries (zone/global plans)
 const MULTI_COUNTRY_CARRIERS = new Set([
   'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
   'pelephone_global', 'esimo', 'terminalesim', 'gomoworld', 'maya', 'besim',
-  'bestconnect', 'esimplus', 'seven_g', 'gigsky',
+  'bestconnect', 'esimplus', 'seven_g', 'gigsky', 'esimgenius',
 ])
 
 const TERMINAL_REGION_MAP = {
@@ -119,6 +120,11 @@ function getPlanCoverage(plan) {
     // and cruise labels ("קרוז - …") aren't keys → null → extras[0] equality /
     // unified cruise filter handle them.
     return GIGSKY_REGION_MAP[dest] || null
+  }
+  if (carrier === 'esimgenius') {
+    // Regional + global bundles expand to their coverage list; per-country
+    // plans return null → extras[0] equality.
+    return ESIMGENIUS_REGION_MAP[dest] || null
   }
   if (carrier === 'seven_g') {
     // plan_name first segment is the English region name (e.g. "Asia (12 areas)")

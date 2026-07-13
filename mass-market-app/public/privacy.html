@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#5c3317" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+  <link rel="stylesheet" href="/fonts/fonts.css" />
+  <title>מדיניות פרטיות | MOCA eSIM</title>
+  <meta name="description" content="מדיניות הפרטיות של שירות השוואת ה-eSIM של MOCA: בלי הרשמה, בלי איסוף פרטים מזהים, IP נשמר בגיבוב חד-כיווני בלבד." />
+  <link rel="canonical" href="https://mocaintel.com/privacy" />
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Assistant',system-ui,-apple-system,'Segoe UI',sans-serif;background:#f9f4ee;color:#3b1f0d;line-height:1.75;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:760px;margin:0 auto;padding:0 20px}
+    header{background:#5c3317;color:#fff;padding:14px 0}
+    header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex;align-items:baseline;gap:8px;color:#fff;text-decoration:none}
+    .brand b{font-size:17px;font-weight:800;letter-spacing:.3px}
+    .brand span{font-size:11px;letter-spacing:2px;opacity:.75;font-weight:600}
+    .lang{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:5px 14px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+    main{padding:34px 0 10px}
+    h1{font-size:29px;font-weight:800;color:#4a2a13;margin-bottom:4px}
+    .updated{font-size:13px;color:#8a6a4a;font-weight:600;margin-bottom:22px}
+    .tldr{background:#fff;border:1.5px solid #e0cdb5;border-radius:16px;padding:16px 18px;margin-bottom:26px;font-size:15px}
+    .tldr b{color:#4a2a13}
+    h2{font-size:18.5px;font-weight:800;color:#4a2a13;margin:26px 0 8px}
+    p,li{font-size:15px;color:#3b1f0d}
+    ul{padding-inline-start:22px;display:flex;flex-direction:column;gap:6px;margin:6px 0}
+    a{color:#c9622f}
+    footer{margin:40px 0 30px;font-size:13px;color:#8a6a4a;border-top:1px solid #e8d5bc;padding-top:16px}
+    footer a{margin-inline-end:14px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <a class="brand" href="/esim-deals"><b>MOCA</b><span data-tag>השוואת eSIM</span></a>
+      <button type="button" class="lang" id="lang-btn">EN</button>
+    </div>
+  </header>
+  <main class="wrap">
+
+    <article data-lang="he">
+      <h1>מדיניות פרטיות</h1>
+      <div class="updated">עדכון אחרון: 11 ביולי 2026</div>
+      <div class="tldr"><b>בקצרה:</b> השוואת ה-eSIM של MOCA עובדת בלי הרשמה ובלי חשבון. לא נאסף שם, אימייל, טלפון או כל פרט מזהה אחר. נשמרות סטטיסטיקות שימוש אנונימיות בלבד, וכתובת ה-IP נשמרת אך ורק בגיבוב חד-כיווני שלא ניתן לשחזור.</div>
+
+      <h2>1. על מה חלה המדיניות</h2>
+      <p>המדיניות חלה על השירותים הציבוריים של MOCA: עמוד השוואת ה-eSIM (mocaintel.com/esim-deals והכתובת esim.mocaintel.com), מדריכי היעדים תחת mocaintel.com/esim/, והאפליקציה המותקנת המבוססת עליהם. פלטפורמת המודיעין העסקית של MOCA (בחשבונות מנוהלים ללקוחות עסקיים) כפופה להסכם נפרד מול הלקוח.</p>
+
+      <h2>2. מידע שנאסף אוטומטית</h2>
+      <ul>
+        <li><b>אירועי שימוש אנונימיים:</b> צפייה בעמוד, בחירת יעד, התקנת האפליקציה והפעלת התראת מחיר - יחד עם שפת הממשק, מקור ההגעה (למשל פרמטרי utm או האתר המפנה), מזהה סשן אקראי שנוצר בדפדפן וזמן האירוע.</li>
+        <li><b>כתובת IP:</b> נשמרת אך ורק כגיבוב חד-כיווני (HMAC-SHA256). לא ניתן לשחזר ממנו את הכתובת, והוא משמש לספירת מבקרים ולסינון תעבורה אוטומטית.</li>
+        <li><b>לחיצה על קישור רכישה:</b> נרשמות זהות הספק, החבילה, היעד, זמן הלחיצה, מחרוזת זיהוי הדפדפן (User Agent, לצורך סינון בוטים) וגיבוב ה-IP כאמור.</li>
+      </ul>
+
+      <h2>3. התראות ירידת מחיר</h2>
+      <p>הפעלת התראה היא בהסכמה מפורשת. עם ההפעלה נשמרים: כתובת המנוי הטכנית שהדפדפן מנפיק (Push Endpoint), מפתחות ההצפנה של המנוי, היעד שנבחר והשפה. אלה נתונים טכניים בלבד - אין בהם שם או פרטי קשר. אפשר לבטל בכל רגע בכפתור הביטול בעמוד או בהגדרות האתר בדפדפן; הביטול מוחק את המנוי משרתינו, ומנוי שהדפדפן ביטל נמחק אוטומטית.</p>
+
+      <h2>4. אחסון במכשיר שלכם</h2>
+      <p>השירות שומר העדפות באחסון המקומי של הדפדפן (localStorage/sessionStorage): שפה, יעד ההתראה, מזהה הסשן ודחיית ההצעה להתקנה. אלה אינן עוגיות מעקב והן משמשות את השירות בלבד.</p>
+
+      <h2>5. צדדים שלישיים</h2>
+      <ul>
+        <li><b>רכישה אצל הספק:</b> הרכישה עצמה מתבצעת באתר ספק ה-eSIM ובכפוף למדיניות הפרטיות שלו. חלק מהקישורים הם קישורי שותפים - אנחנו עשויים לקבל עמלה על רכישה, ללא עלות נוספת לכם. בעת המעבר לאתר הספק, רשתות שותפים (למשל Impact) עשויות להציב עוגיות למדידת העמלה.</li>
+        <li><b>תשתיות:</b> האתר מאוחסן ב-Netlify ומוגש דרך Cloudflare. ספקי התשתית מעבדים תעבורת רשת (כולל כתובות IP) לצורכי אבטחה וביצועים, כמקובל.</li>
+        <li><b>תוכן חזותי:</b> דגלים ולוגואים של ספקים נטענים משרתי CDN חיצוניים (למשל flagcdn.com), שמקבלים את בקשת הרשת ישירות מהדפדפן.</li>
+        <li><b>פיקסלים שיווקיים:</b> בקמפיינים מסוימים עשוי לפעול בעמוד פיקסל מדידה (למשל TikTok Pixel) למדידת יעילות פרסום. נכון למועד העדכון האחרון - כבוי.</li>
+      </ul>
+
+      <h2>6. למה משמש המידע</h2>
+      <p>תפעול ושיפור השירות, סטטיסטיקות שימוש, מדידת עמלות שותפים, אבטחה וסינון בוטים, ושליחת התראות המחיר שביקשתם. איננו מוכרים מידע ואיננו מעבירים אותו לגורם שלישי מעבר למפורט למעלה.</p>
+
+      <h2>7. שמירת מידע ואבטחה</h2>
+      <p>נתוני השימוש האנונימיים נשמרים לצרכים סטטיסטיים; מנויי התראות נשמרים עד לביטולם. התקשורת עם השירות מוצפנת (HTTPS). מאחר שאיננו אוספים פרטים מזהים, אין לנו יכולת לשייך את הנתונים לאדם מסוים.</p>
+
+      <h2>8. זכויותיכם ופניות</h2>
+      <p>אנו פועלים בהתאם לחוק הגנת הפרטיות, התשמ"א-1981. לכל שאלה או בקשה בנושא פרטיות אפשר לפנות אלינו: <a href="mailto:Helpdesk@mocaintel.com">Helpdesk@mocaintel.com</a>.</p>
+
+      <h2>9. קטינים</h2>
+      <p>השירות אינו אוסף ביודעין מידע אישי מאיש, לרבות קטינים - הוא אינו אוסף פרטים מזהים כלל.</p>
+
+      <h2>10. עדכונים למדיניות</h2>
+      <p>נעדכן עמוד זה מעת לעת; התאריך בראש העמוד משקף את הגרסה התקפה.</p>
+
+      <footer>
+        <a href="/esim-deals">להשוואת ה-eSIM</a>
+        <a href="/terms">תנאי שימוש</a>
+        MOCA · Helpdesk@mocaintel.com
+      </footer>
+    </article>
+
+    <article data-lang="en" hidden>
+      <h1>Privacy Policy</h1>
+      <div class="updated">Last updated: July 11, 2026</div>
+      <div class="tldr"><b>In short:</b> MOCA's eSIM comparison works with no sign-up and no account. We do not collect your name, email, phone number or any other identifying detail. Only anonymous usage statistics are kept, and IP addresses are stored solely as a one-way hash that cannot be reversed.</div>
+
+      <h2>1. Scope</h2>
+      <p>This policy covers MOCA's public services: the eSIM comparison page (mocaintel.com/esim-deals and esim.mocaintel.com), the destination guides under mocaintel.com/esim/, and the installable app built on them. MOCA's business intelligence platform (managed accounts for business customers) is governed by a separate customer agreement.</p>
+
+      <h2>2. Data collected automatically</h2>
+      <ul>
+        <li><b>Anonymous usage events:</b> page views, destination picks, app installs and price-alert activations - together with interface language, acquisition source (e.g. utm parameters or referring site), a random browser-generated session token, and the event time.</li>
+        <li><b>IP address:</b> stored only as a one-way hash (HMAC-SHA256). The address cannot be recovered from it; it is used for visitor counting and filtering automated traffic.</li>
+        <li><b>Clicks on purchase links:</b> we record the provider, plan, destination, click time, browser identification string (User Agent, for bot filtering) and the hashed IP as above.</li>
+      </ul>
+
+      <h2>3. Price-drop alerts</h2>
+      <p>Alerts are strictly opt-in. When enabled we store: the technical subscription address issued by your browser (push endpoint), the subscription's encryption keys, your chosen destination and language. These are technical values only - they contain no name or contact details. You can cancel at any time using the cancel button on the page or your browser's site settings; cancelling deletes the subscription from our servers, and subscriptions revoked by the browser are removed automatically.</p>
+
+      <h2>4. Storage on your device</h2>
+      <p>The service keeps preferences in your browser's local storage (localStorage/sessionStorage): language, alert destination, session token and install-prompt dismissal. These are not tracking cookies and serve the service only.</p>
+
+      <h2>5. Third parties</h2>
+      <ul>
+        <li><b>Purchasing from a provider:</b> the purchase itself happens on the eSIM provider's site under its own privacy policy. Some links are affiliate links - we may earn a commission on purchases, at no extra cost to you. When you continue to a provider's site, affiliate networks (e.g. Impact) may set cookies to attribute the commission.</li>
+        <li><b>Infrastructure:</b> the site is hosted on Netlify and served through Cloudflare. These infrastructure providers process network traffic (including IP addresses) for security and performance, as is standard.</li>
+        <li><b>Visual content:</b> flags and provider logos load from external CDNs (e.g. flagcdn.com), which receive the network request directly from your browser.</li>
+        <li><b>Marketing pixels:</b> during certain campaigns a measurement pixel (e.g. TikTok Pixel) may run on the page to measure ad performance. As of the last update it is off.</li>
+      </ul>
+
+      <h2>6. How the data is used</h2>
+      <p>Operating and improving the service, usage statistics, affiliate commission attribution, security and bot filtering, and sending the price alerts you asked for. We do not sell data and do not share it with third parties beyond the above.</p>
+
+      <h2>7. Retention and security</h2>
+      <p>Anonymous usage data is kept for statistical purposes; alert subscriptions are kept until cancelled. Communication with the service is encrypted (HTTPS). Since we collect no identifying details, we cannot link the data to a specific person.</p>
+
+      <h2>8. Your rights and contact</h2>
+      <p>We operate in accordance with the Israeli Protection of Privacy Law, 1981. For any privacy question or request contact us: <a href="mailto:Helpdesk@mocaintel.com">Helpdesk@mocaintel.com</a>.</p>
+
+      <h2>9. Children</h2>
+      <p>The service does not knowingly collect personal information from anyone, including children - it collects no identifying details at all.</p>
+
+      <h2>10. Changes to this policy</h2>
+      <p>We may update this page from time to time; the date at the top reflects the current version.</p>
+
+      <footer>
+        <a href="/esim-deals">eSIM comparison</a>
+        <a href="/terms?lang=en">Terms of use</a>
+        MOCA · Helpdesk@mocaintel.com
+      </footer>
+    </article>
+
+  </main>
+  <script>
+    (function () {
+      var btn = document.getElementById('lang-btn')
+      var cur = 'he'
+      function setLang(l) {
+        cur = l
+        document.querySelectorAll('[data-lang]').forEach(function (el) { el.hidden = el.getAttribute('data-lang') !== l })
+        document.documentElement.lang = l
+        document.documentElement.dir = l === 'he' ? 'rtl' : 'ltr'
+        btn.textContent = l === 'he' ? 'EN' : 'עב'
+        document.querySelector('[data-tag]').textContent = l === 'he' ? 'השוואת eSIM' : 'eSIM Compare'
+        document.title = l === 'he' ? 'מדיניות פרטיות | MOCA eSIM' : 'Privacy Policy | MOCA eSIM'
+        try { localStorage.setItem('esim_lang', l) } catch (e) { /* ignore */ }
+      }
+      try {
+        var q = new URLSearchParams(location.search).get('lang')
+        var s = localStorage.getItem('esim_lang')
+        if (q === 'en' || (!q && s === 'en')) cur = 'en'
+      } catch (e) { /* ignore */ }
+      setLang(cur)
+      btn.onclick = function () { setLang(cur === 'he' ? 'en' : 'he') }
+    })()
+  </script>
+</body>
+</html>

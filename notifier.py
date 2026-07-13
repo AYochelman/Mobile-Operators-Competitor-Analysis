@@ -785,6 +785,73 @@ def send_push_notifications(changes, config, db_path=None, lang="he"):
     return sent
 
 
+def notify_esim_price_drops(config, db_path=None):
+    """State-based price-drop alerts for the public /esim-deals page: after every
+    global scrape, compare each subscribed destination's CURRENT cheapest deal
+    against the subscription's baseline (set at subscribe time / last alert).
+    Deliberately independent of the change log — the global scrape paths drop
+    new_plan/removed_plan events, but a brand-new cheaper plan should still alert.
+    Notify only on a real drop (≥5% AND ≥₪2 — stored ₪ prices carry scrape-time
+    FX noise); on a rise, silently raise the baseline so a later fall re-alerts."""
+    from urllib.parse import quote
+    from db import (get_esim_push_subscriptions, get_esim_alert_floor,
+                    update_esim_push_baseline, delete_esim_push_subscription)
+    try:
+        from pywebpush import webpush, WebPushException
+    except ImportError:
+        return 0
+    vapid_private_key = config.get("vapid_private_key")
+    if not vapid_private_key:
+        return 0
+    subs = get_esim_push_subscriptions(db_path=db_path)
+    if not subs:
+        return 0
+    vapid_email = config.get("vapid_email", "mailto:alon.yoch@gmail.com")
+    min_by_dest = {}
+    sent, stale = 0, []
+    for sub in subs:
+        dest = sub["destination"]
+        if dest not in min_by_dest:
+            min_by_dest[dest] = get_esim_alert_floor(dest, db_path=db_path)
+        cur = min_by_dest[dest]
+        if cur is None:
+            continue
+        base = sub.get("baseline_price")
+        if base is None or cur > base:
+            update_esim_push_baseline(sub["endpoint"], cur, db_path=db_path)
+            continue
+        drop = base - cur
+        if drop < 2 or drop < base * 0.05:
+            continue
+        if (sub.get("lang") or "he") == "en":
+            body = f"Price drop! eSIM deals for your destination now from ₪{round(cur)}"
+        else:
+            body = f"ירידת מחיר! חבילות eSIM ל{dest} עכשיו החל מ-₪{round(cur)}"
+        url = (f"https://mocaintel.com/esim-deals?dest={quote(dest)}"
+               f"&lang={sub.get('lang') or 'he'}&utm_source=push&utm_campaign=price_drop")
+        payload = json.dumps(
+            {"title": "MOCA eSIM", "body": body, "url": url, "tag": "esim-price-drop"},
+            ensure_ascii=False)
+        try:
+            webpush(
+                subscription_info={"endpoint": sub["endpoint"], "keys": sub["keys"]},
+                data=payload,
+                vapid_private_key=vapid_private_key,
+                vapid_claims={"sub": vapid_email},
+            )
+            update_esim_push_baseline(sub["endpoint"], cur, notified=True, db_path=db_path)
+            sent += 1
+        except WebPushException as e:
+            status = getattr(e.response, "status_code", None) if hasattr(e, "response") and e.response else None
+            if status in (404, 410):
+                stale.append(sub["endpoint"])
+        except Exception:
+            pass
+    for ep in stale:
+        delete_esim_push_subscription(ep, db_path=db_path)
+    return sent
+
+
 CARRIER_DISPLAY_NAMES = {
     "partner": "פרטנר", "pelephone": "פלאפון", "hotmobile": "הוט מובייל",
     "cellcom": "סלקום", "mobile019": "019", "xphone": "XPhone",

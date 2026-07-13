@@ -3287,13 +3287,15 @@ def _esimo_fetch(url, timeout=25):
         return r.read().decode("utf-8", "replace")
 
 
-def _esimo_extract_packages(html):
+def _esimo_extract_packages(html, array_key="packages"):
     """Reconstruct the Next.js RSC flight stream and pull the embedded packages array.
 
     esimo.io is a Next.js app: plan data is server-rendered as escaped JSON split across
     multiple self.__next_f.push([1,"..."]) script chunks. The packages array frequently
     straddles a chunk boundary, so the chunks must be decoded and joined BEFORE searching —
     bracket-matching the raw HTML hits the </script><script> junk and corrupts the parse.
+    array_key names the prop that holds the array — other Next.js RSC sites embed the
+    same shape under a different key (esimgenius.ai uses "plans").
     """
     import json as _json
     chunks = re.findall(r'self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)', html)
@@ -3304,7 +3306,7 @@ def _esimo_extract_packages(html):
         except Exception:
             continue
     stream = "".join(decoded)
-    idx = stream.find('"packages":[')
+    idx = stream.find(f'"{array_key}":[')
     if idx < 0:
         return []
     start = stream.index('[', idx)
@@ -7244,6 +7246,295 @@ def scrape_gigsky_global(_page=None, usd_rate=None):
     return plans
 
 
+# ── eSIM Genius (esimgenius.ai) ──────────────────────────────────────────────
+# Destination slugs that esimgenius.ai has but SAILY_SLUG_TO_HEBREW doesn't
+# (sub-national islands, UK nations, and naming variants). Values are the
+# canonical Hebrew spellings already used in global_plans / db._DEST_NORM.
+ESIMGENIUS_SLUG_OVERRIDES = {
+    "aland-islands": "איי אולנד",
+    "azores": "האיים האזוריים",
+    "balearic-islands": "האיים הבלאריים",
+    "belarus": "בלארוס",
+    "cabo-verde": "קייפ ורדה",
+    "canary-islands": "האיים הקנריים",
+    "congo": "רפובליקת קונגו",
+    "corfu": "קורפו",
+    "crete": "כרתים",
+    "cyclades-islands": "האיים הקיקלדיים",
+    "democratic-republic-congo": "הרפובליקה הדמוקרטית של קונגו",
+    "ethiopia": "אתיופיה",
+    "ivory-coast": "חוף השנהב",
+    "madeira": "מדיירה",
+    "rhodes": "רודוס",
+    "saint-pierre-miquelon": "סן פייר ומיקלון",
+    "sardinia": "סרדיניה",
+    "scotland": "סקוטלנד",
+    "sicily": "סיציליה",
+    "usa": "ארצות הברית",
+    "vatican": "ותיקן",
+    "wales": "ויילס",
+}
+
+ESIMGENIUS_REGION_TO_HEBREW = {
+    "europe": "אירופה",
+    "asia": "אסיה",
+    "africa": "אפריקה",
+    "middle-east": "המזרח התיכון",
+    "global": "גלובלי",
+}
+
+# Non-catalog pages in the esimgenius.ai sitemap; Palestine dropped (GigSky precedent)
+_ESIMGENIUS_SKIP_SLUGS = {
+    "advisor", "contact", "destinations", "how-it-works", "privacy",
+    "refund-policy", "terms", "travel-esim-guide", "palestine",
+}
+
+
+def scrape_esimgenius_global(_page=None, usd_rate=None):
+    """Scrape the full eSIM Genius catalog: ~180 country pages + 5 regional/global bundles.
+
+    Pure HTTP — esimgenius.ai is a Next.js app that server-renders each destination
+    page with its plans array (label / daysNum / priceCents in USD cents) in the RSC
+    stream, so _esimo_extract_packages(array_key="plans") reads it with no Playwright.
+    Slugs come from the sitemap (English <loc> entries only). Hebrew destinations
+    resolve via SAILY_SLUG_TO_HEBREW (same kebab-case slugs) + ESIMGENIUS_SLUG_OVERRIDES,
+    then canonicalize through db._DEST_NORM at scrape time so the raw scraped extras
+    match the stored row (a non-canonical value here flaps extras_change every scrape).
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from db import _DEST_NORM
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+
+    slugs = set(ESIMGENIUS_REGION_TO_HEBREW)
+    try:
+        sitemap = _esimo_fetch("https://esimgenius.ai/sitemap.xml", timeout=30)
+        slugs.update(re.findall(r"<loc>https://esimgenius\.ai/([a-z0-9-]+)</loc>", sitemap))
+    except Exception as exc:
+        logger.warning(f"eSIM Genius sitemap fetch failed ({exc}) — scraping regional pages only")
+    slugs -= _ESIMGENIUS_SKIP_SLUGS
+
+    dest_by_slug, unknown_slugs = {}, set()
+    for slug in sorted(slugs):
+        dest = (ESIMGENIUS_REGION_TO_HEBREW.get(slug)
+                or ESIMGENIUS_SLUG_OVERRIDES.get(slug)
+                or SAILY_SLUG_TO_HEBREW.get(slug))
+        if dest:
+            dest_by_slug[slug] = _DEST_NORM.get(dest, dest)
+        else:
+            unknown_slugs.add(slug)
+
+    def fetch_one(slug):
+        return _esimo_extract_packages(
+            _esimo_fetch(f"https://esimgenius.ai/{slug}"), array_key="plans")
+
+    plans, seen_names = [], set()
+    empty, failed = 0, 0
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futures = {ex.submit(fetch_one, s): s for s in dest_by_slug}
+        for fut in as_completed(futures):
+            slug = futures[fut]
+            dest = dest_by_slug[slug]
+            try:
+                items = fut.result()
+            except Exception as exc:
+                failed += 1
+                logger.warning(f"eSIM Genius {slug}: {exc}")
+                continue
+            if not items:
+                empty += 1
+                continue
+            for it in items:
+                label = (it.get("label") or "").strip()
+                try:
+                    days = int(it.get("daysNum") or 0)
+                    usd = int(it.get("priceCents") or 0) / 100.0
+                except (TypeError, ValueError):
+                    continue
+                if days <= 0 or usd <= 0:
+                    continue
+                unlimited = it.get("planType") == "unlimited" or label.lower().startswith("unlim")
+                if unlimited:
+                    gb, gb_str = None, "ללא הגבלה"  # ללא הגבלה
+                else:
+                    m = re.match(r"([\d.]+)\s*(GB|MB)", label, re.I)
+                    if not m:
+                        continue
+                    val = float(m.group(1))
+                    gb = round(val / 1024, 4) if m.group(2).upper() == "MB" else val
+                    gb_str = f"{m.group(1)}{m.group(2).upper()}"
+                day_unit = "יום" if days == 1 else "ימים"  # יום / ימים
+                plan_name = f"{dest} – {gb_str} – {days} {day_unit}"
+                if plan_name in seen_names:      # guard UNIQUE(carrier, plan_name)
+                    continue
+                seen_names.add(plan_name)
+                extras = [dest]
+                if unlimited:
+                    extras.append("גלישה ללא הגבלה")  # גלישה ללא הגבלה
+                plans.append(_make_global_plan(
+                    "esimgenius", plan_name, round(usd * usd_rate, 2), "USD", usd,
+                    data_gb=gb, days=days, esim=True, extras=extras,
+                ))
+    if unknown_slugs:
+        logger.warning(
+            f"eSIM Genius: skipped unmapped destination slugs {sorted(unknown_slugs)} "
+            f"— add them to ESIMGENIUS_SLUG_OVERRIDES"
+        )
+    logger.info(
+        f"eSIM Genius: {len(plans)} plans from {len(dest_by_slug)} pages "
+        f"({empty} empty, {failed} failed)"
+    )
+    return plans
+
+
+# ── Nisim eSIM (nisim-esim.co.il) ────────────────────────────────────────────
+# Israeli WooCommerce shop, ILS prices. Product names are Hebrew country names;
+# these are the site's spellings that differ from the canonical ones.
+NISIM_NAME_FIX = {
+    "אזרבייגאן": "אזרבייג'ן",
+    "גיאורגיה": "גאורגיה",
+    "באהאמאס": "איי הבהאמה",
+    "בוסניה הרצגובינה": "בוסניה והרצגובינה",
+    "איי הבתולה הבריטים": "איי הבתולה (בריטניה)",
+    "טאיוואן": "טייוואן",
+    "טוניסיה": "תוניסיה",
+}
+
+# Regional/global products (matched by cleaned product NAME — ids churn when the
+# shop recreates a product). Values are canonical destination strings that the
+# dest picker already knows (dest_bg_map region_keys). Coverage is NOT expanded
+# per-country (the site's "רשימת מדינות" accordions are one shared Elementor
+# template on every page, so no reliable per-region list exists) — same
+# behavior as bytesim's region bundles.
+NISIM_REGION_NAMES = {
+    "eSIM אירופה": "אירופה",
+    "Europe Unlimited – PAPAYA": "אירופה",
+    "עולמי eSIM": "גלובלי",
+    "אסיה eSIM": "אסיה",
+    "אפריקה eSIM": "אפריקה",
+    "בלקן eSIM": "בלקן",
+    "דרום אמריקה eSIM": "דרום אמריקה",
+    "האיים הקריביים eSIM": "האיים הקריביים",
+    "אוקיאניה eSIM": "אוקיאניה",
+    "אפריקה והמזרח התיכון": "המזרח התיכון ואפריקה",
+    "צפון אמריקה": "צפון אמריקה",
+}
+
+# test items + family multi-line promos (מבצע כתום/הוט/ישראכרט, קומבינציה)
+_NISIM_SKIP_CATS = {"TEST", "test2", "מבצע משפחה"}
+
+
+def _nisim_fetch_json(path):
+    import json as _json
+    return _json.loads(_esimo_fetch(f"https://www.nisim-esim.co.il/wp-json/wc/store/v1/{path}"))
+
+
+def scrape_nisim_global(_page=None, usd_rate=None):
+    """Scrape the Nisim eSIM catalog via the public WooCommerce Store API.
+
+    Two paginated pulls: parent products (name = Hebrew destination, categories
+    used to drop test/family-promo items) and their variations
+    (type=variation; per-variation ILS price + "Days: 30 ימים, Data: 20GB"
+    attribute string). ~92 countries + ~11 regional/global products, ~550 live
+    variations. Prices are ILS minor units (/100) — no FX conversion.
+    Duplicate (dest, size, days) tiers keep the cheapest price.
+    """
+    import html as _html
+
+    def fetch_all(query):
+        out, page = [], 1
+        while True:
+            batch = _nisim_fetch_json(f"products?{query}&per_page=100&page={page}")
+            if not batch:
+                break
+            out.extend(batch)
+            if len(batch) < 100:
+                break
+            page += 1
+        return out
+
+    def clean_name(raw):
+        n = _html.unescape(raw or "").replace("’", "'").replace("׳", "'")
+        return re.sub(r"\s+", " ", n).strip()
+
+    try:
+        parents = fetch_all("")
+    except Exception as exc:
+        logger.warning(f"Nisim eSIM scraper failed (products fetch): {exc}")
+        return []
+
+    from db import _DEST_NORM
+    dest_by_parent, unmapped = {}, set()
+    for p in parents:
+        if p.get("type") != "variable":
+            continue
+        cats = {c.get("name") for c in p.get("categories") or []}
+        name = clean_name(p.get("name"))
+        if cats & _NISIM_SKIP_CATS or "test" in name.lower():
+            continue
+        dest = NISIM_REGION_NAMES.get(name)
+        if not dest:
+            dest = NISIM_NAME_FIX.get(name, name)
+            dest = _DEST_NORM.get(dest, dest)
+            if not re.fullmatch(r"[֐-׿][֐-׿ '\"()\-]*", dest):
+                unmapped.add(name)  # Latin/odd name — not a destination product
+                continue
+        dest_by_parent[p["id"]] = dest
+
+    try:
+        variations = fetch_all("type=variation")
+    except Exception as exc:
+        logger.warning(f"Nisim eSIM scraper failed (variations fetch): {exc}")
+        return []
+
+    best = {}  # plan_name -> plan dict (cheapest wins)
+    for v in variations:
+        dest = dest_by_parent.get(v.get("parent"))
+        if not dest:
+            continue
+        attrs = v.get("variation") or ""
+        # attribute labels vary per product: Days/days/ימים and Data/data/Data Plan
+        m_days = re.search(r"(?:days|ימים)\s*:\s*(\d+)", attrs, re.I)
+        m_data = re.search(r"data(?:\s*plan)?\s*:\s*([^,]+)", attrs, re.I)
+        if not m_days or not m_data:
+            continue
+        days = int(m_days.group(1))
+        data_txt = m_data.group(1).strip()
+        if re.search(r"x\s*\d", data_txt, re.I):
+            continue  # multi-line family tier (20GB X4) — not a consumer plan
+        if "ללא הגבלה" in data_txt or "unlimit" in data_txt.lower():
+            gb, gb_str = None, "ללא הגבלה"
+        else:
+            m_gb = re.match(r"([\d.]+)\s*(GB|MB)", data_txt, re.I)
+            if not m_gb:
+                continue
+            val = float(m_gb.group(1))
+            gb = round(val / 1024, 4) if m_gb.group(2).upper() == "MB" else val
+            gb_str = f"{m_gb.group(1)}{m_gb.group(2).upper()}"
+        try:
+            price = int((v.get("prices") or {}).get("price") or 0) / 100.0
+        except (TypeError, ValueError):
+            continue
+        if price <= 0 or days <= 0:
+            continue
+        day_unit = "יום" if days == 1 else "ימים"
+        plan_name = f"{dest} – {gb_str} – {days} {day_unit}"
+        if plan_name in best and best[plan_name]["price"] <= price:
+            continue  # keep the cheapest duplicate tier (UNIQUE(carrier, plan_name))
+        extras = [dest]
+        if gb is None:
+            extras.append("גלישה ללא הגבלה")
+        best[plan_name] = _make_global_plan(
+            "nisim", plan_name, price, "ILS", price,
+            data_gb=gb, days=days, esim=True, extras=extras,
+        )
+    if unmapped:
+        logger.warning(f"Nisim eSIM: skipped non-destination products {sorted(unmapped)}")
+    plans = list(best.values())
+    logger.info(f"Nisim eSIM: {len(plans)} plans from {len(dest_by_parent)} products")
+    return plans
+
+
 # ── Maya Mobile eSIM ─────────────────────────────────────────────────────────
 MAYA_SLUG_TO_HEBREW = {
     # Global & regions
@@ -9864,6 +10155,8 @@ def scrape_all_global():
         ("scrape_gomoworld_global",    lambda: scrape_gomoworld_global(gbp_rate=gbp_rate)),
         ("scrape_tasim_global",        lambda: scrape_tasim_global(usd_rate=usd_rate)),
         ("scrape_gigsky_global",       lambda: scrape_gigsky_global(usd_rate=usd_rate)),  # pure HTTP, no Playwright
+        ("scrape_esimgenius_global",   lambda: scrape_esimgenius_global(usd_rate=usd_rate)),  # pure HTTP, no Playwright
+        ("scrape_nisim_global",        lambda: scrape_nisim_global()),  # pure HTTP, ILS, no Playwright
         ("scrape_maya_global",         lambda: scrape_maya_global(usd_rate=usd_rate)),
         ("scrape_bcengi_global",       lambda: scrape_bcengi_global(usd_rate=usd_rate)),
         ("scrape_esim70_global",        lambda: scrape_esim70_global(eur_rate=eur_rate)),
@@ -10958,6 +11251,7 @@ GLOBAL_BANNER_URLS = {
     "esimplus":         "https://esimplus.me",
     "esimio":           "https://esim.io",
     "esim70":           "https://esim70.com",
+    "esimgenius":       "https://esimgenius.ai",
     "esimo":            "https://esimo.io",
     "terminalesim":     "https://terminalesim.com",
     "gigsky":           "https://www.gigsky.com",
@@ -10966,6 +11260,7 @@ GLOBAL_BANNER_URLS = {
     "holafly":          "https://esim.holafly.com",
     "jetpack":          "https://www.jetpacglobal.com",
     "maya":             "https://maya.net",
+    "nisim":            "https://www.nisim-esim.co.il",
     "orbit":            "https://orbitmobile.com",
     "saily":            "https://saily.com",
     "simtlv":           "https://simtlv.co.il",

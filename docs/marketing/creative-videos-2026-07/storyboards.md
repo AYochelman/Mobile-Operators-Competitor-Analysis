@@ -41,7 +41,9 @@ Businesswoman arrives at a Tokyo hotel unsure how to get connected; the receptio
 - [ ] concat v2_final - needs 2c first
 - [ ] concat v3_final - needs 3a/3b/3c first
 
-Resume tomorrow: reuse chat "Preparing for Vacation, One Pensive Moment" for 2c (prompt is clip 2c row above), start a fresh chat via Videos gallery template (sets Portrait 9:16 properly) for 3a/3b/3c in order.
+Resume: reuse chat "Preparing for Vacation, One Pensive Moment" for 2c (prompt is clip 2c row above), start a fresh chat via Videos gallery template (sets Portrait 9:16 properly) for 3a/3b/3c in order.
+
+GOTCHA (2026-07-11): Gemini video service was DEGRADED - generations hung ("Defining the Scope") or crawled 6+ min with no output. IMPORTANT model note: the composer defaults to "3.1 Flash-Lite" which handles video poorly (hangs / "I can't make that type of video" refusal). ALWAYS switch the model dropdown to "3.5 Flash" before sending a video prompt. Even on Flash the service was slow/stuck today - retry when Google's video capacity recovers (usually rendered in 60-90s on good days).
 
 ## Watermark (final step for EVERY video)
 After concatenating a v*_final.mp4, brand it:
