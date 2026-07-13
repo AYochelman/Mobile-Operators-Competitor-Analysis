@@ -6,11 +6,20 @@
 # (empty API_BASE) that would otherwise land on the apex/subdomain SPA and 404.
 # Must be FIRST — path-only, so it matches every host (apex + esim.mocaintel.com)
 # before the host/SPA rules below. Netlify appends the incoming query string.
-/go/*        https://api.mocaintel.com/go/:splat   302!
+/go/*        https://terra-nonrestrained-overpiteously.ngrok-free.dev/go/:splat   302!
 # "/" serves the pure-static prerendered marketing page (instant paint, no SPA
 # boot); "/hotels" serves the prerendered+hydrated Guest Connect marketing page;
 # every other path falls through to the SPA (index.html).
 #
+# Legal pages — clean URLs on BOTH hosts. The subdomain rules must precede the
+# esim host wildcard below (first match wins; /privacy is not a static file, so
+# the non-force host rule would otherwise swallow it into esim.html). The apex
+# rules sit with them for symmetry. https://mocaintel.com/privacy is the URL
+# Google Play / app stores get as the public privacy-policy link.
+https://esim.mocaintel.com/privacy  /privacy.html  200!
+https://esim.mocaintel.com/terms    /terms.html    200!
+/privacy     /privacy.html   200!
+/terms       /terms.html     200!
 # esim.mocaintel.com = the public B2C eSIM-compare microsite. Serve the eSIM SPA
 # shell (esim.html: same SPA boot as index.html, but with a canonical pointing at
 # the apex https://mocaintel.com/esim-deals) for the whole host, so App.jsx

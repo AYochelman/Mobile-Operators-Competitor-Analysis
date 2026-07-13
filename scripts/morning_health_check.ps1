@@ -83,33 +83,18 @@ $r = Restart-Service -Name "Flask" -Port 5000 -WaitSeconds 30 -Launcher {
 }
 if ($r) { [void]$results.Add($r) }
 
-# ---- Cloudflare tunnel (cloudflared) ----
-# Replaces ngrok as the public ingress (api.mocaintel.com -> :5000). cloudflared has
-# no stable local listen port, so check the PROCESS; if it's gone, (re)start the
-# MOCA-Cloudflared task (its watchdog relaunches cloudflared).
-if (Get-Process cloudflared -ErrorAction SilentlyContinue) {
-    Write-Log "cloudflared: UP"
-} else {
-    Write-Log "cloudflared: DOWN -- starting MOCA-Cloudflared task"
-    try {
-        Start-ScheduledTask -TaskName "MOCA-Cloudflared" -ErrorAction Stop
-        $deadline = (Get-Date).AddSeconds(20)
-        while ((Get-Date) -lt $deadline) {
-            Start-Sleep -Seconds 2
-            if (Get-Process cloudflared -ErrorAction SilentlyContinue) { break }
-        }
-        if (Get-Process cloudflared -ErrorAction SilentlyContinue) {
-            Write-Log "cloudflared restart: SUCCESS"
-            [void]$results.Add(@{ status = 'restarted'; name = 'cloudflared'; port = 0 })
-        } else {
-            Write-Log "cloudflared restart: FAILED (process not up after 20s)"
-            [void]$results.Add(@{ status = 'failed'; name = 'cloudflared'; port = 0; reason = 'process not up after 20s' })
-        }
-    } catch {
-        Write-Log "cloudflared restart EXCEPTION: $_"
-        [void]$results.Add(@{ status = 'failed'; name = 'cloudflared'; port = 0; reason = "$_" })
-    }
+# ---- Public API ingress: ngrok (port 4040 = local agent interface) ----
+# 2026-07-13: mocaintel.com is OFFLINE (employer request) - cloudflared/api.mocaintel.com
+# is intentionally down (see TUNNEL_DISABLED.flag). Do NOT re-add a cloudflared check
+# here while the takedown is in effect. The public ingress is back on the reserved
+# ngrok domain (terra-nonrestrained-overpiteously.ngrok-free.dev), approved by Alon.
+# The MOCA-Ngrok task can't be enabled without elevation, so this block launches the
+# watchdog DIRECTLY - it is also what brings ngrok back up after a reboot (within one
+# 10-minute cycle).
+$r = Restart-Service -Name "ngrok" -Port 4040 -WaitSeconds 20 -Launcher {
+    Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -NoProfile -File `"$NgrokWatchdog`"" -WindowStyle Hidden
 }
+if ($r) { [void]$results.Add($r) }
 
 # ---- Vite (5173) ----
 $r = Restart-Service -Name "Vite" -Port 5173 -WaitSeconds 30 -Launcher {
