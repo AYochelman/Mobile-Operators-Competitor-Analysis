@@ -2452,6 +2452,13 @@ def _make_global_plan(carrier, name, price_ils, currency, original_price,
     name = _html_unescape(name)
     if extras:
         extras = [_html_unescape(e) if isinstance(e, str) else e for e in extras]
+        # Canonicalize extras[0] (destination) at CREATION, mirroring the DB
+        # write path: change detection compares raw scraped extras against the
+        # _norm_extras-stored row, so a non-canonical dest here flapped
+        # extras_change on every scrape (~1,300 phantom changes/day across 20
+        # providers as of 2026-07-14). plan_name is deliberately untouched.
+        from db import _norm_extras
+        extras = _norm_extras(extras)
     # Insert RLM (\u200f) before digits after separators to fix BiDi rendering in RTL tables
     import re as _re
     name = _re.sub(r'( [\u2013-] )(\d)', lambda m: m.group(1) + '\u200f' + m.group(2), name)
@@ -8187,7 +8194,7 @@ ESIM70_ISO2_TO_HEBREW = {
     "NO": "\u05e0\u05d5\u05e8\u05d1\u05d2\u05d9\u05d4", "OM": "\u05e2\u05d5\u05de\u05df",
     "PK": "\u05e4\u05e7\u05d9\u05e1\u05d8\u05df", "PS": "\u05e4\u05dc\u05e1\u05d8\u05d9\u05df",
     "PA": "\u05e4\u05e0\u05de\u05d4", "PY": "\u05e4\u05e8\u05d0\u05d2\u05d5\u05d5\u05d0\u05d9",
-    "PE": "\u05e4\u05e8\u05d5", "PH": "\u05d4\u05d4\u05e4\u05d9\u05dc\u05d9\u05e4\u05d9\u05e0\u05d9\u05dd",
+    "PE": "\u05e4\u05e8\u05d5", "PH": "\u05d4\u05e4\u05d9\u05dc\u05d9\u05e4\u05d9\u05e0\u05d9\u05dd",
     "PL": "\u05e4\u05d5\u05dc\u05d9\u05df", "PT": "\u05e4\u05d5\u05e8\u05d8\u05d5\u05d2\u05dc",
     "PR": "\u05e4\u05d5\u05d0\u05e8\u05d8\u05d5 \u05e8\u05d9\u05e7\u05d5", "QA": "\u05e7\u05d8\u05e8",
     "RE": "\u05e8\u05d0\u05d5\u05e0\u05d9\u05d5\u05df", "RO": "\u05e8\u05d5\u05de\u05e0\u05d9\u05d4",
@@ -8207,7 +8214,8 @@ ESIM70_ISO2_TO_HEBREW = {
     "AE": "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea", "GB": "\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4",
     "US": "\u05d0\u05e8\u05e6\u05d5\u05ea \u05d4\u05d1\u05e8\u05d9\u05ea", "UY": "\u05d0\u05d5\u05e8\u05d5\u05d2\u05d5\u05d5\u05d0\u05d9",
     "UZ": "\u05d0\u05d5\u05d6\u05d1\u05e7\u05d9\u05e1\u05d8\u05df", "VE": "\u05d5\u05e0\u05e6\u05d5\u05d0\u05dc\u05d4",
-    "VN": "\u05d5\u05d9\u05d9\u05d8\u05e0\u05d0\u05dd",
+    "VN": "\u05d5\u05d9\u05d9\u05d8\u05e0\u05d0\u05dd", "ZM": "\u05d6\u05de\u05d1\u05d9\u05d4",
+    "GP": "\u05d2\u05d5\u05d5\u05d0\u05d3\u05dc\u05d5\u05e4",
 }
 
 ESIM70_REGION_BASE_TO_HEBREW = {
@@ -8226,37 +8234,50 @@ ESIM70_REGION_BASE_TO_HEBREW = {
 
 
 def scrape_esim70_global(_page=None, eur_rate=None):
-    """Scrape eSIM70 global plans via Lascade REST API — no Playwright needed."""
-    import urllib.request as _ur, json as _js
+    """Scrape eSIM70 global plans via Lascade REST API — no Playwright needed.
+
+    2026-07: the API dropped the bulk listing (plans/ now returns 400 without a
+    filter_country or region param), so we enumerate /api/countries/ (150 codes,
+    paginated) + /api/regions/ (9 slugs) and fetch per-country / per-region.
+    Plan payloads and names are unchanged, so plan_name keys stay stable.
+    """
+    import urllib.request as _ur, urllib.error as _ue, json as _js, time as _time
 
     if eur_rate is None:
         eur_rate = _get_eur_to_ils()
 
     all_plans = []
-    _LASCADE_BASE = (
-        "https://esim.lascade.com/api/plans/"
-        "?is_active=true&app_code=D1WE&billing_country=IL&currency=EUR"
-    )
+    _LASCADE_API = "https://esim.lascade.com/api"
+    _LASCADE_COMMON = "is_active=true&app_code=D1WE&billing_country=IL&currency=EUR"
     _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
 
-    def _fetch_all(plan_type):
-        results = []
-        page = 1
-        while True:
-            url = f"{_LASCADE_BASE}&plan_type={plan_type}&page={page}&limit=200"
+    def _get_json(url):
+        # ~160 per-country calls trip the API's rate limit — pace steadily and
+        # back off on 429 (honoring Retry-After when sent).
+        backoff = 10
+        for attempt in range(4):
+            _time.sleep(0.45)
             try:
                 req = _ur.Request(url, headers={"User-Agent": _UA})
                 with _ur.urlopen(req, timeout=20) as r:
-                    data = _js.loads(r.read())
-                batch = data.get("results", [])
-                results.extend(batch)
-                if not data.get("next"):
-                    break
-                page += 1
-            except Exception as e:
-                logger.warning(f"eSIM70 {plan_type} page {page}: {e}")
-                break
-        return results
+                    return _js.loads(r.read())
+            except _ue.HTTPError as e:
+                if e.code == 429 and attempt < 3:
+                    retry_after = e.headers.get("Retry-After") or ""
+                    _time.sleep(min(int(retry_after) if retry_after.isdigit() else backoff, 120))
+                    backoff *= 2
+                    continue
+                raise
+
+    def _paged(url):
+        """Yield results across DRF-style pagination (follows 'next' links)."""
+        while url:
+            data = _get_json(url)
+            if isinstance(data, list):  # /regions/ returns a bare list
+                yield from data
+                return
+            yield from (data.get("results") or [])
+            url = data.get("next")
 
     def _region_heb(raw_name):
         base = re.sub(r"\s+\d+\s+days?\s+unlim$", "", raw_name, flags=re.IGNORECASE).strip()
@@ -8281,7 +8302,9 @@ def scrape_esim70_global(_page=None, eur_rate=None):
             codes = p.get("countries", [])
             if not codes:
                 return None
-            heb_name = ESIM70_ISO2_TO_HEBREW.get(codes[0]["code"], codes[0].get("name", ""))
+            heb_name = ESIM70_ISO2_TO_HEBREW.get(codes[0]["code"]) or codes[0].get("name") or ""
+            if not heb_name:
+                return None
 
         if is_unlimited:
             data_gb = None
@@ -8296,12 +8319,39 @@ def scrape_esim70_global(_page=None, eur_rate=None):
             data_gb=data_gb, days=days, esim=True, extras=[heb_name],
         )
 
-    for plan_type in ("region", "country"):
-        raw_plans = _fetch_all(plan_type)
-        for p in raw_plans:
-            plan = _build_plan(plan_type, p)
-            if plan:
-                all_plans.append(plan)
+    try:
+        region_slugs = [r["slug"] for r in _paged(f"{_LASCADE_API}/regions/?app_code=D1WE")]
+    except Exception as e:
+        logger.warning(f"eSIM70 regions list: {e}")
+        region_slugs = []
+    try:
+        country_codes = [c["code"] for c in _paged(f"{_LASCADE_API}/countries/?app_code=D1WE")]
+    except Exception as e:
+        logger.warning(f"eSIM70 countries list: {e}")
+        country_codes = []
+
+    # A plan covering several countries comes back once per covered country —
+    # dedupe by API id so it lands as a single row (keyed to countries[0], as
+    # the old bulk listing did).
+    seen_ids = set()
+
+    def _collect(plan_type, filt):
+        try:
+            for p in _paged(f"{_LASCADE_API}/plans/?{_LASCADE_COMMON}&plan_type={plan_type}&{filt}&limit=200"):
+                pid = p.get("id")
+                if pid in seen_ids:
+                    continue
+                seen_ids.add(pid)
+                plan = _build_plan(plan_type, p)
+                if plan:
+                    all_plans.append(plan)
+        except Exception as e:
+            logger.warning(f"eSIM70 {plan_type} {filt}: {e}")
+
+    for slug in region_slugs:
+        _collect("region", f"region={slug}")
+    for code in country_codes:
+        _collect("country", f"filter_country={code}")
 
     logger.info(f"eSIM70 global: {len(all_plans)} plans")
     return all_plans
@@ -8499,7 +8549,7 @@ BREEZ_EN_TO_HEBREW = {
     "Czech Republic": "\u05e6'\u05db\u05d9\u05d4",
     "Montenegro": "\u05de\u05d5\u05e0\u05d8\u05e0\u05d2\u05e8\u05d5",
     "Ecuador": "\u05d0\u05e7\u05d5\u05d5\u05d3\u05d5\u05e8",
-    "Philippines": "\u05d4\u05d4\u05e4\u05d9\u05dc\u05d9\u05e4\u05d9\u05e0\u05d9\u05dd",
+    "Philippines": "\u05d4\u05e4\u05d9\u05dc\u05d9\u05e4\u05d9\u05e0\u05d9\u05dd",
     "Israel": "\u05d9\u05e9\u05e8\u05d0\u05dc",
     "Antigua And Barbuda": "\u05d0\u05e0\u05d8\u05d9\u05d2\u05d5\u05d0\u05d4 \u05d5\u05d1\u05e8\u05d1\u05d5\u05d3\u05d4",
     "Denmark": "\u05d3\u05e0\u05de\u05e8\u05e7",
