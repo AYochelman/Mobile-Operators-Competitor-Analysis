@@ -50,6 +50,9 @@ scripts/cloudflared.exe
 # Local Netlify folder
 .netlify
 
+# Packaged sites-moca build (dist tarball) — regenerable from sites-moca/, never committed
+sites-moca-package.tar.gz
+
 # TWA (Google Play) - signing key + credentials must NEVER be committed
 twa/android.keystore
 twa/.keystore-pass
