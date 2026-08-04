@@ -45,13 +45,14 @@ import {
   SEVEN_G_REGION_MAP,
   GIGSKY_REGION_MAP,
   ESIMGENIUS_REGION_MAP,
+  ESIMAX_REGION_MAP, ESIMAX_EUROPE_30,
 } from '../data/globalCountries'
 
 // Carriers where one plan covers many countries (zone/global plans)
 const MULTI_COUNTRY_CARRIERS = new Set([
   'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
   'pelephone_global', 'esimo', 'terminalesim', 'gomoworld', 'maya', 'besim',
-  'bestconnect', 'esimplus', 'seven_g', 'gigsky', 'esimgenius',
+  'bestconnect', 'esimplus', 'seven_g', 'gigsky', 'esimgenius', 'esimax',
 ])
 
 const TERMINAL_REGION_MAP = {
@@ -125,6 +126,12 @@ function getPlanCoverage(plan) {
     // Regional + global bundles expand to their coverage list; per-country
     // plans return null → extras[0] equality.
     return ESIMGENIUS_REGION_MAP[dest] || null
+  }
+  if (carrier === 'esimax') {
+    // "אירופה 30+" shares dest 'אירופה' with the full-Europe bundle but covers
+    // fewer countries — match it by plan-name prefix before the dest lookup.
+    if (name.startsWith('אירופה 30+')) return ESIMAX_EUROPE_30
+    return ESIMAX_REGION_MAP[dest] || null
   }
   if (carrier === 'seven_g') {
     // plan_name first segment is the English region name (e.g. "Asia (12 areas)")

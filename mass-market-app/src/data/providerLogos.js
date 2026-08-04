@@ -19,6 +19,7 @@ export const PROVIDER_LOGOS = {
   gigsky:           '/logos/gigsky.png', // square GS monogram icon
   esimgenius:       '/logos/esimgenius.png',
   nisim:            '/logos/nisim.png',
+  esimax:           '/logos/esimax.png', // square M monogram icon
 
   airalo:           '/logos/airalo.png',
   airalo_local:     '/logos/airalo.png',

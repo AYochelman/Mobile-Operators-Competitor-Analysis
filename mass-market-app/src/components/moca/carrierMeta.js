@@ -64,6 +64,7 @@ export const CARRIER_LOGOS = {
   gigsky:           '/logos/gigsky.png',
   esimgenius:       '/logos/esimgenius.png',
   nisim:            '/logos/nisim.png',
+  esimax:           '/logos/esimax.png',
   airalo:           '/logos/airalo.png',
   airalo_local:     '/logos/airalo.png',
   airalo_regional:  '/logos/airalo.png',

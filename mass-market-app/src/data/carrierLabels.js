@@ -72,6 +72,7 @@ export const GLOBAL_PROVIDERS_REGISTRY = [
   { id: 'esimplus',         label: 'eSIM Plus',    color: 'blue',    chartColor: '#059669', israeli: false },
   { id: 'esimio',           label: 'eSIM.io',      color: 'blue',    chartColor: '#2563eb', israeli: false },
   { id: 'esimgenius',       label: 'eSIM Genius',  color: 'violet',  chartColor: '#8b5cf6', israeli: false },
+  { id: 'esimax',           label: 'eSIM Max',     color: 'pink',    chartColor: '#b70a4d', israeli: true },
   { id: 'esim70',           label: 'eSIM70',       color: 'emerald', chartColor: '#10b981', israeli: false },
   { id: 'esimo',            label: 'eSIMo',        color: 'purple',  chartColor: '#a855f7', israeli: false },
   { id: 'terminalesim',     label: 'Terminal eSIM', color: 'green',  chartColor: '#22c55e', israeli: true },

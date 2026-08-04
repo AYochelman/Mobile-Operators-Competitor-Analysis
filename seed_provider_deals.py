@@ -390,6 +390,17 @@ DEALS = [
         "notes": "ספק ישראלי (נוסף 11/07/2026): חנות WooCommerce, ~489 חבילות ILS, ~90 מדינות + 11 מוצרים אזוריים/גלובליים (סריקת Store API טהורה, כולל וריאציות עם תוויות עברית 'ימים:'). מסונן: מוצרי TEST + מבצעי משפחה מרובי-קווים. כתובת: אריאל שרון 4, גבעתיים.",
     },
     {
+        "provider_id": "esimax", "display_name": "eSIM Max", "category": "global",
+        "is_israeli": True,
+        "outreach_status": "not_contacted",
+        "contact": "טופס יצירת קשר באתר (esimax.io/contact-us); אין מייל/טלפון פומבי. פייסבוק + אינסטגרם: esimax.il",
+        "agreement_status": "none",
+        "coupon_note": "אין קופון. תוכנית שותפים לא ידועה - לשאול בפנייה ראשונה.",
+        "has_tracking_link": False, "priority": "med",
+        "next_actions": "פנייה ראשונה דרך טופס יצירת הקשר באתר - שיתוף פעולה / לינק מעקב / קופון MOCA.",
+        "notes": "ספק ישראלי (נוסף 26/07/2026): אתר עברית מלא (esimax.io, WooCommerce), ~1,100 חבילות USD, 165 מדינות + 13 חבילות אזוריות + גלובלי (סריקת Store API טהורה - הורים + וריאציות type=variation). מסונן: מוצר test. שני מוצרי אירופה (41 מדינות מול 'אירופה 30+' עם 34).",
+    },
+    {
         "provider_id": "esimgenius", "display_name": "eSIM Genius", "category": "global",
         "outreach_status": "contacted", "outreach_last_at": "2026-07-11",
         "contact": "hello@esimgenius.ai",
