@@ -181,6 +181,7 @@ export function useDashboardData(oursCarrier, carrierIds) {
   const [plans, setPlans] = useState([])
   const [changes, setChanges] = useState([])
   const [abroadChanges, setAbroadChanges] = useState([])
+  const [globalChanges, setGlobalChanges] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -191,11 +192,16 @@ export function useDashboardData(oursCarrier, carrierIds) {
       api.getPlans().catch(() => []),
       api.getChanges(300).catch(() => []),
       api.getAbroadChanges().catch(() => []),
-    ]).then(([planData, changeData, abroadData]) => {
+      // 500 (endpoint max): one provider repricing its catalog can occupy
+      // hundreds of consecutive rows, and the per-carrier cap below needs
+      // enough depth to still surface the other providers.
+      api.getGlobalChanges(500).catch(() => []),
+    ]).then(([planData, changeData, abroadData, globalData]) => {
       if (!alive) return
       setPlans(Array.isArray(planData) ? planData : (planData?.plans || []))
       setChanges(Array.isArray(changeData) ? changeData : (changeData?.changes || []))
       setAbroadChanges(Array.isArray(abroadData) ? abroadData : (abroadData?.changes || []))
+      setGlobalChanges(Array.isArray(globalData) ? globalData : (globalData?.changes || []))
       setLoading(false)
     }).catch((e) => {
       if (!alive) return
@@ -226,5 +232,31 @@ export function useDashboardData(oursCarrier, carrierIds) {
     return arr.slice(0, 30)
   }, [changes, abroadChanges])
 
-  return { loading, error, plans, changes, leadChange, kpis, heatmap, recentChanges }
+  // Global eSIM provider changes — separate scope for the feed's toggle. The
+  // volume is far higher than domestic (hundreds of price moves/day across ~30
+  // providers), so it gets its own list instead of drowning the operators feed.
+  // A single provider repricing its whole catalog lands hundreds of rows with
+  // one timestamp, so cap per-provider to keep the 30-row window diverse.
+  const globalRecentChanges = useMemo(() => {
+    const arr = (globalChanges || [])
+      .map((c) => ({ ...c, scope: 'global' }))
+      .filter(isValidChange)
+    arr.sort((a, b) => {
+      const ta = a?.changed_at ? new Date(a.changed_at).getTime() : 0
+      const tb = b?.changed_at ? new Date(b.changed_at).getTime() : 0
+      return tb - ta
+    })
+    const perCarrier = new Map()
+    const capped = []
+    for (const c of arr) {
+      const n = perCarrier.get(c.carrier) || 0
+      if (n >= 6) continue
+      perCarrier.set(c.carrier, n + 1)
+      capped.push(c)
+      if (capped.length >= 30) break
+    }
+    return capped
+  }, [globalChanges])
+
+  return { loading, error, plans, changes, leadChange, kpis, heatmap, recentChanges, globalRecentChanges }
 }

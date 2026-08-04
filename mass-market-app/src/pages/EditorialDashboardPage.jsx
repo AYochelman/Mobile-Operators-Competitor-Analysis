@@ -255,24 +255,38 @@ function BenefitDiffRows({ diff }) {
   )
 }
 
-/** Recent-changes feed with filter pills. */
-function ChangeFeed({ changes, onItemClick }) {
+/** Recent-changes feed with scope toggle (carriers / global eSIM) + filter pills. */
+function ChangeFeed({ changes, globalChanges, onItemClick }) {
   const { tt } = useLang()
+  const [scope, setScope] = useState('operators')
   const [filter, setFilter] = useState('new')
+
+  // Global scrapes never log new_plan/removed_plan (dropped by design in the 3
+  // global scrape paths), so those pills are structurally empty — hide them.
+  const scopeFilters = scope === 'global'
+    ? FILTERS.filter((f) => ['price', 'extras', 'all'].includes(f.id))
+    : FILTERS
+
+  const switchScope = (next) => {
+    if (next === scope) return
+    setScope(next)
+    setFilter(next === 'global' ? 'price' : 'new')
+  }
 
   // Enrich extras_change rows with a material (noise-suppressed) diff and drop
   // the ones that turn out to be text-only churn — reordered or reworded
   // benefits with no change in essence. Counts and rows both derive from this,
   // so the "שינויים בהטבות" tally reflects real changes only.
-  const enriched = useMemo(() => (
-    changes
+  const enriched = useMemo(() => {
+    const source = scope === 'global' ? (globalChanges || []) : (changes || [])
+    return source
       .map((c) => (
         c.change_type === 'extras_change'
           ? { c, diff: materialDiff(c.old_val, c.new_val) }
           : { c, diff: null }
       ))
       .filter(({ diff }) => !diff || diff.added.length > 0 || diff.removed.length > 0)
-  ), [changes])
+  }, [scope, globalChanges, changes])
 
   const filtered = useMemo(() => {
     const pred = FILTERS.find((f) => f.id === filter)?.predicate || (() => true)
@@ -290,24 +304,50 @@ function ChangeFeed({ changes, onItemClick }) {
       }}
     >
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
-        <h2
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 16,
-            fontWeight: 800,
-            color: 'var(--color-moca-dark)',
-            letterSpacing: -0.2,
-            margin: 0,
-          }}
-        >
-          {tt('שינויים אחרונים', 'Recent changes')}
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 16,
+              fontWeight: 800,
+              color: 'var(--color-moca-dark)',
+              letterSpacing: -0.2,
+              margin: 0,
+            }}
+          >
+            {tt('שינויים אחרונים', 'Recent changes')}
+          </h2>
+          {/* Scope toggle — carriers vs global eSIM providers */}
+          <div style={{ display: 'inline-flex', border: '1px solid var(--color-moca-border)', borderRadius: 999, overflow: 'hidden' }}>
+            {[
+              { id: 'operators', he: 'מפעילים', en: 'Carriers' },
+              { id: 'global', he: 'ספקי eSIM', en: 'eSIM providers' },
+            ].map((s) => (
+              <button
+                key={s.id}
+                onClick={() => switchScope(s.id)}
+                style={{
+                  padding: '4px 12px',
+                  border: 'none',
+                  background: scope === s.id ? 'var(--color-moca-dark)' : 'transparent',
+                  color: scope === s.id ? '#fff' : 'var(--color-moca-sub)',
+                  fontSize: 11.5,
+                  fontWeight: scope === s.id ? 700 : 500,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {tt(s.he, s.en)}
+              </button>
+            ))}
+          </div>
+        </div>
         <span style={{ fontSize: 11, color: 'var(--color-moca-muted)' }}>{tt('לחץ על כל שורה לפרטים', 'Click any row for details')}</span>
       </header>
 
       {/* Filter pills */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-        {FILTERS.map((f) => {
+        {scopeFilters.map((f) => {
           const active = filter === f.id
           const matches = enriched.filter((e) => f.predicate(e.c)).length
           return (
@@ -616,7 +656,7 @@ export default function EditorialDashboardPage() {
     [visibleCarriers],
   )
 
-  const { loading, plans, leadChange, kpis, heatmap, recentChanges } =
+  const { loading, plans, leadChange, kpis, heatmap, recentChanges, globalRecentChanges } =
     useDashboardData(oursCarrier, heatmapCarriers)
 
   if (loading) {
@@ -677,8 +717,9 @@ export default function EditorialDashboardPage() {
         {/* Recent changes feed */}
         <ChangeFeed
           changes={recentChanges}
+          globalChanges={globalRecentChanges}
           onItemClick={(c) => {
-            const base = c.scope === 'abroad' ? '/roaming' : '/plans'
+            const base = c.scope === 'abroad' ? '/roaming' : c.scope === 'global' ? '/esim' : '/plans'
             navigate(`${base}?carrier=${c.carrier}&highlight=${encodeURIComponent(c.plan_name || '')}`)
           }}
         />

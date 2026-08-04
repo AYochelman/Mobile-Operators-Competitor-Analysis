@@ -44,7 +44,7 @@ export const api = {
   getAbroadPlans:  (params) => fetchApi(`/api/abroad-plans${params ? '?' + new URLSearchParams(params) : ''}`),
   getAbroadChanges:() => fetchApi('/api/abroad-changes'),
   getGlobalPlans:  (params) => fetchApi(`/api/global-plans${params ? '?' + new URLSearchParams(params) : ''}`),
-  getGlobalChanges:() => fetchApi('/api/global-changes'),
+  getGlobalChanges:(limit = 50) => fetchApi(`/api/global-changes?limit=${limit}`),
   getResellerPlans: (params) => fetchApi(`/api/reseller-plans${params ? '?' + new URLSearchParams(params) : ''}`),
   getUsaPlans:     (params) => fetchApi(`/api/usa-plans${params ? '?' + new URLSearchParams(params) : ''}`),
   getContentPlans: (params) => fetchApi(`/api/content-plans${params ? '?' + new URLSearchParams(params) : ''}`),
