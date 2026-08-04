@@ -9049,10 +9049,20 @@ BREEZ_HEB_TO_HANDLE = {
 
 
 def scrape_breez_global(_page=None, usd_rate=None):
-    """Scrape Breeze eSIM global plans via Shopify JSON API (ILS pricing, no browser)."""
+    """Scrape Breeze eSIM global plans via Shopify JSON API (USD base pricing, no browser).
+
+    Prices are fetched in the shop's BASE currency (USD) and converted to ILS
+    with usd_rate. Do NOT request `currency=ILS` from Shopify — its converted
+    prices are re-rounded against a daily FX rate, so the whole catalog
+    "changed price" by ±1 ₪ every day (~700 phantom price_change events/day,
+    fixed 2026-07-26). currency='USD' + original_price=USD lets
+    change_detector compare the stable USD value.
+    """
     import requests as _req
     import re as _re
 
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
     base = "https://breezesim.com"
     all_plans = []
     seen_names = set()
@@ -9075,7 +9085,7 @@ def scrape_breez_global(_page=None, usd_rate=None):
             try:
                 r = _req.get(
                     f"{base}/collections/{collection_handle}/products.json",
-                    params={"limit": 250, "page": page, "currency": "ILS"},
+                    params={"limit": 250, "page": page},
                     timeout=25,
                 )
                 r.raise_for_status()
@@ -9112,10 +9122,10 @@ def scrape_breez_global(_page=None, usd_rate=None):
                 if days is None:
                     continue
                 try:
-                    price = float(variant.get("price", 0))
+                    usd = float(variant.get("price", 0))
                 except (ValueError, TypeError):
                     continue
-                if price <= 0:
+                if usd <= 0:
                     continue
 
                 gb_str = (f"{int(data_gb)}GB" if data_gb is not None
@@ -9128,7 +9138,7 @@ def scrape_breez_global(_page=None, usd_rate=None):
                 seen_names.add(plan_name)
 
                 all_plans.append(_make_global_plan(
-                    "breez", plan_name, price, "ILS", price,
+                    "breez", plan_name, usd * usd_rate, "USD", usd,
                     data_gb=data_gb, days=days, esim=True, extras=[heb_name],
                 ))
 
@@ -10338,7 +10348,7 @@ def scrape_all_global():
         ("scrape_esim70_global",        lambda: scrape_esim70_global(eur_rate=eur_rate)),
         ("scrape_bnesim_global",        lambda: scrape_bnesim_global(eur_rate=eur_rate)),
         ("scrape_jetpack_global",       lambda: scrape_jetpack_global(usd_rate=usd_rate)),
-        ("scrape_breez_global",         scrape_breez_global),
+        ("scrape_breez_global",         lambda: scrape_breez_global(usd_rate=usd_rate)),
         ("scrape_bytesim_global",       lambda: scrape_bytesim_global(usd_rate=usd_rate)),
         ("scrape_bytesim_regions",      lambda: scrape_bytesim_regions(usd_rate=usd_rate)),
         ("scrape_besim_global",         lambda: scrape_besim_global(usd_rate=usd_rate)),
