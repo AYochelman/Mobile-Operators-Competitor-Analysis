@@ -3516,7 +3516,10 @@ def save_reseller_plans(plans, db_path=None):
 # broke — seed-only sources (Facebook ads, login-gated clubs) are excluded so
 # they don't raise false staleness alarms.
 AUTO_SCRAPED_RESELLER_IDS = {
-    "pelephon4u", "pelephone_join",            # legacy per-site modules
+    # "pelephon4u" removed 2026-07-26 — site 403 (Cloudways domain unmapped)
+    # since ~2026-07-12; module also dropped from RESELLER_SCRAPER_MODULES.
+    # Re-add both if pelephon4u.co.il returns.
+    "pelephone_join",                          # legacy per-site modules
     "tiber", "zol_li", "kamaze",               # btl_scrapers — third-party sites
     "wecom_site", "rami_levy_landing",         # btl_scrapers — carrier pages
     "tikshoretishit", "clubdeal",

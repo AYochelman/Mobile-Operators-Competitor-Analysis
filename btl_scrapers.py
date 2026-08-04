@@ -339,11 +339,11 @@ WECOM_URL = "https://we-com.co.il/sim-data/"
 def scrape_wecom_simdata() -> list[dict]:
     text = _fetch_text(WECOM_URL)
     plans = []
-    # 2026-07 redesign copy: "דור 4 500GB התוכנית כוללת ... 19.90 ₪ לחודש" — a
-    # descriptive paragraph now sits between the card title and the price (the old
-    # terse "סים דאטה דור 4 500GB 19.90 ₪" strip is gone), hence the bounded window.
-    for m in re.finditer(r"דור (\d)\s*(\d{2,4})GB.{0,300}?(\d{1,3}(?:\.\d{1,2})?)\s*₪\s*לחודש", text, re.S):
-        gen, gb, price = m.group(1), int(m.group(2)), float(m.group(3))
+    # 2026-07 (late) copy: "התוכנית כוללת 500GB גלישה סלולרית בישראל ברשת דור 4 ...
+    # 19.90 ₪ לחודש" — the GB now precedes the generation ("ברשת דור N"). The
+    # descriptive paragraph between GB and price keeps the bounded window.
+    for m in re.finditer(r"(\d{2,4})GB[^₪]{0,60}?ברשת דור (\d).{0,300}?(\d{1,3}(?:\.\d{1,2})?)\s*₪\s*לחודש", text, re.S):
+        gb, gen, price = int(m.group(1)), m.group(2), float(m.group(3))
         plans.append({
             "reseller_id": "wecom_site", "carrier": "wecom",
             "plan_name": f"סים דאטה דור {gen} — {gb}GB",
