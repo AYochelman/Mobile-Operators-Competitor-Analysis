@@ -19,15 +19,23 @@ if (!existsSync(sitemapPath)) throw new Error('stamp-sitemap: missing ' + sitema
 const today = new Date().toISOString().slice(0, 10)
 let xml = readFileSync(sitemapPath, 'utf8')
 
-let stamped = 0
-xml = xml.replace(
-  /(<loc>https:\/\/mocaintel\.com\/esim-deals[^<]*<\/loc>[\s\S]*?<lastmod>)[^<]+(<\/lastmod>)/g,
-  (_, pre, post) => {
-    stamped += 1
-    return pre + today + post
-  },
-)
-if (stamped === 0) throw new Error('stamp-sitemap: no /esim-deals <lastmod> entries found - sitemap structure changed?')
+// Daily-refreshing consumer pages whose <lastmod> is stamped with the build
+// date. Each path fails the build loudly on its own if its entries vanish.
+// Add 'mobile-deals' here at the /mobile-deals public launch (Stage 2 — the
+// page has no sitemap entries during the super-admin preview stage).
+const STAMP_PATHS = ['esim-deals']
+
+for (const p of STAMP_PATHS) {
+  let stamped = 0
+  xml = xml.replace(
+    new RegExp(`(<loc>https://mocaintel\\.com/${p}[^<]*</loc>[\\s\\S]*?<lastmod>)[^<]+(</lastmod>)`, 'g'),
+    (_, pre, post) => {
+      stamped += 1
+      return pre + today + post
+    },
+  )
+  if (stamped === 0) throw new Error(`stamp-sitemap: no /${p} <lastmod> entries found - sitemap structure changed?`)
+  console.log(`stamp-sitemap: stamped ${stamped} /${p} lastmod entries with ${today}`)
+}
 
 writeFileSync(sitemapPath, xml, 'utf8')
-console.log(`stamp-sitemap: stamped ${stamped} /esim-deals lastmod entries with ${today}`)

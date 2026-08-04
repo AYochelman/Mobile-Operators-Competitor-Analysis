@@ -321,6 +321,23 @@ export const api = {
   // B2C traffic dashboard data (admin only). days=0 = lifetime.
   getEsimAnalytics: (days = 30) => fetchApi(`/api/esim/analytics?days=${days}`),
 
+  // ── Public B2C domestic mobile comparison (/mobile-deals, no auth) ─────────
+  // Normalized domestic rate-card feed + per-carrier summary (server handles the
+  // data quirks: unlimited encodings, voice-only kosher rows, ₪/GB guard, chips).
+  getMobileCompare: () => fetchApi('/api/mobile/compare'),
+  // Anonymous traffic beacon (page_view / tab_pick / carrier_click). Fire-and-forget.
+  trackMobile: (payload) =>
+    fetchApi('/api/mobile/event', { method: 'POST', body: JSON.stringify(payload), keepalive: true }).catch(() => {}),
+  // Domestic price-drop web-push alert (public). carrier is a domestic id or
+  // 'all'; one alert per device — re-subscribing moves it.
+  mobilePushSubscribe: (subscription, carrier, lang, extra = {}) =>
+    fetchApi('/api/mobile/push/subscribe', {
+      method: 'POST',
+      body: JSON.stringify({ subscription, carrier, lang, ...extra }),
+    }),
+  mobilePushUnsubscribe: (endpoint) =>
+    fetchApi('/api/mobile/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
+
   // Operator console — super_admin (or dev API key).
   getHotels:         () => fetchApi('/api/hotels'),
   createHotel:       (data) => fetchApi('/api/hotels', { method: 'POST', body: JSON.stringify(data) }),

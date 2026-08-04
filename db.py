@@ -281,6 +281,20 @@ def init_db(db_path=None):
                 created_at       TEXT NOT NULL,
                 last_notified_at TEXT
             );
+            -- Price-drop alerts for the public /mobile-deals page (domestic plans).
+            -- Keyed on a carrier id or 'all' — EVENT-driven off the domestic
+            -- change log (no baseline column; domestic change detection is
+            -- reliable per (carrier, plan_name), unlike global).
+            CREATE TABLE IF NOT EXISTS mobile_push_subscriptions (
+                id               INTEGER PRIMARY KEY,
+                endpoint         TEXT NOT NULL UNIQUE,
+                p256dh           TEXT NOT NULL,
+                auth             TEXT NOT NULL,
+                carrier          TEXT DEFAULT 'all',
+                lang             TEXT DEFAULT 'he',
+                created_at       TEXT NOT NULL,
+                last_notified_at TEXT
+            );
             CREATE TABLE IF NOT EXISTS abroad_changes (
                 id          INTEGER PRIMARY KEY,
                 carrier     TEXT NOT NULL,
@@ -460,6 +474,24 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_esim_events_at
                 ON esim_events(created_at);
+            -- Anonymous traffic events for the public B2C /mobile-deals page
+            -- (domestic plan comparison). Same privacy model as esim_events:
+            -- ip hashed, sid is a random per-browser-session token.
+            CREATE TABLE IF NOT EXISTS mobile_events (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                sid         TEXT,
+                event_type  TEXT NOT NULL,   -- page_view | tab_pick | carrier_click | push_subscribe
+                tab         TEXT,            -- domestic | roaming | content
+                carrier     TEXT,            -- clicked / subscribed carrier id
+                src         TEXT,            -- acquisition source (utm_source / referrer host)
+                campaign    TEXT,            -- specific post/video (utm_campaign / campaign)
+                lang        TEXT,
+                referrer    TEXT,            -- referrer host only
+                ip_hash     TEXT,
+                created_at  TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_mobile_events_at
+                ON mobile_events(created_at);
             CREATE TABLE IF NOT EXISTS workspace_invites (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 token        TEXT NOT NULL UNIQUE,
@@ -936,6 +968,31 @@ def log_esim_event(event_type, sid=None, destination=None, src=None, campaign=No
                 "(sid, event_type, destination, src, campaign, lang, referrer, ip_hash, created_at) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 ((sid or "")[:40] or None, str(event_type)[:30], destination,
+                 (src or "")[:60] or None, (campaign or "")[:80] or None,
+                 (lang or "")[:8] or None, (referrer or "")[:120] or None, ip_hash,
+                 datetime.now(timezone.utc).isoformat())
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        pass
+
+
+def log_mobile_event(event_type, sid=None, tab=None, carrier=None, src=None,
+                     campaign=None, lang=None, referrer=None, ip_hash=None, db_path=None):
+    """Best-effort anonymous B2C /mobile-deals page event. NEVER raises into the caller."""
+    if not event_type:
+        return
+    try:
+        conn = _connect(db_path)
+        try:
+            conn.execute(
+                "INSERT INTO mobile_events "
+                "(sid, event_type, tab, carrier, src, campaign, lang, referrer, ip_hash, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                ((sid or "")[:40] or None, str(event_type)[:30],
+                 (tab or "")[:20] or None, (carrier or "")[:30] or None,
                  (src or "")[:60] or None, (campaign or "")[:80] or None,
                  (lang or "")[:8] or None, (referrer or "")[:120] or None, ip_hash,
                  datetime.now(timezone.utc).isoformat())
@@ -2210,6 +2267,65 @@ def update_esim_push_baseline(endpoint, price, notified=False, db_path=None):
             conn.execute(
                 "UPDATE esim_push_subscriptions SET baseline_price=? WHERE endpoint=?",
                 (price, endpoint))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def save_mobile_push_subscription(endpoint, p256dh, auth, carrier="all", lang="he",
+                                  db_path=None):
+    """UPSERT by endpoint — re-subscribing from the same browser with a new
+    carrier MOVES the alert (one domestic price-drop alert per device)."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO mobile_push_subscriptions "
+            "(endpoint, p256dh, auth, carrier, lang, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(endpoint) DO UPDATE SET "
+            "p256dh=excluded.p256dh, auth=excluded.auth, carrier=excluded.carrier, "
+            "lang=excluded.lang, last_notified_at=NULL",
+            (endpoint, p256dh, auth, carrier or "all", lang,
+             datetime.now().isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def delete_mobile_push_subscription(endpoint, db_path=None):
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute("DELETE FROM mobile_push_subscriptions WHERE endpoint=?", (endpoint,))
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
+def get_mobile_push_subscriptions(db_path=None):
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT endpoint, p256dh, auth, carrier, lang, last_notified_at "
+            "FROM mobile_push_subscriptions"
+        ).fetchall()
+        return [
+            {"endpoint": r[0], "keys": {"p256dh": r[1], "auth": r[2]},
+             "carrier": r[3] or "all", "lang": r[4] or "he", "last_notified_at": r[5]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def touch_mobile_push_notified(endpoint, db_path=None):
+    """Stamp last_notified_at — a push was actually delivered to this endpoint."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "UPDATE mobile_push_subscriptions SET last_notified_at=? WHERE endpoint=?",
+            (datetime.now().isoformat(), endpoint))
         conn.commit()
     finally:
         conn.close()

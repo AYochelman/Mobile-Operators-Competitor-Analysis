@@ -149,6 +149,7 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:5000", "http://127.0.0.1:5173",
     "https://www.mocaintel.com", "https://mocaintel.com",
     "https://esim.mocaintel.com",  # public B2C eSIM compare microsite (its own origin)
+    "https://mobile.mocaintel.com",  # public B2C domestic-plans microsite (/mobile-deals)
     "https://lucent-kulfi-f037ad.netlify.app",  # legacy Netlify subdomain — kept as fallback
     # extra origins added dynamically via ALLOWED_ORIGINS env var
 ]
@@ -2120,6 +2121,218 @@ def api_esim_analytics():
     return jsonify(get_esim_analytics(days=days, db_path=_db_path()))
 
 
+# ── Public B2C domestic mobile comparison (/mobile-deals, no auth) ───────────
+# The domestic twin of the eSIM consumer feed: all rate-card plans of the 10
+# Israeli carriers, server-normalized so the public page (and future static
+# prerenders) never re-implement the data quirks: unlimited encodings
+# (data_gb>=9999 / NULL), voice-only kosher rows, conditional multi-line
+# prices, the sub-GB ₪/GB distortion, __info__ extraction and chip curation.
+import re as _re_mobile
+
+_MOBILE_CARRIERS = {
+    'partner': 'פרטנר', 'pelephone': 'פלאפון', 'hotmobile': 'הוט מובייל',
+    'cellcom': 'סלקום', 'mobile019': '019', 'xphone': 'XPhone',
+    'wecom': 'We-Com', 'neptucom': 'Neptucom', 'golan': 'גולן טלקום',
+    'rami_levy': 'רמי לוי תקשורת',
+}
+
+# Facet classifiers — Python ports of the dashboard's regexes. Keep in sync with
+# mass-market-app/src/data/networkPriority.js (5G / priority) and the
+# roaming-included matcher in DashboardPage.jsx baseFilteredPlans.
+# All run on an UPPERCASED haystack (Hebrew is unaffected by upper()).
+_RE_M_5G = _re_mobile.compile(r'\b5G\b|דור\s?5')
+_RE_M_PRIORITY_HE = _re_mobile.compile(r'תיעדוף|מתועדף')
+_RE_M_PRIORITY_KW = _re_mobile.compile(r'\b(?:MAX|ULTRA|PREMIUM|VIP|PRO|BOOST)\b')
+_RE_M_INTL = _re_mobile.compile(r'חו"ל|חו״ל')
+_RE_M_DATA_WORD = _re_mobile.compile(r'GB|גלישה', _re_mobile.IGNORECASE)
+_RE_M_INCLUDED = _re_mobile.compile(r'כלול(?:ה|ים)?|כולל')
+_RE_M_KOSHER = _re_mobile.compile(r'כשר|נטפרי|ועד הרבנים|KOSHER')
+_RE_M_DATA_ONLY = _re_mobile.compile(r'DATA\s*ONLY|SIM\s*DATA|גלישה בלבד')
+_RE_M_CONDITIONAL = _re_mobile.compile(r'קווים|בהצטרפות|כ\.אשראי|\bלקו\b')
+_RE_M_CHIP_PRIO = _re_mobile.compile(
+    r'חו"ל|חו״ל|לחו|אפליקציות|eSIM|תיעדוף|מתועדף|מחיר קבוע|ללא עליית', _re_mobile.IGNORECASE)
+
+
+def _mobile_has_roaming(extras):
+    """Included-roaming detector: a quantified data note ("1GB גלישה בחו\"ל") OR a
+    qualitative "חו\"ל כלול" tag. Pay-per-use routes deliberately don't match."""
+    for e in extras or []:
+        if not _RE_M_INTL.search(e):
+            continue
+        if (any(ch.isdigit() for ch in e) and _RE_M_DATA_WORD.search(e)) or _RE_M_INCLUDED.search(e):
+            return True
+    return False
+
+
+def _mobile_minutes_abroad(extras):
+    for e in extras or []:
+        if ('דק' in e or 'שיחות' in e) and ('לחו"ל' in e or 'לחו״ל' in e):
+            return True
+    return False
+
+
+def _assemble_mobile_plans(db_path):
+    """Normalized consumer feed for /mobile-deals (see section comment)."""
+    rows = get_plans(db_path=db_path)
+    plans, updated = [], None
+    for r in rows:
+        extras = r.get('extras') or []
+        info, vis = None, []
+        for e in extras:
+            if isinstance(e, str) and e.startswith('__info__|'):
+                info = e.split('|', 1)[1]
+            else:
+                vis.append(e)
+        hay = ((r.get('plan_name') or '') + ' ' + ' '.join(vis)).upper()
+        five_g = bool(_RE_M_5G.search(hay))
+        priority = five_g and bool(_RE_M_PRIORITY_HE.search(hay) or _RE_M_PRIORITY_KW.search(hay))
+        kosher = bool(_RE_M_KOSHER.search(hay))
+        gb = r.get('data_gb')
+        unlimited = voice_only = False
+        if gb is not None and gb >= 9999:
+            # wecom encodes "גלישה חופשית" as 10000GB — normalize to unlimited.
+            unlimited, gb = True, None
+        elif gb is None:
+            # NULL is "unlimited" in the dashboard convention, but the only live
+            # NULL rows are voice-only kosher plans — don't sell them as unlimited.
+            if kosher or 'ללא גלישה' in hay:
+                voice_only = True
+            else:
+                unlimited = True
+        price = r.get('price')
+        ppgb = None
+        if not unlimited and not voice_only and gb and gb >= 1 and price:
+            ppgb = round(price / gb, 2)
+        cond_hay = (r.get('plan_name') or '') + ' ' + ' '.join(vis) + ' ' + (info or '')
+        conditional = bool(_RE_M_CONDITIONAL.search(cond_hay))
+        # Chip guard: a bare pay-per-use route mention (e.g. Pelephone's
+        # 'מסלול חו"ל Travel' — intl wording with no quantity and no
+        # included-tag) reads as an included-roaming benefit on a consumer
+        # card. Keep it in the full extras/details, drop it from chips.
+        def _chip_ok(e):
+            if _RE_M_INTL.search(e) and not any(ch.isdigit() for ch in e) \
+                    and not _RE_M_INCLUDED.search(e):
+                return False
+            return True
+        short = [e for e in vis if len(e) <= 60 and _chip_ok(e)]
+        chips = ([e for e in short if _RE_M_CHIP_PRIO.search(e)]
+                 + [e for e in short if not _RE_M_CHIP_PRIO.search(e)])[:4]
+        sa = r.get('scraped_at')
+        if sa and (updated is None or sa > updated):
+            updated = sa
+        plans.append({
+            'id': f"{r['carrier']}|{r['plan_name']}",
+            'carrier': r['carrier'], 'plan_name': r['plan_name'],
+            'price': price, 'promo_price': r.get('promo_price'),
+            'promo_months': r.get('promo_months'),
+            'data_gb': gb, 'unlimited': unlimited, 'voice_only': voice_only,
+            'minutes': r.get('minutes'),
+            'chips': chips, 'extras': vis, 'info': info,
+            'terms_url': r.get('url'),
+            'price_conditional': conditional,
+            'price_per_gb': ppgb,
+            'facets': {
+                'five_g': five_g, 'five_g_priority': priority,
+                'roaming': _mobile_has_roaming(vis),
+                'minutes_abroad': _mobile_minutes_abroad(vis),
+                'esim': 'ESIM' in hay,
+                'kosher': kosher,
+                'data_only': bool(_RE_M_DATA_ONLY.search(hay)),
+                'free_apps': any('אפליקציות' in e for e in vis),
+            },
+            'scraped_at': sa,
+        })
+    carriers = []
+    for cid, name in _MOBILE_CARRIERS.items():
+        mine = [p for p in plans if p['carrier'] == cid]
+        if not mine:
+            continue
+        prices = [p['price'] for p in mine if p['price']]
+        carriers.append({'id': cid, 'name': name, 'count': len(mine),
+                         'min_price': min(prices) if prices else None})
+    return {'plans': plans, 'carriers': carriers,
+            'updated_at': updated or datetime.now(timezone.utc).isoformat()}
+
+
+@app.route("/api/mobile/compare")
+@limiter.limit("60 per minute")
+def api_mobile_compare():
+    """Public consumer feed for /mobile-deals — normalized domestic plans +
+    per-carrier summary. Roaming / content tabs reuse the existing public
+    /api/abroad-plans and /api/content-plans as-is."""
+    payload = _cached_plans('mobile_compare', lambda: _assemble_mobile_plans(_db_path()))
+    return _public_cache(jsonify(payload), 600)
+
+
+@app.route("/api/mobile/event", methods=["POST"])
+@limiter.limit("240 per minute")
+def api_mobile_event():
+    """Anonymous traffic beacon from the public /mobile-deals page. No auth, no
+    PII — ip hashed, sid is a random session token. Kept separate from
+    /api/esim/event so the eSIM analytics funnel stays vertical-clean."""
+    body = request.get_json(silent=True) or {}
+    etype = (body.get("type") or "").strip()
+    if etype not in ("page_view", "tab_pick", "carrier_click"):
+        return jsonify({"ok": False}), 400
+    from db import log_mobile_event
+    log_mobile_event(
+        etype,
+        sid=body.get("sid"),
+        tab=(body.get("tab") or None),
+        carrier=(body.get("carrier") or None),
+        src=(body.get("src") or None),
+        campaign=(body.get("campaign") or None),
+        lang=(body.get("lang") or None),
+        referrer=(body.get("referrer") or None),
+        ip_hash=_guest_ip_hash(),
+        db_path=_db_path(),
+    )
+    return jsonify({"ok": True})
+
+
+@app.route("/api/mobile/push/subscribe", methods=["POST"])
+@limiter.limit("10 per minute")
+def api_mobile_push_subscribe():
+    """Public (no auth): domestic price-drop alert from /mobile-deals.
+    Body: { subscription: {endpoint, keys:{p256dh,auth}}, carrier, lang }.
+    carrier is a domestic id or 'all'. One alert per device — re-subscribing
+    moves it. Event-driven off the domestic change log (notify_mobile_price_drops),
+    so unlike the eSIM flow there is no price baseline."""
+    from db import save_mobile_push_subscription, log_mobile_event
+    body = request.get_json(silent=True) or {}
+    sub = body.get("subscription") or {}
+    endpoint = (sub.get("endpoint") or "").strip()
+    keys = sub.get("keys") or {}
+    p256dh, auth = keys.get("p256dh"), keys.get("auth")
+    carrier = (body.get("carrier") or "all").strip() or "all"
+    lang = body.get("lang") if body.get("lang") in ("he", "en") else "he"
+    if not all([endpoint, p256dh, auth]):
+        return jsonify({"error": "missing fields"}), 400
+    if not endpoint.startswith("https://"):
+        return jsonify({"error": "bad endpoint"}), 400
+    if carrier != "all" and carrier not in _MOBILE_CARRIERS:
+        return jsonify({"error": "unknown carrier"}), 400
+    save_mobile_push_subscription(endpoint, p256dh, auth, carrier=carrier, lang=lang,
+                                  db_path=_db_path())
+    log_mobile_event("push_subscribe", sid=body.get("sid"), carrier=carrier,
+                     src=(body.get("src") or None), campaign=(body.get("campaign") or None),
+                     lang=lang, ip_hash=_guest_ip_hash(), db_path=_db_path())
+    return jsonify({"status": "subscribed"}), 201
+
+
+@app.route("/api/mobile/push/unsubscribe", methods=["DELETE", "POST"])
+@limiter.limit("10 per minute")
+def api_mobile_push_unsubscribe():
+    """Public: remove a /mobile-deals price-drop subscription by its endpoint."""
+    from db import delete_mobile_push_subscription
+    body = request.get_json(silent=True) or {}
+    endpoint = (body.get("endpoint") or "").strip()
+    if not endpoint:
+        return jsonify({"error": "missing endpoint"}), 400
+    deleted = delete_mobile_push_subscription(endpoint, db_path=_db_path())
+    return jsonify({"status": "unsubscribed", "deleted": deleted}), 200
+
+
 # ════════════════════════════════════════════════════════════════════════════
 #  MOCA Guest Connect — hotels vertical (public guest portal + operator console)
 #  Plan: Hotel/Hotel Plan.txt §2.3 / §5. Public routes are unauthenticated;
@@ -2608,6 +2821,12 @@ def api_scrape_all_now():
         from notifier import alert_missing_terms
         _terms_cfg = load_config()
         alert_missing_terms(ch_domestic, new_domestic, 'plans', _terms_cfg)
+        # /mobile-deals consumer price-drop push (event-driven off the fresh list).
+        try:
+            from notifier import notify_mobile_price_drops
+            notify_mobile_price_drops(ch_domestic, _terms_cfg, db_path=_db_path())
+        except Exception as e:
+            logger.warning(f"mobile price-drop push failed: {e}")
 
         # ── Abroad ────────────────────────────────────────────────────────
         _scrape_emit('abroad', 'starting', message='סורק חבילות חו"ל')
@@ -3702,6 +3921,11 @@ def api_scrape_now():
         arc.archive_domestic_plans(new_plans)
         from notifier import alert_missing_terms
         alert_missing_terms(changes, new_plans, 'plans', load_config())
+        try:
+            from notifier import notify_mobile_price_drops
+            notify_mobile_price_drops(changes, load_config(), db_path=_db_path())
+        except Exception as e:
+            logger.warning(f"mobile price-drop push failed: {e}")
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-now failed: {e}", exc_info=True)
@@ -6445,6 +6669,15 @@ if __name__ == "__main__":
             _n_miss = alert_missing_terms(fresh, new_plans, 'plans', config)
             if _n_miss:
                 logger.warning(f"Terms coverage: {_n_miss} new domestic plan(s) without 'עיקרי התוכנית' — alerted.")
+
+            # /mobile-deals consumer price-drop push (event-driven off the fresh list).
+            try:
+                from notifier import notify_mobile_price_drops
+                n_mob = notify_mobile_price_drops(fresh, config)
+                if n_mob:
+                    logger.info(f"Mobile-deals price-drop push sent: {n_mob}")
+            except Exception as e:
+                logger.warning(f"mobile price-drop push failed: {e}")
 
             # ── Abroad plans ───────────────────────────────────────────────
             new_abroad = scraper.scrape_all_abroad()

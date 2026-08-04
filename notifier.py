@@ -852,10 +852,106 @@ def notify_esim_price_drops(config, db_path=None):
     return sent
 
 
+def notify_mobile_price_drops(fresh_changes, config, db_path=None):
+    """Event-driven price-drop alerts for the public /mobile-deals page: called
+    with the POST-dedup ("fresh") domestic change list after every domestic
+    scrape, so the 24h filter_already_notified dedup is inherited. Unlike the
+    eSIM floor model (state-based, because global scrapes drop new/removed
+    events), domestic change detection is reliable per (carrier, plan_name) —
+    alerting straight off price_change events is simpler and can name the
+    actual plan. One push per endpoint per run; endpoints notified in the last
+    20h are skipped (scrapes run 2×/day)."""
+    from db import (get_mobile_push_subscriptions, delete_mobile_push_subscription,
+                    touch_mobile_push_notified)
+    try:
+        from pywebpush import webpush, WebPushException
+    except ImportError:
+        return 0
+    vapid_private_key = config.get("vapid_private_key")
+    if not vapid_private_key:
+        return 0
+
+    def _num(v):
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
+
+    drops = []
+    for c in fresh_changes or []:
+        if c.get("change_type") != "price_change":
+            continue
+        old, new = _num(c.get("old_val")), _num(c.get("new_val"))
+        if old is None or new is None or new >= old:
+            continue
+        drops.append({"carrier": c.get("carrier") or "", "plan_name": c.get("plan_name") or "",
+                      "old": old, "new": new})
+    if not drops:
+        return 0
+    subs = get_mobile_push_subscriptions(db_path=db_path)
+    if not subs:
+        return 0
+    vapid_email = config.get("vapid_email", "mailto:alon.yoch@gmail.com")
+
+    def _fmt(p):
+        return str(int(p)) if float(p).is_integer() else f"{p:g}"
+
+    now = datetime.now()
+    sent, stale = 0, []
+    for sub in subs:
+        mine = drops if sub["carrier"] == "all" else [d for d in drops if d["carrier"] == sub["carrier"]]
+        if not mine:
+            continue
+        last = sub.get("last_notified_at")
+        if last:
+            try:
+                if (now - datetime.fromisoformat(last)).total_seconds() < 20 * 3600:
+                    continue
+            except (ValueError, TypeError):
+                pass
+        lang = sub.get("lang") or "he"
+        if len(mine) == 1:
+            d = mine[0]
+            name = CARRIER_DISPLAY_NAMES.get(d["carrier"], d["carrier"])
+            if lang == "en":
+                body = f"Price drop! {name} - {d['plan_name']}: now ₪{_fmt(d['new'])} instead of ₪{_fmt(d['old'])}"
+            else:
+                body = f"ירידת מחיר! {name} - {d['plan_name']}: עכשיו ₪{_fmt(d['new'])} במקום ₪{_fmt(d['old'])}"
+        else:
+            if lang == "en":
+                body = f"{len(mine)} mobile plans just got cheaper - worth comparing"
+            else:
+                body = f"{len(mine)} חבילות סלולר הוזלו - שווה להשוות"
+        url = ("https://mocaintel.com/mobile-deals?utm_source=push&utm_campaign=price_drop"
+               + ("&lang=en" if lang == "en" else ""))
+        payload = json.dumps(
+            {"title": "MOCA", "body": body, "url": url, "tag": "mobile-price-drop"},
+            ensure_ascii=False)
+        try:
+            webpush(
+                subscription_info={"endpoint": sub["endpoint"], "keys": sub["keys"]},
+                data=payload,
+                vapid_private_key=vapid_private_key,
+                vapid_claims={"sub": vapid_email},
+            )
+            touch_mobile_push_notified(sub["endpoint"], db_path=db_path)
+            sent += 1
+        except WebPushException as e:
+            status = getattr(e.response, "status_code", None) if hasattr(e, "response") and e.response else None
+            if status in (404, 410):
+                stale.append(sub["endpoint"])
+        except Exception:
+            pass
+    for ep in stale:
+        delete_mobile_push_subscription(ep, db_path=db_path)
+    return sent
+
+
 CARRIER_DISPLAY_NAMES = {
     "partner": "פרטנר", "pelephone": "פלאפון", "hotmobile": "הוט מובייל",
     "cellcom": "סלקום", "mobile019": "019", "xphone": "XPhone",
     "wecom": "We-Com", "neptucom": "Neptucom",
+    "golan": "גולן טלקום", "rami_levy": "רמי לוי תקשורת",
     "tuki": "Tuki", "terminalesim": "Terminal eSIM", "airalo": "Airalo",
     "pelephone_global": "GlobalSIM", "esimo": "eSIMo", "simtlv": "SimTLV",
     "world8": "8 World", "saily": "Saily", "holafly": "Holafly",

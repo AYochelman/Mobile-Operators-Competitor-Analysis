@@ -49,6 +49,8 @@ const HotelsLandingPage     = lazy(() => import('./pages/HotelsLandingPage'))
 const HotelsAdminPage       = lazy(() => import('./pages/HotelsAdminPage'))
 // Public B2C eSIM price-comparison page (free, no auth) — sibling of "/".
 const EsimComparePage       = lazy(() => import('./pages/EsimComparePage'))
+// Public B2C domestic-plans comparison page (free, no auth) — sibling of "/".
+const MobileComparePage     = lazy(() => import('./pages/MobileComparePage'))
 const EsimAnalyticsPage     = lazy(() => import('./pages/EsimAnalyticsPage'))
 const ProviderDealsPage     = lazy(() => import('./pages/ProviderDealsPage'))
 
@@ -161,12 +163,41 @@ function EsimGate() {
 const IS_ESIM_HOST = ESIM_B2C_LIVE && typeof window !== 'undefined' &&
   (window.location.hostname === 'esim.mocaintel.com' || window.location.hostname.startsWith('esim.'))
 
+// ── Public B2C domestic-plans page launch switch (/mobile-deals) ────────────
+// Same lifecycle as ESIM_B2C_LIVE above: `import.meta.env.DEV` = super-admin
+// preview stage (visible on `npm run dev` + to super-admins in production, 404
+// for everyone else). Flip to `true` at public launch — together with the
+// Stage-2 ship steps (_redirects, sitemap, DNS; see the mobile-deals plan).
+const MOBILE_B2C_LIVE = import.meta.env.DEV
+
+function MobileGate() {
+  const { loading, isSuperAdmin } = useAuth()
+  if (MOBILE_B2C_LIVE) return <MobileComparePage />
+  if (loading) return <PageFallback />
+  return isSuperAdmin ? <MobileComparePage /> : <NotFoundPage />
+}
+
+// mobile.mocaintel.com serves ONLY the domestic-plans consumer page (mirrors
+// the esim.* branch — the two prefixes are mutually exclusive). Inert until
+// launch: the flag is off in production builds, so the host branch never fires.
+const IS_MOBILE_HOST = MOBILE_B2C_LIVE && typeof window !== 'undefined' &&
+  (window.location.hostname === 'mobile.mocaintel.com' || window.location.hostname.startsWith('mobile.'))
+
 export default function App() {
   if (IS_ESIM_HOST) {
     return (
       <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="*" element={<EsimComparePage />} />
+        </Routes>
+      </Suspense>
+    )
+  }
+  if (IS_MOBILE_HOST) {
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route path="*" element={<MobileComparePage />} />
         </Routes>
       </Suspense>
     )
@@ -189,6 +220,10 @@ export default function App() {
               EsimGate keeps it unpublished (404) until launch, but lets a
               super-admin preview it via the dashboard link. */}
           <Route path="/esim-deals" element={<EsimGate />} />
+          {/* Public B2C domestic-plans comparison — free, no auth, sibling of "/".
+              MobileGate keeps it unpublished (404) until launch, but lets a
+              super-admin preview the live consumer experience. */}
+          <Route path="/mobile-deals" element={<MobileGate />} />
           {/* Short branded bio link. Netlify /_redirects 302s /tt for fresh
               visitors; this client route covers repeat visitors whose PWA
               service worker serves index.html (navigateFallback) before the

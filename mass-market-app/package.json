@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && vite build --ssr src/entry-landing.jsx --outDir dist-ssr && node scripts/prerender-landing.mjs && vite build --ssr src/entry-hotels.jsx --outDir dist-ssr-hotels && node scripts/prerender-hotels.mjs && node scripts/prerender-esim.mjs && node scripts/stamp-sitemap.mjs && node scripts/prerender-esim-dests.mjs",
+    "build": "vite build && vite build --ssr src/entry-landing.jsx --outDir dist-ssr && node scripts/prerender-landing.mjs && vite build --ssr src/entry-hotels.jsx --outDir dist-ssr-hotels && node scripts/prerender-hotels.mjs && node scripts/prerender-esim.mjs && node scripts/prerender-mobile.mjs && node scripts/stamp-sitemap.mjs && node scripts/prerender-esim-dests.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
