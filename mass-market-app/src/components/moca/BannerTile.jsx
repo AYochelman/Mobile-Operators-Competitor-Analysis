@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { API_BASE } from '../../lib/api'
 import { useLang } from '../../hooks/useLanguage'
+import { useApiImage } from '../../hooks/useApiImage'
 import { getCarrierColor, getCarrierName } from './carrierMeta'
 
 // Fallback gradient per carrier when screenshot isn't available yet
@@ -15,12 +15,6 @@ const CARRIER_GRADIENT = {
   neptucom:  'linear-gradient(135deg,#29b6d6,#1d8ca3)',
   golan:     'linear-gradient(135deg,#cc1717,#a01212)',
   rami_levy: 'linear-gradient(135deg,#e8178a,#b51069)',
-}
-
-function formatDate(iso) {
-  if (!iso) return '-'
-  const d = new Date(iso)
-  return d.toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
 function freshness(iso, tt) {
@@ -48,8 +42,9 @@ export default function BannerTile({ banner, onClick }) {
   const { carrier, name, image_url, scraped_at } = banner
   const displayName = name || getCarrierName(carrier)
   const dotColor = banner.color || getCarrierColor(carrier)
-  const resolvedImageUrl = image_url ? `${API_BASE}${image_url}` : null
-  const hasImage = resolvedImageUrl && !imgError
+  // Blob-fetched (useApiImage) so the ngrok interstitial can't eat the <img>.
+  const { src: resolvedImageUrl, error: imgFetchError } = useApiImage(image_url)
+  const hasImage = resolvedImageUrl && !imgFetchError && !imgError
   const age = freshness(scraped_at, tt)
 
   return (

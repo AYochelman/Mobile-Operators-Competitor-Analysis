@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { API_BASE } from '../../lib/api'
 import { useLang } from '../../hooks/useLanguage'
+import { useApiImage } from '../../hooks/useApiImage'
 import { getCarrierColor, getCarrierName } from './carrierMeta'
 
 const CARRIER_GRADIENT = {
@@ -67,11 +67,10 @@ function Fact({ label, value }) {
  */
 export default function BannerDrawer({ banner, onClose }) {
   const { tt } = useLang()
-  const [imgError, setImgError] = useState(false)
-
-  // Reset image error state when banner changes (otherwise the next banner
-  // would inherit the previous one's failure flag).
-  useEffect(() => { setImgError(false) }, [banner?.image_url])
+  // Blob-fetched (useApiImage) so the ngrok interstitial can't eat the <img>.
+  // Called before the early return below - hooks must run unconditionally.
+  // The hook's error state is per-path, so banner switches reset it inherently.
+  const { src: drawerImgSrc, error: drawerImgError } = useApiImage(banner?.image_url)
 
   // Esc to close + lock body scroll while open
   useEffect(() => {
@@ -87,11 +86,10 @@ export default function BannerDrawer({ banner, onClose }) {
 
   if (!banner) return null
 
-  const { carrier, name, url, image_url, scraped_at } = banner
+  const { carrier, name, url, scraped_at } = banner
   const displayName = name || getCarrierName(carrier)
   const accentColor = banner.color || getCarrierColor(carrier)
-  const resolvedImageUrl = image_url ? `${API_BASE}${image_url}` : null
-  const hasImage = resolvedImageUrl && !imgError
+  const hasImage = drawerImgSrc && !drawerImgError
   const isStore = banner.kind === 'store' || (banner.carrier && banner.carrier.endsWith('_store'))
 
   return createPortal(
@@ -196,10 +194,9 @@ export default function BannerDrawer({ banner, onClose }) {
         >
           {hasImage ? (
             <img
-              src={resolvedImageUrl}
+              src={drawerImgSrc}
               alt={`${tt('באנר', 'Banner')} ${displayName}`}
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              onError={() => setImgError(true)}
             />
           ) : (
             <div
@@ -259,7 +256,7 @@ export default function BannerDrawer({ banner, onClose }) {
           )}
           {hasImage && (
             <a
-              href={resolvedImageUrl}
+              href={drawerImgSrc}
               target="_blank"
               rel="noopener noreferrer"
               style={{
