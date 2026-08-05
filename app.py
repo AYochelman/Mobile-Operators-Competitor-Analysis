@@ -157,7 +157,13 @@ ALLOWED_ORIGINS = [
 _extra_origins = os.environ.get("ALLOWED_ORIGINS", "")
 if _extra_origins:
     ALLOWED_ORIGINS.extend(_extra_origins.split(","))
-CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS, "supports_credentials": True}})
+# /banners/* included: the frontend blob-fetches banner screenshots (useApiImage,
+# to carry the ngrok-skip-browser-warning header past the interstitial) and a
+# cross-origin fetch() - unlike a plain <img> - is blocked without CORS headers.
+CORS(app, resources={
+    r"/api/*": {"origins": ALLOWED_ORIGINS, "supports_credentials": True},
+    r"/banners/*": {"origins": ALLOWED_ORIGINS},
+})
 
 @app.after_request
 def add_security_headers(response):
