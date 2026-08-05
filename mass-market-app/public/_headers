@@ -28,7 +28,7 @@
 # DevTools console, and confirm there are no "Refused to ... because it violates
 # CSP" (or X-Frame-Options) errors before treating this as verified.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://terra-nonrestrained-overpiteously.ngrok-free.dev https://gmfefvjdmgzluwffzrzj.supabase.co wss://gmfefvjdmgzluwffzrzj.supabase.co; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://terra-nonrestrained-overpiteously.ngrok-free.dev https://gmfefvjdmgzluwffzrzj.supabase.co wss://gmfefvjdmgzluwffzrzj.supabase.co; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; upgrade-insecure-requests
   X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
