@@ -1154,7 +1154,7 @@ def _rem_email_shell(lang, unsub, inner_rows, hero_url=None, share_url=None):
     if share_url:
         share_txt = ("מכירים מישהו שמשלם יותר מדי על סלולר?" if rtl
                      else "Know someone paying too much for mobile?")
-        share_link = "שלחו לו את ההשוואה" if rtl else "Send them the comparison"
+        share_link = "שלחו להם את ההשוואה" if rtl else "Send them the comparison"
         share_row = (
             f'<tr><td style="padding:14px 16px 0;text-align:center;">'
             f'<p style="margin:0;color:#8a6a4a;font-size:12.5px;line-height:1.7;">{share_txt} '
@@ -1526,7 +1526,7 @@ def _rem_send(rem, subject, text_lines, config, html=None):
     lang = rem.get("lang") or "he"
     utm, unsub = _rem_links(rem, config)
     share_line = (("Know someone paying too much? Send them: " if lang == "en"
-                   else "מכירים מישהו שמשלם יותר מדי? שלחו לו: ") + _rem_share_url(rem, config))
+                   else "מכירים מישהו שמשלם יותר מדי? שלחו להם: ") + _rem_share_url(rem, config))
     body_lines = text_lines + ["", utm, share_line]
     ok = False
     channel = rem.get("channel") or "email"
