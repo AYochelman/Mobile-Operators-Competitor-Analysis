@@ -2452,13 +2452,18 @@ def run_mobile_reminders_job():
     normalized domestic feed: better-deal alerts (recurring, price-ratcheted)
     and plan-term-end reminders (one-shot, optional retention offers)."""
     try:
-        from notifier import notify_mobile_better_deals, notify_mobile_plan_end_reminders
+        from notifier import (notify_mobile_better_deals, notify_mobile_plan_end_reminders,
+                              notify_mobile_heartbeat, notify_mobile_renewal_followups)
         config = load_config()
         plans = _assemble_mobile_plans(_db_path()).get("plans", [])
         n_deal = notify_mobile_better_deals(plans, config, db_path=_db_path())
         n_end = notify_mobile_plan_end_reminders(plans, config, db_path=_db_path())
-        logger.info(f"mobile reminders job: {n_deal} better-deal + {n_end} plan-end sent")
-        return {"better_deal_sent": n_deal, "plan_end_sent": n_end}
+        n_renew = notify_mobile_renewal_followups(plans, config, db_path=_db_path())
+        n_pulse = notify_mobile_heartbeat(plans, config, db_path=_db_path())
+        logger.info(f"mobile reminders job: {n_deal} better-deal + {n_end} plan-end "
+                    f"+ {n_renew} renewal + {n_pulse} heartbeat sent")
+        return {"better_deal_sent": n_deal, "plan_end_sent": n_end,
+                "renewal_sent": n_renew, "heartbeat_sent": n_pulse}
     except Exception as e:
         logger.error(f"mobile reminders job failed: {e}")
         return {"error": str(e)}

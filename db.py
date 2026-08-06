@@ -519,6 +519,8 @@ def init_db(db_path=None):
                 best_price_alerted REAL,             -- better_deal dedup ratchet
                 last_notified_at   TEXT,
                 done               INTEGER DEFAULT 0,
+                last_heartbeat_at  TEXT,             -- better_deal: monthly market-pulse email
+                followup_sent      INTEGER DEFAULT 0,-- plan_end: renewal follow-up went out
                 created_at         TEXT NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_mobile_reminders_token
@@ -806,6 +808,14 @@ def init_db(db_path=None):
             conn.commit()
         except Exception:
             pass  # column already exists
+        # Migration: /mobile-deals reminder engagement fields (monthly heartbeat +
+        # plan-end renewal follow-up)
+        for col, sql in (("last_heartbeat_at", "TEXT"), ("followup_sent", "INTEGER DEFAULT 0")):
+            try:
+                conn.execute(f"ALTER TABLE mobile_reminders ADD COLUMN {col} {sql}")
+                conn.commit()
+            except Exception:
+                pass  # column already exists
         # Migration: promo pricing on domestic plans (e.g. "3 חודשים ראשונים ב-39 ₪")
         for col, sql in (("promo_price", "REAL"), ("promo_months", "INTEGER")):
             try:
@@ -2424,6 +2434,61 @@ def mark_mobile_reminder_notified(reminder_id, best_price=None, done=False, db_p
             "done=CASE WHEN ? THEN 1 ELSE done END WHERE id=?",
             (datetime.now().isoformat(), best_price, 1 if done else 0, reminder_id))
         conn.commit()
+    finally:
+        conn.close()
+
+
+def touch_mobile_reminder_heartbeat(reminder_id, db_path=None):
+    conn = _connect(db_path)
+    try:
+        conn.execute("UPDATE mobile_reminders SET last_heartbeat_at=? WHERE id=?",
+                     (datetime.now().isoformat(), reminder_id))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_mobile_plan_end_followups(db_path=None):
+    """plan_end reminders whose end-of-term reminder already went out (done=1)
+    and whose renewal follow-up hasn't - candidates for the 'did you renew?'
+    email a week after end_date."""
+    conn = _connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        return [dict(r) for r in conn.execute(
+            "SELECT * FROM mobile_reminders "
+            "WHERE kind='plan_end' AND done=1 AND IFNULL(followup_sent,0)=0").fetchall()]
+    finally:
+        conn.close()
+
+
+def mark_mobile_reminder_followup(reminder_id, db_path=None):
+    conn = _connect(db_path)
+    try:
+        conn.execute("UPDATE mobile_reminders SET followup_sent=1 WHERE id=?", (reminder_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def count_domestic_price_drops(days=30, db_path=None):
+    """(drops, rises) counted from the domestic change log over the last N days -
+    fuel for the monthly heartbeat email's market-pulse stats."""
+    conn = _connect(db_path)
+    try:
+        since = (datetime.now() - timedelta(days=days)).isoformat()
+        drops = rises = 0
+        for old_val, new_val in conn.execute(
+                "SELECT old_val, new_val FROM changes "
+                "WHERE change_type='price_change' AND changed_at>=?", (since,)).fetchall():
+            try:
+                if float(new_val) < float(old_val):
+                    drops += 1
+                elif float(new_val) > float(old_val):
+                    rises += 1
+            except (TypeError, ValueError):
+                continue
+        return drops, rises
     finally:
         conn.close()
 
