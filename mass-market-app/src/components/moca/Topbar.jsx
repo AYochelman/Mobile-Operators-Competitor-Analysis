@@ -160,6 +160,7 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
                 <span className="opacity-50">↗</span>
               </button>
               <button onClick={() => go('/admin/esim')} className={itemCls}>{tt('דשבורד eSIM (B2C)', 'eSIM dashboard (B2C)')}</button>
+              <button onClick={() => go('/admin/mobile-subscribers')} className={itemCls}>{tt('מנויי תזכורות (B2C)', 'Reminder subscribers (B2C)')}</button>
               <button onClick={() => go('/admin/deals')} className={itemCls}>{tt('סטטוס ספקים', 'Provider status')}</button>
               <button onClick={() => go('/usage')} className={itemCls}>{tt('שימוש ב-Claude', 'Claude usage')}</button>
             </>

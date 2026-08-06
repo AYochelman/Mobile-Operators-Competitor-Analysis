@@ -34,6 +34,7 @@ const WorkspaceBrandingPage = lazy(() => import('./pages/WorkspaceBrandingPage')
 const AuditLogPage          = lazy(() => import('./pages/AuditLogPage'))
 const UsagePage             = lazy(() => import('./pages/UsagePage'))
 const UserActivityPage      = lazy(() => import('./pages/UserActivityPage'))
+const MobileSubscribersPage = lazy(() => import('./pages/MobileSubscribersPage'))
 const PositioningPage       = lazy(() => import('./pages/PositioningPage'))
 const AIInsightsPage        = lazy(() => import('./pages/AIInsightsPage'))
 const InvitePage            = lazy(() => import('./pages/InvitePage'))
@@ -265,6 +266,7 @@ export default function App() {
             <Route path="admin/user-activity" element={<ProtectedRoute superAdminOnly><UserActivityPage /></ProtectedRoute>} />
             <Route path="admin/hotels" element={<ProtectedRoute superAdminOnly><HotelsAdminPage /></ProtectedRoute>} />
             <Route path="admin/esim" element={<ProtectedRoute superAdminOnly><EsimAnalyticsPage /></ProtectedRoute>} />
+            <Route path="admin/mobile-subscribers" element={<ProtectedRoute superAdminOnly><MobileSubscribersPage /></ProtectedRoute>} />
             <Route path="admin/deals" element={<ProtectedRoute superAdminOnly><ProviderDealsPage /></ProtectedRoute>} />
             <Route path="notifications" element={<Navigate to="/alerts?tab=watchlist" replace />} />
             <Route path="ai-insights" element={<AIInsightsPage />} />

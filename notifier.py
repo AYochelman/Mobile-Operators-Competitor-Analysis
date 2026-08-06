@@ -1140,8 +1140,9 @@ def _rem_hero_url(kind, config):
     return f"{site}/email/{kind}.jpg"
 
 
-def _rem_email_shell(lang, unsub, inner_rows, hero_url=None):
-    """Shared shell (cream canvas, MOCA header, footer) around content <tr> rows."""
+def _rem_email_shell(lang, unsub, inner_rows, hero_url=None, share_url=None):
+    """Shared shell (cream canvas, MOCA header, footer) around content <tr> rows.
+    `share_url` adds a refer-a-friend line above the footer."""
     rtl = lang != "en"
     dir_attr = "rtl" if rtl else "ltr"
     tagline = "השוואת מסלולי סלולר בישראל" if rtl else "Israel mobile plan comparison"
@@ -1149,6 +1150,16 @@ def _rem_email_shell(lang, unsub, inner_rows, hero_url=None):
                    if rtl else
                    "You are receiving this because you signed up for alerts on MOCA's plan comparison page.")
     unsub_label = "להסרה מהעדכונים" if rtl else "Unsubscribe"
+    share_row = ""
+    if share_url:
+        share_txt = ("מכירים מישהו שמשלם יותר מדי על סלולר?" if rtl
+                     else "Know someone paying too much for mobile?")
+        share_link = "שלחו לו את ההשוואה" if rtl else "Send them the comparison"
+        share_row = (
+            f'<tr><td style="padding:14px 16px 0;text-align:center;">'
+            f'<p style="margin:0;color:#8a6a4a;font-size:12.5px;line-height:1.7;">{share_txt} '
+            f'<a href="{share_url}" style="color:#c9622f;font-weight:700;">{share_link}</a></p>'
+            f'</td></tr>')
     return f'''<!DOCTYPE html><html dir="{dir_attr}" lang="{"he" if rtl else "en"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f9f4ee;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9f4ee;">
@@ -1161,6 +1172,7 @@ def _rem_email_shell(lang, unsub, inner_rows, hero_url=None):
 </td></tr>
 {f'<tr><td style="background:#ffffff;padding:0;line-height:0;"><img src="{hero_url}" width="600" alt="" style="width:100%;height:auto;display:block;border:0;"></td></tr>' if hero_url else ''}
 {inner_rows}
+{share_row}
 <tr><td style="padding:18px 16px 4px;text-align:center;">
 <p style="margin:0;color:#a08468;font-size:11.5px;line-height:1.8;">{footer_note}<br>
 <a href="{unsub}" style="color:#8a6a4a;">{unsub_label}</a> &middot; MOCA</p>
@@ -1238,9 +1250,9 @@ def _rem_email_body(lang, badge, title, blocks_html, cta_url):
         f'</td></tr>')
 
 
-def _build_better_deal_html(rem, base, deals, config):
+def _build_better_deal_html(rem, base, deals, config, btl=None):
     """Branded email for the better_deal reminder: current-plan strip, savings
-    tag, competing deal cards, CTA."""
+    tag, competing deal cards, optional below-the-line reseller cards, CTA."""
     lang = rem.get("lang") or "he"
     rtl = lang != "en"
     utm, unsub = _rem_links(rem, config)
@@ -1273,8 +1285,14 @@ def _build_better_deal_html(rem, base, deals, config):
     title = ("מצאנו חבילות שמשתלמות יותר מהמסלול שלך" if rtl
              else "We found plans that beat your current one")
     blocks = base_strip + saving_html + _rem_deal_cards_html(deals, lang, mark_best=True)
+    if btl:
+        btl_title = ("מתחת לקו: הצעות משווקים שרוב ההשוואתונים לא מציגים" if rtl
+                     else "Below the line: reseller offers most comparison sites never show")
+        blocks += (f'<p style="margin:14px 0 8px;color:#3b1f0d;font-size:13.5px;font-weight:700;">{btl_title}</p>'
+                   + _rem_btl_cards_html(btl, lang))
     return _rem_email_shell(lang, unsub, _rem_email_body(lang, badge, title, blocks, utm),
-                            hero_url=_rem_hero_url("better_deal", config))
+                            hero_url=_rem_hero_url("better_deal", config),
+                            share_url=_rem_share_url(rem, config))
 
 
 def _build_plan_end_html(rem, intro_lines, offers, config):
@@ -1295,12 +1313,101 @@ def _build_plan_end_html(rem, intro_lines, offers, config):
     title = (f"המסלול שלך ב{cname} עומד להסתיים" if rtl
              else f"Your plan at {cname} is about to end")
     return _rem_email_shell(lang, unsub, _rem_email_body(lang, badge, title, blocks, utm),
-                            hero_url=_rem_hero_url("plan_end", config))
+                            hero_url=_rem_hero_url("plan_end", config),
+                            share_url=_rem_share_url(rem, config))
 
 
 # ---- Engagement extensions (2026-08-06): annual savings, market percentile,
 # ---- monthly heartbeat, plan-end renewal follow-up. Email-channel only —
 # ---- consumer WhatsApp is quota-blocked until the Green API plan upgrade.
+
+def _rem_share_url(rem, config):
+    """Refer-a-friend link (separate utm_source so referral traffic is
+    distinguishable from the subscriber's own clicks)."""
+    lang = rem.get("lang") or "he"
+    page_url, _ = _rem_urls(config)
+    return f"{page_url}?utm_source=referral&utm_campaign=email_share" + ("&lang=en" if lang == "en" else "")
+
+
+def _rem_base_price(rem, cur=None):
+    """The price this subscriber actually pays: the self-declared paid_price
+    (the 'כמה אתם משלמים?' question) wins; else the plan's current rate-card
+    price; else the signup snapshot."""
+    if rem.get("paid_price"):
+        return rem["paid_price"]
+    return (cur or rem).get("price")
+
+
+def _find_reseller_deals(base, db_path=None, min_saving=2.0, limit=2):
+    """Below-the-line (משווקים) offers that beat the user's plan — reseller
+    sites, carrier landing pages and FB-ad campaigns tracked in reseller_plans.
+    Info no other Israeli comparison surfaces; clearly labeled in the email."""
+    from db import get_reseller_plans
+    INF = float("inf")
+
+    def _data(p):
+        return INF if p.get("data_gb") is None else (p.get("data_gb") or 0)
+
+    base_price = base.get("price")
+    if base_price is None:
+        return []
+    base_data = INF if (base.get("unlimited") or base.get("data_gb") is None) else (base.get("data_gb") or 0)
+    try:
+        rows = get_reseller_plans(db_path=db_path)
+    except Exception:
+        return []
+    out = [r for r in rows
+           if r.get("price") is not None and r["price"] >= 5
+           and _data(r) >= base_data and r["price"] <= base_price - min_saving]
+    out.sort(key=lambda r: r["price"])
+    return out[:limit]
+
+
+def _rem_btl_cards_html(btl, lang):
+    """Reseller-deal cards: reseller name + underlying carrier, clearly tagged
+    as a below-the-line offer, price side links to the source page."""
+    rtl = lang != "en"
+    end_align = "left" if rtl else "right"
+    tag = "הצעת משווק" if rtl else "Reseller offer"
+    per_month = "לחודש" if rtl else "per month"
+    cards = []
+    for r in btl:
+        rname = RESELLER_NAMES.get(r["reseller_id"], r["reseller_id"])
+        cname = CARRIER_DISPLAY_NAMES.get(r["carrier"], r["carrier"])
+        gb = ("ללא הגבלה" if rtl else "Unlimited data") if r.get("data_gb") is None \
+            else f"{r['data_gb']:g}GB"
+        src = r.get("source_url") or ""
+        price_html = f'&#8362;{_rem_fmt_price(r["price"])}'
+        if src:
+            price_html = f'<a href="{src}" style="color:#c9622f;text-decoration:none;">{price_html}</a>'
+        cards.append(
+            f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+            f'style="background:#fdf6ec;border:1px dashed #d9b98c;border-radius:14px;margin:0 0 10px;"><tr>'
+            f'<td style="padding:14px 18px;">'
+            f'<span style="display:inline-block;background:#f5e3c8;color:#7a5a2e;font-size:10.5px;'
+            f'font-weight:700;border-radius:999px;padding:2px 10px;margin-bottom:4px;">{tag}</span><br>'
+            f'<span style="color:#3b1f0d;font-size:15px;font-weight:700;">{rname}</span> '
+            f'<span style="color:#8a6a4a;font-size:12.5px;">({cname})</span><br>'
+            f'<span style="color:#8a6a4a;font-size:12.5px;">{r["plan_name"]}</span></td>'
+            f'<td align="{end_align}" style="padding:14px 18px;white-space:nowrap;">'
+            f'<span dir="ltr" style="font-size:21px;font-weight:800;">{price_html}</span><br>'
+            f'<span style="color:#8a6a4a;font-size:12px;">{gb} &middot; {per_month}</span>'
+            f'</td></tr></table>')
+    return "".join(cards)
+
+
+def _market_ppgb(plans):
+    """GB-weighted market ₪/GB (SUM(price)/SUM(GB), like the exec summary —
+    a naive AVG lets tiny-data plans dominate). The consumer 'מדד MOCA' number."""
+    tp = tg = 0.0
+    for p in plans:
+        gb, pr = p.get("data_gb"), p.get("price")
+        if (pr and gb and gb >= 1 and not p.get("unlimited")
+                and not p.get("voice_only") and not p.get("price_conditional")):
+            tp += pr
+            tg += gb
+    return round(tp / tg, 3) if tg else None
+
 
 def _market_percentile(base, plans):
     """Share (0-100) of comparable plans (>= the user's data, honest pricing)
@@ -1373,7 +1480,8 @@ def _build_heartbeat_html(rem, base, pct, stats, config):
     title = ("החבילה שלכם מול השוק - הכול תחת שליטה" if rtl
              else "Your plan vs the market - all under control")
     return _rem_email_shell(lang, unsub, _rem_email_body(lang, badge, title, blocks, utm),
-                            hero_url=_rem_hero_url("heartbeat", config))
+                            hero_url=_rem_hero_url("heartbeat", config),
+                            share_url=_rem_share_url(rem, config))
 
 
 def _build_renewal_html(rem, offers, config):
@@ -1399,7 +1507,8 @@ def _build_renewal_html(rem, offers, config):
     badge = "ממשיכים לשמור עליכם" if rtl else "Still watching over you"
     title = "התחדשתם? נמשיך לעקוב" if rtl else "Renewed? Let's keep tracking"
     return _rem_email_shell(lang, unsub, _rem_email_body(lang, badge, title, blocks, utm),
-                            hero_url=_rem_hero_url("renewal", config))
+                            hero_url=_rem_hero_url("renewal", config),
+                            share_url=_rem_share_url(rem, config))
 
 
 def _rem_send(rem, subject, text_lines, config, html=None):
@@ -1408,7 +1517,9 @@ def _rem_send(rem, subject, text_lines, config, html=None):
     body (the WhatsApp text always comes from text_lines)."""
     lang = rem.get("lang") or "he"
     utm, unsub = _rem_links(rem, config)
-    body_lines = text_lines + ["", utm]
+    share_line = (("Know someone paying too much? Send them: " if lang == "en"
+                   else "מכירים מישהו שמשלם יותר מדי? שלחו לו: ") + _rem_share_url(rem, config))
+    body_lines = text_lines + ["", utm, share_line]
     ok = False
     channel = rem.get("channel") or "email"
     if channel in ("email", "both") and rem.get("email"):
@@ -1446,10 +1557,11 @@ def notify_mobile_better_deals(plans, config, db_path=None):
                     continue
             except (ValueError, TypeError):
                 pass
-        # Compare against the plan's CURRENT price when it's still on the rate
-        # card (prices move after signup); fall back to the signup snapshot.
+        # Compare against what the user actually PAYS: their self-declared
+        # paid_price wins, else the plan's current rate-card price (prices move
+        # after signup), else the signup snapshot.
         cur = by_id.get(f"{rem['carrier']}|{rem['plan_name']}")
-        base = {"carrier": rem["carrier"], "price": (cur or rem).get("price"),
+        base = {"carrier": rem["carrier"], "price": _rem_base_price(rem, cur),
                 "data_gb": rem.get("data_gb"), "unlimited": rem.get("unlimited")}
         deals = find_better_mobile_deals(base, plans)
         if not deals:
@@ -1476,7 +1588,15 @@ def notify_mobile_better_deals(plans, config, db_path=None):
                          f"מעבר חוסך עד ₪{_rem_fmt_price(saving)} בחודש - כ-₪{annual} בשנה")]
         except (TypeError, ValueError):
             pass
-        html = _build_better_deal_html(rem, base, deals, config)
+        btl = _find_reseller_deals(base, db_path=db_path)
+        if btl:
+            tail.append("Below the line (reseller offers):" if lang == "en"
+                        else "מתחת לקו (הצעות משווקים):")
+            for r in btl:
+                rname = RESELLER_NAMES.get(r["reseller_id"], r["reseller_id"])
+                cname = CARRIER_DISPLAY_NAMES.get(r["carrier"], r["carrier"])
+                tail.append(f"• {rname} ({cname}) - {r['plan_name']}: ₪{_rem_fmt_price(r['price'])}")
+        html = _build_better_deal_html(rem, base, deals, config, btl=btl)
         if _rem_send(rem, subject, head + _rem_deal_lines(deals, lang) + tail, config, html=html):
             mark_mobile_reminder_notified(rem["id"], best_price=best, db_path=db_path)
             sent += 1
@@ -1569,35 +1689,39 @@ def notify_mobile_heartbeat(plans, config, db_path=None):
             drops, rises = count_domestic_price_drops(30, db_path=db_path)
         cur = by_id.get(f"{rem['carrier']}|{rem['plan_name']}")
         base = {"carrier": rem["carrier"], "plan_name": rem["plan_name"],
-                "price": (cur or rem).get("price"),
+                "price": _rem_base_price(rem, cur),
                 "data_gb": rem.get("data_gb"), "unlimited": rem.get("unlimited")}
         if base["price"] is None:
             continue
         pct = _market_percentile(base, plans)
         lang = rem.get("lang") or "he"
-        cheapest = min((p["price"] for p in honest), default=None)
+        ppgb = _market_ppgb(plans)
         unl = min((p["price"] for p in honest if p.get("unlimited")), default=None)
         if lang == "en":
             stats = [(f"{drops}", "price drops, 30 days"), (f"{rises}", "price rises, 30 days")]
-            if cheapest is not None:
-                stats.append((f"₪{_rem_fmt_price(cheapest)}", "cheapest plan today"))
+            if ppgb is not None:
+                stats.append((f"₪{ppgb:g}", "MOCA index: ₪ per GB"))
             if unl is not None:
                 stats.append((f"₪{_rem_fmt_price(unl)}", "cheapest unlimited"))
             subject = "MOCA: your monthly market pulse"
             lines = [f"Your plan \"{rem['plan_name']}\" is still being tracked against the whole market.",
                      f"Last 30 days: {drops} price drops and {rises} rises across the carriers."]
+            if ppgb is not None:
+                lines.append(f"MOCA index: the market's weighted average is ₪{ppgb:g} per GB.")
             if pct is not None:
                 lines.append(f"Your plan is cheaper than {pct}% of comparable plans.")
             lines.append("The moment a plan beats yours - we alert you right away.")
         else:
             stats = [(f"{drops}", "ירידות מחיר ב-30 יום"), (f"{rises}", "עליות מחיר ב-30 יום")]
-            if cheapest is not None:
-                stats.append((f"₪{_rem_fmt_price(cheapest)}", "החבילה הזולה בשוק"))
+            if ppgb is not None:
+                stats.append((f"₪{ppgb:g}", "מדד MOCA: ₪ לכל GB"))
             if unl is not None:
                 stats.append((f"₪{_rem_fmt_price(unl)}", "ללא הגבלה - הזולה ביותר"))
             subject = "MOCA: דופק השוק החודשי שלך"
             lines = [f"אנחנו ממשיכים לעקוב אחרי \"{rem['plan_name']}\" מול כל השוק.",
                      f"ב-30 הימים האחרונים: {drops} ירידות מחיר ו-{rises} עליות אצל המפעילים."]
+            if ppgb is not None:
+                lines.append(f"מדד MOCA: הממוצע המשוקלל בשוק הוא ₪{ppgb:g} לכל GB.")
             if pct is not None:
                 lines.append(f"החבילה שלכם זולה מ-{pct}% מהחבילות המקבילות.")
             lines.append("ברגע שתופיע חבילה שמנצחת את שלכם - נעדכן מיד.")

@@ -105,6 +105,8 @@ const T = {
     remEmail: 'אימייל',
     remPhone: 'וואטסאפ (מספר נייד)',
     remContactHint: 'מספיק למלא אחד מהשניים.',
+    remPaid: 'כמה אתם משלמים בפועל בחודש? (לא חובה)',
+    remPaidHint: 'אם המחיר שלכם שונה מהמחירון - נשווה מול מה שאתם באמת משלמים.',
     remSubmit: 'הרשמה לעדכונים',
     remBusy: 'רק רגע…',
     remOkTitle: 'ההרשמה הושלמה!',
@@ -210,6 +212,8 @@ const T = {
     remEmail: 'Email',
     remPhone: 'WhatsApp (mobile number)',
     remContactHint: 'Filling in just one of the two is enough.',
+    remPaid: 'What do you actually pay per month? (optional)',
+    remPaidHint: 'If your price differs from the rate card - we compare against what you really pay.',
     remSubmit: 'Sign up for updates',
     remBusy: 'One sec…',
     remOkTitle: 'You are signed up!',
@@ -583,6 +587,7 @@ function DetailsModal({ plan, t, onClose }) {
 function ReminderModal({ plan, t, lang, meta, onClose }) {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [paid, setPaid] = useState('')
   const [wantDeal, setWantDeal] = useState(true)
   const [wantEnd, setWantEnd] = useState(false)
   const [endDate, setEndDate] = useState('')
@@ -610,9 +615,11 @@ function ReminderModal({ plan, t, lang, meta, onClose }) {
     setErr(null)
     setBusy(true)
     try {
+      const paidNum = Number(paid)
       await api.mobileReminderSubscribe({
         email: em || undefined,
         phone: ph || undefined,
+        paid_price: paid && Number.isFinite(paidNum) && paidNum > 0 ? paidNum : undefined,
         kinds,
         carrier: plan.carrier,
         plan_name: plan.plan_name,
@@ -706,6 +713,14 @@ function ReminderModal({ plan, t, lang, meta, onClose }) {
               </div>
             </div>
             <div className="rem-hint">{t.remContactHint}</div>
+
+            <div className="rem-field" style={{ marginTop: 12 }}>
+              <label htmlFor="rem-paid">{t.remPaid}</label>
+              <input id="rem-paid" className="rem-input" type="number" dir="ltr" inputMode="decimal"
+                min="5" max="500" step="0.1" value={paid} placeholder="₪"
+                onChange={(e) => setPaid(e.target.value)} />
+              <div className="rem-hint" style={{ marginTop: 2 }}>{t.remPaidHint}</div>
+            </div>
 
             {err && <div className="rem-err" role="alert">{err}</div>}
             <button type="submit" className="rem-submit" disabled={busy}>
@@ -1182,11 +1197,16 @@ export default function MobileComparePage() {
                   {roamCarriers.length > 1 && (
                     <div className="carrier-row" style={{ marginBottom: 12 }}>
                       <button type="button" className={`fchip${roamCarrier === 'all' ? ' on' : ''}`} onClick={() => setRoamCarrier('all')}>{t.alertAll}</button>
-                      {roamCarriers.map((id) => (
-                        <button key={id} type="button" className={`fchip${roamCarrier === id ? ' on' : ''}`} onClick={() => setRoamCarrier(id)}>
-                          <bdi>{carrierLabel(id)}</bdi>
-                        </button>
-                      ))}
+                      {roamCarriers.map((id) => {
+                        const bc = getCarrierColor(id)
+                        return (
+                          <button key={id} type="button" className={`fchip${roamCarrier === id ? ' on' : ''}`}
+                            style={roamCarrier === id ? { background: `color-mix(in srgb, ${bc}, #fff 84%)`, borderColor: bc, color: `color-mix(in srgb, ${bc}, #000 25%)` } : undefined}
+                            onClick={() => setRoamCarrier(id)}>
+                            <bdi>{carrierLabel(id)}</bdi>
+                          </button>
+                        )
+                      })}
                     </div>
                   )}
                   {roamList.length ? roamList.map((p, i) => {

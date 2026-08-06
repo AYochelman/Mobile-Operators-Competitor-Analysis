@@ -2379,12 +2379,22 @@ def api_mobile_reminders_subscribe():
     if plan is None:
         return jsonify({"error": "unknown plan"}), 404
     channel = "both" if (email and phone) else ("email" if email else "whatsapp")
+    # Optional self-declared actual monthly price ("כמה אתם משלמים בפועל?") —
+    # when present, alerts compare against it instead of the rate-card price.
+    paid_price = None
+    try:
+        pp = float(body.get("paid_price"))
+        if 5 <= pp <= 500:
+            paid_price = round(pp, 2)
+    except (TypeError, ValueError):
+        pass
     rows = []
     for k in kinds:
         row = {"kind": k, "carrier": carrier, "plan_name": plan_name,
                "price": plan.get("price"), "data_gb": plan.get("data_gb"),
                "unlimited": plan.get("unlimited"), "email": email or None,
-               "phone": phone or None, "channel": channel, "lang": lang}
+               "phone": phone or None, "channel": channel, "lang": lang,
+               "paid_price": paid_price}
         if k == "plan_end":
             today = datetime.now().date()
             try:
@@ -2474,6 +2484,27 @@ def run_mobile_reminders_job():
 def api_mobile_reminders_run_now():
     """Manual trigger / smoke-test for the daily reminders job."""
     return jsonify(run_mobile_reminders_job())
+
+
+@app.route("/api/mobile/reminders/subscribers")
+@require_api_key_or_super_admin
+def api_mobile_reminders_subscribers():
+    """Super-admin: every reminder signup (contact details included) for the
+    /admin/mobile-subscribers dashboard. Returns ALL rows — active and done —
+    newest first, plus summary counts."""
+    from db import get_all_mobile_reminders
+    rows = get_all_mobile_reminders(db_path=_db_path())
+    emails = {r["email"] for r in rows if r.get("email")}
+    phones = {r["phone"] for r in rows if r.get("phone")}
+    return jsonify({
+        "rows": rows,
+        "stats": {
+            "total_rows": len(rows),
+            "active_rows": sum(1 for r in rows if not r.get("done")),
+            "unique_emails": len(emails),
+            "unique_phones": len(phones),
+        },
+    })
 
 
 # ════════════════════════════════════════════════════════════════════════════

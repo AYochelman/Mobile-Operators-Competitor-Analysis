@@ -37,6 +37,7 @@ export const ROUTE_META = [
   { match: '/admin/audit',       kicker: { he: 'ניהול',        en: 'Admin' },         title: { he: 'יומן ביקורת',          en: 'Audit log' } },
   { match: '/usage',             kicker: { he: 'ניהול',        en: 'Admin' },         title: { he: 'שימוש ב-Claude API',   en: 'Claude API usage' } },
   { match: '/admin/user-activity',kicker: { he: 'ניהול',       en: 'Admin' },         title: { he: 'פעילות משתמשים',       en: 'User activity' } },
+  { match: '/admin/mobile-subscribers', kicker: { he: 'B2C · סלולר', en: 'B2C · Mobile' }, title: { he: 'מנויי תזכורות', en: 'Reminder subscribers' } },
   { match: '/admin/hotels',      kicker: { he: 'Guest Connect',en: 'Guest Connect' }, title: { he: 'פורטלי אורחים',        en: 'Guest portals' } },
   { match: '/admin/esim',        kicker: { he: 'B2C',          en: 'B2C' },           title: { he: 'דשבורד eSIM',          en: 'eSIM dashboard' } },
   { match: '/admin/deals',       kicker: { he: 'B2C',          en: 'B2C' },           title: { he: 'סטטוס ספקים',          en: 'Provider status' } },

@@ -342,6 +342,8 @@ export const api = {
   //            remind_days_before?, include_offers?, lang, sid?, src?, campaign? }
   mobileReminderSubscribe: (payload) =>
     fetchApi('/api/mobile/reminders', { method: 'POST', body: JSON.stringify(payload) }),
+  // Super-admin: every reminder signup (emails/phones) + summary stats.
+  getMobileSubscribers: () => fetchApi('/api/mobile/reminders/subscribers'),
 
   // Operator console — super_admin (or dev API key).
   getHotels:         () => fetchApi('/api/hotels'),

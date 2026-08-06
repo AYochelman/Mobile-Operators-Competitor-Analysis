@@ -521,6 +521,7 @@ def init_db(db_path=None):
                 done               INTEGER DEFAULT 0,
                 last_heartbeat_at  TEXT,             -- better_deal: monthly market-pulse email
                 followup_sent      INTEGER DEFAULT 0,-- plan_end: renewal follow-up went out
+                paid_price         REAL,             -- user-declared ACTUAL monthly price (optional)
                 created_at         TEXT NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_mobile_reminders_token
@@ -810,7 +811,8 @@ def init_db(db_path=None):
             pass  # column already exists
         # Migration: /mobile-deals reminder engagement fields (monthly heartbeat +
         # plan-end renewal follow-up)
-        for col, sql in (("last_heartbeat_at", "TEXT"), ("followup_sent", "INTEGER DEFAULT 0")):
+        for col, sql in (("last_heartbeat_at", "TEXT"), ("followup_sent", "INTEGER DEFAULT 0"),
+                         ("paid_price", "REAL")):
             try:
                 conn.execute(f"ALTER TABLE mobile_reminders ADD COLUMN {col} {sql}")
                 conn.commit()
@@ -2388,13 +2390,13 @@ def save_mobile_reminders(token, rows, db_path=None):
             conn.execute(
                 "INSERT INTO mobile_reminders "
                 "(token, email, phone, channel, kind, carrier, plan_name, price, data_gb, "
-                " unlimited, end_date, remind_days_before, include_offers, lang, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " unlimited, end_date, remind_days_before, include_offers, lang, paid_price, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (token, r.get("email"), r.get("phone"), r.get("channel") or "email",
                  r["kind"], r["carrier"], r["plan_name"], r.get("price"), r.get("data_gb"),
                  1 if r.get("unlimited") else 0, r.get("end_date"),
                  r.get("remind_days_before"), 0 if r.get("include_offers") is False else 1,
-                 r.get("lang") or "he", now))
+                 r.get("lang") or "he", r.get("paid_price"), now))
         conn.commit()
     finally:
         conn.close()
@@ -2411,6 +2413,18 @@ def get_mobile_reminders(kind=None, db_path=None):
             q += " AND kind=?"
             args.append(kind)
         return [dict(r) for r in conn.execute(q, args).fetchall()]
+    finally:
+        conn.close()
+
+
+def get_all_mobile_reminders(db_path=None):
+    """EVERY reminder row (active + done) for the super-admin subscribers view.
+    Contains raw contact details — serve only behind super-admin auth."""
+    conn = _connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        return [dict(r) for r in conn.execute(
+            "SELECT * FROM mobile_reminders ORDER BY created_at DESC, id DESC").fetchall()]
     finally:
         conn.close()
 
