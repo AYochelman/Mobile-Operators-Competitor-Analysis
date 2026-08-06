@@ -1203,7 +1203,8 @@ def _rem_email_body(lang, badge, title, blocks_html, cta_url):
         f'<tr><td style="background:#ffffff;padding:26px 30px 4px;">'
         f'<span style="display:inline-block;background:#fdeee3;color:#c9622f;font-size:11.5px;font-weight:700;'
         f'border-radius:999px;padding:4px 14px;letter-spacing:.3px;">{badge}</span>'
-        f'<h1 style="margin:12px 0 4px;color:#3b1f0d;font-size:20px;font-weight:800;line-height:1.4;">{title}</h1>'
+        f'<h1 style="margin:12px 0 4px;color:#3b1f0d;font-size:20px;font-weight:800;line-height:1.4;'
+        f"font-family:'Assistant','Segoe UI',Arial,sans-serif;\">{title}</h1>"
         f'</td></tr>'
         f'<tr><td style="background:#ffffff;padding:8px 30px 4px;">{blocks_html}</td></tr>'
         f'<tr><td style="background:#ffffff;border-radius:0 0 18px 18px;padding:12px 30px 28px;" align="center">'
