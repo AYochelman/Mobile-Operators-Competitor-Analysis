@@ -1119,6 +1119,154 @@ def _rem_deal_lines(deals, lang):
     return lines
 
 
+# ── Designed reminder emails ────────────────────────────────────────────────
+# Header banners are Gemini-generated brand illustrations (mocha palette, 21:9)
+# living in data/email_assets/ — regenerate with scripts/gen_email_banners.py.
+# All HTML is email-client-safe: nested tables + inline styles, no flex/grid,
+# JPEG (not webp) images embedded inline via cid.
+
+_REM_ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "email_assets")
+_REM_BANNER_FILES = {"better_deal": "reminder_deal.jpg", "heartbeat": "reminder_pulse.jpg",
+                     "plan_end": "reminder_renew.jpg", "renewal": "reminder_renew.jpg"}
+
+
+def _rem_banner_attachment(kind):
+    fn = _REM_BANNER_FILES.get(kind)
+    if not fn:
+        return None
+    try:
+        with open(os.path.join(_REM_ASSETS_DIR, fn), "rb") as f:
+            return {"filename": fn, "content": f.read(), "mimetype": "image/jpeg",
+                    "cid": "moca-banner"}
+    except OSError:
+        return None
+
+
+def _rem_email_shell(inner_html, lang, unsub, has_banner):
+    dir_attr = "ltr" if lang == "en" else "rtl"
+    align = "left" if lang == "en" else "right"
+    tagline = "Israeli mobile-plan comparison" if lang == "en" else "השוואת חבילות סלולר"
+    unsub_label = "Unsubscribe" if lang == "en" else "להסרה מהעדכונים"
+    banner_row = (
+        "<tr><td style='padding:0;line-height:0'>"
+        "<img src='cid:moca-banner' width='560' alt='' "
+        "style='display:block;width:100%;max-width:560px;height:auto'></td></tr>"
+        if has_banner else "")
+    return (
+        f"<div dir='{dir_attr}' style='margin:0;padding:26px 10px;background-color:#f9f4ee'>"
+        f"<table role='presentation' align='center' width='560' cellpadding='0' cellspacing='0' "
+        f"style='max-width:560px;width:100%;margin:0 auto;background-color:#ffffff;"
+        f"border-radius:18px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:#3b1f0d'>"
+        f"{banner_row}"
+        f"<tr><td style='padding:20px 26px 0;text-align:{align}'>"
+        f"<span style='font-size:17px;font-weight:bold;color:#5c3317'>MOCA &#9889;</span>"
+        f"<span style='font-size:12px;color:#8a6a4a'>&nbsp;&middot;&nbsp;{tagline}</span>"
+        f"</td></tr>"
+        f"<tr><td style='padding:10px 26px 24px;text-align:{align}'>{inner_html}</td></tr>"
+        f"</table>"
+        f"<table role='presentation' align='center' width='560' cellpadding='0' cellspacing='0' "
+        f"style='max-width:560px;width:100%;margin:10px auto 0'>"
+        f"<tr><td style='text-align:center;font-size:11px;color:#a08468;padding:4px'>"
+        f"<a href='{unsub}' style='color:#8a6a4a'>{unsub_label}</a> &middot; MOCA</td></tr>"
+        f"</table></div>")
+
+
+def _rem_title_html(txt):
+    return f"<h1 style='font-size:20px;line-height:1.35;margin:0 0 10px;color:#3b1f0d'>{html.escape(txt)}</h1>"
+
+
+def _rem_p_html(txt):
+    return f"<p style='font-size:14px;line-height:1.65;margin:0 0 12px;color:#3b1f0d'>{html.escape(txt)}</p>"
+
+
+def _rem_deal_cards_html(deals, lang):
+    per_month = "/month" if lang == "en" else "לחודש"
+    price_align = "right" if lang == "en" else "left"
+    cards = []
+    for p in deals:
+        name = html.escape(CARRIER_DISPLAY_NAMES.get(p["carrier"], p["carrier"]))
+        plan = html.escape(p["plan_name"])
+        gb = html.escape(_rem_gb_label(p, lang))
+        cards.append(
+            f"<table role='presentation' width='100%' cellpadding='0' cellspacing='0' "
+            f"style='background-color:#f9f4ee;border-radius:12px;margin:0 0 8px'><tr>"
+            f"<td style='padding:12px 14px;font-size:14px;color:#3b1f0d'>"
+            f"<b>{name}</b><br>"
+            f"<span style='font-size:12px;color:#8a6a4a'>{plan} &middot; {gb}</span></td>"
+            f"<td dir='ltr' style='padding:12px 14px;text-align:{price_align};white-space:nowrap'>"
+            f"<span style='font-size:18px;font-weight:bold;color:#5c3317'>&#8362;{_rem_fmt_price(p['price'])}</span><br>"
+            f"<span style='font-size:11px;color:#8a6a4a'>{per_month}</span></td>"
+            f"</tr></table>")
+    return "".join(cards)
+
+
+def _rem_savings_html(annual, lang):
+    label = (f"Switching to the cheapest offer saves about ₪{annual} a year"
+             if lang == "en" else
+             f"מעבר להצעה הזולה ביותר = חיסכון של כ-₪{annual} בשנה")
+    return (
+        f"<table role='presentation' width='100%' cellpadding='0' cellspacing='0' "
+        f"style='background-color:#e3f3e9;border-radius:12px;margin:12px 0'><tr>"
+        f"<td style='padding:14px 16px;text-align:center;font-size:15px;font-weight:bold;"
+        f"color:#246b43'>&#128176; {html.escape(label)}</td></tr></table>")
+
+
+def _rem_percentile_html(pct, lang):
+    label = (f"Your plan is cheaper than {pct}% of comparable plans on the market"
+             if lang == "en" else
+             f"החבילה שלכם זולה מ-{pct}% מהחבילות המקבילות בשוק")
+    return (
+        f"<div style='margin:12px 0 4px'>"
+        f"<div style='font-size:13px;color:#3b1f0d;margin-bottom:6px'>{html.escape(label)}</div>"
+        f"<table role='presentation' width='100%' cellpadding='0' cellspacing='0'><tr>"
+        f"<td style='background-color:#f0e6d8;border-radius:8px;padding:0;line-height:0'>"
+        f"<div style='width:{max(4, min(100, pct))}%;background-color:#c9622f;height:10px;"
+        f"border-radius:8px;font-size:0'>&nbsp;</div></td></tr></table></div>")
+
+
+def _rem_stats_html(stats):
+    cells = "".join(
+        f"<td style='background-color:#f9f4ee;border-radius:12px;padding:12px 6px;"
+        f"text-align:center;width:{round(100 / max(1, len(stats)))}%'>"
+        f"<div dir='ltr' style='font-size:17px;font-weight:bold;color:#5c3317'>{html.escape(str(v))}</div>"
+        f"<div style='font-size:11px;color:#8a6a4a;line-height:1.4'>{html.escape(l)}</div></td>"
+        for v, l in stats)
+    return (f"<table role='presentation' width='100%' cellpadding='0' cellspacing='6' "
+            f"style='margin:8px 0'><tr>{cells}</tr></table>")
+
+
+def _rem_cta_html(label, url):
+    return (
+        f"<table role='presentation' align='center' cellpadding='0' cellspacing='0' "
+        f"style='margin:16px auto 2px'><tr>"
+        f"<td style='background-color:#5c3317;border-radius:12px'>"
+        f"<a href='{url}' style='display:inline-block;padding:12px 28px;color:#ffffff;"
+        f"font-size:14px;font-weight:bold;text-decoration:none'>{html.escape(label)}</a>"
+        f"</td></tr></table>")
+
+
+def _market_percentile(base, plans):
+    """Share (0-100) of comparable plans (>= the user's data, honest pricing)
+    that cost MORE than the user's plan — 'cheaper than N% of the market'.
+    None when the comparable set is too small to be meaningful."""
+    INF = float("inf")
+
+    def _data(p):
+        return INF if (p.get("unlimited") or p.get("data_gb") is None) else (p.get("data_gb") or 0)
+
+    base_price = base.get("price")
+    if base_price is None:
+        return None
+    base_data = _data(base)
+    comp = [p for p in plans
+            if p.get("price") is not None and not p.get("voice_only")
+            and not p.get("price_conditional") and _data(p) >= base_data
+            and not (p.get("carrier") == base.get("carrier") and p.get("plan_name") == base.get("plan_name"))]
+    if len(comp) < 3:
+        return None
+    return round(100 * sum(1 for p in comp if p["price"] > base_price) / len(comp))
+
+
 def _rem_links(rem, config):
     """(page-with-utm, unsubscribe) URLs for one reminder row."""
     lang = rem.get("lang") or "he"
@@ -1203,7 +1351,7 @@ def _rem_email_body(lang, badge, title, blocks_html, cta_url):
         f'<tr><td style="background:#ffffff;padding:26px 30px 4px;">'
         f'<span style="display:inline-block;background:#fdeee3;color:#c9622f;font-size:11.5px;font-weight:700;'
         f'border-radius:999px;padding:4px 14px;letter-spacing:.3px;">{badge}</span>'
-        f'<h1 style="margin:12px 0 4px;color:#3b1f0d;font-size:20px;font-weight:800;line-height:1.4;'
+        f'<h1 style="margin:12px 0 4px;color:#3b1f0d;font-size:20px;font-weight:700;line-height:1.4;'
         f"font-family:'Assistant','Segoe UI',Arial,sans-serif;\">{title}</h1>"
         f'</td></tr>'
         f'<tr><td style="background:#ffffff;padding:8px 30px 4px;">{blocks_html}</td></tr>'
