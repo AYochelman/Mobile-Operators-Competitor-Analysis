@@ -1346,7 +1346,10 @@ def _find_reseller_deals(base, db_path=None, min_saving=2.0, limit=2):
     INF = float("inf")
 
     def _data(p):
-        return INF if p.get("data_gb") is None else (p.get("data_gb") or 0)
+        # Unlike the normalized feed, a NULL data_gb on a reseller row means
+        # UNKNOWN (voice/club deals), not unlimited — never let it outrank a
+        # concrete data plan.
+        return p.get("data_gb") or 0
 
     base_price = base.get("price")
     if base_price is None:
