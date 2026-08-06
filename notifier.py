@@ -1373,11 +1373,14 @@ def _find_reseller_deals(base, db_path=None, min_saving=2.0, limit=2):
 
 def _rem_btl_cards_html(btl, lang):
     """Reseller-deal cards: reseller name + underlying carrier, clearly tagged
-    as a below-the-line offer, price side links to the source page."""
+    as a below-the-line offer. When the source page is known, the card content
+    links to it and an explicit 'לעמוד ההצעה ›' CTA appears — mirroring the
+    carrier-site anchor pattern of _rem_deal_cards_html."""
     rtl = lang != "en"
     end_align = "left" if rtl else "right"
     tag = "הצעת משווק" if rtl else "Reseller offer"
     per_month = "לחודש" if rtl else "per month"
+    visit_label = "לעמוד ההצעה ›" if rtl else "View the offer ›"
     cards = []
     for r in btl:
         rname = RESELLER_NAMES.get(r["reseller_id"], r["reseller_id"])
@@ -1385,22 +1388,26 @@ def _rem_btl_cards_html(btl, lang):
         gb = ("ללא הגבלה" if rtl else "Unlimited data") if r.get("data_gb") is None \
             else f"{r['data_gb']:g}GB"
         src = r.get("source_url") or ""
-        price_html = f'&#8362;{_rem_fmt_price(r["price"])}'
+        info = (f'<span style="color:#3b1f0d;font-size:15px;font-weight:700;">{rname}</span> '
+                f'<span style="color:#8a6a4a;font-size:12.5px;">({cname})</span><br>'
+                f'<span style="color:#8a6a4a;font-size:12.5px;">{r["plan_name"]}</span>')
+        price = (f'<span dir="ltr" style="color:#c9622f;font-size:21px;font-weight:800;">&#8362;{_rem_fmt_price(r["price"])}</span><br>'
+                 f'<span style="color:#8a6a4a;font-size:12px;">{gb} &middot; {per_month}</span>')
         if src:
-            price_html = f'<a href="{src}" style="color:#c9622f;text-decoration:none;">{price_html}</a>'
+            info = (f'<a href="{src}" style="text-decoration:none;color:inherit;">{info}</a><br>'
+                    f'<a href="{src}" style="display:inline-block;margin-top:6px;background:#c9622f;'
+                    f'color:#ffffff;font-size:12px;font-weight:700;text-decoration:none;'
+                    f'border-radius:999px;padding:6px 16px;">{visit_label}</a>')
+            price = f'<a href="{src}" style="text-decoration:none;color:inherit;">{price}</a>'
         cards.append(
             f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
             f'style="background:#fdf6ec;border:1px dashed #d9b98c;border-radius:14px;margin:0 0 10px;"><tr>'
             f'<td style="padding:14px 18px;">'
             f'<span style="display:inline-block;background:#f5e3c8;color:#7a5a2e;font-size:10.5px;'
             f'font-weight:700;border-radius:999px;padding:2px 10px;margin-bottom:4px;">{tag}</span><br>'
-            f'<span style="color:#3b1f0d;font-size:15px;font-weight:700;">{rname}</span> '
-            f'<span style="color:#8a6a4a;font-size:12.5px;">({cname})</span><br>'
-            f'<span style="color:#8a6a4a;font-size:12.5px;">{r["plan_name"]}</span></td>'
-            f'<td align="{end_align}" style="padding:14px 18px;white-space:nowrap;">'
-            f'<span dir="ltr" style="font-size:21px;font-weight:800;">{price_html}</span><br>'
-            f'<span style="color:#8a6a4a;font-size:12px;">{gb} &middot; {per_month}</span>'
-            f'</td></tr></table>')
+            f'{info}</td>'
+            f'<td align="{end_align}" style="padding:14px 18px;white-space:nowrap;vertical-align:top;">'
+            f'{price}</td></tr></table>')
     return "".join(cards)
 
 
