@@ -1353,7 +1353,12 @@ def _find_reseller_deals(base, db_path=None, min_saving=2.0, limit=2):
         return []
     base_data = INF if (base.get("unlimited") or base.get("data_gb") is None) else (base.get("data_gb") or 0)
     try:
-        rows = get_reseller_plans(db_path=db_path)
+        from db import filter_undominated_reseller_plans
+        # The dominance filter drops rate-card-mirror rows (the carrier's own
+        # plan already beats them), so every card here is genuinely below the
+        # line — same filter the משווקים tab applies.
+        rows = filter_undominated_reseller_plans(get_reseller_plans(db_path=db_path),
+                                                 db_path=db_path)
     except Exception:
         return []
     out = [r for r in rows
