@@ -492,6 +492,37 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_mobile_events_at
                 ON mobile_events(created_at);
+            -- /mobile-deals email/WhatsApp reminders (public opt-in, no auth).
+            -- One row per (submission, kind); rows from one submission share a
+            -- token so the unsubscribe link removes the whole signup at once.
+            -- kind='better_deal': recurring — alert when another carrier offers
+            --   >= the snapshot data for less; best_price_alerted ratchets down
+            --   so the same offer never re-alerts.
+            -- kind='plan_end': one-shot — fires at end_date - remind_days_before
+            --   (done=1 after sending), optionally attaching similar offers.
+            CREATE TABLE IF NOT EXISTS mobile_reminders (
+                id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+                token              TEXT NOT NULL,
+                email              TEXT,
+                phone              TEXT,             -- digits, intl format (972…)
+                channel            TEXT NOT NULL DEFAULT 'email',  -- email | whatsapp | both
+                kind               TEXT NOT NULL,    -- better_deal | plan_end
+                carrier            TEXT NOT NULL,
+                plan_name          TEXT NOT NULL,
+                price              REAL,             -- snapshot at signup
+                data_gb            REAL,             -- snapshot (NULL + unlimited=1 → unlimited)
+                unlimited          INTEGER DEFAULT 0,
+                end_date           TEXT,             -- plan_end: ISO date the plan term ends
+                remind_days_before INTEGER,          -- plan_end
+                include_offers     INTEGER DEFAULT 1,-- plan_end: attach similar offers
+                lang               TEXT DEFAULT 'he',
+                best_price_alerted REAL,             -- better_deal dedup ratchet
+                last_notified_at   TEXT,
+                done               INTEGER DEFAULT 0,
+                created_at         TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_mobile_reminders_token
+                ON mobile_reminders(token);
             CREATE TABLE IF NOT EXISTS workspace_invites (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 token        TEXT NOT NULL UNIQUE,
@@ -2326,6 +2357,72 @@ def touch_mobile_push_notified(endpoint, db_path=None):
         conn.execute(
             "UPDATE mobile_push_subscriptions SET last_notified_at=? WHERE endpoint=?",
             (datetime.now().isoformat(), endpoint))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def save_mobile_reminders(token, rows, db_path=None):
+    """Insert the reminder rows of one /mobile-deals signup (all sharing `token`).
+    Re-signing up for the same (kind, carrier, plan_name) with the same contact
+    replaces the old row — a user tweaking the reminder date shouldn't stack
+    duplicate reminders."""
+    conn = _connect(db_path)
+    try:
+        now = datetime.now().isoformat()
+        for r in rows:
+            conn.execute(
+                "DELETE FROM mobile_reminders WHERE kind=? AND carrier=? AND plan_name=? "
+                "AND IFNULL(email,'')=IFNULL(?,'') AND IFNULL(phone,'')=IFNULL(?,'')",
+                (r["kind"], r["carrier"], r["plan_name"], r.get("email"), r.get("phone")))
+            conn.execute(
+                "INSERT INTO mobile_reminders "
+                "(token, email, phone, channel, kind, carrier, plan_name, price, data_gb, "
+                " unlimited, end_date, remind_days_before, include_offers, lang, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (token, r.get("email"), r.get("phone"), r.get("channel") or "email",
+                 r["kind"], r["carrier"], r["plan_name"], r.get("price"), r.get("data_gb"),
+                 1 if r.get("unlimited") else 0, r.get("end_date"),
+                 r.get("remind_days_before"), 0 if r.get("include_offers") is False else 1,
+                 r.get("lang") or "he", now))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_mobile_reminders(kind=None, db_path=None):
+    """Active reminder rows (plan_end rows already sent are excluded)."""
+    conn = _connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        q = "SELECT * FROM mobile_reminders WHERE done=0"
+        args = []
+        if kind:
+            q += " AND kind=?"
+            args.append(kind)
+        return [dict(r) for r in conn.execute(q, args).fetchall()]
+    finally:
+        conn.close()
+
+
+def delete_mobile_reminders_by_token(token, db_path=None):
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute("DELETE FROM mobile_reminders WHERE token=?", (token,))
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
+def mark_mobile_reminder_notified(reminder_id, best_price=None, done=False, db_path=None):
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "UPDATE mobile_reminders SET last_notified_at=?, "
+            "best_price_alerted=COALESCE(?, best_price_alerted), "
+            "done=CASE WHEN ? THEN 1 ELSE done END WHERE id=?",
+            (datetime.now().isoformat(), best_price, 1 if done else 0, reminder_id))
         conn.commit()
     finally:
         conn.close()

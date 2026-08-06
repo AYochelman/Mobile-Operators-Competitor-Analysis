@@ -6,7 +6,7 @@ import os
 import requests
 import smtplib
 import ssl
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import defaultdict
 
 logger = logging.getLogger(__name__)
@@ -992,6 +992,402 @@ def send_price_alert_email(user_email: str, alert: dict, matching_plans: list, c
     subject = f"MOCA \u05d4\u05ea\u05e8\u05d0\u05ea \u05de\u05d7\u05d9\u05e8: {carrier_name} \u05d9\u05e8\u05d3 \u05de\u05ea\u05d7\u05ea \u05dc-\u20aa{alert['threshold']}"
 
     return _send_email(config, user_email, subject, text=body)
+
+
+_WA_CHATID_CACHE = {}
+
+
+def _resolve_whatsapp_chatid(phone, base_url, instance, token):
+    """Resolve a phone number to its real Green API chatId. WhatsApp accounts
+    behind the @lid privacy layer (e.g. 972502002003 → 28862348046428@lid)
+    silently DROP messages addressed to <phone>@c.us — the API returns 200 and
+    the message sticks at 'sent' forever (verified 2026-08-06). checkWhatsapp
+    returns the routable chatId; fall back to <phone>@c.us on any failure."""
+    if phone in _WA_CHATID_CACHE:
+        return _WA_CHATID_CACHE[phone]
+    chat_id = f"{phone}@c.us"
+    try:
+        resp = requests.post(
+            f"{base_url}/waInstance{instance}/checkWhatsapp/{token}",
+            json={"phoneNumber": int(phone)}, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("existsWhatsapp") and data.get("chatId"):
+                chat_id = data["chatId"]
+    except (requests.RequestException, ValueError):
+        pass
+    _WA_CHATID_CACHE[phone] = chat_id
+    return chat_id
+
+
+def _send_whatsapp_direct(phone, message, config):
+    """Green API send to a specific user phone (intl digits, e.g. 9725…) —
+    unlike send_whatsapp, which targets the operator's configured group.
+    The chatId is resolved via checkWhatsapp first (see _resolve_whatsapp_chatid)."""
+    base_url = config.get("greenapi_url", "")
+    instance = config.get("greenapi_instance", "")
+    token = config.get("greenapi_token", "")
+    if not all([base_url, instance, token, phone]):
+        return False
+    chat_id = _resolve_whatsapp_chatid(phone, base_url, instance, token)
+    try:
+        resp = requests.post(
+            f"{base_url}/waInstance{instance}/sendMessage/{token}",
+            json={"chatId": chat_id, "message": message},
+            timeout=10)
+        return resp.status_code == 200
+    except requests.RequestException:
+        return False
+
+
+def _rem_fmt_price(p):
+    try:
+        p = float(p)
+    except (TypeError, ValueError):
+        return str(p)
+    return str(int(p)) if p.is_integer() else f"{p:g}"
+
+
+def _rem_gb_label(plan, lang):
+    if plan.get("unlimited") or plan.get("data_gb") is None:
+        return "Unlimited data" if lang == "en" else "גלישה ללא הגבלה"
+    g = plan["data_gb"]
+    return f"{g:g}GB"
+
+
+def find_better_mobile_deals(base, plans, min_saving=2.0, limit=3):
+    """Competing domestic plans that beat `base` (a mobile_reminders row / feed
+    plan): at least the same data for less money, or more data for the same
+    money. `plans` is the normalized /api/mobile/compare feed (voice-only and
+    conditional-price rows are excluded — their headline ₪ is not comparable)."""
+    INF = float("inf")
+
+    def _data(p):
+        return INF if (p.get("unlimited") or p.get("data_gb") is None) else (p.get("data_gb") or 0)
+
+    base_price, base_data = base.get("price"), _data(base)
+    if base_price is None:
+        return []
+    out = []
+    for p in plans:
+        if p.get("carrier") == base.get("carrier") or p.get("price") is None:
+            continue
+        if p.get("voice_only") or p.get("price_conditional"):
+            continue
+        d, pr = _data(p), p["price"]
+        if (d >= base_data and pr <= base_price - min_saving) or (d > base_data and pr <= base_price):
+            out.append(p)
+    out.sort(key=lambda p: (p["price"], -_data(p) if _data(p) != INF else -10 ** 9))
+    return out[:limit]
+
+
+def find_similar_mobile_offers(base, plans, limit=3):
+    """Retention alternatives for a plan-end reminder: same-or-more data from any
+    carrier (including the user's own), cheapest first. Unlike
+    find_better_mobile_deals, price may equal/exceed the old plan — the point is
+    preserving terms, not only undercutting them."""
+    INF = float("inf")
+
+    def _data(p):
+        return INF if (p.get("unlimited") or p.get("data_gb") is None) else (p.get("data_gb") or 0)
+
+    base_data = _data(base)
+    out = [p for p in plans
+           if p.get("price") is not None and not p.get("voice_only")
+           and not p.get("price_conditional") and _data(p) >= base_data
+           and not (p.get("carrier") == base.get("carrier") and p.get("plan_name") == base.get("plan_name"))]
+    out.sort(key=lambda p: (p["price"], -_data(p) if _data(p) != INF else -10 ** 9))
+    return out[:limit]
+
+
+def _rem_urls(config):
+    """Public URLs for reminder messages. Config-driven because the canonical
+    hosts flip during the mocaintel.com takedown (public_site_url = the Netlify
+    subdomain, public_api_url = the reserved ngrok domain); defaults are the
+    canonical domains."""
+    site = (config.get("public_site_url") or "https://mocaintel.com").rstrip("/")
+    api = (config.get("public_api_url") or "https://api.mocaintel.com").rstrip("/")
+    return (site + "/mobile-deals",
+            api + "/api/mobile/reminders/unsubscribe?token=")
+
+
+def _rem_deal_lines(deals, lang):
+    lines = []
+    for p in deals:
+        name = CARRIER_DISPLAY_NAMES.get(p["carrier"], p["carrier"])
+        lines.append(f"• {name} - {p['plan_name']}: ₪{_rem_fmt_price(p['price'])} ({_rem_gb_label(p, lang)})")
+    return lines
+
+
+def _rem_links(rem, config):
+    """(page-with-utm, unsubscribe) URLs for one reminder row."""
+    lang = rem.get("lang") or "he"
+    page_url, unsub_base = _rem_urls(config)
+    utm = f"{page_url}?utm_source=reminder&utm_campaign={rem['kind']}" + ("&lang=en" if lang == "en" else "")
+    return utm, unsub_base + rem["token"]
+
+
+# ---- Branded reminder emails --------------------------------------------
+# Palette mirrors the #mobile-app tokens in MobileComparePage.jsx so the mail
+# reads as the same product: c1 #5c3317, c2 #c9622f, bg #f9f4ee, cream #f5ede0,
+# ink #3b1f0d, sub #8a6a4a, muted #a08468, line #e0cdb5, green #246b43/#e3f3e9.
+# Email-client-safe: tables + inline styles only, no flex/grid/webfont deps.
+
+def _rem_email_shell(lang, unsub, inner_rows):
+    """Shared shell (cream canvas, MOCA header, footer) around content <tr> rows."""
+    rtl = lang != "en"
+    dir_attr = "rtl" if rtl else "ltr"
+    tagline = "השוואת מסלולי סלולר בישראל" if rtl else "Israel mobile plan comparison"
+    footer_note = ("קיבלת מייל זה כי נרשמת להתראות בעמוד השוואת המסלולים של MOCA."
+                   if rtl else
+                   "You are receiving this because you signed up for alerts on MOCA's plan comparison page.")
+    unsub_label = "להסרה מהעדכונים" if rtl else "Unsubscribe"
+    return f'''<!DOCTYPE html><html dir="{dir_attr}" lang="{"he" if rtl else "en"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f9f4ee;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9f4ee;">
+<tr><td align="center" style="padding:28px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" dir="{dir_attr}" style="max-width:600px;width:100%;font-family:'Assistant','Segoe UI',Arial,sans-serif;">
+<tr><td style="background:#5c3317;border-radius:18px 18px 0 0;padding:24px 30px;">
+<span style="color:#ffffff;font-size:26px;font-weight:800;letter-spacing:2px;">MOCA</span>
+<span style="display:inline-block;width:9px;height:9px;background:#c9622f;border-radius:9px;margin:0 5px;"></span>
+<div style="color:#e8cdb4;font-size:12.5px;margin-top:4px;">{tagline}</div>
+</td></tr>
+{inner_rows}
+<tr><td style="padding:18px 16px 4px;text-align:center;">
+<p style="margin:0;color:#a08468;font-size:11.5px;line-height:1.8;">{footer_note}<br>
+<a href="{unsub}" style="color:#8a6a4a;">{unsub_label}</a> &middot; MOCA</p>
+</td></tr>
+</table></td></tr></table></body></html>'''
+
+
+def _rem_deal_cards_html(deals, lang, mark_best=False):
+    """Deal rows as white cards: carrier + plan on the start side, price + data
+    on the end side. The first card optionally gets a green 'best value' tag."""
+    rtl = lang != "en"
+    end_align = "left" if rtl else "right"
+    best_label = "הכי משתלמת" if rtl else "Best value"
+    per_month = "לחודש" if rtl else "per month"
+    cards = []
+    for i, p in enumerate(deals):
+        name = CARRIER_DISPLAY_NAMES.get(p["carrier"], p["carrier"])
+        badge = ""
+        if mark_best and i == 0 and len(deals) > 1:
+            badge = (f'<span style="display:inline-block;background:#e3f3e9;color:#246b43;font-size:10.5px;'
+                     f'font-weight:700;border-radius:999px;padding:2px 10px;margin-bottom:4px;">{best_label}</span><br>')
+        cards.append(
+            f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+            f'style="background:#ffffff;border:1px solid #e0cdb5;border-radius:14px;margin:0 0 10px;"><tr>'
+            f'<td style="padding:14px 18px;">{badge}'
+            f'<span style="color:#3b1f0d;font-size:15px;font-weight:700;">{name}</span><br>'
+            f'<span style="color:#8a6a4a;font-size:12.5px;">{p["plan_name"]}</span></td>'
+            f'<td align="{end_align}" style="padding:14px 18px;white-space:nowrap;">'
+            f'<span dir="ltr" style="color:#c9622f;font-size:21px;font-weight:800;">&#8362;{_rem_fmt_price(p["price"])}</span><br>'
+            f'<span style="color:#8a6a4a;font-size:12px;">{_rem_gb_label(p, lang)} &middot; {per_month}</span>'
+            f'</td></tr></table>')
+    return "".join(cards)
+
+
+def _rem_email_body(lang, badge, title, blocks_html, cta_url):
+    """Content rows: alert pill + title, free-form blocks, CTA button."""
+    rtl = lang != "en"
+    cta_label = "להשוואה המלאה באתר" if rtl else "See the full comparison"
+    return (
+        f'<tr><td style="background:#ffffff;padding:26px 30px 4px;">'
+        f'<span style="display:inline-block;background:#fdeee3;color:#c9622f;font-size:11.5px;font-weight:700;'
+        f'border-radius:999px;padding:4px 14px;letter-spacing:.3px;">{badge}</span>'
+        f'<h1 style="margin:12px 0 4px;color:#3b1f0d;font-size:20px;font-weight:800;line-height:1.4;">{title}</h1>'
+        f'</td></tr>'
+        f'<tr><td style="background:#ffffff;padding:8px 30px 4px;">{blocks_html}</td></tr>'
+        f'<tr><td style="background:#ffffff;border-radius:0 0 18px 18px;padding:12px 30px 28px;" align="center">'
+        f'<a href="{cta_url}" style="display:inline-block;background:#c9622f;color:#ffffff;text-decoration:none;'
+        f'font-size:14.5px;font-weight:700;border-radius:999px;padding:12px 34px;">{cta_label}</a>'
+        f'</td></tr>')
+
+
+def _build_better_deal_html(rem, base, deals, config):
+    """Branded email for the better_deal reminder: current-plan strip, savings
+    tag, competing deal cards, CTA."""
+    lang = rem.get("lang") or "he"
+    rtl = lang != "en"
+    utm, unsub = _rem_links(rem, config)
+    cname = CARRIER_DISPLAY_NAMES.get(rem["carrier"], rem["carrier"])
+    cur_label = "המסלול שלך היום" if rtl else "Your current plan"
+    base_strip = (
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        f'style="background:#f5ede0;border-radius:12px;margin:6px 0 12px;"><tr>'
+        f'<td style="padding:12px 18px;">'
+        f'<span style="color:#a08468;font-size:11px;font-weight:700;">{cur_label}</span><br>'
+        f'<span style="color:#3b1f0d;font-size:13.5px;font-weight:700;">{rem["plan_name"]}</span> '
+        f'<span style="color:#8a6a4a;font-size:12.5px;">({cname})</span></td>'
+        f'<td align="{"left" if rtl else "right"}" style="padding:12px 18px;white-space:nowrap;">'
+        f'<span dir="ltr" style="color:#8a6a4a;font-size:16px;font-weight:700;">&#8362;{_rem_fmt_price(base["price"])}</span><br>'
+        f'<span style="color:#a08468;font-size:11.5px;">{_rem_gb_label(base, lang)}</span>'
+        f'</td></tr></table>')
+    saving_html = ""
+    try:
+        saving = float(base["price"]) - float(deals[0]["price"])
+        if saving >= 1:
+            saving_txt = (f"חיסכון של עד &#8362;{_rem_fmt_price(saving)} בחודש" if rtl
+                          else f"Save up to &#8362;{_rem_fmt_price(saving)} a month")
+            saving_html = (f'<div style="margin:0 0 14px;"><span style="display:inline-block;background:#e3f3e9;'
+                           f'color:#246b43;font-size:12.5px;font-weight:800;border-radius:999px;padding:5px 16px;">'
+                           f'&#8595; {saving_txt}</span></div>')
+    except (TypeError, ValueError):
+        pass
+    badge = "התראת חיסכון" if rtl else "Savings alert"
+    title = ("מצאנו חבילות שמשתלמות יותר מהמסלול שלך" if rtl
+             else "We found plans that beat your current one")
+    blocks = base_strip + saving_html + _rem_deal_cards_html(deals, lang, mark_best=True)
+    return _rem_email_shell(lang, unsub, _rem_email_body(lang, badge, title, blocks, utm))
+
+
+def _build_plan_end_html(rem, intro_lines, offers, config):
+    """Branded email for the plan_end reminder: intro paragraphs + optional
+    retention-alternative cards."""
+    lang = rem.get("lang") or "he"
+    rtl = lang != "en"
+    utm, unsub = _rem_links(rem, config)
+    paras = "".join(f'<p style="margin:0 0 10px;color:#4a3a24;font-size:14px;line-height:1.7;">{ln}</p>'
+                    for ln in intro_lines if ln)
+    blocks = paras
+    if offers:
+        offers_title = "הצעות דומות שזמינות היום" if rtl else "Similar offers available today"
+        blocks += (f'<p style="margin:14px 0 8px;color:#3b1f0d;font-size:13.5px;font-weight:700;">{offers_title}</p>'
+                   + _rem_deal_cards_html(offers, lang))
+    badge = "תזכורת סיום מסלול" if rtl else "Plan-end reminder"
+    cname = CARRIER_DISPLAY_NAMES.get(rem["carrier"], rem["carrier"])
+    title = (f"המסלול שלך ב{cname} עומד להסתיים" if rtl
+             else f"Your plan at {cname} is about to end")
+    return _rem_email_shell(lang, unsub, _rem_email_body(lang, badge, title, blocks, utm))
+
+
+def _rem_send(rem, subject, text_lines, config, html=None):
+    """Deliver one reminder over its chosen channel(s). Returns True if at least
+    one channel accepted the message. `html` overrides the plain generated email
+    body (the WhatsApp text always comes from text_lines)."""
+    lang = rem.get("lang") or "he"
+    utm, unsub = _rem_links(rem, config)
+    body_lines = text_lines + ["", utm]
+    ok = False
+    channel = rem.get("channel") or "email"
+    if channel in ("email", "both") and rem.get("email"):
+        footer = ("Unsubscribe: " if lang == "en" else "להסרה מהעדכונים: ") + unsub
+        text = "\n".join(body_lines + ["", footer, "", "MOCA"])
+        if html is None:
+            dir_attr = "ltr" if lang == "en" else "rtl"
+            html_body = "".join(f"<p style='margin:6px 0'>{ln}</p>" for ln in body_lines if ln)
+            html = (f"<div dir='{dir_attr}' style='font-family:Arial,sans-serif;font-size:15px;color:#3b1f0d'>"
+                    f"{html_body}"
+                    f"<p style='margin:14px 0 0;font-size:12px;color:#8a6a4a'>"
+                    f"<a href='{unsub}'>{'Unsubscribe' if lang == 'en' else 'להסרה מהעדכונים'}</a> · MOCA</p></div>")
+        if _send_email(config, rem["email"], subject, text=text, html=html):
+            ok = True
+    if channel in ("whatsapp", "both") and rem.get("phone"):
+        footer = ("Unsubscribe: " if lang == "en" else "להסרה: ") + unsub
+        if _send_whatsapp_direct(rem["phone"], "\n".join(body_lines + [footer]), config):
+            ok = True
+    return ok
+
+
+def notify_mobile_better_deals(plans, config, db_path=None):
+    """Recurring /mobile-deals reminder #1: 'a similar plan now costs less at
+    another carrier'. Runs daily off the normalized feed. Per subscription, the
+    best_price_alerted ratchet means a given offer alerts once — a re-alert
+    needs a strictly better (>= ₪1 cheaper) competing offer. 72h cooldown."""
+    from db import get_mobile_reminders, mark_mobile_reminder_notified
+    sent = 0
+    by_id = {f"{p['carrier']}|{p['plan_name']}": p for p in plans}
+    for rem in get_mobile_reminders(kind="better_deal", db_path=db_path):
+        last = rem.get("last_notified_at")
+        if last:
+            try:
+                if (datetime.now() - datetime.fromisoformat(last)).total_seconds() < 72 * 3600:
+                    continue
+            except (ValueError, TypeError):
+                pass
+        # Compare against the plan's CURRENT price when it's still on the rate
+        # card (prices move after signup); fall back to the signup snapshot.
+        cur = by_id.get(f"{rem['carrier']}|{rem['plan_name']}")
+        base = {"carrier": rem["carrier"], "price": (cur or rem).get("price"),
+                "data_gb": rem.get("data_gb"), "unlimited": rem.get("unlimited")}
+        deals = find_better_mobile_deals(base, plans)
+        if not deals:
+            continue
+        best = deals[0]["price"]
+        prev = rem.get("best_price_alerted")
+        if prev is not None and best > prev - 1:
+            continue
+        lang = rem.get("lang") or "he"
+        cname = CARRIER_DISPLAY_NAMES.get(rem["carrier"], rem["carrier"])
+        if lang == "en":
+            subject = f"MOCA: a better deal than {rem['plan_name']} ({cname})"
+            head = [f"Good news - we found plans that beat \"{rem['plan_name']}\" ({cname}, ₪{_rem_fmt_price(base['price'])}):"]
+        else:
+            subject = f"MOCA: נמצאה חבילה משתלמת יותר מ{cname}"
+            head = [f"חדשות טובות - מצאנו חבילות שמנצחות את \"{rem['plan_name']}\" ({cname}, ₪{_rem_fmt_price(base['price'])}):"]
+        html = _build_better_deal_html(rem, base, deals, config)
+        if _rem_send(rem, subject, head + _rem_deal_lines(deals, lang), config, html=html):
+            mark_mobile_reminder_notified(rem["id"], best_price=best, db_path=db_path)
+            sent += 1
+    return sent
+
+
+def notify_mobile_plan_end_reminders(plans, config, db_path=None):
+    """One-shot /mobile-deals reminder #2: the user's plan term is about to end.
+    Fires once when today >= end_date - remind_days_before; optionally attaches
+    similar offers (retention alternatives). Reminders whose end_date passed
+    more than 7 days ago are retired silently."""
+    from db import get_mobile_reminders, mark_mobile_reminder_notified
+    sent = 0
+    today = datetime.now().date()
+    for rem in get_mobile_reminders(kind="plan_end", db_path=db_path):
+        try:
+            end = datetime.fromisoformat((rem.get("end_date") or "")[:10]).date()
+        except (ValueError, TypeError):
+            mark_mobile_reminder_notified(rem["id"], done=True, db_path=db_path)
+            continue
+        days_before = rem.get("remind_days_before") or 7
+        if today < end - timedelta(days=days_before):
+            continue
+        if today > end + timedelta(days=7):
+            mark_mobile_reminder_notified(rem["id"], done=True, db_path=db_path)
+            continue
+        days_left = (end - today).days
+        lang = rem.get("lang") or "he"
+        cname = CARRIER_DISPLAY_NAMES.get(rem["carrier"], rem["carrier"])
+        date_str = end.strftime("%d/%m/%Y")
+        if lang == "en":
+            subject = f"MOCA reminder: your plan at {cname} ends on {date_str}"
+            when = "today" if days_left <= 0 else f"in {days_left} days" if days_left > 1 else "tomorrow"
+            head = [f"Reminder: the term of \"{rem['plan_name']}\" at {cname} ends on {date_str} ({when}).",
+                    "A good moment to renegotiate your terms or compare alternatives."]
+            offers_title = "Similar offers available today:"
+        else:
+            subject = f"MOCA תזכורת: המסלול ב{cname} מסתיים ב-{date_str}"
+            when = ("היום" if days_left <= 0
+                    else "מחר" if days_left == 1
+                    else f"בעוד {days_left} ימים")
+            head = [f"תזכורת: תקופת המסלול \"{rem['plan_name']}\" ב{cname} מסתיימת ב-{date_str} ({when}).",
+                    "זה הזמן לבדוק את התנאים מול המפעיל או להשוות חלופות."]
+            offers_title = "הצעות דומות שזמינות היום:"
+        lines = list(head)
+        offers = []
+        if rem.get("include_offers"):
+            base = {"carrier": rem["carrier"], "plan_name": rem["plan_name"],
+                    "price": rem.get("price"), "data_gb": rem.get("data_gb"),
+                    "unlimited": rem.get("unlimited")}
+            offers = find_similar_mobile_offers(base, plans)
+            if offers:
+                lines += ["", offers_title] + _rem_deal_lines(offers, lang)
+        html = _build_plan_end_html(rem, head, offers, config)
+        if _rem_send(rem, subject, lines, config, html=html):
+            mark_mobile_reminder_notified(rem["id"], done=True, db_path=db_path)
+            sent += 1
+        else:
+            # Delivery failed on every channel — keep the row so tomorrow's run
+            # retries (still inside the pre-end window).
+            pass
+    return sent
 
 
 def send_contact_email(from_email: str, workspace_name: str, message: str, config: dict) -> bool:

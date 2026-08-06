@@ -2339,6 +2339,138 @@ def api_mobile_push_unsubscribe():
     return jsonify({"status": "unsubscribed", "deleted": deleted}), 200
 
 
+_REM_KINDS = ("better_deal", "plan_end")
+_REM_DAYS_CHOICES = (3, 7, 14, 30)
+
+
+@app.route("/api/mobile/reminders", methods=["POST"])
+@limiter.limit("6 per minute")
+def api_mobile_reminders_subscribe():
+    """Public (no auth): /mobile-deals email/WhatsApp reminder signup.
+    Body: { email?, phone?, kinds: ['better_deal'|'plan_end'...], carrier,
+    plan_name, end_date?, remind_days_before?, include_offers?, lang, sid? }.
+    At least one contact field is required; the plan must exist on the live
+    normalized feed (price/data are snapshotted server-side, never trusted from
+    the client). Returns the shared unsubscribe token."""
+    from db import save_mobile_reminders, log_mobile_event
+    body = request.get_json(silent=True) or {}
+    lang = body.get("lang") if body.get("lang") in ("he", "en") else "he"
+    email = (body.get("email") or "").strip().lower()[:120]
+    if email and not _re_mobile.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        return jsonify({"error": "bad email"}), 400
+    phone = _re_mobile.sub(r"\D", "", (body.get("phone") or "").strip()[:25])
+    if phone:
+        if phone.startswith("0"):
+            phone = "972" + phone[1:]
+        if not _re_mobile.match(r"^\d{10,15}$", phone):
+            return jsonify({"error": "bad phone"}), 400
+    if not email and not phone:
+        return jsonify({"error": "missing contact"}), 400
+    carrier = (body.get("carrier") or "").strip()
+    plan_name = (body.get("plan_name") or "").strip()[:200]
+    kinds = [k for k in (body.get("kinds") or []) if k in _REM_KINDS]
+    if not kinds:
+        return jsonify({"error": "missing kinds"}), 400
+    if carrier not in _MOBILE_CARRIERS or not plan_name:
+        return jsonify({"error": "unknown plan"}), 400
+    feed = _cached_plans('mobile_compare', lambda: _assemble_mobile_plans(_db_path()))
+    plan = next((p for p in feed.get("plans", [])
+                 if p["carrier"] == carrier and p["plan_name"] == plan_name), None)
+    if plan is None:
+        return jsonify({"error": "unknown plan"}), 404
+    channel = "both" if (email and phone) else ("email" if email else "whatsapp")
+    rows = []
+    for k in kinds:
+        row = {"kind": k, "carrier": carrier, "plan_name": plan_name,
+               "price": plan.get("price"), "data_gb": plan.get("data_gb"),
+               "unlimited": plan.get("unlimited"), "email": email or None,
+               "phone": phone or None, "channel": channel, "lang": lang}
+        if k == "plan_end":
+            today = datetime.now().date()
+            try:
+                end = datetime.strptime((body.get("end_date") or "").strip()[:10], "%Y-%m-%d").date()
+            except ValueError:
+                return jsonify({"error": "bad end_date"}), 400
+            if not (today <= end <= today + timedelta(days=3 * 365)):
+                return jsonify({"error": "bad end_date"}), 400
+            try:
+                days_before = int(body.get("remind_days_before"))
+            except (TypeError, ValueError):
+                days_before = 7
+            if days_before not in _REM_DAYS_CHOICES:
+                days_before = 7
+            row.update({"end_date": end.isoformat(), "remind_days_before": days_before,
+                        "include_offers": bool(body.get("include_offers", True))})
+        rows.append(row)
+    token = secrets.token_urlsafe(24)
+    save_mobile_reminders(token, rows, db_path=_db_path())
+    log_mobile_event("reminder_subscribe", sid=body.get("sid"), carrier=carrier,
+                     src=(body.get("src") or None), campaign=(body.get("campaign") or None),
+                     lang=lang, ip_hash=_guest_ip_hash(), db_path=_db_path())
+    return jsonify({"status": "subscribed", "token": token, "kinds": kinds}), 201
+
+
+@app.route("/api/mobile/reminders/unsubscribe", methods=["GET", "POST"])
+@limiter.limit("30 per minute")
+def api_mobile_reminders_unsubscribe():
+    """Public: remove ALL reminder rows of one signup by its shared token.
+    GET renders a tiny bilingual confirmation page (the email/WhatsApp links
+    are plain <a> clicks); POST returns JSON for in-app use."""
+    from db import delete_mobile_reminders_by_token
+    token = (request.args.get("token")
+             or (request.get_json(silent=True) or {}).get("token") or "").strip()
+    if not token or len(token) > 80:
+        return jsonify({"error": "missing token"}), 400
+    deleted = delete_mobile_reminders_by_token(token, db_path=_db_path())
+    if request.method == "POST":
+        return jsonify({"status": "unsubscribed", "deleted": deleted})
+    msg_he = ("הוסרת מרשימת העדכונים. לא יישלחו יותר תזכורות." if deleted
+              else "הקישור כבר אינו פעיל - ההרשמה הוסרה בעבר.")
+    msg_en = ("You have been unsubscribed - no more reminders will be sent." if deleted
+              else "This link is no longer active - the signup was already removed.")
+    site = (load_config().get("public_site_url") or "https://mocaintel.com").rstrip("/")
+    page = (
+        "<!doctype html><html dir='rtl' lang='he'><head><meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+        "<title>MOCA</title></head>"
+        "<body style='font-family:Arial,sans-serif;background:#f9f4ee;color:#3b1f0d;"
+        "display:flex;align-items:center;justify-content:center;min-height:90vh;margin:0'>"
+        "<div style='background:#fff;border-radius:20px;padding:32px 28px;max-width:420px;"
+        "text-align:center;box-shadow:0 6px 24px rgba(70,45,20,.08)'>"
+        "<div style='font-size:34px;margin-bottom:10px'>&#9889;</div>"
+        f"<h1 style='font-size:19px;margin:0 0 8px'>MOCA</h1>"
+        f"<p style='font-size:15px;margin:0 0 6px'>{msg_he}</p>"
+        f"<p dir='ltr' style='font-size:13px;color:#8a6a4a;margin:0 0 16px'>{msg_en}</p>"
+        f"<a href='{site}/mobile-deals' "
+        f"style='color:#5c3317;font-weight:bold'>{site.split('//', 1)[-1]}/mobile-deals</a>"
+        "</div></body></html>")
+    return Response(page, mimetype="text/html")
+
+
+def run_mobile_reminders_job():
+    """Daily 09:15 — deliver /mobile-deals email/WhatsApp reminders off the
+    normalized domestic feed: better-deal alerts (recurring, price-ratcheted)
+    and plan-term-end reminders (one-shot, optional retention offers)."""
+    try:
+        from notifier import notify_mobile_better_deals, notify_mobile_plan_end_reminders
+        config = load_config()
+        plans = _assemble_mobile_plans(_db_path()).get("plans", [])
+        n_deal = notify_mobile_better_deals(plans, config, db_path=_db_path())
+        n_end = notify_mobile_plan_end_reminders(plans, config, db_path=_db_path())
+        logger.info(f"mobile reminders job: {n_deal} better-deal + {n_end} plan-end sent")
+        return {"better_deal_sent": n_deal, "plan_end_sent": n_end}
+    except Exception as e:
+        logger.error(f"mobile reminders job failed: {e}")
+        return {"error": str(e)}
+
+
+@app.route("/api/mobile/reminders/run-now", methods=["GET", "POST"])
+@require_api_key
+def api_mobile_reminders_run_now():
+    """Manual trigger / smoke-test for the daily reminders job."""
+    return jsonify(run_mobile_reminders_job())
+
+
 # ════════════════════════════════════════════════════════════════════════════
 #  MOCA Guest Connect — hotels vertical (public guest portal + operator console)
 #  Plan: Hotel/Hotel Plan.txt §2.3 / §5. Public routes are unauthenticated;
@@ -6956,6 +7088,10 @@ if __name__ == "__main__":
     scheduler.add_job(weekly_digest_job, "cron", day_of_week="sun", hour=8, minute=30,
                       id="weekly_digest", **_job_defaults)
     scheduler.add_job(check_trial_expiry_job, "cron", hour=0, minute=5, id="trial_expiry", **_job_defaults)
+    # /mobile-deals consumer reminders (email/WhatsApp) — after the 07:30 scrape
+    # so better-deal checks run against fresh prices
+    scheduler.add_job(run_mobile_reminders_job, "cron", hour=9, minute=15,
+                      id="mobile_reminders", **_job_defaults)
     if config.get("booking_ical_url"):
         try:
             from booking_notifier import check_new_bookings

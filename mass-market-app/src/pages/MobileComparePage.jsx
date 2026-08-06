@@ -88,6 +88,34 @@ const T = {
     alertOff: 'ביטול',
     alertDenied: 'ההתראות חסומות בדפדפן הזה - צריך לאפשר אותן בהגדרות האתר ולנסות שוב.',
     alertErr: 'לא הצלחנו להפעיל את ההתראה. נסו שוב בעוד רגע.',
+    remBell: 'עדכונים על המסלול הזה',
+    remTitle: 'עדכונים על המסלול הזה',
+    remSub: 'השאירו מייל או וואטסאפ ונעדכן אתכם. בלי ספאם - בכל הודעה יש קישור הסרה.',
+    remOpt1: 'חבילה דומה במחיר טוב יותר',
+    remOpt1Sub: 'נשווה מול כל המפעילים ונעדכן כשמופיעה חבילה עם לפחות אותה גלישה במחיר נמוך יותר.',
+    remOpt2: 'תזכורת לסיום תקופת המסלול',
+    remOpt2Sub: 'נזכיר לפני שתקופת המסלול מסתיימת, כדי שתספיקו לשמר תנאים או להשוות.',
+    remEndDate: 'תאריך סיום המסלול',
+    remWhen: 'מתי להזכיר?',
+    remDays: [
+      { v: 3, l: '3 ימים לפני' }, { v: 7, l: 'שבוע לפני' },
+      { v: 14, l: 'שבועיים לפני' }, { v: 30, l: 'חודש לפני' },
+    ],
+    remOffers: 'לצרף לתזכורת גם הצעות דומות מהשוק',
+    remEmail: 'אימייל',
+    remPhone: 'וואטסאפ (מספר נייד)',
+    remContactHint: 'מספיק למלא אחד מהשניים.',
+    remSubmit: 'הרשמה לעדכונים',
+    remBusy: 'רק רגע…',
+    remOkTitle: 'ההרשמה הושלמה!',
+    remOkEmail: 'נעדכן אתכם במייל.',
+    remOkWa: 'נעדכן אתכם בוואטסאפ.',
+    remOkBoth: 'נעדכן אתכם במייל ובוואטסאפ.',
+    remErr: 'ההרשמה לא הצליחה. בדקו את הפרטים ונסו שוב.',
+    remErrContact: 'צריך למלא אימייל או מספר וואטסאפ.',
+    remErrKinds: 'בחרו לפחות סוג עדכון אחד.',
+    remErrDate: 'בחרו תאריך סיום עתידי.',
+    remPrivacy: 'הפרטים משמשים רק לשליחת העדכונים שביקשתם, ולא מועברים לאף גורם אחר.',
     roamTitle: 'חבילות חו"ל של המפעילים',
     roamSub: 'חבילות גלישה ושיחות לחו"ל על המספר הקיים - בלי להחליף סים.',
     roamSearch: 'חיפוש יעד (למשל יוון)…',
@@ -165,6 +193,34 @@ const T = {
     alertOff: 'Cancel',
     alertDenied: 'Notifications are blocked in this browser - allow them in site settings and try again.',
     alertErr: 'Could not enable the alert. Try again in a moment.',
+    remBell: 'Get updates on this plan',
+    remTitle: 'Get updates on this plan',
+    remSub: 'Leave an email or WhatsApp number and we will keep you posted. No spam - every message has an unsubscribe link.',
+    remOpt1: 'A similar plan at a better price',
+    remOpt1Sub: 'We compare all carriers and alert you when a plan with at least the same data shows up for less.',
+    remOpt2: 'Reminder before your plan term ends',
+    remOpt2Sub: 'We remind you before the term ends, so you have time to renegotiate or compare.',
+    remEndDate: 'Plan term end date',
+    remWhen: 'When should we remind you?',
+    remDays: [
+      { v: 3, l: '3 days before' }, { v: 7, l: 'A week before' },
+      { v: 14, l: 'Two weeks before' }, { v: 30, l: 'A month before' },
+    ],
+    remOffers: 'Attach similar market offers to the reminder',
+    remEmail: 'Email',
+    remPhone: 'WhatsApp (mobile number)',
+    remContactHint: 'Filling in just one of the two is enough.',
+    remSubmit: 'Sign up for updates',
+    remBusy: 'One sec…',
+    remOkTitle: 'You are signed up!',
+    remOkEmail: 'We will update you by email.',
+    remOkWa: 'We will update you on WhatsApp.',
+    remOkBoth: 'We will update you by email and WhatsApp.',
+    remErr: 'Signup failed. Check the details and try again.',
+    remErrContact: 'Enter an email or a WhatsApp number.',
+    remErrKinds: 'Pick at least one update type.',
+    remErrDate: 'Pick a future end date.',
+    remPrivacy: 'Your details are used only for the updates you asked for, and are never shared.',
     roamTitle: 'Carrier roaming packages',
     roamSub: 'Data & calls abroad on your existing number - no SIM swap.',
     roamSearch: 'Search a destination (e.g. Greece)…',
@@ -314,6 +370,30 @@ const CSS = `
 @keyframes mspin{to{transform:rotate(360deg)}}
 #mobile-app .reveal{animation:mreveal .35s ease both}
 @keyframes mreveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#mobile-app .bell-btn{display:inline-flex;align-items:center;justify-content:center;border:1.5px solid var(--line);background:#fff;color:var(--c1);border-radius:11px;cursor:pointer;padding:9px 11px;transition:all .15s;flex:none}
+#mobile-app .bell-btn:hover{border-color:var(--c2)}
+#mobile-app .rem-opt{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:all .15s}
+#mobile-app .rem-opt.on{border-color:var(--c1);background:var(--cream)}
+#mobile-app .rem-opt-head{display:flex;gap:10px;align-items:flex-start;font-weight:800;font-size:14px;line-height:1.35}
+#mobile-app .rem-opt-head input{margin-top:2px;accent-color:var(--c1);width:16px;height:16px;flex:none}
+#mobile-app .rem-opt-sub{font-size:12.5px;font-weight:600;color:var(--sub);margin-top:4px;line-height:1.5;padding-inline-start:26px}
+#mobile-app .rem-ext{margin-top:10px;padding-inline-start:26px;display:flex;flex-direction:column;gap:9px}
+#mobile-app .rem-row{display:flex;gap:8px;flex-wrap:wrap}
+#mobile-app .rem-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:145px}
+#mobile-app .rem-field label{font-size:12px;font-weight:700;color:var(--c1)}
+#mobile-app .rem-input{width:100%;border:1.6px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;font:inherit;font-size:14px;font-weight:600;color:var(--ink);outline:none}
+#mobile-app .rem-input:focus{border-color:var(--c2);box-shadow:0 0 0 3px color-mix(in srgb,var(--c2),transparent 82%)}
+#mobile-app .rem-check{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;cursor:pointer}
+#mobile-app .rem-check input{accent-color:var(--c1);width:15px;height:15px;flex:none}
+#mobile-app .rem-hint{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:4px}
+#mobile-app .rem-err{color:var(--warn);font-size:12.5px;font-weight:700;margin-top:8px}
+#mobile-app .rem-submit{width:100%;border:0;border-radius:12px;cursor:pointer;background:var(--c1);color:#fff;font:inherit;font-weight:800;font-size:14px;padding:12px 16px;margin-top:12px;transition:opacity .12s}
+#mobile-app .rem-submit:disabled{opacity:.6;cursor:default}
+#mobile-app .rem-privacy{font-size:11px;color:var(--muted);font-weight:600;margin-top:10px;line-height:1.5;text-align:center}
+#mobile-app .rem-ok{text-align:center;padding:14px 4px 4px}
+#mobile-app .rem-ok-ic{width:52px;height:52px;border-radius:50%;background:#e3f3e9;color:#246b43;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px}
+#mobile-app .rem-ok b{display:block;font-size:16px;margin-bottom:5px}
+#mobile-app .rem-ok span{font-size:13px;color:var(--sub);font-weight:600}
 `
 
 // Read a URL/query param at first render (SPA-only page, so window is defined).
@@ -496,6 +576,153 @@ function DetailsModal({ plan, t, onClose }) {
   )
 }
 
+// Email/WhatsApp reminder signup for one domestic plan: (1) a similar plan at a
+// better price elsewhere, (2) a plan-term-end reminder with optional retention
+// offers. Server snapshots price/data from the live feed; contact details go
+// only to /api/mobile/reminders (see privacy policy).
+function ReminderModal({ plan, t, lang, meta, onClose }) {
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [wantDeal, setWantDeal] = useState(true)
+  const [wantEnd, setWantEnd] = useState(false)
+  const [endDate, setEndDate] = useState('')
+  const [daysBefore, setDaysBefore] = useState(7)
+  const [offers, setOffers] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState(null) // channel string after success
+  const [err, setErr] = useState(null)
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const todayISO = new Date().toISOString().slice(0, 10)
+
+  const submit = async (e) => {
+    e.preventDefault()
+    const kinds = [...(wantDeal ? ['better_deal'] : []), ...(wantEnd ? ['plan_end'] : [])]
+    const em = email.trim(), ph = phone.trim()
+    if (!kinds.length) { setErr(t.remErrKinds); return }
+    if (!em && !ph) { setErr(t.remErrContact); return }
+    if (wantEnd && (!endDate || endDate < todayISO)) { setErr(t.remErrDate); return }
+    setErr(null)
+    setBusy(true)
+    try {
+      await api.mobileReminderSubscribe({
+        email: em || undefined,
+        phone: ph || undefined,
+        kinds,
+        carrier: plan.carrier,
+        plan_name: plan.plan_name,
+        end_date: wantEnd ? endDate : undefined,
+        remind_days_before: wantEnd ? daysBefore : undefined,
+        include_offers: wantEnd ? offers : undefined,
+        lang,
+        ...meta,
+      })
+      setDone(em && ph ? t.remOkBoth : em ? t.remOkEmail : t.remOkWa)
+    } catch {
+      setErr(t.remErr)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="modal-ov" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="modal-x" onClick={onClose} aria-label={t.close}>✕</button>
+        <div className="modal-head">
+          <CarrierLogo carrier={plan.carrier} />
+          <div>
+            <div className="modal-carrier">{t.remTitle}</div>
+            <div className="modal-name"><bdi>{carrierLabel(plan.carrier)} - {plan.plan_name}</bdi></div>
+          </div>
+        </div>
+        {done ? (
+          <div className="rem-ok reveal">
+            <div className="rem-ok-ic">✓</div>
+            <b>{t.remOkTitle}</b>
+            <span>{done}</span>
+          </div>
+        ) : (
+          <form onSubmit={submit} noValidate>
+            <p style={{ fontSize: 13, color: 'var(--sub)', fontWeight: 600, lineHeight: 1.5, marginBottom: 14 }}>{t.remSub}</p>
+
+            <div className={`rem-opt${wantDeal ? ' on' : ''}`} onClick={() => setWantDeal(!wantDeal)}>
+              <div className="rem-opt-head">
+                <input type="checkbox" checked={wantDeal} onChange={(e) => setWantDeal(e.target.checked)}
+                  onClick={(e) => e.stopPropagation()} />
+                <span>{t.remOpt1}</span>
+              </div>
+              <div className="rem-opt-sub">{t.remOpt1Sub}</div>
+            </div>
+
+            <div className={`rem-opt${wantEnd ? ' on' : ''}`} onClick={() => setWantEnd(!wantEnd)}>
+              <div className="rem-opt-head">
+                <input type="checkbox" checked={wantEnd} onChange={(e) => setWantEnd(e.target.checked)}
+                  onClick={(e) => e.stopPropagation()} />
+                <span>{t.remOpt2}</span>
+              </div>
+              <div className="rem-opt-sub">{t.remOpt2Sub}</div>
+              {wantEnd && (
+                <div className="rem-ext" onClick={(e) => e.stopPropagation()}>
+                  <div className="rem-row">
+                    <div className="rem-field">
+                      <label htmlFor="rem-end">{t.remEndDate}</label>
+                      <input id="rem-end" className="rem-input" type="date" min={todayISO}
+                        value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                    </div>
+                    <div className="rem-field">
+                      <label htmlFor="rem-days">{t.remWhen}</label>
+                      <select id="rem-days" className="rem-input" value={daysBefore}
+                        onChange={(e) => setDaysBefore(Number(e.target.value))}>
+                        {t.remDays.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <label className="rem-check">
+                    <input type="checkbox" checked={offers} onChange={(e) => setOffers(e.target.checked)} />
+                    <span>{t.remOffers}</span>
+                  </label>
+                </div>
+              )}
+            </div>
+
+            <div className="rem-row" style={{ marginTop: 14 }}>
+              <div className="rem-field">
+                <label htmlFor="rem-email">{t.remEmail}</label>
+                <input id="rem-email" className="rem-input" type="email" dir="ltr" value={email}
+                  placeholder="you@mail.com" autoComplete="email"
+                  onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div className="rem-field">
+                <label htmlFor="rem-phone">{t.remPhone}</label>
+                <input id="rem-phone" className="rem-input" type="tel" dir="ltr" value={phone}
+                  placeholder="050-1234567" autoComplete="tel"
+                  onChange={(e) => setPhone(e.target.value)} />
+              </div>
+            </div>
+            <div className="rem-hint">{t.remContactHint}</div>
+
+            {err && <div className="rem-err" role="alert">{err}</div>}
+            <button type="submit" className="rem-submit" disabled={busy}>
+              {busy ? t.remBusy : t.remSubmit}
+            </button>
+            <div className="rem-privacy">
+              {t.remPrivacy}{' '}
+              <a href={`/privacy${lang === 'en' ? '?lang=en' : ''}`} target="_blank" rel="noopener noreferrer"
+                style={{ color: 'var(--c1)' }}>{t.privacyL}</a>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
+
 const TABS = ['domestic', 'roaming', 'content']
 
 export default function MobileComparePage() {
@@ -513,6 +740,7 @@ export default function MobileComparePage() {
   const [abroad, setAbroad] = useState(null)      // roaming rows (normalized), null = not fetched
   const [content, setContent] = useState(null)    // content-services rows
   const [detail, setDetail] = useState(null)      // plan in the details modal
+  const [remindFor, setRemindFor] = useState(null) // plan in the reminder-signup modal
 
   // Domestic filters
   const [budget, setBudget] = useState('all')
@@ -808,6 +1036,8 @@ export default function MobileComparePage() {
           {t.goto.replace('{carrier}', carrierLabel(p.carrier))}
         </button>
         <button type="button" className="ghost" onClick={() => setDetail(p)}>{t.details}</button>
+        <button type="button" className="bell-btn" title={t.remBell} aria-label={t.remBell}
+          onClick={() => setRemindFor(p)}><BellIcon /></button>
       </div>
     </>
   )
@@ -1050,6 +1280,10 @@ export default function MobileComparePage() {
       </div>
 
       {detail && <DetailsModal plan={detail} t={t} onClose={() => setDetail(null)} />}
+      {remindFor && (
+        <ReminderModal plan={remindFor} t={t} lang={lang} meta={{ sid, src: acq.src, campaign }}
+          onClose={() => setRemindFor(null)} />
+      )}
     </div>
   )
 }
