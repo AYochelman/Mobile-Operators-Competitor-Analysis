@@ -1133,7 +1133,14 @@ def _rem_links(rem, config):
 # ink #3b1f0d, sub #8a6a4a, muted #a08468, line #e0cdb5, green #246b43/#e3f3e9.
 # Email-client-safe: tables + inline styles only, no flex/grid/webfont deps.
 
-def _rem_email_shell(lang, unsub, inner_rows):
+def _rem_hero_url(kind, config):
+    """Public URL of the per-kind hero illustration (hosted in the app's
+    public/email/ on Netlify — email clients need an absolute, external URL)."""
+    site = (config.get("public_site_url") or "https://mocaintel.com").rstrip("/")
+    return f"{site}/email/{kind}.jpg"
+
+
+def _rem_email_shell(lang, unsub, inner_rows, hero_url=None):
     """Shared shell (cream canvas, MOCA header, footer) around content <tr> rows."""
     rtl = lang != "en"
     dir_attr = "rtl" if rtl else "ltr"
@@ -1152,6 +1159,7 @@ def _rem_email_shell(lang, unsub, inner_rows):
 <span style="display:inline-block;width:9px;height:9px;background:#c9622f;border-radius:9px;margin:0 5px;"></span>
 <div style="color:#e8cdb4;font-size:12.5px;margin-top:4px;">{tagline}</div>
 </td></tr>
+{f'<tr><td style="background:#ffffff;padding:0;line-height:0;"><img src="{hero_url}" width="600" alt="" style="width:100%;height:auto;display:block;border:0;"></td></tr>' if hero_url else ''}
 {inner_rows}
 <tr><td style="padding:18px 16px 4px;text-align:center;">
 <p style="margin:0;color:#a08468;font-size:11.5px;line-height:1.8;">{footer_note}<br>
@@ -1238,7 +1246,8 @@ def _build_better_deal_html(rem, base, deals, config):
     title = ("מצאנו חבילות שמשתלמות יותר מהמסלול שלך" if rtl
              else "We found plans that beat your current one")
     blocks = base_strip + saving_html + _rem_deal_cards_html(deals, lang, mark_best=True)
-    return _rem_email_shell(lang, unsub, _rem_email_body(lang, badge, title, blocks, utm))
+    return _rem_email_shell(lang, unsub, _rem_email_body(lang, badge, title, blocks, utm),
+                            hero_url=_rem_hero_url("better_deal", config))
 
 
 def _build_plan_end_html(rem, intro_lines, offers, config):
@@ -1258,7 +1267,8 @@ def _build_plan_end_html(rem, intro_lines, offers, config):
     cname = CARRIER_DISPLAY_NAMES.get(rem["carrier"], rem["carrier"])
     title = (f"המסלול שלך ב{cname} עומד להסתיים" if rtl
              else f"Your plan at {cname} is about to end")
-    return _rem_email_shell(lang, unsub, _rem_email_body(lang, badge, title, blocks, utm))
+    return _rem_email_shell(lang, unsub, _rem_email_body(lang, badge, title, blocks, utm),
+                            hero_url=_rem_hero_url("plan_end", config))
 
 
 def _rem_send(rem, subject, text_lines, config, html=None):
