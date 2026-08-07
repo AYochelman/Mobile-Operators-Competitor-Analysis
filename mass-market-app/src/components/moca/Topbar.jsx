@@ -159,6 +159,13 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
                 <span>{tt('עמוד eSIM (B2C)', 'eSIM page (B2C)')}</span>
                 <span className="opacity-50">↗</span>
               </button>
+              <button
+                onClick={() => { setOpen(false); window.open('/mobile-deals', '_blank', 'noopener') }}
+                className={itemCls}
+              >
+                <span>{tt('עמוד סלולר (B2C)', 'Mobile page (B2C)')}</span>
+                <span className="opacity-50">↗</span>
+              </button>
               <button onClick={() => go('/admin/esim')} className={itemCls}>{tt('דשבורד eSIM (B2C)', 'eSIM dashboard (B2C)')}</button>
               <button onClick={() => go('/admin/mobile-subscribers')} className={itemCls}>{tt('מנויי תזכורות (B2C)', 'Reminder subscribers (B2C)')}</button>
               <button onClick={() => go('/admin/deals')} className={itemCls}>{tt('סטטוס ספקים', 'Provider status')}</button>
