@@ -1093,13 +1093,41 @@ def send_welcome_email(to_email: str, workspace_name: str, role: str, config: di
     )
 
 
+def _greenapi_state(base_url, instance, token):
+    """Return the Green API instance state (e.g. 'authorized', 'notAuthorized',
+    'blocked', 'sleepMode', 'starting') or None if it can't be fetched.
+
+    A WhatsApp send that returns non-200 is almost always caused by the instance
+    not being 'authorized' (linked phone went offline / session expired) — this
+    lets the failure log say so explicitly instead of just 'WhatsApp sent: False'.
+    """
+    try:
+        resp = requests.get(
+            f"{base_url}/waInstance{instance}/getStateInstance/{token}",
+            timeout=8,
+        )
+        return resp.json().get("stateInstance")
+    except (requests.RequestException, ValueError):
+        return None
+
+
 def send_whatsapp(message, config):
+    import logging as _log
+    logger = _log.getLogger(__name__)
+
     base_url = config.get("greenapi_url", "")
     instance = config.get("greenapi_instance", "")
     token = config.get("greenapi_token", "")
     group_id = config.get("whatsapp_group_id", "")
     phone = config.get("whatsapp_phone", "")
     if not all([base_url, instance, token]) or not (group_id or phone):
+        missing = [k for k, v in (
+            ("greenapi_url", base_url), ("greenapi_instance", instance),
+            ("greenapi_token", token)) if not v]
+        if not (group_id or phone):
+            missing.append("whatsapp_group_id/whatsapp_phone")
+        logger.error(
+            "send_whatsapp skipped: missing config key(s): %s", ", ".join(missing))
         return False
     url = f"{base_url}/waInstance{instance}/sendMessage/{token}"
     chat_id = group_id if group_id else f"{phone}@c.us"
@@ -1109,6 +1137,16 @@ def send_whatsapp(message, config):
             json={"chatId": chat_id, "message": message},
             timeout=10
         )
-        return resp.status_code == 200
-    except requests.RequestException:
+        if resp.status_code == 200:
+            return True
+        # Surface WHY it failed. The single most common cause is the instance
+        # no longer being authorized, so check and report that explicitly.
+        state = _greenapi_state(base_url, instance, token)
+        state_note = f" (instance state: {state})" if state else ""
+        logger.error(
+            "send_whatsapp failed: Green API HTTP %s for chatId %s%s — %s",
+            resp.status_code, chat_id, state_note, resp.text[:200])
+        return False
+    except requests.RequestException as e:
+        logger.error("send_whatsapp request error for chatId %s: %s", chat_id, e)
         return False
