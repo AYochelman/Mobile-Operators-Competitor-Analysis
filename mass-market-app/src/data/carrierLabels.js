@@ -90,6 +90,8 @@ export const GLOBAL_PROVIDERS_REGISTRY = [
   { id: 'tasim',            label: 'Tasim',        color: 'violet',  chartColor: '#7c3aed', israeli: true },
   { id: 'travelsim',        label: 'Travel Sim',   color: 'teal',    chartColor: '#0d9488', israeli: true },
   { id: 'tuki',             label: 'Tuki',         color: 'blue',    chartColor: '#3b82f6', israeli: true },
+  { id: 'venterrasim',      label: 'VenterraSIM',  color: 'blue',    chartColor: '#2463eb', israeli: true },
+  { id: 'simzol',           label: 'Simzol',       color: 'green',   chartColor: '#58b64b', israeli: true },
   { id: 'voye',             label: 'VOYE',         color: 'pink',    chartColor: '#ec4899', israeli: false },
   { id: 'xphone_global',    label: 'XPhone Global',color: 'teal',    chartColor: '#14b8a6', israeli: true },
   { id: 'yesim',            label: 'Yesim',        color: 'orange',  chartColor: '#f97316', israeli: false },

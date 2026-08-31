@@ -20,6 +20,8 @@ export const PROVIDER_LOGOS = {
   esimgenius:       '/logos/esimgenius.png',
   nisim:            '/logos/nisim.png',
   esimax:           '/logos/esimax.png', // square M monogram icon
+  venterrasim:      '/logos/venterrasim.png',
+  simzol:           '/logos/simzol-icon.png', // globe mark (simzol.png is a wide wordmark)
 
   airalo:           '/logos/airalo.png',
   airalo_local:     '/logos/airalo.png',

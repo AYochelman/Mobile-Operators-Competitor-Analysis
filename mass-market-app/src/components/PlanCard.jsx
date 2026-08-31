@@ -83,6 +83,7 @@ const LOGO_WIDTHS = {
   rami_levy: '110px',
   jetpack: '52px',
   breez: '63px',
+  simzol: '64px',
 }
 
 const CONTENT_URLS = {

@@ -34,6 +34,7 @@ const LOGO_SIZES = {
 const LOGO_WIDTHS = {
   jetpack: '52px',
   breez: '63px',
+  simzol: '64px',
 }
 
 // AFFILIATE_PROVIDERS + AFFILIATE_URLS now live in ../data/affiliateLinks (shared

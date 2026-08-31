@@ -46,6 +46,8 @@ import {
   GIGSKY_REGION_MAP,
   ESIMGENIUS_REGION_MAP,
   ESIMAX_REGION_MAP, ESIMAX_EUROPE_30,
+  VENTERRA_REGION_MAP,
+  SIMZOL_REGION_MAP,
 } from '../data/globalCountries'
 
 // Carriers where one plan covers many countries (zone/global plans)
@@ -53,6 +55,7 @@ const MULTI_COUNTRY_CARRIERS = new Set([
   'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
   'pelephone_global', 'esimo', 'terminalesim', 'gomoworld', 'maya', 'besim',
   'bestconnect', 'esimplus', 'seven_g', 'gigsky', 'esimgenius', 'esimax',
+  'venterrasim', 'simzol',
 ])
 
 const TERMINAL_REGION_MAP = {
@@ -132,6 +135,18 @@ function getPlanCoverage(plan) {
     // fewer countries — match it by plan-name prefix before the dest lookup.
     if (name.startsWith('אירופה 30+')) return ESIMAX_EUROPE_30
     return ESIMAX_REGION_MAP[dest] || null
+  }
+  if (carrier === 'venterrasim') {
+    // Coverage varies per bundle within one destination (Europe 33/35/41 areas,
+    // Asia 7/20, South America 6/20), so the map is keyed by the plan_name title.
+    const title = name.split(' – ')[0].replace(/\u200f/g, '').trim()
+    return VENTERRA_REGION_MAP[title] || null
+  }
+  if (carrier === 'simzol') {
+    // 'גלובלי' covers two products with different country lists (eSIM packages
+    // vs the physical 'פלטינום' SIM), so key on the plan_name title.
+    const title = name.split(' – ')[0].replace(/\u200f/g, '').trim()
+    return SIMZOL_REGION_MAP[title] || null
   }
   if (carrier === 'seven_g') {
     // plan_name first segment is the English region name (e.g. "Asia (12 areas)")
