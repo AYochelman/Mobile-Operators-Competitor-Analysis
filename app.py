@@ -163,6 +163,10 @@ if _extra_origins:
 CORS(app, resources={
     r"/api/*": {"origins": ALLOWED_ORIGINS, "supports_credentials": True},
     r"/banners/*": {"origins": ALLOWED_ORIGINS},
+    # Time Machine banner snapshots are blob-fetched too (useApiImage) - same
+    # cross-origin story as /banners/*; without this the archive images are
+    # CORS-blocked on the live site (empty tiles in TimeMachineModal/ArchivePage).
+    r"/archive-banners/*": {"origins": ALLOWED_ORIGINS},
 })
 
 @app.after_request
