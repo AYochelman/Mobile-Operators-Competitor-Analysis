@@ -118,13 +118,32 @@ const T = {
     remErrKinds: 'בחרו לפחות סוג עדכון אחד.',
     remErrDate: 'בחרו תאריך סיום עתידי.',
     remPrivacy: 'הפרטים משמשים רק לשליחת העדכונים שביקשתם, ולא מועברים לאף גורם אחר.',
+    // Per-plan-type overrides for the reminder modal (roaming packages are
+    // one-time buys; content dates are user-chosen, e.g. a free-trial end).
+    remByType: {
+      roaming: {
+        opt1: 'חבילת חו"ל דומה במחיר טוב יותר',
+        opt1Sub: 'נשווה מול חבילות החו"ל של כל המפעילים ונעדכן כשמופיעה חבילה עם לפחות אותה גלישה ואותם ימים במחיר נמוך יותר.',
+        opt2: 'תזכורת לסיום החבילה',
+        opt2Sub: 'נזכיר לפני שהחבילה מסתיימת - כדי שתספיקו לחדש או להשוות להמשך הנסיעה.',
+        endDate: 'תאריך סיום החבילה',
+        hidePaid: true,
+      },
+      content: {
+        opt1: 'אותו שירות במחיר טוב יותר',
+        opt1Sub: 'נעדכן כשאותו שירות מוצע אצל מפעיל אחר במחיר נמוך יותר.',
+        opt2: 'תזכורת לתאריך שתבחרו',
+        opt2Sub: 'למשל לפני סיום תקופת ניסיון חינם - כדי להחליט בזמן אם להמשיך או לבטל.',
+        endDate: 'תאריך',
+      },
+    },
     roamTitle: 'חבילות חו"ל של המפעילים',
     roamSub: 'חבילות גלישה ושיחות לחו"ל על המספר הקיים - בלי להחליף סים.',
     roamSearch: 'חיפוש יעד (למשל יוון)…',
     countriesN: '{n} מדינות',
     appsN: 'גלישה חופשית ב-{n} אפליקציות',
     esimCross: 'טסים לחו"ל? כדאי להשוות גם eSIM גלובלי',
-    esimCrossSub: 'חבילות eSIM ל-190+ יעדים מ-30+ ספקים, לרוב זולות משמעותית מחבילות נדידה.',
+    esimCrossSub: 'חבילות eSIM ל-190+ יעדים מ-38 ספקים, לרוב זולות משמעותית מחבילות נדידה.',
     esimCrossBtn: 'להשוואת eSIM ↗',
     contentTitle: 'שירותים נוספים של המפעילים',
     contentSub: 'שירותי תוכן נלווים - סייבר, נורטון, שיר בהמתנה ועוד - והמחיר אצל כל מפעיל.',
@@ -225,13 +244,30 @@ const T = {
     remErrKinds: 'Pick at least one update type.',
     remErrDate: 'Pick a future end date.',
     remPrivacy: 'Your details are used only for the updates you asked for, and are never shared.',
+    remByType: {
+      roaming: {
+        opt1: 'A similar roaming package at a better price',
+        opt1Sub: 'We compare all carriers and alert you when a package with at least the same data and days shows up for less.',
+        opt2: 'Reminder before the package ends',
+        opt2Sub: 'We remind you before the package expires - so you can top up or compare for the rest of the trip.',
+        endDate: 'Package end date',
+        hidePaid: true,
+      },
+      content: {
+        opt1: 'The same service at a better price',
+        opt1Sub: 'We alert you when this service is offered by another carrier for less.',
+        opt2: 'A reminder on a date you pick',
+        opt2Sub: 'For example before a free trial ends - so you can decide in time whether to keep or cancel.',
+        endDate: 'Date',
+      },
+    },
     roamTitle: 'Carrier roaming packages',
     roamSub: 'Data & calls abroad on your existing number - no SIM swap.',
     roamSearch: 'Search a destination (e.g. Greece)…',
     countriesN: '{n} countries',
     appsN: 'Free browsing in {n} apps',
     esimCross: 'Flying abroad? Compare global eSIMs too',
-    esimCrossSub: 'eSIM plans for 190+ destinations from 30+ providers, often far cheaper than roaming.',
+    esimCrossSub: 'eSIM plans for 190+ destinations from 38 providers, often far cheaper than roaming.',
     esimCrossBtn: 'Compare eSIMs ↗',
     contentTitle: 'Carrier add-on services',
     contentSub: 'Content add-ons - cyber protection, Norton, ringback tones and more - priced per carrier.',
@@ -376,6 +412,8 @@ const CSS = `
 @keyframes mreveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 #mobile-app .bell-btn{display:inline-flex;align-items:center;justify-content:center;border:1.5px solid var(--line);background:#fff;color:var(--c1);border-radius:11px;cursor:pointer;padding:9px 11px;transition:all .15s;flex:none}
 #mobile-app .bell-btn:hover{border-color:var(--c2)}
+#mobile-app .bell-btn.sm{padding:6px 8px;border-radius:9px}
+#mobile-app .bell-btn.sm svg{width:15px;height:15px}
 #mobile-app .rem-opt{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:all .15s}
 #mobile-app .rem-opt.on{border-color:var(--c1);background:var(--cream)}
 #mobile-app .rem-opt-head{display:flex;gap:10px;align-items:flex-start;font-weight:800;font-size:14px;line-height:1.35}
@@ -580,11 +618,13 @@ function DetailsModal({ plan, t, onClose }) {
   )
 }
 
-// Email/WhatsApp reminder signup for one domestic plan: (1) a similar plan at a
-// better price elsewhere, (2) a plan-term-end reminder with optional retention
-// offers. Server snapshots price/data from the live feed; contact details go
-// only to /api/mobile/reminders (see privacy policy).
-function ReminderModal({ plan, t, lang, meta, onClose }) {
+// Email/WhatsApp reminder signup for one plan: (1) a similar plan at a better
+// price elsewhere, (2) an end-date reminder with optional retention offers.
+// planType 'domestic' | 'roaming' | 'content' switches the copy (t.remByType)
+// and what the server validates against; for 'content', plan_name carries the
+// service name. Server snapshots price/data from the live data of the type;
+// contact details go only to /api/mobile/reminders (see privacy policy).
+function ReminderModal({ plan, planType = 'domestic', t, lang, meta, onClose }) {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [paid, setPaid] = useState('')
@@ -605,6 +645,16 @@ function ReminderModal({ plan, t, lang, meta, onClose }) {
 
   const todayISO = new Date().toISOString().slice(0, 10)
 
+  // Per-type copy overrides; anything not overridden falls back to the
+  // domestic strings.
+  const ov = t.remByType?.[planType] || {}
+  const tx = {
+    opt1: ov.opt1 || t.remOpt1, opt1Sub: ov.opt1Sub || t.remOpt1Sub,
+    opt2: ov.opt2 || t.remOpt2, opt2Sub: ov.opt2Sub || t.remOpt2Sub,
+    endDate: ov.endDate || t.remEndDate,
+  }
+  const showPaid = !ov.hidePaid
+
   const submit = async (e) => {
     e.preventDefault()
     const kinds = [...(wantDeal ? ['better_deal'] : []), ...(wantEnd ? ['plan_end'] : [])]
@@ -619,8 +669,9 @@ function ReminderModal({ plan, t, lang, meta, onClose }) {
       await api.mobileReminderSubscribe({
         email: em || undefined,
         phone: ph || undefined,
-        paid_price: paid && Number.isFinite(paidNum) && paidNum > 0 ? paidNum : undefined,
+        paid_price: showPaid && paid && Number.isFinite(paidNum) && paidNum > 0 ? paidNum : undefined,
         kinds,
+        plan_type: planType,
         carrier: plan.carrier,
         plan_name: plan.plan_name,
         end_date: wantEnd ? endDate : undefined,
@@ -662,23 +713,23 @@ function ReminderModal({ plan, t, lang, meta, onClose }) {
               <div className="rem-opt-head">
                 <input type="checkbox" checked={wantDeal} onChange={(e) => setWantDeal(e.target.checked)}
                   onClick={(e) => e.stopPropagation()} />
-                <span>{t.remOpt1}</span>
+                <span>{tx.opt1}</span>
               </div>
-              <div className="rem-opt-sub">{t.remOpt1Sub}</div>
+              <div className="rem-opt-sub">{tx.opt1Sub}</div>
             </div>
 
             <div className={`rem-opt${wantEnd ? ' on' : ''}`} onClick={() => setWantEnd(!wantEnd)}>
               <div className="rem-opt-head">
                 <input type="checkbox" checked={wantEnd} onChange={(e) => setWantEnd(e.target.checked)}
                   onClick={(e) => e.stopPropagation()} />
-                <span>{t.remOpt2}</span>
+                <span>{tx.opt2}</span>
               </div>
-              <div className="rem-opt-sub">{t.remOpt2Sub}</div>
+              <div className="rem-opt-sub">{tx.opt2Sub}</div>
               {wantEnd && (
                 <div className="rem-ext" onClick={(e) => e.stopPropagation()}>
                   <div className="rem-row">
                     <div className="rem-field">
-                      <label htmlFor="rem-end">{t.remEndDate}</label>
+                      <label htmlFor="rem-end">{tx.endDate}</label>
                       <input id="rem-end" className="rem-input" type="date" min={todayISO}
                         value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                     </div>
@@ -714,13 +765,15 @@ function ReminderModal({ plan, t, lang, meta, onClose }) {
             </div>
             <div className="rem-hint">{t.remContactHint}</div>
 
-            <div className="rem-field" style={{ marginTop: 12 }}>
-              <label htmlFor="rem-paid">{t.remPaid}</label>
-              <input id="rem-paid" className="rem-input" type="number" dir="ltr" inputMode="decimal"
-                min="5" max="500" step="0.1" value={paid} placeholder="₪"
-                onChange={(e) => setPaid(e.target.value)} />
-              <div className="rem-hint" style={{ marginTop: 2 }}>{t.remPaidHint}</div>
-            </div>
+            {showPaid && (
+              <div className="rem-field" style={{ marginTop: 12 }}>
+                <label htmlFor="rem-paid">{t.remPaid}</label>
+                <input id="rem-paid" className="rem-input" type="number" dir="ltr" inputMode="decimal"
+                  min="5" max="500" step="0.1" value={paid} placeholder="₪"
+                  onChange={(e) => setPaid(e.target.value)} />
+                <div className="rem-hint" style={{ marginTop: 2 }}>{t.remPaidHint}</div>
+              </div>
+            )}
 
             {err && <div className="rem-err" role="alert">{err}</div>}
             <button type="submit" className="rem-submit" disabled={busy}>
@@ -755,7 +808,7 @@ export default function MobileComparePage() {
   const [abroad, setAbroad] = useState(null)      // roaming rows (normalized), null = not fetched
   const [content, setContent] = useState(null)    // content-services rows
   const [detail, setDetail] = useState(null)      // plan in the details modal
-  const [remindFor, setRemindFor] = useState(null) // plan in the reminder-signup modal
+  const [remindFor, setRemindFor] = useState(null) // { plan, type } in the reminder-signup modal
 
   // Domestic filters
   const [budget, setBudget] = useState('all')
@@ -1052,7 +1105,7 @@ export default function MobileComparePage() {
         </button>
         <button type="button" className="ghost" onClick={() => setDetail(p)}>{t.details}</button>
         <button type="button" className="bell-btn" title={t.remBell} aria-label={t.remBell}
-          onClick={() => setRemindFor(p)}><BellIcon /></button>
+          onClick={() => setRemindFor({ plan: p, type: 'domestic' })}><BellIcon /></button>
       </div>
     </>
   )
@@ -1121,13 +1174,18 @@ export default function MobileComparePage() {
                   <>
                     <div className="q">{t.byCarrier}</div>
                     <div className="carrier-row">
-                      {carriers.map((c) => (
-                        <button key={c.id} type="button" className={`cpick${selCarriers.has(c.id) ? ' on' : ''}`}
-                          aria-pressed={selCarriers.has(c.id)} onClick={() => toggleCarrier(c.id)}>
-                          {CARRIER_LOGOS[c.id] && <img src={CARRIER_LOGOS[c.id]} alt="" loading="lazy" />}
-                          <bdi>{c.name}</bdi>
-                        </button>
-                      ))}
+                      {carriers.map((c) => {
+                        const bc = getCarrierColor(c.id)
+                        const on = selCarriers.has(c.id)
+                        return (
+                          <button key={c.id} type="button" className={`cpick${on ? ' on' : ''}`}
+                            style={on ? { borderColor: bc, boxShadow: `inset 0 0 0 1px ${bc}`, background: `color-mix(in srgb, ${bc}, #fff 88%)` } : undefined}
+                            aria-pressed={on} onClick={() => toggleCarrier(c.id)}>
+                            {CARRIER_LOGOS[c.id] && <img src={CARRIER_LOGOS[c.id]} alt="" loading="lazy" />}
+                            <bdi>{c.name}</bdi>
+                          </button>
+                        )
+                      })}
                     </div>
                   </>
                 )}
@@ -1196,13 +1254,15 @@ export default function MobileComparePage() {
                   </div>
                   {roamCarriers.length > 1 && (
                     <div className="carrier-row" style={{ marginBottom: 12 }}>
-                      <button type="button" className={`fchip${roamCarrier === 'all' ? ' on' : ''}`} onClick={() => setRoamCarrier('all')}>{t.alertAll}</button>
+                      <button type="button" className={`cpick${roamCarrier === 'all' ? ' on' : ''}`} onClick={() => setRoamCarrier('all')}>{t.alertAll}</button>
                       {roamCarriers.map((id) => {
                         const bc = getCarrierColor(id)
+                        const on = roamCarrier === id
                         return (
-                          <button key={id} type="button" className={`fchip${roamCarrier === id ? ' on' : ''}`}
-                            style={roamCarrier === id ? { background: `color-mix(in srgb, ${bc}, #fff 84%)`, borderColor: bc, color: `color-mix(in srgb, ${bc}, #000 25%)` } : undefined}
+                          <button key={id} type="button" className={`cpick${on ? ' on' : ''}`}
+                            style={on ? { borderColor: bc, boxShadow: `inset 0 0 0 1px ${bc}`, background: `color-mix(in srgb, ${bc}, #fff 88%)` } : undefined}
                             onClick={() => setRoamCarrier(id)}>
+                            {CARRIER_LOGOS[id] && <img src={CARRIER_LOGOS[id]} alt="" loading="lazy" />}
                             <bdi>{carrierLabel(id)}</bdi>
                           </button>
                         )
@@ -1221,8 +1281,9 @@ export default function MobileComparePage() {
                             <div className="deal-name"><bdi>{p.plan_name}</bdi></div>
                             <div className="deal-meta">
                               {p.data_gb != null && <bdi>{p.data_gb < 1 ? `${Math.round(p.data_gb * 1024)}MB` : `${+p.data_gb}GB`}</bdi>}
-                              {p.data_gb == null && <bdi>{t.unlimited}</bdi>}
-                              {p.days != null && <><span className="deal-sep" aria-hidden="true">·</span><bdi>{p.days} {p.days === 1 ? t.dayU : t.daysU}</bdi></>}
+                              {/* NULL data_gb on abroad rows = voice-minutes package (no data), not unlimited */}
+                              {p.data_gb == null && !p.minutes && <bdi>{t.unlimited}</bdi>}
+                              {p.days != null && <>{(p.data_gb != null || !p.minutes) && <span className="deal-sep" aria-hidden="true">·</span>}<bdi>{p.days} {p.days === 1 ? t.dayU : t.daysU}</bdi></>}
                               {p.minutes != null && p.minutes !== '' && <><span className="deal-sep" aria-hidden="true">·</span><bdi>{p.minutes} {t.minutesU}</bdi></>}
                             </div>
                           </div>
@@ -1243,6 +1304,8 @@ export default function MobileComparePage() {
                           {(p.info || p.terms_url || (p.extras || []).length > 0) && (
                             <button type="button" className="ghost" onClick={() => setDetail(p)}>{t.details}</button>
                           )}
+                          <button type="button" className="bell-btn" title={t.remBell} aria-label={t.remBell}
+                            onClick={() => setRemindFor({ plan: p, type: 'roaming' })}><BellIcon /></button>
                         </div>
                       </div>
                     )
@@ -1273,6 +1336,9 @@ export default function MobileComparePage() {
                         {p.note && <div className="svc-note"><bdi>{p.note}</bdi></div>}
                       </div>
                       <div className="svc-price"><bdi>{p.price}</bdi></div>
+                      <button type="button" className="bell-btn sm" title={t.remBell} aria-label={t.remBell}
+                        onClick={() => setRemindFor({ plan: { carrier: p.carrier, plan_name: p.service }, type: 'content' })}>
+                        <BellIcon /></button>
                     </div>
                   ))}
                 </div>
@@ -1301,7 +1367,8 @@ export default function MobileComparePage() {
 
       {detail && <DetailsModal plan={detail} t={t} onClose={() => setDetail(null)} />}
       {remindFor && (
-        <ReminderModal plan={remindFor} t={t} lang={lang} meta={{ sid, src: acq.src, campaign }}
+        <ReminderModal plan={remindFor.plan} planType={remindFor.type} t={t} lang={lang}
+          meta={{ sid, src: acq.src, campaign }}
           onClose={() => setRemindFor(null)} />
       )}
     </div>
