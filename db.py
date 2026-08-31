@@ -500,6 +500,8 @@ def init_db(db_path=None):
             --   so the same offer never re-alerts.
             -- kind='plan_end': one-shot — fires at end_date - remind_days_before
             --   (done=1 after sending), optionally attaching similar offers.
+            -- plan_type: 'domestic' (default) | 'roaming' (abroad_plans row) |
+            --   'content' (content_plans row — plan_name holds the service name).
             CREATE TABLE IF NOT EXISTS mobile_reminders (
                 id                 INTEGER PRIMARY KEY AUTOINCREMENT,
                 token              TEXT NOT NULL,
@@ -507,11 +509,13 @@ def init_db(db_path=None):
                 phone              TEXT,             -- digits, intl format (972…)
                 channel            TEXT NOT NULL DEFAULT 'email',  -- email | whatsapp | both
                 kind               TEXT NOT NULL,    -- better_deal | plan_end
+                plan_type          TEXT NOT NULL DEFAULT 'domestic',
                 carrier            TEXT NOT NULL,
                 plan_name          TEXT NOT NULL,
                 price              REAL,             -- snapshot at signup
                 data_gb            REAL,             -- snapshot (NULL + unlimited=1 → unlimited)
                 unlimited          INTEGER DEFAULT 0,
+                days               INTEGER,          -- roaming: package duration snapshot
                 end_date           TEXT,             -- plan_end: ISO date the plan term ends
                 remind_days_before INTEGER,          -- plan_end
                 include_offers     INTEGER DEFAULT 1,-- plan_end: attach similar offers
@@ -810,9 +814,11 @@ def init_db(db_path=None):
         except Exception:
             pass  # column already exists
         # Migration: /mobile-deals reminder engagement fields (monthly heartbeat +
-        # plan-end renewal follow-up)
+        # plan-end renewal follow-up) + roaming/content reminder support
         for col, sql in (("last_heartbeat_at", "TEXT"), ("followup_sent", "INTEGER DEFAULT 0"),
-                         ("paid_price", "REAL")):
+                         ("paid_price", "REAL"),
+                         ("plan_type", "TEXT NOT NULL DEFAULT 'domestic'"),
+                         ("days", "INTEGER")):
             try:
                 conn.execute(f"ALTER TABLE mobile_reminders ADD COLUMN {col} {sql}")
                 conn.commit()
@@ -2376,25 +2382,29 @@ def touch_mobile_push_notified(endpoint, db_path=None):
 
 def save_mobile_reminders(token, rows, db_path=None):
     """Insert the reminder rows of one /mobile-deals signup (all sharing `token`).
-    Re-signing up for the same (kind, carrier, plan_name) with the same contact
-    replaces the old row — a user tweaking the reminder date shouldn't stack
-    duplicate reminders."""
+    Re-signing up for the same (kind, plan_type, carrier, plan_name) with the
+    same contact replaces the old row — a user tweaking the reminder date
+    shouldn't stack duplicate reminders."""
     conn = _connect(db_path)
     try:
         now = datetime.now().isoformat()
         for r in rows:
             conn.execute(
-                "DELETE FROM mobile_reminders WHERE kind=? AND carrier=? AND plan_name=? "
+                "DELETE FROM mobile_reminders WHERE kind=? AND plan_type=? AND carrier=? "
+                "AND plan_name=? "
                 "AND IFNULL(email,'')=IFNULL(?,'') AND IFNULL(phone,'')=IFNULL(?,'')",
-                (r["kind"], r["carrier"], r["plan_name"], r.get("email"), r.get("phone")))
+                (r["kind"], r.get("plan_type") or "domestic", r["carrier"], r["plan_name"],
+                 r.get("email"), r.get("phone")))
             conn.execute(
                 "INSERT INTO mobile_reminders "
-                "(token, email, phone, channel, kind, carrier, plan_name, price, data_gb, "
-                " unlimited, end_date, remind_days_before, include_offers, lang, paid_price, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "(token, email, phone, channel, kind, plan_type, carrier, plan_name, price, "
+                " data_gb, unlimited, days, end_date, remind_days_before, include_offers, "
+                " lang, paid_price, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (token, r.get("email"), r.get("phone"), r.get("channel") or "email",
-                 r["kind"], r["carrier"], r["plan_name"], r.get("price"), r.get("data_gb"),
-                 1 if r.get("unlimited") else 0, r.get("end_date"),
+                 r["kind"], r.get("plan_type") or "domestic", r["carrier"], r["plan_name"],
+                 r.get("price"), r.get("data_gb"),
+                 1 if r.get("unlimited") else 0, r.get("days"), r.get("end_date"),
                  r.get("remind_days_before"), 0 if r.get("include_offers") is False else 1,
                  r.get("lang") or "he", r.get("paid_price"), now))
         conn.commit()

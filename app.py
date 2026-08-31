@@ -2342,18 +2342,63 @@ def api_mobile_push_unsubscribe():
 
 
 _REM_KINDS = ("better_deal", "plan_end")
+_REM_PLAN_TYPES = ("domestic", "roaming", "content")
 _REM_DAYS_CHOICES = (3, 7, 14, 30)
+
+
+def _rem_parse_price(val):
+    """First ₪ amount inside a free-text price (content_plans prices are strings
+    like '19.90 ₪ לחודש'). None when there is no usable number."""
+    m = _re_mobile.search(r"\d+(?:\.\d+)?", str(val or ""))
+    try:
+        p = float(m.group()) if m else None
+        return p if p is not None and 0 < p <= 1000 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _rem_lookup_plan(plan_type, carrier, plan_name):
+    """Snapshot dict for the signed-up plan, validated against the live data of
+    its type — or None when no such plan exists. For 'content', plan_name is the
+    service name (content rows have no plan_name of their own)."""
+    if plan_type == "roaming":
+        from db import get_abroad_plans
+        row = next((p for p in get_abroad_plans(carrier=carrier, db_path=_db_path())
+                    if p["plan_name"] == plan_name), None)
+        if row is None:
+            return None
+        # Abroad NULL data_gb = a voice-minutes package (no data), NOT
+        # unlimited — the matchers skip such rows on both sides.
+        return {"price": row.get("price"), "data_gb": row.get("data_gb"),
+                "unlimited": False, "days": row.get("days")}
+    if plan_type == "content":
+        from db import get_content_plans
+        row = next((p for p in get_content_plans(service=plan_name, carrier=carrier,
+                                                 db_path=_db_path())), None)
+        if row is None:
+            return None
+        return {"price": _rem_parse_price(row.get("price")), "data_gb": None,
+                "unlimited": False, "days": None}
+    feed = _cached_plans('mobile_compare', lambda: _assemble_mobile_plans(_db_path()))
+    plan = next((p for p in feed.get("plans", [])
+                 if p["carrier"] == carrier and p["plan_name"] == plan_name), None)
+    if plan is None:
+        return None
+    return {"price": plan.get("price"), "data_gb": plan.get("data_gb"),
+            "unlimited": plan.get("unlimited"), "days": None}
 
 
 @app.route("/api/mobile/reminders", methods=["POST"])
 @limiter.limit("6 per minute")
 def api_mobile_reminders_subscribe():
     """Public (no auth): /mobile-deals email/WhatsApp reminder signup.
-    Body: { email?, phone?, kinds: ['better_deal'|'plan_end'...], carrier,
-    plan_name, end_date?, remind_days_before?, include_offers?, lang, sid? }.
-    At least one contact field is required; the plan must exist on the live
-    normalized feed (price/data are snapshotted server-side, never trusted from
-    the client). Returns the shared unsubscribe token."""
+    Body: { email?, phone?, kinds: ['better_deal'|'plan_end'...], plan_type?
+    ('domestic'|'roaming'|'content', default domestic), carrier, plan_name,
+    end_date?, remind_days_before?, include_offers?, lang, sid? }. For
+    plan_type='content', plan_name carries the service name. At least one
+    contact field is required; the plan must exist on the live data of its type
+    (price/data are snapshotted server-side, never trusted from the client).
+    Returns the shared unsubscribe token."""
     from db import save_mobile_reminders, log_mobile_event
     body = request.get_json(silent=True) or {}
     lang = body.get("lang") if body.get("lang") in ("he", "en") else "he"
@@ -2370,14 +2415,13 @@ def api_mobile_reminders_subscribe():
         return jsonify({"error": "missing contact"}), 400
     carrier = (body.get("carrier") or "").strip()
     plan_name = (body.get("plan_name") or "").strip()[:200]
+    plan_type = body.get("plan_type") if body.get("plan_type") in _REM_PLAN_TYPES else "domestic"
     kinds = [k for k in (body.get("kinds") or []) if k in _REM_KINDS]
     if not kinds:
         return jsonify({"error": "missing kinds"}), 400
     if carrier not in _MOBILE_CARRIERS or not plan_name:
         return jsonify({"error": "unknown plan"}), 400
-    feed = _cached_plans('mobile_compare', lambda: _assemble_mobile_plans(_db_path()))
-    plan = next((p for p in feed.get("plans", [])
-                 if p["carrier"] == carrier and p["plan_name"] == plan_name), None)
+    plan = _rem_lookup_plan(plan_type, carrier, plan_name)
     if plan is None:
         return jsonify({"error": "unknown plan"}), 404
     channel = "both" if (email and phone) else ("email" if email else "whatsapp")
@@ -2392,9 +2436,11 @@ def api_mobile_reminders_subscribe():
         pass
     rows = []
     for k in kinds:
-        row = {"kind": k, "carrier": carrier, "plan_name": plan_name,
+        row = {"kind": k, "plan_type": plan_type, "carrier": carrier,
+               "plan_name": plan_name,
                "price": plan.get("price"), "data_gb": plan.get("data_gb"),
-               "unlimited": plan.get("unlimited"), "email": email or None,
+               "unlimited": plan.get("unlimited"), "days": plan.get("days"),
+               "email": email or None,
                "phone": phone or None, "channel": channel, "lang": lang,
                "paid_price": paid_price}
         if k == "plan_end":

@@ -337,8 +337,9 @@ export const api = {
     }),
   mobilePushUnsubscribe: (endpoint) =>
     fetchApi('/api/mobile/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
-  // Email/WhatsApp reminder signup for a specific domestic plan (public).
-  // payload: { email?, phone?, kinds, carrier, plan_name, end_date?,
+  // Email/WhatsApp reminder signup for a specific plan (public). plan_type:
+  // 'domestic' (default) | 'roaming' | 'content' (plan_name = service name).
+  // payload: { email?, phone?, kinds, plan_type?, carrier, plan_name, end_date?,
   //            remind_days_before?, include_offers?, lang, sid?, src?, campaign? }
   mobileReminderSubscribe: (payload) =>
     fetchApi('/api/mobile/reminders', { method: 'POST', body: JSON.stringify(payload) }),

@@ -46,6 +46,12 @@ export default function MobileSubscribersPage() {
   const CHANNEL_LABELS = {
     email: tt('מייל', 'Email'), whatsapp: tt('וואטסאפ', 'WhatsApp'), both: tt('מייל + וואטסאפ', 'Both'),
   }
+  // Non-domestic signups (roaming packages / content services) get a small tag
+  // next to the plan name.
+  const TYPE_TAGS = {
+    roaming: tt('חו"ל', 'Roaming'),
+    content: tt('תוכן', 'Content'),
+  }
 
   const rows = useMemo(() => {
     let out = data?.rows || []
@@ -79,7 +85,7 @@ export default function MobileSubscribersPage() {
   }
 
   const exportCsv = () => {
-    const head = ['created_at', 'kind', 'email', 'phone', 'channel', 'carrier', 'plan_name',
+    const head = ['created_at', 'kind', 'plan_type', 'email', 'phone', 'channel', 'carrier', 'plan_name',
       'price', 'paid_price', 'end_date', 'remind_days_before', 'lang', 'done', 'last_notified_at']
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
     const lines = [head.join(',')]
@@ -151,6 +157,11 @@ export default function MobileSubscribersPage() {
                   <td className="px-3 py-2">
                     <span className="font-medium">{carrierLabel(r.carrier)}</span>
                     <span className="text-xs text-[#8b6b52]"> · {r.plan_name}</span>
+                    {TYPE_TAGS[r.plan_type] && (
+                      <span className="mr-1.5 inline-block align-middle text-[10px] font-bold bg-moca-cream text-moca-bolt rounded-full px-2 py-0.5">
+                        {TYPE_TAGS[r.plan_type]}
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap" dir="ltr">{r.price != null ? `₪${r.price}` : '-'}</td>
                   <td className="px-3 py-2 whitespace-nowrap font-medium" dir="ltr">

@@ -3,6 +3,7 @@ import html
 import json
 import logging
 import os
+import re
 import requests
 import smtplib
 import ssl
@@ -1055,6 +1056,37 @@ def _rem_gb_label(plan, lang):
     return f"{g:g}GB"
 
 
+def _content_price(val):
+    """First ₪ amount inside a content_plans free-text price ('19.90 ₪ לחודש').
+    None when there is no usable number."""
+    m = re.search(r"\d+(?:\.\d+)?", str(val or ""))
+    try:
+        p = float(m.group()) if m else None
+        return p if p is not None and 0 < p <= 1000 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _rem_meta_label(p, lang, plan_type="domestic"):
+    """Short spec label for a deal/base row: data (+ days for roaming packages);
+    empty for content services, where the price alone tells the story."""
+    if plan_type == "content":
+        return ""
+    if plan_type == "roaming" and p.get("data_gb") is None and not p.get("unlimited"):
+        # Abroad NULL data_gb = voice-minutes package, not unlimited.
+        d = p.get("days")
+        return ("" if not d else
+                (("1 day" if d == 1 else f"{d} days") if lang == "en"
+                 else ("יום אחד" if d == 1 else f"{d} ימים")))
+    label = _rem_gb_label(p, lang)
+    d = p.get("days")
+    if plan_type == "roaming" and d:
+        days_txt = ("1 day" if d == 1 else f"{d} days") if lang == "en" \
+            else ("יום אחד" if d == 1 else f"{d} ימים")
+        label += f" · {days_txt}"
+    return label
+
+
 def find_better_mobile_deals(base, plans, min_saving=2.0, limit=3):
     """Competing domestic plans that beat `base` (a mobile_reminders row / feed
     plan): at least the same data for less money, or more data for the same
@@ -1100,6 +1132,77 @@ def find_similar_mobile_offers(base, plans, limit=3):
     return out[:limit]
 
 
+def find_better_roaming_deals(base, abroad_plans, min_saving=2.0, limit=3):
+    """Competing carrier roaming packages that beat `base`: at least the same
+    data AND duration for less money, or strictly more of either at the same
+    money. A NULL data_gb on abroad rows means NO data (voice-minutes packages,
+    e.g. rami_levy 'טסים בראש שקט') — NOT unlimited — so NULL rows are excluded
+    from both sides of the comparison (minutes are not modeled). Destination
+    coverage also differs between packages and is not modeled here — the
+    message links to the comparison page where coverage is shown."""
+    base_price = base.get("price")
+    if base_price is None or base.get("data_gb") is None:
+        return []
+    base_data, base_days = base["data_gb"], base.get("days") or 0
+    out = []
+    for p in abroad_plans:
+        if p.get("carrier") == base.get("carrier") or p.get("price") is None:
+            continue
+        if p.get("data_gb") is None:
+            continue
+        d, days, pr = p["data_gb"], p.get("days") or 0, p["price"]
+        if d < base_data or days < base_days:
+            continue
+        if pr <= base_price - min_saving or ((d > base_data or days > base_days) and pr <= base_price):
+            out.append(p)
+    out.sort(key=lambda p: (p["price"], -(p.get("days") or 0)))
+    return out[:limit]
+
+
+def find_similar_roaming_offers(base, abroad_plans, limit=3):
+    """Retention alternatives for a roaming plan-end reminder: same-or-more data
+    and duration from any carrier, cheapest first. NULL data_gb = voice-only —
+    excluded (see find_better_roaming_deals)."""
+    if base.get("data_gb") is None:
+        return []
+    base_data, base_days = base["data_gb"], base.get("days") or 0
+    out = [p for p in abroad_plans
+           if p.get("price") is not None and p.get("data_gb") is not None
+           and p["data_gb"] >= base_data and (p.get("days") or 0) >= base_days
+           and not (p.get("carrier") == base.get("carrier") and p.get("plan_name") == base.get("plan_name"))]
+    out.sort(key=lambda p: (p["price"], -(p.get("days") or 0)))
+    return out[:limit]
+
+
+def _content_offer_rows(base, content_rows, exclude_own=True):
+    """content_plans rows of the SAME service normalized to deal dicts (parsed
+    numeric price), cheapest first. Rows without a parseable ₪ amount are
+    skipped."""
+    out = []
+    for p in content_rows:
+        if p.get("service") != base.get("plan_name"):
+            continue
+        if exclude_own and p.get("carrier") == base.get("carrier"):
+            continue
+        pr = _content_price(p.get("price"))
+        if pr is None:
+            continue
+        out.append({"carrier": p["carrier"], "plan_name": p["service"], "price": pr,
+                    "free_trial": p.get("free_trial")})
+    out.sort(key=lambda p: p["price"])
+    return out
+
+
+def find_better_content_deals(base, content_rows, min_saving=1.0, limit=3):
+    """The same content service (Norton, cyber protection…) at another carrier
+    for at least ₪`min_saving` less."""
+    base_price = base.get("price")
+    if base_price is None:
+        return []
+    return [p for p in _content_offer_rows(base, content_rows)
+            if p["price"] <= base_price - min_saving][:limit]
+
+
 def _rem_urls(config):
     """Public URLs for reminder messages. Config-driven because the canonical
     hosts flip during the mocaintel.com takedown (public_site_url = the Netlify
@@ -1111,11 +1214,13 @@ def _rem_urls(config):
             api + "/api/mobile/reminders/unsubscribe?token=")
 
 
-def _rem_deal_lines(deals, lang):
+def _rem_deal_lines(deals, lang, plan_type="domestic"):
     lines = []
     for p in deals:
         name = CARRIER_DISPLAY_NAMES.get(p["carrier"], p["carrier"])
-        lines.append(f"• {name} - {p['plan_name']}: ₪{_rem_fmt_price(p['price'])} ({_rem_gb_label(p, lang)})")
+        meta = _rem_meta_label(p, lang, plan_type)
+        lines.append(f"• {name} - {p['plan_name']}: ₪{_rem_fmt_price(p['price'])}"
+                     + (f" ({meta})" if meta else ""))
     return lines
 
 
@@ -1197,10 +1302,12 @@ CARRIER_HOME_URLS = {
 }
 
 
-def _rem_deal_cards_html(deals, lang, mark_best=False):
+def _rem_deal_cards_html(deals, lang, mark_best=False, plan_type="domestic"):
     """Deal rows as white cards: carrier + plan on the start side, price + data
     on the end side. The first card optionally gets a green 'best value' tag.
-    When the carrier's homepage is known, the card content links out to it."""
+    When the carrier's homepage is known, the card content links out to it.
+    Roaming packages are one-time buys, so their sub-line shows the package
+    spec (data · days) instead of 'per month'."""
     rtl = lang != "en"
     end_align = "left" if rtl else "right"
     best_label = "הכי משתלמת" if rtl else "Best value"
@@ -1216,8 +1323,11 @@ def _rem_deal_cards_html(deals, lang, mark_best=False):
                      f'font-weight:700;border-radius:999px;padding:2px 10px;margin-bottom:4px;">{best_label}</span><br>')
         info = (f'<span style="color:#3b1f0d;font-size:15px;font-weight:700;">{name}</span><br>'
                 f'<span style="color:#8a6a4a;font-size:12.5px;">{p["plan_name"]}</span>')
+        meta = _rem_meta_label(p, lang, plan_type)
+        sub_parts = ([meta] if meta else []) + ([per_month] if plan_type != "roaming" else [])
+        sub = " &middot; ".join(sub_parts) or "&nbsp;"
         price = (f'<span dir="ltr" style="color:#c9622f;font-size:21px;font-weight:800;">&#8362;{_rem_fmt_price(p["price"])}</span><br>'
-                 f'<span style="color:#8a6a4a;font-size:12px;">{_rem_gb_label(p, lang)} &middot; {per_month}</span>')
+                 f'<span style="color:#8a6a4a;font-size:12px;">{sub}</span>')
         if home:
             info = (f'<a href="{home}" style="text-decoration:none;color:inherit;">{info}</a><br>'
                     f'<a href="{home}" style="color:#c9622f;font-size:11.5px;font-weight:700;'
@@ -1254,10 +1364,15 @@ def _build_better_deal_html(rem, base, deals, config, btl=None):
     """Branded email for the better_deal reminder: current-plan strip, savings
     tag, competing deal cards, optional below-the-line reseller cards, CTA."""
     lang = rem.get("lang") or "he"
+    ptype = rem.get("plan_type") or "domestic"
     rtl = lang != "en"
     utm, unsub = _rem_links(rem, config)
     cname = CARRIER_DISPLAY_NAMES.get(rem["carrier"], rem["carrier"])
-    cur_label = "המסלול שלך היום" if rtl else "Your current plan"
+    cur_label = {
+        "roaming": "החבילה שלך היום" if rtl else "Your current package",
+        "content": "השירות שלך היום" if rtl else "Your current service",
+    }.get(ptype, "המסלול שלך היום" if rtl else "Your current plan")
+    base_meta = _rem_meta_label(base, lang, ptype)
     base_strip = (
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'style="background:#f5ede0;border-radius:12px;margin:6px 0 12px;"><tr>'
@@ -1267,24 +1382,34 @@ def _build_better_deal_html(rem, base, deals, config, btl=None):
         f'<span style="color:#8a6a4a;font-size:12.5px;">({cname})</span></td>'
         f'<td align="{"left" if rtl else "right"}" style="padding:12px 18px;white-space:nowrap;">'
         f'<span dir="ltr" style="color:#8a6a4a;font-size:16px;font-weight:700;">&#8362;{_rem_fmt_price(base["price"])}</span><br>'
-        f'<span style="color:#a08468;font-size:11.5px;">{_rem_gb_label(base, lang)}</span>'
+        f'<span style="color:#a08468;font-size:11.5px;">{base_meta or "&nbsp;"}</span>'
         f'</td></tr></table>')
     saving_html = ""
     try:
         saving = float(base["price"]) - float(deals[0]["price"])
         if saving >= 1:
-            annual = round(saving * 12)
-            saving_txt = (f"חיסכון של עד &#8362;{_rem_fmt_price(saving)} בחודש = כ-&#8362;{annual} בשנה" if rtl
-                          else f"Save up to &#8362;{_rem_fmt_price(saving)} a month = about &#8362;{annual} a year")
+            if ptype == "roaming":
+                # One-time package price — no monthly/annual framing.
+                saving_txt = (f"חיסכון של עד &#8362;{_rem_fmt_price(saving)} בחבילה" if rtl
+                              else f"Save up to &#8362;{_rem_fmt_price(saving)} on the package")
+            else:
+                annual = round(saving * 12)
+                saving_txt = (f"חיסכון של עד &#8362;{_rem_fmt_price(saving)} בחודש = כ-&#8362;{annual} בשנה" if rtl
+                              else f"Save up to &#8362;{_rem_fmt_price(saving)} a month = about &#8362;{annual} a year")
             saving_html = (f'<div style="margin:0 0 14px;"><span style="display:inline-block;background:#e3f3e9;'
                            f'color:#246b43;font-size:12.5px;font-weight:800;border-radius:999px;padding:5px 16px;">'
                            f'&#8595; {saving_txt}</span></div>')
     except (TypeError, ValueError):
         pass
     badge = "התראת חיסכון" if rtl else "Savings alert"
-    title = ("מצאנו חבילות שמשתלמות יותר מהמסלול שלך" if rtl
-             else "We found plans that beat your current one")
-    blocks = base_strip + saving_html + _rem_deal_cards_html(deals, lang, mark_best=True)
+    title = {
+        "roaming": ("מצאנו חבילות חו\"ל שמשתלמות יותר מהחבילה שלך" if rtl
+                    else "We found roaming packages that beat yours"),
+        "content": ((f"מצאנו את {rem['plan_name']} במחיר טוב יותר" if rtl
+                     else f"We found {rem['plan_name']} for less")),
+    }.get(ptype, "מצאנו חבילות שמשתלמות יותר מהמסלול שלך" if rtl
+          else "We found plans that beat your current one")
+    blocks = base_strip + saving_html + _rem_deal_cards_html(deals, lang, mark_best=True, plan_type=ptype)
     if btl:
         btl_title = ("מתחת לקו: הצעות משווקים שרוב ההשוואתונים לא מציגים" if rtl
                      else "Below the line: reseller offers most comparison sites never show")
@@ -1299,6 +1424,7 @@ def _build_plan_end_html(rem, intro_lines, offers, config):
     """Branded email for the plan_end reminder: intro paragraphs + optional
     retention-alternative cards."""
     lang = rem.get("lang") or "he"
+    ptype = rem.get("plan_type") or "domestic"
     rtl = lang != "en"
     utm, unsub = _rem_links(rem, config)
     paras = "".join(f'<p style="margin:0 0 10px;color:#4a3a24;font-size:14px;line-height:1.7;">{ln}</p>'
@@ -1307,11 +1433,16 @@ def _build_plan_end_html(rem, intro_lines, offers, config):
     if offers:
         offers_title = "הצעות דומות שזמינות היום" if rtl else "Similar offers available today"
         blocks += (f'<p style="margin:14px 0 8px;color:#3b1f0d;font-size:13.5px;font-weight:700;">{offers_title}</p>'
-                   + _rem_deal_cards_html(offers, lang))
+                   + _rem_deal_cards_html(offers, lang, plan_type=ptype))
     badge = "תזכורת סיום מסלול" if rtl else "Plan-end reminder"
     cname = CARRIER_DISPLAY_NAMES.get(rem["carrier"], rem["carrier"])
-    title = (f"המסלול שלך ב{cname} עומד להסתיים" if rtl
-             else f"Your plan at {cname} is about to end")
+    title = {
+        "roaming": (f"חבילת החו\"ל שלך ב{cname} עומדת להסתיים" if rtl
+                    else f"Your roaming package at {cname} is about to end"),
+        "content": (f"תזכורת לגבי {rem['plan_name']} ב{cname}" if rtl
+                    else f"A reminder about {rem['plan_name']} at {cname}"),
+    }.get(ptype, f"המסלול שלך ב{cname} עומד להסתיים" if rtl
+          else f"Your plan at {cname} is about to end")
     return _rem_email_shell(lang, unsub, _rem_email_body(lang, badge, title, blocks, utm),
                             hero_url=_rem_hero_url("plan_end", config),
                             share_url=_rem_share_url(rem, config))
@@ -1560,10 +1691,14 @@ def notify_mobile_better_deals(plans, config, db_path=None):
     """Recurring /mobile-deals reminder #1: 'a similar plan now costs less at
     another carrier'. Runs daily off the normalized feed. Per subscription, the
     best_price_alerted ratchet means a given offer alerts once — a re-alert
-    needs a strictly better (>= ₪1 cheaper) competing offer. 72h cooldown."""
+    needs a strictly better (>= ₪1 cheaper) competing offer. 72h cooldown.
+    plan_type='roaming' rows compare against abroad_plans (data AND days),
+    'content' rows against the same service at other carriers; both feeds are
+    loaded lazily on first use."""
     from db import get_mobile_reminders, mark_mobile_reminder_notified
     sent = 0
     by_id = {f"{p['carrier']}|{p['plan_name']}": p for p in plans}
+    abroad = content_rows = None
     for rem in get_mobile_reminders(kind="better_deal", db_path=db_path):
         last = rem.get("last_notified_at")
         if last:
@@ -1572,13 +1707,35 @@ def notify_mobile_better_deals(plans, config, db_path=None):
                     continue
             except (ValueError, TypeError):
                 pass
+        ptype = rem.get("plan_type") or "domestic"
         # Compare against what the user actually PAYS: their self-declared
         # paid_price wins, else the plan's current rate-card price (prices move
         # after signup), else the signup snapshot.
-        cur = by_id.get(f"{rem['carrier']}|{rem['plan_name']}")
-        base = {"carrier": rem["carrier"], "price": _rem_base_price(rem, cur),
-                "data_gb": rem.get("data_gb"), "unlimited": rem.get("unlimited")}
-        deals = find_better_mobile_deals(base, plans)
+        if ptype == "roaming":
+            if abroad is None:
+                from db import get_abroad_plans
+                abroad = get_abroad_plans(db_path=db_path)
+            cur = next((p for p in abroad
+                        if p["carrier"] == rem["carrier"] and p["plan_name"] == rem["plan_name"]), None)
+            base = {"carrier": rem["carrier"], "price": _rem_base_price(rem, cur),
+                    "data_gb": rem.get("data_gb"), "unlimited": rem.get("unlimited"),
+                    "days": rem.get("days")}
+            deals = find_better_roaming_deals(base, abroad)
+        elif ptype == "content":
+            if content_rows is None:
+                from db import get_content_plans
+                content_rows = get_content_plans(db_path=db_path)
+            cur_row = next((p for p in content_rows
+                            if p["carrier"] == rem["carrier"] and p["service"] == rem["plan_name"]), None)
+            cur = {"price": _content_price(cur_row.get("price"))} if cur_row else None
+            base = {"carrier": rem["carrier"], "plan_name": rem["plan_name"],
+                    "price": _rem_base_price(rem, cur), "data_gb": None, "unlimited": 0}
+            deals = find_better_content_deals(base, content_rows)
+        else:
+            cur = by_id.get(f"{rem['carrier']}|{rem['plan_name']}")
+            base = {"carrier": rem["carrier"], "price": _rem_base_price(rem, cur),
+                    "data_gb": rem.get("data_gb"), "unlimited": rem.get("unlimited")}
+            deals = find_better_mobile_deals(base, plans)
         if not deals:
             continue
         best = deals[0]["price"]
@@ -1588,22 +1745,40 @@ def notify_mobile_better_deals(plans, config, db_path=None):
         lang = rem.get("lang") or "he"
         cname = CARRIER_DISPLAY_NAMES.get(rem["carrier"], rem["carrier"])
         if lang == "en":
-            subject = f"MOCA: a better deal than {rem['plan_name']} ({cname})"
-            head = [f"Good news - we found plans that beat \"{rem['plan_name']}\" ({cname}, ₪{_rem_fmt_price(base['price'])}):"]
+            subject = {
+                "roaming": f"MOCA: a better roaming package than {rem['plan_name']} ({cname})",
+                "content": f"MOCA: {rem['plan_name']} for less than at {cname}",
+            }.get(ptype, f"MOCA: a better deal than {rem['plan_name']} ({cname})")
+            head = [{
+                "roaming": f"Good news - we found roaming packages that beat \"{rem['plan_name']}\" ({cname}, ₪{_rem_fmt_price(base['price'])}):",
+                "content": f"Good news - {rem['plan_name']} costs less at other carriers than at {cname} (₪{_rem_fmt_price(base['price'])}):",
+            }.get(ptype, f"Good news - we found plans that beat \"{rem['plan_name']}\" ({cname}, ₪{_rem_fmt_price(base['price'])}):")]
         else:
-            subject = f"MOCA: נמצאה חבילה משתלמת יותר מ{cname}"
-            head = [f"חדשות טובות - מצאנו חבילות שמנצחות את \"{rem['plan_name']}\" ({cname}, ₪{_rem_fmt_price(base['price'])}):"]
+            subject = {
+                "roaming": f"MOCA: נמצאה חבילת חו\"ל משתלמת יותר מ{cname}",
+                "content": f"MOCA: נמצא מחיר טוב יותר ל{rem['plan_name']}",
+            }.get(ptype, f"MOCA: נמצאה חבילה משתלמת יותר מ{cname}")
+            head = [{
+                "roaming": f"חדשות טובות - מצאנו חבילות חו\"ל שמנצחות את \"{rem['plan_name']}\" ({cname}, ₪{_rem_fmt_price(base['price'])}):",
+                "content": f"חדשות טובות - {rem['plan_name']} עולה פחות אצל מפעילים אחרים מאשר ב{cname} (₪{_rem_fmt_price(base['price'])}):",
+            }.get(ptype, f"חדשות טובות - מצאנו חבילות שמנצחות את \"{rem['plan_name']}\" ({cname}, ₪{_rem_fmt_price(base['price'])}):")]
         tail = []
         try:
             saving = float(base["price"]) - float(best)
             if saving >= 1:
-                annual = round(saving * 12)
-                tail = [(f"Switching saves up to ₪{_rem_fmt_price(saving)}/month - about ₪{annual} a year"
-                         if lang == "en" else
-                         f"מעבר חוסך עד ₪{_rem_fmt_price(saving)} בחודש - כ-₪{annual} בשנה")]
+                if ptype == "roaming":
+                    tail = [(f"Switching saves up to ₪{_rem_fmt_price(saving)} on the package"
+                             if lang == "en" else
+                             f"מעבר חוסך עד ₪{_rem_fmt_price(saving)} בחבילה")]
+                else:
+                    annual = round(saving * 12)
+                    tail = [(f"Switching saves up to ₪{_rem_fmt_price(saving)}/month - about ₪{annual} a year"
+                             if lang == "en" else
+                             f"מעבר חוסך עד ₪{_rem_fmt_price(saving)} בחודש - כ-₪{annual} בשנה")]
         except (TypeError, ValueError):
             pass
-        btl = _find_reseller_deals(base, db_path=db_path)
+        # Below-the-line reseller offers only make sense against domestic plans.
+        btl = _find_reseller_deals(base, db_path=db_path) if ptype == "domestic" else []
         if btl:
             tail.append("Below the line (reseller offers):" if lang == "en"
                         else "מתחת לקו (הצעות משווקים):")
@@ -1612,7 +1787,7 @@ def notify_mobile_better_deals(plans, config, db_path=None):
                 cname = CARRIER_DISPLAY_NAMES.get(r["carrier"], r["carrier"])
                 tail.append(f"• {rname} ({cname}) - {r['plan_name']}: ₪{_rem_fmt_price(r['price'])}")
         html = _build_better_deal_html(rem, base, deals, config, btl=btl)
-        if _rem_send(rem, subject, head + _rem_deal_lines(deals, lang) + tail, config, html=html):
+        if _rem_send(rem, subject, head + _rem_deal_lines(deals, lang, ptype) + tail, config, html=html):
             mark_mobile_reminder_notified(rem["id"], best_price=best, db_path=db_path)
             sent += 1
     return sent
@@ -1640,31 +1815,57 @@ def notify_mobile_plan_end_reminders(plans, config, db_path=None):
             continue
         days_left = (end - today).days
         lang = rem.get("lang") or "he"
+        ptype = rem.get("plan_type") or "domestic"
         cname = CARRIER_DISPLAY_NAMES.get(rem["carrier"], rem["carrier"])
         date_str = end.strftime("%d/%m/%Y")
         if lang == "en":
-            subject = f"MOCA reminder: your plan at {cname} ends on {date_str}"
             when = "today" if days_left <= 0 else f"in {days_left} days" if days_left > 1 else "tomorrow"
-            head = [f"Reminder: the term of \"{rem['plan_name']}\" at {cname} ends on {date_str} ({when}).",
-                    "A good moment to renegotiate your terms or compare alternatives."]
+            if ptype == "roaming":
+                subject = f"MOCA reminder: your roaming package at {cname} ends on {date_str}"
+                head = [f"Reminder: the roaming package \"{rem['plan_name']}\" at {cname} ends on {date_str} ({when}).",
+                        "A good moment to top up or compare alternatives for the rest of the trip."]
+            elif ptype == "content":
+                subject = f"MOCA reminder: {rem['plan_name']} at {cname} - {date_str}"
+                head = [f"Reminder: the date you set for \"{rem['plan_name']}\" at {cname} is {date_str} ({when}).",
+                        "A good moment to review the service - keep it, cancel, or compare other carriers."]
+            else:
+                subject = f"MOCA reminder: your plan at {cname} ends on {date_str}"
+                head = [f"Reminder: the term of \"{rem['plan_name']}\" at {cname} ends on {date_str} ({when}).",
+                        "A good moment to renegotiate your terms or compare alternatives."]
             offers_title = "Similar offers available today:"
         else:
-            subject = f"MOCA תזכורת: המסלול ב{cname} מסתיים ב-{date_str}"
             when = ("היום" if days_left <= 0
                     else "מחר" if days_left == 1
                     else f"בעוד {days_left} ימים")
-            head = [f"תזכורת: תקופת המסלול \"{rem['plan_name']}\" ב{cname} מסתיימת ב-{date_str} ({when}).",
-                    "זה הזמן לבדוק את התנאים מול המפעיל או להשוות חלופות."]
+            if ptype == "roaming":
+                subject = f"MOCA תזכורת: חבילת החו\"ל ב{cname} מסתיימת ב-{date_str}"
+                head = [f"תזכורת: חבילת החו\"ל \"{rem['plan_name']}\" ב{cname} מסתיימת ב-{date_str} ({when}).",
+                        "זה הזמן לחדש את החבילה או להשוות חלופות להמשך הנסיעה."]
+            elif ptype == "content":
+                subject = f"MOCA תזכורת: {rem['plan_name']} ב{cname} - {date_str}"
+                head = [f"תזכורת: התאריך שקבעתם עבור \"{rem['plan_name']}\" ב{cname} הוא {date_str} ({when}).",
+                        "זה הזמן לבדוק את השירות - להשאיר, לבטל או להשוות מול מפעילים אחרים."]
+            else:
+                subject = f"MOCA תזכורת: המסלול ב{cname} מסתיים ב-{date_str}"
+                head = [f"תזכורת: תקופת המסלול \"{rem['plan_name']}\" ב{cname} מסתיימת ב-{date_str} ({when}).",
+                        "זה הזמן לבדוק את התנאים מול המפעיל או להשוות חלופות."]
             offers_title = "הצעות דומות שזמינות היום:"
         lines = list(head)
         offers = []
         if rem.get("include_offers"):
             base = {"carrier": rem["carrier"], "plan_name": rem["plan_name"],
                     "price": rem.get("price"), "data_gb": rem.get("data_gb"),
-                    "unlimited": rem.get("unlimited")}
-            offers = find_similar_mobile_offers(base, plans)
+                    "unlimited": rem.get("unlimited"), "days": rem.get("days")}
+            if ptype == "roaming":
+                from db import get_abroad_plans
+                offers = find_similar_roaming_offers(base, get_abroad_plans(db_path=db_path))
+            elif ptype == "content":
+                from db import get_content_plans
+                offers = _content_offer_rows(base, get_content_plans(db_path=db_path))[:3]
+            else:
+                offers = find_similar_mobile_offers(base, plans)
             if offers:
-                lines += ["", offers_title] + _rem_deal_lines(offers, lang)
+                lines += ["", offers_title] + _rem_deal_lines(offers, lang, ptype)
         html = _build_plan_end_html(rem, head, offers, config)
         if _rem_send(rem, subject, lines, config, html=html):
             mark_mobile_reminder_notified(rem["id"], done=True, db_path=db_path)
@@ -1690,6 +1891,10 @@ def notify_mobile_heartbeat(plans, config, db_path=None):
     honest = [p for p in plans if p.get("price") is not None
               and not p.get("voice_only") and not p.get("price_conditional")]
     for rem in get_mobile_reminders(kind="better_deal", db_path=db_path):
+        # Market-percentile stats are computed off the domestic feed — the pulse
+        # email is meaningless for roaming/content subscriptions.
+        if (rem.get("plan_type") or "domestic") != "domestic":
+            continue
         if not rem.get("email") or (rem.get("channel") or "email") == "whatsapp":
             continue
         marks = [m for m in (rem.get("last_heartbeat_at"), rem.get("last_notified_at"),
@@ -1757,6 +1962,11 @@ def notify_mobile_renewal_followups(plans, config, db_path=None):
     sent = 0
     today = datetime.now().date()
     for rem in get_mobile_plan_end_followups(db_path=db_path):
+        # 'Did you renew?' only fits a domestic plan term — a roaming package
+        # ends with the trip and a content date is whatever the user chose.
+        if (rem.get("plan_type") or "domestic") != "domestic":
+            mark_mobile_reminder_followup(rem["id"], db_path=db_path)
+            continue
         try:
             end = datetime.fromisoformat((rem.get("end_date") or "")[:10]).date()
         except (ValueError, TypeError):
