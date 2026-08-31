@@ -48,7 +48,7 @@ function fmtTok(n) {
 }
 
 function fmtDays(n, tt = (he) => he) {
-  if (n == null) return '—'
+  if (n == null) return '-'
   if (n <= 0)    return tt('נוצל', 'Depleted')
   if (n < 1)     return tt('פחות מיום', 'Less than a day')
   if (n >= 365)  return `~${(n / 365).toFixed(1)} ${tt('שנים', 'years')}`
@@ -133,7 +133,7 @@ function OfficialSpend({ official, windowDays }) {
     return (
       <div className="mb-4 rounded-lg p-3 text-xs leading-relaxed" style={{ background: 'var(--color-moca-mist)', color: 'var(--color-moca-sub)' }}>
         💡 {tt('להצגת', 'To display')} <span className="font-semibold">{tt('הוצאה רשמית מ-Anthropic', 'official spend from Anthropic')}</span>: {tt('הוסף ל-config.json את', 'add to config.json the')}{' '}
-        <code className="font-mono">anthropic_admin_key</code> ({tt('מפתח Admin של ארגון,', 'organization Admin key,')} <code className="font-mono">sk-ant-admin…</code> — {tt('לא זמין לחשבון יחיד) והפעל מחדש את Flask. זו הוצאה, לא יתרה.', 'not available for individual accounts), then restart Flask. This is spend, not balance.')}
+        <code className="font-mono">anthropic_admin_key</code> ({tt('מפתח Admin של ארגון,', 'organization Admin key,')} <code className="font-mono">sk-ant-admin…</code> - {tt('לא זמין לחשבון יחיד) והפעל מחדש את Flask. זו הוצאה, לא יתרה.', 'not available for individual accounts), then restart Flask. This is spend, not balance.')}
       </div>
     )
   }
@@ -142,7 +142,7 @@ function OfficialSpend({ official, windowDays }) {
     return (
       <div className="mb-4 rounded-lg p-3 text-xs leading-relaxed" style={{ background: 'var(--color-moca-mist)', color: 'var(--color-moca-up)' }}>
         ⚠️ {tt('לא ניתן למשוך הוצאה רשמית מ-Anthropic', 'Could not fetch official spend from Anthropic')} ({official.error || tt('שגיאה', 'error')}).
-        {auth && tt(' המפתח אינו תקין או שאין הרשאת ארגון — חשבונות יחיד לא תומכים ב-Admin API.', ' The key is invalid or lacks organization permission — individual accounts do not support the Admin API.')}
+        {auth && tt(' המפתח אינו תקין או שאין הרשאת ארגון - חשבונות יחיד לא תומכים ב-Admin API.', ' The key is invalid or lacks organization permission - individual accounts do not support the Admin API.')}
       </div>
     )
   }
@@ -255,7 +255,7 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
           )}
         </div>
         <p className="text-[11px] mt-3" style={{ color: 'var(--color-moca-muted)' }}>
-          {tt('תאריך הספירה שימושי אחרי טעינת קרדיט מחדש — השימוש נספר רק ממנו והלאה. ל-Anthropic אין API ליתרה; הסכום הרשמי ב-console.anthropic.com/settings/billing.', 'The count-from date is useful after a credit top-up — usage is only counted from it onward. Anthropic has no balance API; the official amount is at console.anthropic.com/settings/billing.')}
+          {tt('תאריך הספירה שימושי אחרי טעינת קרדיט מחדש - השימוש נספר רק ממנו והלאה. ל-Anthropic אין API ליתרה; הסכום הרשמי ב-console.anthropic.com/settings/billing.', 'The count-from date is useful after a credit top-up - usage is only counted from it onward. Anthropic has no balance API; the official amount is at console.anthropic.com/settings/billing.')}
         </p>
         {err && <p className="text-xs mt-2 text-red-600">{err}</p>}
       </div>
@@ -538,7 +538,7 @@ export default function UsagePage() {
                     <td className="px-3 py-2 text-end tnum" style={{ color: 'var(--color-moca-text)' }}>{fmtTok(r.output_tokens)}</td>
                     <td className="px-3 py-2 text-end tnum font-semibold" style={{ color: 'var(--color-moca-dark)' }}>{fmtUSD(r.cost_usd)}</td>
                     <td className="px-3 py-2 text-xs" style={{ color: 'var(--color-moca-muted)' }}>
-                      {r.user_email || '—'}
+                      {r.user_email || '-'}
                     </td>
                   </tr>
                 ))}

@@ -1,8 +1,39 @@
 import sqlite3
 import json
 import os
+import re
 import zlib
 from datetime import datetime, timezone, timedelta
+
+# Bot / crawler User-Agent signature. Non-compliant crawlers ignore robots.txt
+# (Disallow: /go/) and rel="sponsored nofollow", hammering the affiliate redirect
+# and polluting the click log (a single crawler fired 1,295 junk /go hits across
+# the new /esim/<dest>/ SEO pages on 2026-07-10). `is_bot_ua` flags those so the
+# /go route can block them AND the attribution reports can exclude them. The bare
+# "bot" token catches the vast majority (Googlebot/Bingbot/AhrefsBot/…); the rest
+# cover UA strings that omit it (scrapers, HTTP libraries, headless browsers,
+# link-preview + uptime fetchers).
+_BOT_UA_RE = re.compile(
+    r"bot\b|bot/|crawl|spider|slurp|mediapartners|adsbot|bingpreview|"
+    r"facebookexternalhit|facebot|embedly|quora|whatsapp|telegram|discord|"
+    r"slackbot|twitterbot|linkedinbot|pinterest|redditbot|applebot|yandex|"
+    r"baidu|sogou|exabot|ahrefs|semrush|mj12|dotbot|petalbot|bytespider|"
+    r"dataforseo|gptbot|oai-searchbot|chatgpt|claudebot|claude-user|ccbot|"
+    r"perplexity|amazonbot|google-extended|python-requests|python-urllib|"
+    r"curl/|wget|scrapy|headlesschrome|phantomjs|go-http-client|axios|"
+    r"node-fetch|okhttp|java/|libwww|apache-httpclient|guzzle|lighthouse|"
+    r"uptimerobot|pingdom|statuscake|monitoring|site24x7",
+    re.I,
+)
+
+
+def is_bot_ua(ua):
+    """True if the User-Agent looks like a bot/crawler/HTTP-library, not a human
+    browser. Empty/absent UA is NOT treated as a bot (real browsers always send
+    one, but so do some privacy tools — we don't want to over-block)."""
+    if not ua:
+        return False
+    return bool(_BOT_UA_RE.search(ua))
 
 # Canonical Hebrew country/destination names — applied before every global plan save
 _DEST_NORM = {
@@ -239,6 +270,31 @@ def init_db(db_path=None):
                 user_email TEXT,
                 created_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS esim_push_subscriptions (
+                id               INTEGER PRIMARY KEY,
+                endpoint         TEXT NOT NULL UNIQUE,
+                p256dh           TEXT NOT NULL,
+                auth             TEXT NOT NULL,
+                destination      TEXT NOT NULL,
+                lang             TEXT DEFAULT 'he',
+                baseline_price   REAL,
+                created_at       TEXT NOT NULL,
+                last_notified_at TEXT
+            );
+            -- Price-drop alerts for the public /mobile-deals page (domestic plans).
+            -- Keyed on a carrier id or 'all' — EVENT-driven off the domestic
+            -- change log (no baseline column; domestic change detection is
+            -- reliable per (carrier, plan_name), unlike global).
+            CREATE TABLE IF NOT EXISTS mobile_push_subscriptions (
+                id               INTEGER PRIMARY KEY,
+                endpoint         TEXT NOT NULL UNIQUE,
+                p256dh           TEXT NOT NULL,
+                auth             TEXT NOT NULL,
+                carrier          TEXT DEFAULT 'all',
+                lang             TEXT DEFAULT 'he',
+                created_at       TEXT NOT NULL,
+                last_notified_at TEXT
+            );
             CREATE TABLE IF NOT EXISTS abroad_changes (
                 id          INTEGER PRIMARY KEY,
                 carrier     TEXT NOT NULL,
@@ -389,10 +445,17 @@ def init_db(db_path=None):
                 clicked_at TEXT NOT NULL,
                 ip_hash    TEXT,
                 src        TEXT,
-                campaign   TEXT
+                campaign   TEXT,
+                user_agent TEXT,
+                is_bot     INTEGER DEFAULT 0
             );
             CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_at
                 ON affiliate_clicks(clicked_at);
+            -- NB: idx_affiliate_clicks_bot is deliberately NOT created here — on a
+            -- DB whose affiliate_clicks predates the is_bot column this whole
+            -- executescript would die with "no such column: is_bot" before the
+            -- ALTER migration below ever runs (bit seed_coupons.py 2026-07-11).
+            -- The migration block adds the column and then creates that index.
             -- Anonymous traffic events for the public B2C eSIM compare page
             -- (page views + destination picks). NO PII — ip is hashed, sid is a
             -- random per-browser-session token (not an identity). Powers the B2C
@@ -411,6 +474,62 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_esim_events_at
                 ON esim_events(created_at);
+            -- Anonymous traffic events for the public B2C /mobile-deals page
+            -- (domestic plan comparison). Same privacy model as esim_events:
+            -- ip hashed, sid is a random per-browser-session token.
+            CREATE TABLE IF NOT EXISTS mobile_events (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                sid         TEXT,
+                event_type  TEXT NOT NULL,   -- page_view | tab_pick | carrier_click | push_subscribe
+                tab         TEXT,            -- domestic | roaming | content
+                carrier     TEXT,            -- clicked / subscribed carrier id
+                src         TEXT,            -- acquisition source (utm_source / referrer host)
+                campaign    TEXT,            -- specific post/video (utm_campaign / campaign)
+                lang        TEXT,
+                referrer    TEXT,            -- referrer host only
+                ip_hash     TEXT,
+                created_at  TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_mobile_events_at
+                ON mobile_events(created_at);
+            -- /mobile-deals email/WhatsApp reminders (public opt-in, no auth).
+            -- One row per (submission, kind); rows from one submission share a
+            -- token so the unsubscribe link removes the whole signup at once.
+            -- kind='better_deal': recurring — alert when another carrier offers
+            --   >= the snapshot data for less; best_price_alerted ratchets down
+            --   so the same offer never re-alerts.
+            -- kind='plan_end': one-shot — fires at end_date - remind_days_before
+            --   (done=1 after sending), optionally attaching similar offers.
+            -- plan_type: 'domestic' (default) | 'roaming' (abroad_plans row) |
+            --   'content' (content_plans row — plan_name holds the service name).
+            CREATE TABLE IF NOT EXISTS mobile_reminders (
+                id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+                token              TEXT NOT NULL,
+                email              TEXT,
+                phone              TEXT,             -- digits, intl format (972…)
+                channel            TEXT NOT NULL DEFAULT 'email',  -- email | whatsapp | both
+                kind               TEXT NOT NULL,    -- better_deal | plan_end
+                plan_type          TEXT NOT NULL DEFAULT 'domestic',
+                carrier            TEXT NOT NULL,
+                plan_name          TEXT NOT NULL,
+                price              REAL,             -- snapshot at signup
+                data_gb            REAL,             -- snapshot (NULL + unlimited=1 → unlimited)
+                unlimited          INTEGER DEFAULT 0,
+                days               INTEGER,          -- roaming: package duration snapshot
+                end_date           TEXT,             -- plan_end: ISO date the plan term ends
+                remind_days_before INTEGER,          -- plan_end
+                include_offers     INTEGER DEFAULT 1,-- plan_end: attach similar offers
+                lang               TEXT DEFAULT 'he',
+                best_price_alerted REAL,             -- better_deal dedup ratchet
+                last_notified_at   TEXT,
+                done               INTEGER DEFAULT 0,
+                last_heartbeat_at  TEXT,             -- better_deal: monthly market-pulse email
+                followup_sent      INTEGER DEFAULT 0,-- plan_end: renewal follow-up went out
+                paid_price         REAL,             -- user-declared ACTUAL monthly price (optional)
+                created_at         TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_mobile_reminders_token
+                ON mobile_reminders(token);
             CREATE TABLE IF NOT EXISTS workspace_invites (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 token        TEXT NOT NULL UNIQUE,
@@ -694,6 +813,17 @@ def init_db(db_path=None):
             conn.commit()
         except Exception:
             pass  # column already exists
+        # Migration: /mobile-deals reminder engagement fields (monthly heartbeat +
+        # plan-end renewal follow-up) + roaming/content reminder support
+        for col, sql in (("last_heartbeat_at", "TEXT"), ("followup_sent", "INTEGER DEFAULT 0"),
+                         ("paid_price", "REAL"),
+                         ("plan_type", "TEXT NOT NULL DEFAULT 'domestic'"),
+                         ("days", "INTEGER")):
+            try:
+                conn.execute(f"ALTER TABLE mobile_reminders ADD COLUMN {col} {sql}")
+                conn.commit()
+            except Exception:
+                pass  # column already exists
         # Migration: promo pricing on domestic plans (e.g. "3 חודשים ראשונים ב-39 ₪")
         for col, sql in (("promo_price", "REAL"), ("promo_months", "INTEGER")):
             try:
@@ -720,6 +850,23 @@ def init_db(db_path=None):
                 conn.commit()
             except Exception:
                 pass  # column already exists
+        # Migration: bot detection on affiliate clicks. `user_agent` = the raw UA
+        # (capped) so a click can be attributed to a human vs a crawler after the
+        # fact; `is_bot` = 1 when the /go route flagged the UA as a bot (see
+        # is_bot_ua). Attribution reports exclude is_bot=1 so a crawler storm can't
+        # masquerade as real traffic. Legacy rows default to 0 (ADD COLUMN default).
+        for col, sql in (("user_agent", "TEXT"), ("is_bot", "INTEGER DEFAULT 0")):
+            try:
+                conn.execute(f"ALTER TABLE affiliate_clicks ADD COLUMN {col} {sql}")
+                conn.commit()
+            except Exception:
+                pass  # column already exists
+        try:
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_affiliate_clicks_bot "
+                         "ON affiliate_clicks(is_bot)")
+            conn.commit()
+        except Exception:
+            pass
         # Migration: terms_url on abroad_plans — the roaming card's "עיקרי התוכנית"
         # PDF. Populated per scrape (e.g. Cellcom's policiesEpi from its abroad API),
         # surfaced by PlanCard's details link with the hardcoded map as a fallback.
@@ -781,15 +928,20 @@ def get_news_articles(carrier=None, limit=200, db_path=None):
 
 
 def log_affiliate_click(provider, plan_id=None, country=None, ip_hash=None,
-                        src=None, campaign=None, db_path=None):
+                        src=None, campaign=None, user_agent=None, is_bot=None,
+                        db_path=None):
+    if is_bot is None:                       # infer from UA when caller didn't decide
+        is_bot = is_bot_ua(user_agent)
     conn = _connect(db_path)
     try:
         conn.execute(
             """INSERT INTO affiliate_clicks
-                   (provider, plan_id, country, clicked_at, ip_hash, src, campaign)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                   (provider, plan_id, country, clicked_at, ip_hash, src, campaign,
+                    user_agent, is_bot)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (provider, plan_id, country, datetime.now(timezone.utc).isoformat(),
-             ip_hash, src, campaign)
+             ip_hash, src, campaign, (user_agent or "")[:300] or None,
+             1 if is_bot else 0)
         )
         conn.commit()
     finally:
@@ -803,7 +955,7 @@ def get_affiliate_stats(days=30, db_path=None):
         rows = conn.execute(
             """SELECT provider, date(clicked_at) AS date, COUNT(*) AS clicks
                FROM affiliate_clicks
-               WHERE clicked_at >= ?
+               WHERE clicked_at >= ? AND COALESCE(is_bot, 0) = 0
                GROUP BY provider, date(clicked_at)
                ORDER BY date DESC, clicks DESC""",
             (cutoff,)
@@ -818,13 +970,15 @@ def get_affiliate_attribution(days=30, db_path=None):
     (the specific post/video, from utm). Lets us see WHICH channel/content drove
     the clicks — separate from get_affiliate_stats so its provider/date shape
     (consumed by SettingsPage) stays unchanged. Legacy rows have NULL src/campaign,
-    surfaced as 'ללא תיוג' / 'untagged' so they're still counted."""
+    surfaced as 'ללא תיוג' / 'untagged' so they're still counted. Bot/crawler
+    clicks (is_bot=1) are excluded so a crawler storm can't masquerade as real
+    traffic; the count that WAS filtered is returned as `bot_clicks`."""
     conn = _connect(db_path)
     try:
         cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         by_source = conn.execute(
             """SELECT COALESCE(NULLIF(src, ''), '—') AS src, COUNT(*) AS clicks
-               FROM affiliate_clicks WHERE clicked_at >= ?
+               FROM affiliate_clicks WHERE clicked_at >= ? AND COALESCE(is_bot,0) = 0
                GROUP BY src ORDER BY clicks DESC""",
             (cutoff,)
         ).fetchall()
@@ -832,13 +986,19 @@ def get_affiliate_attribution(days=30, db_path=None):
             """SELECT COALESCE(NULLIF(campaign, ''), '—') AS campaign,
                       COALESCE(NULLIF(src, ''), '—') AS src, COUNT(*) AS clicks
                FROM affiliate_clicks
-               WHERE clicked_at >= ? AND campaign IS NOT NULL AND campaign != ''
+               WHERE clicked_at >= ? AND COALESCE(is_bot,0) = 0
+                 AND campaign IS NOT NULL AND campaign != ''
                GROUP BY campaign, src ORDER BY clicks DESC""",
             (cutoff,)
         ).fetchall()
+        bot_clicks = conn.execute(
+            "SELECT COUNT(*) FROM affiliate_clicks "
+            "WHERE clicked_at >= ? AND is_bot = 1", (cutoff,)
+        ).fetchone()[0]
         return {
             "by_source":   [{"src": r[0], "clicks": r[1]} for r in by_source],
             "by_campaign": [{"campaign": r[0], "src": r[1], "clicks": r[2]} for r in by_campaign],
+            "bot_clicks":  bot_clicks,
         }
     finally:
         conn.close()
@@ -868,6 +1028,31 @@ def log_esim_event(event_type, sid=None, destination=None, src=None, campaign=No
         pass
 
 
+def log_mobile_event(event_type, sid=None, tab=None, carrier=None, src=None,
+                     campaign=None, lang=None, referrer=None, ip_hash=None, db_path=None):
+    """Best-effort anonymous B2C /mobile-deals page event. NEVER raises into the caller."""
+    if not event_type:
+        return
+    try:
+        conn = _connect(db_path)
+        try:
+            conn.execute(
+                "INSERT INTO mobile_events "
+                "(sid, event_type, tab, carrier, src, campaign, lang, referrer, ip_hash, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                ((sid or "")[:40] or None, str(event_type)[:30],
+                 (tab or "")[:20] or None, (carrier or "")[:30] or None,
+                 (src or "")[:60] or None, (campaign or "")[:80] or None,
+                 (lang or "")[:8] or None, (referrer or "")[:120] or None, ip_hash,
+                 datetime.now(timezone.utc).isoformat())
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        pass
+
+
 def get_esim_analytics(days=30, db_path=None):
     """Traffic dashboard for the public B2C eSIM page: views / sessions / destination
     picks from esim_events + deal clicks from affiliate_clicks (src='esim'), merged
@@ -879,20 +1064,26 @@ def get_esim_analytics(days=30, db_path=None):
             cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
             ev_time, cl_time, pev, pcl = " AND created_at >= ?", " AND clicked_at >= ?", [cutoff], [cutoff]
 
+        # Human deal clicks only — bot/crawler /go hits (is_bot=1) are excluded from
+        # every clicks aggregate so the funnel reflects real traffic. The filtered
+        # count is surfaced separately as totals.bot_clicks for transparency.
+        nobot = " AND COALESCE(is_bot,0) = 0"
+
         one  = lambda sql, p=(): (conn.execute(sql, p).fetchone() or [0])[0]
         rows = lambda sql, p=(): conn.execute(sql, p).fetchall()
 
         views    = one(f"SELECT COUNT(*) FROM esim_events WHERE event_type='page_view'{ev_time}", pev)
         sessions = one(f"SELECT COUNT(DISTINCT sid) FROM esim_events WHERE event_type='page_view' AND sid IS NOT NULL{ev_time}", pev)
         picks    = one(f"SELECT COUNT(*) FROM esim_events WHERE event_type='destination_pick'{ev_time}", pev)
-        clicks   = one(f"SELECT COUNT(*) FROM affiliate_clicks WHERE src='esim'{cl_time}", pcl)
+        clicks   = one(f"SELECT COUNT(*) FROM affiliate_clicks WHERE src='esim'{nobot}{cl_time}", pcl)
+        bot_clicks = one(f"SELECT COUNT(*) FROM affiliate_clicks WHERE src='esim' AND is_bot=1{cl_time}", pcl)
 
         v_day = dict(rows(f"SELECT date(created_at), COUNT(*) FROM esim_events WHERE event_type='page_view'{ev_time} GROUP BY 1", pev))
-        c_day = dict(rows(f"SELECT date(clicked_at), COUNT(*) FROM affiliate_clicks WHERE src='esim'{cl_time} GROUP BY 1", pcl))
+        c_day = dict(rows(f"SELECT date(clicked_at), COUNT(*) FROM affiliate_clicks WHERE src='esim'{nobot}{cl_time} GROUP BY 1", pcl))
         by_day = [{"date": d, "views": v_day.get(d, 0), "clicks": c_day.get(d, 0)} for d in sorted(set(v_day) | set(c_day))]
 
         d_pick  = dict(rows(f"SELECT destination, COUNT(*) FROM esim_events WHERE event_type='destination_pick' AND destination IS NOT NULL{ev_time} GROUP BY destination", pev))
-        d_click = dict(rows(f"SELECT country, COUNT(*) FROM affiliate_clicks WHERE src='esim' AND country IS NOT NULL{cl_time} GROUP BY country", pcl))
+        d_click = dict(rows(f"SELECT country, COUNT(*) FROM affiliate_clicks WHERE src='esim' AND country IS NOT NULL{nobot}{cl_time} GROUP BY country", pcl))
         top_destinations = sorted(
             [{"destination": k, "picks": d_pick.get(k, 0), "clicks": d_click.get(k, 0)} for k in (set(d_pick) | set(d_click))],
             key=lambda r: r["picks"] + r["clicks"], reverse=True)[:12]
@@ -901,14 +1092,14 @@ def get_esim_analytics(days=30, db_path=None):
             f"SELECT COALESCE(NULLIF(src,''),'—'), COUNT(*) FROM esim_events WHERE event_type='page_view'{ev_time} GROUP BY 1 ORDER BY 2 DESC", pev)][:12]
 
         c_views  = dict(rows(f"SELECT campaign, COUNT(*) FROM esim_events WHERE event_type='page_view' AND campaign IS NOT NULL AND campaign!=''{ev_time} GROUP BY campaign", pev))
-        c_clicks = dict(rows(f"SELECT campaign, COUNT(*) FROM affiliate_clicks WHERE src='esim' AND campaign IS NOT NULL AND campaign!=''{cl_time} GROUP BY campaign", pcl))
+        c_clicks = dict(rows(f"SELECT campaign, COUNT(*) FROM affiliate_clicks WHERE src='esim' AND campaign IS NOT NULL AND campaign!=''{nobot}{cl_time} GROUP BY campaign", pcl))
         by_campaign = sorted(
             [{"campaign": k, "views": c_views.get(k, 0), "clicks": c_clicks.get(k, 0)} for k in (set(c_views) | set(c_clicks))],
             key=lambda r: r["views"] + r["clicks"], reverse=True)[:15]
 
         conv = round(clicks / views * 100, 1) if views else 0.0
         return {
-            "totals": {"views": views, "sessions": sessions, "picks": picks, "clicks": clicks, "conversion": conv},
+            "totals": {"views": views, "sessions": sessions, "picks": picks, "clicks": clicks, "conversion": conv, "bot_clicks": bot_clicks},
             "by_day": by_day,
             "top_destinations": top_destinations,
             "by_source": by_source,
@@ -932,6 +1123,12 @@ _CRUISE_DEST_HE = "קרוז"  # קרוז — synthetic B2C cruise destination
 _CRUISE_SOURCE_DESTS = (
     "גלובלי ושייט",   # Maya — unlimited global + cruise tiers
     "קרוז בספינה",     # VOYE — cruise at sea
+    "קרוז - אמריקה וקריביים",  # GigSky cruise buckets ↓
+    "קרוז - אסיה פסיפיק",
+    "קרוז - אירופה",
+    "קרוז - עולמי",
+    "קרוז - המזרח התיכון",
+    "קרוז - בים בלבד",
 )
 
 _HOTEL_COLS = ("slug", "name", "tagline", "brand_primary", "brand_secondary",
@@ -1153,6 +1350,21 @@ def get_esim_deals_for_destination(destination=None, db_path=None):
 def get_israel_esim_deals(db_path=None):
     """Back-compat wrapper — Israel-only eSIM feed."""
     return get_esim_deals_for_destination(_ISRAEL_HE, db_path=db_path)
+
+
+def get_esim_alert_floor(destination, db_path=None):
+    """The ₪ price the B2C price-drop alerts track: cheapest TRIP-SIZED deal for
+    the destination (≥5GB or unlimited, ≥7 days or no day info). The absolute
+    catalog min is a ~₪1 daily/100MB package whose moves are meaningless to a
+    traveler — and sits below the alert threshold anyway. Falls back to the
+    overall min when no deal matches the filter (tiny destinations)."""
+    deals = get_esim_deals_for_destination(destination, db_path=db_path)
+    prices = [d["price"] for d in deals if d.get("price")
+              and (d.get("data_gb") is None or d["data_gb"] >= 5)
+              and (d.get("days") is None or d["days"] >= 7)]
+    if not prices:
+        prices = [d["price"] for d in deals if d.get("price")]
+    return min(prices) if prices else None
 
 
 def get_esim_destinations(db_path=None):
@@ -2037,6 +2249,270 @@ def get_push_subscriptions(user_email=None, db_path=None):
             {"endpoint": r[0], "keys": {"p256dh": r[1], "auth": r[2]}, "hidden_carrier": r[3]}
             for r in rows
         ]
+    finally:
+        conn.close()
+
+
+# ── Public B2C eSIM price-drop push subscriptions (/esim-deals) ─────────────
+
+def save_esim_push_subscription(endpoint, p256dh, auth, destination, lang="he",
+                                baseline_price=None, db_path=None):
+    """UPSERT by endpoint — re-subscribing from the same browser with a new
+    destination MOVES the alert (one destination alert per device)."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO esim_push_subscriptions "
+            "(endpoint, p256dh, auth, destination, lang, baseline_price, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(endpoint) DO UPDATE SET "
+            "p256dh=excluded.p256dh, auth=excluded.auth, destination=excluded.destination, "
+            "lang=excluded.lang, baseline_price=excluded.baseline_price, last_notified_at=NULL",
+            (endpoint, p256dh, auth, destination, lang, baseline_price,
+             datetime.now().isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def delete_esim_push_subscription(endpoint, db_path=None):
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute("DELETE FROM esim_push_subscriptions WHERE endpoint=?", (endpoint,))
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
+def get_esim_push_subscriptions(db_path=None):
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT endpoint, p256dh, auth, destination, lang, baseline_price "
+            "FROM esim_push_subscriptions"
+        ).fetchall()
+        return [
+            {"endpoint": r[0], "keys": {"p256dh": r[1], "auth": r[2]},
+             "destination": r[3], "lang": r[4] or "he", "baseline_price": r[5]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def update_esim_push_baseline(endpoint, price, notified=False, db_path=None):
+    """Move a subscription's price baseline. notified=True also stamps
+    last_notified_at (a push was actually sent for this move)."""
+    conn = _connect(db_path)
+    try:
+        if notified:
+            conn.execute(
+                "UPDATE esim_push_subscriptions SET baseline_price=?, last_notified_at=? "
+                "WHERE endpoint=?",
+                (price, datetime.now().isoformat(), endpoint))
+        else:
+            conn.execute(
+                "UPDATE esim_push_subscriptions SET baseline_price=? WHERE endpoint=?",
+                (price, endpoint))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def save_mobile_push_subscription(endpoint, p256dh, auth, carrier="all", lang="he",
+                                  db_path=None):
+    """UPSERT by endpoint — re-subscribing from the same browser with a new
+    carrier MOVES the alert (one domestic price-drop alert per device)."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO mobile_push_subscriptions "
+            "(endpoint, p256dh, auth, carrier, lang, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(endpoint) DO UPDATE SET "
+            "p256dh=excluded.p256dh, auth=excluded.auth, carrier=excluded.carrier, "
+            "lang=excluded.lang, last_notified_at=NULL",
+            (endpoint, p256dh, auth, carrier or "all", lang,
+             datetime.now().isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def delete_mobile_push_subscription(endpoint, db_path=None):
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute("DELETE FROM mobile_push_subscriptions WHERE endpoint=?", (endpoint,))
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
+def get_mobile_push_subscriptions(db_path=None):
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT endpoint, p256dh, auth, carrier, lang, last_notified_at "
+            "FROM mobile_push_subscriptions"
+        ).fetchall()
+        return [
+            {"endpoint": r[0], "keys": {"p256dh": r[1], "auth": r[2]},
+             "carrier": r[3] or "all", "lang": r[4] or "he", "last_notified_at": r[5]}
+            for r in rows
+        ]
+    finally:
+        conn.close()
+
+
+def touch_mobile_push_notified(endpoint, db_path=None):
+    """Stamp last_notified_at — a push was actually delivered to this endpoint."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "UPDATE mobile_push_subscriptions SET last_notified_at=? WHERE endpoint=?",
+            (datetime.now().isoformat(), endpoint))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def save_mobile_reminders(token, rows, db_path=None):
+    """Insert the reminder rows of one /mobile-deals signup (all sharing `token`).
+    Re-signing up for the same (kind, plan_type, carrier, plan_name) with the
+    same contact replaces the old row — a user tweaking the reminder date
+    shouldn't stack duplicate reminders."""
+    conn = _connect(db_path)
+    try:
+        now = datetime.now().isoformat()
+        for r in rows:
+            conn.execute(
+                "DELETE FROM mobile_reminders WHERE kind=? AND plan_type=? AND carrier=? "
+                "AND plan_name=? "
+                "AND IFNULL(email,'')=IFNULL(?,'') AND IFNULL(phone,'')=IFNULL(?,'')",
+                (r["kind"], r.get("plan_type") or "domestic", r["carrier"], r["plan_name"],
+                 r.get("email"), r.get("phone")))
+            conn.execute(
+                "INSERT INTO mobile_reminders "
+                "(token, email, phone, channel, kind, plan_type, carrier, plan_name, price, "
+                " data_gb, unlimited, days, end_date, remind_days_before, include_offers, "
+                " lang, paid_price, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (token, r.get("email"), r.get("phone"), r.get("channel") or "email",
+                 r["kind"], r.get("plan_type") or "domestic", r["carrier"], r["plan_name"],
+                 r.get("price"), r.get("data_gb"),
+                 1 if r.get("unlimited") else 0, r.get("days"), r.get("end_date"),
+                 r.get("remind_days_before"), 0 if r.get("include_offers") is False else 1,
+                 r.get("lang") or "he", r.get("paid_price"), now))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_mobile_reminders(kind=None, db_path=None):
+    """Active reminder rows (plan_end rows already sent are excluded)."""
+    conn = _connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        q = "SELECT * FROM mobile_reminders WHERE done=0"
+        args = []
+        if kind:
+            q += " AND kind=?"
+            args.append(kind)
+        return [dict(r) for r in conn.execute(q, args).fetchall()]
+    finally:
+        conn.close()
+
+
+def get_all_mobile_reminders(db_path=None):
+    """EVERY reminder row (active + done) for the super-admin subscribers view.
+    Contains raw contact details — serve only behind super-admin auth."""
+    conn = _connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        return [dict(r) for r in conn.execute(
+            "SELECT * FROM mobile_reminders ORDER BY created_at DESC, id DESC").fetchall()]
+    finally:
+        conn.close()
+
+
+def delete_mobile_reminders_by_token(token, db_path=None):
+    conn = _connect(db_path)
+    try:
+        cur = conn.execute("DELETE FROM mobile_reminders WHERE token=?", (token,))
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
+def mark_mobile_reminder_notified(reminder_id, best_price=None, done=False, db_path=None):
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "UPDATE mobile_reminders SET last_notified_at=?, "
+            "best_price_alerted=COALESCE(?, best_price_alerted), "
+            "done=CASE WHEN ? THEN 1 ELSE done END WHERE id=?",
+            (datetime.now().isoformat(), best_price, 1 if done else 0, reminder_id))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def touch_mobile_reminder_heartbeat(reminder_id, db_path=None):
+    conn = _connect(db_path)
+    try:
+        conn.execute("UPDATE mobile_reminders SET last_heartbeat_at=? WHERE id=?",
+                     (datetime.now().isoformat(), reminder_id))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_mobile_plan_end_followups(db_path=None):
+    """plan_end reminders whose end-of-term reminder already went out (done=1)
+    and whose renewal follow-up hasn't - candidates for the 'did you renew?'
+    email a week after end_date."""
+    conn = _connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        return [dict(r) for r in conn.execute(
+            "SELECT * FROM mobile_reminders "
+            "WHERE kind='plan_end' AND done=1 AND IFNULL(followup_sent,0)=0").fetchall()]
+    finally:
+        conn.close()
+
+
+def mark_mobile_reminder_followup(reminder_id, db_path=None):
+    conn = _connect(db_path)
+    try:
+        conn.execute("UPDATE mobile_reminders SET followup_sent=1 WHERE id=?", (reminder_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def count_domestic_price_drops(days=30, db_path=None):
+    """(drops, rises) counted from the domestic change log over the last N days -
+    fuel for the monthly heartbeat email's market-pulse stats."""
+    conn = _connect(db_path)
+    try:
+        since = (datetime.now() - timedelta(days=days)).isoformat()
+        drops = rises = 0
+        for old_val, new_val in conn.execute(
+                "SELECT old_val, new_val FROM changes "
+                "WHERE change_type='price_change' AND changed_at>=?", (since,)).fetchall():
+            try:
+                if float(new_val) < float(old_val):
+                    drops += 1
+                elif float(new_val) > float(old_val):
+                    rises += 1
+            except (TypeError, ValueError):
+                continue
+        return drops, rises
     finally:
         conn.close()
 
@@ -3342,7 +3818,10 @@ def save_reseller_plans(plans, db_path=None):
 # broke — seed-only sources (Facebook ads, login-gated clubs) are excluded so
 # they don't raise false staleness alarms.
 AUTO_SCRAPED_RESELLER_IDS = {
-    "pelephon4u", "pelephone_join",            # legacy per-site modules
+    # "pelephon4u" removed 2026-07-26 — site 403 (Cloudways domain unmapped)
+    # since ~2026-07-12; module also dropped from RESELLER_SCRAPER_MODULES.
+    # Re-add both if pelephon4u.co.il returns.
+    "pelephone_join",                          # legacy per-site modules
     "tiber", "zol_li", "kamaze",               # btl_scrapers — third-party sites
     "wecom_site", "rami_levy_landing",         # btl_scrapers — carrier pages
     "tikshoretishit", "clubdeal",

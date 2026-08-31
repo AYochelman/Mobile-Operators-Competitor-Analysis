@@ -62,7 +62,7 @@ export function ScrapeProvider({ children }) {
       _clearTimers()
       setScraping(false)
       setCountdown(0)
-      const total   = res.total_plans   ?? '—'
+      const total   = res.total_plans   ?? '-'
       const changes = res.total_changes ?? 0
       const quotaNote = res.quota_limit
         ? ` · רענונים החודש: ${res.quota_used}/${res.quota_limit}`

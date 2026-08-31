@@ -51,10 +51,10 @@ function buildHeadline(change, tt) {
         kicker: `${tt('התייקרות', 'Price hike')} · ${fmtHoursAgo(change.changed_at, tt)}`,
         title: (
           <>
-            {carrier} {tt('העלתה את', 'raised')} <span style={{ color: 'var(--color-moca-up)' }}>{name} {tt('ב-', 'by ')}{-diff}₪</span> — {tt('הפוך ממגמת השוק', 'against the market trend')}
+            {carrier} {tt('העלתה את', 'raised')} <span style={{ color: 'var(--color-moca-up)' }}>{name} {tt('ב-', 'by ')}{-diff}₪</span> - {tt('הפוך ממגמת השוק', 'against the market trend')}
           </>
         ),
-        body: `${tt('המחיר החדש', 'The new price')} (${newVal}₪) — ${tt('עליה של', 'an increase of')} ${Math.round((-diff / oldVal) * 100)}% ${tt('מהמחיר הקודם', 'from the previous price')}. ${tt('ייתכן שזה אות לעיכוב במהלך תחרותי או שינוי במיצוב', 'This may signal a pause in a competitive move or a repositioning')}.`,
+        body: `${tt('המחיר החדש', 'The new price')} (${newVal}₪) - ${tt('עליה של', 'an increase of')} ${Math.round((-diff / oldVal) * 100)}% ${tt('מהמחיר הקודם', 'from the previous price')}. ${tt('ייתכן שזה אות לעיכוב במהלך תחרותי או שינוי במיצוב', 'This may signal a pause in a competitive move or a repositioning')}.`,
       }
     }
   }
@@ -154,7 +154,7 @@ export default function EditorialHero({ leadChange, oursCarrier, onAnalyze, onPo
               {tt('אין שינויים משמעותיים ב-24 שעות האחרונות', 'No significant changes in the last 24 hours')}
             </h1>
             <p style={{ fontSize: 14, color: 'var(--color-moca-sub)', lineHeight: 1.65, marginTop: 12, maxWidth: 520 }}>
-              {tt('השוק שקט. כשמתחרה משנה משהו משמעותי — מחיר, מסלול חדש, הוצאה — תראה זאת כאן בראש העמוד.', 'The market is quiet. When a competitor makes a significant move — a price, a new plan, a removal — you will see it here at the top of the page.')}
+              {tt('השוק שקט. כשמתחרה משנה משהו משמעותי - מחיר, מסלול חדש, הוצאה - תראה זאת כאן בראש העמוד.', 'The market is quiet. When a competitor makes a significant move - a price, a new plan, a removal - you will see it here at the top of the page.')}
             </p>
           </div>
         </div>

@@ -133,3 +133,16 @@ def archive_all_banners(banner_dir: str, carriers: list[str], store_carriers: li
     for carrier in store_carriers:
         src = os.path.join(banner_dir, f"{carrier}_store.png")
         save_banner_snapshot(carrier, src, is_store=True)
+
+
+def archive_all_global_banners(banner_dir: str, providers: list[str]):
+    """
+    Snapshot each global eSIM provider's current homepage PNG ({provider}_global.png)
+    under carrier=provider_id (is_store=0), so the Time Machine keeps banner history
+    alongside the already-archived global PLAN snapshots (archive_global_plans). Global
+    provider ids never collide with domestic carrier ids, so they share archive_banners
+    cleanly. Dedup is by content hash — an unchanged banner is not re-snapshotted.
+    """
+    for provider in providers:
+        src = os.path.join(banner_dir, f"{provider}_global.png")
+        save_banner_snapshot(provider, src, is_store=False)

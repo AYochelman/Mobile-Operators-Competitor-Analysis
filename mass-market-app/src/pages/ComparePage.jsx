@@ -14,6 +14,7 @@ import {
   AIRALO_DISCOVER, AIRALO_REGION_MAP, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
   PELEPHONE_GLOBAL_COUNTRIES, ESIMO_COUNTRIES, WORLD8_WORLDWIDE, WORLD8_EUROPE_USA,
   XPHONE_EUROPE, XPHONE_WORLD, ORBIT_COUNTRIES, TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
+  GIGSKY_GLOBAL, ESIMGENIUS_GLOBAL, ESIMAX_GLOBAL, VENTERRA_GLOBAL, SIMZOL_ALL_COUNTRIES,
   getCountriesForPlan
 } from '../data/globalCountries'
 import { GLOBAL_PROVIDERS_WITH_COLOR } from '../data/carrierLabels'
@@ -204,6 +205,11 @@ export default function ComparePage() {
     xphone_global: [...new Set([...XPHONE_EUROPE, ...XPHONE_WORLD])],
     orbit: ORBIT_COUNTRIES,
     travelsim: [...new Set([...TRAVELSIM_GLOBAL, ...TRAVELSIM_USA, ...TRAVELSIM_ME])],
+    gigsky: GIGSKY_GLOBAL,
+    esimgenius: ESIMGENIUS_GLOBAL,
+    esimax: ESIMAX_GLOBAL,
+    venterrasim: VENTERRA_GLOBAL,
+    simzol: SIMZOL_ALL_COUNTRIES,
   }), [])
 
   // Build complete country → carriers mapping
@@ -664,8 +670,8 @@ export default function ComparePage() {
                     </td>
                     <td className="px-4 py-2 text-xs font-bold text-gray-900">₪{p.price}</td>
                     <td className="px-4 py-2 text-xs text-gray-600">{p.data_gb === null ? tt('ללא הגבלה', 'Unlimited') : `${Number(p.data_gb).toLocaleString('en-US')}GB`}</td>
-                    {showDays && <td className="px-4 py-2 text-xs text-gray-600">{p.days || '—'}</td>}
-                    <td className="px-4 py-2 text-xs text-gray-600">{p.minutes ? Number(p.minutes).toLocaleString('en-US') : '—'}</td>
+                    {showDays && <td className="px-4 py-2 text-xs text-gray-600">{p.days || '-'}</td>}
+                    <td className="px-4 py-2 text-xs text-gray-600">{p.minutes ? Number(p.minutes).toLocaleString('en-US') : '-'}</td>
                   </tr>
                 ))}
               </tbody>

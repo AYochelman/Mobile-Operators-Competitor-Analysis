@@ -1,0 +1,42 @@
+# Netlify response headers (read from dist/_headers on manual drag-deploy, same
+# mechanism as dist/_redirects). Applies to EVERY host Netlify serves for this
+# site, including the esim.mocaintel.com subdomain.
+#
+# WHY: the Flask backend sets a CSP (app.py add_security_headers) but that only
+# rides on api.mocaintel.com responses. The actual HTML/JS is served by Netlify
+# from mocaintel.com, which previously had NO security headers at all. This file
+# closes that gap.
+#
+# CSP notes (kept functional for the current SPA + prerendered pages):
+#  - script-src allows 'unsafe-inline' because landing.html / hotels.html embed
+#    inline <script> blocks (language toggle, authed-redirect, hero tilt) and the
+#    PWA service-worker registration is injected inline. Removing it would break
+#    those pages. No 'unsafe-eval' (the Vite production build needs none).
+#  - style-src 'unsafe-inline' + fonts.googleapis.com: Recharts/Tailwind inject
+#    inline styles and index.html links the Google Fonts stylesheet.
+#  - connect-src: same-origin + the Flask API + Supabase (REST https + realtime
+#    wss). This is the key exfiltration control if an XSS ever slips through.
+#  - img-src https: covers carrier logos (wikimedia/icons8), country flags
+#    (flagcdn.com) and provider favicons (icons.duckduckgo.com) on /esim-deals.
+#  - frame-ancestors 'self' + X-Frame-Options SAMEORIGIN (NOT 'none'/DENY): blocks
+#    cross-origin clickjacking but STILL allows same-origin framing, which the
+#    /hotels marketing page needs — it embeds /guest/<slug> in a live-demo iframe.
+#    'none'/DENY would blank that iframe.
+#  - base-uri/object-src/form-action lock down the remaining injection vectors.
+#
+# AFTER DEPLOY: load /esim-deals + the /hotels demo iframe + the dashboard, open
+# DevTools console, and confirm there are no "Refused to ... because it violates
+# CSP" (or X-Frame-Options) errors before treating this as verified.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://terra-nonrestrained-overpiteously.ngrok-free.dev https://gmfefvjdmgzluwffzrzj.supabase.co wss://gmfefvjdmgzluwffzrzj.supabase.co; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; upgrade-insecure-requests
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# Destination background images (/esim-deals trip wizard) rarely change — let
+# browsers keep them for 30 days instead of revalidating on every visit. To
+# replace an image without waiting out the cache, give it a new slug filename.
+/dest-bg/*
+  Cache-Control: public, max-age=2592000

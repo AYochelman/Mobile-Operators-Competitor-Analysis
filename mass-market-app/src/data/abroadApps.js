@@ -58,22 +58,22 @@ export function getAppsForPlan(plan) {
   const hasApps = extras.some(e => /אפליקציות/.test(e));
 
   if (carrier === 'cellcom' && hasApps) {
-    return { title: 'סלקום — גלישה חופשית באפליקציות', apps: CELLCOM_APPS };
+    return { title: 'סלקום - גלישה חופשית באפליקציות', apps: CELLCOM_APPS };
   }
   if (carrier === 'pelephone' && hasApps) {
-    return { title: 'פלאפון — גלישה חופשית באפליקציות', apps: PELEPHONE_APPS };
+    return { title: 'פלאפון - גלישה חופשית באפליקציות', apps: PELEPHONE_APPS };
   }
   if (carrier === 'golan') {
     // 1) name-keyed list (domestic 750GB — card only says "אפליקציות נבחרות")
     const byName = GOLAN_APPS_BY_PLAN[plan.plan_name];
-    if (byName) return { title: 'גולן — גלישה חופשית באפליקציות', apps: byName };
+    if (byName) return { title: 'גולן - גלישה חופשית באפליקציות', apps: byName };
     // 2) roaming bundles name the apps in extras → parse + map to icons
     const line = extras.find(e => /גלישה חופשית באפליקציות\s*[:：]/.test(e));
     if (line) {
       const apps = line.split(/[:：]/)[1].split(/[·,]/)
         .map(s => APP_BY_NAME[s.trim().toLowerCase()] || APP_BY_NAME[s.trim()])
         .filter(Boolean);
-      if (apps.length) return { title: 'גולן — גלישה חופשית באפליקציות', apps };
+      if (apps.length) return { title: 'גולן - גלישה חופשית באפליקציות', apps };
     }
   }
 
@@ -88,7 +88,7 @@ export function getAppsForPlan(plan) {
       const apps = m[1].split(/[·,]/)
         .map(s => APP_BY_NAME[s.trim().toLowerCase()] || APP_BY_NAME[s.trim()])
         .filter(Boolean);
-      if (apps.length) return { title: `${carrierLabel(carrier)} — גלישה חופשית באפליקציות`, apps };
+      if (apps.length) return { title: `${carrierLabel(carrier)} - גלישה חופשית באפליקציות`, apps };
     }
   }
   return null;

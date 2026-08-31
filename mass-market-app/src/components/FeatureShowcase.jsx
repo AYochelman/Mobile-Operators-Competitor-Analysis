@@ -27,7 +27,7 @@ function FeatureRow({ ic, h, p, img, overlay, flip, w, h2, ow, oh }) {
         <div className="fs-stack" data-tilt={flip ? 'r' : 'l'}>
           <div className="fs-shot">
             <img src={src} alt={h} loading="lazy" decoding="async" width={w} height={h2} />
-            {!img && <span className="fs-ph">{tt('תמונה זמנית — כאן ייכנס צילום המסך שלך', 'Placeholder image — your screenshot goes here')}</span>}
+            {!img && <span className="fs-ph">{tt('תמונה זמנית - כאן ייכנס צילום המסך שלך', 'Placeholder image - your screenshot goes here')}</span>}
           </div>
           {overlay && (
             <div className="fs-overlay">
@@ -60,7 +60,7 @@ const CSS = `
   box-shadow:0 2px 5px rgba(60,40,20,.07), 0 36px 64px -30px rgba(60,40,20,.5); }
 .fs-shot img{ display:block; width:auto; height:auto; max-width:min(580px,86vw); max-height:440px; }
 
-/* floating overlay card — bottom-left, popped forward in 3D */
+/* floating overlay card - bottom-left, popped forward in 3D */
 .fs-overlay{ position:absolute; left:-22px; bottom:-26px; width:clamp(148px,46%,206px);
   transform:translateZ(55px); border-radius:13px; overflow:hidden;
   border:1px solid var(--color-moca-border);

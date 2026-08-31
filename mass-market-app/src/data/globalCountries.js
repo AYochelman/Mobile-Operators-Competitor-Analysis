@@ -496,6 +496,140 @@ export const ESIMPLUS_REGION_MAP = {
  * Get country list for a global plan.
  * Returns { title, countries } or null if no data available.
  */
+// ── GigSky ────────────────────────────────────────────────────────────────
+// Coverage lists (canonical Hebrew) for GigSky's regional + global bundles,
+// generated from the GigSky planBundle JSON's countryCodes via the shared
+// ISO→Hebrew map (see scraper.py). Per-country plans return null (extras[0]
+// equality); cruise plans are matched by the unified cruise filter (isCruiseDest).
+const GIGSKY_EUROPE = ['אוסטריה', 'בוסניה והרצגובינה', 'בלגיה', 'בולגריה', 'שוויץ', 'קפריסין', 'צ\'כיה', 'גרמניה', 'דנמרק', 'אסטוניה', 'ספרד', 'פינלנד', 'איי פארו', 'צרפת', 'בריטניה', 'גיברלטר', 'יוון', 'קרואטיה', 'הונגריה', 'אירלנד', 'איסלנד', 'איטליה', 'ליכטנשטיין', 'ליטא', 'לוקסמבורג', 'לטביה', 'מולדובה', 'מונטנגרו', 'מקדוניה הצפונית', 'מלטה', 'הולנד', 'נורבגיה', 'פולין', 'פורטוגל', 'רומניה', 'סרביה', 'שבדיה', 'סלובניה', 'סלובקיה', 'טורקיה', 'אוקראינה', 'קוסובו']
+const GIGSKY_ASIA_PACIFIC = ['אוסטרליה', 'סין', 'פיג\'י', 'הונג קונג', 'אינדונזיה', 'הודו', 'יפן', 'דרום קוריאה', 'קזחסטן', 'סרי לנקה', 'מקאו', 'מלזיה', 'נאורו', 'ניו זילנד', 'תאילנד', 'טונגה', 'טייוואן', 'וייטנאם', 'ונואטו']
+const GIGSKY_NORTH_AMERICA = ['קנדה', 'מקסיקו', 'פוארטו ריקו', 'ארצות הברית', 'איי הבתולה (ארה"ב)']
+const GIGSKY_LATIN_AMERICA = ['ארגנטינה', 'בוליביה', 'ברזיל', 'קולומביה', 'קוסטה ריקה', 'אקוודור', 'גואטמלה', 'גיאנה', 'הונדורס', 'מקסיקו', 'ניקראגואה', 'פנמה', 'פרו', 'פראגוואי', 'אל סלבדור', 'אורוגוואי']
+const GIGSKY_AFRICA = ['בורקינה פאסו', 'בנין', 'בוטסואנה', 'הרפובליקה הדמוקרטית של קונגו', 'הרפובליקה המרכז אפריקאית', 'קונגו ברזוויל', 'חוף השנהב', 'קמרון', 'מצרים', 'גאבון', 'גמביה', 'גינאה', 'גינאה ביסאו', 'קניה', 'ליבריה', 'מדגסקר', 'מאלי', 'מאוריטניה', 'מאוריציוס', 'מלאווי', 'ניגריה', 'ראוניון', 'רואנדה', 'סיירה ליאונה', 'סנגל', 'אסוואטיני', 'צ\'אד', 'טוגו', 'טנזניה', 'אוגנדה', 'מאיוט', 'דרום אפריקה', 'זמביה']
+const GIGSKY_CARIBBEAN = ['אנטיגואה וברבודה', 'אנגווילה', 'ארובה', 'ברבדוס', 'סן ברתלמי', 'ברמודה', 'בונייר', 'איי הבהאמה', 'קוראסאו', 'דומיניקה', 'הרפובליקה הדומיניקנית', 'גרנדה', 'גיאנה הצרפתית', 'גוואדלופ', 'גיאנה', 'ג\'מייקה', 'סנט קיטס ונוויס', 'איי קיימן', 'סנט לוסיה', 'סן מרטן', 'מרטיניק', 'מונסראט', 'סינט מארטן', 'איי טורקס וקאיקוס', 'טרינידד וטובגו', 'סנט וינסנט והגרדינים', 'איי הבתולה (בריטניה)']
+const GIGSKY_MIDDLE_EAST = ['איחוד האמירויות', 'בחריין', 'מצרים', 'ישראל', 'ירדן', 'עומאן', 'קטר', 'ערב הסעודית']
+const GIGSKY_DUTCH_CARIBBEAN = ['ארובה', 'בונייר', 'קוראסאו', 'סינט מארטן']
+const GIGSKY_FRENCH_CARIBBEAN = ['סן ברתלמי', 'גיאנה הצרפתית', 'גוואדלופ', 'סן מרטן', 'מרטיניק']
+export const GIGSKY_GLOBAL = ['אפגניסטן', 'אנטיגואה וברבודה', 'אנגווילה', 'אלבניה', 'ארמניה', 'ארגנטינה', 'אוסטריה', 'אוסטרליה', 'ארובה', 'אזרבייג\'ן', 'בוסניה והרצגובינה', 'ברבדוס', 'בנגלדש', 'בלגיה', 'בורקינה פאסו', 'בולגריה', 'בחריין', 'בנין', 'סן ברתלמי', 'ברמודה', 'בוליביה', 'בונייר', 'ברזיל', 'איי הבהאמה', 'בוטסואנה', 'קנדה', 'הרפובליקה הדמוקרטית של קונגו', 'הרפובליקה המרכז אפריקאית', 'קונגו ברזוויל', 'שוויץ', 'חוף השנהב', 'צ\'ילה', 'קמרון', 'סין', 'קולומביה', 'קוסטה ריקה', 'קוראסאו', 'קפריסין', 'צ\'כיה', 'גרמניה', 'דנמרק', 'דומיניקה', 'הרפובליקה הדומיניקנית', 'אלג\'יריה', 'אקוודור', 'אסטוניה', 'מצרים', 'ספרד', 'פינלנד', 'פיג\'י', 'איי פארו', 'צרפת', 'גאבון', 'בריטניה', 'גרנדה', 'גאורגיה', 'גיאנה הצרפתית', 'גרנזי', 'גיברלטר', 'גרינלנד', 'גינאה', 'גוואדלופ', 'יוון', 'גואטמלה', 'גינאה ביסאו', 'גיאנה', 'הונדורס', 'קרואטיה', 'הונגריה', 'אינדונזיה', 'אירלנד', 'ישראל', 'האי מאן', 'הודו', 'עיראק', 'איסלנד', 'איטליה', 'ג\'רזי', 'ג\'מייקה', 'ירדן', 'יפן', 'קניה', 'קירגיזסטן', 'קמבודיה', 'סנט קיטס ונוויס', 'דרום קוריאה', 'איי קיימן', 'קזחסטן', 'סנט לוסיה', 'ליכטנשטיין', 'סרי לנקה', 'ליבריה', 'ליטא', 'לוקסמבורג', 'לטביה', 'מרוקו', 'מולדובה', 'מונטנגרו', 'סן מרטן', 'מדגסקר', 'מקדוניה הצפונית', 'מאלי', 'מונגוליה', 'מקאו', 'מרטיניק', 'מונסראט', 'מלטה', 'מאוריציוס', 'מלאווי', 'מקסיקו', 'מלזיה', 'ניג\'ר', 'ניגריה', 'ניקראגואה', 'הולנד', 'נורבגיה', 'נאורו', 'ניו זילנד', 'עומאן', 'פנמה', 'פרו', 'פפואה גינאה החדשה', 'פקיסטן', 'פולין', 'פוארטו ריקו', 'פורטוגל', 'פראגוואי', 'קטר', 'ראוניון', 'רומניה', 'סרביה', 'רואנדה', 'ערב הסעודית', 'איי סיישל', 'שבדיה', 'סינגפור', 'סלובניה', 'סלובקיה', 'סיירה ליאונה', 'סנגל', 'אל סלבדור', 'סינט מארטן', 'אסוואטיני', 'איי טורקס וקאיקוס', 'צ\'אד', 'תאילנד', 'טונגה', 'טורקיה', 'טרינידד וטובגו', 'טייוואן', 'טנזניה', 'אוקראינה', 'אוגנדה', 'ארצות הברית', 'אורוגוואי', 'אוזבקיסטן', 'סנט וינסנט והגרדינים', 'איי הבתולה (בריטניה)', 'איי הבתולה (ארה"ב)', 'וייטנאם', 'סמואה', 'קוסובו', 'מאיוט', 'דרום אפריקה', 'אנגולה', 'רוסיה']
+export const GIGSKY_REGION_MAP = {
+  'אירופה': GIGSKY_EUROPE,
+  'אסיה פסיפיק': GIGSKY_ASIA_PACIFIC,
+  'צפון אמריקה': GIGSKY_NORTH_AMERICA,
+  'אמריקה הלטינית': GIGSKY_LATIN_AMERICA,
+  'אפריקה': GIGSKY_AFRICA,
+  'קריביים': GIGSKY_CARIBBEAN,
+  'המזרח התיכון': GIGSKY_MIDDLE_EAST,
+  'האיים הקריביים ההולנדיים': GIGSKY_DUTCH_CARIBBEAN,
+  'האנטילים הצרפתיים': GIGSKY_FRENCH_CARIBBEAN,
+  'גלובלי': GIGSKY_GLOBAL,
+}
+
+// ── eSIM Genius ───────────────────────────────────────────────────────────
+// Coverage lists (canonical Hebrew) for esimgenius.ai's regional + global
+// bundles, generated from the "Covered countries" section of each regional
+// page (slug → Hebrew via SAILY_SLUG_TO_HEBREW + ESIMGENIUS_SLUG_OVERRIDES
+// in scraper.py). Per-country plans return null (extras[0] equality).
+const ESIMGENIUS_EUROPE = ['אוסטריה', 'בלגיה', 'בולגריה', 'קרואטיה', 'קפריסין', 'צ\'כיה', 'דנמרק', 'אסטוניה', 'פינלנד', 'צרפת', 'גרמניה', 'יוון', 'הונגריה', 'איסלנד', 'אירלנד', 'איטליה', 'לטביה', 'ליטא', 'לוקסמבורג', 'מלטה', 'הולנד', 'נורבגיה', 'פולין', 'פורטוגל', 'רומניה', 'סלובקיה', 'סלובניה', 'ספרד', 'שבדיה', 'שוויץ', 'בריטניה']
+const ESIMGENIUS_ASIA = ['בנגלדש', 'קמבודיה', 'סין', 'הונג קונג', 'אינדונזיה', 'יפן', 'לאוס', 'מקאו', 'מלזיה', 'מונגוליה', 'נפאל', 'הפיליפינים', 'סינגפור', 'דרום קוריאה', 'סרי לנקה', 'טייוואן', 'תאילנד', 'וייטנאם']
+const ESIMGENIUS_AFRICA = ['אלג\'יריה', 'בנין', 'קייפ ורדה', 'צ\'אד', 'הרפובליקה הדמוקרטית של קונגו', 'מצרים', 'אתיופיה', 'גאבון', 'גאנה', 'חוף השנהב', 'קניה', 'מדגסקר', 'מלאווי', 'מאוריטניה', 'מאוריציוס', 'מרוקו', 'ניג\'ר', 'ניגריה', 'רפובליקת קונגו', 'ראוניון', 'רואנדה', 'סנגל', 'דרום אפריקה', 'טנזניה', 'תוניסיה', 'אוגנדה', 'זמביה']
+const ESIMGENIUS_MIDDLE_EAST = ['בחריין', 'מצרים', 'ישראל', 'כוויית', 'עומאן', 'קטר', 'ערב הסעודית', 'טורקיה', 'איחוד האמירויות']
+export const ESIMGENIUS_GLOBAL = ['אלג\'יריה', 'אנדורה', 'ארגנטינה', 'ארמניה', 'אוסטרליה', 'אוסטריה', 'אזרבייג\'ן', 'איי הבהאמה', 'בחריין', 'בנגלדש', 'ברבדוס', 'בלארוס', 'בלגיה', 'בוסניה והרצגובינה', 'ברזיל', 'בולגריה', 'קמבודיה', 'קנדה', 'צ\'ילה', 'סין', 'קולומביה', 'קוסטה ריקה', 'קרואטיה', 'קפריסין', 'צ\'כיה', 'דנמרק', 'הרפובליקה הדומיניקנית', 'אקוודור', 'מצרים', 'אל סלבדור', 'אסטוניה', 'אתיופיה', 'איי פארו', 'פיג\'י', 'פינלנד', 'צרפת', 'גיאנה הצרפתית', 'גאורגיה', 'גרמניה', 'גאנה', 'גיברלטר', 'יוון', 'גוואדלופ', 'הונג קונג', 'הונגריה', 'איסלנד', 'הודו', 'אינדונזיה', 'עיראק', 'אירלנד', 'ישראל', 'איטליה', 'ג\'מייקה', 'יפן', 'ירדן', 'קזחסטן', 'קניה', 'כוויית', 'קירגיזסטן', 'לאוס', 'לטביה', 'ליכטנשטיין', 'ליטא', 'לוקסמבורג', 'מקדוניה הצפונית', 'מלזיה', 'מלטה', 'מקסיקו', 'מולדובה', 'מונטנגרו', 'מרוקו', 'הולנד', 'ניו זילנד', 'ניגריה', 'נורבגיה', 'עומאן', 'פקיסטן', 'פרו', 'הפיליפינים', 'פולין', 'פורטוגל', 'פוארטו ריקו', 'קטר', 'ראוניון', 'רומניה', 'רואנדה', 'ערב הסעודית', 'סרביה', 'סינגפור', 'סלובקיה', 'סלובניה', 'דרום אפריקה', 'דרום קוריאה', 'ספרד', 'סרי לנקה', 'שבדיה', 'שוויץ', 'טייוואן', 'טג\'יקיסטן', 'טנזניה', 'תאילנד', 'תוניסיה', 'טורקיה', 'אוקראינה', 'איחוד האמירויות', 'בריטניה', 'אורוגוואי', 'ארצות הברית', 'אוזבקיסטן', 'וייטנאם']
+export const ESIMGENIUS_REGION_MAP = {
+  'אירופה': ESIMGENIUS_EUROPE,
+  'אסיה': ESIMGENIUS_ASIA,
+  'אפריקה': ESIMGENIUS_AFRICA,
+  'המזרח התיכון': ESIMGENIUS_MIDDLE_EAST,
+  'גלובלי': ESIMGENIUS_GLOBAL,
+}
+
+// ── eSIM Max (esimax.io) ──────────────────────────────────────────────────
+// Coverage lists (canonical Hebrew) for esimax.io's regional + global bundles,
+// extracted from the "המדינות שנכללות בחבילה" section of each product page
+// (flag alts + text, canonicalized via db._DEST_NORM). Per-country plans
+// return null (extras[0] equality). The two Europe products share
+// extras[0]='אירופה' but differ in coverage (41 vs 34 countries) — the
+// "אירופה 30+" bundle is matched by plan-name prefix, so it gets its own list.
+const ESIMAX_EUROPE = ['נורבגיה', 'סרביה', 'גרמניה', 'בלגיה', 'פינלנד', 'פורטוגל', 'בולגריה', 'דנמרק', 'ליטא', 'לוקסמבורג', 'לטביה', 'קרואטיה', 'אוקראינה', 'צרפת', 'הונגריה', 'שבדיה', 'סלובניה', 'סלובקיה', 'בריטניה', 'אירלנד', 'מקדוניה הצפונית', 'גרנזי', 'אסטוניה', 'גיברלטר', 'האי מאן', 'שוויץ', 'מלטה', 'איסלנד', 'איטליה', 'יוון', 'ספרד', 'אוסטריה', 'קפריסין', 'איי אולנד', 'צ\'כיה', 'ג\'רזי', 'פולין', 'רומניה', 'ליכטנשטיין', 'הולנד', 'טורקיה']
+export const ESIMAX_EUROPE_30 = ['נורבגיה', 'גרמניה', 'בלגיה', 'פינלנד', 'פורטוגל', 'בולגריה', 'דנמרק', 'ליטא', 'לוקסמבורג', 'לטביה', 'קרואטיה', 'אוקראינה', 'צרפת', 'הונגריה', 'שבדיה', 'סלובניה', 'סלובקיה', 'בריטניה', 'אירלנד', 'אסטוניה', 'שוויץ', 'מלטה', 'איסלנד', 'איטליה', 'יוון', 'ספרד', 'אוסטריה', 'קפריסין', 'צ\'כיה', 'פולין', 'רומניה', 'ליכטנשטיין', 'הולנד', 'טורקיה']
+const ESIMAX_BALKANS = ['סרביה', 'בולגריה', 'מונטנגרו', 'קרואטיה', 'אלבניה', 'יוון', 'מקדוניה הצפונית']
+const ESIMAX_CARIBBEAN = ['ברבדוס', 'פוארטו ריקו', 'ג\'מייקה', 'פראגוואי', 'דומיניקה', 'הרפובליקה הדומיניקנית', 'בוליביה', 'ברזיל', 'גרנדה', 'גיאנה הצרפתית', 'סנט קיטס ונוויס', 'אורוגוואי', 'אנטיגואה וברבודה', 'מונסראט', 'אנגווילה', 'גוואדלופ', 'קולומביה', 'סנט וינסנט והגרדינים', 'איי קיימן', 'איי טורקס וקאיקוס', 'ארגנטינה', 'איי הבתולה (בריטניה)', 'פרו', 'סנט לוסיה', 'האיים הקריביים ההולנדיים']
+const ESIMAX_CENTRAL_ASIA = ['אוזבקיסטן', 'קירגיזסטן', 'קזחסטן', 'סרי לנקה', 'פקיסטן']
+const ESIMAX_OCEANIA = ['אוסטרליה', 'ניו זילנד']
+const ESIMAX_SG_MY_TH = ['תאילנד', 'סינגפור', 'מלזיה']
+const ESIMAX_ASIA = ['מקאו', 'הונג קונג', 'ישראל', 'הודו', 'יפן', 'דרום קוריאה', 'סין', 'ניו זילנד', 'מלזיה', 'אוסטרליה', 'תאילנד', 'סינגפור', 'וייטנאם', 'הפיליפינים', 'אינדונזיה', 'קמבודיה', 'סרי לנקה', 'כוויית', 'ערב הסעודית', 'פקיסטן']
+const ESIMAX_CHINA_HK_MACAO = ['מקאו', 'הונג קונג', 'סין']
+const ESIMAX_MIDDLE_EAST = ['מצרים', 'ישראל', 'מרוקו', 'איחוד האמירויות', 'תוניסיה', 'טורקיה', 'קטר', 'ירדן', 'בחריין', 'כוויית', 'ערב הסעודית', 'עומאן']
+const ESIMAX_AFRICA = ['בורקינה פאסו', 'ליבריה', 'טנזניה', 'איי סיישל', 'אוגנדה', 'מרוקו', 'בוטסואנה', 'מדגסקר', 'גאבון', 'קניה', 'סנגל', 'מאלי', 'הרפובליקה הדמוקרטית של קונגו', 'גאנה', 'מצרים', 'הרפובליקה המרכז אפריקאית', 'רפובליקת קונגו', 'חוף השנהב', 'דרום אפריקה', 'אסוואטיני', 'מלאווי', 'צ\'אד', 'גינאה ביסאו', 'ראוניון', 'זמביה', 'ניג\'ר', 'ניגריה', 'תוניסיה', 'סודן']
+const ESIMAX_NORTH_AMERICA = ['מקסיקו', 'ארצות הברית', 'קנדה']
+const ESIMAX_SOUTH_AMERICA = ['פוארטו ריקו', 'אל סלבדור', 'אורוגוואי', 'הונדורס', 'צ\'ילה', 'פראגוואי', 'קולומביה', 'בוליביה', 'גואטמלה', 'קוסטה ריקה', 'ברזיל', 'ארגנטינה', 'פנמה', 'פרו', 'ניקראגואה', 'אקוודור', 'מרטיניק']
+export const ESIMAX_GLOBAL = ['פוארטו ריקו', 'הונג קונג', 'פורטוגל', 'הונדורס', 'פראגוואי', 'קרואטיה', 'הונגריה', 'אינדונזיה', 'אירלנד', 'ישראל', 'האי מאן', 'איחוד האמירויות', 'הודו', 'דרום אפריקה', 'איסלנד', 'איטליה', 'אלבניה', 'ארגנטינה', 'אוסטריה', 'ראוניון', 'זמביה', 'אוסטרליה', 'איי אולנד', 'אזרבייג\'ן', 'ג\'רזי', 'רומניה', 'בוסניה והרצגובינה', 'סרביה', 'בנגלדש', 'בלגיה', 'בורקינה פאסו', 'בולגריה', 'יפן', 'ברוניי', 'בוליביה', 'ברזיל', 'איי סיישל', 'שבדיה', 'סינגפור', 'בוטסואנה', 'סלובניה', 'סלובקיה', 'קניה', 'סנגל', 'קירגיזסטן', 'קמבודיה', 'קנדה', 'הרפובליקה הדמוקרטית של קונגו', 'אל סלבדור', 'רפובליקת קונגו', 'שוויץ', 'חוף השנהב', 'דרום קוריאה', 'אסוואטיני', 'צ\'ילה', 'קמרון', 'סין', 'קולומביה', 'קוסטה ריקה', 'קזחסטן', 'צ\'אד', 'תאילנד', 'קפריסין', 'צ\'כיה', 'תוניסיה', 'ליכטנשטיין', 'טורקיה', 'סרי לנקה', 'גרמניה', 'ליבריה', 'טנזניה', 'דנמרק', 'ליטא', 'לוקסמבורג', 'לטביה', 'אוקראינה', 'אוגנדה', 'מרוקו', 'מולדובה', 'מונטנגרו', 'מדגסקר', 'ארצות הברית', 'אקוודור', 'מקדוניה הצפונית', 'מאלי', 'אסטוניה', 'מקאו', 'מצרים', 'אורוגוואי', 'אוזבקיסטן', 'מלטה', 'מלאווי', 'מקסיקו', 'מלזיה', 'ספרד', 'ניג\'ר', 'וייטנאם', 'ניגריה', 'ניקראגואה', 'הולנד', 'נורבגיה', 'פינלנד', 'צרפת', 'ניו זילנד', 'גאבון', 'בריטניה', 'גאורגיה', 'גאנה', 'גיברלטר', 'יוון', 'גואטמלה', 'פנמה', 'פרו', 'הפיליפינים', 'פולין', 'קטר', 'ירדן', 'בחריין', 'ערב הסעודית', 'כוויית', 'טייוואן', 'מרטיניק', 'עומאן', 'קוסובו', 'פקיסטן']
+export const ESIMAX_REGION_MAP = {
+  'אירופה': ESIMAX_EUROPE,
+  'בלקן': ESIMAX_BALKANS,
+  'האיים הקריביים': ESIMAX_CARIBBEAN,
+  'מרכז אסיה': ESIMAX_CENTRAL_ASIA,
+  'אוקיאניה': ESIMAX_OCEANIA,
+  'סינגפור, מלזיה, תאילנד': ESIMAX_SG_MY_TH,
+  'אסיה': ESIMAX_ASIA,
+  'סין + הונג קונג + מקאו': ESIMAX_CHINA_HK_MACAO,
+  'המזרח התיכון': ESIMAX_MIDDLE_EAST,
+  'אפריקה': ESIMAX_AFRICA,
+  'צפון אמריקה': ESIMAX_NORTH_AMERICA,
+  'דרום אמריקה': ESIMAX_SOUTH_AMERICA,
+  'גלובלי': ESIMAX_GLOBAL,
+}
+
+// ── VenterraSIM ───────────────────────────────────────────────────────
+// Keyed by the plan_name TITLE (the segment before the first ' – '), not by
+// extras[0]: Venterra sells several coverage tiers under one destination
+// (Europe 33/35/41 areas, Asia 7/20, South America 6/20), and only the title
+// tells them apart. Lists are generated from the ISO-3166 codes the catalog
+// endpoint returns per plan, so they mirror the operator's own coverage.
+const VENTERRA_EUROPE_33 = ["אוסטריה", "איטליה", "איסלנד", "אירלנד", "אסטוניה", "בולגריה", "בלגיה", "בריטניה", "גיברלטר", "גרמניה", "דנמרק", "הולנד", "הונגריה", "יוון", "לוקסמבורג", "לטביה", "ליטא", "ליכטנשטיין", "מלטה", "נורבגיה", "סלובניה", "סלובקיה", "ספרד", "פולין", "פורטוגל", "פינלנד", "צ'כיה", "צרפת", "קפריסין", "קרואטיה", "רומניה", "שבדיה", "שוויץ"]
+const VENTERRA_EUROPE_35 = ["אוסטריה", "אוקראינה", "איטליה", "איסלנד", "אירלנד", "אסטוניה", "בולגריה", "בלגיה", "בריטניה", "גרמניה", "דנמרק", "הולנד", "הונגריה", "ותיקן", "יוון", "לוקסמבורג", "לטביה", "ליטא", "ליכטנשטיין", "מולדובה", "מלטה", "נורבגיה", "סלובניה", "סלובקיה", "סן מרינו", "ספרד", "פולין", "פורטוגל", "פינלנד", "צ'כיה", "קפריסין", "קרואטיה", "רומניה", "שבדיה", "שוויץ"]
+const VENTERRA_EUROPE_41 = ["אוסטריה", "אוקראינה", "איטליה", "איי אולנד", "איסלנד", "אירלנד", "אסטוניה", "בולגריה", "בלגיה", "בריטניה", "ג'רזי", "גיברלטר", "גרמניה", "גרנזי", "דנמרק", "האי מאן", "הולנד", "הונגריה", "טורקיה", "יוון", "לוקסמבורג", "לטביה", "ליטא", "ליכטנשטיין", "מלטה", "מקדוניה הצפונית", "נורבגיה", "סלובניה", "סלובקיה", "ספרד", "סרביה", "פולין", "פורטוגל", "פינלנד", "צ'כיה", "צרפת", "קפריסין", "קרואטיה", "רומניה", "שבדיה", "שוויץ"]
+const VENTERRA_BALKANS = ["אלבניה", "בולגריה", "יוון", "מונטנגרו", "מקדוניה הצפונית", "סרביה", "קרואטיה"]
+const VENTERRA_ASIA_7 = ["אינדונזיה", "הפיליפינים", "וייטנאם", "מלזיה", "סינגפור", "קמבודיה", "תאילנד"]
+const VENTERRA_ASIA_20 = ["אוסטרליה", "אינדונזיה", "דרום קוריאה", "הודו", "הונג קונג", "הפיליפינים", "וייטנאם", "יפן", "ישראל", "כוויית", "מלזיה", "מקאו", "ניו זילנד", "סין", "סינגפור", "סרי לנקה", "ערב הסעודית", "פקיסטן", "קמבודיה", "תאילנד"]
+const VENTERRA_SG_MY_TH = ["מלזיה", "סינגפור", "תאילנד"]
+const VENTERRA_CHINA_HK_MACAO = ["הונג קונג", "מקאו", "סין"]
+const VENTERRA_CENTRAL_ASIA = ["אוזבקיסטן", "טג'יקיסטן", "קזחסטן", "קירגיזסטן"]
+const VENTERRA_NORTH_AMERICA = ["ארצות הברית", "מקסיקו", "קנדה"]
+const VENTERRA_SOUTH_AMERICA_6 = ["אורוגוואי", "אקוודור", "ארגנטינה", "ברזיל", "פרו", "צ'ילה"]
+const VENTERRA_SOUTH_AMERICA_20 = ["אורוגוואי", "אל סלבדור", "אקוודור", "ארגנטינה", "בוליביה", "ברזיל", "גואטמלה", "גוואדלופ", "הונדורס", "מרטיניק", "ניקראגואה", "סן ברתלמי", "סן מרטן", "פוארטו ריקו", "פנמה", "פראגוואי", "פרו", "צ'ילה", "קולומביה", "קוסטה ריקה"]
+const VENTERRA_CARIBBEAN = ["אורוגוואי", "איי הבתולה (בריטניה)", "איי טורקס וקאיקוס", "איי קיימן", "אנגווילה", "אנטיגואה וברבודה", "אנטילים הולנדיים", "ארגנטינה", "בוליביה", "ברבדוס", "ברזיל", "ג'מייקה", "גוואדלופ", "גיאנה הצרפתית", "גרנדה", "דומיניקה", "הרפובליקה הדומיניקנית", "מונסראט", "סנט וינסנט והגרדינים", "סנט לוסיה", "סנט קיטס ונוויס", "פוארטו ריקו", "פראגוואי", "פרו", "קולומביה"]
+export const VENTERRA_GLOBAL = ["אוגנדה", "אוזבקיסטן", "אוסטריה", "אוסטרליה", "אוקראינה", "אורוגוואי", "אזרבייג'ן", "איחוד האמירויות", "איטליה", "איי סיישל", "אינדונזיה", "איסלנד", "אירלנד", "אל סלבדור", "אלבניה", "אסוואטיני", "אסטוניה", "אקוודור", "ארגנטינה", "ארמניה", "ארצות הברית", "בוטסואנה", "בולגריה", "בוליביה", "בוסניה והרצגובינה", "בלגיה", "ברזיל", "בריטניה", "גאבון", "גאנה", "גואטמלה", "גואם", "גיברלטר", "גינאה ביסאו", "גרמניה", "דנמרק", "דרום אפריקה", "דרום קוריאה", "הודו", "הולנד", "הונג קונג", "הונגריה", "הונדורס", "הפיליפינים", "הרפובליקה הדמוקרטית של קונגו", "הרפובליקה המרכז אפריקאית", "זמביה", "חוף השנהב", "טורקיה", "טייוואן", "טנזניה", "יוון", "יפן", "ירדן", "ישראל", "כוויית", "לוקסמבורג", "לטביה", "ליבריה", "ליטא", "ליכטנשטיין", "מאוריציוס", "מאלי", "מדגסקר", "מולדובה", "מונטנגרו", "מלאווי", "מלזיה", "מלטה", "מצרים", "מקדוניה הצפונית", "מקסיקו", "מרוקו", "נורבגיה", "ניג'ר", "ניגריה", "ניו זילנד", "ניקראגואה", "סין", "סינגפור", "סלובניה", "סלובקיה", "סנגל", "ספרד", "סרביה", "סרי לנקה", "עומאן", "ערב הסעודית", "פוארטו ריקו", "פולין", "פורטוגל", "פינלנד", "פנמה", "פקיסטן", "פראגוואי", "פרו", "צ'אד", "צ'ילה", "צ'כיה", "צרפת", "קולומביה", "קונגו ברזוויל", "קוסובו", "קוסטה ריקה", "קזחסטן", "קטר", "קירגיזסטן", "קמרון", "קנדה", "קניה", "קפריסין", "קרואטיה", "רומניה", "שבדיה", "שוויץ", "תאילנד", "תוניסיה"]
+export const VENTERRA_REGION_MAP = {
+  "אירופה 33 יעדים":        VENTERRA_EUROPE_33,
+  "אירופה 35 יעדים":        VENTERRA_EUROPE_35,
+  "אירופה 41 יעדים":        VENTERRA_EUROPE_41,
+  "בלקן":                   VENTERRA_BALKANS,
+  "אסיה 7 יעדים":           VENTERRA_ASIA_7,
+  "אסיה 20 יעדים":          VENTERRA_ASIA_20,
+  "סינגפור, מלזיה, תאילנד": VENTERRA_SG_MY_TH,
+  "סין + הונג קונג + מקאו": VENTERRA_CHINA_HK_MACAO,
+  "מרכז אסיה":              VENTERRA_CENTRAL_ASIA,
+  "צפון אמריקה":            VENTERRA_NORTH_AMERICA,
+  "דרום אמריקה 6 יעדים":    VENTERRA_SOUTH_AMERICA_6,
+  "דרום אמריקה 20 יעדים":   VENTERRA_SOUTH_AMERICA_20,
+  "האיים הקריביים":         VENTERRA_CARIBBEAN,
+  "גלובלי":                 VENTERRA_GLOBAL,
+}
+
+// ── Simzol ────────────────────────────────────
+// Two products share extras[0]='גלובלי' with DIFFERENT coverage, so the map is
+// keyed by the plan_name title (see SIMZOL_PRODUCTS in scraper.py): the eSIM
+// data packages cover the 83 destinations listed on /p/esim, while the physical
+// 'סים עולמי - פלטינום' trip-length SIM lists 123. Both lists are transcribed
+// from the shop's own product copy and canonicalised to MOCA destination names.
+const SIMZOL_GLOBAL_ESIM = ["אוזבקיסטן", "אוסטריה", "אוסטרליה", "אוקראינה", "אורוגוואי", "איחוד האמירויות", "איטליה", "אינדונזיה", "איסלנד", "אירלנד", "אל סלבדור", "אלבניה", "אסטוניה", "אקוודור", "ארגנטינה", "ארצות הברית", "בולגריה", "בחריין", "בלגיה", "בריטניה", "גאורגיה", "גיאנה הצרפתית", "גיברלטר", "גרמניה", "דנמרק", "דרום קוריאה", "האי מאן", "האיים הקנריים", "הודו", "הולנד", "הונג קונג", "הונגריה", "וייטנאם", "טורקיה", "טייוואן", "יוון", "יפן", "ירדן", "כוויית", "לוקסמבורג", "לטביה", "ליטא", "ליכטנשטיין", "מולדובה", "מונטנגרו", "מלזיה", "מלטה", "מצרים", "מקאו", "מקסיקו", "מרוקו", "נורבגיה", "ניגריה", "ניו זילנד", "סין", "סינגפור", "סלובניה", "סלובקיה", "ספרד", "סרביה", "סרי לנקה", "ערב הסעודית", "פוארטו ריקו", "פולין", "פורטוגל", "פינלנד", "פרו", "צ'ילה", "צ'כיה", "צרפת", "קולומביה", "קוסטה ריקה", "קזחסטן", "קטר", "קנדה", "קפריסין", "קרואטיה", "רומניה", "רוסיה", "שבדיה", "שוויץ", "תאילנד", "תוניסיה"]
+const SIMZOL_PLATINUM = ["אוזבקיסטן", "אוסטריה", "אוסטרליה", "אוקראינה", "אורוגוואי", "איחוד האמירויות", "איטליה", "איי הבתולה (בריטניה)", "איי פארו", "איי קיימן", "אינדונזיה", "איסלנד", "אירלנד", "אלבניה", "אנגולה", "אנדורה", "אסטוניה", "אקוודור", "ארגנטינה", "ארמניה", "ארצות הברית", "בולגריה", "בוסניה והרצגובינה", "בחריין", "בלגיה", "בנגלדש", "ברבדוס", "ברזיל", "בריטניה", "ג'מייקה", "גאורגיה", "גאנה", "גואטמלה", "גיאנה", "גיברלטר", "גרמניה", "גרנדה", "גרנזי", "דומיניקה", "דנמרק", "דרום אפריקה", "דרום סודן", "דרום קוריאה", "האי מאן", "האיטי", "האיים הקנריים", "הודו", "הולנד", "הונג קונג", "הונגריה", "הונדורס", "הפיליפינים", "וייטנאם", "ונואטו", "טונגה", "טורקיה", "טייוואן", "טנזניה", "יוון", "יפן", "ירדן", "כוויית", "לאוס", "לוקסמבורג", "לטביה", "ליטא", "ליכטנשטיין", "מוזמביק", "מולדובה", "מונגוליה", "מונטנגרו", "מונסראט", "מונקו", "מיאנמר", "מלזיה", "מלטה", "מצרים", "מקאו", "מקדוניה הצפונית", "מקסיקו", "מרוקו", "נורבגיה", "ניו זילנד", "ניקראגואה", "סורינאם", "סין", "סינגפור", "סלובניה", "סלובקיה", "סמואה", "סנט לוסיה", "סנט קיטס ונוויס", "ספרד", "סרביה", "סרי לנקה", "עומאן", "ערב הסעודית", "פוארטו ריקו", "פולין", "פורטוגל", "פיג'י", "פינלנד", "פנמה", "פקיסטן", "פראגוואי", "פרו", "צ'ילה", "צ'כיה", "צרפת", "קולומביה", "קוסטה ריקה", "קזחסטן", "קטר", "קמבודיה", "קנדה", "קניה", "קפריסין", "קרואטיה", "רומניה", "רוסיה", "שבדיה", "שוויץ", "תאילנד"]
+export const SIMZOL_REGION_MAP = {
+  'גלובלי':          SIMZOL_GLOBAL_ESIM,
+  'גלובלי פלטינום': SIMZOL_PLATINUM,
+}
+export const SIMZOL_ALL_COUNTRIES = [...new Set([...SIMZOL_GLOBAL_ESIM, ...SIMZOL_PLATINUM])]
+
 export function getCountriesForPlan(plan) {
   const carrier = plan.carrier;
   const name = plan.plan_name || '';
@@ -527,7 +661,7 @@ export function getCountriesForPlan(plan) {
       'אפריקה': HOLAFLY_AFRICA,
     };
     if (extras[0] && HOLAFLY_REGION_MAP[extras[0]]) {
-      return { title: 'Holafly — ' + extras[0], countries: HOLAFLY_REGION_MAP[extras[0]] };
+      return { title: 'Holafly - ' + extras[0], countries: HOLAFLY_REGION_MAP[extras[0]] };
     }
     return null; // single country plan
   }
@@ -547,7 +681,7 @@ export function getCountriesForPlan(plan) {
       'צפון אמריקה': ESIMIO_NORTH_AMERICA,
     };
     if (extras[0] && ESIMIO_REGION_MAP[extras[0]]) {
-      return { title: 'eSIM.io — ' + extras[0], countries: ESIMIO_REGION_MAP[extras[0]] };
+      return { title: 'eSIM.io - ' + extras[0], countries: ESIMIO_REGION_MAP[extras[0]] };
     }
     return null; // single country plan
   }
@@ -567,7 +701,7 @@ export function getCountriesForPlan(plan) {
   }
   if (carrier === 'airalo_regional') {
     const countries = AIRALO_REGION_MAP[extras[0]];
-    if (countries) return { title: 'Airalo — ' + extras[0], countries };
+    if (countries) return { title: 'Airalo - ' + extras[0], countries };
     return null;
   }
 
@@ -583,7 +717,7 @@ export function getCountriesForPlan(plan) {
       'גלובלי': TERMINAL_GLOBAL_REGION,
     };
     if (extras[0] && TERMINAL_REGION_MAP[extras[0]]) {
-      return { title: 'Terminal eSIM — ' + extras[0], countries: TERMINAL_REGION_MAP[extras[0]] };
+      return { title: 'Terminal eSIM - ' + extras[0], countries: TERMINAL_REGION_MAP[extras[0]] };
     }
     return null; // Terminal eSIM per-country plan - extras[0] equality handles filtering
   }
@@ -601,7 +735,7 @@ export function getCountriesForPlan(plan) {
       'גלובלי': TUKI_GLOBAL,
     };
     if (extras[0] && TUKI_REGION_MAP[extras[0]]) {
-      return { title: 'Tuki — ' + extras[0], countries: TUKI_REGION_MAP[extras[0]] };
+      return { title: 'Tuki - ' + extras[0], countries: TUKI_REGION_MAP[extras[0]] };
     }
     return null; // single country plan
   }
@@ -627,7 +761,7 @@ export function getCountriesForPlan(plan) {
   // Regional/global products carry a region tag → that product's coverage list.
   if (carrier === 'esimo') {
     if (extras[0] && ESIMO_REGION_MAP[extras[0]]) {
-      return { title: 'eSIMo — ' + extras[0], countries: ESIMO_REGION_MAP[extras[0]] };
+      return { title: 'eSIMo - ' + extras[0], countries: ESIMO_REGION_MAP[extras[0]] };
     }
     return null; // single country plan
   }
@@ -635,9 +769,9 @@ export function getCountriesForPlan(plan) {
   // ── 8 World ──
   if (carrier === 'world8') {
     if (name.includes('אירופה') || name.includes('Europe')) {
-      return { title: '8 World — אירופה וארצות הברית', countries: WORLD8_EUROPE_USA };
+      return { title: '8 World - אירופה וארצות הברית', countries: WORLD8_EUROPE_USA };
     }
-    return { title: '8 World — כל העולם', countries: WORLD8_WORLDWIDE };
+    return { title: '8 World - כל העולם', countries: WORLD8_WORLDWIDE };
   }
 
   // ── Sparks Travel ──
@@ -664,7 +798,7 @@ export function getCountriesForPlan(plan) {
   if (carrier === 'orbit') {
     // Zone plans have covered countries in extras[1+]
     if (extras.length > 1) {
-      return { title: 'Orbit — ' + extras[0], countries: extras.slice(1) };
+      return { title: 'Orbit - ' + extras[0], countries: extras.slice(1) };
     }
     return null; // single country plan
   }
@@ -672,9 +806,9 @@ export function getCountriesForPlan(plan) {
   // ── XPhone Global ──
   if (carrier === 'xphone_global') {
     if (name.startsWith('אירופה')) {
-      return { title: 'XPhone — אירופה', countries: XPHONE_EUROPE };
+      return { title: 'XPhone - אירופה', countries: XPHONE_EUROPE };
     }
-    return { title: 'XPhone — גלובלי', countries: XPHONE_WORLD };
+    return { title: 'XPhone - גלובלי', countries: XPHONE_WORLD };
   }
 
   // ── GoMoWorld ──
@@ -688,24 +822,24 @@ export function getCountriesForPlan(plan) {
       'צפון אמריקה': GOMOWORLD_NORTH_AMERICA,
     };
     if (extras[0] && GOMOWORLD_ZONE_MAP[extras[0]]) {
-      return { title: 'GoMoWorld — ' + extras[0], countries: GOMOWORLD_ZONE_MAP[extras[0]] };
+      return { title: 'GoMoWorld - ' + extras[0], countries: GOMOWORLD_ZONE_MAP[extras[0]] };
     }
     return null; // single country plan
   }
 
   // ── Maya Mobile ──
   if (carrier === 'maya') {
-    if (extras[0] === 'גלובלי') return { title: 'Maya Mobile — גלובלי (179 מדינות)', countries: MAYA_GLOBAL };
-    if (extras[0] === 'אוקיאניה') return { title: 'Maya Mobile — אוקיאניה', countries: MAYA_OCEANIA };
+    if (extras[0] === 'גלובלי') return { title: 'Maya Mobile - גלובלי (179 מדינות)', countries: MAYA_GLOBAL };
+    if (extras[0] === 'אוקיאניה') return { title: 'Maya Mobile - אוקיאניה', countries: MAYA_OCEANIA };
     return null; // single country plan
   }
 
   // ── Travel Sim ──
   if (carrier === 'travelsim') {
     const dest = extras[0]
-    if (dest === 'ארצות הברית') return { title: 'Travel Sim — ארצות הברית / קנדה / איחוד האמירויות', countries: TRAVELSIM_USA }
-    if (dest === 'המזרח התיכון') return { title: 'Travel Sim — מזרח התיכון', countries: TRAVELSIM_ME }
-    return { title: 'Travel Sim — גלובלי (144 מדינות)', countries: TRAVELSIM_GLOBAL }
+    if (dest === 'ארצות הברית') return { title: 'Travel Sim - ארצות הברית / קנדה / איחוד האמירויות', countries: TRAVELSIM_USA }
+    if (dest === 'המזרח התיכון') return { title: 'Travel Sim - מזרח התיכון', countries: TRAVELSIM_ME }
+    return { title: 'Travel Sim - גלובלי (144 מדינות)', countries: TRAVELSIM_GLOBAL }
   }
 
   // ── Jetpack ──
@@ -722,7 +856,7 @@ export function getCountriesForPlan(plan) {
       'דרום מזרח אסיה': ['קמבודיה','אינדונזיה','מלזיה','הפיליפינים','סינגפור','תאילנד','וייטנאם'],
     };
     if (extras[0] && JETPACK_REGION_MAP[extras[0]]) {
-      return { title: 'Jetpack — ' + extras[0], countries: JETPACK_REGION_MAP[extras[0]] };
+      return { title: 'Jetpack - ' + extras[0], countries: JETPACK_REGION_MAP[extras[0]] };
     }
     return null; // single country plan
   }
@@ -748,7 +882,7 @@ export function getCountriesForPlan(plan) {
       'אירופה לייט': ['אוסטריה','בלגיה','צרפת','גרמניה','יוון','איטליה','הולנד','ספרד','שבדיה','שוויץ','בריטניה'],
     };
     if (extras[0] && BREEZ_REGION_MAP[extras[0]] && BREEZ_REGION_MAP[extras[0]].length > 0) {
-      return { title: 'Breeze — ' + extras[0], countries: BREEZ_REGION_MAP[extras[0]] };
+      return { title: 'Breeze - ' + extras[0], countries: BREEZ_REGION_MAP[extras[0]] };
     }
     return null; // single country or global plan
   }
@@ -782,11 +916,11 @@ export function getCountriesForPlan(plan) {
       const BYTESIM_GLOBAL_125 = ['אפגניסטן','אלבניה',"אלג'יריה",'אנדורה','אנגווילה','אנטיגואה וברבודה','ארגנטינה','ארמניה','אוסטרליה','אוסטריה',"אזרבייג'ן",'בחריין','בנגלדש','ברבדוס','בלארוס','בלגיה','בנין','בוסניה והרצגובינה','ברזיל','איי הבתולה (בריטניה)','בולגריה','קנדה','איי קיימן',"צ'אד",'קולומביה','קוסטה ריקה','קרואטיה','קפריסין',"צ'כיה",'הרפובליקה הדמוקרטית של קונגו','דנמרק','דומיניקה','אקוודור','מצרים','אל סלבדור','אסטוניה','איי פארו',"פיג'י",'פינלנד','צרפת','גיאנה הצרפתית','ראוניון','גאבון','גאורגיה','גרמניה','גאנה','גיברלטר','יוון','גרנדה','גוואדלופ','גרנזי','הונגריה','איסלנד','הודו','עיראק','אירלנד','האי מאן','ישראל','איטליה',"ג'מייקה","ג'רזי",'ירדן','קזחסטן','קניה','קוסובו','כוויית','קירגיזסטן','לאוס','לטביה','ליכטנשטיין','ליטא','לוקסמבורג','מקדוניה הצפונית','מדגסקר','מלאווי','מלטה','מאוריציוס','מקסיקו','מולדובה','מונגוליה','מונטנגרו','מונסראט','מרוקו','נפאל','הולנד','אנטילים הולנדיים','ניו זילנד',"ניג'ר",'ניגריה','נורבגיה','פקיסטן','פנמה','פראגוואי','פרו','פולין','פורטוגל','קטר','הרפובליקה הדמוקרטית של קונגו','רומניה','רוסיה','סנט קיטס ונוויס','סנט לוסיה','סנט וינסנט והגרדינים','סמואה','ערב הסעודית','סרביה','סלובקיה','סלובניה','ספרד','סרי לנקה','שבדיה','שוויץ',"טג'יקיסטן",'טנזניה','תוניסיה','טורקיה','איי טורקס וקאיקוס','אוגנדה','אוקראינה','איחוד האמירויות','בריטניה','ארצות הברית','אורוגוואי','אוזבקיסטן','זמביה'];
       // Verified against bytesim.com/products/esim-global-148 on 2026-04-27 — exactly 109 destinations
       const BYTESIM_GLOBAL_109 = ['אלבניה',"אלג'יריה",'אנדורה','ארגנטינה','ארמניה','אוסטרליה','אוסטריה',"אזרבייג'ן",'בחריין','בנגלדש','בלארוס','בלגיה','בוסניה והרצגובינה','ברזיל','בולגריה','קמבודיה','קנדה',"צ'ילה",'סין','קוסטה ריקה','קרואטיה','קפריסין',"צ'כיה",'דנמרק','אקוודור','מצרים','אסטוניה','איי פארו','פינלנד','צרפת','גיאנה הצרפתית','גאורגיה','גרמניה','גאנה','גיברלטר','יוון','גרנזי','הוואי','הוותיקן','הונג קונג','הונגריה','איסלנד','הודו','אינדונזיה','עיראק','אירלנד','האי מאן','ישראל','איטליה','יפן',"ג'רזי",'קזחסטן','קניה','קוסובו','כוויית','קירגיזסטן','לאוס','לטביה','ליכטנשטיין','ליטא','לוקסמבורג','מקאו','מקדוניה הצפונית','מלזיה','מלטה','מקסיקו','מולדובה','מונטנגרו','מרוקו','הולנד','ניו זילנד','ניגריה','נורבגיה','עומאן','פקיסטן','פרו','הפיליפינים','פולין','פורטוגל','פוארטו ריקו','קטר','ראוניון','רומניה','רוסיה','סן ברתלמי','סן מרטן','סן מרינו','ערב הסעודית','סרביה','סינגפור','סלובקיה','סלובניה','דרום קוריאה','ספרד','סרי לנקה','שבדיה','שוויץ','טייוואן','תאילנד','תוניסיה','טורקיה','איי הבתולה (ארה"ב)','אוקראינה','איחוד האמירויות','בריטניה','ארצות הברית','אורוגוואי','אוזבקיסטן','וייטנאם'];
-      const title = name.includes('109') ? 'ByteSim גלובלי — 109 מדינות' : 'ByteSim גלובלי — 125 מדינות';
+      const title = name.includes('109') ? 'ByteSim גלובלי - 109 מדינות' : 'ByteSim גלובלי - 125 מדינות';
       return { title, countries: name.includes('109') ? BYTESIM_GLOBAL_109 : BYTESIM_GLOBAL_125 };
     }
     if (extras[0] && BYTESIM_REGION_MAP[extras[0]]) {
-      return { title: 'ByteSim — ' + extras[0], countries: BYTESIM_REGION_MAP[extras[0]] };
+      return { title: 'ByteSim - ' + extras[0], countries: BYTESIM_REGION_MAP[extras[0]] };
     }
     return null; // single country or global plan
   }
@@ -805,7 +939,7 @@ export function getCountriesForPlan(plan) {
       'אסיה': ['סין','הונג קונג','אינדונזיה','יפן','לאוס','מקאו','מלזיה','מונגוליה','ניו זילנד','הפיליפינים','סינגפור','דרום קוריאה','טייוואן','תאילנד','וייטנאם'],
     };
     if (extras[0] && ESIM70_REGION_MAP[extras[0]]) {
-      return { title: 'eSIM70 — ' + extras[0], countries: ESIM70_REGION_MAP[extras[0]] };
+      return { title: 'eSIM70 - ' + extras[0], countries: ESIM70_REGION_MAP[extras[0]] };
     }
     return null; // single country plan
   }
@@ -825,7 +959,7 @@ export function getCountriesForPlan(plan) {
     if (region === 'גלובלי') {
       countries = labelMatch.includes('120+') ? BESIM_GLOBAL_120 : BESIM_GLOBAL_130;
     }
-    return { title: 'Besim — ' + titleSuffix, countries };
+    return { title: 'Besim - ' + titleSuffix, countries };
   }
 
   // ── 7G ──
@@ -834,7 +968,7 @@ export function getCountriesForPlan(plan) {
   if (carrier === 'seven_g') {
     const regionName = (name || '').split(' – ')[0]?.trim() || '';
     if (SEVEN_G_REGION_MAP[regionName]) {
-      return { title: '7G — ' + regionName, countries: SEVEN_G_REGION_MAP[regionName] };
+      return { title: '7G - ' + regionName, countries: SEVEN_G_REGION_MAP[regionName] };
     }
     return null;
   }
@@ -842,7 +976,7 @@ export function getCountriesForPlan(plan) {
   // ── Best Connect ──
   if (carrier === 'bestconnect') {
     if (extras[0] && BESTCONNECT_REGION_MAP[extras[0]]) {
-      return { title: 'Best Connect — ' + extras[0], countries: BESTCONNECT_REGION_MAP[extras[0]] };
+      return { title: 'Best Connect - ' + extras[0], countries: BESTCONNECT_REGION_MAP[extras[0]] };
     }
     return null;
   }
@@ -850,9 +984,66 @@ export function getCountriesForPlan(plan) {
   // ── eSIM Plus ──
   if (carrier === 'esimplus') {
     if (extras[0] && ESIMPLUS_REGION_MAP[extras[0]]) {
-      return { title: 'eSIM Plus — ' + extras[0], countries: ESIMPLUS_REGION_MAP[extras[0]] };
+      return { title: 'eSIM Plus - ' + extras[0], countries: ESIMPLUS_REGION_MAP[extras[0]] };
     }
     return null;
+  }
+
+  // ── GigSky ──
+  // Regional + global bundles expand to their coverage list; per-country and
+  // cruise plans return null (single-country / unified cruise filter).
+  if (carrier === 'gigsky') {
+    if (extras[0] && GIGSKY_REGION_MAP[extras[0]]) {
+      return { title: 'GigSky - ' + extras[0], countries: GIGSKY_REGION_MAP[extras[0]] };
+    }
+    return null;
+  }
+
+  // ── eSIM Genius ──
+  // Regional + global bundles expand to their coverage list; per-country
+  // plans return null (extras[0] equality).
+  if (carrier === 'esimgenius') {
+    if (extras[0] && ESIMGENIUS_REGION_MAP[extras[0]]) {
+      return { title: 'eSIM Genius - ' + extras[0], countries: ESIMGENIUS_REGION_MAP[extras[0]] };
+    }
+    return null;
+  }
+
+  // ── eSIM Max ──
+  // Regional + global bundles expand to their coverage list; per-country
+  // plans return null (extras[0] equality). "אירופה 30+" shares
+  // extras[0]='אירופה' with the full-Europe bundle but covers fewer countries,
+  // so it's matched by plan-name prefix BEFORE the dest lookup.
+  if (carrier === 'esimax') {
+    if (name.startsWith('אירופה 30+')) {
+      return { title: 'eSIM Max - אירופה 30+', countries: ESIMAX_EUROPE_30 };
+    }
+    if (extras[0] && ESIMAX_REGION_MAP[extras[0]]) {
+      return { title: 'eSIM Max - ' + extras[0], countries: ESIMAX_REGION_MAP[extras[0]] };
+    }
+    return null;
+  }
+
+  // ── VenterraSIM ──
+  // Regional + global bundles expand to their coverage list, keyed by the
+  // plan_name title; per-country plans have no title match → null → extras[0]
+  // equality handles them.
+  if (carrier === 'venterrasim') {
+    const title = name.split(' – ')[0].replace(/\u200f/g, '').trim()
+    return VENTERRA_REGION_MAP[title]
+      ? { title: 'VenterraSIM - ' + title, countries: VENTERRA_REGION_MAP[title] }
+      : null
+  }
+
+  // ── Simzol ──
+  // The two 'גלובלי' products differ in coverage, so match on the title;
+  // per-country plans (גאורגיה / איחוד האמירויות / ארצות הברית / אירופה)
+  // have no title match → null → extras[0] equality.
+  if (carrier === 'simzol') {
+    const title = name.split(' – ')[0].replace(/\u200f/g, '').trim()
+    return SIMZOL_REGION_MAP[title]
+      ? { title: 'Simzol - ' + title, countries: SIMZOL_REGION_MAP[title] }
+      : null
   }
 
   return null;

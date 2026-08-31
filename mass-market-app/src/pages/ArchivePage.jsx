@@ -182,7 +182,7 @@ export default function ArchivePage() {
                 style={{ background: providerInfo.color }}
               />
               <h2 className="text-base font-semibold text-moca-text">{providerInfo.label}</h2>
-              <span className="text-[11px] text-moca-muted">{tt(`— נתונים מ-${date} ולפניו`, `— data from ${date} and earlier`)}</span>
+              <span className="text-[11px] text-moca-muted">{tt(`- נתונים מ-${date} ולפניו`, `- data from ${date} and earlier`)}</span>
             </div>
           )}
 
@@ -222,7 +222,7 @@ export default function ArchivePage() {
                   {PLAN_TYPE_LABELS[planType] ? tt(PLAN_TYPE_LABELS[planType].he, PLAN_TYPE_LABELS[planType].en) : planType}
                 </h3>
                 <span className="text-[11px] text-moca-muted">
-                  {tt(`— snapshot מ-${data.snapshot_date} · ${data.plans.length} חבילות`, `— snapshot from ${data.snapshot_date} · ${data.plans.length} plans`)}
+                  {tt(`- snapshot מ-${data.snapshot_date} · ${data.plans.length} חבילות`, `- snapshot from ${data.snapshot_date} · ${data.plans.length} plans`)}
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

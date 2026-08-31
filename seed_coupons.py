@@ -136,6 +136,20 @@ COUPONS = [
         "notes": "MOCA's own affiliate coupon (Impact acct 7205658). Confirmed live for 10% off first-time customers by Bart Skrzypek / Maya 2026-07-02. Earns 15-20% commission. 6-char min forced MOCA10 (plain 'MOCA' rejected).",
     },
 
+    # ── GoMoWorld ─────────────────────────────────────────────────────────
+    # OUR OWN affiliate code via PUREMIUM SAS (HasOffers/TUNE, offer 23, Affiliate
+    # ID 1968). Rana Doula (Puremium Partnership Manager) confirmed in writing
+    # 2026-07-06: code MOCA = 10% customer discount; we earn 15% on each first
+    # conversion, 30-day cookie on the tracked link (coupon applies at checkout,
+    # no fixed duration). Tracking link wired at /go/gomoworld.
+    {
+        "carrier": "gomoworld",
+        "code": "MOCA",
+        "discount_label": "10% הנחה",
+        "source_url": "https://www.gomoworld.com",
+        "notes": "MOCA's own affiliate coupon (Puremium/HasOffers offer 23, Affiliate ID 1968). Confirmed live for 10% customer discount by Rana Doula / Puremium 2026-07-06. Earns 15% commission on first conversion, 30-day cookie.",
+    },
+
     # ── Holafly ───────────────────────────────────────────────────────────
     # DISABLED 2026-07-03 — all three are THIRD-PARTY codes (adamandlinds,
     # stephandpete, cybernews affiliates), so a competitor earns the commission,
@@ -181,6 +195,36 @@ COUPONS = [
         "external_offer_url": "https://www.gooday.co.il/%D7%94%D7%98%D7%91%D7%95%D7%AA/Airalo",
         "source_url": "https://www.gooday.co.il/%D7%94%D7%98%D7%91%D7%95%D7%AA/Airalo",
         "notes": "DISABLED 2026-07-03 — Gooday's external link-out offer, not a MOCA-owned code, earns us nothing. Per-user single-use code via Gooday (phone+email verification, max 4/month).",
+    },
+
+    # ── GigSky (Everflow network) ─────────────────────────────────────────
+    # OUR OWN affiliate code. Alex Dufort (Head of Partnerships, GigSky) created
+    # "MOCA15" for 15% off and confirmed it on 2026-07-06. Commission is 15%
+    # revshare on purchases (+ CPA payouts: GigSky One $25, VISA benefit $4, free
+    # plan $3). Affiliate tracking link is extractable from Everflow; Sub-IDs are
+    # supported (appended in the Everflow vanity box). Paste the tracking link
+    # into config.json affiliate.gigsky.base_url to attribute /go/gigsky clicks.
+    {
+        "carrier": "gigsky",
+        "code": "MOCA15",
+        "discount_label": "15% הנחה",
+        "source_url": "https://www.gigsky.com/",
+        "notes": "MOCA's own GigSky affiliate coupon (Everflow network). 15% customer discount; earns MOCA 15% revshare on purchases (+ CPA: GigSky One $25 / VISA benefit $4 / free plan $3). Created & confirmed live by Alex Dufort (Head of Partnerships) 2026-07-06. Sub-IDs supported via Everflow; per-destination deep-link format pending from GigSky.",
+    },
+
+    # ── Ubigi (Transatel/NTT, Impact) ────────────────────────────────────
+    # OUR OWN affiliate code (Impact acct 7205658). Cynthia Razafindrakoto
+    # (Ubigi Affiliate Marketing Manager) confirmed code "MOCA" active for 10%
+    # off new customers in her 2026-07-09 email, alongside a fresh tracking
+    # link (go.ubigi.com/5kqGL1, replacing the earlier self-generated one) and
+    # confirmation that per-hotel Sub-ID attribution works via Impact's Shared
+    # ID field.
+    {
+        "carrier": "ubigi",
+        "code": "MOCA",
+        "discount_label": "10% הנחה",
+        "source_url": "https://cellulardata.ubigi.com/",
+        "notes": "MOCA's own affiliate coupon (Impact acct 7205658). Confirmed live for 10% off new customers by Cynthia Razafindrakoto / Ubigi 2026-07-09. Earns 10% commission on first purchase, 60-day cookie.",
     },
 
     # ── ByteSim (in-house affiliate / personal-store program) ─────────────

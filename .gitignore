@@ -1,4 +1,6 @@
-.claude/
+# Ignore local Claude state (settings, launch config) but TRACK the project skills
+.claude/*
+!.claude/skills/
 .superpowers/
 design-handoff/
 data/*.db
@@ -44,3 +46,20 @@ scripts/cloudflared.exe
 /data/_*
 /data/cellcom_*
 /data/item_*.pdf
+
+# Local Netlify folder
+.netlify
+
+# Packaged sites-moca build (dist tarball) — regenerable from sites-moca/, never committed
+sites-moca-package.tar.gz
+
+# TWA (Google Play) - signing key + credentials must NEVER be committed
+twa/android.keystore
+twa/.keystore-pass
+twa/app/
+twa/build/
+twa/gradle*
+twa/*.apk
+twa/*.aab
+twa/*.idsig
+twa/node_modules/

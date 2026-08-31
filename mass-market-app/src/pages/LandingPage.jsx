@@ -15,7 +15,7 @@ import featAiChat from '../assets/feat-ai-chat.webp'
    MOCA public marketing landing page (served at "/" for anonymous
    visitors; logged-in users are redirected to /home). Content ported
    from pitch/index.html with the code-verified numbers (10 operators,
-   30+ eSIM, 2×/day).
+   38 eSIM, 2×/day).
 
    BILINGUAL (he/en): all copy lives in COPY[lang]. The page is rendered
    in two ways and the toggle must work in BOTH:
@@ -44,46 +44,46 @@ const FEAT_META = [
 const COPY = {
   he: {
     dir: 'rtl',
-    title: 'MOCA — מודיעין תחרותי לשוק הסלולר',
+    title: 'MOCA - מודיעין תחרותי לשוק הסלולר',
     toLang: 'EN',
     toLangAria: 'Switch to English',
     signIn: 'כניסה למערכת',
     kicker: 'Mobile Operators · Competitor Analysis',
-    h1a: 'כל מהלך תחרותי בשוק הסלולר —',
+    h1a: 'כל מהלך תחרותי בשוק הסלולר -',
     h1b: 'על המסך שלך, לפני שהוא משפיע עליך.',
     heroSub:
-      'מערכת מודיעין תחרותי שעוקבת אוטומטית אחרי כל השוק — פעמיים ביום — ושולחת התראה ברגע שמתחרה מזיז מחיר, מחליף קמפיין או משיק חבילה.',
-    heroAlt: 'מערכת MOCA — קיר הבאנרים של המתחרים בזמן אמת',
+      'מערכת מודיעין תחרותי שעוקבת אוטומטית אחרי כל השוק - פעמיים ביום - ושולחת התראה ברגע שמתחרה מזיז מחיר, מחליף קמפיין או משיק חבילה.',
+    heroAlt: 'מערכת MOCA - קיר הבאנרים של המתחרים בזמן אמת',
     stats: [
       { n: '10', l: 'מפעילים סלולריים' },
-      { n: '27', l: 'ספקי eSIM גלובליים' },
+      { n: '38', l: 'ספקי eSIM גלובליים' },
       { n: '2×', l: 'סריקות מלאות ביום' },
       { n: 'דקות', l: 'מאירוע להתראה' },
     ],
     painKicker: 'המצב היום',
-    painH: 'מודיעין תחרותי שמתבסס על עבודה ידנית — איטי, חלקי ויקר',
+    painH: 'מודיעין תחרותי שמתבסס על עבודה ידנית - איטי, חלקי ויקר',
     painSub: 'בשוק שבו מלחמת מחירים רצה בזמן אמת, ההחלטות מתקבלות על תמונה של אתמול.',
     pains: [
-      { t: 'זמן תגובה', p: 'מנהל מוצר נכנס ידנית לאתרים בבוקר. עד שמישהו מבחין בהורדת מחיר — עברו שעות או יום.' },
+      { t: 'זמן תגובה', p: 'מנהל מוצר נכנס ידנית לאתרים בבוקר. עד שמישהו מבחין בהורדת מחיר - עברו שעות או יום.' },
       { t: 'כיסוי חלקי', p: 'בודקים מחירים, אבל מי עוקב אחרי הקריאייטיב, הבאנרים, ה-eSIM הגלובלי והמשווקים?' },
       { t: 'אין היסטוריה', p: '"מה סלקום פרסם לפני שלושה שבועות?" אף אחד לא יודע. אין ארכיון, אין מגמות.' },
-      { t: 'עלות מחקר', p: 'חברת מחקר חיצונית נותנת דוח חודשי — שמתיישן ברגע שהוא נשלח.' },
+      { t: 'עלות מחקר', p: 'חברת מחקר חיצונית נותנת דוח חודשי - שמתיישן ברגע שהוא נשלח.' },
     ],
     featKicker: 'מה MOCA עושה',
     featH: 'מודיעין מלא, אוטומטי, בזמן אמת',
-    featSub: 'לא עוד טבלת מחירים — שכבת מודיעין שלמה על כל מה שהמתחרים עושים בחוץ.',
+    featSub: 'לא עוד טבלת מחירים - שכבת מודיעין שלמה על כל מה שהמתחרים עושים בחוץ.',
     features: [
       { h: 'מעקב מחירים חי', p: 'כל חבילה אצל כל מתחרה. שינוי מסומן אדום (רע לנו) / ירוק (טוב לנו) ונשלח להתראה.' },
       { h: 'ניטור קמפיינים', p: 'צילום יומי של עמודי הבית וה-e-stores. רואים מתי כל מתחרה החליף באנר ומה הוא דוחף.' },
-      { h: 'הגנת נדידה ו-eSIM', p: 'למעלה מ-30 ספקי eSIM גלובליים על מאות מדינות — בדיוק היכן שהכנסות הנדידה נשחקות.' },
-      { h: 'התראות בזמן אמת', p: 'וואטסאפ / טלגרם / מייל / Web Push. דדופ חכם — בלי ספאם, רק אירועים אמיתיים.' },
-      { h: 'מכונת זמן', p: 'בחר מתחרה ותאריך — וראה איך נראה האתר, החבילות והמחירים שלו באותו יום.' },
-      { h: 'ניתוח AI', p: 'צ\'אט חכם, מטריצת מיצוב תחרותי, "מי זז הכי הרבה" ומגמות מחיר — לא רק נתון גולמי.' },
+      { h: 'הגנת נדידה ו-eSIM', p: '38 ספקי eSIM גלובליים על מאות מדינות - בדיוק היכן שהכנסות הנדידה נשחקות.' },
+      { h: 'התראות בזמן אמת', p: 'וואטסאפ / טלגרם / מייל / Web Push. דדופ חכם - בלי ספאם, רק אירועים אמיתיים.' },
+      { h: 'מכונת זמן', p: 'בחר מתחרה ותאריך - וראה איך נראה האתר, החבילות והמחירים שלו באותו יום.' },
+      { h: 'ניתוח AI', p: 'צ\'אט חכם, מטריצת מיצוב תחרותי, "מי זז הכי הרבה" ומגמות מחיר - לא רק נתון גולמי.' },
     ],
     spotKicker: 'הזווית האסטרטגית',
-    spotH: 'הכנסות הנדידה שלך נשחקות — ואתה לא רואה את מי שאוכל אותן',
+    spotH: 'הכנסות הנדידה שלך נשחקות - ואתה לא רואה את מי שאוכל אותן',
     spotP:
-      'ספקי ה-eSIM הגלובליים (Airalo, Holafly, Saily, Orbit ועוד) מתמחרים מתחת לחבילות הנדידה שלך, מדינה אחר מדינה. MOCA הוא המקום היחיד שבו תראה את התמחור שלהם מול שלך — בזמן אמת.',
+      'ספקי ה-eSIM הגלובליים (Airalo, Holafly, Saily, Orbit ועוד) מתמחרים מתחת לחבילות הנדידה שלך, מדינה אחר מדינה. MOCA הוא המקום היחיד שבו תראה את התמחור שלהם מול שלך - בזמן אמת.',
     spotStat: 'ספקי eSIM גלובליים',
     spotStatSub: 'על מאות מדינות, מנוטרים אוטומטית',
     cmpKicker: 'למה MOCA ולא Excel או חברת מחקר',
@@ -99,53 +99,55 @@ const COPY = {
     pilotBadge: 'הצעת הפיילוט',
     pilotH: 'שבוע. חיבור מלא למערכת. אפס סיכון.',
     pilotP:
-      'אנחנו מחברים מעקב על כל הספקים בשוק, ושולחים לצוות התראות בזמן אמת לוואטסאפ. אם זה לא חוסך לכם ישיבת בוקר אחת לפחות — אין לכם צורך במערכת!',
+      'אנחנו מחברים מעקב על כל הספקים בשוק, ושולחים לצוות התראות בזמן אמת לוואטסאפ. אם זה לא חוסך לכם ישיבת בוקר אחת לפחות - אין לכם צורך במערכת!',
     pilotCta: 'קביעת פגישה ←',
-    pilotNote: 'בוחרים שעה פנויה — ישר ביומן, אישור מיידי',
+    pilotNote: 'בוחרים שעה פנויה - ישר ביומן, אישור מיידי',
     footer: 'MOCA · Mobile Operators Competitor Analysis · מודיעין תחרותי לשוק הסלולר הישראלי',
+    esimLinks: 'מדריכי eSIM לחו"ל לפי יעד',
+    esimLive: 'השוואת eSIM חיה',
   },
   en: {
     dir: 'ltr',
-    title: 'MOCA — Competitive Intelligence for Mobile Operators',
+    title: 'MOCA - Competitive Intelligence for Mobile Operators',
     toLang: 'עברית',
     toLangAria: 'עבור לעברית',
     signIn: 'Sign in',
     kicker: 'Mobile Operators · Competitor Analysis',
-    h1a: 'Every competitive move in the mobile market —',
+    h1a: 'Every competitive move in the mobile market -',
     h1b: 'on your screen, before it reaches you.',
     heroSub:
-      'A competitive-intelligence platform that automatically tracks the entire market — twice a day — and alerts you the moment a competitor moves a price, swaps a campaign, or launches a plan.',
-    heroAlt: 'The MOCA platform — a live wall of competitors’ marketing banners',
+      'A competitive-intelligence platform that automatically tracks the entire market - twice a day - and alerts you the moment a competitor moves a price, swaps a campaign, or launches a plan.',
+    heroAlt: 'The MOCA platform - a live wall of competitors’ marketing banners',
     stats: [
       { n: '10', l: 'mobile operators' },
-      { n: '27', l: 'global eSIM providers' },
+      { n: '38', l: 'global eSIM providers' },
       { n: '2×', l: 'full scans per day' },
       { n: 'minutes', l: 'from event to alert' },
     ],
     painKicker: 'The status quo',
-    painH: 'Competitive intelligence built on manual work — slow, partial, expensive',
+    painH: 'Competitive intelligence built on manual work - slow, partial, expensive',
     painSub: 'In a market where the price war runs in real time, decisions get made on yesterday’s snapshot.',
     pains: [
-      { t: 'Reaction time', p: 'A product manager checks competitor sites by hand each morning. By the time someone spots a price cut, hours — or a day — have passed.' },
-      { t: 'Partial coverage', p: 'You track prices — but who’s watching the creative, the banners, the global eSIMs, and the resellers?' },
+      { t: 'Reaction time', p: 'A product manager checks competitor sites by hand each morning. By the time someone spots a price cut, hours - or a day - have passed.' },
+      { t: 'Partial coverage', p: 'You track prices - but who’s watching the creative, the banners, the global eSIMs, and the resellers?' },
       { t: 'No history', p: '“What was Cellcom advertising three weeks ago?” Nobody knows. No archive, no trends.' },
-      { t: 'Research cost', p: 'An outside research firm sends a monthly report — already stale the moment it lands.' },
+      { t: 'Research cost', p: 'An outside research firm sends a monthly report - already stale the moment it lands.' },
     ],
     featKicker: 'What MOCA does',
-    featH: 'Complete intelligence — automated, in real time',
-    featSub: 'Not one more price sheet — a full intelligence layer over everything your competitors do in the open.',
+    featH: 'Complete intelligence - automated, in real time',
+    featSub: 'Not one more price sheet - a full intelligence layer over everything your competitors do in the open.',
     features: [
       { h: 'Live price tracking', p: 'Every plan from every competitor. Each change flagged red (bad for you) or green (good for you) and pushed to an alert.' },
-      { h: 'Campaign monitoring', p: 'Daily screenshots of every homepage and e-store. See exactly when a competitor swaps a banner — and what they’re pushing.' },
-      { h: 'Roaming & eSIM defense', p: 'Over 30 global eSIM providers across hundreds of countries — exactly where your roaming revenue is being eroded.' },
-      { h: 'Real-time alerts', p: 'WhatsApp / Telegram / email / web push. Smart dedup — no spam, only the events that matter.' },
-      { h: 'Time machine', p: 'Pick a competitor and a date — and see exactly how their site, plans, and prices looked that day.' },
-      { h: 'AI analysis', p: 'A smart chat, a competitive-positioning matrix, a “who moved most” view, and price trends — not just raw data.' },
+      { h: 'Campaign monitoring', p: 'Daily screenshots of every homepage and e-store. See exactly when a competitor swaps a banner - and what they’re pushing.' },
+      { h: 'Roaming & eSIM defense', p: '38 global eSIM providers across hundreds of countries - exactly where your roaming revenue is being eroded.' },
+      { h: 'Real-time alerts', p: 'WhatsApp / Telegram / email / web push. Smart dedup - no spam, only the events that matter.' },
+      { h: 'Time machine', p: 'Pick a competitor and a date - and see exactly how their site, plans, and prices looked that day.' },
+      { h: 'AI analysis', p: 'A smart chat, a competitive-positioning matrix, a “who moved most” view, and price trends - not just raw data.' },
     ],
     spotKicker: 'The strategic angle',
-    spotH: 'Global eSIMs are undercutting your roaming — and you’re flying blind',
+    spotH: 'Global eSIMs are undercutting your roaming - and you’re flying blind',
     spotP:
-      'Global eSIM providers (Airalo, Holafly, Saily, Orbit, and more) price below your roaming bundles, country by country. MOCA is the one place you’ll see their pricing against yours — in real time.',
+      'Global eSIM providers (Airalo, Holafly, Saily, Orbit, and more) price below your roaming bundles, country by country. MOCA is the one place you’ll see their pricing against yours - in real time.',
     spotStat: 'global eSIM providers',
     spotStatSub: 'across hundreds of countries, monitored automatically',
     cmpKicker: 'Why MOCA, not Excel or a research firm',
@@ -161,10 +163,12 @@ const COPY = {
     pilotBadge: 'The pilot offer',
     pilotH: 'One week. Full access. Zero risk.',
     pilotP:
-      'We connect tracking across every provider in the market and send your team real-time alerts on WhatsApp. If it doesn’t save you at least one morning meeting — you don’t need the system.',
+      'We connect tracking across every provider in the market and send your team real-time alerts on WhatsApp. If it doesn’t save you at least one morning meeting - you don’t need the system.',
     pilotCta: 'Book a meeting →',
-    pilotNote: 'Pick an open slot — straight into the calendar, instant confirmation',
+    pilotNote: 'Pick an open slot - straight into the calendar, instant confirmation',
     footer: 'MOCA · Mobile Operators Competitor Analysis · Competitive intelligence for the Israeli mobile market',
+    esimLinks: 'eSIM guides by destination',
+    esimLive: 'Live eSIM comparison',
   },
 }
 
@@ -331,7 +335,7 @@ export default function LandingPage({ forceLang }) {
               </p>
             </div>
             <div className="text-center">
-              <div className="font-display font-black leading-none text-[64px]" style={{ color: HILITE }}>27</div>
+              <div className="font-display font-black leading-none text-[64px]" style={{ color: HILITE }}>38</div>
               <div className="mt-2 text-base text-[#e8d5bc]">{t.spotStat}<br />{t.spotStatSub}</div>
             </div>
           </div>
@@ -388,6 +392,12 @@ export default function LandingPage({ forceLang }) {
 
       {/* ── Footer ── */}
       <footer className="py-7 text-center text-moca-muted text-[13px]">
+        {/* Homepage → static eSIM cluster: the strongest internal crawl path on the site */}
+        <div className="pb-2">
+          <a href="/esim/destinations/" className="underline">{t.esimLinks}</a>
+          {' · '}
+          <a href="/esim-deals" className="underline">{t.esimLive}</a>
+        </div>
         {t.footer}
       </footer>
     </div>

@@ -15,11 +15,24 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'icons/*.png', 'logos/*.png'],
       manifest: false, // public/manifest.json is served manually
       workbox: {
+        // Web-push display + click handlers (public/push-sw.js) — the generated
+        // SW has none, so pushes from Flask would be received and dropped.
+        importScripts: ['push-sw.js'],
         globPatterns: ['**/*.{js,css,html,svg}'],
+        // Returning visitors carry this SW, whose default navigateFallback serves
+        // the precached SPA index.html for ANY navigation - which 404s the static
+        // prerendered /esim/<dest>/ pages (no SPA route) and would swallow /go/
+        // redirects. Let those hit the network. (/esim-deals starts with "/esim-",
+        // not "/esim/", so it deliberately stays on the SPA fallback.)
+        // /privacy + /terms: bare /privacy happens to survive via the precache
+        // clean-URLs match (→ privacy.html), but /privacy?lang=en does NOT (the
+        // query breaks the precache key match) and fell into the SPA 404 - so
+        // deny both entirely and let the Netlify redirect serve the static page.
+        navigateFallbackDenylist: [/^\/esim\//, /^\/go\//, /^\/privacy/, /^\/terms/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
-            urlPattern: /\/api\/(plans|abroad-plans|global-plans|content-plans|changes|abroad-changes|banners|store-banners|news)/,
+            urlPattern: /\/api\/(plans|abroad-plans|global-plans|content-plans|changes|abroad-changes|banners|store-banners|global-banners|news)/,
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'api-data-cache',

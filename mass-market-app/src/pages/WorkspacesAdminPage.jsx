@@ -45,6 +45,7 @@ const FLAG_DEFINITIONS = [
   { key: 'hide_domestic',          label: 'הסתר טאב סלולר',       en: 'Hide domestic tab' },
   { key: 'hide_abroad',            label: 'הסתר טאב חו"ל',        en: 'Hide roaming tab' },
   { key: 'hide_global',            label: 'הסתר טאב גלובלי',      en: 'Hide global tab' },
+  { key: 'hide_global_banners',    label: 'הסתר באנרים גלובליים', en: 'Hide global banners' },
   { key: 'hide_usa',               label: 'הסתר טאב ארה"ב',       en: 'Hide USA tab' },
   { key: 'hide_resellers',         label: 'הסתר טאב משווקים',     en: 'Hide resellers tab' },
   { key: 'hide_content',           label: 'הסתר טאב תוכן',        en: 'Hide content tab' },
@@ -63,7 +64,7 @@ const FLAG_DEFINITIONS = [
 ]
 
 const MVNO_OPTIONS = [
-  { id: '',          label: '— ללא —', en: '— None —' },
+  { id: '',          label: '- ללא -', en: '- None -' },
   { id: 'partner',   label: 'פרטנר' },
   { id: 'pelephone', label: 'פלאפון' },
   { id: 'hotmobile', label: 'הוט מובייל' },
@@ -186,7 +187,7 @@ function UsersSection({ workspaceId, onChange }) {
                   <td className="py-1.5 whitespace-nowrap" dir="ltr">{u.email}</td>
                   <td className="py-1.5">{u.role}</td>
                   <td className="py-1.5 text-xs text-gray-500 whitespace-nowrap">
-                    {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString('he-IL') : '—'}
+                    {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString('he-IL') : '-'}
                   </td>
                   <td className="py-1.5 text-left">
                     <button onClick={() => unassign(u.id)}
@@ -303,7 +304,7 @@ function WorkspaceRow({ ws, onChange }) {
     try {
       const res = await api.triggerDigest(ws.id)
       if (res.status === 'skipped') {
-        setDigestResult({ ok: true, msg: tt(`לא נשלח — ${res.reason || 'אין שינויים'}`, `Not sent — ${res.reason || 'no changes'}`) })
+        setDigestResult({ ok: true, msg: tt(`לא נשלח - ${res.reason || 'אין שינויים'}`, `Not sent - ${res.reason || 'no changes'}`) })
       } else {
         setDigestResult({ ok: true, msg: tt(`נשלח ל-${res.emails ?? 0} נמענים · ${res.changes ?? 0} שינויים`, `Sent to ${res.emails ?? 0} recipients · ${res.changes ?? 0} changes`) })
       }
@@ -413,7 +414,7 @@ function WorkspaceRow({ ws, onChange }) {
                   {MVNO_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.en ? tt(o.label, o.en) : o.label}</option>)}
                 </select>
               ) : (
-                <strong>{(() => { const o = MVNO_OPTIONS.find(o => o.id === (ws.mvno_carrier || '')); return o ? (o.en ? tt(o.label, o.en) : o.label) : (ws.mvno_carrier || '—') })()}</strong>
+                <strong>{(() => { const o = MVNO_OPTIONS.find(o => o.id === (ws.mvno_carrier || '')); return o ? (o.en ? tt(o.label, o.en) : o.label) : (ws.mvno_carrier || '-') })()}</strong>
               )}
             </span>
             <span>{tt('משתמשים:', 'Users:')} <strong>{ws.user_count}</strong></span>
@@ -532,8 +533,8 @@ function WorkspaceRow({ ws, onChange }) {
           <div className="flex gap-2 items-center flex-wrap mb-2">
             <select value={inviteRole} onChange={e => { setInviteRole(e.target.value); setInviteLink(null); setBulkResults(null) }}
               className="px-2 py-1.5 text-sm border border-moca-border rounded">
-              <option value="viewer">{tt('viewer — צופה', 'viewer')}</option>
-              <option value="admin">{tt('admin — מנהל', 'admin')}</option>
+              <option value="viewer">{tt('viewer - צופה', 'viewer')}</option>
+              <option value="admin">{tt('admin - מנהל', 'admin')}</option>
             </select>
             {!bulkMode ? (
               <Button onClick={generateInvite} disabled={inviting} variant="primary" size="sm">
@@ -551,7 +552,7 @@ function WorkspaceRow({ ws, onChange }) {
               <textarea
                 value={bulkEmails}
                 onChange={e => setBulkEmails(e.target.value)}
-                placeholder={tt("הדבק מיילים — אחד בכל שורה, מופרדים בפסיק או ברווח\nname1@partner.co.il\nname2@partner.co.il", "Paste emails — one per line, or comma/space separated\nname1@partner.co.il\nname2@partner.co.il")}
+                placeholder={tt("הדבק מיילים - אחד בכל שורה, מופרדים בפסיק או ברווח\nname1@partner.co.il\nname2@partner.co.il", "Paste emails - one per line, or comma/space separated\nname1@partner.co.il\nname2@partner.co.il")}
                 rows={5}
                 dir="ltr"
                 className="w-full px-2 py-1.5 text-xs border border-moca-border rounded bg-white font-mono"
@@ -677,7 +678,7 @@ function WorkspaceRow({ ws, onChange }) {
           </label>
           <div className="col-span-2 pt-2 border-t border-moca-border/30">
             <p className="text-sm font-medium text-gray-700 mb-2">{tt('ספקים גלויים (ריק = כולם)', 'Visible carriers (empty = all)')}</p>
-            <p className="text-xs text-gray-500 mb-2">{tt('אם נבחר לפחות ספק אחד — הworkspace יראה רק אותם.', 'If at least one carrier is selected, the workspace will see only those.')}</p>
+            <p className="text-xs text-gray-500 mb-2">{tt('אם נבחר לפחות ספק אחד - הworkspace יראה רק אותם.', 'If at least one carrier is selected, the workspace will see only those.')}</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {DOMESTIC_CARRIERS.map(({ id, label }) => (
                 <label key={id} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -717,7 +718,7 @@ function WorkspaceRow({ ws, onChange }) {
                 </select>
               </label>
             </div>
-            <p className="text-xs text-gray-500 mb-2">{tt('בחירת מצב תצוגה מסמנת את התיבות אוטומטית. אפשר גם לכוונן ידנית - זה יעבור ל"מותאם אישית".', 'Selecting a display mode ticks the boxes automatically. You can also fine-tune manually — it switches to "Custom".')}</p>
+            <p className="text-xs text-gray-500 mb-2">{tt('בחירת מצב תצוגה מסמנת את התיבות אוטומטית. אפשר גם לכוונן ידנית - זה יעבור ל"מותאם אישית".', 'Selecting a display mode ticks the boxes automatically. You can also fine-tune manually - it switches to "Custom".')}</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {FLAG_DEFINITIONS.map(({ key, label, en }) => (
                 <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -775,7 +776,7 @@ function StatsBar({ list, recentEvents }) {
             {recentEvents.map(e => (
               <div key={e.id} className="flex items-center gap-3 text-xs text-gray-600">
                 <span className="text-gray-400 whitespace-nowrap">
-                  {e.created_at ? new Date(e.created_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
+                  {e.created_at ? new Date(e.created_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }) : '-'}
                 </span>
                 <span className="font-medium">{e.action}</span>
                 <span className="truncate text-gray-400">{e.actor_email || ''}</span>

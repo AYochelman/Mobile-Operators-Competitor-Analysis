@@ -85,7 +85,7 @@ export default function AuditLogPage() {
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="mb-5 flex items-center justify-between gap-4 flex-wrap">
-        <p className="text-sm text-gray-500">{tt('פעולות מערכת — 200 אחרונות', 'System actions — last 200')}</p>
+        <p className="text-sm text-gray-500">{tt('פעולות מערכת - 200 אחרונות', 'System actions - last 200')}</p>
         <div className="flex items-center gap-2">
           {uniqueWorkspaces.length > 0 && (
             <select
@@ -131,19 +131,19 @@ export default function AuditLogPage() {
                     <td className="py-2 px-4 text-xs text-gray-500 whitespace-nowrap">
                       {e.created_at
                         ? new Date(e.created_at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })
-                        : '—'}
+                        : '-'}
                     </td>
                     <td className="py-2 px-4">
                       <ActionBadge action={e.action} />
                     </td>
                     <td className="py-2 px-4 text-xs text-gray-700 max-w-[180px] truncate">
-                      {e.actor_email || '—'}
+                      {e.actor_email || '-'}
                     </td>
                     <td className="py-2 px-4 text-xs text-gray-700 max-w-[180px] truncate">
-                      {e.target_email || '—'}
+                      {e.target_email || '-'}
                     </td>
                     <td className="py-2 px-4 text-xs text-gray-500 max-w-[220px] truncate">
-                      {e.details || '—'}
+                      {e.details || '-'}
                     </td>
                   </tr>
                 ))}

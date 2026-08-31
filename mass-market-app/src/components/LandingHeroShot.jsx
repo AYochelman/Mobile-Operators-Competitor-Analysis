@@ -12,7 +12,7 @@ import bannersWall from '../assets/banners-wall.webp'
 const REST = 'rotateY(-13deg) rotateX(8deg)'
 const MAX = 20 // deg — strengthened a touch per user; still legible
 
-export default function LandingHeroShot({ alt = 'מערכת MOCA — קיר הבאנרים של המתחרים בזמן אמת' }) {
+export default function LandingHeroShot({ alt = 'מערכת MOCA - קיר הבאנרים של המתחרים בזמן אמת' }) {
   const stageRef = useRef(null)
   const frameRef = useRef(null)
 

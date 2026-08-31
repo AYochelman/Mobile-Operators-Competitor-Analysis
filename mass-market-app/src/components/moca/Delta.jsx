@@ -22,13 +22,18 @@ export default function Delta({ value, size = 'sm', suffix = '₪' }) {
           color: 'var(--color-moca-muted)',
         }}
       >
-        —
+        -
       </span>
     )
   }
 
   const up = value > 0
-  const color = up ? 'var(--color-moca-up)' : 'var(--color-moca-down)'
+  // Filled tint pill: soft background from the up/down family + a darker text
+  // shade from the same family. Far more legible at a glance than bare colored
+  // text — a competitor's price move reads instantly. Semantic unchanged
+  // (up = warm red = bad for us, down = green = good for us).
+  const color = up ? '#9a3320' : '#3f6c34'
+  const bg = up ? 'rgba(180, 71, 45, 0.12)' : 'rgba(74, 124, 63, 0.13)'
   const arrow = up ? '▲' : '▼'
   const sign = up ? '+' : ''
 
@@ -38,10 +43,13 @@ export default function Delta({ value, size = 'sm', suffix = '₪' }) {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 3,
-        fontSize: size === 'sm' ? 11 : 13,
+        gap: 4,
+        fontSize: size === 'sm' ? 11 : 12.5,
         fontWeight: 700,
         color,
+        background: bg,
+        padding: size === 'sm' ? '2px 8px' : '3px 10px',
+        borderRadius: 999,
         direction: 'ltr',
       }}
     >

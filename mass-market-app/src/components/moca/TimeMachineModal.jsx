@@ -1,9 +1,22 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { api, API_BASE } from '../../lib/api'
+import { api } from '../../lib/api'
 import { useLang } from '../../hooks/useLanguage'
+import { useApiImage } from '../../hooks/useApiImage'
+
+// Blob-fetched (useApiImage) so the ngrok interstitial can't eat the <img>.
+function ArchiveShotImg({ url, label }) {
+  const { src } = useApiImage(url)
+  if (!src) return null
+  return (
+    <img
+      src={src}
+      alt={label}
+      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+    />
+  )
+}
 import { DOMESTIC_LABELS, GLOBAL_LABELS } from '../../data/carrierLabels'
-import { getCarrierColor } from './carrierMeta'
 import CarrierChip from './CarrierChip'
 
 /**
@@ -48,7 +61,7 @@ function PlanRow({ plan, isContent }) {
             textOverflow: 'ellipsis',
           }}
         >
-          {plan.plan_name || plan.service || '—'}
+          {plan.plan_name || plan.service || '-'}
         </div>
         {!isContent && (plan.data_gb != null || plan.minutes || plan.days) && (
           <div style={{ fontSize: 11, color: 'var(--color-moca-muted)', marginTop: 2 }}>
@@ -70,7 +83,7 @@ function PlanRow({ plan, isContent }) {
           textAlign: 'left',
         }}
       >
-        {plan.price != null ? `${plan.price}${plan.currency && plan.currency !== 'ILS' ? plan.currency : '₪'}` : '—'}
+        {plan.price != null ? `${plan.price}${plan.currency && plan.currency !== 'ILS' ? plan.currency : '₪'}` : '-'}
       </div>
     </div>
   )
@@ -93,12 +106,7 @@ function ArchiveBannerPreview({ archiveDate, url, label }) {
           border: '1px solid var(--color-moca-border)',
         }}
       >
-        <img
-          src={`${API_BASE}${url}`}
-          alt={label}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          loading="lazy"
-        />
+        <ArchiveShotImg url={url} label={label} />
       </div>
     </div>
   )

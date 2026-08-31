@@ -115,7 +115,7 @@ export default function WorkspaceUsersPage() {
                       }`}>{u.role}</span>
                     </td>
                     <td className="py-2 text-xs text-gray-500 whitespace-nowrap">
-                      {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString('he-IL') : '—'}
+                      {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString('he-IL') : '-'}
                     </td>
                     <td className="py-2 text-left">
                       <button onClick={() => unassign(u.id)}

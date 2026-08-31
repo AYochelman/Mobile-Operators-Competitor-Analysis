@@ -16,6 +16,13 @@ export const PROVIDER_LOGOS = {
   // global eSIM providers
   tuki:             '/logos/tuki-icon.png', // square icon (tuki.png is a wide wordmark)
   terminalesim:     '/logos/terminalesim.png',
+  gigsky:           '/logos/gigsky.png', // square GS monogram icon
+  esimgenius:       '/logos/esimgenius.png',
+  nisim:            '/logos/nisim.png',
+  esimax:           '/logos/esimax.png', // square M monogram icon
+  venterrasim:      '/logos/venterrasim.png',
+  simzol:           '/logos/simzol-icon.png', // globe mark (simzol.png is a wide wordmark)
+
   airalo:           '/logos/airalo.png',
   airalo_local:     '/logos/airalo.png',
   airalo_regional:  '/logos/airalo.png',
@@ -31,7 +38,7 @@ export const PROVIDER_LOGOS = {
   voye:             '/logos/voye.png',
   yesim:            '/logos/yesim.png',
   nomad:            '/logos/nomad.png',
-  ubigi:            '/logos/ubigi.png',
+  ubigi:            '/logos/ubigi.svg',
   alosim:           '/logos/alosim.png',
   orbit:            '/logos/orbit.png',
   travelsim:        '/logos/travelsim.png',
@@ -44,6 +51,7 @@ export const PROVIDER_LOGOS = {
   breez:            '/logos/breez.png',
   bytesim:          '/logos/bytesim.png',
   besim:            '/logos/besim.png',
+  bnesim:           '/logos/bnesim.png',
   seven_g:          '/logos/seven_g.png',
   bestconnect:      '/logos/bestconnect.png',
   esimplus:         '/logos/esimplus.png',

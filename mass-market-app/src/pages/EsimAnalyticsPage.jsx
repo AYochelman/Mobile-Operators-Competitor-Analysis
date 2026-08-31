@@ -70,7 +70,7 @@ export default function EsimAnalyticsPage() {
 
   useEffect(() => { load() }, [load])
 
-  const t = data?.totals || { views: 0, sessions: 0, picks: 0, clicks: 0, conversion: 0 }
+  const t = data?.totals || { views: 0, sessions: 0, picks: 0, clicks: 0, conversion: 0, bot_clicks: 0 }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
@@ -92,12 +92,13 @@ export default function EsimAnalyticsPage() {
 
       {!loading && data && (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
             <StatCard label={tt('צפיות בעמוד', 'Page views')} value={nf(t.views)} />
             <StatCard label={tt('סשנים', 'Sessions')} value={nf(t.sessions)} hint={tt('דפדפנים ייחודיים', 'Unique browsers')} />
             <StatCard label={tt('בחירות יעד', 'Destination picks')} value={nf(t.picks)} />
             <StatCard label={tt('קליקים על דילים', 'Deal clicks')} value={nf(t.clicks)} accent="var(--color-moca-hot)" />
             <StatCard label={tt('המרה', 'Conversion')} value={`${t.conversion}%`} hint={tt('קליקים / צפיות', 'Clicks / views')} accent="#4a7c3f" />
+            <StatCard label={tt('בוטים שסוננו', 'Bots filtered')} value={nf(t.bot_clicks)} hint={tt('קליקי זחלנים, לא נספרים', 'Crawler clicks, excluded')} accent="#a04747" />
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
@@ -145,7 +146,7 @@ export default function EsimAnalyticsPage() {
             title={tt('לפי קמפיין (פוסט / סרטון)', 'By campaign (post / video)')} head={[tt('קמפיין', 'Campaign'), tt('צפיות', 'Views'), tt('קליקים', 'Clicks'), tt('המרה', 'Conversion')]}
             empty={tt('אין עדיין תנועה מתויגת. הוסיפו ?campaign=… לקישורים בפוסטים כדי לראות איזה תוכן עבד.', 'No tagged traffic yet. Add ?campaign=… to your post links to see which content performed.')}
             rows={(data.by_campaign || []).map(r => {
-              const cv = r.views ? `${Math.round((r.clicks / r.views) * 1000) / 10}%` : '—'
+              const cv = r.views ? `${Math.round((r.clicks / r.views) * 1000) / 10}%` : '-'
               return (
                 <tr key={r.campaign} className="bg-gray-50">
                   <td className="px-3 py-2 rounded-r-lg font-medium"><bdi>{r.campaign}</bdi></td>

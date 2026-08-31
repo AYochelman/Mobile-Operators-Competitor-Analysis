@@ -73,7 +73,7 @@ export default function AnnotationsModal({ open, onClose, carrier, planName, pla
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={`${tt('הערות צוות', 'Team notes')} — ${planLabel || planName}`} maxWidth="max-w-lg">
+    <Modal open={open} onClose={onClose} title={`${tt('הערות צוות', 'Team notes')} - ${planLabel || planName}`} maxWidth="max-w-lg">
       <div className="text-right space-y-3">
         {loading && (
           <p className="text-xs text-gray-400 text-center py-4">{tt('טוען הערות...', 'Loading notes...')}</p>

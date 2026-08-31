@@ -41,13 +41,14 @@ const EVENT_LABELS_EN = {
   export:            'Excel export',
 }
 
-// pathname → Hebrew page name (reuse the Topbar route map)
+// pathname → page name (reuse the Topbar route map), resolved per active UI language
 const PATH_LABELS = ROUTE_META.reduce((m, r) => { m[r.match] = r.title; return m }, {})
-function pageLabel(path) {
-  if (!path) return '—'
-  if (PATH_LABELS[path]) return PATH_LABELS[path]
+function pageLabel(path, lang = 'he') {
+  if (!path) return '-'
+  const pick = (title) => (title ? (title[lang] != null ? title[lang] : title.he) : null)
+  if (PATH_LABELS[path]) return pick(PATH_LABELS[path])
   const base = path.split('?')[0].split('#')[0]
-  return PATH_LABELS[base] || path
+  return pick(PATH_LABELS[base]) || path
 }
 
 function detailSummary(details, tt = (he) => he) {
@@ -73,7 +74,7 @@ function fmtNum(n) {
 }
 
 function fmtDateTime(iso) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   try {
     return new Date(iso).toLocaleString('he-IL', {
       day: '2-digit', month: '2-digit', year: '2-digit',
@@ -83,7 +84,7 @@ function fmtDateTime(iso) {
 }
 
 function fmtDate(iso, locale = 'he-IL') {
-  if (!iso) return '—'
+  if (!iso) return '-'
   try {
     return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: '2-digit' })
   } catch { return iso }
@@ -269,7 +270,7 @@ export default function UserActivityPage() {
   const workspaceRollup = useMemo(() => {
     const map = new Map()
     for (const u of users) {
-      const name = u.workspace_name || tt('— ללא Workspace', '— No workspace')
+      const name = u.workspace_name || tt('- ללא Workspace', '- No workspace')
       const g = map.get(name) || { name, users: 0, active: 0, logins: 0, page_views: 0, actions: 0 }
       g.users += 1
       if (u.last_seen) g.active += 1
@@ -308,7 +309,7 @@ export default function UserActivityPage() {
             {tt('ניהול משתמשים', 'User management')}
           </Link>
           <p className="text-sm" style={{ color: 'var(--color-moca-sub)' }}>
-            {tt('מעקב פעילות לקוחות — התחברויות, עמודים שנצפו ופעולות. מנהלי-על אינם נספרים.', 'Client activity tracking — logins, pages viewed and actions. Super admins are not counted.')}
+            {tt('מעקב פעילות לקוחות - התחברויות, עמודים שנצפו ופעולות. מנהלי-על אינם נספרים.', 'Client activity tracking - logins, pages viewed and actions. Super admins are not counted.')}
           </p>
         </div>
         <div className="flex items-center gap-1.5">
@@ -502,7 +503,7 @@ export default function UserActivityPage() {
               {summary.top_pages.map((p) => (
                 <tr key={p.path} className="border-t border-moca-border first:border-t-0">
                   <td className="px-4 py-2.5 text-start" style={{ color: 'var(--color-moca-text)' }}>
-                    {pageLabel(p.path)}
+                    {pageLabel(p.path, lang)}
                   </td>
                   <td className="px-4 py-2.5 text-start text-xs" style={{ color: 'var(--color-moca-muted)' }}>
                     {p.path}
@@ -557,9 +558,9 @@ export default function UserActivityPage() {
                   >
                     <td className="px-3 py-2 text-start" style={{ color: 'var(--color-moca-text)' }}>{u.email}</td>
                     <td className="px-3 py-2 text-start"><RoleBadge role={u.role} /></td>
-                    <td className="px-3 py-2 text-start text-xs" style={{ color: 'var(--color-moca-sub)' }}>{u.workspace_name || '—'}</td>
+                    <td className="px-3 py-2 text-start text-xs" style={{ color: 'var(--color-moca-sub)' }}>{u.workspace_name || '-'}</td>
                     <td className="px-3 py-2 text-end text-xs tnum" style={{ color: 'var(--color-moca-sub)' }}>{fmtDate(u.created_at, dateLocale)}</td>
-                    <td className="px-3 py-2 text-end text-xs tnum" style={{ color: 'var(--color-moca-text)' }}>{u.last_sign_in_at ? fmtDateTime(u.last_sign_in_at) : '—'}</td>
+                    <td className="px-3 py-2 text-end text-xs tnum" style={{ color: 'var(--color-moca-text)' }}>{u.last_sign_in_at ? fmtDateTime(u.last_sign_in_at) : '-'}</td>
                     <td className="px-3 py-2 text-end tnum" style={{ color: 'var(--color-moca-text)' }}>{fmtNum(u.logins)}</td>
                     <td className="px-3 py-2 text-end tnum" style={{ color: 'var(--color-moca-text)' }}>{fmtNum(u.page_views)}</td>
                     <td className="px-3 py-2 text-end tnum" style={{ color: 'var(--color-moca-text)' }}>{fmtNum(u.alerts_created)}</td>
@@ -611,7 +612,7 @@ export default function UserActivityPage() {
               ) : (
                 <ul>
                   {events.map((ev) => {
-                    const sub = ev.event_type === 'page_view' ? pageLabel(ev.path) : detailSummary(ev.details, tt)
+                    const sub = ev.event_type === 'page_view' ? pageLabel(ev.path, lang) : detailSummary(ev.details, tt)
                     return (
                       <li key={ev.id} className="flex items-center justify-between gap-3 px-5 py-2.5 border-b border-moca-border last:border-b-0">
                         <div className="min-w-0">

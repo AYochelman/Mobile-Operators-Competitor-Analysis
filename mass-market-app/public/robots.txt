@@ -1,6 +1,10 @@
 User-agent: *
 Allow: /
 
+# Affiliate redirect endpoints - crawler hits pollute the click-attribution log
+# (and can fire tracking-network clicks). No indexable content behind them.
+Disallow: /go/
+
 # Login-gated app areas - no value to index (they redirect to /login)
 Disallow: /login
 Disallow: /reset-password
@@ -31,5 +35,13 @@ Disallow: /preferences
 Disallow: /ai-insights
 Disallow: /social
 Disallow: /notifications
+
+# AI crawlers (GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-User,
+# PerplexityBot, Perplexity-User, Google-Extended, Amazonbot, Applebot-Extended,
+# meta-externalagent, cohere-ai, Bytespider) are intentionally ALLOWED under the
+# "*" policy above - MOCA wants its public comparison pages cited by AI answer
+# engines. Do not add blanket blocks for these user-agents.
+# A machine-readable site summary for LLMs is published at:
+#   https://mocaintel.com/llms.txt
 
 Sitemap: https://mocaintel.com/sitemap.xml

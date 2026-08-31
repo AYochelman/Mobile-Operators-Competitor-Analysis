@@ -1,0 +1,4 @@
+mocaintel.com takedown, 2026-07-13 (employer request).
+This flag makes cloudflared_watchdog.ps1 exit immediately, keeping api.mocaintel.com offline
+even after a reboot (the MOCA-Cloudflared task could not be disabled without elevation).
+Delete this file to re-enable the Cloudflare Tunnel.

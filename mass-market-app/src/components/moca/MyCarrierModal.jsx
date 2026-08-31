@@ -70,7 +70,7 @@ export default function MyCarrierModal({ open, onClose }) {
 
   const handleSave = async () => {
     if (!wsId) {
-      setError(tt('לא נמצא workspace_id — אין workspace זמין לעדכון', 'No workspace_id found — no workspace available to update'))
+      setError(tt('לא נמצא workspace_id - אין workspace זמין לעדכון', 'No workspace_id found - no workspace available to update'))
       return
     }
     setSaving(true)
@@ -157,7 +157,7 @@ export default function MyCarrierModal({ open, onClose }) {
             {workspaces ? (
               workspaces.length === 0 ? (
                 <div style={{ fontSize: 12, color: 'var(--color-moca-sub)', padding: 10, background: 'var(--color-moca-cream)', borderRadius: 8 }}>
-                  {tt('אין workspaces במערכת — צור אחד ב-/admin/workspaces', 'No workspaces in the system — create one at /admin/workspaces')}
+                  {tt('אין workspaces במערכת - צור אחד ב-/admin/workspaces', 'No workspaces in the system - create one at /admin/workspaces')}
                 </div>
               ) : (
                 <select

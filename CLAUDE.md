@@ -7,7 +7,7 @@ Israeli cellular plan comparison system branded **MOCA** (Mobile Operators Compe
 - **Legacy dashboard**: Flask-served HTML at localhost:5000 (templates/index.html)
 - **New React app**: Vite + Tailwind + Supabase Auth at localhost:5173 (mass-market-app/)
 
-Both frontends consume the same Flask REST API. The system scrapes 10 domestic carriers + 27 global eSIM providers twice daily, detects price changes, and sends notifications via Telegram/Email/WhatsApp/Web Push.
+Both frontends consume the same Flask REST API. The system scrapes 10 domestic carriers + 38 global eSIM providers twice daily, detects price changes, and sends notifications via Telegram/Email/WhatsApp/Web Push.
 
 ## Commands
 
@@ -98,117 +98,16 @@ python telegram_resellers.py scrape                 # ingest channels listed in 
 | config.json | All credentials — NOT in git, auto-generates VAPID keys |
 | templates/index.html | Legacy RTL Hebrew dashboard (2,300+ lines, escHtml XSS protection) |
 
-## React App Structure (mass-market-app/src/)
+## React App Structure
 
-### Pages
-
-| Path | Purpose |
-|------|---------|
-| pages/DashboardPage.jsx | Main 8-tab view (domestic/abroad/global/**resellers**/content/banners/history/news) with filters. **Lazy-loaded** since phase 15. `RESELLERS` const lists reseller IDs+labels mapped to underlying carriers. Reads `lockedTab` from `useLocation().pathname` — when on a clean URL like `/plans` or `/banners` the tab navigation hides and `setTab` navigates instead of mutating state. |
-| pages/ComparePage.jsx | Price comparison charts (Recharts) |
-| pages/AlertsPage.jsx | Personal price alerts with DB persistence |
-| pages/SettingsPage.jsx | Admin panel — scrape triggers, user management (adminOnly). "ניהול משתמשים" tab (super_admin) creates users via direct-DB provisioning (`POST /api/users`, no email — see Security) and resets a user's password via `<AdminResetPasswordModal>` → `POST /api/users/<id>/password`. |
-| pages/ExecutiveSummaryPage.jsx | Per-category cards + ₪/GB bar chart + AI narrative, from cached `executive_summaries` (regen 08:05 / `POST /api/executive-summary/refresh`). Metrics from `compute_executive_metrics` (db.py): ₪/GB chart is GB-**weighted** `SUM(price)/SUM(GB)` — a naive `AVG(price/data_gb)` lets a tiny-data plan (e.g. 019's 100MB "חבילת עשר", ~102 ₪/GB) dominate the mean; "המשתלם ביותר" card = `MIN(price/GB)` (best single deal); "האגרסיבי ביותר" shows `—` when there are 0 price drops (no false aggressor) |
-| pages/PositioningPage.jsx | Competitive positioning matrix |
-| pages/ArchivePage.jsx | Historical plan snapshots (content-hash based, via archive.py) |
-| pages/PreferencesPage.jsx | Per-user display preferences |
-| pages/NotificationsPage.jsx | Web Push / notification settings |
-| pages/ResetPasswordPage.jsx | **Public** route `/reset-password` (outside the AppShell auth gate) — the Supabase recovery-link target. Waits for the `PASSWORD_RECOVERY` session, then sets the new password via `supabase.auth.updateUser`. Paired with the "שכחתי סיסמה" flow on LoginPage (`sendPasswordReset` → `resetPasswordForEmail`, redirectTo `/reset-password`). |
-| pages/WorkspaceUsersPage.jsx | Manage users in current workspace (adminOnly) |
-| pages/WorkspaceBrandingPage.jsx | Workspace logo, colors, MVNO theme (adminOnly). Logo accepts a hosted **URL** *or* a **file upload** via the shared `<LogoField>` (`components/LogoField.jsx`, also used by `WorkspacesAdminPage`): the picked file is resized client-side to a 480×160 bounding box and stored **inline as a `data:` URI** in `brand_config.logo_url` (SVGs kept verbatim). No upload endpoint / file-serving — `PATCH /api/workspace/branding` (and the workspace POST/PATCH) store the string as-is, CSP already allows `img-src data:`, and every consumer (`Logo`/`Sidebar`/`Navbar`/preview) is a plain `<img src>`. Keeps the logo in the cloud workspace row (no dependence on local Flask/ngrok). |
-| pages/WorkspacesAdminPage.jsx | Global workspace CRUD (superAdminOnly) |
-| pages/AuditLogPage.jsx | Action audit trail (superAdminOnly) |
-| pages/UsagePage.jsx | Claude API usage analytics (**superAdminOnly**, `/usage` — hidden from client-workspace admins since it reports the owner's global Anthropic spend) — cost/tokens by day/model/endpoint from the `claude_api_usage` table. **Budget panel** (`BudgetPanel`): remaining balance + depletion forecast. Anthropic exposes no balance API, so the budget is user-entered in config.json (`claude_budget_usd`, optional `claude_budget_as_of` baseline — set it after a top-up so old spend doesn't count). `remaining = budget − logged spend` (lifetime, or since `as_of`); burn rate = the selected 7/30/90-day window's daily pace over its *active span* (so a partly-filled window isn't understated). Set/cleared via `POST /api/usage/budget` (`@require_api_key`); the `GET /api/usage/summary` response carries a `budget` block built by `_claude_budget_block()` in app.py. **Official spend** (`OfficialSpend` row): authoritative org-wide spend from Anthropic's **Admin Cost API** (`/v1/organizations/cost_report`), via `GET /api/usage/official-cost?days=N` → `_fetch_anthropic_cost_usd()` (10-min TTL cache, paginated). Needs config.json `anthropic_admin_key` (org Admin key `sk-ant-admin…`; **not available for individual accounts**). GOTCHA: the API's `amount` is in **cents** (lowest currency unit) as a decimal string → divide by 100. This is SPEND, not balance — Anthropic still has no remaining-credit endpoint, so "remaining" always needs the user-set total. |
-| pages/UserActivityPage.jsx | **Super-admin user-activity dashboard** (`/admin/user-activity`, superAdminOnly). Per-client-user login times, pages visited, and actions (alerts / watchlist / saved comparisons), merged from Supabase `auth.users` + the `user_activity` table. **Super-admins are excluded** everywhere (operator's own activity is never recorded or shown). Mirrors `UsagePage` (StatCards + Recharts daily chart + sortable table with row-click drill-down) and links to existing user management (`/settings?tab=users`). Activity is recorded via a best-effort beacon — `POST /api/activity` (`components/RouteTracker.jsx` fires `page_view` on each authed route change; `useAuth` fires `login` on real sign-in, deduped per browser session) — plus server-side hooks in the alert/watchlist/saved-view handlers (`_track_user_action` in app.py). Read endpoints `GET /api/activity/overview` + `GET /api/activity/events` are `@require_api_key_or_super_admin` (so they work with the dev API key locally, like the usage endpoints). |
-
-### Components
-
-| Path | Purpose |
-|------|---------|
-| components/Logo.jsx | MOCA brand logo (bolt + wordmark), sizes: xs/sm/md |
-| components/PlanCard.jsx | Universal plan card with country/apps modals. Uses `<Delta>` from moca/ for price-trend pills |
-| components/ChatPanel.jsx | AI chat (floating button → /api/chat) |
-| components/NewsTab.jsx | Google News RSS per carrier, client-side filter by carrier + date window |
-| components/GlobalSearch.jsx | Cmd+K / Ctrl+K full-app plan search, portal-rendered |
-| components/AnnotationsModal.jsx | Team notes per plan — pinned to (carrier, plan_name) |
-| components/ScrapeProgressPanel.jsx | Live scrape progress indicator (SSE stream) |
-| components/ViewAsBanner.jsx | Super-admin "viewing as workspace X" banner. Rendered inside Layout (above the sidebar+main flex row) — not sticky |
-| components/CarrierAIInsights.jsx | Per-carrier AI summary widget. Used inline in DashboardPage; `/ai-insights` page uses its own feed-style layout |
-| components/MarketMoversWidget.jsx | Biggest price changes since last scrape |
-| components/SparklineMini.jsx | Inline price-history sparkline (Recharts) — API-fetching variant |
-| components/SavedComparesMenu.jsx | Save/load named comparison filter sets |
-| components/SavedViewsMenu.jsx | Save/load named dashboard filter states |
-| components/PriceHistoryModal.jsx | Full price history chart for a single plan |
-| components/OfflineBanner.jsx | Offline detection banner (useOnlineStatus) |
-| components/ChangePasswordModal.jsx | Self-service password change for the logged-in user (profile menu → "שינוי סיסמה"). Verifies the current password (re-auth), then `supabase.auth.updateUser` — no email. Exposed via `changePassword` in useAuth |
-| components/AdminResetPasswordModal.jsx | super_admin sets a new password for any user from SettingsPage "ניהול משתמשים" → `api.adminSetPassword` → `POST /api/users/<id>/password` (direct DB, no email). Generates an unambiguous temp password to hand over |
-
-### MOCA Design System (`components/moca/`)
-
-Shared primitives that drive the new visual language. Import via the barrel: `import { CarrierChip, Delta, Tag, PageHeader, ... } from '../components/moca'`.
-
-| Path | Purpose |
-|------|---------|
-| moca/CarrierChip.jsx | Circular avatar with brand color (from `mvnoBrandColors.js`) + 1-2 letter glyph + optional name. Workspace-themed |
-| moca/Sparkline.jsx | **Pure presentational** SVG sparkline (no API). Pair with `useCarrierPriceTrend` for fetched data |
-| moca/Delta.jsx | +/- pill with ▲/▼ arrows. Positive=red (`--color-moca-up`)=bad-for-us; negative=green (`--color-moca-down`)=good-for-us |
-| moca/Tag.jsx | Compact uppercase status pill — NEW, HOT, PRICE UP, BENCHMARK |
-| moca/PageHeader.jsx | Standard page top — kicker + title + subtitle + actions + tabs. Title is **optional** (omit when Topbar already shows it) |
-| moca/Sidebar.jsx | Universal: desktop sticky aside on RTL start; pass `mobile open onClose` for the slide-in drawer variant |
-| moca/Topbar.jsx | Desktop topbar — kicker + dynamic title from `routeMeta.js` + LIVE pulse + ⌘K search + Time Machine + alerts + profile |
-| moca/TimeMachineModal.jsx | `/api/archive` viewer — carrier dropdown + date picker, renders historical banners + plans for the picked snapshot |
-| moca/CompetitorBoard.jsx | Per-carrier competitive snapshot row — chip + sparkline + min/avg price + delta + "ביחס לשלך". Domestic-tab only |
-| moca/BannerMosaic.jsx | column-count layout for banners (3→2→1 responsive). Wires tiles → drawer state. Per-banner `kind` overrides mosaic-level `source` |
-| moca/BannerTile.jsx | Single banner tile with carrier color dot + freshness pill (היום / אתמול / לפני N ימים) + hover lift |
-| moca/BannerDrawer.jsx | Slide-in detail drawer (480px from RTL start) for a banner — large preview + facts grid + actions |
-| moca/routeMeta.js | Pathname → `{ kicker, title }` map used by Topbar. Add new entries when adding routes |
-| moca/carrierMeta.js | `getCarrierColor(id)` / `getCarrierLetter(id)` / `getCarrierName(id)` for the chip primitives |
-| moca/index.js | Barrel re-export — always import from here for consistency |
-
-### Hooks & Lib
-
-| Path | Purpose |
-|------|---------|
-| hooks/useAuth.jsx | Supabase Auth + dev mode (VITE_DEV_AUTH=true). Exposes user, isAdmin, isSuperAdmin, workspace |
-| hooks/useFeatureFlags.js | Returns workspace.feature_flags (empty obj for super_admin = all features on) |
-| hooks/useHiddenCarrier.js | Per-user hidden carrier list (persisted) |
-| hooks/useScrape.jsx | ScrapeProvider context — SSE progress stream, trigger scrape |
-| hooks/useAnnotationCounts.jsx | Aggregated annotation counts per plan |
-| hooks/useWatchlist.jsx | Per-user watchlist of plan IDs |
-| hooks/useOnlineStatus.js | Navigator online/offline event listener |
-| hooks/useCarrierPriceTrend.js | Aggregate per-carrier price-history series (avg across all plans, daily). Module-scope cache + in-flight coalescing. Used by `<CompetitorBoard>` |
-| lib/api.js | Flask API wrapper with JWT headers |
-| lib/supabase.js | Supabase client (graceful null if unconfigured) |
-
-### Data Files
-
-| Path | Purpose |
-|------|---------|
-| data/carrierLabels.js | **Single source of truth** for carrier ID → display name. Exports `carrierLabel(id)`, `DOMESTIC_LABELS`, `GLOBAL_LABELS`. Mirror in app.py: `_CARRIER_NAMES`. Update both together when adding a carrier. |
-| data/mvnoBrandColors.js | MVNO-specific primary/secondary colors. `getMvnoColors(mvno_carrier)` used by `BrandThemeApplier` in App.jsx to set `--color-moca-bolt` / `--color-moca-dark` CSS vars. |
-| data/globalCountries.js | Country lists for global eSIM providers + getCountriesForPlan() |
-| data/abroadCountries.js | Country lists for domestic abroad plans + getCountriesForAbroadPlan() |
-| data/abroadApps.js | Free app lists (Cellcom 6 apps, Pelephone 12 apps) |
-
-## Multi-Workspace Architecture
-
-The React app supports multiple isolated workspaces (e.g. different MVNO clients). Key concepts:
-
-- **Roles**: `viewer` / `admin` / `super_admin`. `isSuperAdmin` in `useAuth` bypasses all feature flags and workspace restrictions.
-- **Workspace object** (from Supabase): `id`, `name`, `active`, `feature_flags` (JSON), `brand_config` (primary/secondary colors), `mvno_carrier` (links to mvnoBrandColors.js).
-- **Brand theming**: `BrandThemeApplier` in `App.jsx` applies workspace `brand_config` or `mvno_carrier` colors as CSS variables at runtime — no rebuild needed.
-- **Suspended workspaces**: `workspace.active === false` redirects non-super-admin users to `SuspendedPage`.
-- **ViewAsBanner**: Super-admin can impersonate any workspace; `ViewAsBanner` shows a persistent indicator.
-- **feature_flags**: Gate features per workspace via `useFeatureFlags()`. Super-admin always sees all features regardless of flags.
-
-Route protection uses `<ProtectedRoute adminOnly>` or `<ProtectedRoute superAdminOnly>` wrappers in `App.jsx`.
+React app structure, the MOCA design system, multi-workspace architecture, Brand & UI tokens, and key UI component docs live in `mass-market-app/CLAUDE.md` (loads automatically when working on files under `mass-market-app/`).
 
 ## Carriers & Providers
 
 **Domestic (10)**: partner, pelephone, hotmobile, cellcom, mobile019, xphone, wecom, neptucom, golan, rami_levy
 **Abroad**: same carriers, per-country roaming plans (rami_levy_abroad, wecom_abroad, golan_abroad, 019_abroad have dedicated scrapers)
 **E-store carriers (4)**: pelephone, cellcom, partner, hotmobile — screenshots saved as `{carrier}_store.png` in `data/banners/`
-**Global eSIM (27)**: tuki, terminalesim (Terminal eSIM — full per-country + regional/global catalog (~2,500 plans, ~190 countries) via the public WooCommerce Store API `terminalesim.com/wp-json/wc/store/v1/products`, USD priced (minor units → /100); `scrape_terminalesim` pure-HTTP, dedup by (title, gb, days, daily); country codes via `TERMINAL_CODE_TO_HEBREW`, regionals via `TERMINAL_REGION_BASE`; REPLACED GlobaleSIM 2026-07 at the operator's request), airalo, pelephone_global (GlobalSIM), esimo (200 countries + 9 regions + global — pure-HTTP scrape: sitemap slugs + Next.js RSC-embedded packages JSON, dest Hebrew from package `code` via ESIMO_CODE_TO_HEBREW), simtlv (130 countries + regional/global bundles + USA unlimited — `scrape_simtlv_esim` pure-HTTP via the public WooCommerce Store API `wp-json/wc/store/v1/products`; live products identified by strict name patterns, legacy/B2B products skipped; PLUS `scrape_simtlv_global` for the 127-country bundles page), world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (eSIM.io — ~184 countries + 10 regions; site moved to the eSIMo Next.js platform ~2026-04, so `scrape_esimio_destinations`/`scrape_esimio_regions` now reuse `_esimo_extract_packages` to read the RSC-embedded `packages` JSON, pure-HTTP, no Playwright — the old h5 plan-card parsing died in that redesign), sparks (143 countries), voye (157 countries + 5 regions + global), orbit (195 countries + 9 zones, REST API at be.orbitmobile.com), travelsim (global + USA + Middle East zones), seven_g (7G), gomoworld (GoMoWorld), tasim (USA 15/50GB one-time packages — pure HTTP via tasim.us/api/plans?type=one_time; 'subscription' plans skipped, no public page), maya (Maya Mobile, GLOBAL-ONLY catalog: `scrape_maya_global` reads Maya's OFFICIAL affiliate feed `https://assets.maya.net/affiliates/plans.json` (auth-free JSON, shared by their partnerships team 2026-06) - this REPLACED the brittle Angular-SSR `<script id="maya-mobile-state">` scrape that broke twice in the 2026 redesigns. ~8 unlimited "גלובלי"/"גלובלי ושייט" tiers at 3/7/14/30 days; the feed is split by `regionType` into the same globalRegions/cruiseRegions buckets `_ingest` expects, so plan_name keys stay unchanged. Catalog = exactly the 8 stored rows, no stale purge needed), bcengi, esim70, jetpack, breez (Breeze), bytesim, bestconnect (Best Connect), besim, esimplus (eSIM Plus). Source of truth: `GLOBAL_LABELS` in carrierLabels.js (29 keys — airalo_local/airalo_regional are aliases of airalo) mirrored by `_CARRIER_NAMES` in app.py.
+**Global eSIM (38)**: tuki, terminalesim (Terminal eSIM — full per-country + regional/global catalog (~2,500 plans, ~190 countries) via the public WooCommerce Store API `terminalesim.com/wp-json/wc/store/v1/products`, USD priced (minor units → /100); `scrape_terminalesim` pure-HTTP, dedup by (title, gb, days, daily); country codes via `TERMINAL_CODE_TO_HEBREW`, regionals via `TERMINAL_REGION_BASE`; REPLACED GlobaleSIM 2026-07 at the operator's request), airalo, pelephone_global (GlobalSIM), esimo (200 countries + 9 regions + global — pure-HTTP scrape: sitemap slugs + Next.js RSC-embedded packages JSON, dest Hebrew from package `code` via ESIMO_CODE_TO_HEBREW), simtlv (130 countries + regional/global bundles + USA unlimited — `scrape_simtlv_esim` pure-HTTP via the public WooCommerce Store API `wp-json/wc/store/v1/products`; live products identified by strict name patterns, legacy/B2B products skipped; PLUS `scrape_simtlv_global` for the 127-country bundles page), world8, xphone_global, saily (199 countries + 8 regions), holafly (182 countries + 16 regions), esimio (eSIM.io — ~184 countries + 10 regions; site moved to the eSIMo Next.js platform ~2026-04, so `scrape_esimio_destinations`/`scrape_esimio_regions` now reuse `_esimo_extract_packages` to read the RSC-embedded `packages` JSON, pure-HTTP, no Playwright — the old h5 plan-card parsing died in that redesign), sparks (143 countries), voye (157 countries + 5 regions + global), orbit (195 countries + 9 zones, REST API at be.orbitmobile.com), travelsim (global + USA + Middle East zones), seven_g (7G), gomoworld (GoMoWorld), tasim (USA 15/50GB one-time packages — pure HTTP via tasim.us/api/plans?type=one_time; 'subscription' plans skipped, no public page), maya (Maya Mobile, GLOBAL-ONLY catalog: `scrape_maya_global` reads Maya's OFFICIAL affiliate feed `https://assets.maya.net/affiliates/plans.json` (auth-free JSON, shared by their partnerships team 2026-06) - this REPLACED the brittle Angular-SSR `<script id="maya-mobile-state">` scrape that broke twice in the 2026 redesigns. ~8 unlimited "גלובלי"/"גלובלי ושייט" tiers at 3/7/14/30 days; the feed is split by `regionType` into the same globalRegions/cruiseRegions buckets `_ingest` expects, so plan_name keys stay unchanged. Catalog = exactly the 8 stored rows, no stale purge needed), bcengi, esim70, jetpack, breez (Breeze), bytesim, bestconnect (Best Connect), besim, esimplus (eSIM Plus), gigsky, esimgenius (eSIM Genius), nisim (Nisim eSIM), esimax (eSIM Max), bnesim (BNESIM), venterrasim (VenterraSIM — Israeli, ILS-priced; ~1,017 packages / 188 countries + 14 regional-global bundles from ONE public JSON endpoint `venterrasim.com/api/v1/plans/` (auth-free, explicitly Allow:ed in their robots.txt). Destinations arrive as ISO-3166 alpha-2 in `location_code`, so `VENTERRA_CODE_TO_HEBREW` just extends `ESIMO_CODE_TO_HEBREW` with the 7 codes eSIMo doesn't sell. Regional bundles are keyed by the plan_name TITLE, not extras[0], because several coverage tiers share one destination — Europe 33/35/41 areas, Asia 7/20, South America 6/20 — see `VENTERRA_REGION_MAP` in globalCountries.js. Every price carries a permanent 20%-off list price; only `price_ils` is stored), simzol (Simzol / סים זול — small Israeli reseller on the CashCow storefront, no API: `scrape_simzol_global` walks `simzol.co.il/crowlers/sitemap` and parses each product page. ~36 ILS plans across גלובלי / גאורגיה / איחוד האמירויות / ארצות הברית / אירופה. Products are keyed by permalink slug in `SIMZOL_PRODUCTS` → (title, dest, esim?, perks); an unmapped page that sits under the site's `/c/esim` category WARNS rather than being dropped silently — that is how the 7-day USA eSIM was caught. Carries BOTH eSIMs and the shop's physical travel SIMs: physical rows get `esim=False` (→ `form='sim'`, excluded by the /esim-deals "eSIM" filter chip) and a ` – סים פיזי` plan_name suffix, without which the physical USA ladder collides with the eSIM USA ladder at 7/20/30 days under UNIQUE(carrier, plan_name). Two products share extras[0]='גלובלי' with different coverage — the eSIM packages (83 destinations) and the physical סים עולמי פלטינום (123, unlimited data+calls sold by trip length) — so `SIMZOL_REGION_MAP` in globalCountries.js keys on the plan_name TITLE, same trick as VenterraSIM). Source of truth: `GLOBAL_LABELS` in carrierLabels.js (40 keys — airalo_local/airalo_regional are aliases of airalo) mirrored by `_CARRIER_NAMES` in app.py.
 **Content (5 services × 4 carriers)**: eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי
 **Resellers / מתחת לקו (משווקים)**: below-the-line offers that don't appear on the carriers' official rate cards — third-party reseller sites (tiber/טיבר, zol_li/זול-לי, kamaze/כמה זה, tikshoretishit, sell_zoll, kamazeole), carrier-owned lead-gen pages (partner_site lobby, rami_levy_landing/hever/cc, wecom_site sim-data, clubdeal, pelephone_join, pelephon4u, pelephone_cellphone), Facebook-ad campaigns (pelephone_fb, analizer) and social resellers (cellcomshefamr, zorro). ~19 reseller_ids, ~55 rows. Auto-scraped ids are listed in `db.AUTO_SCRAPED_RESELLER_IDS`; labels live in `RESELLERS` (DashboardPage.jsx) + `RESELLER_NAMES` (notifier.py) — keep all three in sync. Social-media-only pricing remains sparse (1,400 Telegram messages scanned — zero matches); the 2026-06-11 web sweep found the real BTL channel is reseller WEBSITES + landing pages.
 
@@ -252,50 +151,6 @@ change_detector.py compares old vs new plan lists by (carrier, plan_name) key:
 - **User provisioning is direct-DB, NOT GoTrue signup**: `POST /api/users` (super_admin) writes `auth.users` + `auth.identities` + a workspace-less `user_roles` row in one transaction, email pre-confirmed, password hashed with `crypt(pw, gen_salt('bf', 10))` (pgcrypto). It deliberately does **not** call `/auth/v1/signup` — signup sends a confirmation email on every create (which we then force-confirm anyway), and Supabase's shared email sender rate-limits those to a few/hour, so onboarding >2 users in a row failed with `over_email_send_rate_limit` → the generic "Failed to create user". Direct provisioning sends no email; onboarding mail is our own Welcome email (fired by the workspace-assign step). Mirror a known-good `auth.users`/`auth.identities` row when changing columns — `auth.users.confirmed_at` and `auth.identities.email` are GENERATED (never insert them).
 - **Password management** — three flows, no Supabase email except recovery: self-service change (`changePassword` in useAuth → `supabase.auth.updateUser`, profile menu), admin reset (`POST /api/users/<id>/password`, direct-DB bcrypt, super_admin only), and "forgot password" (`resetPasswordForEmail` → `/reset-password` page → `updateUser`). The recovery email is the **only** Supabase email in the user lifecycle; its redirect target `https://mocaintel.com/reset-password` (and `http://localhost:5173/reset-password` for dev) must stay in Supabase → Auth → URL Configuration → Redirect URLs, and the SPA `_redirects` `/*  /index.html  200` rule must serve that path.
 
-## Brand & UI
-
-The React app uses the **MOCA mocha-latte** design system (per Claude Design handoff, see `design-handoff/` at the repo root). All tokens live in `index.css` `@theme` block:
-
-**Surface colors**:
-- `--color-moca-bg: #f9f4ee` (page background)
-- `--color-moca-cream: #f5ede0` (cards, hover)
-- `--color-moca-mist: #faf5ee` (subtle hover)
-- `--color-moca-sand: #e8d5bc` (warm dividers)
-- `--color-moca-border: #e0cdb5` (default border)
-
-**Brand / text**:
-- `--color-moca-bolt: #5c3317` (primary brand — buttons, accents). Aliased as `--color-moca-espresso`
-- `--color-moca-dark: #4a2a13` (darkest text)
-- `--color-moca-text: #3b1f0d` (body text)
-- `--color-moca-sub: #8a6a4a` (secondary text)
-- `--color-moca-muted: #a08468` (tertiary)
-
-**Semantic** (added phase 1):
-- `--color-moca-up: #b4472d` (price ↑ — bad-for-us in competitive context)
-- `--color-moca-down: #4a7c3f` (price ↓ — good-for-us)
-- `--color-moca-hot: #c9622f` (NEW / attention)
-
-**Typography** (added phase 1):
-- `--font-display: 'Frank Ruhl Libre', serif` — page titles, big headings
-- `--font-body: 'Assistant', system-ui, sans-serif` — everything else (set on `body`)
-- Both loaded via `<link>` in `index.html` from Google Fonts
-
-**Shadows** (added phase 1, scoped to `:root`):
-- `--sh-card`, `--sh-card-hover`, `--sh-modal`, `--sh-drawer`, `--sh-popover`
-
-**Layout shell** (rebuilt phase 2):
-- Desktop: right-side `<Sidebar>` (RTL start) + sticky `<Topbar>` + content. Layout is `flex-col md:flex-row` so the sidebar is the first flex child = physical right in RTL
-- Mobile: existing `<Navbar>` top bar + bottom-nav + hamburger that opens `<Sidebar mobile>` drawer
-- `BrandThemeApplier` in App.jsx still overrides `--color-moca-bolt` / `--color-moca-dark` per workspace (mvno_carrier or brand_config)
-
-**Routing — clean URLs** (added phase 9):
-- `/` — Dashboard (CompetitorBoard widget + tab navigation)
-- `/plans` `/roaming` `/esim` `/banners` `/history` — all mount `DashboardPage` with a `lockedTab` derived from pathname; tab nav is hidden on these routes. Legacy `?tab=X` URLs still resolve via the searchParams fallback in DashboardPage
-- Other routes: `/compare`, `/positioning`, `/alerts`, `/executive-summary`, `/archive`, `/ai-insights`, `/preferences`, `/notifications`, `/settings`, `/workspace/users`, `/workspace/settings`, `/admin/workspaces`, `/admin/audit`, `/usage`, `/admin/user-activity`
-- **Public routes** (siblings of `/`, outside the AppShell auth gate): `/login`, `/reset-password` (Supabase password-recovery target), `/invite/:token`
-
-PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` prop (xs/sm/md) and `showSubtext` prop (default true, set false on login page).
-
 ## Conventions
 
 - All Hebrew text uses unicode escapes in Python (`"\u05d9\u05e9\u05e8\u05d0\u05dc"` for ישראל)
@@ -315,7 +170,7 @@ PWA icons live in `public/icons/` (180/192/512px). `Logo.jsx` accepts `size` pro
 
 `db.py` contains `_DEST_NORM` — a dict applied on every DB write to canonicalize country names across all scrapers. When a scraper returns a non-canonical name, add a mapping here rather than fixing each scraper individually. Canonical names are defined by what appears in `globalCountries.js` / `abroadCountries.js`.
 
-Caveats: `_DEST_NORM` rewrites extras/destination only — it never touches `plan_name`, and change detection compares the RAW scraped values against the (normalized) stored row, so papering over a wrong scraper value with a `_DEST_NORM` mapping causes an `extras_change` flap on every scrape (this happened with eSIM Plus "St. Vincent &amp; Grenadines" — daily false Telegram alerts until the scraper itself was fixed). If the wrong value contains HTML entities, fix extraction in the scraper. `_make_global_plan()` now runs `html.unescape` on `plan_name` + `extras` as a safety net for all global scrapers.
+Caveats: `_DEST_NORM` rewrites extras/destination only — it never touches `plan_name`. Change detection compares the SCRAPED extras against the (normalized) stored row, which historically made any non-canonical scraper value flap `extras_change` on every scrape (eSIM Plus "St. Vincent &amp; Grenadines" — daily false Telegram alerts; by 2026-07-14 the same mechanism produced ~1,300 phantom `extras_change`/day across 20 global providers). **Fixed 2026-07-14**: `_make_global_plan()` now runs `db._norm_extras` on `extras` at creation (in addition to the earlier `html.unescape` safety net), so for global scrapers using the helper, scraped extras == stored extras and adding a `_DEST_NORM` mapping is safe. `plan_name` is still never normalized — a wrong plan_name spelling must be fixed in the scraper's own dict (fix the DB rows' `plan_name` in place at the same time, or the old keys linger as stale duplicates: see the esim70/breez "ההפיליפינים" typo cleanup, 2026-07-14).
 
 ### Multi-Country Provider Filtering (DashboardPage / ComparePage)
 
@@ -392,6 +247,7 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 | cloudflared.exe + cloudflared_watchdog.ps1 | **Cloudflare Tunnel** binary + watchdog: loops `cloudflared tunnel run moca` (config `~/.cloudflared/config.yml`: api.mocaintel.com → localhost:5000). The public ingress — replaced ngrok 2026-06-04. |
 | ngrok_watchdog.ps1 | (Task DISABLED 2026-06-04) loops `ngrok http 5000 --domain=…` — kept as a re-enable-able fallback. |
 | db_compress_and_prune.py | One-time DB maintenance: snapshot → zlib-compress archive_snapshots → delete global_changes flap noise → VACUUM (shrank DB 421→43MB). |
+| gen_dest_backgrounds.py + dest_bg_map.json | Destination background images for the /esim-deals trip wizard: one Gemini-generated landmark photo per live destination (config.json `gemini_api_key`, model gemini-2.5-flash-image) → `mass-market-app/public/dest-bg/<slug>.jpg`, then auto-rewrites the React manifest `src/data/destBg.js` (he string → path) from what exists on disk. Curation (region images shared by variants, combo-plan aliases, sub-national places, cruise ship) lives in dest_bg_map.json. Idempotent — delete a jpg to regenerate; rerun when new destinations appear. Needs Flask on :5000 + node. |
 
 ## Archive System
 
@@ -423,7 +279,7 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 
 ## Deployment
 
-- **Frontend**: Netlify, served at **https://mocaintel.com** (canonical; `www.mocaintel.com` 301-redirects to it; custom domain via Cloudflare DNS — the `lucent-kulfi-f037ad.netlify.app` subdomain still resolves) — drag `mass-market-app/dist` manually
+- **Frontend**: Netlify, served at **https://mocaintel.com** (canonical; `www.mocaintel.com` 301-redirects to it; custom domain via Cloudflare DNS — the `lucent-kulfi-f037ad.netlify.app` subdomain still resolves). **Deploy via Netlify CLI** (since 2026-07-09: CLI installed, logged in as Alon, `mass-market-app/` linked to site `39164e5d-2df9-4254-82e1-a1e9d825a240`): `cd mass-market-app && netlify deploy --prod --dir=dist --no-build`, then verify the live bundle hash matches dist (deploy-live skill). **`--no-build` is mandatory** — without it the CLI rebuilds with the Netlify dashboard env vars instead of local `.env.production` (this shipped a dead-API bundle once, 2026-07-09, when the dashboard `VITE_API_URL` was still the retired ngrok URL; fixed same day, but the local build remains the canonical artifact). Manual drag of `mass-market-app/dist` remains the fallback.
 - **Backend**: Local Flask, exposed via **Cloudflare Tunnel** → https://api.mocaintel.com (cloudflared tunnel "moca", run by the **MOCA-Cloudflared** task / `scripts/cloudflared_watchdog.ps1`). ngrok retired 2026-06-04 (MOCA-Ngrok task disabled + kept as fallback; reserved domain still on the account)
 - **Auth**: Supabase (https://gmfefvjdmgzluwffzrzj.supabase.co)
 - **Code**: GitHub (https://github.com/AYochelman/Mobile-Operators-Competitor-Analysis)
@@ -438,20 +294,21 @@ Two public marketing pages are **prerendered to static HTML at build time** so t
 
 **SEO canonical note (`/esim-deals`):** `prerender-esim.mjs` is NOT a standalone render like landing/hotels — it copies `dist/index.html` and only swaps the `<head>` (self-referencing canonical `https://mocaintel.com/esim-deals`, title, description, hreflang, OG), keeping the SPA boot intact, so `EsimComparePage` still mounts live. It exists because the generic `index.html` head canonicalises every SPA route to the site root, which made Google treat the public `/esim-deals` page (and its `esim.mocaintel.com` mirror) as a duplicate of the homepage and de-index it. The `esim.mocaintel.com` host is served this same `esim.html` (see `_redirects`) so the subdomain consolidates its SEO signal onto the apex `/esim-deals` instead of self-canonicalising. `EsimComparePage.jsx` also rewrites the canonical + description client-side (belt-and-suspenders for any JS-rendered view). GOTCHA: attribute values injected by the prerender must be HTML-escaped — the Hebrew `חו"ל` carries a literal `"` that closes a `"`-delimited attr early (`escAttr` handles it). `sitemap.xml` lists `/esim-deals` (he + `?lang=en`); `robots.txt` Disallows the login-gated dashboard routes but deliberately NOT `/esim` (a prefix of `/esim-deals`).
 
+**eSIM consumer PWA (2026-07-11):** `/esim-deals` is an installable consumer PWA, separate in identity from the dashboard PWA. `prerender-esim.mjs` swaps the head's manifest link to `public/esim-manifest.webmanifest` (id `/esim-deals`, name "MOCA eSIM", start_url `/esim-deals?utm_source=pwa&utm_campaign=pwa_install`) + `apple-mobile-web-app-title` "MOCA eSIM"; the generic `/manifest.json` stays the dashboard app. Web-push display lives in `public/push-sw.js`, imported into the Workbox SW via `vite.config.js` `workbox.importScripts` (the generated SW has NO push/notificationclick handlers of its own — without this, pushes are silently dropped). EsimComparePage carries an engagement-gated install card (`beforeinstallprompt` on Android, share-sheet instructions on iOS, 30-day dismissal, `pwa_install` event beacon) + a **destination price-drop alert card**: public `POST /api/esim/push/subscribe` / `unsubscribe` (no auth, one alert per device, UPSERT by endpoint) → `esim_push_subscriptions` table → `notifier.notify_esim_price_drops(config)` runs after `save_global_plans` on ALL 3 global scrape paths. It's STATE-based (baseline vs `db.get_esim_alert_floor` = cheapest trip-sized deal ≥5GB/≥7d — the raw catalog min is a meaningless ~₪1 daily package), so it also catches new-cheaper-plan drops that the global change log deliberately discards; threshold ≥5% AND ≥₪2 (FX noise), baseline silently rises so a later fall re-alerts.
+
 - **`/` → `dist/landing.html`** (`LandingPage.jsx` + `entry-landing.jsx`): **zero JS** — `renderToStaticMarkup` (purely presentational). Bilingual he/en are BOTH rendered into the DOM under `[data-lang-root]`; a vanilla script toggles visibility + recreates the hero tilt. The SPA home moved to `/home`.
 - **`/hotels` → `dist/hotels.html`** (`HotelsLandingPage.jsx` + `entry-hotels.jsx` + `entry-hotels-client.jsx`): **prerender + React hydration** — this page is interactive (live demo iframe picker, ROI calculator sliders, lead form), so it uses `renderToString` and `hydrateRoot(#hotels-root)`. The hydration bundle is a **2nd Vite input** (`vite.config.js` `build.rollupOptions.input['hotels-client']` → `dist/assets/hotels-client-*.js`), located by `prerender-hotels.mjs` via a glob. Its `<head>` is hand-built (self-hosted `/fonts/fonts.css` only — the component is fully self-scoped under `#hl-app`, no Tailwind needed) with a page-specific canonical + hreflang + OG block for shareable previews. **Hydration gotcha**: `HotelsLandingPage` MUST init language deterministically (`useState('he')`, then apply `?lang=` / stored pref in a mount `useEffect`) — otherwise `?lang=en` deep-links make the server markup ('he') differ from the client's first render and React throws a hydration mismatch.
 
-When adding a new prerendered page: add an `entry-<x>.jsx` (SSR) + — if interactive — an `entry-<x>-client.jsx` (hydration, wired into the vite `input` map), a `scripts/prerender-<x>.mjs`, two build-chain steps in package.json, and a `_redirects` rule before the catch-all.
+When adding a new prerendered page: add an `entry-<x>.jsx` (SSR) + — if interactive — an `entry-<x>-client.jsx` (hydration, wired into the vite `input` map), a `scripts/prerender-<x>.mjs`, two build-chain steps in package.json, and a `_redirects` rule before the catch-all. **ALSO add the route to `workbox.navigateFallbackDenylist` in vite.config.js** — returning visitors' service worker otherwise swallows the navigation into the SPA (404). This bit the `/esim/<dest>/` pages and again `/privacy?lang=en` (2026-07-11: bare `/privacy` accidentally survived via the precache clean-URLs match → `privacy.html`, but any query string breaks that match, so the Hebrew link worked while the English one 404'd).
 
-## Key UI Components
+**Domestic consumer page `/mobile-deals` (2026-08-04, Stage 1 - UNPUBLISHED preview):** the domestic twin of `/esim-deals`. `MobileComparePage.jsx` (self-contained `#mobile-app` microsite, he/en via the shared `esim_lang` key, 3 tabs: domestic / roaming / content, carrier click-out via `data/carrierHomeUrls.js` + `carrier_click` beacon - no affiliate). Backend: `/api/mobile/compare` (public, `_assemble_mobile_plans` in app.py normalizes the domestic data quirks server-side: `data_gb>=9999`→unlimited, NULL+kosher→`voice_only`, `price_conditional` multi-line regex, sub-GB `price_per_gb` guard, `__info__` extraction, ≤4 curated `chips`, facet booleans), `/api/mobile/event` (separate `mobile_events` table - do NOT widen the esim whitelist), `/api/mobile/push/subscribe|unsubscribe` (`mobile_push_subscriptions`, keyed carrier-or-'all', EVENT-driven: `notifier.notify_mobile_price_drops(fresh_changes, config)` hooked into all 3 domestic scrape paths, unlike the eSIM floor model). Launch switch `MOBILE_B2C_LIVE` in App.jsx is `import.meta.env.DEV` (super-admins preview in production, everyone else 404). `prerender-mobile.mjs` → `dist/mobile.html` is built but UNREFERENCED until launch.
 
-- **SearchableSelect** (`components/ui/SearchableSelect.jsx`): Custom dropdown with search input, renders via React Portal to avoid clipping
-- **PlanCard**: Universal card for all plan types (domestic/abroad/global/resellers/content via `type` prop), supports highlight animation from chat. Content cards skip plan name and info line; all text must use explicit `text-right` or RTL-aware flex (`justify-start`). For `type='resellers'`, the "לאתר הספק" button becomes "לפוסט המקור" and links to `plan.source_url` instead of `CARRIER_HOME_URLS[carrier]`. The DashboardPage `loadTab` injects `"משווק: <label>"` as `extras[0]` so the reseller name appears as a bullet on the card.
-- **BannerCard** (`components/BannerCard.jsx`): Carrier screenshot card (16:7 ratio), modal on click, fallback gradient. Used for both homepage banners and e-store banners in the Banners tab
-- **GroupedPlanCard** (`components/GroupedPlanCard.jsx`): Used for XPhone "גולשים ומדברים" plans — renders GB selector pills + price + info line (GB · days · minutes · SMS)
-- **ChatPanel**: AI chat with clickable carrier names that navigate to filtered dashboard
-- **FilterTag**: Compact filter toggle pill used across Dashboard and Compare pages
+**/mobile-deals email/WhatsApp reminders (2026-08-06; extended to all 3 tabs 2026-08-09):** per-plan bell button → `ReminderModal` (email and/or WhatsApp number, at least one) with two opt-ins. **`plan_type` ('domestic'|'roaming'|'content', column on `mobile_reminders` + `days` snapshot column)**: roaming bells sit on the חבילות לחו"ל cards (validated against `abroad_plans`; better_deal matcher `find_better_roaming_deals` = ≥data AND ≥days for less, cross-carrier; NULL `data_gb` on abroad rows means a VOICE-MINUTES package - e.g. rami_levy "טסים בראש שקט" - NOT unlimited, excluded from both sides of the match and no longer rendered as "ללא הגבלה" on the card); content bells sit on the שירותים נוספים rows (`plan_name` = the service name, validated against `content_plans`; price parsed from the free-text ₪ string; `find_better_content_deals` = same service, other carrier, cheaper; plan_end doubles as a free-trial-end reminder). Modal copy per type via `t.remByType`; the paid_price question is hidden for roaming (one-time package). Monthly heartbeat + renewal follow-up stay domestic-only (market percentile is a domestic stat). BTL reseller section: domestic only. Original domestic mechanics: (1) `better_deal` - recurring alert when another carrier offers ≥ the same data for less (matcher `find_better_mobile_deals` in notifier.py; excludes voice-only + `price_conditional` rows; `best_price_alerted` ratchet + 72h cooldown prevent repeats - a re-alert needs a ≥₪1-better offer); (2) `plan_end` - one-shot reminder at `end_date - remind_days_before` (3/7/14/30), optional `include_offers` attaches retention alternatives (`find_similar_mobile_offers` - any carrier, ≥ data, cheapest first). Backend: `POST /api/mobile/reminders` (public; server snapshots price/data from the live feed, Israeli phones normalized 05x→972), `GET|POST /api/mobile/reminders/unsubscribe?token=` (GET = bilingual HTML confirmation for the email link; token shared per signup, deletes all its rows), `POST /api/mobile/reminders/run-now` (`@require_api_key` smoke test). Table `mobile_reminders` (db.py; re-signup for same kind+plan+contact replaces, not stacks). Daily job `run_mobile_reminders_job` at **09:15** (after the 07:30 scrape). Email via `_send_email` (Resend), WhatsApp via `_send_whatsapp_direct` (Green API; the chatId is resolved per phone via `checkWhatsapp` + module cache - `@lid` privacy accounts silently DROP messages sent to `<phone>@c.us` (200 + stuck at 'sent' forever), so never send to `@c.us` directly). Message links are config-driven via `public_site_url` / `public_api_url` in config.json (currently the Netlify subdomain + reserved ngrok domain per the mocaintel takedown; remove the keys to fall back to the canonical domains). Privacy policy section 3א/3a documents the contact-details collection - keep it in sync.
+
+**Reminder emails are DESIGNED (2026-08-06):** branded HTML built by `_build_better_deal_html` / `_build_plan_end_html` / `_build_heartbeat_html` / `_build_renewal_html` in notifier.py (shared shell `_rem_email_shell` + `_rem_email_body`, palette mirrors `#mobile-app` tokens, tables + inline styles only). Hero illustrations are Gemini-generated (mocha palette, 21:9, `scripts/gen_email_banners.py`) hosted as PUBLIC Netlify URLs at `public/email/{better_deal,plan_end,heartbeat,renewal}.jpg` via `_rem_hero_url` - regenerating requires a frontend deploy. **Engagement layer (email-only until the Green API upgrade):** (a) better_deal emails carry a monthly+annual savings pill; (b) `notify_mobile_heartbeat` - monthly market-pulse email (percentile bar `_market_percentile` + 30d drops/rises from `db.count_domestic_price_drops` + cheapest/cheapest-unlimited chips), gated per row by 28 days since last touch (`last_heartbeat_at` column); (c) `notify_mobile_renewal_followups` - one-shot "התחדשתם?" email 7 days after a done plan_end's end_date (`followup_sent` column, rows via `db.get_mobile_plan_end_followups`), re-signup CTA closes the yearly loop. All 4 flows run in `run_mobile_reminders_job`. **Extensions (same day):** every email carries a refer-a-friend footer (`_rem_share_url`, utm_source=referral) and every text/WhatsApp body a share line; better_deal emails append a clearly-tagged "מתחת לקו" section of reseller offers that beat the user's plan (`_find_reseller_deals` over reseller_plans + `_rem_btl_cards_html`, dashed-border cards linking to source_url); the heartbeat carries the consumer "מדד MOCA" chip (`_market_ppgb` - GB-weighted SUM(price)/SUM(GB)); signup accepts an optional self-declared `paid_price` (5-500, column on mobile_reminders) and ALL comparisons use `_rem_base_price` (paid_price > current rate-card > snapshot). **Super-admin subscribers view:** `/admin/mobile-subscribers` (`MobileSubscribersPage.jsx`, superAdminOnly, profile-menu entry in Topbar+Navbar) ← `GET /api/mobile/reminders/subscribers` (`@require_api_key_or_super_admin`, `db.get_all_mobile_reminders` - raw contact details, stats, CSV export client-side; consent scope = reminders only, see privacy 3א). **Public-launch (Stage 2) checklist:** flip `MOBILE_B2C_LIVE=true`; `_redirects`: subdomain privacy/terms rules + `https://mobile.mocaintel.com/* /mobile.html 200` (after the esim host rule) + `/mobile-deals /mobile.html 200!`; sitemap.xml he+en entries + add `'mobile-deals'` to `STAMP_PATHS` in stamp-sitemap.mjs; reciprocal footer link in EsimComparePage; Cloudflare DNS CNAME `mobile` + Netlify domain alias; Search Console request-indexing.
+
+**Legal pages (2026-07-11):** `public/privacy.html` + `public/terms.html` — bilingual (he default, EN toggle via `?lang=en` / shared `esim_lang` localStorage key), static, self-styled. Clean URLs `/privacy` + `/terms` via `_redirects` on BOTH hosts (the esim-subdomain host-scoped rules must precede the esim.html host wildcard) + netlify.toml mirror. Linked from the EsimComparePage footer and the 160 static dest pages. `https://mocaintel.com/privacy` is the Play-Console privacy-policy URL. Content is code-accurate (HMAC-SHA256 ip_hash, push-subscription fields, affiliate cookies, TikTok pixel "currently off") — update it if data collection changes.
 
 ## After Every Code Change
 
-Always run `npm run build` in `mass-market-app/` after any React/JS change. The `dist/` folder is deployed to Netlify manually by dragging. The build also regenerates the prerendered `/` and `/hotels` static pages — so a change to `LandingPage.jsx` / `HotelsLandingPage.jsx` (or their copy) only goes live after a rebuild + redeploy (see Deployment → Static prerendered marketing pages).
+Always run `npm run build` in `mass-market-app/` after any React/JS change. Deploy `dist/` with `netlify deploy --prod --dir=dist --no-build` from `mass-market-app/` (see the deploy-live skill; `--no-build` is mandatory — the dashboard env vars are stale; manual drag is the fallback). The build also regenerates the prerendered `/` and `/hotels` static pages — so a change to `LandingPage.jsx` / `HotelsLandingPage.jsx` (or their copy) only goes live after a rebuild + redeploy (see Deployment → Static prerendered marketing pages).

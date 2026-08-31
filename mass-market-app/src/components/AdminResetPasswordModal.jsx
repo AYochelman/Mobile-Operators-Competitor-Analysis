@@ -51,7 +51,7 @@ export default function AdminResetPasswordModal({ user, onClose }) {
   return (
     <Modal open={!!user} onClose={onClose} title={tt('איפוס סיסמה', 'Reset password')} maxWidth="max-w-sm">
       <p className="text-xs text-moca-sub mb-3 text-right leading-relaxed">
-        {tt('קביעת סיסמה חדשה עבור ', 'Set a new password for ')}<span dir="ltr" className="font-medium text-moca-text">{user.email}</span>{tt('. לא נשלח מייל — מסור את הסיסמה למשתמש והמלץ להחליף אותה בכניסה.', '. No email will be sent — hand the password to the user and recommend they change it on sign-in.')}
+        {tt('קביעת סיסמה חדשה עבור ', 'Set a new password for ')}<span dir="ltr" className="font-medium text-moca-text">{user.email}</span>{tt('. לא נשלח מייל - מסור את הסיסמה למשתמש והמלץ להחליף אותה בכניסה.', '. No email will be sent - hand the password to the user and recommend they change it on sign-in.')}
       </p>
       {done ? (
         <div className="space-y-3">

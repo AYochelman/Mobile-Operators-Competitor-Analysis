@@ -1,0 +1,48 @@
+{
+  "week_of": "2026-07-12",
+  "directives": [
+    "AVOID duplicates: 6 posts are already QUEUED in Postiz for Tue-Thu this week (Facebook 12:30 on 14/15/16, Instagram 20:30 on 14/15/16). The creation routine does not dedup against Postiz, so DO NOT schedule anything on Tue-Thu 2026-07-14/15/16. Fill only the open days: Sunday 07-12, Monday 07-13, Friday 07-17, Saturday 07-18.",
+    "Postiz exposes no engagement metrics, so the real KPI is tagged site traffic that converts to a provider click. Last 14 days: 154 non-bot affiliate clicks, but only 1 attributed to TikTok. Give every post ONE clear CTA and always use the tagged link so next week we can actually measure per-network conversion.",
+    "Weekend TikTok is the highest-leverage open slot for the Israeli audience. Keep 2 weekend videos (Friday 20:00, Saturday 21:00). Per the cross-post rule each also becomes a Facebook Reel with an adapted caption.",
+    "Use FRESH destinations not covered by the queued posts (queued: Italy, Netherlands, Greece, USA). This week use Cyprus (קפריסין) and Thailand (תאילנד). Pull real cheapest-eSIM numbers from http://localhost:5000/api/esim/compare?dest=<destination>.",
+    "Hebrew copy: every line including hashtags opens with a Hebrew word (RTL). No em-dash. Every link carries utm_source and utm_campaign (never src=esim), target esim.mocaintel.com. Video text stays in the center safe zone.",
+    "Content mix that resonates: concrete savings-vs-roaming numbers per destination plus a short how-it-works reassurance for new users."
+  ],
+  "slots": [
+    {
+      "network": "instagram",
+      "datetime_local": "2026-07-12T20:30",
+      "format": "image",
+      "topic": "יעד קפריסין - החבילה הזולה ביותר וכמה חוסכים מול רואמינג",
+      "notes": "יום ראשון בערב = חלון שיא ישראלי. תמונה נקייה, מספר חיסכון בולט. משיכת מחיר אמיתי מ-/api/esim/compare?dest=קפריסין. קישור utm_source=instagram&utm_campaign=ig_cyprus&dest=קפריסין."
+    },
+    {
+      "network": "facebook",
+      "datetime_local": "2026-07-13T12:30",
+      "format": "image",
+      "topic": "יעד תאילנד - eSIM זול מול חבילת הגלישה של המפעיל",
+      "notes": "פייסבוק צהריים. מסר חד של חיסכון בכסף, מספר גדול. מחיר אמיתי מ-/api/esim/compare?dest=תאילנד. קישור utm_source=facebook&utm_campaign=fb_thailand&dest=תאילנד."
+    },
+    {
+      "network": "instagram",
+      "datetime_local": "2026-07-13T20:30",
+      "format": "carousel",
+      "topic": "קרוסלה: יעדי קיץ מומלצים והחבילה הזולה לכל אחד",
+      "notes": "קרוסלה עם שקופית פתיחה + שקופית ליעד (קפריסין, תאילנד, ספרד, פורטוגל) + שקופית CTA. להימנע מחזרה על יוון/איטליה/ארה\"ב/הולנד שכבר בתור. קישור utm_source=instagram&utm_campaign=ig_summer_guide."
+    },
+    {
+      "network": "tiktok",
+      "datetime_local": "2026-07-17T20:00",
+      "format": "video",
+      "topic": "וידאו: כמה באמת עולה גלישה בחו\"ל מול eSIM (וו חזק בשנייה הראשונה)",
+      "notes": "שישי בערב = שיא טיקטוק. וו בשנייה הראשונה, כל הטקסט במרכז המסך, כרטיס סיום עם ה-URL במרכז. קרוס-פוסט חובה לפייסבוק כ-Reel עם קופי מותאם. קישור utm_source=tiktok&utm_campaign=tt_roaming_cost."
+    },
+    {
+      "network": "tiktok",
+      "datetime_local": "2026-07-18T21:00",
+      "format": "video",
+      "topic": "וידאו: השוואת eSIM ליעד ב-30 שניות (דמו מהיר של האתר)",
+      "notes": "מוצ\"ש = חלון שיא. דמו מהיר של esim.mocaintel.com, מספרים במרכז. קרוס-פוסט חובה לפייסבוק כ-Reel עם קופי מותאם. קישור utm_source=tiktok&utm_campaign=tt_compare30s_v2."
+    }
+  ]
+}

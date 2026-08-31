@@ -21,7 +21,7 @@ from db import init_db, get_plans, get_changes, get_abroad_plans, get_abroad_cha
                get_archive_plans, get_archive_banners, get_archive_date_range, \
                get_history_changes, get_history_price_series, get_all_price_series, \
                upsert_news_articles, get_news_articles, \
-               log_affiliate_click, get_affiliate_stats, get_affiliate_attribution, \
+               log_affiliate_click, get_affiliate_stats, get_affiliate_attribution, is_bot_ua, \
                upsert_hotel, get_hotel, list_hotels, delete_hotel, \
                log_guest_event, get_guest_analytics, get_esim_deals_for_destination, \
                log_esim_event, get_esim_analytics, \
@@ -117,8 +117,25 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 # Skips already-compressed mimetypes (image/*, video/*) automatically.
 Compress(app)
 
-# Rate limiting
-limiter = Limiter(get_remote_address, app=app, default_limits=["200 per minute"], storage_uri="memory://")
+
+def _client_ip():
+    """Real client IP behind the Cloudflare Tunnel. cloudflared terminates the
+    public TLS connection and forwards the origin IP in CF-Connecting-IP (and
+    X-Forwarded-For); Flask's request.remote_addr is just the tunnel's local peer
+    (127.0.0.1), so WITHOUT this every public visitor collapses to one address —
+    breaking per-client rate limiting and any bot/human IP analysis. Falls back to
+    remote_addr for direct localhost/LAN access. Trusting the header is safe because
+    the only public ingress is the tunnel from localhost (Flask binds 127.0.0.1)."""
+    hdr = request.headers
+    return (hdr.get("CF-Connecting-IP")
+            or hdr.get("X-Forwarded-For", "").split(",")[0].strip()
+            or request.remote_addr
+            or "")
+
+
+# Rate limiting — keyed on the real client IP (see _client_ip) so limits are
+# per-visitor, not one global bucket for all tunnel traffic.
+limiter = Limiter(_client_ip, app=app, default_limits=["200 per minute"], storage_uri="memory://")
 
 
 def _public_cache(resp, max_age):
@@ -132,6 +149,7 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:5000", "http://127.0.0.1:5173",
     "https://www.mocaintel.com", "https://mocaintel.com",
     "https://esim.mocaintel.com",  # public B2C eSIM compare microsite (its own origin)
+    "https://mobile.mocaintel.com",  # public B2C domestic-plans microsite (/mobile-deals)
     "https://lucent-kulfi-f037ad.netlify.app",  # legacy Netlify subdomain — kept as fallback
     # extra origins added dynamically via ALLOWED_ORIGINS env var
 ]
@@ -139,7 +157,17 @@ ALLOWED_ORIGINS = [
 _extra_origins = os.environ.get("ALLOWED_ORIGINS", "")
 if _extra_origins:
     ALLOWED_ORIGINS.extend(_extra_origins.split(","))
-CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS, "supports_credentials": True}})
+# /banners/* included: the frontend blob-fetches banner screenshots (useApiImage,
+# to carry the ngrok-skip-browser-warning header past the interstitial) and a
+# cross-origin fetch() - unlike a plain <img> - is blocked without CORS headers.
+CORS(app, resources={
+    r"/api/*": {"origins": ALLOWED_ORIGINS, "supports_credentials": True},
+    r"/banners/*": {"origins": ALLOWED_ORIGINS},
+    # Time Machine banner snapshots are blob-fetched too (useApiImage) - same
+    # cross-origin story as /banners/*; without this the archive images are
+    # CORS-blocked on the live site (empty tiles in TimeMachineModal/ArchivePage).
+    r"/archive-banners/*": {"origins": ALLOWED_ORIGINS},
+})
 
 @app.after_request
 def add_security_headers(response):
@@ -194,7 +222,7 @@ def require_api_key(f):
     def decorated(*args, **kwargs):
         provided = request.headers.get("X-API-Key")
         expected = _get_api_key()
-        if not provided or provided != expected:
+        if not provided or not hmac.compare_digest(provided, expected):
             return jsonify({"error": "Unauthorized — API key required"}), 401
         return f(*args, **kwargs)
     return decorated
@@ -599,7 +627,7 @@ def require_api_key_or_query(f):
     def decorated(*args, **kwargs):
         provided = request.headers.get("X-API-Key") or request.args.get("api_key")
         expected = _get_api_key()
-        if not provided or provided != expected:
+        if not provided or not hmac.compare_digest(provided, expected):
             return jsonify({"error": "Unauthorized — API key required"}), 401
         return f(*args, **kwargs)
     return decorated
@@ -824,12 +852,19 @@ def _verify_supabase_jwt(token: str):
             logger.warning(f"Unsupported JWT algorithm: {alg}")
             return None
 
-        # Check expiry — allow up to 4-hour grace period for clock skew.
-        # Production servers have correct clocks so this never triggers there.
-        # Local dev on Windows can drift significantly (seen: +2h) which would
-        # cause every fresh JWT to appear expired without this leeway.
+        # Check expiry with a bounded grace period for clock skew. The backend
+        # runs on a Windows box whose clock can drift (seen: +2h) and whose
+        # w32time NTP sync is not always running, so a fresh JWT can look expired
+        # without some leeway. But a large grace also extends the replay window
+        # for a stolen/logged-out token, so keep it as small as the drift allows
+        # and make it tunable: enable Windows time sync, then drop this to ~300s.
+        # config.json:jwt_exp_grace_seconds overrides the default (2h, down from 4h).
+        try:
+            _grace = int(load_config().get('jwt_exp_grace_seconds', 7200))
+        except (TypeError, ValueError):
+            _grace = 7200
         exp = payload.get('exp')
-        if exp is not None and _time.time() > exp + 14400:
+        if exp is not None and _time.time() > exp + max(0, _grace):
             logger.warning("JWT has expired (beyond grace period)")
             return None
 
@@ -1052,6 +1087,11 @@ _GUEST_PROVIDER_META = {
     "gomoworld":   {"label": "GoMoWorld",    "color": "#00a86b", "domain": "gomoworld.com",    "url": "https://www.gomoworld.com"},
     "bcengi":      {"label": "BCengi",       "color": "#555c66", "domain": "bcengi.com",        "url": "https://www.bcengi.com"},
     "esim70":      {"label": "eSIM70",       "color": "#1f6feb", "domain": "esim70.com",       "url": "https://esim70.com"},
+    "esimgenius":  {"label": "eSIM Genius",  "color": "#7c3aed", "domain": "esimgenius.ai",    "url": "https://esimgenius.ai"},
+    "nisim":       {"label": "Nisim eSIM",   "color": "#252551", "domain": "nisim-esim.co.il", "url": "https://www.nisim-esim.co.il"},
+    "esimax":      {"label": "eSIM Max",     "color": "#b70a4d", "domain": "esimax.io",        "url": "https://esimax.io"},
+    "venterrasim": {"label": "VenterraSIM",  "color": "#2463eb", "domain": "venterrasim.com",  "url": "https://venterrasim.com"},
+    "simzol":      {"label": "Simzol",       "color": "#58b64b", "domain": "simzol.co.il",     "url": "https://www.simzol.co.il"},
     "jetpack":     {"label": "Jetpac",       "color": "#7b2ff7", "domain": "jetpacglobal.com", "url": "https://www.jetpacglobal.com"},
     "breez":       {"label": "Breeze",       "color": "#19b3c7", "domain": "breezesim.com",    "url": "https://breezesim.com"},
     "bytesim":     {"label": "ByteSIM",      "color": "#34495e", "domain": "bytesim.com",      "url": "https://bytesim.com"},
@@ -1065,13 +1105,14 @@ _GUEST_PROVIDER_META = {
     # feed can emit to have a label + domain, else the chip is bare + /go dead-ends).
     "tuki":             {"label": "Tuki",          "color": "#6c2bd9", "domain": "tuki-esim.co.il"},
     "terminalesim":     {"label": "Terminal eSIM", "color": "#1a73e8", "domain": "terminalesim.com"},
+    "gigsky":           {"label": "GigSky",        "color": "#2b4c9b", "domain": "gigsky.com",       "url": "https://www.gigsky.com"},
     "airalo_regional":  {"label": "Airalo",        "color": "#ff5963", "domain": "airalo.com"},
-    "pelephone_global": {"label": "GlobalSIM",     "color": "#e3001b", "domain": "pelephone.co.il"},
+    "pelephone_global": {"label": "GlobalSIM",     "color": "#e3001b", "domain": "pelephone.co.il", "url": "https://www.pelephone.co.il/digitalsite/heb/abroad/global-sim/"},
     "world8":           {"label": "8 World",       "color": "#00a3a3", "domain": "world8.co.il"},
     "xphone_global":    {"label": "XPhone Global", "color": "#00857a", "domain": "xphone.co.il"},
     "travelsim":        {"label": "Travel Sim",    "color": "#f59e0b", "domain": "travelsimobile.co.il"},
     "tasim":            {"label": "Tasim",         "color": "#2563eb", "domain": "tasim.us"},
-    "maya":             {"label": "Maya Mobile",   "color": "#ec4899", "domain": "maya.net",       "url": "https://maya.net/esim/israel"},  # Israel dest lands on Maya's IL eSIM page (per Bart, Maya 2026-06-30). Impact tracking base_url pending → add to config.json["affiliate"]["maya"] once the tracked link is generated in the Impact dashboard.
+    "maya":             {"label": "Maya Mobile",   "color": "#ec4899", "domain": "maya.net",       "url": "https://maya.net/esim/israel"},  # Israel dest lands on Maya's IL eSIM page (per Bart, Maya 2026-06-30). Impact tracking base_url is wired in config.json["affiliate"]["maya"] (mayamobile.pxf.io/oNV1xn) → /go/maya attributes; this `url` is only the Israel-dest fallback.
     # local Israeli carriers — inbound-tourist SIM/eSIM (curated, see below)
     "mobile019":   {"label": "019 Mobile",     "color": "#d81b60", "domain": "019mobile.co.il", "url": "https://www.019mobile.co.il"},
     "partner":     {"label": "Partner Tourist","color": "#0072ce", "domain": "partner.co.il",   "url": "https://www.partner.co.il"},
@@ -1490,11 +1531,325 @@ def _saily_checkout_url(plan_name, db_path=None, sub_id=None):
     return base + sep + "url=" + quote(checkout, safe="")
 
 
+# Per-plan Maya Impact deep-links — generated 2026-07-03 in the Impact partner
+# dashboard (one TrackingLink per plan URL from assets.maya.net/affiliates/plans.json).
+# A /go/maya?plan=… click deep-links to the exact plan page WITH attribution instead
+# of the generic plans-page link (config.json affiliate.maya.base_url = oNV1xn), which
+# still serves as the fallback. Keyed by (region, days) parsed from the plan_name the
+# maya scraper builds: "גלובלי – … – 3 ימים" (global)
+# / "גלובלי ושייט – … – 14 ימים" (cruise).
+_MAYA_PLAN_DEEPLINKS = {
+    ("global", 3):  "https://mayamobile.pxf.io/VOgJBM",
+    ("global", 7):  "https://mayamobile.pxf.io/vDW5Qy",
+    ("global", 14): "https://mayamobile.pxf.io/4a2zyr",
+    ("global", 30): "https://mayamobile.pxf.io/NGX5Rb",
+    ("cruise", 3):  "https://mayamobile.pxf.io/yZWajb",
+    ("cruise", 7):  "https://mayamobile.pxf.io/MKgP22",
+    ("cruise", 14): "https://mayamobile.pxf.io/KBgrOy",
+    ("cruise", 30): "https://mayamobile.pxf.io/7XdEnd",
+}
+
+
+def _maya_deeplink_url(plan_name):
+    """Map a stored Maya plan_name to its plan-specific Impact TrackingLink, or None
+    if it can't be matched (so /go/maya falls back to the generic base_url)."""
+    if not plan_name:
+        return None
+    name = plan_name.strip()
+    if name.startswith("גלובלי ושייט"):  # "גלובלי ושייט" (global + cruise)
+        region = "cruise"
+    elif name.startswith("גלובלי"):  # "גלובלי" (global)
+        region = "global"
+    else:
+        return None
+    days = next((d for d in (3, 7, 14, 30)
+                 if f"{d} ימים" in name), None)  # "N ימים"
+    if days is None:
+        return None
+    return _MAYA_PLAN_DEEPLINKS.get((region, days))
+
+
+# Per-destination deep-links for Voye + Ubigi (top travel destinations only).
+# Unlike Maya's 8-plan catalog, these have 1,000+ plans across 180+ countries with
+# no per-plan URL, so we deep-link the busiest destinations and let the long tail
+# fall back to the generic base_url. Generated 2026-07-03 in the Impact dashboard
+# (Voye → voyeglobal.com/he/esim/<country>/, Ubigi → cellulardata.ubigi.com/…
+# ?destination=<iso3>). Keyed by the canonical Hebrew destination the consumer/guest
+# surfaces pass as ?dest=. All verified: 302 → country page carrying irpid=7205658.
+_VOYE_DEST_DEEPLINKS = {
+    "ישראל":            "https://voyeglobalconnectivity.pxf.io/aNPbPb",
+    "ארצות הברית":      "https://voyeglobalconnectivity.pxf.io/1G2X2a",
+    "בריטניה":          "https://voyeglobalconnectivity.pxf.io/JkB9jr",
+    "תאילנד":           "https://voyeglobalconnectivity.pxf.io/gRJmrO",
+    "יפן":              "https://voyeglobalconnectivity.pxf.io/PzBeBX",
+    "איטליה":           "https://voyeglobalconnectivity.pxf.io/oNVxGn",
+    "יוון":             "https://voyeglobalconnectivity.pxf.io/B5BNGx",
+    "ספרד":             "https://voyeglobalconnectivity.pxf.io/0G2gnP",
+    "צרפת":             "https://voyeglobalconnectivity.pxf.io/E02Lxe",
+    "גרמניה":           "https://voyeglobalconnectivity.pxf.io/n4gqAo",
+    "איחוד האמירויות":  "https://voyeglobalconnectivity.pxf.io/bk56qP",
+    "טורקיה":           "https://voyeglobalconnectivity.pxf.io/6k70xV",
+    "הולנד":            "https://voyeglobalconnectivity.pxf.io/OYzkaz",
+    "גאורגיה":          "https://voyeglobalconnectivity.pxf.io/2R2ogg",
+    "אירופה":           "https://voyeglobalconnectivity.pxf.io/R0KALa",
+    "גלובלי":           "https://voyeglobalconnectivity.pxf.io/vDW50O",
+}
+_UBIGI_DEST_DEEPLINKS = {
+    "ישראל":            "https://go.ubigi.com/MKgPk3",
+    "ארצות הברית":      "https://go.ubigi.com/KBgrPA",
+    "בריטניה":          "https://go.ubigi.com/m4NLaq",
+    "תאילנד":           "https://go.ubigi.com/L0gj5L",
+    "יפן":              "https://go.ubigi.com/4a2zLM",
+    "איטליה":           "https://go.ubigi.com/qWVQ0j",
+    "יוון":             "https://go.ubigi.com/DWBYqo",
+    "ספרד":             "https://go.ubigi.com/QY0aGM",
+    "צרפת":             "https://go.ubigi.com/9V2m90",
+    "גרמניה":           "https://go.ubigi.com/rER905",
+    "איחוד האמירויות":  "https://go.ubigi.com/PzBeAX",
+    "טורקיה":           "https://go.ubigi.com/5kKWq9",
+    "הולנד":            "https://go.ubigi.com/k4Vykn",
+    "גאורגיה":          "https://go.ubigi.com/ena3QD",
+    "אירופה":           "https://go.ubigi.com/MKkqe2",
+    "קנדה":             "https://go.ubigi.com/DWq6xa",
+    "גלובלי":           "https://go.ubigi.com/L05LkL",
+}
+
+
+def _voye_deeplink_url(dest):
+    """Voye per-destination Impact deep-link for a top destination, else None."""
+    return _VOYE_DEST_DEEPLINKS.get((dest or "").strip())
+
+
+def _ubigi_deeplink_url(dest):
+    """Ubigi per-destination Impact deep-link for a top destination, else None."""
+    return _UBIGI_DEST_DEEPLINKS.get((dest or "").strip())
+
+
+# Breeze (UpPromote/Shopify) — unlike Voye/Ubigi (Impact TrackingLinks generated one
+# per URL), Breeze attributes via a single `sca_ref` query param that works on ANY store
+# page, so a per-destination deep link is just the country's product page + ?sca_ref=.
+# The Hebrew dest -> Shopify handle map lives in scraper.BREEZ_HEB_TO_HANDLE (co-located
+# with the scraper that reads those same product collections). Format confirmed via the
+# dashboard "Get product link" tool 2026-07-06: it emits /products/<handle>?sca_ref=<tag>.
+# UpPromote also supports an optional `sca_source` sub-tag (the "Get link with source"
+# feature) — we ride the traffic channel (hotel > src) on it for per-placement reporting.
+_BREEZ_HEB_TO_HANDLE = None  # lazily imported from scraper
+
+
+def _breez_deeplink_url(dest=None, src=None, hotel=None):
+    """Breeze per-destination Shopify product deep-link with UpPromote sca_ref
+    attribution (+ optional sca_source = hotel/src for per-placement tracking). Falls
+    back to the configured homepage tracking link when the destination has no known
+    product handle, so every breez click stays attributed. Returns None only when breez
+    isn't configured at all (so /go drops to the generic path)."""
+    global _BREEZ_HEB_TO_HANDLE
+    aff = load_config().get("affiliate", {}).get("breez", {}) or {}
+    ref, base = aff.get("tag"), aff.get("base_url")
+    if not ref and not base:
+        return None
+    if _BREEZ_HEB_TO_HANDLE is None:
+        try:
+            from scraper import BREEZ_HEB_TO_HANDLE
+            _BREEZ_HEB_TO_HANDLE = BREEZ_HEB_TO_HANDLE
+        except Exception:
+            _BREEZ_HEB_TO_HANDLE = {}
+    handle = _BREEZ_HEB_TO_HANDLE.get((dest or "").strip())
+    if handle and ref:
+        url = "https://breezesim.com/products/{}?sca_ref={}".format(handle, ref)
+    else:
+        url = base or "https://breezesim.com?sca_ref={}".format(ref)
+    source = (hotel or src or "").strip()
+    if source:
+        from urllib.parse import quote
+        url += ("&" if "?" in url else "?") + "sca_source=" + quote(source[:60], safe="")
+    return url
+
+
+# Bcengi has NO per-destination pages (verified via sitemap 2026-07-04: a single
+# /travelpass/pricing page covers all 200+ countries), so per-destination Impact
+# TrackingLinks à la Voye/Ubigi would all land on the same page. Instead, the
+# destination rides on Impact's standard SubId click parameters appended to the
+# one tracking link (config.json affiliate.bcengi.base_url): subId1 = destination
+# (English slug), subId2 = traffic source (src), subId3 = hotel code. Impact
+# records SubIds per click/conversion, so reporting can be segmented per
+# destination without separate links.
+_BCENGI_HEB_TO_EN = None  # lazily inverted from scraper.BCENGI_EN_TO_HEB
+
+
+def _bcengi_subid_url(dest=None, src=None, hotel=None):
+    """The Bcengi Impact tracking link with per-click SubIds attached, or None
+    when no tracking link is configured (so /go falls back to the generic path)."""
+    global _BCENGI_HEB_TO_EN
+    base = (load_config().get("affiliate", {}).get("bcengi", {}) or {}).get("base_url")
+    if not base:
+        return None
+    if _BCENGI_HEB_TO_EN is None:
+        try:
+            from scraper import BCENGI_EN_TO_HEB
+            _BCENGI_HEB_TO_EN = {heb: en for en, heb in BCENGI_EN_TO_HEB.items()}
+        except Exception:
+            _BCENGI_HEB_TO_EN = {}
+    from urllib.parse import quote
+    params = []
+    d = (dest or "").strip()
+    if d:
+        en = _BCENGI_HEB_TO_EN.get(d, d)
+        params.append("subId1=" + quote(en.lower().replace(" ", "-")[:60], safe="-"))
+    if src:
+        params.append("subId2=" + quote(str(src)[:40], safe=""))
+    if hotel:
+        params.append("subId3=" + quote(str(hotel)[:60], safe=""))
+    if not params:
+        return base
+    return base + ("&" if "?" in base else "?") + "&".join(params)
+
+
+# Orbit Mobile has NO per-destination pages either (verified live 2026-07-08: the
+# orbitmobile.com store is a SPA where picking a country expands an inline accordion —
+# the URL stays /en/plans/top-destinations, so per-destination Impact TrackingLinks à
+# la Voye/Ubigi would all land on the same page). So the destination rides on Impact's
+# standard SubId click parameters appended to the one tracking link (config.json
+# affiliate.orbit.base_url): subId1 = destination (English slug), subId2 = traffic
+# source (src), subId3 = hotel code. Impact records SubIds per click/conversion, so
+# reporting segments per destination without separate links.
+_ORBIT_HEB_TO_EN = None  # lazily inverted from scraper.ORBIT_NAME_TO_HEBREW
+
+
+def _orbit_subid_url(dest=None, src=None, hotel=None):
+    """The Orbit Impact tracking link with per-click SubIds attached, or None when no
+    tracking link is configured (so /go falls back to the generic path)."""
+    global _ORBIT_HEB_TO_EN
+    base = (load_config().get("affiliate", {}).get("orbit", {}) or {}).get("base_url")
+    if not base:
+        return None
+    if _ORBIT_HEB_TO_EN is None:
+        try:
+            from scraper import ORBIT_NAME_TO_HEBREW
+            inv = {}
+            for en, heb in ORBIT_NAME_TO_HEBREW.items():
+                if heb:
+                    inv.setdefault(heb, en)
+            _ORBIT_HEB_TO_EN = inv
+        except Exception:
+            _ORBIT_HEB_TO_EN = {}
+    from urllib.parse import quote
+    params = []
+    d = (dest or "").strip()
+    if d:
+        en = _ORBIT_HEB_TO_EN.get(d, d)
+        params.append("subId1=" + quote(en.lower().replace(" ", "-")[:60], safe="-"))
+    if src:
+        params.append("subId2=" + quote(str(src)[:40], safe=""))
+    if hotel:
+        params.append("subId3=" + quote(str(hotel)[:60], safe=""))
+    if not params:
+        return base
+    return base + ("&" if "?" in base else "?") + "&".join(params)
+
+
+# GigSky (Everflow network, per Alex Dufort / GigSky 2026-07-06). Per-destination
+# deep links to specific country/plan pages were "just launched" on GigSky's side
+# but the URL format is pending documentation, so until then a /go/gigsky click
+# lands on the configured Everflow tracking link (config.json affiliate.gigsky.
+# base_url) with the viewed destination + traffic source + hotel carried as
+# Everflow Sub-IDs: sub1 = destination (ISO code), sub2 = src, sub5 = hotel.
+# Everflow records Sub-IDs per click/conversion, so reporting is segmented per
+# destination/placement without separate links. Returns None when no tracking
+# link is configured yet (so /go falls back to the generic gigsky.com dest).
+_GIGSKY_HEB_TO_CODE = None  # lazily inverted from scraper code→Hebrew maps
+
+
+def _gigsky_deeplink_url(dest=None, src=None, hotel=None):
+    """The GigSky Everflow tracking link with per-click Sub-IDs attached, or None
+    when no tracking link is configured (so /go falls back to the generic path)."""
+    global _GIGSKY_HEB_TO_CODE
+    base = (load_config().get("affiliate", {}).get("gigsky", {}) or {}).get("base_url")
+    if not base:
+        return None
+    if _GIGSKY_HEB_TO_CODE is None:
+        try:
+            from scraper import ESIMO_CODE_TO_HEBREW, GIGSKY_CODE_EXTRA
+            inv = {}
+            for code, heb in {**ESIMO_CODE_TO_HEBREW, **GIGSKY_CODE_EXTRA}.items():
+                if heb:
+                    inv.setdefault(heb, code)
+            _GIGSKY_HEB_TO_CODE = inv
+        except Exception:
+            _GIGSKY_HEB_TO_CODE = {}
+    from urllib.parse import quote
+    params = []
+    d = (dest or "").strip()
+    if d:
+        code = _GIGSKY_HEB_TO_CODE.get(d, d)
+        params.append("sub1=" + quote(str(code)[:60], safe=""))
+    if src:
+        params.append("sub2=" + quote(str(src)[:40], safe=""))
+    if hotel:
+        params.append("sub5=" + quote(str(hotel)[:60], safe=""))
+    if not params:
+        return base
+    return base + ("&" if "?" in base else "?") + "&".join(params)
+
+
+# GoMoWorld (Puremium/HasOffers, offer 23, Affiliate ID 1968). The default tracking
+# link (config.json affiliate.gomoworld.base_url) lands on gomoworld.com's homepage.
+# For a per-destination deep link we ride Puremium's `url=` redirect override: the
+# aff_c tracker URL-decodes the url= value and fills the {transaction_id}/
+# {affiliate_id} macros inside it (verified 2026-07-06), so the click stays fully
+# attributed (this is a Server-Postback-with-Transaction-ID offer) while landing
+# straight on the country page. We rebuild the exact querystring Puremium appends to
+# its own default landing — utm_source=puremium, affiliate={affiliate_id},
+# transaction_id={transaction_id}, promocode=MOCA — so the MOCA 10% code is
+# auto-applied on the destination page too. Hebrew dest -> English destination slug
+# comes from scraper.GOMOWORLD_SLUG_TO_HEBREW (the same map the scraper reads
+# gomoworld.com/en/destinations/<slug> from). Unmapped dests return None so /go
+# falls back to the generic config link.
+_GOMOWORLD_HEB_TO_SLUG = None  # lazily inverted from scraper.GOMOWORLD_SLUG_TO_HEBREW
+
+
+def _gomoworld_deeplink_url(dest=None, src=None, hotel=None):
+    """GoMoWorld per-destination deep link via Puremium's url= override — fully
+    attributed (transaction_id macro) with the MOCA promo code auto-applied. Returns
+    None when the destination is unknown or no tracking link is configured, so /go
+    falls back to the generic config link."""
+    global _GOMOWORLD_HEB_TO_SLUG
+    aff = load_config().get("affiliate", {}).get("gomoworld", {}) or {}
+    aff_id = aff.get("tag")
+    if not aff_id:
+        return None
+    if _GOMOWORLD_HEB_TO_SLUG is None:
+        try:
+            from scraper import GOMOWORLD_SLUG_TO_HEBREW
+            inv = {}
+            for slug, heb in GOMOWORLD_SLUG_TO_HEBREW.items():
+                if heb:
+                    inv.setdefault(heb, slug)
+            _GOMOWORLD_HEB_TO_SLUG = inv
+        except Exception:
+            _GOMOWORLD_HEB_TO_SLUG = {}
+    slug = _GOMOWORLD_HEB_TO_SLUG.get((dest or "").strip())
+    if not slug:
+        return None
+    from urllib.parse import quote
+    landing = (
+        "https://www.gomoworld.com/en/destinations/{}"
+        "?utm_source=puremium&affiliate={{affiliate_id}}"
+        "&transaction_id={{transaction_id}}&promocode=MOCA"
+    ).format(slug)
+    link = "https://www.puremium1.com/aff_c?offer_id=23&aff_id={}&url={}".format(
+        aff_id, quote(landing, safe=""))
+    source = (hotel or src or "").strip()
+    if source:  # per-placement reporting on Puremium's Sub-ID
+        link += "&aff_sub=" + quote(source[:60], safe="")
+    return link
+
+
 @app.route("/go/<provider>")
 @app.route("/go/<provider>/<plan_id>")
 @limiter.limit("120 per minute")
 def affiliate_redirect(provider, plan_id=None):
-    ip      = request.remote_addr or ""
+    ip      = _client_ip()
+    ua      = request.headers.get("User-Agent", "")
     cfg     = load_config()
     api_key = cfg.get("api_key", "")
     ip_hash = hmac.new(api_key.encode(), ip.encode(), hashlib.sha256).hexdigest()
@@ -1511,11 +1866,24 @@ def affiliate_redirect(provider, plan_id=None):
     campaign = (request.args.get("campaign") or request.args.get("utm_campaign")
                 or request.args.get("utm_source") or "").strip()[:80] or None
 
+    # Bot/crawler gate. robots.txt Disallows /go/ and the buttons are rel="sponsored
+    # nofollow", but non-compliant crawlers ignore both and hammer the redirect (a
+    # single crawler fired 1,295 junk /go hits across the /esim/<dest>/ SEO pages on
+    # 2026-07-10). Following the redirect would register those junk clicks in the
+    # affiliate networks (Impact/Everflow), inflating clicks + tanking conversion
+    # ratios and risking an invalid-traffic flag. So: log the hit (is_bot=1, for
+    # visibility) but STOP here — no affiliate redirect, no hotel attribution.
+    bot = is_bot_ua(ua)
     try:
         log_affiliate_click(provider, plan_id=plan, country=country, ip_hash=ip_hash,
-                            src=src, campaign=campaign, db_path=_db_path())
+                            src=src, campaign=campaign, user_agent=ua, is_bot=bot,
+                            db_path=_db_path())
     except Exception:
         app.logger.warning("affiliate click log failed", exc_info=True)
+
+    if bot:
+        return ("bot traffic not permitted on affiliate links", 403,
+                {"X-Robots-Tag": "noindex, nofollow"})
 
     # Per-hotel attribution: a click from a hotel's guest portal earns the hotel.
     if hotel:
@@ -1536,6 +1904,60 @@ def affiliate_redirect(provider, plan_id=None):
                 return redirect(deep, 302)
         return redirect(_saily_attach_sub(
             _guest_provider_dest(provider, destination=dest), hotel), 302)
+    # Maya: deep-link straight to the clicked plan's page (with attribution) when we
+    # have a per-plan Impact TrackingLink for it; otherwise fall through to the generic
+    # per-provider destination (config.json affiliate.maya.base_url).
+    if provider == "maya" and plan:
+        deep = _maya_deeplink_url(plan)
+        if deep:
+            return redirect(deep, 302)
+    # Voye / Ubigi: deep-link to the viewed destination's country page (top
+    # destinations only) with attribution; else fall through to the generic link.
+    if provider == "voye" and dest:
+        deep = _voye_deeplink_url(dest)
+        if deep:
+            return redirect(deep, 302)
+    if provider == "ubigi" and dest:
+        deep = _ubigi_deeplink_url(dest)
+        if deep:
+            return redirect(deep, 302)
+    # Breeze: deep-link to the viewed destination's Shopify product page carrying the
+    # UpPromote sca_ref (+ optional sca_source = hotel/src); unknown destinations fall
+    # back to the configured homepage tracking link (both attributed).
+    if provider == "breez":
+        deep = _breez_deeplink_url(dest=dest, src=src, hotel=hotel)
+        if deep:
+            return redirect(deep, 302)
+    # Bcengi: no per-destination pages exist on bcengi.com, so the destination is
+    # attached to the single Impact tracking link as subId1 (+ subId2=src,
+    # subId3=hotel) for per-destination attribution in Impact reporting.
+    if provider == "bcengi":
+        deep = _bcengi_subid_url(dest=dest, src=src, hotel=hotel)
+        if deep:
+            return redirect(deep, 302)
+    # Orbit: no per-destination pages (orbitmobile.com is a SPA accordion), so the
+    # destination rides on Impact SubIds (subId1=dest, subId2=src, subId3=hotel)
+    # appended to the single tracking link for per-destination reporting. Falls
+    # through to the generic config link when Orbit isn't configured.
+    if provider == "orbit":
+        deep = _orbit_subid_url(dest=dest, src=src, hotel=hotel)
+        if deep:
+            return redirect(deep, 302)
+    # GigSky: Everflow network. Per-destination deep-link format is pending from
+    # GigSky; until then the click lands on the configured Everflow tracking link
+    # with destination/src/hotel as Sub-IDs (sub1/sub2/sub5). Falls through to the
+    # generic gigsky.com destination while no tracking link is configured yet.
+    if provider == "gigsky":
+        deep = _gigsky_deeplink_url(dest=dest, src=src, hotel=hotel)
+        if deep:
+            return redirect(deep, 302)
+    # GoMoWorld: per-destination deep-link via Puremium's url= override (the
+    # macro-filled transaction_id keeps attribution intact) with the MOCA code
+    # auto-applied; unknown destinations fall through to the generic homepage link.
+    if provider == "gomoworld":
+        deep = _gomoworld_deeplink_url(dest=dest, src=src, hotel=hotel)
+        if deep:
+            return redirect(deep, 302)
     return redirect(_guest_provider_dest(provider, destination=dest), 302)
 
 
@@ -1633,7 +2055,7 @@ def api_esim_event():
     Deal clicks are logged separately by the /go redirect (src='esim')."""
     body = request.get_json(silent=True) or {}
     etype = (body.get("type") or "").strip()
-    if etype not in ("page_view", "destination_pick"):
+    if etype not in ("page_view", "destination_pick", "pwa_install"):
         return jsonify({"ok": False}), 400
     log_esim_event(
         etype,
@@ -1649,6 +2071,55 @@ def api_esim_event():
     return jsonify({"ok": True})
 
 
+@app.route("/api/esim/push/subscribe", methods=["POST"])
+@limiter.limit("10 per minute")
+def api_esim_push_subscribe():
+    """Public (no auth): destination price-drop alert from the B2C eSIM page.
+    Body: { subscription: {endpoint, keys:{p256dh,auth}}, destination, lang }.
+    One alert per device — re-subscribing moves the alert to the new destination.
+    The baseline is the destination's current cheapest TRIP-SIZED ₪ price
+    (db.get_esim_alert_floor), so the first push only fires on a genuine
+    post-subscribe drop (see notify_esim_price_drops)."""
+    from db import save_esim_push_subscription
+    body = request.get_json(silent=True) or {}
+    sub = body.get("subscription") or {}
+    endpoint = (sub.get("endpoint") or "").strip()
+    keys = sub.get("keys") or {}
+    p256dh, auth = keys.get("p256dh"), keys.get("auth")
+    destination = (body.get("destination") or "").strip()
+    lang = body.get("lang") if body.get("lang") in ("he", "en") else "he"
+    if not all([endpoint, p256dh, auth, destination]) or len(destination) > 80:
+        return jsonify({"error": "missing fields"}), 400
+    if not endpoint.startswith("https://"):
+        return jsonify({"error": "bad endpoint"}), 400
+    # Only destinations that actually carry live deals are subscribable (also
+    # blocks junk rows from hand-crafted requests).
+    live = {d["destination"] for d in get_esim_destinations(db_path=_db_path())}
+    if destination not in live:
+        return jsonify({"error": "unknown destination"}), 400
+    from db import get_esim_alert_floor
+    baseline = get_esim_alert_floor(destination, db_path=_db_path())
+    save_esim_push_subscription(endpoint, p256dh, auth, destination, lang=lang,
+                                baseline_price=baseline, db_path=_db_path())
+    log_esim_event("push_subscribe", sid=body.get("sid"), destination=destination,
+                   src=(body.get("src") or None), campaign=(body.get("campaign") or None),
+                   lang=lang, ip_hash=_guest_ip_hash(), db_path=_db_path())
+    return jsonify({"status": "subscribed", "baseline": baseline}), 201
+
+
+@app.route("/api/esim/push/unsubscribe", methods=["DELETE", "POST"])
+@limiter.limit("10 per minute")
+def api_esim_push_unsubscribe():
+    """Public: remove a B2C price-drop subscription by its push endpoint."""
+    from db import delete_esim_push_subscription
+    body = request.get_json(silent=True) or {}
+    endpoint = (body.get("endpoint") or "").strip()
+    if not endpoint:
+        return jsonify({"error": "missing endpoint"}), 400
+    deleted = delete_esim_push_subscription(endpoint, db_path=_db_path())
+    return jsonify({"status": "unsubscribed", "deleted": deleted}), 200
+
+
 @app.route("/api/esim/analytics")
 @require_api_key_or_super_admin
 @limiter.limit("60 per minute")
@@ -1662,6 +2133,432 @@ def api_esim_analytics():
     return jsonify(get_esim_analytics(days=days, db_path=_db_path()))
 
 
+# ── Public B2C domestic mobile comparison (/mobile-deals, no auth) ───────────
+# The domestic twin of the eSIM consumer feed: all rate-card plans of the 10
+# Israeli carriers, server-normalized so the public page (and future static
+# prerenders) never re-implement the data quirks: unlimited encodings
+# (data_gb>=9999 / NULL), voice-only kosher rows, conditional multi-line
+# prices, the sub-GB ₪/GB distortion, __info__ extraction and chip curation.
+import re as _re_mobile
+
+_MOBILE_CARRIERS = {
+    'partner': 'פרטנר', 'pelephone': 'פלאפון', 'hotmobile': 'הוט מובייל',
+    'cellcom': 'סלקום', 'mobile019': '019', 'xphone': 'XPhone',
+    'wecom': 'We-Com', 'neptucom': 'Neptucom', 'golan': 'גולן טלקום',
+    'rami_levy': 'רמי לוי תקשורת',
+}
+
+# Facet classifiers — Python ports of the dashboard's regexes. Keep in sync with
+# mass-market-app/src/data/networkPriority.js (5G / priority) and the
+# roaming-included matcher in DashboardPage.jsx baseFilteredPlans.
+# All run on an UPPERCASED haystack (Hebrew is unaffected by upper()).
+_RE_M_5G = _re_mobile.compile(r'\b5G\b|דור\s?5')
+_RE_M_PRIORITY_HE = _re_mobile.compile(r'תיעדוף|מתועדף')
+_RE_M_PRIORITY_KW = _re_mobile.compile(r'\b(?:MAX|ULTRA|PREMIUM|VIP|PRO|BOOST)\b')
+_RE_M_INTL = _re_mobile.compile(r'חו"ל|חו״ל')
+_RE_M_DATA_WORD = _re_mobile.compile(r'GB|גלישה', _re_mobile.IGNORECASE)
+_RE_M_INCLUDED = _re_mobile.compile(r'כלול(?:ה|ים)?|כולל')
+_RE_M_KOSHER = _re_mobile.compile(r'כשר|נטפרי|ועד הרבנים|KOSHER')
+_RE_M_DATA_ONLY = _re_mobile.compile(r'DATA\s*ONLY|SIM\s*DATA|גלישה בלבד')
+_RE_M_CONDITIONAL = _re_mobile.compile(r'קווים|בהצטרפות|כ\.אשראי|\bלקו\b')
+_RE_M_CHIP_PRIO = _re_mobile.compile(
+    r'חו"ל|חו״ל|לחו|אפליקציות|eSIM|תיעדוף|מתועדף|מחיר קבוע|ללא עליית', _re_mobile.IGNORECASE)
+
+
+def _mobile_has_roaming(extras):
+    """Included-roaming detector: a quantified data note ("1GB גלישה בחו\"ל") OR a
+    qualitative "חו\"ל כלול" tag. Pay-per-use routes deliberately don't match."""
+    for e in extras or []:
+        if not _RE_M_INTL.search(e):
+            continue
+        if (any(ch.isdigit() for ch in e) and _RE_M_DATA_WORD.search(e)) or _RE_M_INCLUDED.search(e):
+            return True
+    return False
+
+
+def _mobile_minutes_abroad(extras):
+    for e in extras or []:
+        if ('דק' in e or 'שיחות' in e) and ('לחו"ל' in e or 'לחו״ל' in e):
+            return True
+    return False
+
+
+def _assemble_mobile_plans(db_path):
+    """Normalized consumer feed for /mobile-deals (see section comment)."""
+    rows = get_plans(db_path=db_path)
+    plans, updated = [], None
+    for r in rows:
+        extras = r.get('extras') or []
+        info, vis = None, []
+        for e in extras:
+            if isinstance(e, str) and e.startswith('__info__|'):
+                info = e.split('|', 1)[1]
+            else:
+                vis.append(e)
+        hay = ((r.get('plan_name') or '') + ' ' + ' '.join(vis)).upper()
+        five_g = bool(_RE_M_5G.search(hay))
+        priority = five_g and bool(_RE_M_PRIORITY_HE.search(hay) or _RE_M_PRIORITY_KW.search(hay))
+        kosher = bool(_RE_M_KOSHER.search(hay))
+        gb = r.get('data_gb')
+        unlimited = voice_only = False
+        if gb is not None and gb >= 9999:
+            # wecom encodes "גלישה חופשית" as 10000GB — normalize to unlimited.
+            unlimited, gb = True, None
+        elif gb is None:
+            # NULL is "unlimited" in the dashboard convention, but the only live
+            # NULL rows are voice-only kosher plans — don't sell them as unlimited.
+            if kosher or 'ללא גלישה' in hay:
+                voice_only = True
+            else:
+                unlimited = True
+        price = r.get('price')
+        ppgb = None
+        if not unlimited and not voice_only and gb and gb >= 1 and price:
+            ppgb = round(price / gb, 2)
+        cond_hay = (r.get('plan_name') or '') + ' ' + ' '.join(vis) + ' ' + (info or '')
+        conditional = bool(_RE_M_CONDITIONAL.search(cond_hay))
+        # Chip guard: a bare pay-per-use route mention (e.g. Pelephone's
+        # 'מסלול חו"ל Travel' — intl wording with no quantity and no
+        # included-tag) reads as an included-roaming benefit on a consumer
+        # card. Keep it in the full extras/details, drop it from chips.
+        def _chip_ok(e):
+            if _RE_M_INTL.search(e) and not any(ch.isdigit() for ch in e) \
+                    and not _RE_M_INCLUDED.search(e):
+                return False
+            return True
+        short = [e for e in vis if len(e) <= 60 and _chip_ok(e)]
+        chips = ([e for e in short if _RE_M_CHIP_PRIO.search(e)]
+                 + [e for e in short if not _RE_M_CHIP_PRIO.search(e)])[:4]
+        sa = r.get('scraped_at')
+        if sa and (updated is None or sa > updated):
+            updated = sa
+        plans.append({
+            'id': f"{r['carrier']}|{r['plan_name']}",
+            'carrier': r['carrier'], 'plan_name': r['plan_name'],
+            'price': price, 'promo_price': r.get('promo_price'),
+            'promo_months': r.get('promo_months'),
+            'data_gb': gb, 'unlimited': unlimited, 'voice_only': voice_only,
+            'minutes': r.get('minutes'),
+            'chips': chips, 'extras': vis, 'info': info,
+            'terms_url': r.get('url'),
+            'price_conditional': conditional,
+            'price_per_gb': ppgb,
+            'facets': {
+                'five_g': five_g, 'five_g_priority': priority,
+                'roaming': _mobile_has_roaming(vis),
+                'minutes_abroad': _mobile_minutes_abroad(vis),
+                'esim': 'ESIM' in hay,
+                'kosher': kosher,
+                'data_only': bool(_RE_M_DATA_ONLY.search(hay)),
+                'free_apps': any('אפליקציות' in e for e in vis),
+            },
+            'scraped_at': sa,
+        })
+    carriers = []
+    for cid, name in _MOBILE_CARRIERS.items():
+        mine = [p for p in plans if p['carrier'] == cid]
+        if not mine:
+            continue
+        prices = [p['price'] for p in mine if p['price']]
+        carriers.append({'id': cid, 'name': name, 'count': len(mine),
+                         'min_price': min(prices) if prices else None})
+    return {'plans': plans, 'carriers': carriers,
+            'updated_at': updated or datetime.now(timezone.utc).isoformat()}
+
+
+@app.route("/api/mobile/compare")
+@limiter.limit("60 per minute")
+def api_mobile_compare():
+    """Public consumer feed for /mobile-deals — normalized domestic plans +
+    per-carrier summary. Roaming / content tabs reuse the existing public
+    /api/abroad-plans and /api/content-plans as-is."""
+    payload = _cached_plans('mobile_compare', lambda: _assemble_mobile_plans(_db_path()))
+    return _public_cache(jsonify(payload), 600)
+
+
+@app.route("/api/mobile/event", methods=["POST"])
+@limiter.limit("240 per minute")
+def api_mobile_event():
+    """Anonymous traffic beacon from the public /mobile-deals page. No auth, no
+    PII — ip hashed, sid is a random session token. Kept separate from
+    /api/esim/event so the eSIM analytics funnel stays vertical-clean."""
+    body = request.get_json(silent=True) or {}
+    etype = (body.get("type") or "").strip()
+    if etype not in ("page_view", "tab_pick", "carrier_click"):
+        return jsonify({"ok": False}), 400
+    from db import log_mobile_event
+    log_mobile_event(
+        etype,
+        sid=body.get("sid"),
+        tab=(body.get("tab") or None),
+        carrier=(body.get("carrier") or None),
+        src=(body.get("src") or None),
+        campaign=(body.get("campaign") or None),
+        lang=(body.get("lang") or None),
+        referrer=(body.get("referrer") or None),
+        ip_hash=_guest_ip_hash(),
+        db_path=_db_path(),
+    )
+    return jsonify({"ok": True})
+
+
+@app.route("/api/mobile/push/subscribe", methods=["POST"])
+@limiter.limit("10 per minute")
+def api_mobile_push_subscribe():
+    """Public (no auth): domestic price-drop alert from /mobile-deals.
+    Body: { subscription: {endpoint, keys:{p256dh,auth}}, carrier, lang }.
+    carrier is a domestic id or 'all'. One alert per device — re-subscribing
+    moves it. Event-driven off the domestic change log (notify_mobile_price_drops),
+    so unlike the eSIM flow there is no price baseline."""
+    from db import save_mobile_push_subscription, log_mobile_event
+    body = request.get_json(silent=True) or {}
+    sub = body.get("subscription") or {}
+    endpoint = (sub.get("endpoint") or "").strip()
+    keys = sub.get("keys") or {}
+    p256dh, auth = keys.get("p256dh"), keys.get("auth")
+    carrier = (body.get("carrier") or "all").strip() or "all"
+    lang = body.get("lang") if body.get("lang") in ("he", "en") else "he"
+    if not all([endpoint, p256dh, auth]):
+        return jsonify({"error": "missing fields"}), 400
+    if not endpoint.startswith("https://"):
+        return jsonify({"error": "bad endpoint"}), 400
+    if carrier != "all" and carrier not in _MOBILE_CARRIERS:
+        return jsonify({"error": "unknown carrier"}), 400
+    save_mobile_push_subscription(endpoint, p256dh, auth, carrier=carrier, lang=lang,
+                                  db_path=_db_path())
+    log_mobile_event("push_subscribe", sid=body.get("sid"), carrier=carrier,
+                     src=(body.get("src") or None), campaign=(body.get("campaign") or None),
+                     lang=lang, ip_hash=_guest_ip_hash(), db_path=_db_path())
+    return jsonify({"status": "subscribed"}), 201
+
+
+@app.route("/api/mobile/push/unsubscribe", methods=["DELETE", "POST"])
+@limiter.limit("10 per minute")
+def api_mobile_push_unsubscribe():
+    """Public: remove a /mobile-deals price-drop subscription by its endpoint."""
+    from db import delete_mobile_push_subscription
+    body = request.get_json(silent=True) or {}
+    endpoint = (body.get("endpoint") or "").strip()
+    if not endpoint:
+        return jsonify({"error": "missing endpoint"}), 400
+    deleted = delete_mobile_push_subscription(endpoint, db_path=_db_path())
+    return jsonify({"status": "unsubscribed", "deleted": deleted}), 200
+
+
+_REM_KINDS = ("better_deal", "plan_end")
+_REM_PLAN_TYPES = ("domestic", "roaming", "content")
+_REM_DAYS_CHOICES = (3, 7, 14, 30)
+
+
+def _rem_parse_price(val):
+    """First ₪ amount inside a free-text price (content_plans prices are strings
+    like '19.90 ₪ לחודש'). None when there is no usable number."""
+    m = _re_mobile.search(r"\d+(?:\.\d+)?", str(val or ""))
+    try:
+        p = float(m.group()) if m else None
+        return p if p is not None and 0 < p <= 1000 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _rem_lookup_plan(plan_type, carrier, plan_name):
+    """Snapshot dict for the signed-up plan, validated against the live data of
+    its type — or None when no such plan exists. For 'content', plan_name is the
+    service name (content rows have no plan_name of their own)."""
+    if plan_type == "roaming":
+        from db import get_abroad_plans
+        row = next((p for p in get_abroad_plans(carrier=carrier, db_path=_db_path())
+                    if p["plan_name"] == plan_name), None)
+        if row is None:
+            return None
+        # Abroad NULL data_gb = a voice-minutes package (no data), NOT
+        # unlimited — the matchers skip such rows on both sides.
+        return {"price": row.get("price"), "data_gb": row.get("data_gb"),
+                "unlimited": False, "days": row.get("days")}
+    if plan_type == "content":
+        from db import get_content_plans
+        row = next((p for p in get_content_plans(service=plan_name, carrier=carrier,
+                                                 db_path=_db_path())), None)
+        if row is None:
+            return None
+        return {"price": _rem_parse_price(row.get("price")), "data_gb": None,
+                "unlimited": False, "days": None}
+    feed = _cached_plans('mobile_compare', lambda: _assemble_mobile_plans(_db_path()))
+    plan = next((p for p in feed.get("plans", [])
+                 if p["carrier"] == carrier and p["plan_name"] == plan_name), None)
+    if plan is None:
+        return None
+    return {"price": plan.get("price"), "data_gb": plan.get("data_gb"),
+            "unlimited": plan.get("unlimited"), "days": None}
+
+
+@app.route("/api/mobile/reminders", methods=["POST"])
+@limiter.limit("6 per minute")
+def api_mobile_reminders_subscribe():
+    """Public (no auth): /mobile-deals email/WhatsApp reminder signup.
+    Body: { email?, phone?, kinds: ['better_deal'|'plan_end'...], plan_type?
+    ('domestic'|'roaming'|'content', default domestic), carrier, plan_name,
+    end_date?, remind_days_before?, include_offers?, lang, sid? }. For
+    plan_type='content', plan_name carries the service name. At least one
+    contact field is required; the plan must exist on the live data of its type
+    (price/data are snapshotted server-side, never trusted from the client).
+    Returns the shared unsubscribe token."""
+    from db import save_mobile_reminders, log_mobile_event
+    body = request.get_json(silent=True) or {}
+    lang = body.get("lang") if body.get("lang") in ("he", "en") else "he"
+    email = (body.get("email") or "").strip().lower()[:120]
+    if email and not _re_mobile.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        return jsonify({"error": "bad email"}), 400
+    phone = _re_mobile.sub(r"\D", "", (body.get("phone") or "").strip()[:25])
+    if phone:
+        if phone.startswith("0"):
+            phone = "972" + phone[1:]
+        if not _re_mobile.match(r"^\d{10,15}$", phone):
+            return jsonify({"error": "bad phone"}), 400
+    if not email and not phone:
+        return jsonify({"error": "missing contact"}), 400
+    carrier = (body.get("carrier") or "").strip()
+    plan_name = (body.get("plan_name") or "").strip()[:200]
+    plan_type = body.get("plan_type") if body.get("plan_type") in _REM_PLAN_TYPES else "domestic"
+    kinds = [k for k in (body.get("kinds") or []) if k in _REM_KINDS]
+    if not kinds:
+        return jsonify({"error": "missing kinds"}), 400
+    if carrier not in _MOBILE_CARRIERS or not plan_name:
+        return jsonify({"error": "unknown plan"}), 400
+    plan = _rem_lookup_plan(plan_type, carrier, plan_name)
+    if plan is None:
+        return jsonify({"error": "unknown plan"}), 404
+    channel = "both" if (email and phone) else ("email" if email else "whatsapp")
+    # Optional self-declared actual monthly price ("כמה אתם משלמים בפועל?") —
+    # when present, alerts compare against it instead of the rate-card price.
+    paid_price = None
+    try:
+        pp = float(body.get("paid_price"))
+        if 5 <= pp <= 500:
+            paid_price = round(pp, 2)
+    except (TypeError, ValueError):
+        pass
+    rows = []
+    for k in kinds:
+        row = {"kind": k, "plan_type": plan_type, "carrier": carrier,
+               "plan_name": plan_name,
+               "price": plan.get("price"), "data_gb": plan.get("data_gb"),
+               "unlimited": plan.get("unlimited"), "days": plan.get("days"),
+               "email": email or None,
+               "phone": phone or None, "channel": channel, "lang": lang,
+               "paid_price": paid_price}
+        if k == "plan_end":
+            today = datetime.now().date()
+            try:
+                end = datetime.strptime((body.get("end_date") or "").strip()[:10], "%Y-%m-%d").date()
+            except ValueError:
+                return jsonify({"error": "bad end_date"}), 400
+            if not (today <= end <= today + timedelta(days=3 * 365)):
+                return jsonify({"error": "bad end_date"}), 400
+            try:
+                days_before = int(body.get("remind_days_before"))
+            except (TypeError, ValueError):
+                days_before = 7
+            if days_before not in _REM_DAYS_CHOICES:
+                days_before = 7
+            row.update({"end_date": end.isoformat(), "remind_days_before": days_before,
+                        "include_offers": bool(body.get("include_offers", True))})
+        rows.append(row)
+    token = secrets.token_urlsafe(24)
+    save_mobile_reminders(token, rows, db_path=_db_path())
+    log_mobile_event("reminder_subscribe", sid=body.get("sid"), carrier=carrier,
+                     src=(body.get("src") or None), campaign=(body.get("campaign") or None),
+                     lang=lang, ip_hash=_guest_ip_hash(), db_path=_db_path())
+    return jsonify({"status": "subscribed", "token": token, "kinds": kinds}), 201
+
+
+@app.route("/api/mobile/reminders/unsubscribe", methods=["GET", "POST"])
+@limiter.limit("30 per minute")
+def api_mobile_reminders_unsubscribe():
+    """Public: remove ALL reminder rows of one signup by its shared token.
+    GET renders a tiny bilingual confirmation page (the email/WhatsApp links
+    are plain <a> clicks); POST returns JSON for in-app use."""
+    from db import delete_mobile_reminders_by_token
+    token = (request.args.get("token")
+             or (request.get_json(silent=True) or {}).get("token") or "").strip()
+    if not token or len(token) > 80:
+        return jsonify({"error": "missing token"}), 400
+    deleted = delete_mobile_reminders_by_token(token, db_path=_db_path())
+    if request.method == "POST":
+        return jsonify({"status": "unsubscribed", "deleted": deleted})
+    msg_he = ("הוסרת מרשימת העדכונים. לא יישלחו יותר תזכורות." if deleted
+              else "הקישור כבר אינו פעיל - ההרשמה הוסרה בעבר.")
+    msg_en = ("You have been unsubscribed - no more reminders will be sent." if deleted
+              else "This link is no longer active - the signup was already removed.")
+    site = (load_config().get("public_site_url") or "https://mocaintel.com").rstrip("/")
+    page = (
+        "<!doctype html><html dir='rtl' lang='he'><head><meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+        "<title>MOCA</title></head>"
+        "<body style='font-family:Arial,sans-serif;background:#f9f4ee;color:#3b1f0d;"
+        "display:flex;align-items:center;justify-content:center;min-height:90vh;margin:0'>"
+        "<div style='background:#fff;border-radius:20px;padding:32px 28px;max-width:420px;"
+        "text-align:center;box-shadow:0 6px 24px rgba(70,45,20,.08)'>"
+        "<div style='font-size:34px;margin-bottom:10px'>&#9889;</div>"
+        f"<h1 style='font-size:19px;margin:0 0 8px'>MOCA</h1>"
+        f"<p style='font-size:15px;margin:0 0 6px'>{msg_he}</p>"
+        f"<p dir='ltr' style='font-size:13px;color:#8a6a4a;margin:0 0 16px'>{msg_en}</p>"
+        f"<a href='{site}/mobile-deals' "
+        f"style='color:#5c3317;font-weight:bold'>{site.split('//', 1)[-1]}/mobile-deals</a>"
+        "</div></body></html>")
+    return Response(page, mimetype="text/html")
+
+
+def run_mobile_reminders_job():
+    """Daily 09:15 — deliver /mobile-deals email/WhatsApp reminders off the
+    normalized domestic feed: better-deal alerts (recurring, price-ratcheted)
+    and plan-term-end reminders (one-shot, optional retention offers)."""
+    try:
+        from notifier import (notify_mobile_better_deals, notify_mobile_plan_end_reminders,
+                              notify_mobile_heartbeat, notify_mobile_renewal_followups)
+        config = load_config()
+        plans = _assemble_mobile_plans(_db_path()).get("plans", [])
+        n_deal = notify_mobile_better_deals(plans, config, db_path=_db_path())
+        n_end = notify_mobile_plan_end_reminders(plans, config, db_path=_db_path())
+        n_renew = notify_mobile_renewal_followups(plans, config, db_path=_db_path())
+        n_pulse = notify_mobile_heartbeat(plans, config, db_path=_db_path())
+        logger.info(f"mobile reminders job: {n_deal} better-deal + {n_end} plan-end "
+                    f"+ {n_renew} renewal + {n_pulse} heartbeat sent")
+        return {"better_deal_sent": n_deal, "plan_end_sent": n_end,
+                "renewal_sent": n_renew, "heartbeat_sent": n_pulse}
+    except Exception as e:
+        logger.error(f"mobile reminders job failed: {e}")
+        return {"error": str(e)}
+
+
+@app.route("/api/mobile/reminders/run-now", methods=["GET", "POST"])
+@require_api_key
+def api_mobile_reminders_run_now():
+    """Manual trigger / smoke-test for the daily reminders job."""
+    return jsonify(run_mobile_reminders_job())
+
+
+@app.route("/api/mobile/reminders/subscribers")
+@require_api_key_or_super_admin
+def api_mobile_reminders_subscribers():
+    """Super-admin: every reminder signup (contact details included) for the
+    /admin/mobile-subscribers dashboard. Returns ALL rows — active and done —
+    newest first, plus summary counts."""
+    from db import get_all_mobile_reminders
+    rows = get_all_mobile_reminders(db_path=_db_path())
+    emails = {r["email"] for r in rows if r.get("email")}
+    phones = {r["phone"] for r in rows if r.get("phone")}
+    return jsonify({
+        "rows": rows,
+        "stats": {
+            "total_rows": len(rows),
+            "active_rows": sum(1 for r in rows if not r.get("done")),
+            "unique_emails": len(emails),
+            "unique_phones": len(phones),
+        },
+    })
+
+
 # ════════════════════════════════════════════════════════════════════════════
 #  MOCA Guest Connect — hotels vertical (public guest portal + operator console)
 #  Plan: Hotel/Hotel Plan.txt §2.3 / §5. Public routes are unauthenticated;
@@ -1669,7 +2566,7 @@ def api_esim_analytics():
 # ════════════════════════════════════════════════════════════════════════════
 
 def _guest_ip_hash():
-    ip = request.remote_addr or ""
+    ip = _client_ip() or ""
     api_key = load_config().get("api_key", "")
     return hmac.new(api_key.encode(), ip.encode(), hashlib.sha256).hexdigest()
 
@@ -1933,6 +2830,13 @@ def api_scrape_global_now():
                 save_global_changes(changes, db_path=_db_path())
         save_global_plans(new_plans, db_path=_db_path())
         arc.archive_global_plans(new_plans)
+        # B2C destination price-drop pushes — state-based (baseline vs current min),
+        # so it must run after save_global_plans on EVERY global scrape path.
+        try:
+            from notifier import notify_esim_price_drops
+            notify_esim_price_drops(load_config(), db_path=_db_path())
+        except Exception as e:
+            logger.warning(f"esim price-drop push failed: {e}")
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-global-now failed: {e}", exc_info=True)
@@ -2012,13 +2916,23 @@ def _scrape_emit(stage, status='running', count=None, message=None):
 
 
 def _scrape_start():
+    """Atomically claim the single-scrape slot. Returns True if acquired, or
+    False if a full scrape (manual OR scheduled) is already running — both the
+    /api/scrape-all-now handler and the scheduled run_scrape_job share this flag,
+    so a manual refresh can't run on top of the 07:30/17:00 scheduled scrape (two
+    Playwright passes at once would double the load on the single box and let a
+    half-written DB state emit spurious price_change/removed_plan events). Release
+    with _scrape_finish()."""
     with _scrape_lock:
+        if _scrape_progress.get('active'):
+            return False
         _scrape_progress['log'] = []
         _scrape_progress['active'] = True
         _scrape_progress['started_at'] = datetime.now(timezone.utc).isoformat()
         _scrape_progress['completed_at'] = None
     with _scrape_signal:
         _scrape_signal.notify_all()
+    return True
 
 
 def _scrape_finish(error=None):
@@ -2107,7 +3021,8 @@ def api_scrape_all_now():
     ok, used, limit = _check_refresh_quota()
     if not ok:
         return jsonify({"error": f"מכסת הרענון החודשית הגיעה לסיום ({used}/{limit}). מחכים לחודש הבא.", "quota_used": used, "quota_limit": limit}), 429
-    _scrape_start()
+    if not _scrape_start():
+        return jsonify({"error": "סריקה כבר רצה כרגע. נסו שוב בעוד כמה דקות.", "scrape_active": True}), 409
     try:
         import scraper as sc
         from db import save_plans, save_changes, save_abroad_plans, save_abroad_changes, \
@@ -2132,6 +3047,12 @@ def api_scrape_all_now():
         from notifier import alert_missing_terms
         _terms_cfg = load_config()
         alert_missing_terms(ch_domestic, new_domestic, 'plans', _terms_cfg)
+        # /mobile-deals consumer price-drop push (event-driven off the fresh list).
+        try:
+            from notifier import notify_mobile_price_drops
+            notify_mobile_price_drops(ch_domestic, _terms_cfg, db_path=_db_path())
+        except Exception as e:
+            logger.warning(f"mobile price-drop push failed: {e}")
 
         # ── Abroad ────────────────────────────────────────────────────────
         _scrape_emit('abroad', 'starting', message='סורק חבילות חו"ל')
@@ -2173,6 +3094,11 @@ def api_scrape_all_now():
             if ch_global:
                 save_global_changes(ch_global, db_path=_db_path())
         save_global_plans(new_global, db_path=_db_path())
+        try:
+            from notifier import notify_esim_price_drops
+            notify_esim_price_drops(load_config(), db_path=_db_path())
+        except Exception as e:
+            logger.warning(f"esim price-drop push failed: {e}")
         results["global"] = {"plans": len(new_global), "changes": len(ch_global)}
         _scrape_emit('global', 'done', count=len(new_global), message=f'{len(new_global)} חבילות, {len(ch_global)} שינויים')
 
@@ -2201,15 +3127,20 @@ def api_scrape_all_now():
         # ── Banners (homepage + e-store screenshots) ───────────────────────
         _scrape_emit('banners', 'starting', message='מצלם באנרים')
         banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
-        from scraper import scrape_carrier_banners, scrape_carrier_store_banners
+        from scraper import (scrape_carrier_banners, scrape_carrier_store_banners,
+                             scrape_global_provider_banners)
         banner_results = scrape_carrier_banners(banners_dir)
         store_results  = scrape_carrier_store_banners(banners_dir)
+        global_results = scrape_global_provider_banners(banners_dir)
+        from scraper import GLOBAL_BANNER_URLS as _GBU
         arc.archive_all_banners(banners_dir, list(CARRIER_DISPLAY.keys()), list(CARRIER_STORE_DISPLAY.keys()))
+        arc.archive_all_global_banners(banners_dir, list(_GBU.keys()))
         results["banners"] = {
             "homepage": sum(1 for r in banner_results if r["success"]),
             "store":    sum(1 for r in store_results  if r["success"]),
+            "global":   sum(1 for r in global_results if r["success"]),
         }
-        _scrape_emit('banners', 'done', count=results['banners']['homepage'] + results['banners']['store'])
+        _scrape_emit('banners', 'done', count=results['banners']['homepage'] + results['banners']['store'] + results['banners']['global'])
 
         _invalidate_plan_cache()
         results["status"] = "ok"
@@ -2274,6 +3205,12 @@ _HISTORY_CARRIER_NAMES = {
     'neptucom': 'Neptucom',
     'tuki': 'Tuki',
     'terminalesim': 'Terminal eSIM',
+    'gigsky': 'GigSky',
+    'esimgenius': 'eSIM Genius',
+    'nisim': 'Nisim eSIM',
+    'esimax': 'eSIM Max',
+    'venterrasim': 'VenterraSIM',
+    'simzol': 'Simzol',
     'airalo': 'Airalo',
     'pelephone_global': 'GlobalSIM',
     'esimo': 'eSIMo',
@@ -2299,6 +3236,7 @@ _HISTORY_CARRIER_NAMES = {
     'bestconnect': 'Best Connect',
     'bnesim': 'BNESIM',
     'esimplus': 'eSIM Plus',
+    'bcengi': 'Bcengi',
     'yesim': 'Yesim', 'nomad': 'Nomad', 'ubigi': 'Ubigi', 'alosim': 'aloSIM',
 }
 _HISTORY_TYPE_NAMES = {
@@ -2765,7 +3703,9 @@ def scrape_news_job():
         logger.error(f"News scrape job failed: {e}", exc_info=True)
 
 
-RESELLER_SCRAPER_MODULES = ("pelephon4u_scraper", "pelephone_join_scraper", "btl_scrapers")
+# pelephon4u_scraper SILENCED 2026-07-26: pelephon4u.co.il returns 403 since
+# ~2026-07-12 (Cloudways domain unmapped). Re-add if the site comes back.
+RESELLER_SCRAPER_MODULES = ("pelephone_join_scraper", "btl_scrapers")
 
 
 def scrape_resellers_job():
@@ -3007,6 +3947,58 @@ def api_store_banners():
     return _public_cache(jsonify(_filter_hidden_carrier(result)), 600)
 
 
+@app.route("/api/global-banners")
+@limiter.limit("60 per minute")
+def api_global_banners():
+    """Return metadata for global eSIM provider homepage banner screenshots.
+
+    Providers + homepage URLs come from scraper.GLOBAL_BANNER_URLS; display
+    name/color come from _GUEST_PROVIDER_META (same source that drives the
+    provider chips). Files are {provider}_global.png in data/banners/.
+    """
+    from scraper import GLOBAL_BANNER_URLS
+    banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
+    # Freshness state (provider -> {hash, changed_at}) written by the scraper.
+    state = {}
+    try:
+        with open(os.path.join(banners_dir, "_global_banner_state.json"), "r", encoding="utf-8") as f:
+            state = json.load(f)
+    except Exception:
+        state = {}
+    now = datetime.now(timezone.utc)
+    result = []
+    for provider, url in GLOBAL_BANNER_URLS.items():
+        meta = _GUEST_PROVIDER_META.get(provider, {})
+        png_path = os.path.join(banners_dir, f"{provider}_global.png")
+        scraped_at = None
+        image_url = None
+        if os.path.exists(png_path):
+            mtime = os.path.getmtime(png_path)
+            scraped_at = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
+            image_url = f"/banners/{provider}_global.png?v={int(mtime)}"
+        # changed_at = last time the homepage campaign visibly changed (perceptual
+        # hash drift). changed_recently drives the "התעדכן" freshness badge.
+        changed_at = (state.get(provider) or {}).get("changed_at")
+        changed_recently = False
+        if changed_at:
+            try:
+                changed_recently = (now - datetime.fromisoformat(changed_at)).total_seconds() <= 48 * 3600
+            except Exception:
+                changed_recently = False
+        result.append({
+            "carrier":    provider,
+            "name":       meta.get("label") or provider,
+            "url":        meta.get("url") or (f"https://{meta['domain']}" if meta.get("domain") else url),
+            "color":      meta.get("color") or "#8a6a4a",
+            "image_url":  image_url,
+            "scraped_at": scraped_at,
+            "changed_at": changed_at,
+            "changed_recently": changed_recently,
+            "changed_today": changed_recently,
+        })
+    return _public_cache(jsonify(_filter_hidden_carrier(result)), 600)
+
+
 @app.route("/api/archive")
 @limiter.limit("60 per minute")
 def api_archive():
@@ -3157,6 +4149,11 @@ def api_scrape_now():
         arc.archive_domestic_plans(new_plans)
         from notifier import alert_missing_terms
         alert_missing_terms(changes, new_plans, 'plans', load_config())
+        try:
+            from notifier import notify_mobile_price_drops
+            notify_mobile_price_drops(changes, load_config(), db_path=_db_path())
+        except Exception as e:
+            logger.warning(f"mobile price-drop push failed: {e}")
         return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-now failed: {e}", exc_info=True)
@@ -3717,7 +4714,9 @@ def api_chat():
             'wecom': 'We-Com', 'neptucom': 'Neptucom', 'golan': 'גולן טלקום',
             'rami_levy': 'רמי לוי תקשורת',
             # Global eSIM
-            'tuki': 'Tuki', 'terminalesim': 'Terminal eSIM',
+            'tuki': 'Tuki', 'terminalesim': 'Terminal eSIM', 'gigsky': 'GigSky',
+            'esimgenius': 'eSIM Genius', 'nisim': 'Nisim eSIM', 'esimax': 'eSIM Max',
+            'venterrasim': 'VenterraSIM', 'simzol': 'Simzol',
             'airalo': 'Airalo', 'airalo_local': 'Airalo', 'airalo_regional': 'Airalo',
             'pelephone_global': 'GlobalSIM', 'esimo': 'eSIMo', 'simtlv': 'SimTLV',
             'world8': '8 World', 'xphone_global': 'XPhone Global', 'saily': 'Saily',
@@ -5049,6 +6048,27 @@ def api_history_changes():
     return jsonify({'changes': changes, 'summary': summary})
 
 
+@app.route('/robots.txt')
+@limiter.exempt
+def robots_txt():
+    """robots.txt for the API host (api.mocaintel.com). The frontend's robots.txt
+    (Netlify) Disallows /go/, but the prerendered /esim/<dest>/ SEO pages link the
+    deal buttons ABSOLUTELY to api.mocaintel.com/go/... — a different host, where
+    (until 2026-07-11) the only robots.txt was Cloudflare's auto-generated one
+    (User-agent: * → Allow: /). Result: a perfectly compliant crawler
+    (Claude-SearchBot) followed ~1,295 /go links off the SEO pages on launch day.
+    Cloudflare's managed robots.txt prepends its content-signal block to whatever
+    the origin serves, so these directives ride along with it."""
+    body = (
+        "User-agent: *\n"
+        "Disallow: /go/\n"          # affiliate redirects — clicks pollute attribution
+        "Disallow: /api/\n"         # JSON endpoints — nothing indexable
+        "Disallow: /banners/\n"     # screenshot PNGs for the internal dashboard
+    )
+    return body, 200, {"Content-Type": "text/plain; charset=utf-8",
+                       "Cache-Control": "public, max-age=3600"}
+
+
 @app.route('/api/ping')
 @limiter.exempt
 def api_ping():
@@ -5185,10 +6205,17 @@ def api_history_price_series_batch():
 
 
 @app.route('/api/history/analyze')
+@require_auth
 @limiter.limit('10 per minute')
+@limiter.limit(_chat_daily_limit, key_func=_chat_user_key)
 def api_history_analyze():
     """AI analysis of historical price changes for a carrier using Claude Haiku.
-    Rate-limited to 10/min (vs 60/min for other history routes) due to Anthropic API cost.
+
+    Auth: @require_auth (logged-in user or server API key) — this endpoint spends
+    real Anthropic USD, so it must not be anonymously reachable. It's only called
+    from the login-gated History tab, so gating it does not affect public pages.
+    Rate limits: 10/min (per user/IP) PLUS the same per-user daily cap as /api/chat
+    (_chat_daily_limit), so a single authenticated user can't drive unbounded spend.
     Note: to_date is not forwarded to get_history_price_series (unsupported by that function).
     """
     carrier   = request.args.get('carrier', '')
@@ -5703,7 +6730,8 @@ if __name__ == "__main__":
     from change_detector import detect_changes
     from notifier import (format_message, format_abroad_message, format_global_message,
                           format_content_message, send_notification, send_whatsapp,
-                          send_email_report, send_push_notifications, alert_missing_terms)
+                          send_email_report, send_push_notifications, alert_missing_terms,
+                          notify_esim_price_drops)
     from excel_report import build_excel_report
     import scraper
 
@@ -5787,16 +6815,25 @@ if __name__ == "__main__":
         def _broadcast_workspace_slack(changes_list, plan_type_label, lang="he"):
             if not changes_list:
                 return 0
+            conn = None
             try:
                 from notifier import send_slack, _carrier_name
                 conn = _supabase_conn()
                 cur = conn.cursor()
                 cur.execute("SELECT name, mvno_carrier, brand_config FROM public.workspaces WHERE active IS NOT FALSE")
                 rows = cur.fetchall()
-                conn.close()
             except Exception as exc:
                 logger.warning(f"slack broadcast: workspace fetch failed: {exc}")
                 return 0
+            finally:
+                # Always release the Supabase connection — the happy-path close()
+                # used to be skipped on any execute/fetch error, slowly exhausting
+                # the Postgres pool (this runs on every scheduled + manual scrape).
+                if conn is not None:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
             sent = 0
             import json as _json
             for ws_name, mvno, bc in rows:
@@ -5862,6 +6899,15 @@ if __name__ == "__main__":
             if _n_miss:
                 logger.warning(f"Terms coverage: {_n_miss} new domestic plan(s) without 'עיקרי התוכנית' — alerted.")
 
+            # /mobile-deals consumer price-drop push (event-driven off the fresh list).
+            try:
+                from notifier import notify_mobile_price_drops
+                n_mob = notify_mobile_price_drops(fresh, config)
+                if n_mob:
+                    logger.info(f"Mobile-deals price-drop push sent: {n_mob}")
+            except Exception as e:
+                logger.warning(f"mobile price-drop push failed: {e}")
+
             # ── Abroad plans ───────────────────────────────────────────────
             new_abroad = scraper.scrape_all_abroad()
             old_abroad = get_abroad_plans()
@@ -5903,6 +6949,10 @@ if __name__ == "__main__":
                 # Drop global new/removed churn (per-country scrape flapping); keep price/extras/details.
                 global_changes = [c for c in global_changes if c["change_type"] not in ("new_plan", "removed_plan")]
             save_global_plans(new_global)
+            try:
+                notify_esim_price_drops(config)
+            except Exception as e:
+                logger.warning(f"esim price-drop push failed: {e}")
             fresh_global = filter_already_notified(global_changes, 'global_changes')
             if fresh_global:
                 if existing_global_ch:
@@ -5959,17 +7009,22 @@ if __name__ == "__main__":
             # each schedule_times slot (07:30 / 17:00). The previous standalone
             # 08:00 job was removed; /api/scrape-all-now still captures banners.
             try:
-                from scraper import scrape_carrier_banners, scrape_carrier_store_banners
+                from scraper import (scrape_carrier_banners, scrape_carrier_store_banners,
+                                      scrape_global_provider_banners, GLOBAL_BANNER_URLS)
                 banners_dir = os.path.join(os.path.dirname(__file__), "data", "banners")
-                home_results  = scrape_carrier_banners(banners_dir)
-                store_results = scrape_carrier_store_banners(banners_dir)
-                ok_home  = sum(1 for r in home_results  if r["success"])
-                ok_store = sum(1 for r in store_results if r["success"])
-                logger.info("Banner screenshots: %d/%d homepage, %d/%d e-store",
-                            ok_home, len(home_results), ok_store, len(store_results))
+                home_results   = scrape_carrier_banners(banners_dir)
+                store_results  = scrape_carrier_store_banners(banners_dir)
+                global_results = scrape_global_provider_banners(banners_dir)
+                ok_home   = sum(1 for r in home_results   if r["success"])
+                ok_store  = sum(1 for r in store_results  if r["success"])
+                ok_global = sum(1 for r in global_results if r["success"])
+                logger.info("Banner screenshots: %d/%d homepage, %d/%d e-store, %d/%d global",
+                            ok_home, len(home_results), ok_store, len(store_results),
+                            ok_global, len(global_results))
                 arc.archive_all_banners(banners_dir,
                                         list(CARRIER_DISPLAY.keys()),
                                         list(CARRIER_STORE_DISPLAY.keys()))
+                arc.archive_all_global_banners(banners_dir, list(GLOBAL_BANNER_URLS.keys()))
             except Exception as be:
                 logger.error(f"Banner capture failed in scheduled scrape: {be}", exc_info=True)
 
@@ -6084,10 +7139,24 @@ if __name__ == "__main__":
     # the host is briefly throttled (Win11 modern standby, IO storms, etc).
     # coalesce=True collapses any backlog into a single late run.
     _job_defaults = {"misfire_grace_time": 3600, "coalesce": True}
+
+    def _run_scrape_job_guarded():
+        # Claim the shared single-scrape slot so a scheduled run never overlaps a
+        # manual /api/scrape-all-now (or vice versa) — two Playwright passes on the
+        # one box double the load and can interleave DB writes into spurious change
+        # events. APScheduler's max_instances already blocks scheduled-vs-scheduled.
+        if not _scrape_start():
+            logger.warning("scheduled scrape skipped — a scrape is already running")
+            return
+        try:
+            run_scrape_job()
+        finally:
+            _scrape_finish()
+
     scheduler = BackgroundScheduler()
     for time_str in config.get("schedule_times", ["10:00", "16:00"]):
         hour, minute = map(int, time_str.split(":"))
-        scheduler.add_job(run_scrape_job, "cron", hour=hour, minute=minute, **_job_defaults)
+        scheduler.add_job(_run_scrape_job_guarded, "cron", hour=hour, minute=minute, **_job_defaults)
     report_time = config.get("email_report_time", "09:00")
     rh, rm = map(int, report_time.split(":"))
     scheduler.add_job(run_email_report_job, "cron", hour=rh, minute=rm, **_job_defaults)
@@ -6110,6 +7179,10 @@ if __name__ == "__main__":
     scheduler.add_job(weekly_digest_job, "cron", day_of_week="sun", hour=8, minute=30,
                       id="weekly_digest", **_job_defaults)
     scheduler.add_job(check_trial_expiry_job, "cron", hour=0, minute=5, id="trial_expiry", **_job_defaults)
+    # /mobile-deals consumer reminders (email/WhatsApp) — after the 07:30 scrape
+    # so better-deal checks run against fresh prices
+    scheduler.add_job(run_mobile_reminders_job, "cron", hour=9, minute=15,
+                      id="mobile_reminders", **_job_defaults)
     if config.get("booking_ical_url"):
         try:
             from booking_notifier import check_new_bookings

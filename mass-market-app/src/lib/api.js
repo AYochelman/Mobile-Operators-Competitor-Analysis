@@ -44,13 +44,14 @@ export const api = {
   getAbroadPlans:  (params) => fetchApi(`/api/abroad-plans${params ? '?' + new URLSearchParams(params) : ''}`),
   getAbroadChanges:() => fetchApi('/api/abroad-changes'),
   getGlobalPlans:  (params) => fetchApi(`/api/global-plans${params ? '?' + new URLSearchParams(params) : ''}`),
-  getGlobalChanges:() => fetchApi('/api/global-changes'),
+  getGlobalChanges:(limit = 50) => fetchApi(`/api/global-changes?limit=${limit}`),
   getResellerPlans: (params) => fetchApi(`/api/reseller-plans${params ? '?' + new URLSearchParams(params) : ''}`),
   getUsaPlans:     (params) => fetchApi(`/api/usa-plans${params ? '?' + new URLSearchParams(params) : ''}`),
   getContentPlans: (params) => fetchApi(`/api/content-plans${params ? '?' + new URLSearchParams(params) : ''}`),
   getContentChanges:() => fetchApi('/api/content-changes'),
   getBanners:      () => fetchApi('/api/banners'),
   getStoreBanners: () => fetchApi('/api/store-banners'),
+  getGlobalBanners:() => fetchApi('/api/global-banners'),
   getArchive:      (carrier, date) => fetchApi(`/api/archive?carrier=${encodeURIComponent(carrier)}&date=${encodeURIComponent(date)}`),
   getArchiveDateRange: () => fetchApi('/api/archive/date-range'),
   getHistoryChanges: (carrier, planType, fromDate = '', toDate = '') => {
@@ -305,11 +306,45 @@ export const api = {
     if (campaign) p.set('campaign', campaign)  // which post/video drove this click
     return `${API_BASE}/go/${encodeURIComponent(provider)}?${p.toString()}`
   },
-  // Anonymous traffic beacon for the B2C page (page_view / destination_pick). Fire-and-forget.
+  // Anonymous traffic beacon for the B2C page (page_view / destination_pick / pwa_install). Fire-and-forget.
   trackEsim: (payload) =>
     fetchApi('/api/esim/event', { method: 'POST', body: JSON.stringify(payload), keepalive: true }).catch(() => {}),
+  // Destination price-drop web-push alert (public, no auth). One alert per device —
+  // re-subscribing moves it to the new destination.
+  esimPushSubscribe: (subscription, destination, lang, extra = {}) =>
+    fetchApi('/api/esim/push/subscribe', {
+      method: 'POST',
+      body: JSON.stringify({ subscription, destination, lang, ...extra }),
+    }),
+  esimPushUnsubscribe: (endpoint) =>
+    fetchApi('/api/esim/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
   // B2C traffic dashboard data (admin only). days=0 = lifetime.
   getEsimAnalytics: (days = 30) => fetchApi(`/api/esim/analytics?days=${days}`),
+
+  // ── Public B2C domestic mobile comparison (/mobile-deals, no auth) ─────────
+  // Normalized domestic rate-card feed + per-carrier summary (server handles the
+  // data quirks: unlimited encodings, voice-only kosher rows, ₪/GB guard, chips).
+  getMobileCompare: () => fetchApi('/api/mobile/compare'),
+  // Anonymous traffic beacon (page_view / tab_pick / carrier_click). Fire-and-forget.
+  trackMobile: (payload) =>
+    fetchApi('/api/mobile/event', { method: 'POST', body: JSON.stringify(payload), keepalive: true }).catch(() => {}),
+  // Domestic price-drop web-push alert (public). carrier is a domestic id or
+  // 'all'; one alert per device — re-subscribing moves it.
+  mobilePushSubscribe: (subscription, carrier, lang, extra = {}) =>
+    fetchApi('/api/mobile/push/subscribe', {
+      method: 'POST',
+      body: JSON.stringify({ subscription, carrier, lang, ...extra }),
+    }),
+  mobilePushUnsubscribe: (endpoint) =>
+    fetchApi('/api/mobile/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
+  // Email/WhatsApp reminder signup for a specific plan (public). plan_type:
+  // 'domestic' (default) | 'roaming' | 'content' (plan_name = service name).
+  // payload: { email?, phone?, kinds, plan_type?, carrier, plan_name, end_date?,
+  //            remind_days_before?, include_offers?, lang, sid?, src?, campaign? }
+  mobileReminderSubscribe: (payload) =>
+    fetchApi('/api/mobile/reminders', { method: 'POST', body: JSON.stringify(payload) }),
+  // Super-admin: every reminder signup (emails/phones) + summary stats.
+  getMobileSubscribers: () => fetchApi('/api/mobile/reminders/subscribers'),
 
   // Operator console — super_admin (or dev API key).
   getHotels:         () => fetchApi('/api/hotels'),

@@ -393,55 +393,90 @@ _WECOM_FAIR_USE_GB = 10000
 _WECOM_OVERSEAS_RATES_URL = "https://we-com.co.il/price-list-for-overseas-customers/"
 
 
-def _wecom_wefly_popup_info(page, post_id, listing_id=None):
-    """Return the wefly package's "פרטי החבילה" details as a cleaned
-    "__info__|<lines>" extra (or None on failure).
+def _wecom_fetch_html(url):
+    """Fetch a We-Com page over plain HTTP with a browser UA.
 
-    We-Com's roaming cards all open ONE JetEngine-dynamic JetPopup (jet-popup-14068)
-    whose body is rendered per the clicked card's postId. Rather than drive the JS popup
-    (which is blocked by a page-load marketing overlay), we replay its admin-ajax call
-    (action=jet_popup_get_content) directly with that postId. PlanCard renders the result
-    as the in-card "תנאי התוכנית" modal; the call-rates line becomes a clickable
-    "label|url" link.
+    The 2026-07 site redesign renders all plan cards server-side as
+    <article class="tier-card"> blocks (custom "wecom-theme"), so the wecom
+    scrapers no longer need Playwright at all.
     """
-    import html as _html
-    try:
-        resp = page.request.post(
-            "https://we-com.co.il/wp-admin/admin-ajax.php",
-            form={
-                "action": "jet_popup_get_content",
-                "data[forceLoad]": "true",
-                "data[customContent]": "",
-                "data[popupId]": "jet-popup-14068",
-                "data[isJetEngine]": "true",
-                "data[listingSource]": "posts",
-                "data[listingId]": listing_id or "27979",
-                "data[queryId]": "",
-                "data[postId]": str(post_id),
-                "data[popup_id]": "14068",
-                "data[page_url]": "https://we-com.co.il/roaming/",
-            },
-        )
-        html_body = ((resp.json().get("content") or {}).get("content")) or ""
-    except Exception as e:
-        logging.warning("wecom wefly popup fetch failed (post %s): %s", post_id, e)
+    import requests
+    r = requests.get(url, headers={"User-Agent": _WECOM_UA}, timeout=30)
+    r.raise_for_status()
+    return r.text
+
+
+def _wecom_text_lines(chunk):
+    """HTML chunk -> clean, whitespace-normalized text lines."""
+    txt = re.sub(r'(?is)<(script|style)[^>]*>.*?</\1>', '', chunk)
+    txt = re.sub(r'(?i)<br\s*/?>', '\n', txt)
+    txt = re.sub(r'(?s)<[^>]+>', '\n', txt)
+    txt = _html_unescape(txt)
+    lines = []
+    for raw in txt.split('\n'):
+        ln = re.sub(r'[\s ]+', ' ', raw).strip()
+        if ln:
+            lines.append(ln)
+    return lines
+
+
+def _wecom_tier_cards(page_html):
+    """Split page HTML into its <article class="tier-card"> blocks (2026-07 design)."""
+    return [chunk.split('</article>')[0]
+            for chunk in re.split(r'<article class="tier-card[^"]*">', page_html)[1:]]
+
+
+def _wecom_card_name(card_html):
+    """The card's display name = first line of the tier-card__sub-headline element."""
+    m = re.search(r'class="tier-card__sub-headline">(.*?)</p>', card_html, re.S)
+    if not m:
         return None
-    if not html_body:
+    lines = _wecom_text_lines(m.group(1))
+    return lines[0] if lines else None
+
+
+def _wecom_card_price(card_html):
+    """Parse the tier-card__price-plain element ("29.90 ₪ לחודש" / "₪499")."""
+    m = re.search(r'class="tier-card__price-plain">(.*?)</p>', card_html, re.S)
+    if not m:
         return None
-    # Capture the overseas call-rates link before stripping tags.
+    pm = re.search(r'(\d+(?:\.\d+)?)', re.sub(r'(?s)<[^>]+>', ' ', m.group(1)))
+    if not pm:
+        return None
+    v = float(pm.group(1))
+    return int(v) if v == int(v) else v
+
+
+# Card lines that are navigation/CTA noise, never plan facts.
+_WECOM_CARD_NOISE = {
+    'השארת פרטים', 'הצטרפות דרך נציג', 'הצטרפות אונליין', 'פרטי החבילה',
+    'סגירה', 'לרכישה', 'לרשימת המדינות', 'לעיקרי התוכנית', 'למחירון',
+    'בארץ:', 'בחו"ל:', 'בחו״ל:',
+}
+
+
+def _wecom_popup_info(page_html, popup_id):
+    """Return a roaming card's "פרטי החבילה" popup as a "__info__|<lines>" extra.
+
+    Since the 2026-07 redesign the popup bodies are inline in the page HTML
+    (<div class="wecom-popup wecom-popup--plan" id="wecom-popup-N">), replacing
+    the old JetEngine admin-ajax fetch. PlanCard renders the result as the
+    in-card "תנאי התוכנית" modal (abroad has no url column, so this is the only
+    terms affordance); the call-rates line becomes a clickable "label|url" link.
+    """
+    m = re.search(
+        r'id="%s".*?class="wecom-popup__content">(.*?)</div>\s*</div>\s*</div>' % re.escape(popup_id),
+        page_html, re.S)
+    if not m:
+        return None
+    body = re.sub(r'(?s)<div class="popup-plan-title">.*?</div>', '', m.group(1))
     rate_url = _WECOM_OVERSEAS_RATES_URL
-    m = re.search(r'href="([^"]*price-list[^"]*)"', html_body)
-    if m:
-        rate_url = m.group(1)
-    text = re.sub(r'(?is)<(script|style)[^>]*>.*?</\1>', '', html_body)
-    text = re.sub(r'(?i)<br\s*/?>', '\n', text)
-    text = re.sub(r'(?i)</(p|div|li|h[1-6]|tr)>', '\n', text)
-    text = re.sub(r'(?s)<[^>]+>', '', text)
-    text = _html.unescape(text)
+    href = re.search(r'href="([^"]*price-list[^"]*)"', body)
+    if href:
+        rate_url = _html_unescape(href.group(1))
     lines, seen = [], set()
-    for raw in text.split('\n'):
-        ln = raw.strip()
-        if not ln or ln in seen:
+    for ln in _wecom_text_lines(body):
+        if ln in seen:
             continue
         seen.add(ln)
         if ln.lower().startswith('wefly'):        # bare plan-name heading — the card already shows it
@@ -454,145 +489,65 @@ def _wecom_wefly_popup_info(page, post_id, listing_id=None):
     return ('__info__|' + '\n'.join(lines)) if lines else None
 
 
-def _scrape_wecom_page(page, url, name_prefix, already_navigated=False):
-    """Helper: navigate to url (unless already_navigated), find headings starting with name_prefix, parse cards."""
-    if not already_navigated:
-        page.goto(url, timeout=30000, wait_until="networkidle")
-        page.wait_for_timeout(2000)
+def _wecom_card_extras(front_lines, skip_name=None, cap=8):
+    """Meaningful card-front lines only (skip CTAs, price fragments, bare numbers)."""
+    extras, seen = [], set()
+    for ln in front_lines:
+        if (ln == skip_name or ln in _WECOM_CARD_NOISE or ln in seen or len(ln) <= 2
+                or '₪' in ln or 'לחודש' in ln or re.match(r'^[\d.,]+$', ln)):
+            continue
+        seen.add(ln)
+        extras.append(ln)
+        if len(extras) >= cap:
+            break
+    return extras
+
+
+def scrape_wecom(_page=None):
+    """Scrape We-Com domestic plans (pure HTTP, 2026-07 tier-card design).
+
+    The redesign renamed the rate card to Hebrew display names (חבילה משפחתית,
+    חבילה בסיסית, גלישה חופשית 5G, חו״ל כלול 5G); the legacy wecom* product names
+    survive only in the terms-PDF filenames (wecomFREE-Family-V3.pdf, ...), which
+    we keep as the plan's url ("עיקרי התוכנית").
+    """
+    page_html = _wecom_fetch_html("https://we-com.co.il/cellular-packages/")
     plans = []
-
-    for h_el in page.query_selector_all('.elementor-heading-title, h2, h3, h4'):
-        name = h_el.inner_text().strip()
-        if not name.lower().startswith(name_prefix):
+    for card in _wecom_tier_cards(page_html):
+        name = _wecom_card_name(card)
+        price = _wecom_card_price(card)
+        if not name or price is None:
             continue
 
-        block_text = h_el.evaluate(r"""el => {
-            let p = el;
-            for (let i = 0; i < 12; i++) {
-                p = p.parentElement;
-                if (!p) break;
-                const t = (p.innerText || '').trim();
-                if ((t.includes('\u20aa') || /\d+\.\d+/.test(t)) && t.length > 20 && t.length < 3000) return t;
-            }
-            return '';
-        }""")
+        pdf_m = re.search(r'href="([^"]+\.pdf)"', card)
+        plan_url = _html_unescape(pdf_m.group(1)) if pdf_m else None
 
-        if not block_text:
-            continue
+        # Card front only (headline + bullets + note) — the collapsible
+        # "פרטי החבילה" section repeats the same facts in long form and the
+        # terms PDF already carries the fine print.
+        front_lines = _wecom_text_lines(card.split('<div class="tier-card__details')[0])
+        front_text = '\n'.join(front_lines)
 
-        # Extract PDF terms link from the heading's ancestor block
-        plan_url = h_el.evaluate(r"""el => {
-            let p = el;
-            for (let i = 0; i < 15; i++) {
-                p = p.parentElement;
-                if (!p) break;
-                const a = p.querySelector('a[href*=".pdf"]');
-                if (a) return a.href;
-            }
-            return null;
-        }""")
-
-        # Parse price: on We-Com the price appears BEFORE ₪ (e.g. "29.90\n₪\nלחודש")
-        price_m = re.search(r'(\d+(?:\.\d+)?)\s*\n\s*\u20aa', block_text)
-        if not price_m:
-            price_m = re.search(r'\u20aa\s*(\d+(?:\.\d+)?)', block_text)
-        if price_m:
-            v = float(price_m.group(1))
-            price = int(v) if v == int(v) else v
+        # Domestic GB (see _WECOM_FAIR_USE_GB above for the data model):
+        #  1) explicit cap on the card, e.g. "150GB גלישה בארץ בדור 4" — anchored on
+        #     בארץ so a roaming figure ("5GB גלישה בחו״ל") is never grabbed;
+        #  2) unlimited-marketed "גלישה חופשית" → fair-use ceiling;
+        #  3) otherwise unknown.
+        gb_m = re.search(r'(\d[\d,]*)\s*GB[^\n]*?בארץ', front_text)
+        if gb_m:
+            gb = int(gb_m.group(1).replace(',', ''))
+        elif 'חופשית' in front_text:
+            gb = _WECOM_FAIR_USE_GB
         else:
-            price = None
+            gb = None
 
-        if name_prefix == 'wefly':
-            # Abroad plans: parse GB and days from block
-            gb   = _parse_gb(block_text)
-            days = _parse_days(block_text)
+        minutes_m = re.search(r'([\d,]+)\s*דקות', front_text)
+        minutes = int(minutes_m.group(1).replace(',', '')) if minutes_m else None
 
-            # Extras: meaningful lines only (skip noise and redundant lines)
-            extras = []
-            for line in block_text.split('\n'):
-                line = line.strip()
-                if (line and line != name
-                        and '\u20aa' not in line
-                        and 'לחודש' not in line
-                        and 'אונליין' not in line
-                        and 'פרטי' not in line
-                        and 'רשימת' not in line
-                        and not re.match(r'^[\d.,\s]+(?:GB|MB)?$', line, re.IGNORECASE)  # skip bare GB numbers
-                        and not re.match(r'^[\d.,]+$', line)):
-                    extras.append(line)
-            seen_e, clean_extras = set(), []
-            for e in extras:
-                if e not in seen_e and len(e) > 2:
-                    seen_e.add(e); clean_extras.append(e)
-                if len(clean_extras) >= 4: break
-
-            # "פרטי החבילה" details — read this card's JetEngine postId and fetch the
-            # popup body (see _wecom_wefly_popup_info), surfaced as the "תנאי התוכנית" modal.
-            ids = h_el.evaluate(r"""el => {
-                let p = el, postId = null, listingId = null;
-                for (let i = 0; i < 16 && p; i++) {
-                    p = p.parentElement; if (!p) break;
-                    if (!postId && p.dataset && p.dataset.postId) postId = p.dataset.postId;
-                    if (!listingId && p.getAttribute && p.getAttribute('data-listing-id')) listingId = p.getAttribute('data-listing-id');
-                }
-                return { postId: postId, listingId: listingId };
-            }""")
-            if ids and ids.get("postId"):
-                info = _wecom_wefly_popup_info(page, ids["postId"], ids.get("listingId"))
-                if info:
-                    clean_extras.append(info)
-
-            plans.append({"carrier": "wecom", "plan_name": name, "price": price,
-                          "days": days, "data_gb": gb, "minutes": None, "sms": None,
-                          "extras": clean_extras, "url": plan_url})
-        else:
-            # Domestic GB. See _WECOM_FAIR_USE_GB above for the data model.
-            #  1) explicit cap printed on the card, e.g. "150GB גלישה בארץ". Anchor on
-            #     בארץ so we never grab a roaming figure (Global 5G's "5GB גלישה בחו״ל").
-            #  2) otherwise, an unlimited-marketed "גלישה חופשית" plan → fair-use ceiling.
-            #  3) otherwise unknown → None.
-            gb_m = re.search(r'(\d[\d,]*)\s*GB[^\n]*?בארץ', block_text)
-            if gb_m:
-                gb = int(gb_m.group(1).replace(',', ''))
-            elif 'חופשית' in block_text:
-                gb = _WECOM_FAIR_USE_GB
-            else:
-                gb = None
-
-            # Parse minutes from "X,000 דקות" line
-            minutes_m = re.search(r'([\d,]+)\s*דקות', block_text)
-            minutes = int(minutes_m.group(1).replace(',', '')) if minutes_m else None
-
-            # Extract extras: include useful bullets from both בארץ and בחו"ל sections
-            SKIP_DOMESTIC = {'בארץ:', 'בחו"ל:', 'בחו״ל:', 'השארת פרטים', 'הצטרפות אונליין >',
-                             'פרטי החבילה', 'לרשימת המדינות', 'מחירון שיחות והודעות',
-                             'מכשירים הנתמכים ב-5G', 'מכשירים הנתמכים ב5G'}
-            extras = []
-            for line in block_text.split('\n'):
-                line = line.strip()
-                if not line or line == name:
-                    continue
-                # Footnote lines (starting with *): strip prefix and include as condition note
-                if re.match(r'^\*', line):
-                    note = line.lstrip('* ').strip()
-                    if note and len(note) > 2:
-                        extras.append('* ' + note)
-                    continue
-                # Skip noisy/navigation lines
-                if ('\u20aa' in line or 'לחודש' in line or line in SKIP_DOMESTIC
-                        or 'אונליין' in line or 'פרטי' in line or 'מכשירים' in line
-                        or 'מחירון' in line or 'רשימת' in line
-                        or re.match(r'^[\d.,]+$', line)):
-                    continue
-                extras.append(line)
-            seen_e, clean_extras = set(), []
-            for e in extras:
-                if e not in seen_e and len(e) > 2:
-                    seen_e.add(e); clean_extras.append(e)
-                if len(clean_extras) >= 8: break
-
-            plans.append({"carrier": "wecom", "plan_name": name, "price": price,
-                          "data_gb": gb, "minutes": minutes, "extras": clean_extras, "url": plan_url})
+        plans.append({"carrier": "wecom", "plan_name": name, "price": price,
+                      "data_gb": gb, "minutes": minutes,
+                      "extras": _wecom_card_extras(front_lines, skip_name=name),
+                      "url": plan_url})
 
     seen_names, deduped = set(), []
     for p in plans:
@@ -601,41 +556,46 @@ def _scrape_wecom_page(page, url, name_prefix, already_navigated=False):
     return deduped
 
 
-def scrape_wecom(_page=None):
-    """Scrape We-Com domestic plans. Uses own fresh session with UA."""
-    from playwright.sync_api import sync_playwright as _sp
-    with _sp() as pw:
-        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-        page = browser.new_page(user_agent=_WECOM_UA)
-        try:
-            return _scrape_wecom_page(page, "https://we-com.co.il/cellular-packages/", "wecom")
-        finally:
-            browser.close()
-
-
 def scrape_wecom_abroad(_page=None):
-    """Scrape We-Com abroad (wefly) packages. Uses own fresh session with UA."""
-    from playwright.sync_api import sync_playwright as _sp
-    with _sp() as pw:
-        browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-        page = browser.new_page(user_agent=_WECOM_UA)
-        try:
-            # Click "show more" to reveal all packages
-            page.goto("https://we-com.co.il/roaming/", timeout=30000, wait_until="networkidle")
-            page.wait_for_timeout(2000)
-            for btn in page.query_selector_all("a, button"):
-                txt = (btn.inner_text() or "").strip()
-                if "נוספות" in txt or "עוד חבילות" in txt or "לצפייה" in txt:
-                    try:
-                        btn.scroll_into_view_if_needed()
-                        btn.click()
-                        page.wait_for_timeout(1500)
-                    except Exception:
-                        pass
-                    break
-            return _scrape_wecom_page(page, "https://we-com.co.il/roaming/", "wefly", already_navigated=True)
-        finally:
-            browser.close()
+    """Scrape We-Com abroad (wefly) packages (pure HTTP, 2026-07 tier-card design).
+
+    The card headlines are now Hebrew ("70GB גלישה בחו\"ל") but the product brand
+    is still wefly (popup titles + FAQ), so plan_name keeps the legacy
+    wefly{N}GB[Family] keys — preserving price-history/change continuity.
+    """
+    page_html = _wecom_fetch_html("https://we-com.co.il/roaming/")
+    plans = []
+    for card in _wecom_tier_cards(page_html):
+        headline = _wecom_card_name(card)
+        if not headline or 'בחו' not in headline:
+            continue
+        gb_m = re.search(r'(\d+)\s*GB', headline)
+        if not gb_m:
+            continue
+        gb = int(gb_m.group(1))
+        name = "wefly%dGB%s" % (gb, "Family" if 'משפחתית' in headline else "")
+
+        price = _wecom_card_price(card)
+        # Card front = everything before the פרטי החבילה / לרשימת המדינות links row.
+        front_lines = _wecom_text_lines(card.split('<div class="tier-card__links')[0])
+        days = _parse_days('\n'.join(front_lines))
+        extras = _wecom_card_extras(front_lines)
+
+        pop_m = re.search(r'href="#(wecom-popup-\d+)"[^>]*>\s*פרטי החבילה', card)
+        if pop_m:
+            info = _wecom_popup_info(page_html, pop_m.group(1))
+            if info:
+                extras.append(info)
+
+        plans.append({"carrier": "wecom", "plan_name": name, "price": price,
+                      "days": days, "data_gb": gb, "minutes": None, "sms": None,
+                      "extras": extras})
+
+    seen_names, deduped = set(), []
+    for p in plans:
+        if p["plan_name"] not in seen_names:
+            seen_names.add(p["plan_name"]); deduped.append(p)
+    return deduped
 
 
 def scrape_neptucom(_page=None):
@@ -2492,6 +2452,13 @@ def _make_global_plan(carrier, name, price_ils, currency, original_price,
     name = _html_unescape(name)
     if extras:
         extras = [_html_unescape(e) if isinstance(e, str) else e for e in extras]
+        # Canonicalize extras[0] (destination) at CREATION, mirroring the DB
+        # write path: change detection compares raw scraped extras against the
+        # _norm_extras-stored row, so a non-canonical dest here flapped
+        # extras_change on every scrape (~1,300 phantom changes/day across 20
+        # providers as of 2026-07-14). plan_name is deliberately untouched.
+        from db import _norm_extras
+        extras = _norm_extras(extras)
     # Insert RLM (\u200f) before digits after separators to fix BiDi rendering in RTL tables
     import re as _re
     name = _re.sub(r'( [\u2013-] )(\d)', lambda m: m.group(1) + '\u200f' + m.group(2), name)
@@ -3327,13 +3294,15 @@ def _esimo_fetch(url, timeout=25):
         return r.read().decode("utf-8", "replace")
 
 
-def _esimo_extract_packages(html):
+def _esimo_extract_packages(html, array_key="packages"):
     """Reconstruct the Next.js RSC flight stream and pull the embedded packages array.
 
     esimo.io is a Next.js app: plan data is server-rendered as escaped JSON split across
     multiple self.__next_f.push([1,"..."]) script chunks. The packages array frequently
     straddles a chunk boundary, so the chunks must be decoded and joined BEFORE searching —
     bracket-matching the raw HTML hits the </script><script> junk and corrupts the parse.
+    array_key names the prop that holds the array — other Next.js RSC sites embed the
+    same shape under a different key (esimgenius.ai uses "plans").
     """
     import json as _json
     chunks = re.findall(r'self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)', html)
@@ -3344,7 +3313,7 @@ def _esimo_extract_packages(html):
         except Exception:
             continue
     stream = "".join(decoded)
-    idx = stream.find('"packages":[')
+    idx = stream.find(f'"{array_key}":[')
     if idx < 0:
         return []
     start = stream.index('[', idx)
@@ -7127,6 +7096,870 @@ def scrape_tasim_global(_page=None, usd_rate=None):
     return plans
 
 
+# ── GigSky eSIM ──────────────────────────────────────────────────────────────
+# Pure HTTP, no Playwright: GigSky exposes its ENTIRE catalog as one static JSON
+# on their CDN (the same file the site's plan picker fetches):
+#   https://cdn-prod.gigsky.com/planBundle/...2-plan-bundle-ext.json
+# 180 "plan bundles" split by planBundleType into COUNTRY / REGIONAL / WORLD
+# (WORLD = the global "World Plan" tiers + the "Cruise + …" packages + ferries).
+# Each bundle carries a `plans` array; each plan has dataLimitInKB (0 = unlimited),
+# validityPeriodInDays and a `prices` array aligned to currencyCodes — USD is the
+# index we bill on. Destinations resolve to canonical Hebrew by reusing the
+# existing ESIMO_CODE_TO_HEBREW (ISO alpha-2 → Hebrew) so we don't hand-maintain
+# 157 country names; only the handful of multi-code / non-ESIMO bundles need an
+# override below.
+GIGSKY_PLAN_BUNDLE_URL = (
+    "https://cdn-prod.gigsky.com/planBundle/"
+    "includeSponsorPlans=false&simType=ACME_GSMA_ESIM_V2&includePlanVariants=true"
+    "&lang=en&version=2-plan-bundle-ext.json"
+)
+# COUNTRY bundles whose countryCodes[0] is NOT the primary country → force the code.
+GIGSKY_NAME_TO_CODE = {
+    "United States": "US", "Israel": "IL", "Fiji": "FJ",
+    "Vanuatu": "VU", "Mayotte": "YT", "Réunion": "RE",
+}
+# COUNTRY bundles that are not real travel destinations (offshore rigs / inflight) or
+# politically redundant (Palestine == Israel coverage on GigSky) → not ingested.
+GIGSKY_COUNTRY_SKIP = {
+    "North Sea - Offshore", "Gulf of Mexico - Offshore", "Inflight", "Palestine",
+}
+# Codes GigSky uses that ESIMO_CODE_TO_HEBREW lacks.
+GIGSKY_CODE_EXTRA = {
+    "AO": "אנגולה",              # Angola
+    "PF": "פולינזיה הצרפתית",  # French Polynesia
+    "CI": "חוף השנהב",  # Ivory Coast
+    "SX": "סינט מארטן",  # Sint Maarten
+    "XK": "קוסובו",              # Kosovo
+}
+GIGSKY_REGION_TO_HEBREW = {
+    "Caribbean":        "קריביים",
+    "Middle East":      "המזרח התיכון",
+    "North America":    "צפון אמריקה",
+    "Africa":           "אפריקה",
+    "Latin America":    "אמריקה הלטינית",
+    "Europe":           "אירופה",
+    "Asia Pacific":     "אסיה פסיפיק",
+    "Dutch Caribbean":  "האיים הקריביים ההולנדיים",
+    "French Caribbean": "האנטילים הצרפתיים",
+}
+# WORLD bundles → global tiers collapse to "גלובלי"; cruise packages become a
+# "קרוז - <region>" label (the "קרוז" prefix drives isCruiseDest + the B2C cruise
+# fold, see db._CRUISE_SOURCE_DESTS). Ferries are not ingested (value None).
+GIGSKY_WORLD_TO_HEBREW = {
+    "World Plan":                   "גלובלי",
+    "World Plan Lite":              "גלובלי",
+    "Cruise + Americas/Caribbean":  "קרוז - אמריקה וקריביים",
+    "Cruise + Asia Pacific":        "קרוז - אסיה פסיפיק",
+    "Cruise + Europe":              "קרוז - אירופה",
+    "Cruise + World":               "קרוז - עולמי",
+    "Cruise + Middle East":         "קרוז - המזרח התיכון",
+    "Cruise - At Sea Only":         "קרוז - בים בלבד",
+    "European Ferries":             None,
+    "Europe Ferries + Land":        None,
+}
+
+
+def _gigsky_dest_hebrew(bundle):
+    """Canonical Hebrew destination for a GigSky plan bundle (None → skip)."""
+    btype = bundle.get("planBundleType")
+    name = bundle.get("planBundleName", "")
+    if btype == "REGIONAL":
+        return GIGSKY_REGION_TO_HEBREW.get(name)
+    if btype == "WORLD":
+        return GIGSKY_WORLD_TO_HEBREW.get(name)
+    # COUNTRY
+    if name in GIGSKY_COUNTRY_SKIP:
+        return None
+    code = GIGSKY_NAME_TO_CODE.get(name) or (bundle.get("countryCodes") or [None])[0]
+    return ESIMO_CODE_TO_HEBREW.get(code) or GIGSKY_CODE_EXTRA.get(code)
+
+
+def _gigsky_gb_str(data_gb):
+    if data_gb is None:
+        return "בלתי מוגבל"  # בלתי מוגבל
+    if data_gb >= 1:
+        return f"{int(data_gb)}GB" if data_gb == int(data_gb) else f"{data_gb:g}GB"
+    return f"{round(data_gb * 1024)}MB"
+
+
+def scrape_gigsky_global(_page=None, usd_rate=None):
+    """Scrape the full GigSky eSIM catalog (countries + regions + global + cruise).
+
+    Pure HTTP — one CDN JSON (GIGSKY_PLAN_BUNDLE_URL) holds every plan bundle.
+    Skips free trials (freePlan), the recurring "GigSky One" subscription bundles,
+    offshore/inflight/Palestine, and ferry bundles. USD is the billed currency.
+    """
+    import requests
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+    try:
+        r = requests.get(
+            GIGSKY_PLAN_BUNDLE_URL,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"},
+            timeout=40,
+        )
+        r.raise_for_status()
+        payload = r.json() or {}
+    except Exception as exc:
+        logger.warning(f"GigSky scraper failed: {exc}")
+        return []
+
+    currencies = payload.get("currencyCodes") or []
+    try:
+        usd_idx = currencies.index("USD")
+    except ValueError:
+        usd_idx = 5  # BRL,CAD,EUR,GBP,JPY,USD
+    unlimited_note = "גלישה יומית ללא הגבלה"  # גלישה יומית ללא הגבלה
+
+    plans, seen = [], set()
+    for bundle in payload.get("list") or []:
+        if bundle.get("isRecurringPlan"):
+            continue
+        dest = _gigsky_dest_hebrew(bundle)
+        if not dest:
+            continue
+        for p in bundle.get("plans") or []:
+            if p.get("freePlan"):
+                continue
+            prices = p.get("prices") or []
+            usd = prices[usd_idx] if usd_idx < len(prices) else None
+            try:
+                usd = float(usd)
+            except (TypeError, ValueError):
+                continue
+            if usd <= 0:
+                continue
+            kb = p.get("dataLimitInKB") or 0
+            unlimited = (p.get("chargingType") == "UNLIMITED") or kb == 0
+            data_gb = None if unlimited else round(kb / 1048576, 4)
+            try:
+                days = int(p.get("validityPeriodInDays"))
+            except (TypeError, ValueError):
+                continue
+            g = _gigsky_gb_str(data_gb)
+            day_unit = "יום" if days == 1 else "ימים"  # יום / ימים
+            plan_name = f"{dest} – {g} – {days} {day_unit}"
+            if plan_name in seen:      # guard UNIQUE(carrier, plan_name)
+                continue
+            seen.add(plan_name)
+            extras = [dest]
+            if unlimited:
+                extras.append(unlimited_note)
+            plans.append(_make_global_plan(
+                "gigsky", plan_name, round(usd * usd_rate, 2), "USD", usd,
+                data_gb=data_gb, days=days, esim=True, extras=extras,
+            ))
+    logger.info(f"GigSky: {len(plans)} plans")
+    return plans
+
+
+# ── eSIM Genius (esimgenius.ai) ──────────────────────────────────────────────
+# Destination slugs that esimgenius.ai has but SAILY_SLUG_TO_HEBREW doesn't
+# (sub-national islands, UK nations, and naming variants). Values are the
+# canonical Hebrew spellings already used in global_plans / db._DEST_NORM.
+ESIMGENIUS_SLUG_OVERRIDES = {
+    "aland-islands": "איי אולנד",
+    "azores": "האיים האזוריים",
+    "balearic-islands": "האיים הבלאריים",
+    "belarus": "בלארוס",
+    "cabo-verde": "קייפ ורדה",
+    "canary-islands": "האיים הקנריים",
+    "congo": "רפובליקת קונגו",
+    "corfu": "קורפו",
+    "crete": "כרתים",
+    "cyclades-islands": "האיים הקיקלדיים",
+    "democratic-republic-congo": "הרפובליקה הדמוקרטית של קונגו",
+    "ethiopia": "אתיופיה",
+    "ivory-coast": "חוף השנהב",
+    "madeira": "מדיירה",
+    "rhodes": "רודוס",
+    "saint-pierre-miquelon": "סן פייר ומיקלון",
+    "sardinia": "סרדיניה",
+    "scotland": "סקוטלנד",
+    "sicily": "סיציליה",
+    "usa": "ארצות הברית",
+    "vatican": "ותיקן",
+    "wales": "ויילס",
+}
+
+ESIMGENIUS_REGION_TO_HEBREW = {
+    "europe": "אירופה",
+    "asia": "אסיה",
+    "africa": "אפריקה",
+    "middle-east": "המזרח התיכון",
+    "global": "גלובלי",
+}
+
+# Non-catalog pages in the esimgenius.ai sitemap; Palestine dropped (GigSky precedent)
+_ESIMGENIUS_SKIP_SLUGS = {
+    "advisor", "contact", "destinations", "how-it-works", "privacy",
+    "refund-policy", "terms", "travel-esim-guide", "palestine",
+}
+
+
+def scrape_esimgenius_global(_page=None, usd_rate=None):
+    """Scrape the full eSIM Genius catalog: ~180 country pages + 5 regional/global bundles.
+
+    Pure HTTP — esimgenius.ai is a Next.js app that server-renders each destination
+    page with its plans array (label / daysNum / priceCents in USD cents) in the RSC
+    stream, so _esimo_extract_packages(array_key="plans") reads it with no Playwright.
+    Slugs come from the sitemap (English <loc> entries only). Hebrew destinations
+    resolve via SAILY_SLUG_TO_HEBREW (same kebab-case slugs) + ESIMGENIUS_SLUG_OVERRIDES,
+    then canonicalize through db._DEST_NORM at scrape time so the raw scraped extras
+    match the stored row (a non-canonical value here flaps extras_change every scrape).
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from db import _DEST_NORM
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+
+    slugs = set(ESIMGENIUS_REGION_TO_HEBREW)
+    try:
+        sitemap = _esimo_fetch("https://esimgenius.ai/sitemap.xml", timeout=30)
+        slugs.update(re.findall(r"<loc>https://esimgenius\.ai/([a-z0-9-]+)</loc>", sitemap))
+    except Exception as exc:
+        logger.warning(f"eSIM Genius sitemap fetch failed ({exc}) — scraping regional pages only")
+    slugs -= _ESIMGENIUS_SKIP_SLUGS
+
+    dest_by_slug, unknown_slugs = {}, set()
+    for slug in sorted(slugs):
+        dest = (ESIMGENIUS_REGION_TO_HEBREW.get(slug)
+                or ESIMGENIUS_SLUG_OVERRIDES.get(slug)
+                or SAILY_SLUG_TO_HEBREW.get(slug))
+        if dest:
+            dest_by_slug[slug] = _DEST_NORM.get(dest, dest)
+        else:
+            unknown_slugs.add(slug)
+
+    def fetch_one(slug):
+        return _esimo_extract_packages(
+            _esimo_fetch(f"https://esimgenius.ai/{slug}"), array_key="plans")
+
+    plans, seen_names = [], set()
+    empty, failed = 0, 0
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futures = {ex.submit(fetch_one, s): s for s in dest_by_slug}
+        for fut in as_completed(futures):
+            slug = futures[fut]
+            dest = dest_by_slug[slug]
+            try:
+                items = fut.result()
+            except Exception as exc:
+                failed += 1
+                logger.warning(f"eSIM Genius {slug}: {exc}")
+                continue
+            if not items:
+                empty += 1
+                continue
+            for it in items:
+                label = (it.get("label") or "").strip()
+                try:
+                    days = int(it.get("daysNum") or 0)
+                    usd = int(it.get("priceCents") or 0) / 100.0
+                except (TypeError, ValueError):
+                    continue
+                if days <= 0 or usd <= 0:
+                    continue
+                unlimited = it.get("planType") == "unlimited" or label.lower().startswith("unlim")
+                if unlimited:
+                    gb, gb_str = None, "ללא הגבלה"  # ללא הגבלה
+                else:
+                    m = re.match(r"([\d.]+)\s*(GB|MB)", label, re.I)
+                    if not m:
+                        continue
+                    val = float(m.group(1))
+                    gb = round(val / 1024, 4) if m.group(2).upper() == "MB" else val
+                    gb_str = f"{m.group(1)}{m.group(2).upper()}"
+                day_unit = "יום" if days == 1 else "ימים"  # יום / ימים
+                plan_name = f"{dest} – {gb_str} – {days} {day_unit}"
+                if plan_name in seen_names:      # guard UNIQUE(carrier, plan_name)
+                    continue
+                seen_names.add(plan_name)
+                extras = [dest]
+                if unlimited:
+                    extras.append("גלישה ללא הגבלה")  # גלישה ללא הגבלה
+                plans.append(_make_global_plan(
+                    "esimgenius", plan_name, round(usd * usd_rate, 2), "USD", usd,
+                    data_gb=gb, days=days, esim=True, extras=extras,
+                ))
+    if unknown_slugs:
+        logger.warning(
+            f"eSIM Genius: skipped unmapped destination slugs {sorted(unknown_slugs)} "
+            f"— add them to ESIMGENIUS_SLUG_OVERRIDES"
+        )
+    logger.info(
+        f"eSIM Genius: {len(plans)} plans from {len(dest_by_slug)} pages "
+        f"({empty} empty, {failed} failed)"
+    )
+    return plans
+
+
+# ── Nisim eSIM (nisim-esim.co.il) ────────────────────────────────────────────
+# Israeli WooCommerce shop, ILS prices. Product names are Hebrew country names;
+# these are the site's spellings that differ from the canonical ones.
+NISIM_NAME_FIX = {
+    "אזרבייגאן": "אזרבייג'ן",
+    "גיאורגיה": "גאורגיה",
+    "באהאמאס": "איי הבהאמה",
+    "בוסניה הרצגובינה": "בוסניה והרצגובינה",
+    "איי הבתולה הבריטים": "איי הבתולה (בריטניה)",
+    "טאיוואן": "טייוואן",
+    "טוניסיה": "תוניסיה",
+}
+
+# Regional/global products (matched by cleaned product NAME — ids churn when the
+# shop recreates a product). Values are canonical destination strings that the
+# dest picker already knows (dest_bg_map region_keys). Coverage is NOT expanded
+# per-country (the site's "רשימת מדינות" accordions are one shared Elementor
+# template on every page, so no reliable per-region list exists) — same
+# behavior as bytesim's region bundles.
+NISIM_REGION_NAMES = {
+    "eSIM אירופה": "אירופה",
+    "Europe Unlimited – PAPAYA": "אירופה",
+    "עולמי eSIM": "גלובלי",
+    "אסיה eSIM": "אסיה",
+    "אפריקה eSIM": "אפריקה",
+    "בלקן eSIM": "בלקן",
+    "דרום אמריקה eSIM": "דרום אמריקה",
+    "האיים הקריביים eSIM": "האיים הקריביים",
+    "אוקיאניה eSIM": "אוקיאניה",
+    "אפריקה והמזרח התיכון": "המזרח התיכון ואפריקה",
+    "צפון אמריקה": "צפון אמריקה",
+}
+
+# test items + family multi-line promos (מבצע כתום/הוט/ישראכרט, קומבינציה)
+_NISIM_SKIP_CATS = {"TEST", "test2", "מבצע משפחה"}
+
+
+def _nisim_fetch_json(path):
+    import json as _json
+    return _json.loads(_esimo_fetch(f"https://www.nisim-esim.co.il/wp-json/wc/store/v1/{path}"))
+
+
+def scrape_nisim_global(_page=None, usd_rate=None):
+    """Scrape the Nisim eSIM catalog via the public WooCommerce Store API.
+
+    Two paginated pulls: parent products (name = Hebrew destination, categories
+    used to drop test/family-promo items) and their variations
+    (type=variation; per-variation ILS price + "Days: 30 ימים, Data: 20GB"
+    attribute string). ~92 countries + ~11 regional/global products, ~550 live
+    variations. Prices are ILS minor units (/100) — no FX conversion.
+    Duplicate (dest, size, days) tiers keep the cheapest price.
+    """
+    import html as _html
+
+    def fetch_all(query):
+        out, page = [], 1
+        while True:
+            batch = _nisim_fetch_json(f"products?{query}&per_page=100&page={page}")
+            if not batch:
+                break
+            out.extend(batch)
+            if len(batch) < 100:
+                break
+            page += 1
+        return out
+
+    def clean_name(raw):
+        n = _html.unescape(raw or "").replace("’", "'").replace("׳", "'")
+        return re.sub(r"\s+", " ", n).strip()
+
+    try:
+        parents = fetch_all("")
+    except Exception as exc:
+        logger.warning(f"Nisim eSIM scraper failed (products fetch): {exc}")
+        return []
+
+    from db import _DEST_NORM
+    dest_by_parent, unmapped = {}, set()
+    for p in parents:
+        if p.get("type") != "variable":
+            continue
+        cats = {c.get("name") for c in p.get("categories") or []}
+        name = clean_name(p.get("name"))
+        if cats & _NISIM_SKIP_CATS or "test" in name.lower():
+            continue
+        dest = NISIM_REGION_NAMES.get(name)
+        if not dest:
+            dest = NISIM_NAME_FIX.get(name, name)
+            dest = _DEST_NORM.get(dest, dest)
+            if not re.fullmatch(r"[֐-׿][֐-׿ '\"()\-]*", dest):
+                unmapped.add(name)  # Latin/odd name — not a destination product
+                continue
+        dest_by_parent[p["id"]] = dest
+
+    try:
+        variations = fetch_all("type=variation")
+    except Exception as exc:
+        logger.warning(f"Nisim eSIM scraper failed (variations fetch): {exc}")
+        return []
+
+    best = {}  # plan_name -> plan dict (cheapest wins)
+    for v in variations:
+        dest = dest_by_parent.get(v.get("parent"))
+        if not dest:
+            continue
+        attrs = v.get("variation") or ""
+        # attribute labels vary per product: Days/days/ימים and Data/data/Data Plan
+        m_days = re.search(r"(?:days|ימים)\s*:\s*(\d+)", attrs, re.I)
+        m_data = re.search(r"data(?:\s*plan)?\s*:\s*([^,]+)", attrs, re.I)
+        if not m_days or not m_data:
+            continue
+        days = int(m_days.group(1))
+        data_txt = m_data.group(1).strip()
+        if re.search(r"x\s*\d", data_txt, re.I):
+            continue  # multi-line family tier (20GB X4) — not a consumer plan
+        if "ללא הגבלה" in data_txt or "unlimit" in data_txt.lower():
+            gb, gb_str = None, "ללא הגבלה"
+        else:
+            m_gb = re.match(r"([\d.]+)\s*(GB|MB)", data_txt, re.I)
+            if not m_gb:
+                continue
+            val = float(m_gb.group(1))
+            gb = round(val / 1024, 4) if m_gb.group(2).upper() == "MB" else val
+            gb_str = f"{m_gb.group(1)}{m_gb.group(2).upper()}"
+        try:
+            price = int((v.get("prices") or {}).get("price") or 0) / 100.0
+        except (TypeError, ValueError):
+            continue
+        if price <= 0 or days <= 0:
+            continue
+        day_unit = "יום" if days == 1 else "ימים"
+        plan_name = f"{dest} – {gb_str} – {days} {day_unit}"
+        if plan_name in best and best[plan_name]["price"] <= price:
+            continue  # keep the cheapest duplicate tier (UNIQUE(carrier, plan_name))
+        extras = [dest]
+        if gb is None:
+            extras.append("גלישה ללא הגבלה")
+        best[plan_name] = _make_global_plan(
+            "nisim", plan_name, price, "ILS", price,
+            data_gb=gb, days=days, esim=True, extras=extras,
+        )
+    if unmapped:
+        logger.warning(f"Nisim eSIM: skipped non-destination products {sorted(unmapped)}")
+    plans = list(best.values())
+    logger.info(f"Nisim eSIM: {len(plans)} plans from {len(dest_by_parent)} products")
+    return plans
+
+
+# ── eSIM Max (esimax.io) ─────────────────────────────────────────────────────
+# Israeli WooCommerce shop (Hebrew product names), USD prices in minor units.
+# Site spellings that differ from the canonical names AND aren't already
+# _DEST_NORM keys. "קונגו" must be fixed HERE: the site sells BOTH Congos
+# (slug republic-of-the-congo vs democratic-republic-of-the-congo), while the
+# global _DEST_NORM maps bare "קונגו" to the DRC — wrong for this site.
+ESIMAX_NAME_FIX = {
+    "גרנסי": "גרנזי",
+    "איי אלנד": "איי אולנד",
+    "קונגו": "רפובליקת קונגו",
+}
+
+# Regional/global products, matched by cleaned product NAME → (plan title, dest).
+# dest is the canonical extras[0]; title leads the plan_name. "אירופה 30+"
+# keeps its site name as the title to stay distinct from the full 41-country
+# "אירופה" product (same dest, different coverage — see ESIMAX_REGION_MAP in
+# globalCountries.js). "סין (היבשת)" actually covers mainland+HK+Macao, so it
+# uses the canonical combo dest shared with Holafly/ByteSIM/Besim.
+ESIMAX_REGION_NAMES = {
+    "אירופה": ("אירופה", "אירופה"),
+    "אירופה 30+": ("אירופה 30+", "אירופה"),
+    "מדינות הבלקן": ("בלקן", "בלקן"),
+    "האיים הקריביים": ("האיים הקריביים", "האיים הקריביים"),
+    "מרכז אסיה": ("מרכז אסיה", "מרכז אסיה"),
+    "אוקיאניה": ("אוקיאניה", "אוקיאניה"),
+    "סינגפור מלזיה ותאילנד": ("סינגפור, מלזיה, תאילנד", "סינגפור, מלזיה, תאילנד"),
+    "אסיה": ("אסיה", "אסיה"),
+    "סין (היבשת)": ("סין + הונג קונג + מקאו", "סין + הונג קונג + מקאו"),
+    "המזרח התיכון": ("המזרח התיכון", "המזרח התיכון"),
+    "אפריקה": ("אפריקה", "אפריקה"),
+    "צפון אמריקה": ("צפון אמריקה", "צפון אמריקה"),
+    "דרום אמריקה": ("דרום אמריקה", "דרום אמריקה"),
+    "גלובלי": ("גלובלי", "גלובלי"),
+}
+
+
+def scrape_esimax_global(_page=None, usd_rate=None):
+    """Scrape the eSIM Max (esimax.io) catalog via the public WooCommerce Store API.
+
+    Two paginated pulls via the shared Woo fetcher: parent products (~179
+    variable products — 165 Hebrew country names + 14 regional/global bundles)
+    and their variations (~1,100; "נפח גלישה: 10GB, כמות ימים: 30 ימים"
+    attribute string + USD price in minor units). The "אירופה 30+" product's
+    variations carry an EMPTY attribute string — their GB/days are parsed from
+    the variation slug ("אירופה-30-1gb-30-ימים") instead. Duplicate
+    (title, size, days) tiers keep the cheapest price.
+    """
+    import html as _html
+    import urllib.parse as _urlparse
+    from db import _DEST_NORM
+
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
+
+    def clean_name(raw):
+        n = _html.unescape(raw or "").replace("׳", "'").replace("’", "'")
+        return re.sub(r"\s+", " ", n).strip()
+
+    parents = _woo_store_fetch(
+        "https://esimax.io/wp-json/wc/store/v1/products", "eSIM Max")
+
+    title_dest_by_parent, unmapped = {}, set()
+    for p in parents:
+        if p.get("type") != "variable":
+            continue
+        name = clean_name(p.get("name"))
+        if not name or "test" in name.lower():
+            continue
+        if name in ESIMAX_REGION_NAMES:
+            title_dest_by_parent[p["id"]] = ESIMAX_REGION_NAMES[name]
+            continue
+        dest = ESIMAX_NAME_FIX.get(name, name)
+        dest = _DEST_NORM.get(dest, dest)
+        if not re.fullmatch(r"[֐-׿][֐-׿ '\"()\-]*", dest):
+            unmapped.add(name)  # Latin/odd name — not a destination product
+            continue
+        title_dest_by_parent[p["id"]] = (dest, dest)
+
+    variations = _woo_store_fetch(
+        "https://esimax.io/wp-json/wc/store/v1/products?type=variation",
+        "eSIM Max variations")
+
+    best = {}  # plan_name -> plan dict (cheapest wins)
+    for v in variations:
+        td = title_dest_by_parent.get(v.get("parent"))
+        if not td:
+            continue
+        title, dest = td
+        attrs = v.get("variation") or ""
+        m_data = re.search(r"([\d.]+)\s*(GB|MB)", attrs, re.I)
+        m_days = re.search(r"(\d+)\s*(?:ימים|יום)", attrs)
+        if m_data and m_days:
+            val, unit, days = float(m_data.group(1)), m_data.group(2).upper(), int(m_days.group(1))
+        else:
+            # "אירופה 30+" variations: empty attrs, spec lives in the slug
+            slug = _urlparse.unquote(v.get("slug") or "")
+            m = re.search(r"([\d.]+)\s*(gb|mb)-(\d+)-ימים", slug, re.I)
+            if not m:
+                continue
+            val, unit, days = float(m.group(1)), m.group(2).upper(), int(m.group(3))
+        gb = round(val / 1024, 4) if unit == "MB" else val
+        gb_str = (f"{int(val)}" if val == int(val) else f"{val}") + unit
+        try:
+            prices = v.get("prices") or {}
+            minor = int(prices.get("currency_minor_unit") or 2)
+            usd = int(prices.get("price")) / (10 ** minor)
+        except (TypeError, ValueError):
+            continue
+        if usd <= 0 or days <= 0:
+            continue
+        day_unit = "יום" if days == 1 else "ימים"
+        plan_name = f"{title} – {gb_str} – {days} {day_unit}"
+        if plan_name in best and best[plan_name]["original_price"] <= usd:
+            continue  # keep the cheapest duplicate tier (UNIQUE(carrier, plan_name))
+        best[plan_name] = _make_global_plan(
+            "esimax", plan_name, round(usd * usd_rate, 2), "USD", round(usd, 2),
+            data_gb=gb, days=days, esim=True, extras=[dest],
+        )
+    if unmapped:
+        logger.warning(f"eSIM Max: skipped non-destination products {sorted(unmapped)}")
+    plans = list(best.values())
+    logger.info(f"eSIM Max: {len(plans)} plans from {len(title_dest_by_parent)} products")
+    return plans
+
+
+# ── VenterraSIM (venterrasim.com) ────────────────────────────────────────────
+# Israeli travel-eSIM shop. The storefront reads its whole catalogue from one
+# public, auth-free endpoint (/api/v1/plans/ — explicitly Allow:ed in the site's
+# own robots.txt so Google can render the package lists), so this is a pure-HTTP
+# scrape: ~1,000 plans, prices already in ILS, destinations as ISO-3166 alpha-2.
+#
+# Hebrew destination names reuse ESIMO_CODE_TO_HEBREW (same uppercase ISO keys,
+# already-canonical spellings) plus the handful of codes eSIMo doesn't sell.
+VENTERRA_CODE_TO_HEBREW = {
+    **ESIMO_CODE_TO_HEBREW,
+    "AO": "אנגולה",
+    "BT": "בהוטן",
+    "CI": "חוף השנהב",
+    "PF": "פולינזיה הצרפתית",
+    "SM": "סן מרינו",
+    "XK": "קוסובו",
+    "ZW": "זימבבואה",
+}
+
+# Regional/global bundles, keyed by the API `name` with its trailing
+# "<N>GB <M>Days" spec stripped → (plan_name title, canonical extras[0] dest).
+# Regions that sell SEVERAL coverage tiers under one label (Europe 33/35/41
+# areas, Asia 7/20, South America 6/20) keep the area count in the TITLE: the
+# tiers share (gb, days) pairs, so a bare region title would collide under
+# UNIQUE(carrier, plan_name), and the title is what VENTERRA_REGION_MAP in
+# globalCountries.js keys on to resolve the right country list.
+VENTERRA_REGION_NAMES = {
+    "Europe (33 areas)":               ("אירופה 33 יעדים", "אירופה"),
+    "Europe (35 areas)":               ("אירופה 35 יעדים", "אירופה"),
+    "Europe":                          ("אירופה 41 יעדים", "אירופה"),
+    "Balkans (5+ areas)":              ("בלקן", "בלקן"),
+    "Asia (7 areas)":                  ("אסיה 7 יעדים", "אסיה"),
+    "Asia-20":                         ("אסיה 20 יעדים", "אסיה"),
+    "Singapore & Malaysia & Thailand": ("סינגפור, מלזיה, תאילנד", "סינגפור, מלזיה, תאילנד"),
+    "China (mainland HK Macao)":       ("סין + הונג קונג + מקאו", "סין + הונג קונג + מקאו"),
+    "Central Asia (4 areas)":          ("מרכז אסיה", "מרכז אסיה"),
+    "North America":                   ("צפון אמריקה", "צפון אמריקה"),
+    "South America (6 areas)":         ("דרום אמריקה 6 יעדים", "דרום אמריקה"),
+    "South America":                   ("דרום אמריקה 20 יעדים", "דרום אמריקה"),
+    "Caribbean (20+ areas)":           ("האיים הקריביים", "האיים הקריביים"),
+    "Global (120+ areas)":             ("גלובלי", "גלובלי"),
+}
+
+_VENTERRA_SPEC_RE = re.compile(r"\s*[\d.]+\s*GB\s*[\d.]+\s*Days?\s*$", re.I)
+
+
+def scrape_venterrasim_global(_page=None, usd_rate=None):
+    """Scrape the VenterraSIM catalog from its public JSON plans endpoint.
+
+    One request returns every package: `type` is COUNTRY (location_code = a
+    single ISO2) or REGIONAL (location_code = a comma-separated ISO2 list, and
+    the region is identified by the name prefix via VENTERRA_REGION_NAMES).
+    Prices are native ILS — `price_ils` is the live selling price, which is
+    what change detection should track; `original_price_ils` is a permanent
+    strike-through list price on every row, so it is deliberately ignored.
+    """
+    import json as _json
+
+    raw = _json.loads(_esimo_fetch("https://venterrasim.com/api/v1/plans/", timeout=40))
+    if not isinstance(raw, list) or not raw:
+        logger.warning("VenterraSIM: empty/unexpected catalog payload")
+        return []
+
+    best, unmapped = {}, set()
+    for p in raw:
+        try:
+            gb = float(p.get("data_gb") or 0)
+            days = int(p.get("duration_days") or 0)
+            price = float(p.get("price_ils") or p.get("price") or 0)
+        except (TypeError, ValueError):
+            continue
+        if gb <= 0 or days <= 0 or price <= 0:
+            continue
+
+        if (p.get("type") or "").upper() == "REGIONAL":
+            key = _VENTERRA_SPEC_RE.sub("", p.get("name") or "").strip()
+            td = VENTERRA_REGION_NAMES.get(key)
+            if not td:
+                unmapped.add(key)
+                continue
+            title, dest = td
+        else:
+            code = (p.get("location_code") or "").strip().upper()
+            dest = VENTERRA_CODE_TO_HEBREW.get(code)
+            if not dest:
+                unmapped.add(f"{code}={p.get('country')}")
+                continue
+            title = dest
+
+        gb_str = f"{int(gb)}GB" if gb == int(gb) else f"{gb}GB"
+        day_unit = "יום" if days == 1 else "ימים"
+        plan_name = f"{title} – {gb_str} – {days} {day_unit}"
+        if plan_name in best and best[plan_name]["price"] <= price:
+            continue  # cheapest duplicate tier wins (UNIQUE(carrier, plan_name))
+        best[plan_name] = _make_global_plan(
+            "venterrasim", plan_name, price, "ILS", price,
+            data_gb=gb, days=days, esim=True, extras=[dest],
+        )
+    if unmapped:
+        logger.warning(f"VenterraSIM: skipped unmapped destinations {sorted(unmapped)}")
+    plans = list(best.values())
+    logger.info(f"VenterraSIM: {len(plans)} plans from {len(raw)} catalog rows")
+    return plans
+
+# ── Simzol / סים זול (simzol.co.il) ──────────────────────────────────────────
+# Small Israeli reseller on the CashCow storefront platform. No API and no
+# structured feed, so this walks the site's own sitemap and parses each product
+# page. Products are keyed by permalink slug in SIMZOL_PRODUCTS; a page that is
+# NOT in the map but sits under the site's eSIM category warns, so a new eSIM
+# line gets noticed instead of being silently dropped.
+#
+# The shop sells both eSIMs and physical travel SIMs. Physical products carry
+# esim=False (the public feed maps that to form='sim', which the /esim-deals
+# "eSIM" filter chip excludes) plus a "סים פיזי" suffix in plan_name — without
+# the suffix the physical USA ladder would collide with the eSIM USA ladder at
+# 20/30 days under UNIQUE(carrier, plan_name) and the pricier physical tier
+# would be discarded as a "duplicate".
+SIMZOL_SITEMAP = "https://www.simzol.co.il/crowlers/sitemap"
+
+# slug (URL-decoded, without the /p/ prefix) → (plan_name title, extras[0] dest,
+# esim?, extra perk bullets). Title differs from dest only where two products
+# share a destination but not a coverage list — "גלובלי פלטינום" (123 listed
+# destinations, unlimited data + calls, sold by trip length) vs the "גלובלי"
+# eSIM data packages (83); SIMZOL_REGION_MAP in globalCountries.js keys on the
+# title to tell them apart.
+SIMZOL_PRODUCTS = {
+    "esim":                           ("גלובלי", "גלובלי", True, ()),
+    "1_גב_-_ESIM":                    ("גלובלי", "גלובלי", True, ()),
+    "3_גב_-_ESIM":                    ("גלובלי", "גלובלי", True, ()),
+    "5_גב_-_ESIM":                    ("גלובלי", "גלובלי", True, ()),
+    "סים_לגיאורגיה":                  ("גאורגיה", "גאורגיה", True, ()),
+    "סים_לדובאי":                     ("איחוד האמירויות", "איחוד האמירויות", True, ()),
+    "7-day-usa-esim":                 ("ארצות הברית", "ארצות הברית", True,
+                                       ("שיחות מקומיות ללא הגבלה",)),
+    "10_ימים_ארהב_ללא_הגבלה__-_ESIM": ("ארצות הברית", "ארצות הברית", True,
+                                       ("שיחות מקומיות ללא הגבלה",)),
+    "20_ימים_ארהב_ללא_הגבלה__-_ESIM": ("ארצות הברית", "ארצות הברית", True,
+                                       ("שיחות מקומיות ללא הגבלה",)),
+    "30_ימים_ארהב_ללא_הגבלה__-_ESIM": ("ארצות הברית", "ארצות הברית", True,
+                                       ("שיחות מקומיות ללא הגבלה",)),
+    # ── physical travel SIMs ──
+    "סים_ארהב_-_מבצע":                ("ארצות הברית", "ארצות הברית", False,
+                                       ("רשת T-Mobile", "שיחות ו-SMS ללא הגבלה בארצות הברית",
+                                        "מספר אמריקאי", "אפשרות לתוספת דקות שיחה לישראל")),
+    "סים_גלישה_לאירופה":              ("אירופה", "אירופה", False,
+                                       ("גלישה בדור 4G/5G",
+                                        "אפשרות לתוספת דקות שיחה ומספר ישראלי ואירופאי")),
+    "SIM_Europe_Global":              ("גלובלי פלטינום", "גלובלי", False,
+                                       ("שיחות ללא הגבלה", "מספר ישראלי ואירופאי",
+                                        "מתאים לראוטר וטאבלט")),
+}
+
+# Attribute groups that price optional ADD-ONS rather than the package itself
+# (minutes to Israel, a Canada/Mexico rider). Never a data tier.
+_SIMZOL_ADDON_RE = re.compile(r"דקות|קנדה|מקסיקו")
+_SIMZOL_TAG_RE = re.compile(r"(?s)<(script|style)\b.*?</\1>|<[^>]+>")
+_SIMZOL_ESIM_CAT_RE = re.compile(r'href="https://www\.simzol\.co\.il/c/esim"')
+
+
+def _simzol_page_text(html_src):
+    return re.sub(r"[\s ]+", " ", _html_unescape(_SIMZOL_TAG_RE.sub(" ", html_src)))
+
+
+def _simzol_tiers(html_src, title, text):
+    """Yield (data_gb|None, days, price) for one product page.
+
+    CashCow renders a variable product as radio inputs carrying
+    data-price/attr_id/data-text, grouped by attr_id. The FIRST group is the
+    package ladder; later groups are add-ons. A fixed-price product has no
+    ladder at all — its spec lives in the title plus a "למשך N ימים" line.
+    """
+    groups, order = {}, []
+    for m in re.finditer(
+            r"data-price='([\d.]+)'[^>]*attr_id='(\d+)'[^>]*data-text='([^']*)'", html_src):
+        price, attr_id, label = float(m.group(1)), m.group(2), _html_unescape(m.group(3)).strip()
+        if attr_id not in groups:
+            groups[attr_id] = []
+            order.append(attr_id)
+        groups[attr_id].append((label, price))
+
+    ladder = []
+    for attr_id in order:
+        opts = groups[attr_id]
+        if any(_SIMZOL_ADDON_RE.search(lbl) for lbl, _ in opts):
+            continue  # minutes / country rider — not a data ladder
+        ladder = opts
+        break
+
+    m_days_txt = re.search(r"למשך\s*(\d+)\s*(?:ימים|יום)", text)
+    fallback_days = int(m_days_txt.group(1)) if m_days_txt else None
+
+    if ladder:
+        for label, price in ladder:
+            # "1GB גלישה / 7 יום"
+            m = re.search(r"([\d.]+)\s*GB\s*גלישה\s*/\s*(\d+)\s*(?:ימים|יום)", label)
+            if m:
+                yield float(m.group(1)), int(m.group(2)), price
+                continue
+            # "7 ימים גלישה ללא הגבלה"
+            m = re.search(r"(\d+)\s*(?:ימים|יום)\s*גלישה\s*ללא\s*הגבלה", label)
+            if m:
+                yield None, int(m.group(1)), price
+                continue
+            # "6 ג'יגה" — duration only stated in the product copy
+            m = re.search(r"([\d.]+)\s*(?:GB|ג\"ב|ג'יגה)", label)
+            if m and fallback_days:
+                yield float(m.group(1)), fallback_days, price
+                continue
+            # bare "3 ימים" — a trip-length ladder, which on this shop always
+            # means an unlimited data+calls SIM (סים עולמי - פלטינום)
+            m = re.fullmatch(r"(\d+)\s*(?:ימים|יום)", label)
+            if m:
+                yield None, int(m.group(1)), price
+        return
+
+    # Fixed-price product: spec comes from the title + copy.
+    m_price = re.search(r'product:price:amount"\s*content="([\d.]+)"', html_src)
+    price = float(m_price.group(1)) if m_price else 0.0
+    if price <= 0:
+        return
+    if "ללא הגבלה" in title:
+        m = re.search(r"(\d+)\s*(?:ימים|יום)", title)
+        if m:
+            yield None, int(m.group(1)), price
+        return
+    m = re.search(r"([\d.]+)\s*(?:GB|ג\"ב|ג'יגה)", title)
+    if m and fallback_days:
+        yield float(m.group(1)), fallback_days, price
+
+
+def scrape_simzol_global(_page=None, usd_rate=None):
+    """Scrape the Simzol (simzol.co.il) catalog — pure HTTP, ILS prices."""
+    import urllib.parse as _urlparse
+
+    try:
+        sitemap = _esimo_fetch(SIMZOL_SITEMAP, timeout=30)
+    except Exception as e:
+        logger.warning(f"Simzol: sitemap fetch failed ({e})")
+        return []
+    urls = [u for u in re.findall(r"<loc>([^<]+)</loc>", sitemap) if "/p/" in u]
+    if not urls:
+        logger.warning("Simzol: sitemap listed no product pages")
+        return []
+
+    best, unmapped, seen = {}, set(), 0
+    for url in urls:
+        slug = _urlparse.unquote(url.rsplit("/p/", 1)[1])
+        try:
+            page_html = _esimo_fetch(url, timeout=30)
+        except Exception as e:
+            logger.warning(f"Simzol: {slug} fetch failed ({e})")
+            continue
+        product = SIMZOL_PRODUCTS.get(slug)
+        if not product:
+            # An unknown page under the eSIM category is a new product worth
+            # mapping; anything else is a physical line we chose not to carry.
+            if _SIMZOL_ESIM_CAT_RE.search(page_html):
+                unmapped.add(slug)
+            continue
+        title, dest, is_esim, perks = product
+        seen += 1
+        m_title = re.search(r'<h1[^>]*product-details-title[^>]*>(.*?)</h1>', page_html, re.S)
+        page_title = (_html_unescape(re.sub(r"<[^>]+>", "", m_title.group(1))).strip()
+                      if m_title else slug)
+        text = _simzol_page_text(page_html)
+
+        for gb, days, price in _simzol_tiers(page_html, page_title, text):
+            if not days or price <= 0:
+                continue
+            extras = [dest]
+            if gb is None:
+                gb_str = "ללא הגבלה"
+                extras.append("גלישה ללא הגבלה")
+            else:
+                gb_str = f"{int(gb)}GB" if gb == int(gb) else f"{gb}GB"
+            extras.extend(perks)
+            day_unit = "יום" if days == 1 else "ימים"
+            plan_name = f"{title} – {gb_str} – {days} {day_unit}"
+            if not is_esim:
+                plan_name += " – סים פיזי"
+                extras.append("סים פיזי")
+            if plan_name in best and best[plan_name]["price"] <= price:
+                continue  # cheapest duplicate tier wins (UNIQUE(carrier, plan_name))
+            best[plan_name] = _make_global_plan(
+                "simzol", plan_name, price, "ILS", price,
+                data_gb=gb, days=days, esim=is_esim, extras=extras,
+            )
+    if unmapped:
+        logger.warning(f"Simzol: unmapped eSIM products {sorted(unmapped)}")
+    plans = list(best.values())
+    logger.info(f"Simzol: {len(plans)} plans from {seen} products")
+    return plans
+
 # ── Maya Mobile eSIM ─────────────────────────────────────────────────────────
 MAYA_SLUG_TO_HEBREW = {
     # Global & regions
@@ -7779,7 +8612,7 @@ ESIM70_ISO2_TO_HEBREW = {
     "NO": "\u05e0\u05d5\u05e8\u05d1\u05d2\u05d9\u05d4", "OM": "\u05e2\u05d5\u05de\u05df",
     "PK": "\u05e4\u05e7\u05d9\u05e1\u05d8\u05df", "PS": "\u05e4\u05dc\u05e1\u05d8\u05d9\u05df",
     "PA": "\u05e4\u05e0\u05de\u05d4", "PY": "\u05e4\u05e8\u05d0\u05d2\u05d5\u05d5\u05d0\u05d9",
-    "PE": "\u05e4\u05e8\u05d5", "PH": "\u05d4\u05d4\u05e4\u05d9\u05dc\u05d9\u05e4\u05d9\u05e0\u05d9\u05dd",
+    "PE": "\u05e4\u05e8\u05d5", "PH": "\u05d4\u05e4\u05d9\u05dc\u05d9\u05e4\u05d9\u05e0\u05d9\u05dd",
     "PL": "\u05e4\u05d5\u05dc\u05d9\u05df", "PT": "\u05e4\u05d5\u05e8\u05d8\u05d5\u05d2\u05dc",
     "PR": "\u05e4\u05d5\u05d0\u05e8\u05d8\u05d5 \u05e8\u05d9\u05e7\u05d5", "QA": "\u05e7\u05d8\u05e8",
     "RE": "\u05e8\u05d0\u05d5\u05e0\u05d9\u05d5\u05df", "RO": "\u05e8\u05d5\u05de\u05e0\u05d9\u05d4",
@@ -7799,7 +8632,8 @@ ESIM70_ISO2_TO_HEBREW = {
     "AE": "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea", "GB": "\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4",
     "US": "\u05d0\u05e8\u05e6\u05d5\u05ea \u05d4\u05d1\u05e8\u05d9\u05ea", "UY": "\u05d0\u05d5\u05e8\u05d5\u05d2\u05d5\u05d5\u05d0\u05d9",
     "UZ": "\u05d0\u05d5\u05d6\u05d1\u05e7\u05d9\u05e1\u05d8\u05df", "VE": "\u05d5\u05e0\u05e6\u05d5\u05d0\u05dc\u05d4",
-    "VN": "\u05d5\u05d9\u05d9\u05d8\u05e0\u05d0\u05dd",
+    "VN": "\u05d5\u05d9\u05d9\u05d8\u05e0\u05d0\u05dd", "ZM": "\u05d6\u05de\u05d1\u05d9\u05d4",
+    "GP": "\u05d2\u05d5\u05d5\u05d0\u05d3\u05dc\u05d5\u05e4",
 }
 
 ESIM70_REGION_BASE_TO_HEBREW = {
@@ -7818,37 +8652,50 @@ ESIM70_REGION_BASE_TO_HEBREW = {
 
 
 def scrape_esim70_global(_page=None, eur_rate=None):
-    """Scrape eSIM70 global plans via Lascade REST API — no Playwright needed."""
-    import urllib.request as _ur, json as _js
+    """Scrape eSIM70 global plans via Lascade REST API — no Playwright needed.
+
+    2026-07: the API dropped the bulk listing (plans/ now returns 400 without a
+    filter_country or region param), so we enumerate /api/countries/ (150 codes,
+    paginated) + /api/regions/ (9 slugs) and fetch per-country / per-region.
+    Plan payloads and names are unchanged, so plan_name keys stay stable.
+    """
+    import urllib.request as _ur, urllib.error as _ue, json as _js, time as _time
 
     if eur_rate is None:
         eur_rate = _get_eur_to_ils()
 
     all_plans = []
-    _LASCADE_BASE = (
-        "https://esim.lascade.com/api/plans/"
-        "?is_active=true&app_code=D1WE&billing_country=IL&currency=EUR"
-    )
+    _LASCADE_API = "https://esim.lascade.com/api"
+    _LASCADE_COMMON = "is_active=true&app_code=D1WE&billing_country=IL&currency=EUR"
     _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
 
-    def _fetch_all(plan_type):
-        results = []
-        page = 1
-        while True:
-            url = f"{_LASCADE_BASE}&plan_type={plan_type}&page={page}&limit=200"
+    def _get_json(url):
+        # ~160 per-country calls trip the API's rate limit — pace steadily and
+        # back off on 429 (honoring Retry-After when sent).
+        backoff = 10
+        for attempt in range(4):
+            _time.sleep(0.45)
             try:
                 req = _ur.Request(url, headers={"User-Agent": _UA})
                 with _ur.urlopen(req, timeout=20) as r:
-                    data = _js.loads(r.read())
-                batch = data.get("results", [])
-                results.extend(batch)
-                if not data.get("next"):
-                    break
-                page += 1
-            except Exception as e:
-                logger.warning(f"eSIM70 {plan_type} page {page}: {e}")
-                break
-        return results
+                    return _js.loads(r.read())
+            except _ue.HTTPError as e:
+                if e.code == 429 and attempt < 3:
+                    retry_after = e.headers.get("Retry-After") or ""
+                    _time.sleep(min(int(retry_after) if retry_after.isdigit() else backoff, 120))
+                    backoff *= 2
+                    continue
+                raise
+
+    def _paged(url):
+        """Yield results across DRF-style pagination (follows 'next' links)."""
+        while url:
+            data = _get_json(url)
+            if isinstance(data, list):  # /regions/ returns a bare list
+                yield from data
+                return
+            yield from (data.get("results") or [])
+            url = data.get("next")
 
     def _region_heb(raw_name):
         base = re.sub(r"\s+\d+\s+days?\s+unlim$", "", raw_name, flags=re.IGNORECASE).strip()
@@ -7873,7 +8720,9 @@ def scrape_esim70_global(_page=None, eur_rate=None):
             codes = p.get("countries", [])
             if not codes:
                 return None
-            heb_name = ESIM70_ISO2_TO_HEBREW.get(codes[0]["code"], codes[0].get("name", ""))
+            heb_name = ESIM70_ISO2_TO_HEBREW.get(codes[0]["code"]) or codes[0].get("name") or ""
+            if not heb_name:
+                return None
 
         if is_unlimited:
             data_gb = None
@@ -7888,12 +8737,39 @@ def scrape_esim70_global(_page=None, eur_rate=None):
             data_gb=data_gb, days=days, esim=True, extras=[heb_name],
         )
 
-    for plan_type in ("region", "country"):
-        raw_plans = _fetch_all(plan_type)
-        for p in raw_plans:
-            plan = _build_plan(plan_type, p)
-            if plan:
-                all_plans.append(plan)
+    try:
+        region_slugs = [r["slug"] for r in _paged(f"{_LASCADE_API}/regions/?app_code=D1WE")]
+    except Exception as e:
+        logger.warning(f"eSIM70 regions list: {e}")
+        region_slugs = []
+    try:
+        country_codes = [c["code"] for c in _paged(f"{_LASCADE_API}/countries/?app_code=D1WE")]
+    except Exception as e:
+        logger.warning(f"eSIM70 countries list: {e}")
+        country_codes = []
+
+    # A plan covering several countries comes back once per covered country —
+    # dedupe by API id so it lands as a single row (keyed to countries[0], as
+    # the old bulk listing did).
+    seen_ids = set()
+
+    def _collect(plan_type, filt):
+        try:
+            for p in _paged(f"{_LASCADE_API}/plans/?{_LASCADE_COMMON}&plan_type={plan_type}&{filt}&limit=200"):
+                pid = p.get("id")
+                if pid in seen_ids:
+                    continue
+                seen_ids.add(pid)
+                plan = _build_plan(plan_type, p)
+                if plan:
+                    all_plans.append(plan)
+        except Exception as e:
+            logger.warning(f"eSIM70 {plan_type} {filt}: {e}")
+
+    for slug in region_slugs:
+        _collect("region", f"region={slug}")
+    for code in country_codes:
+        _collect("country", f"filter_country={code}")
 
     logger.info(f"eSIM70 global: {len(all_plans)} plans")
     return all_plans
@@ -8091,7 +8967,7 @@ BREEZ_EN_TO_HEBREW = {
     "Czech Republic": "\u05e6'\u05db\u05d9\u05d4",
     "Montenegro": "\u05de\u05d5\u05e0\u05d8\u05e0\u05d2\u05e8\u05d5",
     "Ecuador": "\u05d0\u05e7\u05d5\u05d5\u05d3\u05d5\u05e8",
-    "Philippines": "\u05d4\u05d4\u05e4\u05d9\u05dc\u05d9\u05e4\u05d9\u05e0\u05d9\u05dd",
+    "Philippines": "\u05d4\u05e4\u05d9\u05dc\u05d9\u05e4\u05d9\u05e0\u05d9\u05dd",
     "Israel": "\u05d9\u05e9\u05e8\u05d0\u05dc",
     "Antigua And Barbuda": "\u05d0\u05e0\u05d8\u05d9\u05d2\u05d5\u05d0\u05d4 \u05d5\u05d1\u05e8\u05d1\u05d5\u05d3\u05d4",
     "Denmark": "\u05d3\u05e0\u05de\u05e8\u05e7",
@@ -8242,12 +9118,244 @@ BREEZ_EN_TO_HEBREW = {
     "Africa": "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",
 }
 
+# English product title -> Shopify product handle (breezesim.com/products/<handle>),
+# from the same country-bundles + regional-bundles collections the scraper reads. Used
+# by app.py to build per-destination affiliate deep-links (/go/breez?dest=...) with the
+# UpPromote sca_ref param. Format verified via the dashboard "Get product link" tool
+# 2026-07-06 (it emits exactly /products/<handle>?sca_ref=<tag>). Regenerate when Breeze
+# changes its catalog (scratchpad breez_en_handles.py: fetch collections, map title->handle).
+BREEZ_EN_TO_HANDLE = {
+    "Africa": "esimg_raf_v2",
+    "Albania": "esimg_al_v2",
+    "Algeria": "esimg_dz_v2",
+    "Andorra": "esimg_ad_v2",
+    "Anguilla": "esimg_ai_v2",
+    "Antigua And Barbuda": "esimg_ag_v2",
+    "Argentina": "esim-argentina",
+    "Armenia": "esimg_am_v2",
+    "Aruba": "esim-aruba",
+    "Asia": "esim-asia",
+    "Australia": "esim-australia",
+    "Austria": "esimg_at_v2",
+    "Azerbaijan": "esimg_az_v2",
+    "Bahamas": "esim-bahamas",
+    "Bahrain": "esimg_bh_v2",
+    "Balkans": "esim-balkans",
+    "Bangladesh": "esimg_bd_v2",
+    "Barbados": "esimg_bb_v2",
+    "Belarus": "esimg_by_v2",
+    "Belgium": "esimg_be_v2",
+    "Benin": "esimg_bj_v2",
+    "Bermuda": "esim-bermuda",
+    "Bolivia": "esimg_bo_v2",
+    "Bonaire, saint Eustatius and Saba": "esim-bonaire-saint-eustatius-and-saba",
+    "Bosnia And Herzegovina": "esimg_ba_v2",
+    "Botswana": "esimg_bw_v2",
+    "Brazil": "esim-brazil",
+    "Brunei": "esimg_bn_v2",
+    "Bulgaria": "esimg_bg_v2",
+    "Burkina Faso": "esimg_bf_v2",
+    "CENAM": "esim-cenam",
+    "CIS": "esim-cis-region",
+    "Cambodia": "esimg_kh_v2",
+    "Cameroon": "esimg_cm_v2",
+    "Canada": "esim-canada",
+    "Canary Islands": "esimg_ic_v2",
+    "Cape Verde": "esim-cape-verde",
+    "Caribbean": "esim-caribbean",
+    "Cayman Islands": "esimg_ky_v2",
+    "Central African Republic": "esimg_cf_v2",
+    "Chad": "esimg_td_v2",
+    "Chile": "esimg_cl_v2",
+    "China": "esim-china",
+    "Colombia": "esim-colombia",
+    "Congo": "esimg_cg_v2",
+    "Congo-the Democratic Republic of the": "esimg_cd_v2",
+    "Costa Rica": "esim-costa-rica",
+    "Croatia": "esimg_hr_v2",
+    "Cuba": "esim-cuba",
+    "Curacao": "esim-curacao",
+    "Cyprus": "esimg_cy_v2",
+    "Czech Republic": "esimg_cz_v2",
+    "Denmark": "esimg_dk_v2",
+    "Dominica": "esimg_dm_v2",
+    "Dominican Republic": "esim-dominican-republic",
+    "EU+": "esim-europe",
+    "Ecuador": "esimg_ec_v2",
+    "Egypt": "esim-egypt",
+    "El Salvador": "esimg_sv_v2",
+    "Estonia": "esimg_ee_v2",
+    "Ethiopia": "esim-ethiopia",
+    "Europe Lite": "esim-europe-lite",
+    "Faroe Islands": "esimg_fo_v2",
+    "Fiji": "esimg_fj_v2",
+    "Finland": "esimg_fi_v2",
+    "France": "esim-france",
+    "French Guiana": "esimg_gf_v2",
+    "Gabon": "esimg_ga_v2",
+    "Georgia": "esimg_ge_v2",
+    "Germany": "esim-germany",
+    "Ghana": "esimg_gh_v2",
+    "Gibraltar": "esimg_gi_v2",
+    "Global": "esim-global",
+    "Greece": "esim-greece",
+    "Greenland": "esimg_gl_v2",
+    "Grenada": "esimg_gd_v2",
+    "Guadeloupe": "esimg_gp_v2",
+    "Guam": "esimg_gu_v2",
+    "Guatemala": "esimg_gt_v2",
+    "Guernsey": "esimg_gg_v2",
+    "Guinea": "esimg_gn_v2",
+    "Guinea-Bissau": "esimg_gw_v2",
+    "Guyana": "esimg_gy_v2",
+    "Haiti": "esim-haiti",
+    "Hawaii": "esim-hawaii",
+    "Honduras": "esimg_hn_v2",
+    "Hong Kong": "esim-hong-kong",
+    "Hungary": "esim-hungary",
+    "Iceland": "esimg_is_v2",
+    "India": "esim-india",
+    "Indonesia": "esimg_id_v2",
+    "Iran-Islamic Republic of": "esimg_ir_v2",
+    "Ireland": "esim-ireland",
+    "Isle of Man": "esimg_im_v2",
+    "Israel": "esimg_il_v2",
+    "Italy": "esim-italy",
+    "Ivory Coast": "esimg_ci_v2",
+    "Jamaica": "esimg_jm_v2",
+    "Japan": "esim-japan",
+    "Jersey": "esimg_je_v2",
+    "Jordan": "esimg_jo_v2",
+    "Kazakhstan": "esimg_kz_v2",
+    "Kenya": "esimg_ke_v2",
+    "Korea Republic of": "esim-south-korea",
+    "Kyrgyzstan": "esimg_kg_v2",
+    "Laos": "esimg_la_v2",
+    "Latvia": "esimg_lv_v2",
+    "Lesotho": "esimg_ls_v2",
+    "Liberia": "esimg_lr_v2",
+    "Liechtenstein": "esimg_li_v2",
+    "Lithuania": "esimg_lt_v2",
+    "Luxembourg": "esimg_lu_v2",
+    "Macao": "esimg_mo_v2",
+    "Madagascar": "esimg_mg_v2",
+    "Malawi": "esimg_mw_v2",
+    "Malaysia": "esimg_my_v2",
+    "Mali": "esimg_ml_v2",
+    "Malta": "esimg_mt_v2",
+    "Martinique": "esimg_mq_v2",
+    "Mauritania": "esimg_mr_v2",
+    "Mauritius": "esimg_mu_v2",
+    "Mayotte": "esimg_yt_v2",
+    "Mexico": "esim-mexico",
+    "Middle East": "esimg_rme_v2",
+    "Middle East and North Africa": "esim-middle-east-and-north-africa",
+    "Moldova": "esimg_md_v2",
+    "Monaco": "esimg_mc_v2",
+    "Mongolia": "esimg_mn_v2",
+    "Montenegro": "esimg_me_v2",
+    "Montserrat": "esimg_ms_v2",
+    "Morocco": "esim-morocco",
+    "Mozambique": "esimg_mz_v2",
+    "Namibia": "esimg_na_v2",
+    "Nauru": "esimg_nr_v2",
+    "Netherlands": "esim-netherlands",
+    "Netherlands Antilles": "esim-netherlands-antilles",
+    "New Zealand": "esimg_nz_v2",
+    "Nicaragua": "esimg_ni_v2",
+    "Niger": "esimg_ne_v2",
+    "Nigeria": "esimg_ng_v2",
+    "North America": "esim-north-america",
+    "North Macedonia": "esimg_mk_v2",
+    "Northern Cyprus": "esim-northern-cyprus",
+    "Norway": "esimg_no_v2",
+    "Oman": "esimg_om_v2",
+    "Pakistan": "esimg_pk_v2",
+    "Palestine": "esimg_ps_v2",
+    "Panama": "esim-panama",
+    "Papua New Guinea": "esimg_pg_v2",
+    "Paraguay": "esimg_py_v2",
+    "Peru": "esim-peru",
+    "Philippines": "esim-philippines",
+    "Poland": "esimg_pl_v2",
+    "Portugal": "esim-portugal",
+    "Puerto Rico": "esim-puerto-rico",
+    "Qatar": "esimg_qa_v2",
+    "Reunion": "esimg_re_v2",
+    "Romania": "esimg_ro_v2",
+    "Russian Federation": "esimg_ru_v2",
+    "Rwanda": "esimg_rw_v2",
+    "Saint Barthelemy": "esimg_bl_v2",
+    "Saint Kitts And Nevis": "esimg_kn_v2",
+    "Saint Lucia": "esim-saint-lucia",
+    "Saint Martin": "esimg_mf_v2",
+    "Saint Vincent And The Grenadines": "esimg_vc_v2",
+    "Samoa": "esimg_eh_v2",
+    "Saudi Arabia": "esim-saudi-arabia",
+    "Senegal": "esimg_sn_v2",
+    "Serbia": "esimg_rs_v2",
+    "Seychelles": "esim-seychelles",
+    "Singapore": "esimg_sg_v2",
+    "Slovakia": "esimg_sk_v2",
+    "Slovenia": "esimg_si_v2",
+    "South Africa": "esim-south-africa",
+    "South America": "esim-south-america",
+    "Spain": "esim-spain",
+    "Sri Lanka": "esimg_lk_v2",
+    "Sudan": "esimg_sd_v2",
+    "Suriname": "esimg_sr_v2",
+    "Swaziland": "esimg_sz_v2",
+    "Sweden": "esimg_se_v2",
+    "Switzerland": "esim-switzerland",
+    "Taiwan-Province of China": "esim-taiwan",
+    "Tajikistan": "esimg_tj_v2",
+    "Tanzania, United Republic of": "esim-tanzania",
+    "Thailand": "esim-thailand",
+    "Togo": "esim-togo",
+    "Tonga": "esimg_to_v2",
+    "Trinidad And Tobago": "esimg_tt_v2",
+    "Tunisia": "esim-tunisia",
+    "Turkey": "esim-turkey",
+    "Turks And Caicos Islands": "esimg_tc_v2",
+    "Uganda": "esimg_ug_v2",
+    "Ukraine": "esimg_ua_v2",
+    "United Arab Emirates": "esim-united-arab-emirates",
+    "United Kingdom": "esim-united-kingdom",
+    "United States of America": "esim-usa",
+    "Uruguay": "esimg_uy_v2",
+    "Uzbekistan": "esimg_uz_v2",
+    "Vanuatu": "esim-vanuatu",
+    "Vatican City": "esimg_va_v2",
+    "VietNam": "esim-vietnam",
+    "Virgin Islands - British": "esimg_vg_v2",
+    "Virgin Islands - United States": "esim-virgin-islands-us",
+    "Zambia": "esimg_zm_v2",
+}
+
+# Hebrew destination -> Shopify handle, composed from the two maps above so the
+# /go/breez deep-link layer can key on the canonical Hebrew ?dest= value.
+BREEZ_HEB_TO_HANDLE = {
+    BREEZ_EN_TO_HEBREW[_en]: _h
+    for _en, _h in BREEZ_EN_TO_HANDLE.items()
+    if _en in BREEZ_EN_TO_HEBREW
+}
+
 
 def scrape_breez_global(_page=None, usd_rate=None):
-    """Scrape Breeze eSIM global plans via Shopify JSON API (ILS pricing, no browser)."""
+    """Scrape Breeze eSIM global plans via Shopify JSON API (USD base pricing, no browser).
+
+    Prices are fetched in the shop's BASE currency (USD) and converted to ILS
+    with usd_rate. Do NOT request `currency=ILS` from Shopify — its converted
+    prices are re-rounded against a daily FX rate, so the whole catalog
+    "changed price" by ±1 ₪ every day (~700 phantom price_change events/day,
+    fixed 2026-07-26). currency='USD' + original_price=USD lets
+    change_detector compare the stable USD value.
+    """
     import requests as _req
     import re as _re
 
+    if usd_rate is None:
+        usd_rate = _get_usd_to_ils()
     base = "https://breezesim.com"
     all_plans = []
     seen_names = set()
@@ -8270,7 +9378,7 @@ def scrape_breez_global(_page=None, usd_rate=None):
             try:
                 r = _req.get(
                     f"{base}/collections/{collection_handle}/products.json",
-                    params={"limit": 250, "page": page, "currency": "ILS"},
+                    params={"limit": 250, "page": page},
                     timeout=25,
                 )
                 r.raise_for_status()
@@ -8307,10 +9415,10 @@ def scrape_breez_global(_page=None, usd_rate=None):
                 if days is None:
                     continue
                 try:
-                    price = float(variant.get("price", 0))
+                    usd = float(variant.get("price", 0))
                 except (ValueError, TypeError):
                     continue
-                if price <= 0:
+                if usd <= 0:
                     continue
 
                 gb_str = (f"{int(data_gb)}GB" if data_gb is not None
@@ -8323,7 +9431,7 @@ def scrape_breez_global(_page=None, usd_rate=None):
                 seen_names.add(plan_name)
 
                 all_plans.append(_make_global_plan(
-                    "breez", plan_name, price, "ILS", price,
+                    "breez", plan_name, usd * usd_rate, "USD", usd,
                     data_gb=data_gb, days=days, esim=True, extras=[heb_name],
                 ))
 
@@ -9524,12 +10632,18 @@ def scrape_all_global():
         ("scrape_travelsim",           scrape_travelsim),
         ("scrape_gomoworld_global",    lambda: scrape_gomoworld_global(gbp_rate=gbp_rate)),
         ("scrape_tasim_global",        lambda: scrape_tasim_global(usd_rate=usd_rate)),
+        ("scrape_gigsky_global",       lambda: scrape_gigsky_global(usd_rate=usd_rate)),  # pure HTTP, no Playwright
+        ("scrape_esimgenius_global",   lambda: scrape_esimgenius_global(usd_rate=usd_rate)),  # pure HTTP, no Playwright
+        ("scrape_nisim_global",        lambda: scrape_nisim_global()),  # pure HTTP, ILS, no Playwright
+        ("scrape_esimax_global",       lambda: scrape_esimax_global(usd_rate=usd_rate)),  # pure HTTP, no Playwright
+        ("scrape_venterrasim_global",  lambda: scrape_venterrasim_global()),  # pure HTTP, ILS, no Playwright
+        ("scrape_simzol_global",       lambda: scrape_simzol_global()),  # pure HTTP, ILS, no Playwright
         ("scrape_maya_global",         lambda: scrape_maya_global(usd_rate=usd_rate)),
         ("scrape_bcengi_global",       lambda: scrape_bcengi_global(usd_rate=usd_rate)),
         ("scrape_esim70_global",        lambda: scrape_esim70_global(eur_rate=eur_rate)),
         ("scrape_bnesim_global",        lambda: scrape_bnesim_global(eur_rate=eur_rate)),
         ("scrape_jetpack_global",       lambda: scrape_jetpack_global(usd_rate=usd_rate)),
-        ("scrape_breez_global",         scrape_breez_global),
+        ("scrape_breez_global",         lambda: scrape_breez_global(usd_rate=usd_rate)),
         ("scrape_bytesim_global",       lambda: scrape_bytesim_global(usd_rate=usd_rate)),
         ("scrape_bytesim_regions",      lambda: scrape_bytesim_regions(usd_rate=usd_rate)),
         ("scrape_besim_global",         lambda: scrape_besim_global(usd_rate=usd_rate)),
@@ -10098,6 +11212,246 @@ def _dismiss_popups(page) -> None:
     page.wait_for_timeout(500)
 
 
+# International eSIM provider sites stack a GDPR cookie-consent banner (OneTrust /
+# Cookiebot / Osano / CookieYes / Iubenda / Usercentrics / Quantcast …) AND often a
+# marketing / newsletter modal — neither of which _dismiss_popups (tuned for Israeli
+# carriers, clicks only ONE button on purpose) reliably clears. Accepting the cookie
+# banner is the cleanest dismissal (it's what a real visitor does) and leaves the
+# hero — the "main banner" — fully visible. Kept SEPARATE from _dismiss_popups so the
+# domestic scrapers' careful single-click behavior is untouched.
+_GLOBAL_POPUP_DISMISS_JS = r"""
+() => {
+  let clicked = 0, hidden = 0;
+
+  // 1) Click well-known consent "accept all" / modal-close controls by id/class.
+  const clickSels = [
+    '#onetrust-accept-btn-handler',
+    '#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll',
+    '#CybotCookiebotDialogBodyButtonAccept',
+    '.osano-cm-accept-all', '.osano-cm-accept',
+    '.cky-btn-accept', '[data-cky-tag="accept-button"]',
+    '.iubenda-cs-accept-btn',
+    '#uc-btn-accept-banner', '[data-testid="uc-accept-all-button"]',
+    '.cc-allow', '.cc-dismiss',
+    '.cookie-accept', '#acceptCookies', '#cookie-accept', '#cookieAccept',
+    '.termly-styles-buttonPrimary',
+    '#hs-eu-confirmation-button',
+    '.qc-cmp2-summary-buttons button[mode="primary"]',
+    'button[aria-label="Accept all"]', 'button[aria-label="Accept"]',
+    '[aria-label="Close"]', '[aria-label="close"]', '[aria-label="Dismiss"]',
+    '.modal-close', '.popup-close', '.close-btn', '.btn-close', '[data-dismiss="modal"]',
+  ];
+  for (const s of clickSels) {
+    document.querySelectorAll(s).forEach(el => {
+      try { const r = el.getBoundingClientRect(); if (r.width && r.height) { el.click(); clicked++; } } catch (e) {}
+    });
+  }
+
+  // 2) Click buttons/links by their TEXT (frameworks without stable ids). Kept
+  //    consent-specific + short so we never hit a hero CTA (e.g. "Buy", "Continue").
+  const wantText = ['accept all','accept cookies','accept','allow all','allow cookies',
+    'i agree','agree','got it','אני מסכים','מאשר','אישור','קבל','סגור'];
+  document.querySelectorAll('button, a, [role="button"]').forEach(el => {
+    const t = (el.innerText || el.textContent || '').trim().toLowerCase();
+    if (!t || t.length > 20) return;
+    if (wantText.includes(t)) { try { el.click(); clicked++; } catch (e) {} }
+  });
+
+  // 3) Force-hide known consent-SDK / overlay containers that survive clicking,
+  //    plus the Israeli Adoric marketing wrappers (some .co.il global providers).
+  const hideSels = [
+    '#onetrust-consent-sdk', '#onetrust-banner-sdk',
+    '#CybotCookiebotDialog', '.CybotCookiebotDialog', '#CybotCookiebotDialogBodyUnderlay',
+    '.osano-cm-window', '.osano-cm-dialog',
+    '.cky-consent-container', '.cky-overlay', '.cky-modal',
+    '.iubenda-cs-container', '#iubenda-cs-banner',
+    '#usercentrics-root', '#uc-center-container', '#usercentrics-cmp-ui',
+    '[id*="usercentrics"]', 'usercentrics-root', 'usercentrics-cmp-ui',
+    '#axeptio_overlay', '.axeptio_mount', '[class*="axeptio"]', '#axeptio_main_button',
+    '.termly-consent-banner', '#hs-eu-cookie-confirmation',
+    '.qc-cmp2-container', '#qc-cmp2-container',
+    '.cc-window', '#gdpr-cookie-message', '#gdpr-cookie-notice',
+    '[class*="cookie-consent"]', '[id*="cookie-consent"]', '[class*="CookieConsent"]',
+    'div[class*="__ADORIC__"]', '[id^="adoric_smartbox"]',
+  ];
+  for (const s of hideSels) {
+    document.querySelectorAll(s).forEach(el => { el.style.setProperty('display','none','important'); hidden++; });
+  }
+
+  // 4) Hide common backdrop/overlay wrappers by class so the dimming layer behind a
+  //    modal doesn't leave the screenshot darkened. NB: match SPECIFIC backdrop
+  //    classes — a bare [class*="backdrop"] wrongly hits Tailwind's `backdrop-blur`
+  //    utility (used on sticky headers), which nuked real nav bars.
+  const overlaySels = ['.modal-backdrop', '.modal-overlay', '[class*="modal-backdrop"]',
+    '[class*="ModalBackdrop"]', '.cdk-overlay-backdrop', '.MuiBackdrop-root',
+    '.ReactModal__Overlay', '.fancybox-container', '.fancybox__backdrop',
+    '[class*="overlay"][class*="open"]', '[class*="Overlay"][class*="open"]'];
+  for (const s of overlaySels) {
+    document.querySelectorAll(s).forEach(el => { el.style.setProperty('display','none','important'); hidden++; });
+  }
+
+  // 5) General overlay/modal killer: any fixed/sticky element with a high z-index
+  //    that either covers most of the viewport (backdrop / full-screen modal) or sits
+  //    as a large centered box (cookie / language / newsletter dialog). Hero content
+  //    is never position:fixed, and sticky top nav / slim footers are excluded, so
+  //    this removes the popup without touching the banner.
+  const vw = innerWidth, vh = innerHeight;
+  document.querySelectorAll('body *').forEach(el => {
+    const cs = getComputedStyle(el);
+    if (cs.position !== 'fixed' && cs.position !== 'sticky') return;
+    if ((parseInt(cs.zIndex, 10) || 0) < 100) return;
+    const r = el.getBoundingClientRect();
+    if (r.width < 60 || r.height < 60) return;
+    if (r.top <= 2 && r.height <= vh * 0.2) return;            // sticky top nav — keep
+    if (r.bottom >= vh - 2 && r.height <= vh * 0.15) return;   // slim sticky footer — keep
+    const coversMost  = r.width >= vw * 0.85 && r.height >= vh * 0.85;
+    const centeredBox = r.width >= vw * 0.3 && r.height >= vh * 0.25 &&
+                        r.top > vh * 0.02 && r.top < vh * 0.6;
+    const cls = ((el.className && el.className.toString ? el.className.toString() : '') + ' ' + (el.id || '')).toLowerCase();
+    const looksOverlay = /(overlay|backdrop|modal|popup|lightbox|dialog|drawer|cookie|consent|lang|newsletter|subscribe)/.test(cls)
+      || /rgba\(0,\s*0,\s*0/.test(cs.backgroundColor)
+      || !!el.querySelector('[role="dialog"], [class*="modal"], [class*="popup"], [class*="lightbox"]');
+    if ((coversMost && looksOverlay) || centeredBox) {
+      el.style.setProperty('display','none','important'); hidden++;
+    }
+  });
+
+  // 5b) Shadow-DOM consent (Usercentrics v2 et al. render the banner inside a
+  //     custom-element shadow root, so the light-DOM button/text passes miss it).
+  document.querySelectorAll('*').forEach(el => {
+    const sr = el.shadowRoot;
+    if (!sr) return;
+    sr.querySelectorAll('button, [role="button"]').forEach(b => {
+      const t = (b.innerText || b.textContent || '').trim().toLowerCase();
+      if (b.getAttribute && b.getAttribute('data-testid') === 'uc-accept-all-button') { try { b.click(); clicked++; } catch (e) {} return; }
+      if (['accept all','accept cookies','accept','allow all','agree','i agree','ok','got it','אני מסכים','מאשר','אישור','קבל'].includes(t)) {
+        try { b.click(); clicked++; } catch (e) {}
+      }
+    });
+    const hostId = ((el.id || '') + ' ' + (el.tagName || '')).toLowerCase();
+    if (/usercentrics|consent|cookie|cmp|gdpr/.test(hostId)) { el.style.setProperty('display','none','important'); hidden++; }
+  });
+
+  // 6) Consent-text pass: cookie banners are often bottom-anchored (top > 60%, so
+  //    the geometry rules above miss them). Hide any fixed/sticky/absolute strip whose
+  //    text (or class/id) is clearly a cookie/consent notice — EN or HE (Israeli
+  //    providers like GlobalSIM show a Hebrew "שימוש ב-Cookies … מדיניות הפרטיות" bar).
+  //    The nav/header guard means a sticky menu that merely links to a cookie policy
+  //    is never nuked.
+  document.querySelectorAll('div,section,aside,footer').forEach(el => {
+    if (el.tagName === 'HEADER' || el.querySelector('nav, header')) return;
+    const cs = getComputedStyle(el);
+    if (!['fixed','sticky','absolute'].includes(cs.position)) return;
+    const r = el.getBoundingClientRect();
+    if (r.height > vh * 0.7 || r.width < vw * 0.3 || r.width < 200) return;  // strip, not whole page
+    const low = (el.innerText || '').slice(0, 600).toLowerCase();
+    const clsid = ((el.className && el.className.toString ? el.className.toString() : '') + ' ' + (el.id || '')).toLowerCase();
+    const cookieTok = low.includes('cookie') || low.includes('עוגיות') || low.includes('קוקיז')
+      || /(cookie|consent|gdpr)/.test(clsid);
+    const consentWord = /(accept|consent|agree|continue|got it|confirm|understood|\bok\b|manage|policy|settings|allow|preferences)/.test(low)
+      || /(מדיניות|פרטיות|מסכים|אישור|לאשר|הסכמה|שימוש ב)/.test(low);
+    const isConsent = low.includes('we use cookies') || low.includes('uses cookies') ||
+      low.includes('gdpr') || (cookieTok && consentWord);
+    if (isConsent) { el.style.setProperty('display','none','important'); hidden++; }
+  });
+
+  // 7) Restore scroll that popups commonly lock so the hero renders normally.
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  return { clicked, hidden };
+}
+"""
+
+
+def _dismiss_global_popups(page) -> None:
+    """Aggressively clear cookie-consent + marketing popups on international
+    provider sites so the screenshot shows only the hero banner."""
+    try:
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(300)
+    except Exception:
+        pass
+    # Two main-document passes — a 2nd modal often appears only after the consent
+    # banner is accepted/closed.
+    for _ in range(2):
+        try:
+            res = page.evaluate(_GLOBAL_POPUP_DISMISS_JS)
+            if res and (res.get("clicked") or res.get("hidden")):
+                logger.info("Global popup dismiss: clicked=%s hidden=%s",
+                            res.get("clicked"), res.get("hidden"))
+        except Exception:
+            pass
+        page.wait_for_timeout(500)
+    # Iframe-based consent (Quantcast / TrustArc / some Cookiebot render in an iframe).
+    for fr in page.frames:
+        for sel in ("#onetrust-accept-btn-handler",
+                    "#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll",
+                    "button[aria-label='Accept all']",
+                    ".qc-cmp2-summary-buttons button[mode='primary']"):
+            try:
+                loc = fr.locator(sel).first
+                if loc.is_visible(timeout=200):
+                    loc.click(timeout=500)
+                    page.wait_for_timeout(300)
+            except Exception:
+                continue
+    # Final late pass — some banners (Axeptio, a few Hebrew bars) inject a second or
+    # two after load, after the passes above already ran.
+    page.wait_for_timeout(1300)
+    try:
+        page.evaluate(_GLOBAL_POPUP_DISMISS_JS)
+    except Exception:
+        pass
+    page.wait_for_timeout(400)
+
+
+# Persistent consent-hider — installed as an init script so it runs on every page
+# load and keeps HIDING (not clicking) known consent containers + fixed cookie-text
+# strips on a 500ms interval for ~15s. Timing-independent: a banner injected 8-12s
+# after load (e.g. TravelSim's Hebrew bar, which isn't in the DOM even at 9s) is
+# removed within half a second of appearing, regardless of when the one-shot
+# dismissal passes ran. Only hides consent-shaped elements, never navs/heroes.
+_PERSISTENT_CONSENT_HIDER_JS = r"""
+(() => {
+  const SELS = [
+    '#onetrust-consent-sdk','#onetrust-banner-sdk','#CybotCookiebotDialog','.CybotCookiebotDialog',
+    '#CybotCookiebotDialogBodyUnderlay','.osano-cm-window','.osano-cm-dialog','.cky-consent-container',
+    '.cky-overlay','.cky-modal','.iubenda-cs-container','#iubenda-cs-banner','#usercentrics-root',
+    '#usercentrics-cmp-ui','[id*="usercentrics"]','usercentrics-root','usercentrics-cmp-ui',
+    '#axeptio_overlay','.axeptio_mount','[class*="axeptio"]','#axeptio_main_button','.termly-consent-banner',
+    '#hs-eu-cookie-confirmation','.qc-cmp2-container','#qc-cmp2-container','.cc-window','#gdpr-cookie-message',
+    '#gdpr-cookie-notice','[class*="cookie-consent"]','[id*="cookie-consent"]','[class*="CookieConsent"]',
+    'div[class*="__ADORIC__"]','[id^="adoric_smartbox"]'
+  ];
+  const hide = () => {
+    for (const s of SELS) { try { document.querySelectorAll(s).forEach(el => el.style.setProperty('display','none','important')); } catch (e) {} }
+    if (!document.body) return;
+    const vw = innerWidth, vh = innerHeight;
+    document.querySelectorAll('div,section,aside,footer').forEach(el => {
+      if (el.tagName === 'HEADER' || el.querySelector('nav, header')) return;
+      const cs = getComputedStyle(el);
+      if (!['fixed','sticky','absolute'].includes(cs.position)) return;
+      const r = el.getBoundingClientRect();
+      if (r.height > vh * 0.7 || r.width < vw * 0.3 || r.width < 200) return;
+      const low = (el.innerText || '').slice(0, 600).toLowerCase();
+      const clsid = ((el.className && el.className.toString ? el.className.toString() : '') + ' ' + (el.id || '')).toLowerCase();
+      const cookieTok = low.includes('cookie') || low.includes('עוגיות') || low.includes('קוקיז') || /(cookie|consent|gdpr)/.test(clsid);
+      const consentWord = /(accept|consent|agree|continue|got it|confirm|understood|\bok\b|manage|policy|settings|allow|preferences)/.test(low)
+        || /(מדיניות|פרטיות|מסכים|אישור|לאשר|הסכמה|שימוש ב)/.test(low);
+      if (low.includes('we use cookies') || low.includes('uses cookies') || low.includes('gdpr') || (cookieTok && consentWord)) {
+        el.style.setProperty('display','none','important');
+      }
+    });
+    document.documentElement.style.overflow = ''; document.body.style.overflow = '';
+  };
+  let n = 0;
+  const iv = setInterval(() => { try { hide(); } catch (e) {} if (++n > 30) clearInterval(iv); }, 500);
+  try { hide(); } catch (e) {}
+})();
+"""
+
+
 CARRIER_HOMEPAGE_URLS = {
     "partner":   "https://www.partner.net.il",
     "pelephone": "https://www.pelephone.co.il",
@@ -10356,4 +11710,199 @@ def scrape_carrier_store_banners(output_dir: str) -> list[dict]:
         finally:
             browser.close()
 
+    return results
+
+
+# ── Global eSIM provider homepage banners ───────────────────────────────────
+# Screenshot the MAIN (homepage) banner of every global eSIM provider once per
+# capture, exactly like the domestic carrier banners. Files are saved as
+# {provider}_global.png in the same data/banners/ folder. URLs are the provider's
+# clean homepage root (the "main banner"), NOT an Israel deep-link — mirror of
+# app.py's GLOBAL_PROVIDERS_REGISTRY / _GUEST_PROVIDER_META ids.
+GLOBAL_BANNER_URLS = {
+    "seven_g":          "https://7g.app",
+    "world8":           "https://world8.co.il",
+    "airalo":           "https://www.airalo.com",
+    "bcengi":           "https://www.bcengi.com",
+    "besim":            "https://besim.co.il",
+    "bestconnect":      "https://bestconnect.online",
+    "bnesim":           "https://www.bnesim.com",
+    "breez":            "https://breezesim.com",
+    "bytesim":          "https://bytesim.com",
+    "esimplus":         "https://esimplus.me",
+    "esimio":           "https://esim.io",
+    "esim70":           "https://esim70.com",
+    "esimgenius":       "https://esimgenius.ai",
+    "esimax":           "https://esimax.io",
+    "esimo":            "https://esimo.io",
+    "terminalesim":     "https://terminalesim.com",
+    "gigsky":           "https://www.gigsky.com",
+    "pelephone_global": "https://www.pelephone.co.il/digitalsite/heb/abroad/global-sim/",
+    "gomoworld":        "https://www.gomoworld.com",
+    "holafly":          "https://esim.holafly.com",
+    "jetpack":          "https://www.jetpacglobal.com",
+    "maya":             "https://maya.net",
+    "nisim":            "https://www.nisim-esim.co.il",
+    "orbit":            "https://orbitmobile.com",
+    "saily":            "https://saily.com",
+    "simtlv":           "https://simtlv.co.il",
+    "sparks":           "https://www.sparks.travel",
+    "tasim":            "https://tasim.us",
+    "travelsim":        "https://travelsimobile.co.il",
+    "tuki":             "https://tuki-esim.co.il",
+    "venterrasim":      "https://venterrasim.com",
+    "simzol":           "https://www.simzol.co.il",
+    "voye":             "https://voyeglobal.com",
+    "xphone_global":    "https://www.xphone.co.il",
+    "yesim":            "https://yesim.app",
+    "nomad":            "https://www.nomadesim.com",
+    "ubigi":            "https://www.ubigi.com",
+    "alosim":           "https://alosim.com",
+}
+
+
+# "Banner changed" (freshness) tracking. We store a small perceptual average-hash
+# (aHash) per provider in a JSON sidecar; when a fresh capture's aHash drifts past a
+# threshold from the stored one, the provider changed its homepage campaign and we
+# stamp changed_at=now. A perceptual hash (not sha256) is used so minor rendering
+# noise — antialiasing, a blinking cursor — doesn't trigger a false "changed".
+_GLOBAL_BANNER_STATE_FILE = "_global_banner_state.json"
+_BANNER_CHANGE_THRESHOLD = 18   # aHash bits (out of 256) that must differ = a real change
+
+
+def _banner_ahash(path: str):
+    """16x16 grayscale average-hash → 256-char bit string (None on failure)."""
+    try:
+        from PIL import Image
+        img = Image.open(path).convert("L").resize((16, 16))
+        px = list(img.getdata())
+        avg = sum(px) / len(px)
+        return "".join("1" if p >= avg else "0" for p in px)
+    except Exception as exc:
+        logger.warning("aHash failed for %s: %s", path, exc)
+        return None
+
+
+def _ahash_distance(a: str, b: str) -> int:
+    if not a or not b or len(a) != len(b):
+        return 999
+    return sum(1 for x, y in zip(a, b) if x != y)
+
+
+def _load_global_banner_state(output_dir: str) -> dict:
+    import json
+    try:
+        with open(os.path.join(output_dir, _GLOBAL_BANNER_STATE_FILE), "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _save_global_banner_state(output_dir: str, state: dict) -> None:
+    import json
+    try:
+        with open(os.path.join(output_dir, _GLOBAL_BANNER_STATE_FILE), "w", encoding="utf-8") as f:
+            json.dump(state, f)
+    except Exception as exc:
+        logger.warning("Could not write global banner state: %s", exc)
+
+
+def scrape_global_provider_banners(output_dir: str) -> list[dict]:
+    """
+    Navigate to each global eSIM provider's homepage and save a 1280x720 PNG.
+    Files are saved as {provider}_global.png in output_dir.
+    Returns a list of dicts: { carrier, scraped_at, success }.
+
+    Mirrors scrape_carrier_store_banners: 2 attempts, error-page detection,
+    min-size guard, atomic replace — so a failed capture preserves the previous
+    good screenshot instead of overwriting it with a blank/consent page. On each
+    successful capture it also updates the perceptual-hash state so the API can
+    flag which banners changed their campaign (freshness badge).
+    """
+    _ensure_event_loop()
+    results = []
+    os.makedirs(output_dir, exist_ok=True)
+    state = _load_global_banner_state(output_dir)
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"],
+        )
+        try:
+            context = browser.new_context(
+                viewport={"width": 1280, "height": 720},
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+                ignore_https_errors=True,
+            )
+            # Persistent hider catches late-injected consent banners regardless of
+            # the one-shot dismissal timing.
+            context.add_init_script(_PERSISTENT_CONSENT_HIDER_JS)
+
+            for provider, url in GLOBAL_BANNER_URLS.items():
+                out_path = os.path.join(output_dir, f"{provider}_global.png")
+                scraped_at = datetime.now(timezone.utc).isoformat()
+                success = False
+                last_reason = ""
+                for attempt in (1, 2):
+                    page = context.new_page()
+                    try:
+                        page.goto(url, timeout=30000, wait_until="domcontentloaded")
+                        # Global SPA sites render hero + consent banners with a delay.
+                        page.wait_for_timeout(4000)
+                        is_err, reason = _is_error_page(page)
+                        if is_err:
+                            last_reason = f"attempt {attempt}: {reason}"
+                            logger.warning("Global banner %s: skipping bad page (%s)", provider, last_reason)
+                            if attempt == 1:
+                                page.wait_for_timeout(3000)
+                            continue
+                        # International cookie-consent + marketing popups need the
+                        # aggressive dismissal, not the Israeli-tuned _dismiss_popups.
+                        _dismiss_global_popups(page)
+                        tmp_path = out_path + ".new.png"
+                        page.screenshot(path=tmp_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
+                        file_size = os.path.getsize(tmp_path) if os.path.exists(tmp_path) else 0
+                        if file_size < _MIN_BANNER_FILE_BYTES:
+                            last_reason = f"attempt {attempt}: screenshot too small ({file_size} bytes)"
+                            logger.warning("Global banner %s: %s", provider, last_reason)
+                            try:
+                                os.remove(tmp_path)
+                            except Exception:
+                                pass
+                            continue
+                        os.replace(tmp_path, out_path)
+                        success = True
+                        logger.info("Global banner screenshot saved: %s (%d bytes)", out_path, file_size)
+                        # ── Freshness tracking: mark changed_at when the campaign drifts.
+                        new_h = _banner_ahash(out_path)
+                        prev = state.get(provider) or {}
+                        prev_h = prev.get("hash")
+                        if not prev_h or new_h is None:
+                            # First-ever baseline (or hash failure) — record, don't flag.
+                            changed_at = prev.get("changed_at")
+                        elif _ahash_distance(new_h, prev_h) > _BANNER_CHANGE_THRESHOLD:
+                            changed_at = datetime.now(timezone.utc).isoformat()
+                            logger.info("Global banner CHANGED: %s", provider)
+                        else:
+                            changed_at = prev.get("changed_at")
+                        state[provider] = {"hash": new_h or prev_h, "changed_at": changed_at}
+                        break
+                    except Exception as exc:
+                        last_reason = f"attempt {attempt}: {exc}"
+                        logger.warning("Global banner attempt %d failed for %s: %s", attempt, provider, exc)
+                    finally:
+                        page.close()
+                if not success:
+                    logger.warning("Global banner FAILED for %s after retries; previous banner preserved (%s)",
+                                   provider, last_reason)
+                results.append({"carrier": provider, "scraped_at": scraped_at, "success": success})
+        finally:
+            browser.close()
+
+    _save_global_banner_state(output_dir, state)
     return results
