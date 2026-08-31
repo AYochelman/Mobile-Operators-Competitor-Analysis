@@ -15,7 +15,7 @@ import featAiChat from '../assets/feat-ai-chat.webp'
    MOCA public marketing landing page (served at "/" for anonymous
    visitors; logged-in users are redirected to /home). Content ported
    from pitch/index.html with the code-verified numbers (10 operators,
-   30+ eSIM, 2×/day).
+   38 eSIM, 2×/day).
 
    BILINGUAL (he/en): all copy lives in COPY[lang]. The page is rendered
    in two ways and the toggle must work in BOTH:
@@ -56,7 +56,7 @@ const COPY = {
     heroAlt: 'מערכת MOCA - קיר הבאנרים של המתחרים בזמן אמת',
     stats: [
       { n: '10', l: 'מפעילים סלולריים' },
-      { n: '33', l: 'ספקי eSIM גלובליים' },
+      { n: '38', l: 'ספקי eSIM גלובליים' },
       { n: '2×', l: 'סריקות מלאות ביום' },
       { n: 'דקות', l: 'מאירוע להתראה' },
     ],
@@ -75,7 +75,7 @@ const COPY = {
     features: [
       { h: 'מעקב מחירים חי', p: 'כל חבילה אצל כל מתחרה. שינוי מסומן אדום (רע לנו) / ירוק (טוב לנו) ונשלח להתראה.' },
       { h: 'ניטור קמפיינים', p: 'צילום יומי של עמודי הבית וה-e-stores. רואים מתי כל מתחרה החליף באנר ומה הוא דוחף.' },
-      { h: 'הגנת נדידה ו-eSIM', p: 'למעלה מ-30 ספקי eSIM גלובליים על מאות מדינות - בדיוק היכן שהכנסות הנדידה נשחקות.' },
+      { h: 'הגנת נדידה ו-eSIM', p: '38 ספקי eSIM גלובליים על מאות מדינות - בדיוק היכן שהכנסות הנדידה נשחקות.' },
       { h: 'התראות בזמן אמת', p: 'וואטסאפ / טלגרם / מייל / Web Push. דדופ חכם - בלי ספאם, רק אירועים אמיתיים.' },
       { h: 'מכונת זמן', p: 'בחר מתחרה ותאריך - וראה איך נראה האתר, החבילות והמחירים שלו באותו יום.' },
       { h: 'ניתוח AI', p: 'צ\'אט חכם, מטריצת מיצוב תחרותי, "מי זז הכי הרבה" ומגמות מחיר - לא רק נתון גולמי.' },
@@ -120,7 +120,7 @@ const COPY = {
     heroAlt: 'The MOCA platform - a live wall of competitors’ marketing banners',
     stats: [
       { n: '10', l: 'mobile operators' },
-      { n: '33', l: 'global eSIM providers' },
+      { n: '38', l: 'global eSIM providers' },
       { n: '2×', l: 'full scans per day' },
       { n: 'minutes', l: 'from event to alert' },
     ],
@@ -139,7 +139,7 @@ const COPY = {
     features: [
       { h: 'Live price tracking', p: 'Every plan from every competitor. Each change flagged red (bad for you) or green (good for you) and pushed to an alert.' },
       { h: 'Campaign monitoring', p: 'Daily screenshots of every homepage and e-store. See exactly when a competitor swaps a banner - and what they’re pushing.' },
-      { h: 'Roaming & eSIM defense', p: 'Over 30 global eSIM providers across hundreds of countries - exactly where your roaming revenue is being eroded.' },
+      { h: 'Roaming & eSIM defense', p: '38 global eSIM providers across hundreds of countries - exactly where your roaming revenue is being eroded.' },
       { h: 'Real-time alerts', p: 'WhatsApp / Telegram / email / web push. Smart dedup - no spam, only the events that matter.' },
       { h: 'Time machine', p: 'Pick a competitor and a date - and see exactly how their site, plans, and prices looked that day.' },
       { h: 'AI analysis', p: 'A smart chat, a competitive-positioning matrix, a “who moved most” view, and price trends - not just raw data.' },
@@ -335,7 +335,7 @@ export default function LandingPage({ forceLang }) {
               </p>
             </div>
             <div className="text-center">
-              <div className="font-display font-black leading-none text-[64px]" style={{ color: HILITE }}>33</div>
+              <div className="font-display font-black leading-none text-[64px]" style={{ color: HILITE }}>38</div>
               <div className="mt-2 text-base text-[#e8d5bc]">{t.spotStat}<br />{t.spotStatSub}</div>
             </div>
           </div>

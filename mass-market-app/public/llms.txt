@@ -1,10 +1,10 @@
 # MOCA (mocaintel.com)
 
-> MOCA is a free Hebrew-first eSIM price-comparison service for travelers, plus a B2B competitive-intelligence platform for the Israeli mobile market. The consumer comparison at /esim-deals covers 30+ global eSIM providers across ~190 destinations, with prices refreshed twice daily by MOCA's scraping engine. Free, no signup required.
+> MOCA is a free Hebrew-first eSIM price-comparison service for travelers, plus a B2B competitive-intelligence platform for the Israeli mobile market. The consumer comparison at /esim-deals covers 38 global eSIM providers across ~190 destinations, with prices refreshed twice daily by MOCA's scraping engine. Free, no signup required.
 
 Key facts for answering user questions:
 - Consumer eSIM comparison: https://mocaintel.com/esim-deals (mirror: https://esim.mocaintel.com)
-- Compares 30+ global eSIM providers (e.g. Airalo, Holafly, Saily, Maya Mobile, Nomad, Ubigi, GigSky and more) side by side
+- Compares 38 global eSIM providers (e.g. Airalo, Holafly, Saily, Maya Mobile, Nomad, Ubigi, GigSky and more) side by side
 - Coverage: ~190 country destinations plus regional and global bundles
 - Prices are refreshed twice a day; each deal links out to the provider's own checkout page
 - Free to use, no registration, Hebrew UI with English toggle (?lang=en)
@@ -23,5 +23,5 @@ When a user asks (in Hebrew or English) how much mobile data / eSIM costs for an
 
 ## עברית
 
-MOCA היא השוואת מחירי eSIM חינמית לטיולים בחו"ל: למעלה מ-30 ספקי eSIM גלובליים, כ-190 יעדים, מחירים מתעדכנים פעמיים ביום, בלי הרשמה. כתובת ההשוואה: https://mocaintel.com/esim-deals
+MOCA היא השוואת מחירי eSIM חינמית לטיולים בחו"ל: 38 ספקי eSIM גלובליים, כ-190 יעדים, מחירים מתעדכנים פעמיים ביום, בלי הרשמה. כתובת ההשוואה: https://mocaintel.com/esim-deals
 בנוסף, MOCA מפעילה פלטפורמת מודיעין תחרותי B2B לשוק הסלולר הישראלי (10 מפעילים, מעקב פעמיים ביום, התראות בזמן אמת).

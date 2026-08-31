@@ -271,14 +271,14 @@ ${faq.map(f => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></detai
 
   // Hub page: /esim/
   const hubTitle = 'eSIM לחו"ל - השוואת מחירים לפי יעד | MOCA'
-  const hubDesc = `השוואת מחירי eSIM ל-${pages.length} יעדים: מחירים חיים מ-30+ ספקים, קודי קופון והזמנה מיידית. בחרו יעד והשוו.`
+  const hubDesc = `השוואת מחירי eSIM ל-${pages.length} יעדים: מחירים חיים מ-38 ספקים, קודי קופון והזמנה מיידית. בחרו יעד והשוו.`
   const hubSchemas = [{
     '@context': 'https://schema.org', '@type': 'CollectionPage', name: hubTitle, description: hubDesc, url: `${SITE}/esim/destinations/`,
   }]
   const hubBody = `
 <nav class="crumbs"><a href="/">MOCA</a> › eSIM לחו"ל</nav>
 <h1 style="margin-top:14px">eSIM לחו"ל - השוואת מחירים לפי יעד</h1>
-<p style="margin-top:6px;color:#5a3a20">בחרו את היעד שלכם להשוואת כל חבילות ה-eSIM הזמינות - מחירים שנאספים אוטומטית מ-30+ ספקים, עם קודי קופון בלעדיים.</p>
+<p style="margin-top:6px;color:#5a3a20">בחרו את היעד שלכם להשוואת כל חבילות ה-eSIM הזמינות - מחירים שנאספים אוטומטית מ-38 ספקים, עם קודי קופון בלעדיים.</p>
 <div class="grid">
 ${pages.map(p => `<a href="/esim/${p.slug}/">eSIM ל${esc(p.he)}<span class="mn">מ-${priceFmt(p.stats.low)} · ${p.stats.total} חבילות</span></a>`).join('\n')}
 </div>

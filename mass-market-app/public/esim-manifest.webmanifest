@@ -2,7 +2,7 @@
   "id": "/esim-deals",
   "name": "MOCA eSIM - השוואת מחירי eSIM לחו\"ל",
   "short_name": "MOCA eSIM",
-  "description": "השוואת מחירי eSIM חינמית לטיול בחו\"ל - החבילה המשתלמת ביותר מתוך 30+ ספקים גלובליים, מתעדכן פעמיים ביום.",
+  "description": "השוואת מחירי eSIM חינמית לטיול בחו\"ל - החבילה המשתלמת ביותר מתוך 38 ספקים גלובליים, מתעדכן פעמיים ביום.",
   "start_url": "/esim-deals?utm_source=pwa&utm_campaign=pwa_install",
   "scope": "/",
   "display": "standalone",

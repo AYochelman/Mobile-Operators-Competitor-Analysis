@@ -53,7 +53,7 @@ const head = `<meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#5c3317" />
     <title>MOCA Guest Connect - eSIM concierge for your hotel guests</title>
-    <meta name="description" content="A guest-facing portal, branded in your hotel's colors, that compares every eSIM &amp; tourist-SIM deal in Israel in real time - over 30 global providers and 10 local operators. No inventory, no operations, and a commission to the hotel on every purchase." />
+    <meta name="description" content="A guest-facing portal, branded in your hotel's colors, that compares every eSIM &amp; tourist-SIM deal in Israel in real time - 38 global providers and 10 local operators. No inventory, no operations, and a commission to the hotel on every purchase." />
     <link rel="canonical" href="https://mocaintel.com/hotels" />
     <link rel="alternate" hreflang="he" href="https://mocaintel.com/hotels" />
     <link rel="alternate" hreflang="en" href="https://mocaintel.com/hotels?lang=en" />

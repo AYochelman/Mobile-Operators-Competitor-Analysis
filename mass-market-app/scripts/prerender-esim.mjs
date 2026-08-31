@@ -29,9 +29,9 @@ if (!existsSync(distIndex)) throw new Error('prerender-esim: missing ' + distInd
 
 const CANON = 'https://mocaintel.com/esim-deals'
 const TITLE = 'השוואת מחירי eSIM לטיול בחו"ל - חינם | MOCA'
-const DESC = 'השוואת מחירי eSIM חינמית לטיול בחו"ל, בלי הרשמה. מוצאים את החבילה המשתלמת ביותר מתוך למעלה מ-30 ספקי eSIM גלובליים, מתעדכן פעמיים ביום.'
+const DESC = 'השוואת מחירי eSIM חינמית לטיול בחו"ל, בלי הרשמה. מוצאים את החבילה המשתלמת ביותר מתוך 38 ספקי eSIM גלובליים, מתעדכן פעמיים ביום.'
 const OG_TITLE = 'השוואת מחירי eSIM לטיול בחו"ל | MOCA'
-const OG_DESC = 'מוצאים את חבילת ה-eSIM המשתלמת ביותר לטיול, מושווה על פני למעלה מ-30 ספקים גלובליים ומתעדכן פעמיים ביום. חינם, בלי הרשמה.'
+const OG_DESC = 'מוצאים את חבילת ה-eSIM המשתלמת ביותר לטיול, מושווה על פני 38 ספקים גלובליים ומתעדכן פעמיים ביום. חינם, בלי הרשמה.'
 const OG_IMG = 'https://mocaintel.com/og/og-esim.png'
 
 // FAQ — rendered BOTH as visible content in #root (crawlable) and as FAQPage
@@ -136,7 +136,7 @@ const rootContent =
   `font-family:'Assistant',system-ui,-apple-system,'Segoe UI',sans-serif;color:#3b1f0d">` +
   `<div style="font-size:13px;font-weight:800;letter-spacing:2px;color:#c9622f;text-transform:uppercase;margin-bottom:12px">השוואת eSIM · חינם</div>` +
   `<h1 style="font-family:'Assistant',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:clamp(28px,6vw,40px);line-height:1.18;margin:0 0 12px;color:#4a2a13">כמה תשלמו על אינטרנט בטיול הבא בחו"ל?</h1>` +
-  `<p style="font-size:18px;color:#8a6a4a;max-width:620px;margin:0 auto 28px">השוואת מחירים חינמית, בלי הרשמה. מוצאים את חבילת ה-eSIM המשתלמת ביותר לטיול, מושווה על פני למעלה מ-30 ספקי eSIM גלובליים ומתעדכן פעמיים ביום.</p>` +
+  `<p style="font-size:18px;color:#8a6a4a;max-width:620px;margin:0 auto 28px">השוואת מחירים חינמית, בלי הרשמה. מוצאים את חבילת ה-eSIM המשתלמת ביותר לטיול, מושווה על פני 38 ספקי eSIM גלובליים ומתעדכן פעמיים ביום.</p>` +
   `<h2 style="font-family:'Assistant',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:24px;color:#4a2a13;margin:0 0 16px">פעם ראשונה עם eSIM?</h2>` +
   `<div style="max-width:640px;margin:0 auto 32px;text-align:right;color:#3b1f0d;font-size:16px;line-height:1.7">` +
   `<div style="margin-bottom:8px"><b>1. רוכשים אונליין ב-2 דקות</b> - בלי חנות ובלי תור, משלמים בכרטיס וזהו.</div>` +
