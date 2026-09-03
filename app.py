@@ -892,6 +892,45 @@ def _db_path():
     return app.config.get("TEST_DB_PATH") or None
 
 
+_GLOBAL_PURGE_KNOBS = ("min_ratio", "min_rows", "grace_hours", "window_days")
+
+
+def _purge_stale_global(new_global, config, db_path=None):
+    """Guarded purge of stale global_plans rows - run right AFTER save_global_plans
+    and BEFORE notify_esim_price_drops on every global scrape path (so the alert
+    floor is computed on clean data). See db.purge_stale_global_rows for the
+    completeness guards. config.json knobs (all optional): `global_purge_enabled`
+    (default true; false = dry-run: the per-carrier report is still logged),
+    `global_purge_min_ratio` (0.90), `global_purge_min_rows` (2),
+    `global_purge_grace_hours` (72), `global_purge_window_days` (30).
+    Never raises. Returns {"purged": n, "carriers": {...}}."""
+    summary = {"purged": 0, "carriers": {}}
+    try:
+        from db import purge_stale_global_rows
+        knobs = {k: config.get(f"global_purge_{k}") for k in _GLOBAL_PURGE_KNOBS
+                 if config.get(f"global_purge_{k}") is not None}
+        dry_run = not config.get("global_purge_enabled", True)
+        report = purge_stale_global_rows(new_global, db_path=db_path, dry_run=dry_run, **knobs)
+        for carrier, r in report.items():
+            line = (f"global purge {carrier}: fresh={r['fresh']} ({r['fresh_dests']} dests) "
+                    f"baseline={r['baseline_rows']} rows/{r['baseline_dests']} dests in window "
+                    f"ratio={r['ratio_rows']:.2f}/{r['ratio_dests']:.2f} db={r['db_rows']} "
+                    f"stale={r['stale']} eligible={r['eligible']} purged={r['purged']} [{r['decision']}]")
+            if r["purged"] or r["decision"].startswith(("partial", "too-few", "complete, dry-run")):
+                logger.info(line)
+            else:
+                logger.debug(line)
+            summary["carriers"][carrier] = {"purged": r["purged"], "stale": r["stale"], "decision": r["decision"]}
+        summary["purged"] = sum(r["purged"] for r in report.values())
+        n_stale = sum(r["stale"] for r in report.values())
+        logger.info(f"global purge summary: carriers={len(report)} purged={summary['purged']} "
+                    f"stale_remaining={n_stale - summary['purged']}"
+                    + (" (dry-run: global_purge_enabled=false)" if dry_run else ""))
+    except Exception as e:
+        logger.warning(f"global stale purge failed: {e}", exc_info=True)
+    return summary
+
+
 def _ensure_vapid_keys(config_path):
     """Generate VAPID keys on first run and save to config.json."""
     if not os.path.exists(config_path):
@@ -2829,6 +2868,7 @@ def api_scrape_global_now():
             if changes:
                 save_global_changes(changes, db_path=_db_path())
         save_global_plans(new_plans, db_path=_db_path())
+        purge = _purge_stale_global(new_plans, load_config(), db_path=_db_path())
         arc.archive_global_plans(new_plans)
         # B2C destination price-drop pushes — state-based (baseline vs current min),
         # so it must run after save_global_plans on EVERY global scrape path.
@@ -2837,7 +2877,8 @@ def api_scrape_global_now():
             notify_esim_price_drops(load_config(), db_path=_db_path())
         except Exception as e:
             logger.warning(f"esim price-drop push failed: {e}")
-        return jsonify({"plans": len(new_plans), "changes": len(changes), "status": "ok"})
+        return jsonify({"plans": len(new_plans), "changes": len(changes),
+                        "purged": purge["purged"], "status": "ok"})
     except Exception as e:
         logger.error(f"scrape-global-now failed: {e}", exc_info=True)
         logger.error(f"API error: {e}", exc_info=True); return jsonify({"error": "Internal server error"}), 500
@@ -3094,12 +3135,14 @@ def api_scrape_all_now():
             if ch_global:
                 save_global_changes(ch_global, db_path=_db_path())
         save_global_plans(new_global, db_path=_db_path())
+        purge_global = _purge_stale_global(new_global, load_config(), db_path=_db_path())
         try:
             from notifier import notify_esim_price_drops
             notify_esim_price_drops(load_config(), db_path=_db_path())
         except Exception as e:
             logger.warning(f"esim price-drop push failed: {e}")
-        results["global"] = {"plans": len(new_global), "changes": len(ch_global)}
+        results["global"] = {"plans": len(new_global), "changes": len(ch_global),
+                             "purged": purge_global["purged"]}
         _scrape_emit('global', 'done', count=len(new_global), message=f'{len(new_global)} חבילות, {len(ch_global)} שינויים')
 
         # ── Content services ──────────────────────────────────────────────
@@ -6949,6 +6992,7 @@ if __name__ == "__main__":
                 # Drop global new/removed churn (per-country scrape flapping); keep price/extras/details.
                 global_changes = [c for c in global_changes if c["change_type"] not in ("new_plan", "removed_plan")]
             save_global_plans(new_global)
+            _purge_stale_global(new_global, config)
             try:
                 notify_esim_price_drops(config)
             except Exception as e:

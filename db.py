@@ -2014,6 +2014,138 @@ def save_global_plans(plans, db_path=None):
         conn.close()
 
 
+
+# ── Guarded purge of stale global rows ────────────────────────────────────────
+# save_global_plans deliberately never deletes (per-country scrapers fail
+# partially all the time), so rows for tiers/destinations a provider dropped
+# months ago kept being served by /api/global-plans, the /esim-deals deals +
+# alert floor, etc. (2026-09-03: gomoworld had 894 rows vs a 716-plan live
+# catalog, 178 of them with prices from an old currency bug; 17% of all global
+# rows were stale). This purge deletes them, but only when the scrape that just
+# ran LOOKS COMPLETE for that carrier. "Complete" is judged against what the DB
+# saw for the carrier within a rolling window (rows + destinations with
+# scraped_at in the last `window_days`), NOT against the total row count:
+# a months-old backlog ages out of the baseline and gets purged (sparks/tuki/
+# orbit sat at ~51% stale for months), while a per-country scraper that missed
+# destinations RECENTLY still counts them and blocks the purge.
+GLOBAL_PURGE_DEFAULTS = {
+    "min_ratio":    0.90,  # fresh rows / rows seen in window AND fresh dests / dests seen in window
+    "min_rows":     2,     # never act on a stub result (tasim/world8 are 2-row catalogs)
+    "grace_hours":  72,    # a row must be unseen for this long before it's eligible
+    "window_days":  30,    # baseline = rows/destinations seen in the last N days
+}
+# Per-country scrapers whose coverage fluctuates run-to-run (archive_snapshots
+# 2026-08-20..09-03 daily row counts: esimplus 33..582, holafly 509..1645,
+# alosim 1439..1705, besim 438..640, gomoworld 284..716). A row of theirs must be
+# unseen for a full week before it's eligible; the window guards do the rest.
+# Keys are the same knob names as GLOBAL_PURGE_DEFAULTS; {"enabled": False}
+# disables the purge for a carrier entirely (the report is still produced).
+GLOBAL_PURGE_OVERRIDES = {
+    "esimplus":  {"grace_hours": 168},
+    "holafly":   {"grace_hours": 168},
+    "alosim":    {"grace_hours": 168},
+    "besim":     {"grace_hours": 168},
+    "gomoworld": {"grace_hours": 168},
+}
+
+
+def _global_dest(plan):
+    ex = _norm_extras(plan.get("extras") or [])
+    return ex[0] if ex and ex[0] else None
+
+
+def purge_stale_global_rows(plans, db_path=None, dry_run=False, overrides=None, **knobs):
+    """Delete global_plans rows that a COMPLETE-looking scrape no longer returns.
+
+    `plans` is the fresh list just passed to save_global_plans (call this right
+    after it, so the fresh rows carry the newest scraped_at). For every carrier
+    present in `plans`:
+      1. baseline = the carrier's rows with scraped_at within `window_days`
+         (fresh rows included): their count and their distinct destinations;
+      2. the scrape is "complete" when fresh rows >= min_rows AND
+         fresh_rows / baseline_rows >= min_ratio AND
+         fresh_dests / baseline_dests >= min_ratio;
+      3. if complete (and not dry_run / disabled): delete the carrier's rows whose
+         plan_name is not in the fresh set AND whose scraped_at is older than
+         `grace_hours` (a flapping per-country tier seen recently is spared).
+    Carriers absent from `plans` (scraper returned []) are never touched.
+    Deletes only global_plans (+ the matching plan_refs); it never writes to
+    global_changes, so no new_plan/removed_plan noise, and never touches
+    esim_push_subscriptions - removing rows can only raise a destination's
+    alert floor, which notify_esim_price_drops absorbs silently as a baseline rise.
+    dry_run performs no writes at all. Returns {carrier: report-dict};
+    report["purged"] is the deleted row count, report["decision"] says why not.
+    """
+    knobs = {**GLOBAL_PURGE_DEFAULTS, **{k: v for k, v in knobs.items() if v is not None}}
+    overrides = GLOBAL_PURGE_OVERRIDES if overrides is None else overrides
+    by_carrier = {}
+    for p in plans:
+        by_carrier.setdefault(p["carrier"], []).append(p)
+    if not by_carrier:
+        return {}
+    now = datetime.now()
+    report = {}
+    conn = _connect(db_path)
+    try:
+        for carrier, fresh in sorted(by_carrier.items()):
+            k = {**knobs, **(overrides.get(carrier) or {})}
+            fresh_names = {p["plan_name"] for p in fresh}
+            fresh_dests = {d for d in (_global_dest(p) for p in fresh) if d}
+            window_start = (now - timedelta(days=k["window_days"])).isoformat()
+            cutoff = (now - timedelta(hours=k["grace_hours"])).isoformat()
+            rows = conn.execute(
+                "SELECT id, plan_name, scraped_at, json_extract(extras, '$[0]') "
+                "FROM global_plans WHERE carrier=?", (carrier,)).fetchall()
+            in_window = [r for r in rows if (r[2] or "") >= window_start]
+            base_names = {r[1] for r in in_window} | fresh_names
+            base_dests = {r[3] for r in in_window if r[3]} | fresh_dests
+            ratio_rows = len(fresh_names) / len(base_names) if base_names else 0.0
+            ratio_dests = len(fresh_dests) / len(base_dests) if base_dests else 1.0
+            stale = [(rid, name) for rid, name, at, _ in rows if name not in fresh_names]
+            eligible = [(rid, name) for rid, name, at, _ in rows
+                        if name not in fresh_names and (at or "") < cutoff]
+            if k.get("enabled") is False:
+                decision = "disabled"
+            elif len(fresh_names) < k["min_rows"]:
+                decision = f"too-few-rows (<{k['min_rows']})"
+            elif ratio_rows < k["min_ratio"]:
+                decision = f"partial-rows ({ratio_rows:.2f}<{k['min_ratio']})"
+            elif ratio_dests < k["min_ratio"]:
+                decision = f"partial-dests ({ratio_dests:.2f}<{k['min_ratio']})"
+            elif not eligible:
+                decision = "complete, nothing eligible"
+            elif dry_run:
+                decision = "complete, dry-run"
+            else:
+                decision = "purged"
+            purged = 0
+            if decision == "purged":
+                ids = [rid for rid, _ in eligible]
+                names = [name for _, name in eligible]
+                for i in range(0, len(ids), 500):
+                    chunk = ids[i:i + 500]
+                    ph = ",".join("?" * len(chunk))
+                    purged += conn.execute(
+                        f"DELETE FROM global_plans WHERE id IN ({ph})", chunk).rowcount
+                for i in range(0, len(names), 500):
+                    chunk = names[i:i + 500]
+                    ph = ",".join("?" * len(chunk))
+                    conn.execute(
+                        f"DELETE FROM plan_refs WHERE carrier=? AND plan_name IN ({ph})",
+                        (carrier, *chunk))
+            report[carrier] = {
+                "fresh": len(fresh_names), "fresh_dests": len(fresh_dests),
+                "baseline_rows": len(base_names), "baseline_dests": len(base_dests),
+                "ratio_rows": round(ratio_rows, 3), "ratio_dests": round(ratio_dests, 3),
+                "db_rows": len(rows), "stale": len(stale), "eligible": len(eligible),
+                "purged": purged, "decision": decision,
+            }
+        if not dry_run:
+            conn.commit()
+    finally:
+        conn.close()
+    return report
+
 def get_plan_ref(carrier, plan_name, db_path=None):
     """Provider-side checkout/plan token for one plan, or None. Used by the /go
     redirect to build a per-plan affiliate deep link (e.g. Saily checkout)."""
