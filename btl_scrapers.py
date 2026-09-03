@@ -94,7 +94,9 @@ TIBER_PAGES = [
 
 _TIBER_CARD = re.compile(
     r"סלולר[^₪]{0,80}?(\d{2,4})\s*ג'?יגה(.{0,900}?)"
-    r"(\d{1,3}(?:\.\d{1,2})?)\s*₪\s*/?\s*חודש(.{0,140}?)להצטרפות"
+    # Card CTA was "להצטרפות" until ~2026-08-20, then became "קבלו הצעה"
+    # (tiber went 0 plans for 2 weeks on that copy change alone).
+    r"(\d{1,3}(?:\.\d{1,2})?)\s*₪\s*/?\s*חודש(.{0,140}?)(?:להצטרפות|קבלו הצעה)"
 )
 _TIBER_AFTER = re.compile(r"לאחר (\d+) חודשים (\d{1,3}(?:\.\d{1,2})?)\s*₪ לחודש")
 _TIBER_PROMO = re.compile(r"מחיר מבצע ל-?(\d+) חודשים")

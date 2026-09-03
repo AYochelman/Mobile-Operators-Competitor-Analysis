@@ -124,12 +124,17 @@ def scrape_xphone(_page=None):
         )
         page = browser.new_page(user_agent=_XPHONE_UA)
         try:
-            page.goto("https://xphone.co.il/cellularplans/", timeout=40000, wait_until="domcontentloaded")
+            _resp = page.goto("https://xphone.co.il/cellularplans/", timeout=40000, wait_until="domcontentloaded")
             page.wait_for_timeout(5000)
             body = page.evaluate("document.body.innerText") or ""
-
             if "confirm you are human" in body.lower() or len(body) < 500:
-                logger.warning("scrape_xphone: WAF block detected. Returning [].")
+                # Distinguish a site outage (CloudFront 503 + empty body, e.g. the
+                # 2026-08-31 xphone.co.il outage) from a real WAF challenge page.
+                _st = _resp.status if _resp else None
+                if _st and _st >= 500:
+                    logger.warning(f"scrape_xphone: site down (HTTP {_st}, body={len(body)} chars). Returning [].")
+                else:
+                    logger.warning(f"scrape_xphone: WAF block detected (HTTP {_st}). Returning [].")
                 return []
 
             # Parse from body text: plan blocks separated by known plan names
@@ -278,11 +283,17 @@ def scrape_xphone_abroad(_page=None):
         browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
         page = browser.new_page(user_agent=_XPHONE_UA)
         try:
-            page.goto("https://xphone.co.il/roaming", timeout=40000, wait_until="domcontentloaded")
+            _resp = page.goto("https://xphone.co.il/roaming", timeout=40000, wait_until="domcontentloaded")
             page.wait_for_timeout(4000)
             body = page.evaluate("document.body.innerText") or ""
             if "confirm you are human" in body.lower() or len(body) < 500:
-                logger.warning("scrape_xphone_abroad: WAF block detected. Returning [].")
+                # Distinguish a site outage (CloudFront 503 + empty body, e.g. the
+                # 2026-08-31 xphone.co.il outage) from a real WAF challenge page.
+                _st = _resp.status if _resp else None
+                if _st and _st >= 500:
+                    logger.warning(f"scrape_xphone_abroad: site down (HTTP {_st}, body={len(body)} chars). Returning [].")
+                else:
+                    logger.warning(f"scrape_xphone_abroad: WAF block detected (HTTP {_st}). Returning [].")
                 return []
 
             TAB_CONFIGS = [
@@ -2986,11 +2997,18 @@ def scrape_airalo_regional(_page=None, usd_rate=None):
 
 
 def scrape_pelephone_globalsim(page):
+    # domcontentloaded + explicit card wait: "networkidle" never settles on this
+    # page (analytics long-polling) and timed out ~1 in 4 scheduled runs, which
+    # silently aged the 8 GlobalSIM rows (missed both 2026-09-03 runs).
     page.goto(
         "https://www.pelephone.co.il/digitalsite/heb/abroad/global-sim/",
-        timeout=30000, wait_until="networkidle"
+        timeout=40000, wait_until="domcontentloaded"
     )
-    page.wait_for_timeout(2000)
+    try:
+        page.wait_for_selector(".packs > div[id^='p'] .pack_top .price", timeout=25000)
+    except Exception:
+        logger.warning("Pelephone GlobalSIM: plan cards did not render within 25s")
+    page.wait_for_timeout(1500)
     plans = []
     seen_gb_days = set()
     for card in page.query_selector_all(".packs > div[id^='p']"):
@@ -4128,11 +4146,17 @@ def scrape_xphone_global(page=None):
         browser = pw.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
         pg = browser.new_page(user_agent=_XPHONE_UA)
         try:
-            pg.goto("https://xphone.co.il/roaming", timeout=40000, wait_until="domcontentloaded")
+            _resp = pg.goto("https://xphone.co.il/roaming", timeout=40000, wait_until="domcontentloaded")
             pg.wait_for_timeout(4000)
             body = pg.evaluate("document.body.innerText") or ""
             if "confirm you are human" in body.lower() or len(body) < 500:
-                logger.warning("scrape_xphone_global: WAF block detected.")
+                # Distinguish a site outage (CloudFront 503 + empty body, e.g. the
+                # 2026-08-31 xphone.co.il outage) from a real WAF challenge page.
+                _st = _resp.status if _resp else None
+                if _st and _st >= 500:
+                    logger.warning(f"scrape_xphone_global: site down (HTTP {_st}, body={len(body)} chars). Returning [].")
+                else:
+                    logger.warning(f"scrape_xphone_global: WAF block detected (HTTP {_st}). Returning [].")
                 return []
 
             TAB_CONFIGS = [
@@ -6946,8 +6970,21 @@ GOMOWORLD_SLUG_TO_HEBREW = {
 }
 
 
-def _parse_gomoworld_plans(body, country_heb, gbp_rate):
-    """Parse plan blocks from a GoMoWorld destination page body text."""
+_GOMO_SYMBOL_CCY = {"\u20aa": "ILS", "\u00a3": "GBP", "$": "USD", "\u20ac": "EUR"}
+
+
+def _parse_gomoworld_plans(body, country_heb, gbp_rate, usd_rate=None, eur_rate=None):
+    """Parse plan blocks from a GoMoWorld destination page body text.
+
+    Currency-aware (2026-09-03): the site geo-prices per visitor and flips the
+    quoted currency between GBP / USD / ILS from run to run (cookie
+    `gmw_currency`), while this parser used to treat every number as GBP -
+    8,600 phantom price_change rows (x1.26 / x3.7 swings) since 2026-07-10.
+    `scrape_gomoworld_global` now pins the cookie to ILS, and the symbol in the
+    price line decides the conversion here as a safety net: ILS is stored as-is
+    (they are fixed x.99 price points, not FX-converted), other symbols are
+    converted with the matching rate and logged.
+    """
     lines = [l.strip() for l in body.split('\n') if l.strip()]
     # Find start after "Compatible smartphones"
     start = -1
@@ -6965,6 +7002,7 @@ def _parse_gomoworld_plans(body, country_heb, gbp_rate):
             break
     plan_lines = lines[start:end]
     plans = []
+    warned = set()
     i = 0
     while i < len(plan_lines):
         line = plan_lines[i]
@@ -6976,16 +7014,29 @@ def _parse_gomoworld_plans(body, country_heb, gbp_rate):
             m_day = re.match(r'^(\d+)-day plan$', plan_lines[i + 1])
             if m_day:
                 days = int(m_day.group(1))
-                # Next line: price with currency symbol + number
+                # Next line: price with currency symbol + number, e.g. "₪109.99" / "£29.99"
                 price_line = plan_lines[i + 2]
-                m_price = re.search(r'(\d+\.\d+)', price_line)
+                m_price = re.search(r'([\u20aa\u00a3$\u20ac])\s*(\d+(?:\.\d+)?)', price_line)
                 if m_price:
-                    price_gbp = float(m_price.group(1))
-                    price_ils = round(price_gbp * gbp_rate, 2)
+                    sym, price_orig = m_price.group(1), float(m_price.group(2))
+                    ccy = _GOMO_SYMBOL_CCY[sym]
+                    if ccy == "ILS":
+                        price_ils = round(price_orig, 2)
+                    else:
+                        if ccy not in warned:
+                            warned.add(ccy)
+                            logger.warning(f"GoMoWorld {country_heb}: page quoted {ccy}, not ILS - converting")
+                        if ccy == "GBP":
+                            rate = gbp_rate
+                        elif ccy == "USD":
+                            rate = usd_rate or _get_usd_to_ils()
+                        else:
+                            rate = eur_rate or _get_eur_to_ils()
+                        price_ils = round(price_orig * rate, 2)
                     gb_str = f"{int(gb)}GB" if gb == int(gb) else f"{gb}GB"
                     plan_name = f"{country_heb} \u2013 {gb_str} \u2013 {days} \u05d9\u05de\u05d9\u05dd"
                     plans.append(_make_global_plan(
-                        "gomoworld", plan_name, price_ils, "GBP", price_gbp,
+                        "gomoworld", plan_name, price_ils, ccy, price_orig,
                         data_gb=gb, days=days, esim=True, extras=[country_heb]
                     ))
                     i += 3
@@ -6995,7 +7046,13 @@ def _parse_gomoworld_plans(body, country_heb, gbp_rate):
 
 
 def scrape_gomoworld_global(_page=None, gbp_rate=None):
-    """Scrape GoMoWorld eSIM per-country and regional plans (GBP pricing)."""
+    """Scrape GoMoWorld eSIM per-country and regional plans.
+
+    Prices are read in ILS: the `gmw_currency` cookie is pinned to ILS on the
+    browser context so the quoted currency no longer depends on geo-detection
+    (see `_parse_gomoworld_plans`). `gbp_rate` is only used as the fallback
+    conversion if a page still comes back in GBP.
+    """
     if gbp_rate is None:
         gbp_rate = _get_gbp_to_ils()
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -7006,7 +7063,12 @@ def scrape_gomoworld_global(_page=None, gbp_rate=None):
             headless=True,
             args=["--disable-blink-features=AutomationControlled"]
         )
-        page = browser.new_page(user_agent=ua)
+        context = browser.new_context(user_agent=ua)
+        context.add_cookies([{
+            "name": "gmw_currency", "value": "ILS",
+            "domain": ".gomoworld.com", "path": "/",
+        }])
+        page = context.new_page()
         for slug, country_heb in GOMOWORLD_SLUG_TO_HEBREW.items():
             try:
                 page.goto(

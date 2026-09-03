@@ -91,6 +91,25 @@ the scheduled job path is the problem (check Flask logs / whether Flask runs old
 4. **Wrong-but-parsing data**: destination names that need `db._DEST_NORM` - fix the
    SCRAPER extraction, not the norm map (papering over HTML entities there causes
    daily extras_change flaps; `_make_global_plan()` already html.unescapes).
+5. **Geo-priced currency flip** (gomoworld, 2026-09-03): the site quotes GBP / USD /
+   ILS per visitor (cookie `gmw_currency`) and the parser assumed one currency ->
+   8,600 phantom `price_change` rows at x1.26 / x3.7 / x0.27 over 2 months, 716 in
+   one digest. Signature: a carrier's price_change ratios cluster at an FX rate
+   (`SELECT carrier, COUNT(*), AVG(new/old) ... GROUP BY carrier`). Fix = pin the
+   currency cookie on the browser context AND parse the symbol in the price line
+   (`_parse_gomoworld_plans`); then migrate rows in place with `db.save_global_plans`
+   from a fresh process and delete the flap rows (backup first) so the next run is
+   silent. Israeli-facing sites with fixed x.99 ILS price points -> store ILS as-is;
+   Shopify-style auto-converted ILS -> keep the foreign basis (breez precedent).
+6. **Site outage, not a scraper bug**: CloudFront/WAF-fronted sites return an empty
+   503 to EVERYONE (xphone 2026-08-31, verified via curl headers + a real browser +
+   the Wayback availability API). The xphone scrapers now log `site down (HTTP 5xx)`
+   vs `WAF block` - nothing to fix, rows age until the site returns; retire only if
+   news/Wayback/socials confirm the company is gone.
+7. **BTL regex scrapers die on copy changes** (btl_scrapers.py): tiber went 0 plans
+   for 2 weeks when the card CTA changed "להצטרפות" -> "קבלו הצעה". Reproduce with
+   `btl_scrapers._fetch_text(url)` and print the text around the first `₪`; persist
+   with `db.sync_reseller_plans(rows)` from a fresh process.
 
 ## 4. Fix, then validate end-to-end
 
