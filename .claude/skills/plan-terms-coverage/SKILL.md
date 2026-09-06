@@ -170,7 +170,7 @@ edit required.
 | Carrier | Mech | Capture | How to get the terms for a plan |
 |---|---|---|---|
 | **partner** | terms_url | **AUTO** | In-page fetch CMS `GetPageContent/?pageid=75299&lang=he`; walk nodes → `properties.serviceTermsPdf` → regex `u.partner.co.il/media/…/*.pdf`. Match exact name then prefix. (`scrape_partner_abroad` — added 2026-06; **was MAP-only**.) |
-| cellcom | terms_url | AUTO | POST `https://digital-api.cellcom.co.il/api/abroad/GetPackagePopular` `{SocIdList:[…], BlockId}`; read each pkg's `policiesEpi`; prefix `https://contentepi.cellcom.co.il`. (`_cellcom_fetch_abroad_policies`, blocks 20557 + 60988) |
+| cellcom | terms_url | AUTO | POST `https://digital-api.cellcom.co.il/api/abroad/GetPackagePopular` `{SocIdList:[…], BlockId}`; read each pkg's `policiesEpi`; prefix `https://contentepi.cellcom.co.il`. (`_cellcom_fetch_abroad_policies`, blocks 20557 + 60988.) The API **echoes back only the SOCs you ask for**, so the two hardcoded lists are not the catalogue — `scrape_cellcom_abroad` also regex-harvests SOC codes (`_CELLCOM_SOC_RE`) out of the silent-roamers page and asks for the unknown ones, which is what covers a package published outside the lists (2026-09; see worked example). Matching order per plan: **socCode** → normalised **title** (`_cellcom_norm_title`) → the card's own `/globalassets/…pdf` anchor. |
 | hotmobile | terms_url | AUTO | Card `onclick=ShowMoreDetails('<socId>')` → `page.evaluate` opens modal → find `a` whose href has `.pdf` & `/media/` and text ≈ "תנאיהחבילה". Re-captured every run (slug rotates). (`scrape_hotmobile_abroad`) |
 | **pelephone** | terms_url | **AUTO** | socId from each card's `a[href*="more-info/?socId="]`; in-page fetch the "מידע נוסף" modal (`/abroad/more-info/?socId=<id>&mode=open`); regex the plan-specific "לתנאי החבילה והתוכנית" anchor via `_PELE_ABROAD_TERMS_RE` → `/abroad/terms/<slug>/` page. ("מושלמת" family shares `terms-summer2019`; promo plans may reuse another plan's page, e.g. מונדיאל 2026 → `Family-Travel-Package`.) (`scrape_pelephone_abroad` — added 2026-06-09; **was MAP-only**.) Map kept as fallback. |
 | mobile019 | __info__ | AUTO | Card `.blist li` bullets + the site-wide `_MOBILE019_VOLTE_NOTE` → `__info__|`. Label shows "עיקרי התוכנית". (`scrape_019_abroad`) |
@@ -236,6 +236,39 @@ plan to the map. The same MAP→AUTO upgrade as Partner:
    (scrape→DB), so the deployed site showed terms with no wait — safe, the scraper reproduces them.
 6. **Verified:** audit → `TOTAL MISSING: 0`; local `/api/abroad-plans` serves the terms_url;
    `npm run build`; hand off `dist/`.
+
+## Worked example — Cellcom "מושלמת לחגים" (2026-09-06): a closed SOC list vs an open DOM source
+
+`alert_missing_terms` flagged a new Cellcom **roaming** package, "מושלמת לחגים", with no
+"עיקרי התוכנית". Cellcom roaming was already marked AUTO — so why the gap?
+
+1. **The two sources disagree about what the catalogue is.** `scrape_cellcom_abroad` has a
+   closed source (the API, `SocIdList` hardcoded) and an **open** one (the Silent-Roamers
+   page DOM, which ingests whatever cards Cellcom publishes). Terms came only from
+   `_cellcom_fetch_abroad_policies` over the two hardcoded SOC lists, keyed by title.
+2. **Confirmed the API filters by the caller's list** from the recorded response
+   `cellcom_abroad_api_result.json`: 8 SOCs requested → exactly those 8 returned, in order,
+   each carrying its own `blockId` (the request's `BlockId` is context, not a selector).
+   So a SOC nobody hardcoded is a package whose `policiesEpi` is **unreachable** — the DOM
+   can scrape a plan the policy fetch can never cover. That is the whole bug; the holiday
+   promo was simply the first plan to fall through it.
+3. **Fix — discover the SOC instead of remembering it.** `scrape_cellcom_abroad` now
+   regex-harvests SOC codes (`FMWH…`/`HUL…`) from the silent-roamers page HTML and from each
+   card's own subtree, asks GetPackagePopular for the ones the hardcoded lists don't know,
+   and resolves terms by **socCode first** (one package, one code), then normalised title,
+   then the card's own `/globalassets/…pdf` anchor. Lobby plans now carry their `socCode`
+   too, so they stop depending on title matching at all.
+4. **Did NOT invent a URL** for the new plan (same call as the 500GB case below) — the terms
+   come from Cellcom's own API on the next scrape or not at all. A plan that still resolves
+   to nothing now emits a `logger.warning` naming it, alongside the Telegram alert.
+5. **Verified offline** (`tests/test_cellcom_abroad_terms.py`, 14 tests, no network): the
+   recorded API response as a fixture + a fake Page; the regression test asserts a card whose
+   SOC appears **only** in the page HTML gets the right PDF, and that an unrelated
+   (non-`/globalassets/`) PDF is never linked as terms.
+
+**Lesson:** "AUTO" is only as open as its narrowest link. When a scraper pairs an open-ended
+source with a closed id list, new plans are ingested but never enriched — check that the
+enrichment key set can actually grow before trusting the AUTO column.
 
 ## Worked example — Cellcom 500GB flash-publish (2026-06-11): when NO link exists yet
 
