@@ -2011,13 +2011,40 @@ def scrape_pelephone_abroad(page):
     return plans
 
 
+# Cellcom package codes ("SOC"), e.g. FMWH998 / FMWH0047 / HUL4209. GetPackagePopular
+# echoes back ONLY the SOCs the caller asks for, so a SOC we never learned about is a
+# package whose terms PDF we can never fetch — hence the DOM discovery in
+# scrape_cellcom_abroad.
+_CELLCOM_SOC_RE = re.compile(r'\b(?:FMWH|HUL)\d{3,5}\b')
+
+# A Cellcom terms PDF always lives under /globalassets/ on the contentepi CDN (that is
+# exactly the shape of every `policiesEpi` value). Anchoring on it keeps the per-card DOM
+# fallback from grabbing an unrelated PDF (a price list, a generic brochure) and linking
+# the wrong document to a plan.
+_CELLCOM_TERMS_HREF_RE = re.compile(r'/globalassets/[^\s"\'<>]+\.pdf', re.I)
+
+
+def _cellcom_norm_title(name):
+    """Cellcom's API `titleEpi` and the DOM card title are the same string typed twice —
+       in practice they drift by NBSPs, doubled/trailing spaces, HTML entities and quote
+       glyphs (״ vs "). Terms are matched by title, so normalise BOTH sides or a purely
+       cosmetic difference silently costs a plan its 'עיקרי התוכנית' link."""
+    s = _html_unescape(str(name or "")).replace("\u00a0", " ")
+    for src_ch, dst_ch in (("\u05f4", '"'), ("\u201c", '"'), ("\u201d", '"'),
+                           ("\u05f3", "'"), ("\u2018", "'"), ("\u2019", "'")):
+        s = s.replace(src_ch, dst_ch)
+    return re.sub(r"\s+", " ", s).strip()
+
+
 def _cellcom_fetch_abroad_policies(soc_ids, block_id):
-    """Return {titleEpi: full terms-PDF URL} for one Cellcom abroad GetPackagePopular
+    """Return (by_title, by_soc) terms-PDF maps for one Cellcom abroad GetPackagePopular
        block. The PDF is each package's `policiesEpi` — the same doc the roaming card
        surfaces via 'חשוב לדעת' → 'לתנאי חבילה המלאים' — served from the contentepi CDN.
-       Used to populate `terms_url` (the 'עיקרי התוכנית' link) on each plan."""
+       Used to populate `terms_url` (the 'עיקרי התוכנית' link) on each plan. `by_soc` is
+       the authoritative key (one package, one code); `by_title` covers plans scraped from
+       the DOM, whose SOC the card may not expose."""
     import urllib.request, json as _json
-    out = {}
+    out, by_soc = {}, {}
     try:
         payload = _json.dumps({"SocIdList": soc_ids, "BlockId": block_id}).encode()
         req = urllib.request.Request(
@@ -2033,13 +2060,19 @@ def _cellcom_fetch_abroad_policies(soc_ids, block_id):
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = _json.loads(resp.read())
         for pkg in data.get("Body", []):
-            name = (pkg.get("titleEpi") or "").strip()
+            name = _cellcom_norm_title(pkg.get("titleEpi"))
             pol  = pkg.get("policiesEpi")
-            if name and pol:
-                out[name] = pol if pol.startswith("http") else "https://contentepi.cellcom.co.il" + pol
+            if not pol:
+                continue
+            url = pol if pol.startswith("http") else "https://contentepi.cellcom.co.il" + pol
+            if name:
+                out[name] = url
+            soc = (pkg.get("socCode") or "").strip().upper()
+            if soc:
+                by_soc[soc] = url
     except Exception as e:
         logger.error(f"Cellcom abroad policies (block {block_id}) failed: {e}")
-    return out
+    return out, by_soc
 
 
 def scrape_cellcom_abroad(page):
@@ -2092,15 +2125,23 @@ def scrape_cellcom_abroad(page):
                 extras.append("גלישה חופשית באפליקציות נבחרות")
             plans.append({"carrier": "cellcom", "plan_name": name, "price": price,
                           "days": days, "data_gb": gb, "minutes": minutes,
-                          "sms": sms, "extras": extras})
+                          "sms": sms, "extras": extras,
+                          "_soc": (pkg.get("socCode") or "").strip().upper() or None})
     except Exception as e:
         logger.error(f"Cellcom abroad API failed: {e}")
 
     # ── Source 2: Silent Roamers page (DOM) ───────────────────────────────
+    page_socs = set()
     try:
         page.goto("https://cellcom.co.il/AbroadMain/Silent_roamers-old/",
                   timeout=30000, wait_until="networkidle")
         page.wait_for_timeout(2000)
+        # Every SOC the page mentions — this is what makes terms capture automatic for a
+        # package Cellcom publishes here without telling anyone (see the enrich step).
+        try:
+            page_socs = {m.group(0).upper() for m in _CELLCOM_SOC_RE.finditer(page.content() or "")}
+        except Exception:
+            page_socs = set()
         for card in page.query_selector_all(".abroad-package-client"):
             name_el     = card.query_selector(".abroad-package-client__title")
             duration_el = card.query_selector(".abroad-package-client__duration")
@@ -2122,22 +2163,77 @@ def scrape_cellcom_abroad(page):
                     if re.match(r'^\d', t):
                         price = _parse_price(t)
                         break
+            # Per-card terms discovery, in the card's OWN subtree only so a neighbour's
+            # document can never be attributed to this plan: the package SOC (purchase
+            # link / data attribute) and, if the "חשוב לדעת" panel is inline, its PDF.
+            card_soc, card_pdf = None, None
+            try:
+                m = _CELLCOM_SOC_RE.search(card.evaluate("el => el.outerHTML") or "")
+                if m:
+                    card_soc = m.group(0).upper()
+                for a in card.query_selector_all('a[href*=".pdf"]'):
+                    href = a.get_attribute("href") or ""
+                    if not _CELLCOM_TERMS_HREF_RE.search(href):
+                        continue
+                    card_pdf = href if href.startswith("http") else \
+                        "https://contentepi.cellcom.co.il" + href
+                    if "תנאי" in (a.inner_text() or ""):
+                        break            # an explicit "לתנאי החבילה" anchor wins
+            except Exception:
+                pass
             plans.append({"carrier": "cellcom", "plan_name": name, "price": price,
                           "days": days, "data_gb": gb, "minutes": minutes,
-                          "sms": sms, "extras": []})
+                          "sms": sms, "extras": [],
+                          "_soc": card_soc, "_dom_terms": card_pdf})
     except Exception as e:
         logger.error(f"Cellcom silent roamers scrape failed: {e}")
 
     # ── Enrich with terms PDFs (policiesEpi) — the "עיקרי התוכנית" link ────
-    # Keyed by plan title across both abroad blocks: lobby (BlockId 20557, same
-    # SOC list as Source 1) + silent roamers (BlockId 60988). A miss leaves
-    # terms_url=None and PlanCard falls back to its hardcoded map.
-    terms = {}
-    terms.update(_cellcom_fetch_abroad_policies(SOC_IDS, 20557))
-    terms.update(_cellcom_fetch_abroad_policies(
-        ["FMWH990", "FMWH0065", "HUL4710", "FMWH627", "FMWH947", "FMWH946"], 60988))
+    # The two known blocks: lobby (BlockId 20557, same SOC list as Source 1) + silent
+    # roamers (BlockId 60988). These lists are CLOSED, but Source 2 is open-ended — it
+    # ingests whatever cards Cellcom publishes — so a package outside them used to get
+    # terms_url=None with nothing to fall back on but PlanCard's hardcoded map, which
+    # nobody updates for a plan that launched this morning (that is how the holiday promo
+    # "מושלמת לחגים" landed with an empty "עיקרי התוכנית", 2026-09). Anything the page
+    # mentions but the lists don't know is therefore asked for by SOC below, so the terms
+    # come from Cellcom's own API rather than from a list somebody has to remember to edit.
+    SILENT_ROAMER_SOCS = ["FMWH990", "FMWH0065", "HUL4710", "FMWH627", "FMWH947", "FMWH946"]
+    KNOWN_SOCS = SOC_IDS + SILENT_ROAMER_SOCS
+    terms, terms_by_soc = {}, {}
+    for socs, block in ((SOC_IDS, 20557), (SILENT_ROAMER_SOCS, 60988)):
+        t, s = _cellcom_fetch_abroad_policies(socs, block)
+        terms.update(t); terms_by_soc.update(s)
+
+    new_socs = sorted(page_socs - {s.upper() for s in KNOWN_SOCS})
+    for block in (60988, 20557):          # 2nd block only if the 1st returned nothing
+        if not new_socs or all(s in terms_by_soc for s in new_socs):
+            break
+        t, s = _cellcom_fetch_abroad_policies(new_socs, block)
+        # setdefault, not update: a page-wide regex can also pick up codes that aren't
+        # consumer roaming packages, and those must never overwrite a title the two
+        # authoritative blocks already resolved.
+        for k, v in t.items():
+            terms.setdefault(k, v)
+        for k, v in s.items():
+            terms_by_soc.setdefault(k, v)
+    if new_socs:
+        logger.info(f"scrape_cellcom_abroad: discovered {len(new_socs)} SOC(s) not in the "
+                    f"known lists {new_socs} — resolved terms for "
+                    f"{sum(1 for s in new_socs if s in terms_by_soc)}")
+
     for pl in plans:
-        pl["terms_url"] = terms.get(pl["plan_name"])
+        soc = pl.pop("_soc", None)
+        dom_terms = pl.pop("_dom_terms", None)
+        # SOC is the authoritative key (one package, one code); title covers DOM-scraped
+        # cards that hide their SOC; the card's own PDF anchor is the last resort.
+        pl["terms_url"] = (terms_by_soc.get(soc) if soc else None) \
+            or terms.get(_cellcom_norm_title(pl["plan_name"])) \
+            or dom_terms
+        if not pl["terms_url"]:
+            logger.warning(
+                f"scrape_cellcom_abroad: no terms link for {pl['plan_name']!r} (soc={soc}) — "
+                f"Cellcom published a package whose SOC and terms PDF the page never exposed; "
+                f"run the plan-terms-coverage skill")
 
     return plans
 
