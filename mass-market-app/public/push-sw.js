@@ -7,7 +7,7 @@
 self.addEventListener('push', (event) => {
   let data = { title: 'MOCA', body: '' }
   if (event.data) {
-    try { data = event.data.json() } catch (e) { data.body = event.data.text() }
+    try { data = event.data.json() } catch { data.body = event.data.text() }
   }
   const options = {
     body: data.body || '',

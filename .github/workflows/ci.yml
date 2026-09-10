@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (pytest, unit only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Unit tests
+        # pytest.ini deselects @integration (live carrier sites) by default.
+        # No config.json in CI: load_config() falls back to env vars (all empty).
+        run: pytest -q --durations=10
+      - name: Scraper fixture replay
+        # Offline record/replay of the pure-HTTP scrapers (tests/fixtures/http/*.json.gz).
+        run: pytest -q tests/test_scraper_fixtures.py
+      - name: Static check (undefined names)
+        # The app.py -> api/ and scraper.py -> scrapers/ extraction late-binds
+        # through `core.<name>`; an undefined name here means a broken reference.
+        run: |
+          pip install pyflakes
+          if python -m pyflakes app.py scraper.py db.py notifier.py change_detector.py archive.py maintenance.py scraper_fixtures.py api/ scrapers/ | grep -E "undefined name"; then exit 1; fi
+
+  frontend:
+    name: Frontend (lint + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mass-market-app
+    env:
+      # .env.production is gitignored; the build only needs the vars to exist.
+      VITE_SUPABASE_URL: https://example.supabase.co
+      VITE_SUPABASE_ANON_KEY: ci-dummy-anon-key
+      VITE_API_URL: https://api.mocaintel.com
+      VITE_DEV_AUTH: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mass-market-app/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - name: Build
+        # prerender-esim-dests.mjs needs the live Flask API; without it, it warns and exits 0.
+        run: npm run build
+      - name: Sanity-check build output
+        run: |
+          test -f dist/index.html
+          test -f dist/landing.html
+          test -f dist/hotels.html
+          test -f dist/esim.html
+          test -f dist/_redirects

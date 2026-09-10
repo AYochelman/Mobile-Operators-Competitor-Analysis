@@ -867,6 +867,37 @@ def init_db(db_path=None):
             conn.commit()
         except Exception:
             pass
+        # Daily price aggregates per (plan_type, carrier) + market-wide per
+        # (plan_type, destination) with carrier='*' - the chart /
+        # analytics source that does NOT depend on the change log (maintenance.py
+        # fills it after each scrape + backfills from archive_snapshots), so the
+        # *_changes tables can be pruned on a retention schedule without losing
+        # price history. destination = '' on per-carrier rows, extras[0] on market rows.
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS price_history_daily (
+                day          TEXT NOT NULL,     -- YYYY-MM-DD
+                plan_type    TEXT NOT NULL,     -- domestic | abroad | global | content
+                carrier      TEXT NOT NULL,
+                destination  TEXT NOT NULL DEFAULT '',
+                min_price    REAL,
+                avg_price    REAL,
+                max_price    REAL,
+                min_ppgb     REAL,              -- cheapest price per GB among plans with data_gb >= 1
+                plan_count   INTEGER NOT NULL DEFAULT 0,
+                source       TEXT NOT NULL DEFAULT 'live',   -- live | archive
+                min_carrier  TEXT,              -- carrier holding min_price (market rows: carrier='*')
+                PRIMARY KEY (day, plan_type, carrier, destination)
+            );
+            CREATE INDEX IF NOT EXISTS idx_phd_lookup
+                ON price_history_daily(plan_type, carrier, destination, day);
+            CREATE TABLE IF NOT EXISTS maintenance_log (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                ran_at      TEXT NOT NULL,
+                job         TEXT NOT NULL,      -- prune | vacuum | thin_archive | price_history
+                details     TEXT                -- JSON
+            );
+        """)
+        conn.commit()
         # Migration: terms_url on abroad_plans — the roaming card's "עיקרי התוכנית"
         # PDF. Populated per scrape (e.g. Cellcom's policiesEpi from its abroad API),
         # surfaced by PlanCard's details link with the hardcoded map as a fallback.

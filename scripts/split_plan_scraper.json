@@ -1,0 +1,533 @@
+{
+ "monolith": "scraper.py",
+ "core": "scraper",
+ "package": "scrapers",
+ "kind": "plain",
+ "local_aliases": [
+  "logger"
+ ],
+ "latebind_imports": [
+  "sync_playwright"
+ ],
+ "modules": {
+  "xphone": {
+   "names": [
+    "_XPHONE_UA",
+    "scrape_xphone",
+    "scrape_xphone_abroad",
+    "scrape_xphone_global"
+   ],
+   "doc": "xphone scraper (extracted from scraper.py)."
+  },
+  "wecom": {
+   "names": [
+    "_WECOM_UA",
+    "_WECOM_FAIR_USE_GB",
+    "_WECOM_OVERSEAS_RATES_URL",
+    "_wecom_fetch_html",
+    "_wecom_text_lines",
+    "_wecom_tier_cards",
+    "_wecom_card_name",
+    "_wecom_card_price",
+    "_WECOM_CARD_NOISE",
+    "_wecom_popup_info",
+    "_wecom_card_extras",
+    "scrape_wecom",
+    "scrape_wecom_abroad"
+   ],
+   "doc": "wecom scraper (extracted from scraper.py)."
+  },
+  "neptucom": {
+   "names": [
+    "scrape_neptucom"
+   ],
+   "doc": "neptucom scraper (extracted from scraper.py)."
+  },
+  "golan": {
+   "names": [
+    "_golan_num",
+    "_golan_gb_from_text",
+    "_golan_gb_label",
+    "_golan_period_to_days",
+    "_GOLAN_DOMESTIC_JS",
+    "_GOLAN_OVERSEAS_JS",
+    "_build_golan_domestic",
+    "_GOLAN_GENERIC_SUPERL",
+    "_build_golan_abroad",
+    "_golan_open",
+    "_GOLAN_OFFERS_URL",
+    "_GOLAN_OVERSEAS_URL",
+    "_GOLAN_UA",
+    "scrape_golan",
+    "scrape_golan_abroad"
+   ],
+   "doc": "golan scraper (extracted from scraper.py)."
+  },
+  "rami_levy": {
+   "names": [
+    "_parse_rami_levy_body",
+    "_parse_rami_levy_abroad_body",
+    "_enrich_rami_levy_abroad_info",
+    "scrape_rami_levy_abroad",
+    "scrape_rami_levy"
+   ],
+   "doc": "rami_levy scraper (extracted from scraper.py)."
+  },
+  "partner": {
+   "names": [
+    "scrape_partner",
+    "scrape_partner_abroad"
+   ],
+   "doc": "partner scraper (extracted from scraper.py)."
+  },
+  "pelephone": {
+   "names": [
+    "scrape_pelephone",
+    "_PELE_ABROAD_TERMS_RE",
+    "_PELE_ABROAD_TERMS_OVERRIDES",
+    "scrape_pelephone_abroad"
+   ],
+   "doc": "pelephone scraper (extracted from scraper.py)."
+  },
+  "hotmobile": {
+   "names": [
+    "scrape_hotmobile",
+    "scrape_hotmobile_abroad"
+   ],
+   "doc": "hotmobile scraper (extracted from scraper.py)."
+  },
+  "cellcom": {
+   "names": [
+    "_cellcom_extract_terms_urls",
+    "_fetch_cellcom_terms_urls",
+    "scrape_cellcom",
+    "_cellcom_fetch_abroad_policies",
+    "scrape_cellcom_abroad",
+    "_cellcom_hub_price",
+    "_cellcom_faq_esim_price"
+   ],
+   "doc": "cellcom scraper (extracted from scraper.py)."
+  },
+  "mobile019": {
+   "names": [
+    "scrape_019",
+    "_MOBILE019_VOLTE_NOTE",
+    "scrape_019_abroad"
+   ],
+   "doc": "mobile019 scraper (extracted from scraper.py)."
+  },
+  "tuki": {
+   "names": [
+    "scrape_tuki_global",
+    "TUKI_REGIONS",
+    "scrape_tuki_regions",
+    "scrape_tuki_local"
+   ],
+   "doc": "tuki scraper (extracted from scraper.py)."
+  },
+  "airalo": {
+   "names": [
+    "scrape_airalo_global",
+    "AIRALO_SLUG_TO_HEBREW",
+    "AIRALO_REGION_TO_HEBREW",
+    "scrape_airalo_local",
+    "scrape_airalo_regional"
+   ],
+   "doc": "airalo scraper (extracted from scraper.py)."
+  },
+  "pelephone_globalsim": {
+   "names": [
+    "scrape_pelephone_globalsim"
+   ],
+   "doc": "pelephone_globalsim scraper (extracted from scraper.py)."
+  },
+  "esimo": {
+   "names": [
+    "ESIMO_CODE_TO_HEBREW",
+    "ESIMO_REGION_TO_HEBREW",
+    "_ESIMO_REGION_SLUGS",
+    "_ESIMO_UA",
+    "_esimo_fetch",
+    "_esimo_extract_packages",
+    "scrape_esimo_global"
+   ],
+   "doc": "esimo scraper (extracted from scraper.py)."
+  },
+  "simtlv": {
+   "names": [
+    "scrape_simtlv_global",
+    "SIMTLV_DEST_FIX",
+    "_SIMTLV_RX_UNLIMITED",
+    "_SIMTLV_RX_EUROPE",
+    "_SIMTLV_RX_EUROPE_YR",
+    "_SIMTLV_RX_GLOBAL_N",
+    "_SIMTLV_RX_EUR_PKG",
+    "_SIMTLV_RX_GLOB_PKG",
+    "_SIMTLV_RX_LOCAL",
+    "_simtlv_duration",
+    "_simtlv_classify",
+    "_simtlv_fetch_catalog",
+    "scrape_simtlv_esim"
+   ],
+   "doc": "simtlv scraper (extracted from scraper.py)."
+  },
+  "terminalesim": {
+   "names": [
+    "TERMINAL_CODE_TO_HEBREW",
+    "TERMINAL_REGION_BASE",
+    "TERMINAL_REGION_FULL",
+    "_terminal_resolve_dest",
+    "_terminal_parse_pkg",
+    "scrape_terminalesim"
+   ],
+   "doc": "terminalesim scraper (extracted from scraper.py)."
+  },
+  "world8": {
+   "names": [
+    "scrape_world8_global"
+   ],
+   "doc": "world8 scraper (extracted from scraper.py)."
+  },
+  "banners": {
+   "names": [
+    "scrape_carrier_news",
+    "_BANNER_ERROR_INDICATORS",
+    "_is_error_page",
+    "_MIN_BANNER_FILE_BYTES",
+    "_POPUP_CLOSE_SELECTORS",
+    "_POPUP_HIDE_JS",
+    "_dismiss_popups",
+    "_GLOBAL_POPUP_DISMISS_JS",
+    "_dismiss_global_popups",
+    "_PERSISTENT_CONSENT_HIDER_JS",
+    "CARRIER_HOMEPAGE_URLS",
+    "_STEALTH_UA",
+    "_banner_019_stealth",
+    "_banner_xphone_stealth",
+    "scrape_carrier_banners",
+    "CARRIER_STORE_URLS",
+    "scrape_carrier_store_banners",
+    "GLOBAL_BANNER_URLS",
+    "_GLOBAL_BANNER_STATE_FILE",
+    "_BANNER_CHANGE_THRESHOLD",
+    "_banner_ahash",
+    "_ahash_distance",
+    "_load_global_banner_state",
+    "_save_global_banner_state",
+    "scrape_global_provider_banners"
+   ],
+   "doc": "Homepage / e-store / global-provider banner screenshots, popup dismissal, Google News RSS."
+  },
+  "saily": {
+   "names": [
+    "SAILY_SLUG_TO_HEBREW",
+    "SAILY_ISO_TO_HEBREW",
+    "SAILY_API_REGION_TO_HEBREW",
+    "_SAILY_API_URL",
+    "_SAILY_API_HEADERS",
+    "_SAILY_API_CACHE",
+    "_fetch_saily_api",
+    "_saily_api_item_to_plan",
+    "scrape_saily_global",
+    "scrape_saily_regions"
+   ],
+   "doc": "saily scraper (extracted from scraper.py)."
+  },
+  "esimio": {
+   "names": [
+    "ESIMIO_SLUG_TO_HEBREW",
+    "_esimio_packages_to_plans",
+    "scrape_esimio_destinations",
+    "ESIMIO_REGIONS",
+    "scrape_esimio_regions"
+   ],
+   "doc": "esimio scraper (extracted from scraper.py)."
+  },
+  "holafly": {
+   "names": [
+    "HOLAFLY_SLUG_TO_HEBREW",
+    "_HOLAFLY_KEY_DAYS",
+    "scrape_holafly_global",
+    "HOLAFLY_REGIONS",
+    "_HOLAFLY_NON_SHOPIFY_REGIONS",
+    "scrape_holafly_regions"
+   ],
+   "doc": "holafly scraper (extracted from scraper.py)."
+  },
+  "yesim": {
+   "names": [
+    "_YESIM_EXTRA_ISO_TO_HEBREW",
+    "_YESIM_REGION_TO_HEBREW",
+    "_YESIM_UA",
+    "_yesim_iso_to_heb",
+    "_yesim_get_pp",
+    "_yesim_plans_from_pp",
+    "scrape_yesim_global",
+    "scrape_yesim_regions"
+   ],
+   "doc": "yesim scraper (extracted from scraper.py)."
+  },
+  "nomad": {
+   "names": [
+    "_NOMAD_REGION_SLUG_TO_HEBREW",
+    "_nomad_find_plans",
+    "_nomad_get_plans",
+    "scrape_nomad_global"
+   ],
+   "doc": "nomad scraper (extracted from scraper.py)."
+  },
+  "ubigi": {
+   "names": [
+    "_UBIGI_API",
+    "_UBIGI_ALIAS",
+    "_UBIGI_EXTRA_HEBREW",
+    "_ubigi_norm",
+    "_ubigi_resolve",
+    "scrape_ubigi_global"
+   ],
+   "doc": "ubigi scraper (extracted from scraper.py)."
+  },
+  "alosim": {
+   "names": [
+    "_ALOSIM_EXTRA",
+    "_alosim_resolve",
+    "_alosim_page_plans",
+    "scrape_alosim_global"
+   ],
+   "doc": "alosim scraper (extracted from scraper.py)."
+  },
+  "sparks": {
+   "names": [
+    "SPARKS_REGIONS",
+    "SPARKS_COUNTRY_TO_HEBREW_EXTRA",
+    "scrape_sparks_global"
+   ],
+   "doc": "sparks scraper (extracted from scraper.py)."
+  },
+  "voye": {
+   "names": [
+    "VOYE_REGION_MAP",
+    "scrape_voye_global"
+   ],
+   "doc": "voye scraper (extracted from scraper.py)."
+  },
+  "orbit": {
+   "names": [
+    "ORBIT_NAME_TO_HEBREW",
+    "ORBIT_ZONE_TO_HEBREW",
+    "scrape_orbit_global"
+   ],
+   "doc": "orbit scraper (extracted from scraper.py)."
+  },
+  "travelsim": {
+   "names": [
+    "scrape_travelsim"
+   ],
+   "doc": "travelsim scraper (extracted from scraper.py)."
+  },
+  "gomoworld": {
+   "names": [
+    "GOMOWORLD_SLUG_TO_HEBREW",
+    "_GOMO_SYMBOL_CCY",
+    "_parse_gomoworld_plans",
+    "scrape_gomoworld_global"
+   ],
+   "doc": "gomoworld scraper (extracted from scraper.py)."
+  },
+  "tasim": {
+   "names": [
+    "scrape_tasim_global"
+   ],
+   "doc": "tasim scraper (extracted from scraper.py)."
+  },
+  "gigsky": {
+   "names": [
+    "GIGSKY_PLAN_BUNDLE_URL",
+    "GIGSKY_NAME_TO_CODE",
+    "GIGSKY_COUNTRY_SKIP",
+    "GIGSKY_CODE_EXTRA",
+    "GIGSKY_REGION_TO_HEBREW",
+    "GIGSKY_WORLD_TO_HEBREW",
+    "_gigsky_dest_hebrew",
+    "_gigsky_gb_str",
+    "scrape_gigsky_global"
+   ],
+   "doc": "gigsky scraper (extracted from scraper.py)."
+  },
+  "esimgenius": {
+   "names": [
+    "ESIMGENIUS_SLUG_OVERRIDES",
+    "ESIMGENIUS_REGION_TO_HEBREW",
+    "_ESIMGENIUS_SKIP_SLUGS",
+    "scrape_esimgenius_global"
+   ],
+   "doc": "esimgenius scraper (extracted from scraper.py)."
+  },
+  "nisim": {
+   "names": [
+    "NISIM_NAME_FIX",
+    "NISIM_REGION_NAMES",
+    "_NISIM_SKIP_CATS",
+    "_nisim_fetch_json",
+    "scrape_nisim_global"
+   ],
+   "doc": "nisim scraper (extracted from scraper.py)."
+  },
+  "esimax": {
+   "names": [
+    "ESIMAX_NAME_FIX",
+    "ESIMAX_REGION_NAMES",
+    "scrape_esimax_global"
+   ],
+   "doc": "esimax scraper (extracted from scraper.py)."
+  },
+  "venterrasim": {
+   "names": [
+    "VENTERRA_CODE_TO_HEBREW",
+    "VENTERRA_REGION_NAMES",
+    "_VENTERRA_SPEC_RE",
+    "scrape_venterrasim_global"
+   ],
+   "doc": "venterrasim scraper (extracted from scraper.py)."
+  },
+  "simzol": {
+   "names": [
+    "SIMZOL_SITEMAP",
+    "SIMZOL_PRODUCTS",
+    "_SIMZOL_ADDON_RE",
+    "_SIMZOL_TAG_RE",
+    "_SIMZOL_ESIM_CAT_RE",
+    "_simzol_page_text",
+    "_simzol_tiers",
+    "scrape_simzol_global"
+   ],
+   "doc": "simzol scraper (extracted from scraper.py)."
+  },
+  "maya": {
+   "names": [
+    "MAYA_SLUG_TO_HEBREW",
+    "scrape_maya_global"
+   ],
+   "doc": "maya scraper (extracted from scraper.py)."
+  },
+  "bcengi": {
+   "names": [
+    "BCENGI_EN_TO_HEB",
+    "BCENGI_BENEFITS",
+    "_parse_bcengi_body",
+    "scrape_bcengi_global"
+   ],
+   "doc": "bcengi scraper (extracted from scraper.py)."
+  },
+  "esim70": {
+   "names": [
+    "ESIM70_ISO2_TO_HEBREW",
+    "ESIM70_REGION_BASE_TO_HEBREW",
+    "scrape_esim70_global"
+   ],
+   "doc": "esim70 scraper (extracted from scraper.py)."
+  },
+  "jetpack": {
+   "names": [
+    "JETPACK_SLUGS",
+    "JETPACK_REGION_SLUG_TO_HEBREW",
+    "JETPACK_EXTRA_COUNTRY_HEBREW",
+    "_jetpack_country_heb",
+    "scrape_jetpack_global"
+   ],
+   "doc": "jetpack scraper (extracted from scraper.py)."
+  },
+  "breez": {
+   "names": [
+    "BREEZ_EN_TO_HEBREW",
+    "BREEZ_EN_TO_HANDLE",
+    "BREEZ_HEB_TO_HANDLE",
+    "scrape_breez_global"
+   ],
+   "doc": "breez scraper (extracted from scraper.py)."
+  },
+  "bytesim": {
+   "names": [
+    "BYTESIM_HANDLE_TO_HEBREW",
+    "BYTESIM_ZONE_HANDLES",
+    "_parse_bytesim_option1",
+    "_BYTESIM_JS",
+    "_BYTESIM_UA",
+    "_scrape_bytesim_batch",
+    "_scrape_bytesim_product_list",
+    "scrape_bytesim_global",
+    "scrape_bytesim_regions"
+   ],
+   "doc": "bytesim scraper (extracted from scraper.py)."
+  },
+  "seven_g": {
+   "names": [
+    "SEVEN_G_DESTINATIONS",
+    "_SEVEN_G_SLUG_OVERRIDES",
+    "_SEVEN_G_REGION_HEB",
+    "SEVEN_G_REGION_SLUG_MAP",
+    "_seven_g_slugify",
+    "_parse_seven_g_page",
+    "_fetch_seven_g_destination",
+    "scrape_seven_g_global"
+   ],
+   "doc": "seven_g scraper (extracted from scraper.py)."
+  },
+  "bestconnect": {
+   "names": [
+    "_BC_API_HEADERS",
+    "_BC_REGIONAL_HEBREW",
+    "_fetch_bestconnect_catalog",
+    "scrape_bestconnect_global"
+   ],
+   "doc": "bestconnect scraper (extracted from scraper.py)."
+  },
+  "esimplus": {
+   "names": [
+    "_ESIMPLUS_TO_SAILY",
+    "ESIMPLUS_COUNTRY_SLUGS",
+    "_ESIMPLUS_REGION_HEB",
+    "_ESIMPLUS_PLAN_PREFIX",
+    "_fetch_esimplus_country",
+    "scrape_esimplus_global"
+   ],
+   "doc": "esimplus scraper (extracted from scraper.py)."
+  },
+  "besim": {
+   "names": [
+    "BESIM_SLUG_TO_HEBREW",
+    "BESIM_REGIONAL_BUNDLES",
+    "_BESIM_UA",
+    "_BESIM_GB_RE",
+    "_BESIM_MB_RE",
+    "_BESIM_DAYS_RE",
+    "_BESIM_PRICE_RE",
+    "_parse_besim_plans",
+    "_besim_format_data",
+    "_scrape_besim_batch",
+    "_scrape_besim_product_list",
+    "scrape_besim_global",
+    "scrape_besim_regions"
+   ],
+   "doc": "besim scraper (extracted from scraper.py)."
+  },
+  "bnesim": {
+   "names": [
+    "_BNESIM_UA",
+    "BNESIM_REGION_TO_HEBREW",
+    "BNESIM_NAME_TO_HEBREW",
+    "_bnesim_parse_offers",
+    "scrape_bnesim_global"
+   ],
+   "doc": "bnesim scraper (extracted from scraper.py)."
+  },
+  "content": {
+   "names": [
+    "CONTENT_SERVICES",
+    "_extract_content_price",
+    "scrape_all_content"
+   ],
+   "doc": "Content services (eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי) across the 4 big carriers."
+  }
+ }
+}

@@ -15,9 +15,20 @@ Both frontends consume the same Flask REST API. The system scrapes 10 domestic c
 ```bash
 cd "D:\השוואת MASS MARKET"
 python app.py                    # Start server on port 5000
-pytest tests/ -v                 # Run all tests
-pytest tests/test_scraper.py -v  # Run single test file
+pytest -q                        # Unit suite (~8s). pytest.ini deselects @integration by default
+pytest -m integration -v         # Live carrier/provider tests (Playwright + internet, ~2.5 min)
+pytest tests/test_scraper_fixtures.py -q   # Offline replay of the pure-HTTP scrapers (tests/fixtures/http/)
+python scripts/record_scraper_fixture.py <provider>|all [--cap 12]   # (re)record a provider's HTTP fixture
+python scripts/scraper_drift_check.py [provider] [--notify]          # live drift probe (what the Sunday job runs)
+python -m pyflakes app.py scraper.py api/ scrapers/ | grep "undefined name"   # the late-binding split's safety check
 ```
+
+**CI (2026-09):** `.github/workflows/ci.yml` runs on every push/PR - backend (unit pytest + fixture replay + pyflakes
+undefined-name check on Python 3.12) and frontend (`npm ci`, `npm run lint`, `npm run build` with dummy `VITE_*` env,
+sanity check of the prerendered HTML). Local pre-commit hook in `.githooks/pre-commit` (enable once per clone with
+`git config core.hooksPath .githooks`) runs the unit suite when `.py` files are staged and ESLint when `mass-market-app`
+JS/JSX is staged. ESLint is green (0 errors); the React-Compiler rules from `eslint-plugin-react-hooks` 6 are `warn`
+in `eslint.config.js` until the flagged effects are reworked - don't turn them back to `error` without fixing them.
 
 ### React Frontend
 ```bash
@@ -86,8 +97,11 @@ python telegram_resellers.py scrape                 # ingest channels listed in 
 
 | File | Purpose |
 |------|---------|
-| app.py | Flask server, API routes, APScheduler, CORS, API key auth. `CARRIER_DISPLAY` (10 carriers, homepage URLs) and `CARRIER_STORE_DISPLAY` (4 carriers with e-stores) drive the banners API. |
-| scraper.py | 40+ scrapers (domestic + abroad + global per-country/regional + content) + `scrape_carrier_banners()` / `scrape_carrier_store_banners()` for screenshots + `scrape_carrier_news()` for Google News RSS |
+| app.py | Flask **core** (~3,000 lines since the 2026-09 split): config, auth decorators, shared helpers, the plan/changes feeds, `/go` affiliate redirect, APScheduler. `CARRIER_DISPLAY` (10 carriers, homepage URLs) and `CARRIER_STORE_DISPLAY` (4 carriers with e-stores) drive the banners API. Everything else lives in `api/` blueprints (below). |
+| api/*.py | **Flask blueprints extracted from app.py by `scripts/split_monolith.py` (2026-09)** - `esim`, `mobile`, `hotels`, `scrape`, `jobs` (scheduled jobs + their preview endpoints), `banners`, `engagement` (alerts/watchlist/saved views/activity/annotations/coupons/deals), `chat`, `account`, `workspaces`, `history`, `usage`. Each module does `import app as core` and references every app.py name as `core.<name>` (LATE-BOUND: tests that `monkeypatch.setattr(app, ...)` keep working); app.py imports the blueprints at its bottom and re-exports all their names, so `app.<name>` still resolves for scripts, tests and the scheduler. Paths from `__file__` must use `core.__file__` (guarded by `tests/test_url_map.py`). `tests/fixtures/url_map.json` is the route snapshot - regenerate it when you add/remove a route (command in the test docstring). To re-split after a merge: `python scripts/split_monolith.py scripts/split_plan_app.json` on a monolithic app.py. |
+| scraper.py | Scraper **core** (~900 lines): parsers, FX rates, `_make_global_plan`, `_woo_store_fetch`, the `scrape_all` / `scrape_all_global` / `scrape_all_abroad` aggregators. The 76 `scrape_*` functions + their per-provider dicts live in `scrapers/<provider>.py` (49 modules: one per domestic carrier incl. its roaming scraper, one per global provider, `content.py`, `banners.py` for screenshots/popups/news) and are re-exported, so `scraper.scrape_saily_global` / `scraper._SAILY_API_CACHE` keep working. Same late-binding scheme as `api/` (`core.<name>`), so patching `scraper._get_usd_to_ils` / `scraper.sync_playwright` still reaches every provider. Plan generator: `scripts/make_split_plan_scraper.py` (keyword buckets + `OVERRIDES`). |
+| scraper_fixtures.py | **Record / replay harness for the pure-HTTP scrapers** (2026-09). `PROVIDERS` registry (51 `_page=None` scrapers, pinned FX 3.7/4.0/4.7); `record()` captures the first N distinct URLs of a live run into `tests/fixtures/http/<provider>.json.gz` (gzipped JSON, ~8 MB total, 36 providers; Playwright-launching scrapers are auto-marked `playwright: true` and skipped); `replay()` runs the scraper offline (unrecorded URLs = connection error, sleeps no-op) and `tests/test_scraper_fixtures.py` asserts the exact recorded plan count + schema; `drift_check()` re-fetches ONLY the fixture's URL set live and flags <50% of the expected plans - the Sunday 06:30 `run_scraper_drift_job` (api/jobs.py, Telegram) and `scripts/scraper_drift_check.py`. Re-record after an intentional scraper change. Sizing rule: keep a fixture under ~700 KB (lower `--cap` for heavy HTML sites). |
+| maintenance.py | **Scheduled DB maintenance** (2026-09): `price_history_daily` builder (08:50 + 18:30, per-carrier and market-per-destination aggregates; backfilled from `archive_snapshots` since 2026-04), weekly Sunday 03:00 `run_weekly` = `prune_change_logs` (config `changes_retention_days`, 180) + optional `thin_archive_snapshots` (`archive_thin_after_days`, OFF by default - archive_snapshots is ~80 MB of the DB) + VACUUM on the first Sunday of the month. `GET /api/maintenance/run-now?job=weekly|daily|backfill&dry_run=true&api_key=…`. One-off cleanup already applied 2026-09-10 (`scripts/db_prune_2026_09.py`: 161K flap rows deleted, DB 141 → 117 MB). |
 | db.py | SQLite CRUD — 25 tables with UPSERT logic |
 | change_detector.py | Diff old vs new plans, detect price/extras/details changes |
 | notifier.py | Format + send notifications (Telegram, Email, WhatsApp, Web Push). `alert_missing_terms()` = post-scrape safety net: if a **new** domestic/roaming plan lands with no "עיקרי התוכנית" link (no `url`/`terms_url`/`__info__`), it Telegrams the operator so the per-provider fetch can be wired in (run the plan-terms-coverage skill). Wired into every scrape path; exempts neptucom domestic + xphone roaming (no terms by design). |
@@ -127,6 +141,10 @@ React app structure, the MOCA design system, multi-workspace architecture, Brand
 | push_subscriptions | endpoint, p256dh, auth |
 | news_articles | carrier, headline, url (UNIQUE), source, published_at (ISO 8601), fetched_at |
 | user_activity | user_email, workspace_id, event_type (login/page_view/alert_created/watchlist_added/watchlist_removed/comparison_saved), path, details (JSON), user_agent, created_at — powers the super-admin user-activity dashboard; super-admins are never recorded |
+| price_history_daily | day, plan_type, carrier, destination, min/avg/max_price, min_ppgb, plan_count, min_carrier, source — PK (day, plan_type, carrier, destination). Two row kinds: per-carrier (`destination=''`) and market-wide per destination (`carrier='*'`, `min_carrier` = who had the min). The change-log-independent history source (maintenance.py); read via `GET /api/history/daily`. A full carrier×destination matrix was tried and rejected (570K rows / 5 months) |
+| maintenance_log | ran_at, job (prune/vacuum/thin_archive/price_history), details (JSON) — audit trail of maintenance.py runs |
+
+**Retention (2026-09):** `*_changes` rows older than `changes_retention_days` (180) are deleted every Sunday 03:00 by `maintenance.run_weekly`; charts that need longer history read `price_history_daily` instead of the change log. `archive_snapshots` is untouched unless `archive_thin_after_days` is set in config.json.
 
 ## Change Detection
 
@@ -174,18 +192,18 @@ Caveats: `_DEST_NORM` rewrites extras/destination only — it never touches `pla
 
 ### Multi-Country Provider Filtering (DashboardPage / ComparePage)
 
-Some global providers sell a single plan that covers many countries (e.g. SimTLV, TravelSim, World8, Airalo, Terminal eSIM, eSIMo, XPhone Global, GlobalSIM). These are tracked in `MULTI_COUNTRY_CARRIERS` Set in `DashboardPage.jsx`. Their country coverage is defined as static arrays in `globalCountries.js` and resolved at runtime by `getPlanCoverage(plan)`:
+Some global providers sell a single plan that covers many countries (e.g. SimTLV, TravelSim, World8, Airalo, Terminal eSIM, eSIMo, XPhone Global, GlobalSIM). These are tracked in the `MULTI_COUNTRY_CARRIERS` Set in **`data/planCoverage.js`** (moved out of DashboardPage.jsx 2026-09, together with `getPlanCoverage`). The dashboard's filter / sort / group / destination pipeline itself is the set of pure functions in **`hooks/useDashboardPlans.js`** (`filterAndSortPlans`, `groupGlobalDisplayItems`, `globalDestinationsOf`, `globalRegionsOf`, `hasCruisePackages`) plus the `useDashboardPlans` memo hook; region-label consolidation (`KNOWN_REGIONS`, `normalizeRegionLabel`) is in `data/regionLabels.js`. Their country coverage is defined as static arrays in `globalCountries.js` and resolved at runtime by `getPlanCoverage(plan)`:
 
 ```js
 // Returns string[] of covered countries, or null for single-country plans
 function getPlanCoverage(plan) { ... }
 ```
 
-- `globalDestinations` useMemo: for MULTI_COUNTRY_CARRIERS, expands all covered countries into the dropdown instead of using extras[0]
-- `filteredPlans`: for MULTI_COUNTRY_CARRIERS, matches via `getPlanCoverage(p).includes(destination)` instead of `extras[0] === destination`
+- `globalDestinationsOf` (useDashboardPlans.js): for MULTI_COUNTRY_CARRIERS, expands all covered countries into the dropdown instead of using extras[0]
+- `filterAndSortPlans` (useDashboardPlans.js): for MULTI_COUNTRY_CARRIERS, matches via `getPlanCoverage(p).includes(destination)` instead of `extras[0] === destination`
 - `CARRIER_COUNTRY_LISTS` in ComparePage mirrors this for the comparison chart's country filter
 
-When adding a new multi-country provider: add arrays to `globalCountries.js`, add the carrier id to `MULTI_COUNTRY_CARRIERS`, add a branch in `getPlanCoverage()`, and add to `CARRIER_COUNTRY_LISTS` in ComparePage.
+When adding a new multi-country provider: add arrays to `globalCountries.js`, add the carrier id to `MULTI_COUNTRY_CARRIERS` and a branch in `getPlanCoverage()` (both in `data/planCoverage.js`), and add to `CARRIER_COUNTRY_LISTS` in ComparePage.
 
 ### RTL Layout Pitfalls
 
@@ -219,7 +237,10 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 - **08:10** — scrape Google News RSS for all 10 domestic carriers + Breeze (`scrape_carrier_news()` → `upsert_news_articles()`), INSERT OR IGNORE by URL
 - **08:15** — **below-the-line reseller scrape** (`scrape_resellers_job`): all modules in `RESELLER_SCRAPER_MODULES` → `sync_reseller_plans` (diff → `reseller_changes` → upsert). Runs 5 min before the digest so its changes land in the same morning's "מתחת לקו" section
 - **08:20** — **morning changes digest** (`run_morning_check_job` in app.py): reads the change LOG (not a live scrape) for the last 26h across all 5 change tables (domestic/abroad/global/content/**resellers**) — new/removed plans, price/extras changes — plus **scraper-freshness warnings** (`db.get_scrape_freshness`: carrier stale, 0 plans, or missing from `plans` entirely vs `CARRIER_DISPLAY`), and **always** sends Telegram — an explicit "לא זוהו שינויים" message doubles as a daily heartbeat (no message = job/Flask down). A scraper that silently breaks can never report a new plan it didn't see, so the freshness warnings surface the breakage. **Per-category staleness thresholds**: domestic/abroad/content/resellers use `morning_check_stale_hours` (36h); **global** uses a separate, more lenient `morning_check_global_stale_hours` (72h) — global eSIM providers scrape hundreds of per-country pages with partial coverage per run, so a blanket 36h false-positives on normal flakiness; a days-scale threshold catches real breakage (weeks of zero rows — e.g. esimio frozen since Apr 29, maya since May 11, both fixed 2026-06-11) while tolerating a missed run. NB: a broken global scraper returns `[]` but `save_global_plans` never deletes, so its rows AGE (caught by the MAX(scraped_at) check) rather than vanish. Manual trigger / preview: `GET|POST /api/morning-check/now?api_key=…` (`&send=false` returns the digest JSON without sending). config.json knobs (all optional): `morning_check_time` ("08:20"), `morning_check_window_hours` (26), `morning_check_stale_hours` (36), `morning_check_global_stale_hours` (72), `morning_check_whatsapp` (false)
+- **08:50 + 18:30** — `maintenance.run_daily`: aggregate the live plan tables into `price_history_daily` (after each scrape window)
 - **09:00** — send daily Excel email report via Resend SMTP (SendGrid fallback)
+- **Sunday 03:00** — `maintenance.run_weekly`: prune `*_changes` older than 180 days (+ optional archive thinning); VACUUM on the first Sunday of the month
+- **Sunday 06:30** — `run_scraper_drift_job` (api/jobs.py): live drift probe of every scraper with an HTTP fixture (`scraper_fixtures.drift_check`), Telegram summary listing providers that now return <50% of their recorded plans or fail validation. Manual: `GET /api/scraper-drift/now?api_key=…&send=false`
 - **07:30 + 17:00** — scrape all (domestic + abroad + global + content), detect changes, notify (Telegram + WhatsApp + Web Push). Times come from `config.json:schedule_times`. Notifications are deduplicated against the last 24h of changes — `db.filter_already_notified()` drops any (carrier, plan_name, change_type) already announced, so a sticky removal isn't reported twice.
 - WhatsApp via Green API (config.json: greenapi_url, greenapi_instance, greenapi_token, whatsapp_phone or whatsapp_group_id)
 - **Autologon ENABLED** (Sysinternals) — the box auto-logs-in as `Alon` at boot, so the at-logon tasks below start **without a manual login** (survives Windows Update / power-blip reboots).
@@ -247,7 +268,12 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 | cloudflared.exe + cloudflared_watchdog.ps1 | **Cloudflare Tunnel** binary + watchdog: loops `cloudflared tunnel run moca` (config `~/.cloudflared/config.yml`: api.mocaintel.com → localhost:5000). The public ingress — replaced ngrok 2026-06-04. |
 | ngrok_watchdog.ps1 | (Task DISABLED 2026-06-04) loops `ngrok http 5000 --domain=…` — kept as a re-enable-able fallback. |
 | global_stale_report.py | READ-ONLY dry run of the global stale-row purge: per provider, rows in DB vs rows in its latest scrape, stale/eligible counts, coverage ratios and the exact purge decision (`db.purge_stale_global_rows(dry_run=True)`). Run before/after changing the `global_purge_*` knobs. |
-| db_compress_and_prune.py | One-time DB maintenance: snapshot → zlib-compress archive_snapshots → delete global_changes flap noise → VACUUM (shrank DB 421→43MB). |
+| db_compress_and_prune.py | One-time DB maintenance (2026-06): snapshot → zlib-compress archive_snapshots → delete global_changes flap noise → VACUUM (shrank DB 421→43MB). |
+| db_prune_2026_09.py | One-time (already run 2026-09-10): deleted the two documented flap backlogs from global_changes - 73,568 phantom `extras_change` rows before the 2026-07-14 fix and 87,400 Breeze FX-flap `price_change` rows before the 2026-07-26 fix - then VACUUM (141 → 105 MB; snapshot in `data/plans_pre_prune_2026_09.db`, delete once verified). Standing retention now lives in maintenance.py. |
+| split_monolith.py + split_plan_app.json / split_plan_scraper.json | The 2026-09 monolith splitter (app.py → api/, scraper.py → scrapers/). AST-based: moves top-level nodes by plan, rewrites references to monolith names as `core.<name>` (scope-aware, incl. `__file__`), replicates stdlib/third-party imports, late-binds project-module imports, topologically orders modules by import-time deps, warns on import-time refs left in the core, appends the import + re-export block before `if __name__ == "__main__"`. Re-runnable on a monolithic file; `--dry-run` reports only. |
+| make_split_plan_scraper.py | Generates split_plan_scraper.json from scraper.py by name-keyword buckets (`BUCKETS`, `OVERRIDES`, `KEEP`). Run it, then the splitter. |
+| record_scraper_fixture.py | Records HTTP fixtures for the pure-HTTP scrapers (`scraper_fixtures.record`): `all`, `all --missing`, or named providers; `--cap N` distinct URLs (default 12; use 3-6 for heavy HTML sites). Prints a per-provider table (plans, urls, KB, validation). |
+| scraper_drift_check.py | Live drift probe over the recorded URL sets (`--notify` = Telegram); the same check the Sunday 06:30 job runs. |
 | gen_dest_backgrounds.py + dest_bg_map.json | Destination background images for the /esim-deals trip wizard: one Gemini-generated landmark photo per live destination (config.json `gemini_api_key`, model gemini-2.5-flash-image) → `mass-market-app/public/dest-bg/<slug>.jpg`, then auto-rewrites the React manifest `src/data/destBg.js` (he string → path) from what exists on disk. Curation (region images shared by variants, combo-plan aliases, sub-national places, cruise ship) lives in dest_bg_map.json. Idempotent — delete a jpg to regenerate; rerun when new destinations appear. Needs Flask on :5000 + node. |
 
 ## Archive System

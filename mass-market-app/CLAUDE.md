@@ -8,7 +8,7 @@ Supplements the root CLAUDE.md when working in `mass-market-app/`. Moved here so
 
 | Path | Purpose |
 |------|---------|
-| pages/DashboardPage.jsx | Main 8-tab view (domestic/abroad/global/**resellers**/content/banners/history/news) with filters. **Lazy-loaded** since phase 15. `RESELLERS` const lists reseller IDs+labels mapped to underlying carriers. Reads `lockedTab` from `useLocation().pathname` — when on a clean URL like `/plans` or `/banners` the tab navigation hides and `setTab` navigates instead of mutating state. |
+| pages/DashboardPage.jsx | Main 8-tab view (domestic/abroad/global/**resellers**/content/banners/history/news) with filters. **Lazy-loaded** since phase 15. Since 2026-09 (~1,570 lines, was 1,984) the filter/sort/group/destination logic lives in `hooks/useDashboardPlans.js` and the multi-country + region-label data in `data/planCoverage.js` / `data/regionLabels.js`; the page keeps the UI catalogs (`TABS`, `RESELLERS`, `USA_OPERATORS`, `CARRIERS` + `CARRIER_IDS`) and the JSX. `RESELLERS` const lists reseller IDs+labels mapped to underlying carriers. Reads `lockedTab` from `useLocation().pathname` — when on a clean URL like `/plans` or `/banners` the tab navigation hides and `setTab` navigates instead of mutating state. |
 | pages/ComparePage.jsx | Price comparison charts (Recharts) |
 | pages/AlertsPage.jsx | Personal price alerts with DB persistence |
 | pages/SettingsPage.jsx | Admin panel — scrape triggers, user management (adminOnly). "ניהול משתמשים" tab (super_admin) creates users via direct-DB provisioning (`POST /api/users`, no email — see Security) and resets a user's password via `<AdminResetPasswordModal>` → `POST /api/users/<id>/password`. |
@@ -81,6 +81,7 @@ Shared primitives that drive the new visual language. Import via the barrel: `im
 | hooks/useWatchlist.jsx | Per-user watchlist of plan IDs |
 | hooks/useOnlineStatus.js | Navigator online/offline event listener |
 | hooks/useCarrierPriceTrend.js | Aggregate per-carrier price-history series (avg across all plans, daily). Module-scope cache + in-flight coalescing. Used by `<CompetitorBoard>` |
+| hooks/useDashboardPlans.js | **Dashboard plan pipeline** (extracted from DashboardPage 2026-09): PURE functions `filterAndSortPlans(tabPlans, tab, filters, ctx)`, `groupGlobalDisplayItems`, `globalRegionsOf`, `globalDestinationsOf`, `hasCruisePackages` + the `useDashboardPlans({plans, tab, filters, visibleCarrierIds, carrierIds, usaOperators, onlyWatched, isWatched, watchItems, lang})` memo hook that DashboardPage renders from. Memo boundaries mirror the old inline useMemos (heavy filter+sort keyed on plans/tab/filters + a join-key of visibleCarrierIds; the watchlist toggle only re-runs a light filter). Smoke-testable in node via `npx esbuild src/hooks/useDashboardPlans.js --bundle --platform=node` |
 | lib/api.js | Flask API wrapper with JWT headers |
 | lib/supabase.js | Supabase client (graceful null if unconfigured) |
 
@@ -91,6 +92,8 @@ Shared primitives that drive the new visual language. Import via the barrel: `im
 | data/carrierLabels.js | **Single source of truth** for carrier ID → display name. Exports `carrierLabel(id)`, `DOMESTIC_LABELS`, `GLOBAL_LABELS`. Mirror in app.py: `_CARRIER_NAMES`. Update both together when adding a carrier. |
 | data/mvnoBrandColors.js | MVNO-specific primary/secondary colors. `getMvnoColors(mvno_carrier)` used by `BrandThemeApplier` in App.jsx to set `--color-moca-bolt` / `--color-moca-dark` CSS vars. |
 | data/globalCountries.js | Country lists for global eSIM providers + getCountriesForPlan() |
+| data/planCoverage.js | `MULTI_COUNTRY_CARRIERS` + `getPlanCoverage(plan)` (moved out of DashboardPage 2026-09) - which providers sell one plan over many countries and how to resolve a plan's coverage list from globalCountries.js |
+| data/regionLabels.js | `KNOWN_REGIONS`, `isLargeMultiCountryRegion`, `normalizeRegionLabel` - region tags on global plans and the "N+ מדינות → גלובלי", "*אירופה* → אירופה" consolidation rules |
 | data/abroadCountries.js | Country lists for domestic abroad plans + getCountriesForAbroadPlan() |
 | data/abroadApps.js | Free app lists (Cellcom 6 apps, Pelephone 12 apps) |
 

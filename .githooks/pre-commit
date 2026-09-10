@@ -1,0 +1,14 @@
+#!/bin/sh
+# MOCA pre-commit: fast unit tests + ESLint (only when frontend files are staged).
+# Enable once per clone:  git config core.hooksPath .githooks
+set -e
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+if git diff --cached --name-only | grep -qE '\.py$'; then
+  echo "[pre-commit] pytest (unit)"
+  python -m pytest -q -p no:cacheprovider
+fi
+if git diff --cached --name-only | grep -qE '^mass-market-app/.*\.(js|jsx)$'; then
+  echo "[pre-commit] eslint"
+  (cd mass-market-app && npm run lint --silent)
+fi

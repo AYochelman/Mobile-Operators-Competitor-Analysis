@@ -131,7 +131,7 @@ export default function ChatPanel() {
         if (line.includes(carrier.id) || Object.keys(CARRIER_MAP).some(k => CARRIER_MAP[k].id === carrier.id && line.includes(k))) {
           // Extract plan name pattern (contains GB or has dashes)
           const planMatch = line.match(/[\u0590-\u05FF\w][\u0590-\u05FF\w\s\-–]+\d+\s*GB/i)
-            || line.match(/\|[\s]*([^\|]+\d+\s*GB[^\|]*)/i)
+            || line.match(/\|[\s]*([^|]+\d+\s*GB[^|]*)/i)
             || line.match(/\*\*([^*]+)\*\*/i)
           if (planMatch) {
             highlight = (planMatch[1] || planMatch[0]).replace(/\*\*/g, '').trim()

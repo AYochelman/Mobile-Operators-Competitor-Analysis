@@ -214,7 +214,7 @@ function GroupLabel({ children }) {
  * Mobile:   <Sidebar mobile open onClose={...} /> — portal drawer
  */
 export default function Sidebar({ className = '', mobile = false, open = false, onClose }) {
-  const { isSuperAdmin, workspace } = useAuth()
+  const { workspace } = useAuth()
   const flags = useFeatureFlags()
   const { changesCount } = useWatchlist()
   const { dir, tt } = useLang()

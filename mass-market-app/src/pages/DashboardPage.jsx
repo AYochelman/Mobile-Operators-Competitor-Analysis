@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo, useCallback, useRef, startTransition, laz
 import { useSearchParams, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
-import { useHiddenCarrier, useVisibleCarriers } from '../hooks/useHiddenCarrier'
+import { useVisibleCarriers } from '../hooks/useHiddenCarrier'
+import { useDashboardPlans } from '../hooks/useDashboardPlans'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
-import { has5G, hasMaxPriority } from '../data/networkPriority'
 import PlanCard from '../components/PlanCard'
 import BannerMosaic from '../components/moca/BannerMosaic'
 const HistoryTab = lazy(() => import('../components/HistoryTab'))
@@ -25,136 +25,8 @@ import Spinner from '../components/ui/Spinner'
 import Button from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
 import { useLang } from '../hooks/useLanguage'
-import { destKey, dedupeDestOptions, isCruiseDest, cruiseLabel, CRUISE_VALUE } from '../data/destI18n'
+import { CRUISE_VALUE } from '../data/destI18n'
 import { ISRAELI_GLOBAL_PROVIDERS, USA_LABELS, GLOBAL_PROVIDERS } from '../data/carrierLabels'
-import {
-  TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
-  SIMTLV_COUNTRIES, PELEPHONE_GLOBAL_COUNTRIES, ESIMO_REGION_MAP,
-  WORLD8_EUROPE_USA, WORLD8_WORLDWIDE,
-  XPHONE_EUROPE, XPHONE_WORLD,
-  AIRALO_DISCOVER,
-  AIRALO_REGION_MAP,
-  TERMINAL_EUROPE, TERMINAL_ASIA, TERMINAL_NORTH_AMERICA,
-  TERMINAL_SOUTH_AMERICA, TERMINAL_AFRICA, TERMINAL_OCEANIA, TERMINAL_GLOBAL_REGION,
-  GOMOWORLD_EUROPE, GOMOWORLD_LATIN_AMERICA, GOMOWORLD_SOUTHEAST_ASIA,
-  GOMOWORLD_FRENCH_ANTILLES, GOMOWORLD_NETHERLANDS_ANTILLES, GOMOWORLD_NORTH_AMERICA,
-  MAYA_GLOBAL, MAYA_OCEANIA,
-  BESIM_REGION_MAP,
-  BESTCONNECT_REGION_MAP,
-  ESIMPLUS_REGION_MAP,
-  SEVEN_G_REGION_MAP,
-  GIGSKY_REGION_MAP,
-  ESIMGENIUS_REGION_MAP,
-  ESIMAX_REGION_MAP, ESIMAX_EUROPE_30,
-  VENTERRA_REGION_MAP,
-  SIMZOL_REGION_MAP,
-} from '../data/globalCountries'
-
-// Carriers where one plan covers many countries (zone/global plans)
-const MULTI_COUNTRY_CARRIERS = new Set([
-  'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
-  'pelephone_global', 'esimo', 'terminalesim', 'gomoworld', 'maya', 'besim',
-  'bestconnect', 'esimplus', 'seven_g', 'gigsky', 'esimgenius', 'esimax',
-  'venterrasim', 'simzol',
-])
-
-const TERMINAL_REGION_MAP = {
-  'אפריקה': TERMINAL_AFRICA,
-  'אסיה': TERMINAL_ASIA,
-  'צפון אמריקה': TERMINAL_NORTH_AMERICA,
-  'דרום אמריקה': TERMINAL_SOUTH_AMERICA,
-  'אוקיאניה': TERMINAL_OCEANIA,
-  'אירופה': TERMINAL_EUROPE,
-  'גלובלי': TERMINAL_GLOBAL_REGION,
-}
-
-function getPlanCoverage(plan) {
-  const carrier = plan.carrier
-  const dest = plan.extras?.[0] || ''
-  const name = plan.plan_name || ''
-  if (carrier === 'travelsim') {
-    if (dest === 'ארצות הברית') return TRAVELSIM_USA
-    if (dest === 'המזרח התיכון') return TRAVELSIM_ME
-    return TRAVELSIM_GLOBAL
-  }
-  if (carrier === 'xphone_global') {
-    return dest.startsWith('אירופה') ? XPHONE_EUROPE : XPHONE_WORLD
-  }
-  if (carrier === 'simtlv') {
-    // Only the 127-country bundles expand to the full coverage list.
-    // Per-country and regional catalog plans (extras[0] = country name or
-    // 'אירופה (N מדינות)' label) return null → extras[0] equality fallback.
-    return dest === '127 מדינות' ? SIMTLV_COUNTRIES : null
-  }
-  if (carrier === 'world8') {
-    return (name.includes('אירופה') || name.includes('Europe')) ? WORLD8_EUROPE_USA : WORLD8_WORLDWIDE
-  }
-  if (carrier === 'airalo') return AIRALO_DISCOVER
-  if (carrier === 'airalo_regional') return AIRALO_REGION_MAP[dest] || null
-  if (carrier === 'pelephone_global') return PELEPHONE_GLOBAL_COUNTRIES
-  if (carrier === 'esimo') {
-    // Regional/global products expand to their coverage list; per-country plans
-    // return null → the destination filter falls back to extras[0] equality.
-    return ESIMO_REGION_MAP[dest] || null
-  }
-  if (carrier === 'terminalesim') return TERMINAL_REGION_MAP[dest] || null
-  if (carrier === 'gomoworld') {
-    const GOMOWORLD_ZONE_MAP = {
-      'אירופה': GOMOWORLD_EUROPE, 'אמריקה הלטינית': GOMOWORLD_LATIN_AMERICA,
-      'דרום מזרח אסיה': GOMOWORLD_SOUTHEAST_ASIA, 'האנטילים הצרפתיים': GOMOWORLD_FRENCH_ANTILLES,
-      'אנטילים הולנדיים': GOMOWORLD_NETHERLANDS_ANTILLES, 'צפון אמריקה': GOMOWORLD_NORTH_AMERICA,
-    }
-    return GOMOWORLD_ZONE_MAP[dest] || null
-  }
-  if (carrier === 'maya') {
-    if (dest === 'גלובלי') return MAYA_GLOBAL
-    if (dest === 'אוקיאניה') return MAYA_OCEANIA
-    return null
-  }
-  if (carrier === 'besim') {
-    // Per-country plans: extras[0] is a country name (not a region) — return null so the
-    // dashboard's destination-filter falls back to direct-equality matching on extras[0].
-    // Regional/global bundles: extras[0] is a canonical region name → expand via the map.
-    return BESIM_REGION_MAP[dest] || null
-  }
-  if (carrier === 'bestconnect') return BESTCONNECT_REGION_MAP[dest] || null
-  if (carrier === 'esimplus') return ESIMPLUS_REGION_MAP[dest] || null
-  if (carrier === 'gigsky') {
-    // Regional + global bundles expand to their coverage list. Per-country plans
-    // and cruise labels ("קרוז - …") aren't keys → null → extras[0] equality /
-    // unified cruise filter handle them.
-    return GIGSKY_REGION_MAP[dest] || null
-  }
-  if (carrier === 'esimgenius') {
-    // Regional + global bundles expand to their coverage list; per-country
-    // plans return null → extras[0] equality.
-    return ESIMGENIUS_REGION_MAP[dest] || null
-  }
-  if (carrier === 'esimax') {
-    // "אירופה 30+" shares dest 'אירופה' with the full-Europe bundle but covers
-    // fewer countries — match it by plan-name prefix before the dest lookup.
-    if (name.startsWith('אירופה 30+')) return ESIMAX_EUROPE_30
-    return ESIMAX_REGION_MAP[dest] || null
-  }
-  if (carrier === 'venterrasim') {
-    // Coverage varies per bundle within one destination (Europe 33/35/41 areas,
-    // Asia 7/20, South America 6/20), so the map is keyed by the plan_name title.
-    const title = name.split(' – ')[0].replace(/\u200f/g, '').trim()
-    return VENTERRA_REGION_MAP[title] || null
-  }
-  if (carrier === 'simzol') {
-    // 'גלובלי' covers two products with different country lists (eSIM packages
-    // vs the physical 'פלטינום' SIM), so key on the plan_name title.
-    const title = name.split(' – ')[0].replace(/\u200f/g, '').trim()
-    return SIMZOL_REGION_MAP[title] || null
-  }
-  if (carrier === 'seven_g') {
-    // plan_name first segment is the English region name (e.g. "Asia (12 areas)")
-    const regionName = (name || '').split(' – ')[0]?.trim() || ''
-    return SEVEN_G_REGION_MAP[regionName] || null
-  }
-  return null
-}
 
 const TAB_ICONS = {
   domestic: (
@@ -303,48 +175,6 @@ const USA_OPERATORS = [
 ]
 const USA_NETWORKS = ['T-Mobile', 'AT&T', 'Verizon', 'Boost', '\u05e8\u05d1-\u05e8\u05e9\u05ea\u05d9']
 
-const KNOWN_REGIONS = new Set([
-  'אירופה','אסיה','אסיה ואוקיאניה','אפריקה','גלובלי','קריביים','איי הקריביים',
-  'אמריקה הלטינית','צפון אמריקה','המזרח התיכון','המזרח התיכון וצפון אפריקה',
-  'דרום מזרח אסיה','סקנדינביה','בלקן','מזרח אירופה','מרכז אמריקה','אוקיאניה',
-  'סין + הונג קונג + מקאו','יפן וקוריאה','יפן וסין',
-  'אסיה פסיפיק','מרכז אסיה','צפון אפריקה',
-  'שוויץ+','גוודלופ','קפריסין+',
-  'אמריקה הדרומית','דרום אמריקה',
-  'צפון ודרום אמריקה','מדינות האיים הקריביים',
-  'אירופה — גלישה בלבד','אירופה — גולשים ומדברים',
-  '167+ מדינות','156+ מדינות',
-  'ספארי אפריקה','האיחוד האירופי ובריטניה',
-  'כלל העולם',
-  // Breeze regions
-  'אירופה+','אמריקה המרכזית','חבר המדינות',
-  'אירופה וארה"ב','פורטוגל וספרד','המזרח התיכון לייט','אירופה לייט',
-  // SimTLV catalog regional bundles (counts < 100 so the generic
-  // "N מדינות → גלובלי" rule doesn't catch them)
-  'אירופה (32 מדינות)','אירופה (33 מדינות)','אירופה (37 מדינות)',
-  'גלובלי (36 מדינות)','גלובלי (37 מדינות)','גלובלי (41 מדינות)',
-  'גלובלי (47 מדינות)','גלובלי (58 מדינות)','גלובלי (84 מדינות)',
-  'דרום אמריקה (11 מדינות)',
-])
-
-// Region-label consolidation rules:
-// 1. Any "<N>+? מדינות" tag with N > 100 → unified "גלובלי" (global multi-country bundle).
-// 2. Any tag whose name contains the word "אירופה" (e.g. "אירופה+", "אירופה לייט",
-//    "אירופה — גלישה בלבד", "מזרח אירופה") → unified "אירופה" so the regions
-//    dropdown shows one Europe entry instead of six near-duplicates.
-const MULTI_COUNTRY_REGION_RE = /^(\d+)\+?\s*מדינות$/
-function isLargeMultiCountryRegion(region) {
-  const m = region && String(region).match(MULTI_COUNTRY_REGION_RE)
-  return !!m && parseInt(m[1], 10) > 100
-}
-function normalizeRegionLabel(region) {
-  if (isLargeMultiCountryRegion(region)) return 'גלובלי'
-  if (region && String(region).includes('אירופה')) return 'אירופה'
-  // "גלובלי (47 מדינות)" etc. (SimTLV) fold into the unified global entry
-  if (region && String(region).includes('גלובלי')) return 'גלובלי'
-  return region
-}
-
 const CARRIERS = [
   { id: 'partner', label: 'פרטנר' },
   { id: 'pelephone', label: 'פלאפון' },
@@ -358,6 +188,8 @@ const CARRIERS = [
   { id: 'rami_levy', label: 'רמי לוי' },
 ]
 
+const CARRIER_IDS = CARRIERS.map(c => c.id)
+
 // GLOBAL_PROVIDERS (the global-tab provider filter chips) is derived from the single
 // source of truth in data/carrierLabels — add a provider there, not here.
 
@@ -365,8 +197,7 @@ export default function DashboardPage() {
   const { tt, lang } = useLang()
   const { isAdmin, workspace } = useAuth()
   const { scraping, countdown, triggerScrape } = useScrape()
-  const hiddenCarrier = useHiddenCarrier()
-  const visibleCarrierIds = useVisibleCarriers(CARRIERS.map(c => c.id))
+  const visibleCarrierIds = useVisibleCarriers(CARRIER_IDS)
   const flags = useFeatureFlags()
   const { items: watchItems, isWatched } = useWatchlist()
   const [onlyWatched, setOnlyWatched] = useState(false)
@@ -738,261 +569,12 @@ export default function DashboardPage() {
     return lookup
   }, [changes, tab])
 
-  // Filter + sort plans — everything EXCEPT the personal "watched only" filter,
-  // which is applied downstream so toggling a star doesn't re-run this whole
-  // (regex-heavy) filter+sort pass over the full dataset.
-  const baseFilteredPlans = useMemo(() => {
-    let result = plans[tab] || []
-    const f = filters
-
-    // Apply workspace visible_carriers scoping on domestic + abroad tabs
-    if ((tab === 'domestic' || tab === 'abroad') && visibleCarrierIds.length < CARRIERS.length) {
-      result = result.filter(p => visibleCarrierIds.includes(p.carrier))
-    }
-
-    if (tab === 'domestic' || tab === 'abroad') {
-      if (f.carrier !== 'all') result = result.filter(p => p.carrier === f.carrier)
-    }
-    if (tab === 'domestic' && f.gen !== 'all') {
-      // "5G" = basic 5G only (excludes priority); "5G מתועדף" = priority only
-      if (f.gen === '5g') result = result.filter(p => has5G(p) && !hasMaxPriority(p))
-      if (f.gen === '5g_priority') result = result.filter(hasMaxPriority)
-      if (f.gen === '4g') result = result.filter(p => !has5G(p))
-    }
-    if (tab === 'domestic' && f.roaming === 'yes') {
-      // Accept either a quantified data note ("1GB גלישה בחו\"ל בכל חודש") OR a
-      // qualitative "חו\"ל כלול"-style tag (premium plans share total data pool).
-      // Pay-per-use abroad routes (e.g. Pelephone's "מסלול חו\"ל Travel") are
-      // deliberately NOT matched — they have no included data volume.
-      result = result.filter(p => p.extras && p.extras.some(e => {
-        const hasIntl = /חו"ל|חו״ל/.test(e)
-        if (!hasIntl) return false
-        const hasQuantifiedData = /\d+/.test(e) && /GB|גלישה/i.test(e)
-        const hasIncludedTag = /(?:כלול(?:ה|ים)?|כולל)/.test(e)
-        return hasQuantifiedData || hasIncludedTag
-      }))
-    }
-    if (tab === 'global') {
-      if (f.globalProvider !== 'all') {
-        const ids = f.globalProvider === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [f.globalProvider]
-        result = result.filter(p => ids.includes(p.carrier))
-      }
-      if (f.israeliProvider !== 'all') {
-        const wantIsraeli = f.israeliProvider === 'israeli'
-        result = result.filter(p => ISRAELI_GLOBAL_PROVIDERS.has(p.carrier) === wantIsraeli)
-      }
-      if (f.region !== 'all') {
-        const rTarget = destKey(f.region)
-        result = result.filter(p => p.extras && destKey(normalizeRegionLabel(p.extras[0])) === rTarget)
-      }
-      else if (f.destination === CRUISE_VALUE) {
-        // Unified "Cruise" filter — matches every provider's cruise-at-sea package.
-        result = result.filter(p => p.extras && isCruiseDest(p.extras[0]))
-      }
-      else if (f.destination !== 'all') {
-        // Compare via canonical English key so a selected representative spelling
-        // matches plans tagged with any of its de-duplicated variants.
-        const dTarget = destKey(f.destination)
-        result = result.filter(p => {
-          if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
-            const coverage = getPlanCoverage(p)
-            if (coverage) return coverage.some(c => destKey(c) === dTarget)
-            return p.extras && destKey(p.extras[0]) === dTarget
-          }
-          return p.extras && destKey(p.extras[0]) === dTarget
-        })
-      }
-    }
-    if (tab === 'content') {
-      const NA = ['לא נמצא', 'שגיאה', 'לא זמין']
-      if (f.contentCarrier !== 'all') result = result.filter(p => p.carrier === f.contentCarrier)
-      if (f.contentService !== 'all') result = result.filter(p => p.service === f.contentService)
-      result = result.filter(p => !p.price || !NA.some(v => String(p.price).includes(v)))
-    }
-    if (tab === 'resellers') {
-      if (f.reseller !== 'all') result = result.filter(p => p.reseller_id === f.reseller)
-      if (f.carrier !== 'all') result = result.filter(p => p.carrier === f.carrier)
-    }
-    if (tab === 'usa') {
-      if (f.usaOperator !== 'all') result = result.filter(p => p.carrier === f.usaOperator)
-      if (f.usaNetwork !== 'all') {
-        const opsOnNet = new Set(USA_OPERATORS.filter(o => o.net === f.usaNetwork).map(o => o.id))
-        result = result.filter(p => opsOnNet.has(p.carrier))
-      }
-    }
-
-    if (f.gb !== 'all' && tab !== 'content') {
-      if (f.gb === 'unlimited') result = result.filter(p => p.data_gb === null)
-      else if (f.gb === '0-5') result = result.filter(p => p.data_gb !== null && p.data_gb <= 5)
-      else if (f.gb === '5-15') result = result.filter(p => p.data_gb !== null && p.data_gb > 5 && p.data_gb <= 15)
-      else if (f.gb === '15-100') result = result.filter(p => p.data_gb !== null && p.data_gb > 15 && p.data_gb <= 100)
-      else if (f.gb === '100+') result = result.filter(p => p.data_gb !== null && p.data_gb > 100)
-    }
-
-    if (f.days !== 'all' && (tab === 'abroad' || tab === 'global' || tab === 'usa')) {
-      if (f.days === '1-7') result = result.filter(p => p.days && p.days <= 7)
-      else if (f.days === '8-14') result = result.filter(p => p.days && p.days > 7 && p.days <= 14)
-      else if (f.days === '15-30') result = result.filter(p => p.days && p.days > 14 && p.days <= 30)
-      else if (f.days === '30+') result = result.filter(p => p.days && p.days > 30)
-    }
-
-    const ppgb = (p) => {
-      const pr = Number(p.price)
-      const gb = Number(p.data_gb)
-      if (!pr || !gb || gb <= 0) return null
-      return pr / gb
-    }
-    if (f.sort === 'price_asc') result = [...result].sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999))
-    else if (f.sort === 'price_desc') result = [...result].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
-    else if (f.sort === 'gb_asc') result = [...result].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
-    else if (f.sort === 'gb_desc') result = [...result].sort((a, b) => (b.data_gb ?? 99999) - (a.data_gb ?? 99999))
-    else if (f.sort === 'ppgb_asc') result = [...result].sort((a, b) => (ppgb(a) ?? 9999) - (ppgb(b) ?? 9999))
-    else if (f.sort === 'ppgb_desc') result = [...result].sort((a, b) => (ppgb(b) ?? 0) - (ppgb(a) ?? 0))
-
-    return result
-  }, [plans, tab, filters])
-
-  // Apply the personal "watched only" filter downstream. When off, returns the
-  // base array unchanged (stable identity → displayItems doesn't recompute); a
-  // watchlist toggle then only re-runs this light filter, not the pipeline above.
-  const filteredPlans = useMemo(() => {
-    if (!onlyWatched) return baseFilteredPlans
-    return baseFilteredPlans.filter(p => isWatched({
-      carrier: p.carrier,
-      plan_name: p.plan_name || p.service || '',
-      plan_type: tab,
-    }))
-  }, [baseFilteredPlans, onlyWatched, watchItems, isWatched, tab])
-
-  // Group plans into display items (GroupedPlanCard or PlanCard) for global tab
-  const displayItems = useMemo(() => {
-    if (tab !== 'global') return filteredPlans.map(p => ({ isGroup: false, plan: p }))
-    const grouped = new Map()
-    const singles = []
-    for (const plan of filteredPlans) {
-      const dest = plan.extras?.[0]
-      if (dest) {
-        // bytesim: group by product label (plan_name minus last 2 parts) to separate MAX/UK+/Lite
-        // besim: same — multiple bundles share extras[0] (4× אסיה, 2× אירופה, 2× גלובלי).
-        //        Group by plan_name prefix so each bundle gets its own card.
-        // airalo: split Discover (data only) vs Discover+ (data+calls+sms) like Airalo's website tabs
-        let key
-        if (plan.carrier === 'bytesim' || plan.carrier === 'besim' || plan.carrier === 'seven_g') {
-          const parts = plan.plan_name?.split(' – ') || []
-          const productLabel = parts.slice(0, -2).join(' – ') || dest
-          key = `${plan.carrier}|${productLabel}`
-        } else if (plan.carrier === 'airalo') {
-          const operator = (plan.plan_name || '').includes('Discover+') ? 'Discover+' : 'Discover'
-          key = `airalo|${dest}|${operator}`
-        } else {
-          key = `${plan.carrier}|${dest}`
-        }
-        if (!grouped.has(key)) grouped.set(key, [])
-        grouped.get(key).push(plan)
-      } else {
-        singles.push({ isGroup: false, plan })
-      }
-    }
-    const result = []
-    for (const [, plans] of grouped) {
-      if (plans.length <= 1) {
-        result.push({ isGroup: false, plan: plans[0] })
-      } else {
-        const byGb = new Map()
-        for (const p of plans) {
-          // bytesim/maya/besim: keep all (data × days) combinations; other carriers: keep cheapest per GB.
-          // Besim's Global bundles have e.g. 1GB/7d AND 1GB/365d — both need to show.
-          // Unlimited plans (data_gb null) are differentiated by days so VOYE-style
-          // 3GB/יום × {3,7,10,15,20,30}-day variants don't collapse into one card.
-          const keepAll = p.carrier === 'bytesim' || p.carrier === 'maya' || p.carrier === 'besim' || p.carrier === 'seven_g'
-          const isUnlimited = p.data_gb == null
-          const gbKey = keepAll
-            ? p.plan_name
-            : (isUnlimited ? `unl-${p.days ?? 0}` : p.data_gb)
-          if (!byGb.has(gbKey) || (!keepAll && p.price < byGb.get(gbKey).price)) byGb.set(gbKey, p)
-        }
-        const unique = [...byGb.values()].sort((a, b) => (a.data_gb ?? 99999) - (b.data_gb ?? 99999))
-        // bytesim/besim: destination shown as product label extracted from plan_name
-        // airalo: destination shows Discover vs Discover+ to mirror Airalo's site tabs
-        let destination
-        if (unique[0].carrier === 'bytesim' || unique[0].carrier === 'besim' || unique[0].carrier === 'seven_g') {
-          const parts = unique[0].plan_name?.split(' – ') || []
-          destination = parts.slice(0, -2).join(' – ') || unique[0].extras[0]
-        } else if (unique[0].carrier === 'airalo') {
-          const isPlus = (unique[0].plan_name || '').includes('Discover+')
-          const opLabel = isPlus ? 'Airalo Discover+ - דאטה ושיחות' : 'Airalo Discover - דאטה'
-          destination = `${opLabel} (${unique[0].extras[0]})`
-        } else {
-          destination = unique[0].extras[0]
-        }
-        result.push({ isGroup: true, carrier: unique[0].carrier, destination, plans: unique })
-      }
-    }
-    return [...result, ...singles]
-  }, [filteredPlans, tab])
-
-  // Regions for global tab
-  const globalRegions = useMemo(() => {
-    if (tab !== 'global') return []
-    let src = plans.global
-    if (filters.globalProvider !== 'all') {
-      const ids = filters.globalProvider === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [filters.globalProvider]
-      src = src.filter(p => ids.includes(p.carrier))
-    }
-    return [...new Set(
-      src
-        .filter(p => p.extras && p.extras[0] && (KNOWN_REGIONS.has(p.extras[0]) || isLargeMultiCountryRegion(p.extras[0])))
-        .map(p => normalizeRegionLabel(p.extras[0]))
-    )].sort((a, b) => a.localeCompare(b, 'he'))
-  }, [plans.global, tab, filters.globalProvider])
-
-  // Destinations for global tab
-  const globalDestinations = useMemo(() => {
-    if (tab !== 'global') return []
-    let src = plans.global
-    if (filters.globalProvider !== 'all') {
-      const ids = filters.globalProvider === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [filters.globalProvider]
-      src = src.filter(p => ids.includes(p.carrier))
-    }
-    const destSet = new Set()
-    for (const p of src) {
-      // Cruise packages are surfaced via the single synthetic "Cruise" option
-      // (see hasCruise / destinationOptions), not as raw per-provider rows.
-      if (p.extras && isCruiseDest(p.extras[0])) continue
-      if (MULTI_COUNTRY_CARRIERS.has(p.carrier)) {
-        const coverage = getPlanCoverage(p)
-        if (coverage) {
-          for (const c of coverage) destSet.add(c)
-        } else if (p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(p.extras[0])) {
-          // single-country plan from a multi-country carrier — add directly
-          destSet.add(p.extras[0])
-        }
-      } else if (p.extras && p.extras[0] && !/\d/.test(p.extras[0]) && !KNOWN_REGIONS.has(p.extras[0])) {
-        destSet.add(p.extras[0])
-      }
-    }
-    return [...destSet].sort((a, b) => a.localeCompare(b, 'he'))
-  }, [plans.global, tab, filters.globalProvider])
-
-  // Any cruise-at-sea package in the current (provider-filtered) global set?
-  const hasCruise = useMemo(() => {
-    if (tab !== 'global') return false
-    let src = plans.global
-    if (filters.globalProvider !== 'all') {
-      const ids = filters.globalProvider === 'airalo' ? ['airalo', 'airalo_local', 'airalo_regional'] : [filters.globalProvider]
-      src = src.filter(p => ids.includes(p.carrier))
-    }
-    return src.some(p => p.extras && isCruiseDest(p.extras[0]))
-  }, [plans.global, tab, filters.globalProvider])
-
-  // Deduplicated, localized dropdown options — spelling variants that resolve to
-  // the same English collapse into one entry (value = a representative Hebrew).
-  const regionOptions = useMemo(() => dedupeDestOptions(globalRegions, lang), [globalRegions, lang])
-  const destinationOptions = useMemo(() => {
-    const opts = dedupeDestOptions(globalDestinations, lang)
-    // Pin the unified "Cruise" option at the top when cruise packages exist.
-    return hasCruise ? [{ value: CRUISE_VALUE, label: cruiseLabel(lang) }, ...opts] : opts
-  }, [globalDestinations, hasCruise, lang])
+  // Filter / sort / group / destination pipeline - pure functions + memo hook
+  // (hooks/useDashboardPlans.js); DashboardPage only wires state in and cards out.
+  const { filteredPlans, displayItems, regionOptions, destinationOptions } = useDashboardPlans({
+    plans, tab, filters, visibleCarrierIds, carrierIds: CARRIER_IDS, usaOperators: USA_OPERATORS,
+    onlyWatched, isWatched, watchItems, lang,
+  })
 
   // Content services list
   const contentServices = useMemo(() => {

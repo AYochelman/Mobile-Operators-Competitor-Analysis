@@ -1,0 +1,947 @@
+[
+{
+"rule": "/",
+"methods": [
+"GET"
+],
+"endpoint": "index"
+},
+{
+"rule": "/api/abroad-changes",
+"methods": [
+"GET"
+],
+"endpoint": "api_abroad_changes"
+},
+{
+"rule": "/api/abroad-plans",
+"methods": [
+"GET"
+],
+"endpoint": "api_abroad_plans"
+},
+{
+"rule": "/api/activity",
+"methods": [
+"POST"
+],
+"endpoint": "api_track_activity"
+},
+{
+"rule": "/api/activity/events",
+"methods": [
+"GET"
+],
+"endpoint": "api_activity_events"
+},
+{
+"rule": "/api/activity/overview",
+"methods": [
+"GET"
+],
+"endpoint": "api_activity_overview"
+},
+{
+"rule": "/api/affiliate/attribution",
+"methods": [
+"GET"
+],
+"endpoint": "api_affiliate_attribution"
+},
+{
+"rule": "/api/affiliate/stats",
+"methods": [
+"GET"
+],
+"endpoint": "api_affiliate_stats"
+},
+{
+"rule": "/api/alerts",
+"methods": [
+"POST"
+],
+"endpoint": "api_create_alert"
+},
+{
+"rule": "/api/alerts",
+"methods": [
+"GET"
+],
+"endpoint": "api_get_alerts"
+},
+{
+"rule": "/api/alerts/<int:alert_id>",
+"methods": [
+"DELETE"
+],
+"endpoint": "api_delete_alert"
+},
+{
+"rule": "/api/annotations",
+"methods": [
+"POST"
+],
+"endpoint": "api_add_annotation"
+},
+{
+"rule": "/api/annotations",
+"methods": [
+"GET"
+],
+"endpoint": "api_get_annotations"
+},
+{
+"rule": "/api/annotations/<int:ann_id>",
+"methods": [
+"DELETE"
+],
+"endpoint": "api_delete_annotation"
+},
+{
+"rule": "/api/annotations/<int:ann_id>",
+"methods": [
+"PATCH"
+],
+"endpoint": "api_update_annotation"
+},
+{
+"rule": "/api/annotations/counts",
+"methods": [
+"GET"
+],
+"endpoint": "api_annotation_counts"
+},
+{
+"rule": "/api/archive",
+"methods": [
+"GET"
+],
+"endpoint": "api_archive"
+},
+{
+"rule": "/api/archive/date-range",
+"methods": [
+"GET"
+],
+"endpoint": "api_archive_date_range"
+},
+{
+"rule": "/api/audit-log",
+"methods": [
+"GET"
+],
+"endpoint": "api_audit_log"
+},
+{
+"rule": "/api/auth/logout",
+"methods": [
+"POST"
+],
+"endpoint": "api_auth_logout"
+},
+{
+"rule": "/api/auth/session",
+"methods": [
+"POST"
+],
+"endpoint": "api_auth_session"
+},
+{
+"rule": "/api/banners",
+"methods": [
+"GET"
+],
+"endpoint": "api_banners"
+},
+{
+"rule": "/api/changes",
+"methods": [
+"GET"
+],
+"endpoint": "api_changes"
+},
+{
+"rule": "/api/chat",
+"methods": [
+"POST"
+],
+"endpoint": "api_chat"
+},
+{
+"rule": "/api/contact",
+"methods": [
+"POST"
+],
+"endpoint": "api_contact"
+},
+{
+"rule": "/api/content-changes",
+"methods": [
+"GET"
+],
+"endpoint": "api_content_changes"
+},
+{
+"rule": "/api/content-plans",
+"methods": [
+"GET"
+],
+"endpoint": "api_content_plans"
+},
+{
+"rule": "/api/coupons",
+"methods": [
+"POST"
+],
+"endpoint": "api_create_coupon"
+},
+{
+"rule": "/api/coupons",
+"methods": [
+"GET"
+],
+"endpoint": "api_get_coupons"
+},
+{
+"rule": "/api/coupons/<int:coupon_id>",
+"methods": [
+"DELETE"
+],
+"endpoint": "api_delete_coupon"
+},
+{
+"rule": "/api/coupons/<int:coupon_id>",
+"methods": [
+"PATCH"
+],
+"endpoint": "api_update_coupon"
+},
+{
+"rule": "/api/coupons/all",
+"methods": [
+"GET"
+],
+"endpoint": "api_get_all_coupons"
+},
+{
+"rule": "/api/esim/analytics",
+"methods": [
+"GET"
+],
+"endpoint": "api_esim_analytics"
+},
+{
+"rule": "/api/esim/compare",
+"methods": [
+"GET"
+],
+"endpoint": "api_esim_compare"
+},
+{
+"rule": "/api/esim/destinations",
+"methods": [
+"GET"
+],
+"endpoint": "api_esim_destinations"
+},
+{
+"rule": "/api/esim/event",
+"methods": [
+"POST"
+],
+"endpoint": "api_esim_event"
+},
+{
+"rule": "/api/esim/push/subscribe",
+"methods": [
+"POST"
+],
+"endpoint": "api_esim_push_subscribe"
+},
+{
+"rule": "/api/esim/push/unsubscribe",
+"methods": [
+"DELETE",
+"POST"
+],
+"endpoint": "api_esim_push_unsubscribe"
+},
+{
+"rule": "/api/exchange-rates",
+"methods": [
+"GET"
+],
+"endpoint": "api_exchange_rates"
+},
+{
+"rule": "/api/executive-summary",
+"methods": [
+"GET"
+],
+"endpoint": "api_executive_summary"
+},
+{
+"rule": "/api/executive-summary/refresh",
+"methods": [
+"POST"
+],
+"endpoint": "api_executive_summary_refresh"
+},
+{
+"rule": "/api/global-banners",
+"methods": [
+"GET"
+],
+"endpoint": "api_global_banners"
+},
+{
+"rule": "/api/global-changes",
+"methods": [
+"GET"
+],
+"endpoint": "api_global_changes"
+},
+{
+"rule": "/api/global-plans",
+"methods": [
+"GET"
+],
+"endpoint": "api_global_plans"
+},
+{
+"rule": "/api/guest/<slug>",
+"methods": [
+"GET"
+],
+"endpoint": "api_guest_portal"
+},
+{
+"rule": "/api/guest/<slug>/event",
+"methods": [
+"POST"
+],
+"endpoint": "api_guest_event"
+},
+{
+"rule": "/api/guest/<slug>/qr.svg",
+"methods": [
+"GET"
+],
+"endpoint": "api_guest_qr"
+},
+{
+"rule": "/api/health",
+"methods": [
+"GET"
+],
+"endpoint": "api_health"
+},
+{
+"rule": "/api/history/analyze",
+"methods": [
+"GET"
+],
+"endpoint": "api_history_analyze"
+},
+{
+"rule": "/api/history/changes",
+"methods": [
+"GET"
+],
+"endpoint": "api_history_changes"
+},
+{
+"rule": "/api/history/daily",
+"methods": [
+"GET"
+],
+"endpoint": "api_history_daily"
+},
+{
+"rule": "/api/history/price-series",
+"methods": [
+"GET"
+],
+"endpoint": "api_history_price_series"
+},
+{
+"rule": "/api/history/price-series/batch",
+"methods": [
+"GET"
+],
+"endpoint": "api_history_price_series_batch"
+},
+{
+"rule": "/api/hotels",
+"methods": [
+"POST"
+],
+"endpoint": "api_hotels_create"
+},
+{
+"rule": "/api/hotels",
+"methods": [
+"GET"
+],
+"endpoint": "api_hotels_list"
+},
+{
+"rule": "/api/hotels/<slug>",
+"methods": [
+"DELETE"
+],
+"endpoint": "api_hotels_delete"
+},
+{
+"rule": "/api/hotels/<slug>",
+"methods": [
+"PATCH"
+],
+"endpoint": "api_hotels_update"
+},
+{
+"rule": "/api/hotels/<slug>/analytics",
+"methods": [
+"GET"
+],
+"endpoint": "api_hotels_analytics"
+},
+{
+"rule": "/api/hotels/lead",
+"methods": [
+"POST"
+],
+"endpoint": "api_hotels_lead"
+},
+{
+"rule": "/api/hotels/leads",
+"methods": [
+"GET"
+],
+"endpoint": "api_hotels_leads"
+},
+{
+"rule": "/api/invite/<token>",
+"methods": [
+"GET"
+],
+"endpoint": "api_get_invite"
+},
+{
+"rule": "/api/invite/<token>/accept",
+"methods": [
+"POST"
+],
+"endpoint": "api_accept_invite"
+},
+{
+"rule": "/api/maintenance/run-now",
+"methods": [
+"GET",
+"POST"
+],
+"endpoint": "api_maintenance_run_now"
+},
+{
+"rule": "/api/market-movers",
+"methods": [
+"GET"
+],
+"endpoint": "api_market_movers"
+},
+{
+"rule": "/api/mobile/compare",
+"methods": [
+"GET"
+],
+"endpoint": "api_mobile_compare"
+},
+{
+"rule": "/api/mobile/event",
+"methods": [
+"POST"
+],
+"endpoint": "api_mobile_event"
+},
+{
+"rule": "/api/mobile/push/subscribe",
+"methods": [
+"POST"
+],
+"endpoint": "api_mobile_push_subscribe"
+},
+{
+"rule": "/api/mobile/push/unsubscribe",
+"methods": [
+"DELETE",
+"POST"
+],
+"endpoint": "api_mobile_push_unsubscribe"
+},
+{
+"rule": "/api/mobile/reminders",
+"methods": [
+"POST"
+],
+"endpoint": "api_mobile_reminders_subscribe"
+},
+{
+"rule": "/api/mobile/reminders/run-now",
+"methods": [
+"GET",
+"POST"
+],
+"endpoint": "api_mobile_reminders_run_now"
+},
+{
+"rule": "/api/mobile/reminders/subscribers",
+"methods": [
+"GET"
+],
+"endpoint": "api_mobile_reminders_subscribers"
+},
+{
+"rule": "/api/mobile/reminders/unsubscribe",
+"methods": [
+"GET",
+"POST"
+],
+"endpoint": "api_mobile_reminders_unsubscribe"
+},
+{
+"rule": "/api/morning-check/now",
+"methods": [
+"GET",
+"POST"
+],
+"endpoint": "api_morning_check_now"
+},
+{
+"rule": "/api/my-context",
+"methods": [
+"GET"
+],
+"endpoint": "api_my_context"
+},
+{
+"rule": "/api/my-preferences",
+"methods": [
+"PATCH"
+],
+"endpoint": "api_update_my_preferences"
+},
+{
+"rule": "/api/my-role",
+"methods": [
+"GET"
+],
+"endpoint": "api_my_role"
+},
+{
+"rule": "/api/news",
+"methods": [
+"GET"
+],
+"endpoint": "api_news"
+},
+{
+"rule": "/api/ping",
+"methods": [
+"GET"
+],
+"endpoint": "api_ping"
+},
+{
+"rule": "/api/plans",
+"methods": [
+"GET"
+],
+"endpoint": "api_plans"
+},
+{
+"rule": "/api/provider-deals",
+"methods": [
+"GET"
+],
+"endpoint": "api_provider_deals"
+},
+{
+"rule": "/api/push/subscribe",
+"methods": [
+"POST"
+],
+"endpoint": "api_push_subscribe"
+},
+{
+"rule": "/api/push/test",
+"methods": [
+"GET"
+],
+"endpoint": "api_push_test"
+},
+{
+"rule": "/api/push/unsubscribe",
+"methods": [
+"DELETE"
+],
+"endpoint": "api_push_unsubscribe"
+},
+{
+"rule": "/api/push/vapid-public-key",
+"methods": [
+"GET"
+],
+"endpoint": "api_vapid_public_key"
+},
+{
+"rule": "/api/refresh-quota",
+"methods": [
+"GET"
+],
+"endpoint": "api_refresh_quota"
+},
+{
+"rule": "/api/reseller-plans",
+"methods": [
+"GET"
+],
+"endpoint": "api_reseller_plans"
+},
+{
+"rule": "/api/saved-views",
+"methods": [
+"POST"
+],
+"endpoint": "api_create_saved_view"
+},
+{
+"rule": "/api/saved-views",
+"methods": [
+"GET"
+],
+"endpoint": "api_get_saved_views"
+},
+{
+"rule": "/api/saved-views/<int:view_id>",
+"methods": [
+"DELETE"
+],
+"endpoint": "api_delete_saved_view"
+},
+{
+"rule": "/api/scrape-abroad-now",
+"methods": [
+"GET"
+],
+"endpoint": "api_scrape_abroad_now"
+},
+{
+"rule": "/api/scrape-all-now",
+"methods": [
+"GET"
+],
+"endpoint": "api_scrape_all_now"
+},
+{
+"rule": "/api/scrape-content-now",
+"methods": [
+"GET"
+],
+"endpoint": "api_scrape_content_now"
+},
+{
+"rule": "/api/scrape-global-now",
+"methods": [
+"GET"
+],
+"endpoint": "api_scrape_global_now"
+},
+{
+"rule": "/api/scrape-now",
+"methods": [
+"GET"
+],
+"endpoint": "api_scrape_now"
+},
+{
+"rule": "/api/scrape-progress/state",
+"methods": [
+"GET"
+],
+"endpoint": "api_scrape_progress_state"
+},
+{
+"rule": "/api/scrape-progress/stream",
+"methods": [
+"GET"
+],
+"endpoint": "api_scrape_progress_stream"
+},
+{
+"rule": "/api/scrape-resellers-now",
+"methods": [
+"GET"
+],
+"endpoint": "api_scrape_resellers_now"
+},
+{
+"rule": "/api/scraper-drift/now",
+"methods": [
+"GET",
+"POST"
+],
+"endpoint": "api_scraper_drift_now"
+},
+{
+"rule": "/api/settings/notifications",
+"methods": [
+"GET"
+],
+"endpoint": "api_get_notification_settings"
+},
+{
+"rule": "/api/settings/notifications",
+"methods": [
+"POST"
+],
+"endpoint": "api_set_notification_settings"
+},
+{
+"rule": "/api/social-sentiment",
+"methods": [
+"GET"
+],
+"endpoint": "api_social_sentiment"
+},
+{
+"rule": "/api/social-sentiment/refresh",
+"methods": [
+"POST"
+],
+"endpoint": "api_social_sentiment_refresh"
+},
+{
+"rule": "/api/store-banners",
+"methods": [
+"GET"
+],
+"endpoint": "api_store_banners"
+},
+{
+"rule": "/api/usa-plans",
+"methods": [
+"GET"
+],
+"endpoint": "api_usa_plans"
+},
+{
+"rule": "/api/usage/budget",
+"methods": [
+"POST"
+],
+"endpoint": "api_usage_set_budget"
+},
+{
+"rule": "/api/usage/official-cost",
+"methods": [
+"GET"
+],
+"endpoint": "api_usage_official_cost"
+},
+{
+"rule": "/api/usage/recent",
+"methods": [
+"GET"
+],
+"endpoint": "api_usage_recent"
+},
+{
+"rule": "/api/usage/summary",
+"methods": [
+"GET"
+],
+"endpoint": "api_usage_summary"
+},
+{
+"rule": "/api/users",
+"methods": [
+"POST"
+],
+"endpoint": "api_create_user"
+},
+{
+"rule": "/api/users",
+"methods": [
+"GET"
+],
+"endpoint": "api_get_users"
+},
+{
+"rule": "/api/users/<user_id>",
+"methods": [
+"DELETE"
+],
+"endpoint": "api_delete_user"
+},
+{
+"rule": "/api/users/<user_id>/password",
+"methods": [
+"POST"
+],
+"endpoint": "api_set_user_password"
+},
+{
+"rule": "/api/users/<user_id>/role",
+"methods": [
+"POST"
+],
+"endpoint": "api_update_user_role"
+},
+{
+"rule": "/api/watchlist",
+"methods": [
+"POST"
+],
+"endpoint": "api_add_to_watchlist"
+},
+{
+"rule": "/api/watchlist",
+"methods": [
+"GET"
+],
+"endpoint": "api_get_watchlist"
+},
+{
+"rule": "/api/watchlist",
+"methods": [
+"DELETE"
+],
+"endpoint": "api_remove_from_watchlist"
+},
+{
+"rule": "/api/workspace/branding",
+"methods": [
+"PATCH"
+],
+"endpoint": "api_workspace_branding"
+},
+{
+"rule": "/api/workspace/slack-test",
+"methods": [
+"POST"
+],
+"endpoint": "api_workspace_slack_test"
+},
+{
+"rule": "/api/workspaces",
+"methods": [
+"POST"
+],
+"endpoint": "api_create_workspace"
+},
+{
+"rule": "/api/workspaces",
+"methods": [
+"GET"
+],
+"endpoint": "api_list_workspaces"
+},
+{
+"rule": "/api/workspaces/<workspace_id>",
+"methods": [
+"PATCH"
+],
+"endpoint": "api_update_workspace"
+},
+{
+"rule": "/api/workspaces/<workspace_id>/invite",
+"methods": [
+"POST"
+],
+"endpoint": "api_create_invite"
+},
+{
+"rule": "/api/workspaces/<workspace_id>/invite-bulk",
+"methods": [
+"POST"
+],
+"endpoint": "api_create_invite_bulk"
+},
+{
+"rule": "/api/workspaces/<workspace_id>/trigger-digest",
+"methods": [
+"POST"
+],
+"endpoint": "api_trigger_digest"
+},
+{
+"rule": "/api/workspaces/<workspace_id>/users",
+"methods": [
+"POST"
+],
+"endpoint": "api_assign_workspace_user"
+},
+{
+"rule": "/api/workspaces/<workspace_id>/users",
+"methods": [
+"GET"
+],
+"endpoint": "api_workspace_users"
+},
+{
+"rule": "/api/workspaces/<workspace_id>/users/<user_id>",
+"methods": [
+"DELETE"
+],
+"endpoint": "api_unassign_workspace_user"
+},
+{
+"rule": "/archive-banners/<path:filepath>",
+"methods": [
+"GET"
+],
+"endpoint": "serve_archive_banner"
+},
+{
+"rule": "/banners/<string:filename>",
+"methods": [
+"GET"
+],
+"endpoint": "serve_banner"
+},
+{
+"rule": "/go/<provider>",
+"methods": [
+"GET"
+],
+"endpoint": "affiliate_redirect"
+},
+{
+"rule": "/go/<provider>/<plan_id>",
+"methods": [
+"GET"
+],
+"endpoint": "affiliate_redirect"
+},
+{
+"rule": "/robots.txt",
+"methods": [
+"GET"
+],
+"endpoint": "robots_txt"
+},
+{
+"rule": "/static/<path:filename>",
+"methods": [
+"GET"
+],
+"endpoint": "static"
+},
+{
+"rule": "/sw.js",
+"methods": [
+"GET"
+],
+"endpoint": "service_worker"
+}
+]

@@ -116,31 +116,39 @@ def test_history_price_series_builds_correct_timeline(client_with_history):
 
 # --- /api/history/analyze ---------------------------------------------------
 
-def test_history_analyze_invalid_plan_type_returns_400(client):
-    resp = client.get('/api/history/analyze?carrier=partner&plan_type=bad')
+@pytest.fixture
+def auth_headers(monkeypatch):
+    """/api/history/analyze is @require_auth (spends Anthropic USD) - send the server API key."""
+    import app as appmod
+    monkeypatch.setattr(appmod, "_get_api_key", lambda: "testkey")
+    return {"X-API-Key": "testkey"}
+
+
+def test_history_analyze_invalid_plan_type_returns_400(client, auth_headers):
+    resp = client.get('/api/history/analyze?carrier=partner&plan_type=bad', headers=auth_headers)
     assert resp.status_code == 400
 
-def test_history_analyze_no_data_returns_null(client):
-    resp = client.get('/api/history/analyze?carrier=nobody&plan_type=domestic')
+def test_history_analyze_no_data_returns_null(client, auth_headers):
+    resp = client.get('/api/history/analyze?carrier=nobody&plan_type=domestic', headers=auth_headers)
     data = json.loads(resp.data)
     assert resp.status_code == 200
     assert data['analysis'] is None
 
-def test_history_analyze_returns_analysis(client_with_history):
+def test_history_analyze_returns_analysis(client_with_history, auth_headers):
     mock_resp = MagicMock()
     mock_resp.json.return_value = {'content': [{'text': 'ניתוח בדיקה'}]}
     mock_resp.raise_for_status.return_value = None
     with patch('requests.post', return_value=mock_resp), \
          patch('app.load_config', return_value={'anthropic_api_key': 'test-key'}):
         resp = client_with_history.get(
-            '/api/history/analyze?carrier=partner&plan_type=domestic'
+            '/api/history/analyze?carrier=partner&plan_type=domestic', headers=auth_headers
         )
     data = json.loads(resp.data)
     assert resp.status_code == 200
     assert data['analysis'] == 'ניתוח בדיקה'
 
 
-def test_history_analyze_prompt_contains_carrier_and_type(client_with_history):
+def test_history_analyze_prompt_contains_carrier_and_type(client_with_history, auth_headers):
     mock_resp = MagicMock()
     mock_resp.json.return_value = {'content': [{'text': 'x'}]}
     mock_resp.raise_for_status.return_value = None
@@ -151,7 +159,7 @@ def test_history_analyze_prompt_contains_carrier_and_type(client_with_history):
     with patch('requests.post', side_effect=capture_post), \
          patch('app.load_config', return_value={'anthropic_api_key': 'test-key'}):
         client_with_history.get(
-            '/api/history/analyze?carrier=partner&plan_type=domestic'
+            '/api/history/analyze?carrier=partner&plan_type=domestic', headers=auth_headers
         )
     assert 'payload' in captured, "requests.post was never called"
     user_content = captured['payload']['messages'][0]['content']
