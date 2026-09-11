@@ -6,8 +6,25 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 const r = (p) => fileURLToPath(new URL(p, import.meta.url))
 
+// Dev-only twin of the Netlify `_redirects` clean URLs for the static legal
+// pages (/privacy, /terms, /cookies, /accessibility -> public/*.html). In
+// production Netlify rewrites them; in `vite dev` the SPA router would 404.
+const LEGAL_PAGES = ['privacy', 'terms', 'cookies', 'accessibility']
+const legalCleanUrls = () => ({
+  name: 'moca-legal-clean-urls',
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      const path = (req.url || '').split('?')[0]
+      const m = path.match(/^\/([a-z]+)\/?$/)
+      if (m && LEGAL_PAGES.includes(m[1])) req.url = req.url.replace(path, `/${m[1]}.html`)
+      next()
+    })
+  },
+})
+
 export default defineConfig({
   plugins: [
+    legalCleanUrls(),
     react(),
     tailwindcss(),
     VitePWA({
