@@ -26,30 +26,6 @@ COUPONS = [
         "source_url": "https://saily.com/",
         "notes": "MOCA's own affiliate coupon (aff_id 14705). Confirmed live for 10% by Saily Affiliate Team 2026-06-16. Earns commission for us.",
     },
-    {
-        "carrier": "saily",
-        "code": "GIZMODO",
-        "discount_label": "15% הנחה",
-        "is_active": False,
-        "source_url": "https://gizmodo.com/best-esim-provider/saily-coupon",
-        "notes": "DISABLED 2026-06-16 — superseded by our own MOCA code. Third-party (Gizmodo affiliate), earns us nothing.",
-    },
-    {
-        "carrier": "saily",
-        "code": "TECHNOVICE",
-        "discount_label": "10% הנחה",
-        "is_active": False,
-        "source_url": "https://www.technovice.net/en/post/saily-coupon-codes-2026-tested",
-        "notes": "DISABLED 2026-06-16 — superseded by our own MOCA code. Third-party, earns us nothing.",
-    },
-    {
-        "carrier": "saily",
-        "code": "ESIMP",
-        "discount_label": "10% הנחה",
-        "is_active": False,
-        "source_url": "https://esimplanet.io/en/promos/saily",
-        "notes": "DISABLED 2026-06-16 — superseded by our own MOCA code. Third-party, earns us nothing.",
-    },
 
     # ── Voye Global ───────────────────────────────────────────────────────
     # OUR OWN affiliate code (Impact campaign 25196). Confirmed live for 15% by
@@ -150,52 +126,10 @@ COUPONS = [
         "notes": "MOCA's own affiliate coupon (Puremium/HasOffers offer 23, Affiliate ID 1968). Confirmed live for 10% customer discount by Rana Doula / Puremium 2026-07-06. Earns 15% commission on first conversion, 30-day cookie.",
     },
 
-    # ── Holafly ───────────────────────────────────────────────────────────
-    # DISABLED 2026-07-03 — all three are THIRD-PARTY codes (adamandlinds,
-    # stephandpete, cybernews affiliates), so a competitor earns the commission,
-    # not us. We have NO active Holafly affiliate agreement (applied via Impact
-    # 06-13, no approval since), so these must not render. Re-enable ONLY with a
-    # MOCA-owned Holafly code once the Impact contract is live.
-    {
-        "carrier": "holafly",
-        "code": "ADAMANDLINDS",
-        "discount_label": "10% חודשי / 5% חבילה",
-        "is_active": False,
-        "source_url": "https://www.adamandlinds.com/blog/holafly-discount-code-2026/",
-        "notes": "DISABLED 2026-07-03 — third-party (adamandlinds affiliate), credits a competitor, earns us nothing. No active MOCA Holafly deal.",
-    },
-    {
-        "carrier": "holafly",
-        "code": "STEPHANDPETE",
-        "discount_label": "5% / 10% שנתי",
-        "is_active": False,
-        "source_url": "https://stephandpete.co/blog/blog/holafly-march-2026-codes",
-        "notes": "DISABLED 2026-07-03 — third-party (stephandpete affiliate), credits a competitor, earns us nothing. No active MOCA Holafly deal.",
-    },
-    {
-        "carrier": "holafly",
-        "code": "MYESIMNOW5",
-        "discount_label": "5% הנחה",
-        "is_active": False,
-        "source_url": "https://cybernews.com/esim-coupon-codes/holafly/",
-        "notes": "DISABLED 2026-07-03 — third-party (cybernews list), credits a competitor, earns us nothing. No active MOCA Holafly deal.",
-    },
+    # ── Holafly ── no MOCA-owned code yet (Impact application pending); the third-party
+    # codes were DELETED 2026-09-11 at the operator's request - never re-add them.
 
-    # ── Airalo via Gooday (external offer — per-user code) ────────────────
-    # Gooday issues a unique single-use 20%-off code after phone verification, so
-    # we can't seed a static code. Instead we render a link-out tile that sends
-    # the user to gooday's Airalo page where they get a personal code.
-    # See https://www.gooday.co.il/הטבות/Airalo
-    {
-        "carrier": "airalo",
-        "code": "GOODAY",  # synthetic — satisfies UNIQUE(carrier, code); not shown when external_offer_url is set
-        "discount_label": "20% הנחה (קוד אישי)",
-        "is_active": False,
-        "partner_name": "גודיי",
-        "external_offer_url": "https://www.gooday.co.il/%D7%94%D7%98%D7%91%D7%95%D7%AA/Airalo",
-        "source_url": "https://www.gooday.co.il/%D7%94%D7%98%D7%91%D7%95%D7%AA/Airalo",
-        "notes": "DISABLED 2026-07-03 — Gooday's external link-out offer, not a MOCA-owned code, earns us nothing. Per-user single-use code via Gooday (phone+email verification, max 4/month).",
-    },
+    # ── Airalo ── the Gooday link-out entry was DELETED 2026-09-11 (third-party offer).
 
     # ── GigSky (Everflow network) ─────────────────────────────────────────
     # OUR OWN affiliate code. Alex Dufort (Head of Partnerships, GigSky) created
