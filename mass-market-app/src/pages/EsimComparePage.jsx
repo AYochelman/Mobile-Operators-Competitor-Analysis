@@ -6,6 +6,7 @@ import { DEST_ISO_BY_HE, DEST_BY_HE, destLabel, destInHe } from '../data/hotelDe
 import { DEST_BG_BY_HE } from '../data/destBg'
 import { PROVIDER_LOGOS } from '../data/providerLogos'
 import BoltMark from '../components/BoltMark'
+import CookieBanner from '../components/CookieBanner'
 import { miniMarkup } from '../lib/miniMarkup'
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -61,13 +62,17 @@ function WizBg({ url, className = 'wiz-bg' }) {
   return <div className={className} key={shown} style={{ backgroundImage: `url(${shown})` }} aria-hidden="true" />
 }
 
+
+// Visually hidden but announced by screen readers (live regions / extra context)
+const SR = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }
+
 const T = {
   he: {
     dir: 'rtl', other: 'EN', otherLang: 'en',
     brandTag: 'השוואת eSIM',
     heroTitle: 'כמה תשלמו על אינטרנט בטיול הבא?',
     heroTitleDest: 'חבילות eSIM {inCountry}',
-    heroSub: 'השוואת מחירים חינמית, בלי הרשמה. מוצאים את החבילה המשתלמת ביותר לטיול, מ-38 ספקי eSIM גלובליים.',
+    heroSub: 'השוואת מחירים חינמית, בלי הרשמה. מוצאים חבילה מתאימה לטיול מתוך ההצעות של 38 ספקי eSIM גלובליים.',
     updated: 'המחירים עודכנו',
     pickTitle: 'לאן טסים?',
     pickSub: 'בחרו יעד ונראה לכם את החבילות הזולות ביותר',
@@ -95,14 +100,14 @@ const T = {
     days: [{ v: 3, l: '3 ימים' }, { v: 7, l: 'שבוע' }, { v: 14, l: 'שבועיים' }, { v: 30, l: 'חודש' }],
     data: [{ v: 3, l: 'קל', s: '3GB · ניווט והודעות' }, { v: 10, l: 'רגיל', s: '10GB · + רשתות' }, { v: 20, l: 'כבד', s: '20GB · + וידאו' }, { v: 'unl', l: 'ללא הגבלה', s: 'בלי לחשוב' }],
     filters: [{ v: 'all', l: 'הכל' }, { v: 'esim', l: 'eSIM' }, { v: 'unl', l: 'ללא הגבלה' }],
-    badges: ['הכי משתלם', 'הזול ביותר', 'הכי הרבה דאטה', 'כדאי גם'],
+    badges: ['ההמלצה שלנו', 'הזול ביותר בסינון', 'הכי הרבה דאטה', 'כדאי גם'],
     unlimited: 'ללא הגבלה', daysU: 'ימים', dayU: 'יום', get: 'למעבר לרכישה ↗', perGB: '/GB',
     perks: { instant: 'eSIM מיידי', unlimited: 'דאטה ללא הגבלה' },
     empty: 'אין חבילות שמתאימות לסינון הזה - נסו אפשרות אחרת.',
     emptyDest: 'אין כרגע חבילות ליעד הזה. נסו יעד אחר.',
     loading: 'טוענים את ההצעות המשתלמות…',
     couponLabel: 'קוד {code} · {pct} הנחה', couponNoPct: 'קוד הנחה: {code}', couponCopy: 'העתקה', couponCopied: 'הועתק ✓',
-    poweredFree: 'חינם תמיד · ללא הרשמה',
+    poweredFree: 'חינם · ללא הרשמה',
     alertTitle: 'לקבל התראה כשהמחיר ל{country} יורד?',
     alertSub: 'נשלח התראה כשמופיעה חבילה זולה יותר. התראה אחת לכל מכשיר, בלי ספאם.',
     alertBtn: 'הפעלת התראה', alertBusy: 'רק רגע…',
@@ -116,13 +121,16 @@ const T = {
     installBtn: 'הוספה למסך הבית',
     installIos: 'בספארי: כפתור השיתוף ואז "הוספה למסך הבית". האפליקציה המותקנת יכולה גם לקבל התראות.',
     privacyL: 'מדיניות פרטיות', termsL: 'תנאי שימוש',
+    cookiesL: 'מדיניות עוגיות', accessL: 'הצהרת נגישות',
+    toLangAria: 'Switch to English', closeL: 'סגירה', skipL: 'דילוג לתוכן',
+    external: 'אתר חיצוני, נפתח בחלון חדש', resultsAria: 'תוצאות חיפוש יעד', found: 'נמצאו',
   },
   en: {
     dir: 'ltr', other: 'עב', otherLang: 'he',
     brandTag: 'eSIM Compare',
     heroTitle: 'How much will data cost on your next trip?',
     heroTitleDest: 'eSIM plans for {country}',
-    heroSub: 'Free price comparison, no sign-up. Find the best-value plan for your trip across 38 global eSIM providers.',
+    heroSub: 'Free price comparison, no sign-up. Find a plan that fits your trip from the offers of 38 global eSIM providers.',
     updated: 'Prices updated',
     pickTitle: 'Where are you flying?',
     pickSub: 'Pick a destination and we’ll show the cheapest plans',
@@ -150,14 +158,14 @@ const T = {
     days: [{ v: 3, l: '3 days' }, { v: 7, l: '1 week' }, { v: 14, l: '2 weeks' }, { v: 30, l: '1 month' }],
     data: [{ v: 3, l: 'Light', s: '3GB · maps & chat' }, { v: 10, l: 'Regular', s: '10GB · + social' }, { v: 20, l: 'Heavy', s: '20GB · + video' }, { v: 'unl', l: 'Unlimited', s: 'no limits' }],
     filters: [{ v: 'all', l: 'All' }, { v: 'esim', l: 'eSIM' }, { v: 'unl', l: 'Unlimited' }],
-    badges: ['BEST VALUE', 'CHEAPEST', 'MAX DATA', 'ALSO GREAT'],
+    badges: ['OUR PICK', 'CHEAPEST IN FILTER', 'MAX DATA', 'ALSO GREAT'],
     unlimited: 'Unlimited', daysU: 'days', dayU: 'day', get: 'Get this deal ↗', perGB: '/GB',
     perks: { instant: 'Instant eSIM', unlimited: 'Unlimited data' },
     empty: 'No deals match this filter - try another option.',
     emptyDest: 'No deals for this destination right now. Try another one.',
     loading: 'Loading the best deals…',
     couponLabel: 'Code {code} · {pct} off', couponNoPct: 'Discount code: {code}', couponCopy: 'copy', couponCopied: 'copied ✓',
-    poweredFree: 'Always free · no sign-up',
+    poweredFree: 'Free · no sign-up',
     alertTitle: 'Get an alert when {country} prices drop?',
     alertSub: 'We notify you when a cheaper plan appears. One alert per device, no spam.',
     alertBtn: 'Enable alert', alertBusy: 'One sec…',
@@ -171,15 +179,23 @@ const T = {
     installBtn: 'Add to home screen',
     installIos: 'In Safari: tap Share, then "Add to Home Screen". The installed app can also receive alerts.',
     privacyL: 'Privacy policy', termsL: 'Terms of use',
+    cookiesL: 'Cookie policy', accessL: 'Accessibility statement',
+    toLangAria: 'עבור לעברית', closeL: 'Close', skipL: 'Skip to content',
+    external: 'external site, opens in a new tab', resultsAria: 'Destination search results', found: 'Found',
   },
 }
 
 const DATE_LOCALES = { en: 'en-GB', he: 'he-IL' }
 
 const CSS = `
-#esim-app{--c1:#5c3317;--c2:#c9622f;--bg:#f9f4ee;--cream:#f5ede0;--ink:#3b1f0d;--sub:#8a6a4a;--muted:#a08468;--line:#e0cdb5;--card:#fff;--down:#4a7c3f;--coupon:#d1332e;--r:20px;
+#esim-app{--c1:#5c3317;--c2:#c9622f;--bg:#f9f4ee;--cream:#f5ede0;--ink:#3b1f0d;--sub:#7d5f40;--muted:#6f553b;--line:#e0cdb5;--card:#fff;--down:#4a7c3f;--down-text:#3d6a33;--coupon:#d1332e;--r:20px;
   font-family:'Assistant',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased}
 #esim-app *{box-sizing:border-box;margin:0;padding:0}
+#esim-app :focus-visible{outline:3px solid var(--c1);outline-offset:2px}
+#esim-app .hero :focus-visible{outline-color:#fff}
+#esim-app .skip{position:absolute;inset-inline-start:-999px;top:8px;background:#fff;color:var(--c1);padding:8px 14px;border-radius:8px;font-weight:800;z-index:100}
+#esim-app .skip:focus{inset-inline-start:12px}
+#esim-app a{color:#8f3f16}
 #esim-app .page{max-width:560px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
 #esim-app .hero{position:relative;overflow:hidden;color:#fff;background:linear-gradient(150deg,var(--c1),color-mix(in srgb,var(--c1),#000 32%));padding:22px 22px 30px;border-radius:0 0 30px 30px}
 #esim-app .hero::before{content:"";position:absolute;inset:auto -70px -120px auto;width:260px;height:260px;border-radius:50%;background:color-mix(in srgb,var(--c2),transparent 70%)}
@@ -189,12 +205,12 @@ const CSS = `
 #esim-app .brand{display:flex;align-items:center;gap:10px}
 #esim-app .bolt{width:40px;height:40px;border-radius:12px;background:#fff;color:var(--c1);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 #esim-app .brand-name{font-weight:800;font-size:17px;line-height:1;letter-spacing:.3px}
-#esim-app .brand-tag{font-size:10px;letter-spacing:2.2px;opacity:.78;font-weight:600;margin-top:3px}
-#esim-app .lang{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+#esim-app .brand-tag{font-size:11px;letter-spacing:2px;opacity:.92;font-weight:600;margin-top:3px}
+#esim-app .lang{border:1.5px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
 #esim-app .hero h1{font-size:25px;font-weight:800;line-height:1.2;margin-bottom:9px}
 #esim-app .hero p{font-size:14.5px;line-height:1.5;opacity:.9;max-width:40ch}
 #esim-app .updated{display:inline-flex;align-items:center;gap:7px;margin-top:16px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600}
-#esim-app .dot{width:7px;height:7px;border-radius:50%;background:#7fd99b;box-shadow:0 0 0 3px rgba(127,217,155,.25);animation:epulse 2s infinite}
+#esim-app .dot{width:7px;height:7px;border-radius:50%;background:#7fd99b;box-shadow:0 0 0 3px rgba(127,217,155,.25)}
 @keyframes epulse{50%{box-shadow:0 0 0 6px rgba(127,217,155,.08)}}
 #esim-app main{padding:18px 16px 8px;display:flex;flex-direction:column;gap:20px;flex:1}
 #esim-app .card{background:var(--card);border-radius:var(--r);padding:18px;box-shadow:0 6px 24px rgba(70,45,20,.07)}
@@ -205,7 +221,7 @@ const CSS = `
 #esim-app .search-wrap{position:relative}
 #esim-app .search{width:100%;border:1.6px solid var(--line);background:var(--bg);border-radius:14px;padding:13px 44px 13px 14px;font:inherit;font-size:15px;font-weight:600;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}
 #esim-app[dir=ltr] .search{padding:13px 14px 13px 44px}
-#esim-app .search:focus{border-color:var(--c2);box-shadow:0 0 0 3px color-mix(in srgb,var(--c2),transparent 82%)}
+#esim-app .search:focus-visible{border-color:var(--c1);outline:3px solid var(--c1);outline-offset:2px}
 #esim-app .search-ic{position:absolute;inset-inline-end:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
 #esim-app .results{margin-top:8px;border:1px solid var(--line);border-radius:14px;overflow:hidden;max-height:298px;overflow-y:auto}
 #esim-app .res{display:flex;align-items:center;gap:11px;width:100%;border:0;border-bottom:1px solid var(--cream);background:#fff;padding:11px 14px;font:inherit;cursor:pointer;text-align:start;transition:background .12s}
@@ -244,6 +260,7 @@ const CSS = `
 #esim-app .cpill svg{width:14px;height:14px;flex:none}
 #esim-app .prov-select{position:relative;flex:none}
 #esim-app .prov-select select{appearance:none;-webkit-appearance:none;border:1.5px solid var(--line);background:#fff;color:var(--c1);border-radius:999px;padding-block:6px;padding-inline-start:13px;padding-inline-end:30px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;outline:none;max-width:180px;text-overflow:ellipsis;transition:border-color .15s}
+#esim-app .prov-select select:focus-visible{outline:3px solid var(--c1);outline-offset:2px}
 #esim-app .prov-select select:focus{border-color:var(--c2)}
 #esim-app .prov-select .chev{position:absolute;inset-inline-end:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted)}
 #esim-app .wizard{position:relative;overflow:hidden}
@@ -301,7 +318,7 @@ const CSS = `
 #esim-app footer{padding:18px 16px 30px;text-align:center}
 #esim-app .powered{font-size:12.5px;color:var(--sub);font-weight:600}
 #esim-app .powered b{color:var(--ink)}
-#esim-app .freepill{display:inline-block;margin-bottom:8px;font-size:11.5px;font-weight:800;letter-spacing:.4px;color:var(--down);background:#e3f3e9;border-radius:999px;padding:4px 12px}
+#esim-app .freepill{display:inline-block;margin-bottom:8px;font-size:11.5px;font-weight:800;letter-spacing:.4px;color:var(--down-text);background:#e3f3e9;border-radius:999px;padding:4px 12px}
 #esim-app .disclaim{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;max-width:46ch;margin-inline:auto}
 #esim-app .splash{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:var(--c1);text-align:center;padding:30px}
 #esim-app .spin{width:34px;height:34px;border-radius:50%;border:3px solid color-mix(in srgb,var(--c1),transparent 78%);border-top-color:var(--c1);animation:espin .8s linear infinite}
@@ -515,7 +532,7 @@ function InstallCard({ t, canPrompt, onPrompt, onDismiss }) {
   const [iosOpen, setIosOpen] = useState(false)
   return (
     <section className="card alertcard reveal">
-      <button type="button" className="dismiss-x" onClick={onDismiss} aria-label="close">✕</button>
+      <button type="button" className="dismiss-x" onClick={onDismiss} aria-label={t.closeL}>✕</button>
       <div className="alert-ic">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="5" y="2" width="14" height="20" rx="2" /><path d="M12 18h.01" />
@@ -663,8 +680,8 @@ export default function EsimComparePage() {
   useEffect(() => {
     const CANON = 'https://mocaintel.com/esim-deals'
     const DESC = lang === 'he'
-      ? 'השוואת מחירי eSIM חינמית לטיול בחו"ל, בלי הרשמה. מוצאים את החבילה המשתלמת ביותר מתוך 38 ספקי eSIM גלובליים, מתעדכן פעמיים ביום.'
-      : 'Free eSIM price comparison for your trip abroad, no sign-up. Find the best-value plan across 38 global eSIM providers, refreshed twice a day.'
+      ? 'השוואת מחירי eSIM חינמית לטיול בחו"ל, בלי הרשמה. מוצאים חבילה מתאימה מתוך ההצעות של 38 ספקי eSIM גלובליים, מתעדכן פעמיים ביום.'
+      : 'Free eSIM price comparison for your trip abroad, no sign-up. Find a plan that fits from 38 global eSIM providers, refreshed twice a day.'
     const head = document.head
 
     let canon = head.querySelector('link[rel="canonical"]')
@@ -704,7 +721,15 @@ export default function EsimComparePage() {
     next.set('dest', he)
     setParams(next, { replace: true })
     requestAnimationFrame(() => {
-      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
+      setTimeout(() => {
+        const el = resultsRef.current
+        if (!el) return
+        const reduce = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+        // The picker button that was activated is unmounted - move focus to the results.
+        el.setAttribute('tabindex', '-1')
+        el.focus({ preventScroll: true })
+      }, 60)
     })
   }
   const clearDest = () => {
@@ -947,6 +972,7 @@ export default function EsimComparePage() {
     <div id="esim-app" dir={t.dir}>
       <style>{CSS}</style>
       <div className="page">
+        <a href="#esim-main" className="skip">{t.skipL}</a>
         <header className="hero">
           <div className="hero-top">
             <div className="brand">
@@ -956,14 +982,14 @@ export default function EsimComparePage() {
                 <div className="brand-tag">{t.brandTag}</div>
               </div>
             </div>
-            <button type="button" className="lang" onClick={switchLang}>{t.other}</button>
+            <button type="button" className="lang" onClick={switchLang} aria-label={t.toLangAria}>{t.other}</button>
           </div>
           <h1>{dest ? fillCountry(t.heroTitleDest) : t.heroTitle}</h1>
           <p>{t.heroSub}</p>
           {dest && updatedStr && <div className="updated"><span className="dot" /><span>{updatedStr}</span></div>}
         </header>
 
-        <main>
+        <main id="esim-main">
           {/* ── Destination picker (the entry point) ─────────────────────── */}
           {!dest ? (
             <section className="card picker">
@@ -979,9 +1005,10 @@ export default function EsimComparePage() {
                   <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
                 </svg>
               </div>
+              {query.trim() && <span style={SR} aria-live="polite">{results.length ? `${t.found} ${results.length}` : t.noResults}</span>}
               {query.trim() && (
                 results.length ? (
-                  <div className="results">
+                  <div className="results" role="group" aria-label={t.resultsAria}>
                     {results.map((d) => (
                       <button type="button" className="res" key={d.he} onClick={() => chooseDest(d.he)}>
                         <Flag he={d.he} />
@@ -1019,7 +1046,7 @@ export default function EsimComparePage() {
 
           {/* ── Results (after a destination is chosen) ──────────────────── */}
           {dest && loading && (
-            <div className="splash"><div className="spin" /><div style={{ fontWeight: 700 }}>{t.loading}</div></div>
+            <div className="splash" role="status"><div className="spin" aria-hidden="true" /><div style={{ fontWeight: 700 }}>{t.loading}</div></div>
           )}
 
           {dest && !loading && deals.length === 0 && (
@@ -1034,14 +1061,14 @@ export default function EsimComparePage() {
                 <div className="q">{t.qDays}</div>
                 <div className="chips">
                   {t.days.map((o) => (
-                    <button key={o.v} type="button" className={`chip${o.v === stay ? ' on' : ''}`} onClick={() => setStay(o.v)}>{o.l}</button>
+                    <button key={o.v} type="button" className={`chip${o.v === stay ? ' on' : ''}`} aria-pressed={o.v === stay} onClick={() => setStay(o.v)}>{o.l}</button>
                   ))}
                 </div>
                 <div className="q">{t.qData}</div>
                 <div className="chips">
                   {t.data.map((o) => (
                     <button key={o.v} type="button" className={`chip${String(o.v) === String(dataNeed) ? ' on' : ''}`}
-                      onClick={() => setDataNeed(o.v === 'unl' ? 'unl' : o.v)}>
+                      aria-pressed={String(o.v) === String(dataNeed)} onClick={() => setDataNeed(o.v === 'unl' ? 'unl' : o.v)}>
                       {o.l}<small>{o.s}</small>
                     </button>
                   ))}
@@ -1085,7 +1112,7 @@ export default function EsimComparePage() {
                   <div className={`pick${i === 0 ? ' first' : ''}`} key={i}>
                     {badges.map((b) => <span className={`badge ${cls[b]}`} key={b}>{t.badges[b]}</span>)}
                     <DealCore d={d} />
-                    <button type="button" className="get" onClick={() => openDeal(d)}>{t.get}</button>
+                    <button type="button" className="get" onClick={() => openDeal(d)} aria-label={`${t.get} - ${(providers[d.provider] || {}).label || d.provider} (${t.external})`}>{t.get}</button>
                   </div>
                 )) : <div className="card empty">{t.empty}</div>}
               </section>
@@ -1093,9 +1120,10 @@ export default function EsimComparePage() {
               <section className="reveal">
                 <div className="all-head">
                   <h2 className="sec" style={{ marginBottom: 0 }}>{t.allDeals}</h2>
+                  <span style={SR} aria-live="polite">{list.length} {t.deals}</span>
                   <div className="filters">
                     {t.filters.map((o) => (
-                      <button key={o.v} type="button" className={`fpill${o.v === filter ? ' on' : ''}`} onClick={() => setFilter(o.v)}>{o.l}</button>
+                      <button key={o.v} type="button" className={`fpill${o.v === filter ? ' on' : ''}`} aria-pressed={o.v === filter} onClick={() => setFilter(o.v)}>{o.l}</button>
                     ))}
                   </div>
                 </div>
@@ -1103,7 +1131,7 @@ export default function EsimComparePage() {
                   <div className="deal" key={i}>
                     <DealCore d={d} />
                     <div className="deal-bottom">
-                      <button type="button" className="get" onClick={() => openDeal(d)}>{t.get}</button>
+                      <button type="button" className="get" onClick={() => openDeal(d)} aria-label={`${t.get} - ${(providers[d.provider] || {}).label || d.provider} (${t.external})`}>{t.get}</button>
                     </div>
                   </div>
                 )) : <div className="card empty">{t.empty}</div>}
@@ -1147,9 +1175,14 @@ export default function EsimComparePage() {
             <a href={`/privacy${lang === 'en' ? '?lang=en' : ''}`}>{t.privacyL}</a>
             {' · '}
             <a href={`/terms${lang === 'en' ? '?lang=en' : ''}`}>{t.termsL}</a>
+            {' · '}
+            <a href={`/cookies${lang === 'en' ? '?lang=en' : ''}`}>{t.cookiesL}</a>
+            {' · '}
+            <a href={`/accessibility${lang === 'en' ? '?lang=en' : ''}`}>{t.accessL}</a>
           </div>
         </footer>
       </div>
+      <CookieBanner lang={lang} />
     </div>
   )
 }

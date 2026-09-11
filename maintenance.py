@@ -14,6 +14,10 @@ turns the one-time scripts/db_compress_and_prune.py into a standing schedule:
                                           instead of replaying the change log.
   weekly  prune_change_logs()          - delete *_changes rows older than
                                           `changes_retention_days` (default 180).
+          prune_personal_data()        - retention for analytics beacons (hashed
+                                          IP + UA, 13 months), user_activity (180d),
+                                          hotel_leads (24 months), finished
+                                          reminders (90d) - see PERSONAL_RETENTION.
           thin_archive_snapshots()     - OPTIONAL (config `archive_thin_after_days`,
                                           default off): beyond N days keep only
                                           one snapshot per week per carrier/type.
@@ -36,7 +40,7 @@ import logging
 import os
 import sqlite3
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import db
 
@@ -125,6 +129,50 @@ def thin_archive_snapshots(after_days, keep_weekday=0, db_path=None, dry_run=Fal
         if drop and not dry_run:
             conn.executemany("DELETE FROM archive_snapshots WHERE id = ?", [(i,) for i in drop])
             _log(conn, "thin_archive", out)
+        conn.commit()
+    finally:
+        conn.close()
+    return out
+
+
+# ── personal-data retention ──────────────────────────────────────────────────
+# Tables that hold hashed IPs / user agents / contact details. Nothing deleted
+# them before 2026-09-11; the privacy policy now states these periods, so keep
+# the two in sync (config.json knobs override the defaults).
+PERSONAL_RETENTION = {
+    # table: (timestamp column, config knob, default days, extra WHERE)
+    "esim_events":      ("created_at", "analytics_retention_days", 395, ""),
+    "mobile_events":    ("created_at", "analytics_retention_days", 395, ""),
+    "guest_events":     ("created_at", "analytics_retention_days", 395, ""),
+    "affiliate_clicks": ("clicked_at", "analytics_retention_days", 395, ""),
+    "user_activity":    ("created_at", "activity_retention_days", 180, ""),
+    "hotel_leads":      ("created_at", "leads_retention_days", 730, ""),
+    # finished reminders (plan_end sent / unsubscribed rows are hard-deleted already)
+    "mobile_reminders": ("created_at", "reminders_done_retention_days", 90, " AND done = 1"),
+}
+
+
+def prune_personal_data(config=None, db_path=None, dry_run=False):
+    """Delete personal-data rows past their retention period. Returns
+    {table: deleted_or_would_delete_count, ...}."""
+    config = config or {}
+    out = {"dry_run": bool(dry_run)}
+    conn = _conn(db_path)
+    try:
+        for table, (col, knob, default_days, extra) in PERSONAL_RETENTION.items():
+            days = int(config.get(knob, default_days))
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S")
+            # created_at is written both as naive local ISO and as UTC ISO ("+00:00")
+            # across tables; string comparison on the date prefix is what we need.
+            try:
+                n = conn.execute(f"SELECT COUNT(*) FROM {table} WHERE {col} < ?{extra}", (cutoff,)).fetchone()[0]
+            except sqlite3.OperationalError:
+                continue
+            out[table] = int(n)
+            if n and not dry_run:
+                conn.execute(f"DELETE FROM {table} WHERE {col} < ?{extra}", (cutoff,))
+        if not dry_run:
+            _log(conn, "prune_personal", out)
         conn.commit()
     finally:
         conn.close()
@@ -338,6 +386,7 @@ def run_weekly(config=None, db_path=None, dry_run=None, force_vacuum=False, now=
     now = now or datetime.now()
     report = {"dry_run": dry_run, "started": now.isoformat(timespec="seconds")}
     report["prune"] = prune_change_logs(int(config.get("changes_retention_days", 180)), db_path=db_path, dry_run=dry_run)
+    report["personal"] = prune_personal_data(config, db_path=db_path, dry_run=dry_run)
     thin_days = config.get("archive_thin_after_days")
     if thin_days:
         report["thin_archive"] = thin_archive_snapshots(int(thin_days), int(config.get("archive_keep_weekday", 0)),

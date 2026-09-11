@@ -18,8 +18,12 @@
 # Google Play / app stores get as the public privacy-policy link.
 https://esim.mocaintel.com/privacy  /privacy.html  200!
 https://esim.mocaintel.com/terms    /terms.html    200!
-/privacy     /privacy.html   200!
-/terms       /terms.html     200!
+https://esim.mocaintel.com/cookies  /cookies.html  200!
+https://esim.mocaintel.com/accessibility  /accessibility.html  200!
+/privacy       /privacy.html        200!
+/terms         /terms.html          200!
+/cookies       /cookies.html        200!
+/accessibility /accessibility.html  200!
 # esim.mocaintel.com = the public B2C eSIM-compare microsite. Serve the eSIM SPA
 # shell (esim.html: same SPA boot as index.html, but with a canonical pointing at
 # the apex https://mocaintel.com/esim-deals) for the whole host, so App.jsx

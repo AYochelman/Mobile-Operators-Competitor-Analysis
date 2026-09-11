@@ -7,6 +7,7 @@ import { CARRIER_HOME_URLS } from '../data/carrierHomeUrls'
 import { getCountriesForAbroadPlan } from '../data/abroadCountries'
 import { getAppsForPlan } from '../data/abroadApps'
 import BoltMark from '../components/BoltMark'
+import CookieBanner from '../components/CookieBanner'
 import { miniMarkup } from '../lib/miniMarkup'
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -24,6 +25,35 @@ const fmtNum = (n) => {
   if (n == null) return ''
   const r = Math.round(n * 100) / 100
   return Number.isInteger(r) ? String(r) : r.toFixed(2).replace(/0$/, '')
+}
+
+
+// Visually hidden but announced by screen readers (live regions / extra context)
+const SR = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }
+
+// Version of the reminder consent wording; stored server-side with each signup.
+const CONSENT_TEXT_VERSION = '2026-09-11'
+
+// Accessible dialog behaviour shared by the modals: move focus into the dialog
+// on open, keep Tab inside it, close on Escape, and return focus to the element
+// that opened it (WCAG 2.4.3 / 4.1.2).
+function useDialogFocus(ref, onClose) {
+  useEffect(() => {
+    const prev = document.activeElement
+    const el = ref.current
+    if (el) el.focus({ preventScroll: true })
+    const onKey = (e) => {
+      if (e.key === 'Escape') { onClose(); return }
+      if (e.key !== 'Tab' || !el) return
+      const f = el.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')
+      if (!f.length) return
+      const first = f[0], last = f[f.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => { window.removeEventListener('keydown', onKey); if (prev && prev.focus) prev.focus({ preventScroll: true }) }
+  }, [ref, onClose])
 }
 
 const T = {
@@ -90,7 +120,7 @@ const T = {
     alertErr: 'לא הצלחנו להפעיל את ההתראה. נסו שוב בעוד רגע.',
     remBell: 'עדכונים על המסלול הזה',
     remTitle: 'עדכונים על המסלול הזה',
-    remSub: 'השאירו מייל או וואטסאפ ונעדכן אתכם. בלי ספאם - בכל הודעה יש קישור הסרה.',
+    remSub: 'השאירו מייל או וואטסאפ ונעדכן אתכם. בכל הודעה יש קישור הסרה.',
     remOpt1: 'חבילה דומה במחיר טוב יותר',
     remOpt1Sub: 'נשווה מול כל המפעילים ונעדכן כשמופיעה חבילה עם לפחות אותה גלישה במחיר נמוך יותר.',
     remOpt2: 'תזכורת לסיום תקופת המסלול',
@@ -117,7 +147,7 @@ const T = {
     remErrContact: 'צריך למלא אימייל או מספר וואטסאפ.',
     remErrKinds: 'בחרו לפחות סוג עדכון אחד.',
     remErrDate: 'בחרו תאריך סיום עתידי.',
-    remPrivacy: 'הפרטים משמשים רק לשליחת העדכונים שביקשתם, ולא מועברים לאף גורם אחר.',
+    remPrivacy: 'הפרטים משמשים רק לשליחת העדכונים שביקשתם ונשמרים עד להסרה. המשלוח נעשה דרך ספקי מייל ווואטסאפ מטעמנו. פרטים מלאים ב',
     // Per-plan-type overrides for the reminder modal (roaming packages are
     // one-time buys; content dates are user-chosen, e.g. a free-trial end).
     remByType: {
@@ -143,15 +173,21 @@ const T = {
     countriesN: '{n} מדינות',
     appsN: 'גלישה חופשית ב-{n} אפליקציות',
     esimCross: 'טסים לחו"ל? כדאי להשוות גם eSIM גלובלי',
-    esimCrossSub: 'חבילות eSIM ל-190+ יעדים מ-38 ספקים, לרוב זולות משמעותית מחבילות נדידה.',
+    esimCrossSub: 'חבילות eSIM ליותר מ-150 יעדים מ-38 ספקים - שווה להשוות מול חבילת הנדידה של המפעיל.',
     esimCrossBtn: 'להשוואת eSIM ↗',
     contentTitle: 'שירותים נוספים של המפעילים',
     contentSub: 'שירותי תוכן נלווים - סייבר, נורטון, שיר בהמתנה ועוד - והמחיר אצל כל מפעיל.',
     freeTrial: 'ניסיון חינם',
     trust: 'משווים את כל <b>10 מפעילי הסלולר בישראל</b><br>מתעדכן פעמיים ביום על ידי מנוע המודיעין של MOCA',
     disclaim: 'המחירים נאספים אוטומטית מאתרי המפעילים ומתעדכנים פעמיים ביום. המחיר המחייב הוא המחיר שמוצג באתר המפעיל.',
-    poweredFree: 'חינם תמיד · ללא הרשמה',
+    poweredFree: 'חינם · ללא הרשמה',
     privacyL: 'מדיניות פרטיות', termsL: 'תנאי שימוש',
+    cookiesL: 'מדיניות עוגיות', accessL: 'הצהרת נגישות',
+    toLangAria: 'Switch to English', skipL: 'דילוג לתוכן', tabsAria: 'סוג ההשוואה',
+    external: 'אתר חיצוני, נפתח בחלון חדש',
+    remConsent: 'אני מסכימ/ה לקבל את העדכונים שסימנתי במייל או בוואטסאפ, ומאשר/ת שהפרטים יישמרו לצורך זה עד להסרה. חלק מההודעות מציגות הצעות של מפעילים אחרים ומסומנות כ"פרסומת".',
+    remMarketing: 'לשלוח לי גם עדכון שוק תקופתי (כפעם בחודש) ומעקב אחרי חידוש המסלול (רשות).',
+    remErrConsent: 'כדי להירשם צריך לאשר את תיבת ההסכמה.',
   },
   en: {
     dir: 'ltr', other: 'עב', otherLang: 'he',
@@ -243,7 +279,7 @@ const T = {
     remErrContact: 'Enter an email or a WhatsApp number.',
     remErrKinds: 'Pick at least one update type.',
     remErrDate: 'Pick a future end date.',
-    remPrivacy: 'Your details are used only for the updates you asked for, and are never shared.',
+    remPrivacy: 'Your details are used only for the updates you asked for and kept until you unsubscribe. Delivery runs through email and WhatsApp providers acting for us. Full details in the',
     remByType: {
       roaming: {
         opt1: 'A similar roaming package at a better price',
@@ -267,24 +303,36 @@ const T = {
     countriesN: '{n} countries',
     appsN: 'Free browsing in {n} apps',
     esimCross: 'Flying abroad? Compare global eSIMs too',
-    esimCrossSub: 'eSIM plans for 190+ destinations from 38 providers, often far cheaper than roaming.',
+    esimCrossSub: 'eSIM plans for 150+ destinations from 38 providers - worth comparing against your carrier’s roaming package.',
     esimCrossBtn: 'Compare eSIMs ↗',
     contentTitle: 'Carrier add-on services',
     contentSub: 'Content add-ons - cyber protection, Norton, ringback tones and more - priced per carrier.',
     freeTrial: 'Free trial',
     trust: 'Comparing all <b>10 Israeli mobile carriers</b><br>Refreshed twice a day by MOCA market intelligence',
     disclaim: 'Prices are collected automatically from the carriers’ sites and refreshed twice a day. The binding price is the one shown on the carrier’s site.',
-    poweredFree: 'Always free · no sign-up',
+    poweredFree: 'Free · no sign-up',
     privacyL: 'Privacy policy', termsL: 'Terms of use',
+    cookiesL: 'Cookie policy', accessL: 'Accessibility statement',
+    toLangAria: 'עבור לעברית', skipL: 'Skip to content', tabsAria: 'Comparison type',
+    external: 'external site, opens in a new tab',
+    remConsent: 'I agree to receive the updates I ticked by email or WhatsApp, and to my details being kept for that purpose until I unsubscribe. Some messages present other carriers\' offers and are labelled as advertising.',
+    remMarketing: 'Also send me a periodic market update (about monthly) and a renewal follow-up (optional).',
+    remErrConsent: 'Please tick the consent box to sign up.',
   },
 }
 
 const DATE_LOCALES = { en: 'en-GB', he: 'he-IL' }
 
 const CSS = `
-#mobile-app{--c1:#5c3317;--c2:#c9622f;--bg:#f9f4ee;--cream:#f5ede0;--ink:#3b1f0d;--sub:#8a6a4a;--muted:#a08468;--line:#e0cdb5;--card:#fff;--down:#4a7c3f;--warn:#b4472d;--r:20px;
+#mobile-app{--c1:#5c3317;--c2:#c9622f;--bg:#f9f4ee;--cream:#f5ede0;--ink:#3b1f0d;--sub:#7d5f40;--muted:#6f553b;--line:#e0cdb5;--card:#fff;--down:#4a7c3f;--down-text:#3d6a33;--warn:#b4472d;--r:20px;
   font-family:'Assistant',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased}
 #mobile-app *{box-sizing:border-box;margin:0;padding:0}
+#mobile-app :focus-visible{outline:3px solid var(--c1);outline-offset:2px}
+#mobile-app .hero :focus-visible{outline-color:#fff}
+#mobile-app .skip{position:absolute;inset-inline-start:-999px;top:8px;background:#fff;color:var(--c1);padding:8px 14px;border-radius:8px;font-weight:800;z-index:100}
+#mobile-app .skip:focus{inset-inline-start:12px}
+#mobile-app a{color:#8f3f16}
+#mobile-app .rem-check label,#mobile-app .rem-opt-head label{cursor:pointer}
 #mobile-app .page{max-width:560px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
 #mobile-app .hero{position:relative;overflow:hidden;color:#fff;background:linear-gradient(150deg,var(--c1),color-mix(in srgb,var(--c1),#000 32%));padding:22px 22px 26px;border-radius:0 0 30px 30px}
 #mobile-app .hero::before{content:"";position:absolute;inset:auto -70px -120px auto;width:260px;height:260px;border-radius:50%;background:color-mix(in srgb,var(--c2),transparent 70%)}
@@ -294,12 +342,12 @@ const CSS = `
 #mobile-app .brand{display:flex;align-items:center;gap:10px}
 #mobile-app .bolt{width:40px;height:40px;border-radius:12px;background:#fff;color:var(--c1);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 #mobile-app .brand-name{font-weight:800;font-size:17px;line-height:1;letter-spacing:.3px}
-#mobile-app .brand-tag{font-size:10px;letter-spacing:2.2px;opacity:.78;font-weight:600;margin-top:3px}
-#mobile-app .lang{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+#mobile-app .brand-tag{font-size:11px;letter-spacing:2px;opacity:.92;font-weight:600;margin-top:3px}
+#mobile-app .lang{border:1.5px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
 #mobile-app .hero h1{font-size:25px;font-weight:800;line-height:1.2;margin-bottom:9px}
 #mobile-app .hero p{font-size:14.5px;line-height:1.5;opacity:.9;max-width:42ch}
 #mobile-app .updated{display:inline-flex;align-items:center;gap:7px;margin-top:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600}
-#mobile-app .dot{width:7px;height:7px;border-radius:50%;background:#7fd99b;box-shadow:0 0 0 3px rgba(127,217,155,.25);animation:mpulse 2s infinite}
+#mobile-app .dot{width:7px;height:7px;border-radius:50%;background:#7fd99b;box-shadow:0 0 0 3px rgba(127,217,155,.25);}
 @keyframes mpulse{50%{box-shadow:0 0 0 6px rgba(127,217,155,.08)}}
 #mobile-app main{padding:14px 16px 8px;display:flex;flex-direction:column;gap:18px;flex:1}
 #mobile-app .card{background:var(--card);border-radius:var(--r);padding:18px;box-shadow:0 6px 24px rgba(70,45,20,.07)}
@@ -323,6 +371,7 @@ const CSS = `
 #mobile-app .count-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--c1);background:color-mix(in srgb,var(--c1),#fff 90%);border:1px solid color-mix(in srgb,var(--c1),#fff 78%);padding:5px 11px;border-radius:999px}
 #mobile-app .sort-select{position:relative}
 #mobile-app .sort-select select{appearance:none;-webkit-appearance:none;border:1.5px solid var(--line);background:#fff;color:var(--c1);border-radius:999px;padding-block:6px;padding-inline-start:13px;padding-inline-end:30px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;outline:none;max-width:190px;text-overflow:ellipsis}
+#mobile-app .sort-select select:focus-visible,#mobile-app .alert-select:focus-visible{outline:3px solid var(--c1);outline-offset:2px}
 #mobile-app .sort-select .chev{position:absolute;inset-inline-end:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted)}
 #mobile-app .pick{background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:10px;box-shadow:0 6px 24px rgba(70,45,20,.07);border:1.5px solid transparent}
 #mobile-app .pick.first{border-color:var(--c2);box-shadow:0 10px 30px color-mix(in srgb,var(--c2),transparent 74%)}
@@ -358,7 +407,7 @@ const CSS = `
 #mobile-app .search-wrap{position:relative;margin-bottom:12px}
 #mobile-app .search{width:100%;border:1.6px solid var(--line);background:var(--bg);border-radius:14px;padding:12px 44px 12px 14px;font:inherit;font-size:15px;font-weight:600;color:var(--ink);outline:none}
 #mobile-app[dir=ltr] .search{padding:12px 14px 12px 44px}
-#mobile-app .search:focus{border-color:var(--c2);box-shadow:0 0 0 3px color-mix(in srgb,var(--c2),transparent 82%)}
+#mobile-app .search:focus-visible{border-color:var(--c1);outline:3px solid var(--c1);outline-offset:2px}
 #mobile-app .search-ic{position:absolute;inset-inline-end:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
 #mobile-app .cross{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,color-mix(in srgb,var(--c2),#fff 88%),#fff);border:1.5px solid color-mix(in srgb,var(--c2),#fff 60%)}
 #mobile-app .cross .alert-tx b{font-size:14px}
@@ -403,7 +452,7 @@ const CSS = `
 #mobile-app footer{padding:18px 16px 30px;text-align:center}
 #mobile-app .powered{font-size:12.5px;color:var(--sub);font-weight:600}
 #mobile-app .powered b{color:var(--ink)}
-#mobile-app .freepill{display:inline-block;margin-bottom:8px;font-size:11.5px;font-weight:800;letter-spacing:.4px;color:var(--down);background:#e3f3e9;border-radius:999px;padding:4px 12px}
+#mobile-app .freepill{display:inline-block;margin-bottom:8px;font-size:11.5px;font-weight:800;letter-spacing:.4px;color:var(--down-text);background:#e3f3e9;border-radius:999px;padding:4px 12px}
 #mobile-app .disclaim{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;max-width:48ch;margin-inline:auto}
 #mobile-app .splash{min-height:50vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:var(--c1);text-align:center;padding:30px}
 #mobile-app .spin{width:34px;height:34px;border-radius:50%;border:3px solid color-mix(in srgb,var(--c1),transparent 78%);border-top-color:var(--c1);animation:mspin .8s linear infinite}
@@ -414,7 +463,7 @@ const CSS = `
 #mobile-app .bell-btn:hover{border-color:var(--c2)}
 #mobile-app .bell-btn.sm{padding:6px 8px;border-radius:9px}
 #mobile-app .bell-btn.sm svg{width:15px;height:15px}
-#mobile-app .rem-opt{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:all .15s}
+#mobile-app .rem-opt{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;transition:all .15s}
 #mobile-app .rem-opt.on{border-color:var(--c1);background:var(--cream)}
 #mobile-app .rem-opt-head{display:flex;gap:10px;align-items:flex-start;font-weight:800;font-size:14px;line-height:1.35}
 #mobile-app .rem-opt-head input{margin-top:2px;accent-color:var(--c1);width:16px;height:16px;flex:none}
@@ -424,7 +473,7 @@ const CSS = `
 #mobile-app .rem-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:145px}
 #mobile-app .rem-field label{font-size:12px;font-weight:700;color:var(--c1)}
 #mobile-app .rem-input{width:100%;border:1.6px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;font:inherit;font-size:14px;font-weight:600;color:var(--ink);outline:none}
-#mobile-app .rem-input:focus{border-color:var(--c2);box-shadow:0 0 0 3px color-mix(in srgb,var(--c2),transparent 82%)}
+#mobile-app .rem-input:focus-visible{border-color:var(--c1);outline:3px solid var(--c1);outline-offset:2px}
 #mobile-app .rem-check{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;cursor:pointer}
 #mobile-app .rem-check input{accent-color:var(--c1);width:15px;height:15px;flex:none}
 #mobile-app .rem-hint{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:4px}
@@ -432,6 +481,7 @@ const CSS = `
 #mobile-app .rem-submit{width:100%;border:0;border-radius:12px;cursor:pointer;background:var(--c1);color:#fff;font:inherit;font-weight:800;font-size:14px;padding:12px 16px;margin-top:12px;transition:opacity .12s}
 #mobile-app .rem-submit:disabled{opacity:.6;cursor:default}
 #mobile-app .rem-privacy{font-size:11px;color:var(--muted);font-weight:600;margin-top:10px;line-height:1.5;text-align:center}
+#mobile-app .rem-privacy a{text-decoration:underline}
 #mobile-app .rem-ok{text-align:center;padding:14px 4px 4px}
 #mobile-app .rem-ok-ic{width:52px;height:52px;border-radius:50%;background:#e3f3e9;color:#246b43;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px}
 #mobile-app .rem-ok b{display:block;font-size:16px;margin-bottom:5px}
@@ -576,22 +626,19 @@ function PriceAlertCard({ t, lang, meta, carriers }) {
 // (lines shaped "label|https://…" become links, mirroring PlanCard) + the
 // terms-PDF link. Works for both domestic (normalized feed) and roaming rows.
 function DetailsModal({ plan, t, onClose }) {
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  const boxRef = useRef(null)
+  useDialogFocus(boxRef, onClose)
   if (!plan) return null
   const infoLines = (plan.info || '').split('\n').map((l) => l.trim()).filter(Boolean)
   return (
-    <div className="modal-ov" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-ov" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="dm-title" ref={boxRef} tabIndex={-1}>
         <button type="button" className="modal-x" onClick={onClose} aria-label={t.close}>✕</button>
         <div className="modal-head">
           <CarrierLogo carrier={plan.carrier} />
           <div>
-            <div className="modal-carrier"><bdi>{carrierLabel(plan.carrier)}</bdi></div>
-            <div className="modal-name"><bdi>{plan.plan_name}</bdi></div>
+            <h2 className="modal-carrier" id="dm-title"><bdi>{carrierLabel(plan.carrier)}</bdi> - <bdi>{plan.plan_name}</bdi></h2>
+            <div className="modal-name" aria-hidden="true"><bdi>{plan.plan_name}</bdi></div>
           </div>
         </div>
         {plan.price != null && <div className="modal-price" dir="ltr">₪{fmtNum(plan.price)}</div>}
@@ -628,20 +675,20 @@ function ReminderModal({ plan, planType = 'domestic', t, lang, meta, onClose }) 
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [paid, setPaid] = useState('')
-  const [wantDeal, setWantDeal] = useState(true)
+  // Nothing is pre-ticked (Privacy Protection Authority guidance + Communications
+  // Law s.30A: consent must be an active choice per purpose).
+  const [wantDeal, setWantDeal] = useState(false)
   const [wantEnd, setWantEnd] = useState(false)
   const [endDate, setEndDate] = useState('')
   const [daysBefore, setDaysBefore] = useState(7)
-  const [offers, setOffers] = useState(true)
+  const [offers, setOffers] = useState(false)
+  const [consent, setConsent] = useState(false)
+  const [marketing, setMarketing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(null) // channel string after success
   const [err, setErr] = useState(null)
-
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  const boxRef = useRef(null)
+  useDialogFocus(boxRef, onClose)
 
   const todayISO = new Date().toISOString().slice(0, 10)
 
@@ -662,6 +709,7 @@ function ReminderModal({ plan, planType = 'domestic', t, lang, meta, onClose }) 
     if (!kinds.length) { setErr(t.remErrKinds); return }
     if (!em && !ph) { setErr(t.remErrContact); return }
     if (wantEnd && (!endDate || endDate < todayISO)) { setErr(t.remErrDate); return }
+    if (!consent) { setErr(t.remErrConsent); return }
     setErr(null)
     setBusy(true)
     try {
@@ -677,6 +725,9 @@ function ReminderModal({ plan, planType = 'domestic', t, lang, meta, onClose }) 
         end_date: wantEnd ? endDate : undefined,
         remind_days_before: wantEnd ? daysBefore : undefined,
         include_offers: wantEnd ? offers : undefined,
+        consent: true,
+        consent_version: CONSENT_TEXT_VERSION,
+        marketing_ok: marketing,
         lang,
         ...meta,
       })
@@ -689,19 +740,19 @@ function ReminderModal({ plan, planType = 'domestic', t, lang, meta, onClose }) 
   }
 
   return (
-    <div className="modal-ov" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-ov" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="rm-title" ref={boxRef} tabIndex={-1}>
         <button type="button" className="modal-x" onClick={onClose} aria-label={t.close}>✕</button>
         <div className="modal-head">
           <CarrierLogo carrier={plan.carrier} />
           <div>
-            <div className="modal-carrier">{t.remTitle}</div>
+            <h2 className="modal-carrier" id="rm-title">{t.remTitle}</h2>
             <div className="modal-name"><bdi>{carrierLabel(plan.carrier)} - {plan.plan_name}</bdi></div>
           </div>
         </div>
         {done ? (
-          <div className="rem-ok reveal">
-            <div className="rem-ok-ic">✓</div>
+          <div className="rem-ok reveal" role="status">
+            <div className="rem-ok-ic" aria-hidden="true">✓</div>
             <b>{t.remOkTitle}</b>
             <span>{done}</span>
           </div>
@@ -709,24 +760,24 @@ function ReminderModal({ plan, planType = 'domestic', t, lang, meta, onClose }) 
           <form onSubmit={submit} noValidate>
             <p style={{ fontSize: 13, color: 'var(--sub)', fontWeight: 600, lineHeight: 1.5, marginBottom: 14 }}>{t.remSub}</p>
 
-            <div className={`rem-opt${wantDeal ? ' on' : ''}`} onClick={() => setWantDeal(!wantDeal)}>
+            <div className={`rem-opt${wantDeal ? ' on' : ''}`}>
               <div className="rem-opt-head">
-                <input type="checkbox" checked={wantDeal} onChange={(e) => setWantDeal(e.target.checked)}
-                  onClick={(e) => e.stopPropagation()} />
-                <span>{tx.opt1}</span>
+                <input type="checkbox" id="rem-opt1" checked={wantDeal} onChange={(e) => setWantDeal(e.target.checked)}
+                  aria-describedby="rem-opt1-sub" />
+                <label htmlFor="rem-opt1">{tx.opt1}</label>
               </div>
-              <div className="rem-opt-sub">{tx.opt1Sub}</div>
+              <div className="rem-opt-sub" id="rem-opt1-sub">{tx.opt1Sub}</div>
             </div>
 
-            <div className={`rem-opt${wantEnd ? ' on' : ''}`} onClick={() => setWantEnd(!wantEnd)}>
+            <div className={`rem-opt${wantEnd ? ' on' : ''}`}>
               <div className="rem-opt-head">
-                <input type="checkbox" checked={wantEnd} onChange={(e) => setWantEnd(e.target.checked)}
-                  onClick={(e) => e.stopPropagation()} />
-                <span>{tx.opt2}</span>
+                <input type="checkbox" id="rem-opt2" checked={wantEnd} onChange={(e) => setWantEnd(e.target.checked)}
+                  aria-describedby="rem-opt2-sub" />
+                <label htmlFor="rem-opt2">{tx.opt2}</label>
               </div>
-              <div className="rem-opt-sub">{tx.opt2Sub}</div>
+              <div className="rem-opt-sub" id="rem-opt2-sub">{tx.opt2Sub}</div>
               {wantEnd && (
-                <div className="rem-ext" onClick={(e) => e.stopPropagation()}>
+                <div className="rem-ext">
                   <div className="rem-row">
                     <div className="rem-field">
                       <label htmlFor="rem-end">{tx.endDate}</label>
@@ -774,6 +825,15 @@ function ReminderModal({ plan, planType = 'domestic', t, lang, meta, onClose }) 
                 <div className="rem-hint" style={{ marginTop: 2 }}>{t.remPaidHint}</div>
               </div>
             )}
+
+            <label className="rem-check" style={{ marginTop: 14, alignItems: 'flex-start' }}>
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} aria-required="true" style={{ marginTop: 2 }} />
+              <span>{t.remConsent}</span>
+            </label>
+            <label className="rem-check" style={{ marginTop: 8, alignItems: 'flex-start' }}>
+              <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} style={{ marginTop: 2 }} />
+              <span>{t.remMarketing}</span>
+            </label>
 
             {err && <div className="rem-err" role="alert">{err}</div>}
             <button type="submit" className="rem-submit" disabled={busy}>
@@ -1095,16 +1155,16 @@ export default function MobileComparePage() {
       {(p.chips.length > 0 || p.price_conditional || p.voice_only) && (
         <div className="tags">
           {p.voice_only && <span className="tag warn">{t.voiceOnly}</span>}
-          {p.price_conditional && <span className="tag warn" title={t.conditionalHint}>{t.conditional}</span>}
+          {p.price_conditional && <span className="tag warn" title={t.conditionalHint}>{t.conditional}<span style={SR}> - {t.conditionalHint}</span></span>}
           {p.chips.map((c, i) => <span className="tag" key={i}><bdi>{c}</bdi></span>)}
         </div>
       )}
       <div className="deal-bottom">
-        <button type="button" className="get" onClick={() => openCarrier(p, 'domestic')}>
+        <button type="button" className="get" onClick={() => openCarrier(p, 'domestic')} aria-label={`${t.goto.replace('{carrier}', carrierLabel(p.carrier))} (${t.external})`}>
           {t.goto.replace('{carrier}', carrierLabel(p.carrier))}
         </button>
-        <button type="button" className="ghost" onClick={() => setDetail(p)}>{t.details}</button>
-        <button type="button" className="bell-btn" title={t.remBell} aria-label={t.remBell}
+        <button type="button" className="ghost" onClick={() => setDetail(p)} aria-label={`${t.details} - ${p.plan_name}`}>{t.details}</button>
+        <button type="button" className="bell-btn" title={t.remBell} aria-label={`${t.remBell} - ${p.plan_name}`}
           onClick={() => setRemindFor({ plan: p, type: 'domestic' })}><BellIcon /></button>
       </div>
     </>
@@ -1114,6 +1174,7 @@ export default function MobileComparePage() {
     <div id="mobile-app" dir={t.dir}>
       <style>{CSS}</style>
       <div className="page">
+        <a href="#mobile-main" className="skip">{t.skipL}</a>
         <header className="hero">
           <div className="hero-top">
             <div className="brand">
@@ -1123,24 +1184,24 @@ export default function MobileComparePage() {
                 <div className="brand-tag">{t.brandTag}</div>
               </div>
             </div>
-            <button type="button" className="lang" onClick={switchLang}>{t.other}</button>
+            <button type="button" className="lang" onClick={switchLang} aria-label={t.toLangAria}>{t.other}</button>
           </div>
           <h1>{t.heroTitle}</h1>
           <p>{t.heroSub}</p>
           {updatedStr && <div className="updated"><span className="dot" /><span>{updatedStr}</span></div>}
         </header>
 
-        <main>
-          <div className="tabs" role="tablist">
+        <main id="mobile-main">
+          <div className="tabs" role="group" aria-label={t.tabsAria}>
             {t.tabs.map((o) => (
-              <button key={o.v} type="button" role="tab" aria-selected={tab === o.v}
+              <button key={o.v} type="button" aria-pressed={tab === o.v}
                 className={`tab${tab === o.v ? ' on' : ''}`} onClick={() => pickTab(o.v)}>{o.l}</button>
             ))}
           </div>
 
           {/* ══ Domestic tab ══════════════════════════════════════════════ */}
           {tab === 'domestic' && (data === null ? (
-            <div className="splash"><div className="spin" /><div style={{ fontWeight: 700 }}>{t.loading}</div></div>
+            <div className="splash" role="status"><div className="spin" aria-hidden="true" /><div style={{ fontWeight: 700 }}>{t.loading}</div></div>
           ) : (
             <>
               <section className="card wizard reveal">
@@ -1148,19 +1209,19 @@ export default function MobileComparePage() {
                 <div className="q">{t.qBudget}</div>
                 <div className="chips">
                   {t.budget.map((o) => (
-                    <button key={o.v} type="button" className={`chip${o.v === budget ? ' on' : ''}`} onClick={() => setBudget(o.v)}>{o.l}</button>
+                    <button key={o.v} type="button" className={`chip${o.v === budget ? ' on' : ''}`} aria-pressed={o.v === budget} onClick={() => setBudget(o.v)}>{o.l}</button>
                   ))}
                 </div>
                 <div className="q">{t.qGb}</div>
                 <div className="chips">
                   {t.gb.map((o) => (
-                    <button key={o.v} type="button" className={`chip${o.v === gbTier ? ' on' : ''}`} onClick={() => setGbTier(o.v)}>{o.l}</button>
+                    <button key={o.v} type="button" className={`chip${o.v === gbTier ? ' on' : ''}`} aria-pressed={o.v === gbTier} onClick={() => setGbTier(o.v)}>{o.l}</button>
                   ))}
                 </div>
                 <div className="q">{t.qGen}</div>
                 <div className="chips">
                   {t.gen.map((o) => (
-                    <button key={o.v} type="button" className={`chip${o.v === gen ? ' on' : ''}`} onClick={() => setGen(o.v)}>{o.l}</button>
+                    <button key={o.v} type="button" className={`chip${o.v === gen ? ' on' : ''}`} aria-pressed={o.v === gen} onClick={() => setGen(o.v)}>{o.l}</button>
                   ))}
                 </div>
                 <div className="q">{t.qMore}</div>
@@ -1207,7 +1268,7 @@ export default function MobileComparePage() {
                 <div className="list-head">
                   <h2 className="sec" style={{ marginBottom: 0 }}>{t.allPlans}</h2>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span className="count-pill">{t.resultsN.replace('{n}', String(list.length))}</span>
+                    <span className="count-pill" aria-live="polite">{t.resultsN.replace('{n}', String(list.length))}</span>
                     <div className="sort-select">
                       <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label={t.sortLabel}>
                         {t.sorts.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
@@ -1240,7 +1301,7 @@ export default function MobileComparePage() {
               </section>
 
               {abroad === null ? (
-                <div className="splash"><div className="spin" /><div style={{ fontWeight: 700 }}>{t.loading}</div></div>
+                <div className="splash" role="status"><div className="spin" aria-hidden="true" /><div style={{ fontWeight: 700 }}>{t.loading}</div></div>
               ) : (
                 <section className="reveal">
                   <h2 className="sec">{t.roamTitle}</h2>
@@ -1254,12 +1315,12 @@ export default function MobileComparePage() {
                   </div>
                   {roamCarriers.length > 1 && (
                     <div className="carrier-row" style={{ marginBottom: 12 }}>
-                      <button type="button" className={`cpick${roamCarrier === 'all' ? ' on' : ''}`} onClick={() => setRoamCarrier('all')}>{t.alertAll}</button>
+                      <button type="button" className={`cpick${roamCarrier === 'all' ? ' on' : ''}`} aria-pressed={roamCarrier === 'all'} onClick={() => setRoamCarrier('all')}>{t.alertAll}</button>
                       {roamCarriers.map((id) => {
                         const bc = getCarrierColor(id)
                         const on = roamCarrier === id
                         return (
-                          <button key={id} type="button" className={`cpick${on ? ' on' : ''}`}
+                          <button key={id} type="button" className={`cpick${on ? ' on' : ''}`} aria-pressed={on}
                             style={on ? { borderColor: bc, boxShadow: `inset 0 0 0 1px ${bc}`, background: `color-mix(in srgb, ${bc}, #fff 88%)` } : undefined}
                             onClick={() => setRoamCarrier(id)}>
                             {CARRIER_LOGOS[id] && <img src={CARRIER_LOGOS[id]} alt="" loading="lazy" />}
@@ -1298,13 +1359,13 @@ export default function MobileComparePage() {
                           </div>
                         )}
                         <div className="deal-bottom">
-                          <button type="button" className="get" onClick={() => openCarrier(p, 'roaming')}>
+                          <button type="button" className="get" onClick={() => openCarrier(p, 'roaming')} aria-label={`${t.goto.replace('{carrier}', carrierLabel(p.carrier))} (${t.external})`}>
                             {t.goto.replace('{carrier}', carrierLabel(p.carrier))}
                           </button>
                           {(p.info || p.terms_url || (p.extras || []).length > 0) && (
-                            <button type="button" className="ghost" onClick={() => setDetail(p)}>{t.details}</button>
+                            <button type="button" className="ghost" onClick={() => setDetail(p)} aria-label={`${t.details} - ${p.plan_name}`}>{t.details}</button>
                           )}
-                          <button type="button" className="bell-btn" title={t.remBell} aria-label={t.remBell}
+                          <button type="button" className="bell-btn" title={t.remBell} aria-label={`${t.remBell} - ${p.plan_name}`}
                             onClick={() => setRemindFor({ plan: p, type: 'roaming' })}><BellIcon /></button>
                         </div>
                       </div>
@@ -1317,7 +1378,7 @@ export default function MobileComparePage() {
 
           {/* ══ Content-services tab ══════════════════════════════════════ */}
           {tab === 'content' && (content === null ? (
-            <div className="splash"><div className="spin" /><div style={{ fontWeight: 700 }}>{t.loading}</div></div>
+            <div className="splash" role="status"><div className="spin" aria-hidden="true" /><div style={{ fontWeight: 700 }}>{t.loading}</div></div>
           ) : (
             <section className="reveal">
               <h2 className="sec">{t.contentTitle}</h2>
@@ -1336,7 +1397,7 @@ export default function MobileComparePage() {
                         {p.note && <div className="svc-note"><bdi>{p.note}</bdi></div>}
                       </div>
                       <div className="svc-price"><bdi>{p.price}</bdi></div>
-                      <button type="button" className="bell-btn sm" title={t.remBell} aria-label={t.remBell}
+                      <button type="button" className="bell-btn sm" title={t.remBell} aria-label={`${t.remBell} - ${p.service}`}
                         onClick={() => setRemindFor({ plan: { carrier: p.carrier, plan_name: p.service }, type: 'content' })}>
                         <BellIcon /></button>
                     </div>
@@ -1361,9 +1422,14 @@ export default function MobileComparePage() {
             <a href={`/privacy${lang === 'en' ? '?lang=en' : ''}`}>{t.privacyL}</a>
             {' · '}
             <a href={`/terms${lang === 'en' ? '?lang=en' : ''}`}>{t.termsL}</a>
+            {' · '}
+            <a href={`/cookies${lang === 'en' ? '?lang=en' : ''}`}>{t.cookiesL}</a>
+            {' · '}
+            <a href={`/accessibility${lang === 'en' ? '?lang=en' : ''}`}>{t.accessL}</a>
           </div>
         </footer>
       </div>
+      <CookieBanner lang={lang} />
 
       {detail && <DetailsModal plan={detail} t={t} onClose={() => setDetail(null)} />}
       {remindFor && (

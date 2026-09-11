@@ -134,9 +134,11 @@ The React app uses the **MOCA mocha-latte** design system (per Claude Design han
 - `--color-moca-hot: #c9622f` (NEW / attention)
 
 **Typography** (added phase 1):
-- `--font-display: 'Frank Ruhl Libre', serif` — page titles, big headings
+- `--font-display` is aliased to Assistant (the Frank Ruhl serif was retired 2026-07-06; its woff2 files were deleted 2026-09-11)
 - `--font-body: 'Assistant', system-ui, sans-serif` — everything else (set on `body`)
-- Both loaded via `<link>` in `index.html` from Google Fonts
+- Self-hosted: `public/fonts/fonts.css` + `assistant-*.woff2` (OFL 1.1, notice in `public/fonts/OFL.txt`). Nothing loads from Google Fonts any more and the CSP no longer allows it.
+
+**Accessibility + consent (2026-09-11):** the public pages carry a skip link, `<main>` landmark, `aria-pressed` on every chip/tab-like button, `role="status"`/`aria-live` on loading and result counts, labelled form controls, `role="dialog"` modals with focus trap/return (`useDialogFocus` in MobileComparePage), solid 3px `:focus-visible` outlines, and AA-safe text colors (`--sub #7d5f40`, `--muted #6f553b`, hot-orange text `#9a4419`, green pill text `#3d6a33`; the brand oranges stay for backgrounds only). Keep new text on these tokens. `src/lib/consent.js` + `components/CookieBanner.jsx` gate the TikTok pixel (`lib/tiktokPixel.js`) behind explicit marketing consent (`moca_consent` in localStorage, versioned by `CONSENT_VERSION`); the bar only appears when `VITE_TIKTOK_PIXEL_ID` is set. Legal pages live in `public/{privacy,terms,cookies,accessibility}.html` (bilingual, static) and get the operator identity stamped from `src/data/legalEntity.js` by `scripts/stamp-legal.mjs` at build time. `dev-pages/` holds operator-only HTML that must never ship.
 
 **Shadows** (added phase 1, scoped to `:root`):
 - `--sh-card`, `--sh-card-hover`, `--sh-modal`, `--sh-drawer`, `--sh-popover`

@@ -290,6 +290,15 @@ def api_mobile_reminders_subscribe():
     kinds = [k for k in (body.get("kinds") or []) if k in _REM_KINDS]
     if not kinds:
         return jsonify({"error": "missing kinds"}), 400
+    # Documented consent (Privacy Protection Law s.11 notice + Communications Law
+    # s.30A): the client must send consent=true from an UNCHECKED-by-default box
+    # whose wording is versioned (consent_version); marketing_ok is the separate
+    # opt-in for the periodic marketing mails (market pulse / renewal follow-up).
+    if body.get("consent") is not True:
+        return jsonify({"error": "consent required"}), 400
+    consent_version = str(body.get("consent_version") or "")[:40] or "unversioned"
+    marketing_ok = body.get("marketing_ok") is True
+    consent_at = datetime.now().isoformat(timespec="seconds")
     if carrier not in core._MOBILE_CARRIERS or not plan_name:
         return jsonify({"error": "unknown plan"}), 400
     plan = _rem_lookup_plan(plan_type, carrier, plan_name)
@@ -313,7 +322,9 @@ def api_mobile_reminders_subscribe():
                "unlimited": plan.get("unlimited"), "days": plan.get("days"),
                "email": email or None,
                "phone": phone or None, "channel": channel, "lang": lang,
-               "paid_price": paid_price}
+               "paid_price": paid_price,
+               "consent_at": consent_at, "consent_version": consent_version,
+               "marketing_ok": marketing_ok}
         if k == "plan_end":
             today = datetime.now().date()
             try:

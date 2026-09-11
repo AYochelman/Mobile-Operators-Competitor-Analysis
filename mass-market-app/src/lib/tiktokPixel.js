@@ -5,18 +5,34 @@
 // Empty id = disabled: every function below is a safe no-op, so the page ships
 // fine before the pixel exists. Set the id in .env.production + rebuild to turn
 // it on. Pixel ids are NOT secret — they live in client JS by design.
+// Even with an id, NOTHING loads until the visitor accepts marketing in the
+// cookie banner (src/lib/consent.js); the CSP in public/_headers allowlists
+// analytics.tiktok.com for that case.
 //
 // Wired into EsimComparePage: initTikTokPixel() fires PageView on mount (for the
 // "Landing page view" optimization + a retargeting audience), and trackTikTok()
 // fires a ClickButton event on every affiliate deal tap (the money event, so the
 // campaign can later be optimized toward provider clicks).
 
+import { hasMarketingConsent, onConsentChange } from './consent'
+
 const PIXEL_ID = import.meta.env.VITE_TIKTOK_PIXEL_ID || ''
 let started = false
+let waiting = false
 
 // Inject TikTok's official base snippet once, load the pixel, fire PageView.
 export function initTikTokPixel() {
   if (started || !PIXEL_ID || typeof window === 'undefined') return
+  // Consent gate (2026-09-11): the pixel sets third-party cookies, so it loads
+  // only after the visitor accepted "marketing" in the CookieBanner. Until
+  // then we wait for a consent change instead of loading anything.
+  if (!hasMarketingConsent()) {
+    if (!waiting) {
+      waiting = true
+      onConsentChange((c) => { if (c?.marketing) initTikTokPixel() })
+    }
+    return
+  }
   started = true
   /* eslint-disable */
   !function (w, d, t) {
@@ -41,7 +57,7 @@ export function initTikTokPixel() {
 // Fire a standard TikTok event (e.g. 'ClickButton', 'ViewContent', 'Search').
 // No-op until the pixel is configured and the base snippet has loaded.
 export function trackTikTok(event, params) {
-  if (!PIXEL_ID || typeof window === 'undefined' || !window.ttq || typeof window.ttq.track !== 'function') return
+  if (!PIXEL_ID || typeof window === 'undefined' || !hasMarketingConsent() || !window.ttq || typeof window.ttq.track !== 'function') return
   try { window.ttq.track(event, params || {}) } catch { /* ignore */ }
 }
 

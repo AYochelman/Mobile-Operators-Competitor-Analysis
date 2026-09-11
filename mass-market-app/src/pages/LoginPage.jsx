@@ -14,6 +14,8 @@ export default function LoginPage() {
   const { signIn, sendPasswordReset, user, loading } = useAuth()
   const navigate = useNavigate()
 
+  useEffect(() => { document.title = 'כניסה | MOCA' }, [])
+
   useEffect(() => {
     if (!loading && user) {
       const pendingInvite = sessionStorage.getItem('pending_invite')
@@ -58,8 +60,9 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-moca-bg">
-        <div className="animate-spin h-8 w-8 border-4 border-moca-bolt border-t-transparent rounded-full" />
+      <div className="min-h-screen flex items-center justify-center bg-moca-bg" role="status">
+        <div className="animate-spin h-8 w-8 border-4 border-moca-bolt border-t-transparent rounded-full" aria-hidden="true" />
+        <span className="sr-only">טוען...</span>
       </div>
     )
   }
@@ -83,33 +86,36 @@ export default function LoginPage() {
         {/* Login / forgot-password card */}
         {mode === 'login' ? (
           <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-card border border-moca-border p-7 space-y-5">
+            <h1 className="text-base font-bold text-moca-dark text-center">כניסה למערכת</h1>
             <div>
-              <label className="block text-xs font-medium text-moca-text mb-1.5">אימייל</label>
+              <label htmlFor="login-email" className="block text-xs font-medium text-moca-text mb-1.5">אימייל</label>
               <input
+                id="login-email" autoComplete="email"
                 type="email" value={email} onChange={e => setEmail(e.target.value)}
-                className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:ring-2 focus:ring-moca-bolt/30 focus:border-moca-bolt outline-none transition-all"
+                className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:border-moca-bolt focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-moca-bolt transition-all"
                 placeholder="name@example.com" required dir="ltr"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-moca-text mb-1.5">סיסמה</label>
+              <label htmlFor="login-password" className="block text-xs font-medium text-moca-text mb-1.5">סיסמה</label>
               <input
+                id="login-password" autoComplete="current-password"
                 type="password" value={password} onChange={e => setPassword(e.target.value)}
-                className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:ring-2 focus:ring-moca-bolt/30 focus:border-moca-bolt outline-none transition-all"
+                className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:border-moca-bolt focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-moca-bolt transition-all"
                 placeholder="••••••••" required dir="ltr"
               />
             </div>
 
             {error && (
-              <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+              <p className="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-2" role="alert">{error}</p>
             )}
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting} aria-busy={submitting}
               className="w-full bg-moca-bolt text-white font-medium py-2.5 rounded-xl hover:bg-moca-dark disabled:opacity-50 transition-colors hover-press"
             >
-              {submitting ? '⏳ מתחבר...' : 'כניסה'}
+              {submitting ? 'מתחבר...' : 'כניסה'}
             </button>
 
             <button
@@ -127,26 +133,27 @@ export default function LoginPage() {
               <p className="text-xs text-moca-sub">נשלח אליך קישור לאיפוס הסיסמה למייל.</p>
             </div>
             <div>
-              <label className="block text-xs font-medium text-moca-text mb-1.5">אימייל</label>
+              <label htmlFor="forgot-email" className="block text-xs font-medium text-moca-text mb-1.5">אימייל</label>
               <input
+                id="forgot-email" autoComplete="email"
                 type="email" value={email} onChange={e => setEmail(e.target.value)}
-                className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:ring-2 focus:ring-moca-bolt/30 focus:border-moca-bolt outline-none transition-all"
+                className="w-full border border-moca-border rounded-xl px-4 py-2.5 text-sm bg-moca-mist focus:border-moca-bolt focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-moca-bolt transition-all"
                 placeholder="name@example.com" required dir="ltr"
               />
             </div>
 
             {resetSent && (
-              <p className="text-xs text-moca-down bg-green-50 rounded-lg px-3 py-2 text-center">
+              <p className="text-xs text-moca-down bg-green-50 rounded-lg px-3 py-2 text-center" role="status">
                 אם המייל קיים במערכת, נשלח אליו קישור לאיפוס.
               </p>
             )}
 
             <button
               type="submit"
-              disabled={resetBusy || resetSent}
+              disabled={resetBusy || resetSent} aria-busy={resetBusy}
               className="w-full bg-moca-bolt text-white font-medium py-2.5 rounded-xl hover:bg-moca-dark disabled:opacity-50 transition-colors hover-press"
             >
-              {resetBusy ? '⏳ שולח...' : 'שלח קישור לאיפוס'}
+              {resetBusy ? 'שולח...' : 'שלח קישור לאיפוס'}
             </button>
 
             <button

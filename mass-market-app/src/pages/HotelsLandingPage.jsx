@@ -43,8 +43,8 @@ const COPY = {
     heroLine2pre: 'המלון שלכם עונה - ',
     heroEm: 'ומרוויח',
     heroLine2post: '.',
-    heroLead: 'פורטל ממותג בצבעי המלון שמשווה לאורח, בזמן אמת, את כל חבילות ה-eSIM והסים לתיירים בישראל - 38 ספקים גלובליים ו-10 מפעילים מקומיים, מתעדכן פעמיים ביום.',
-    heroLead2: 'בלי מלאי, בלי תפעול - ועם עמלה למלון על כל רכישה.',
+    heroLead: 'פורטל ממותג בצבעי המלון שמשווה לאורח חבילות eSIM וסים לתיירים בישראל מ-38 ספקים גלובליים ו-10 מפעילים מקומיים, עם מחירים שמתעדכנים פעמיים ביום.',
+    heroLead2: 'בלי מלאי ובלי תפעול שוטף - ועם עמלה למלון על רכישות שמיוחסות לקוד ההפניה שלו.',
     heroCtaDemo: '▶ צפו בהדגמה החיה',
     heroCtaContact: 'תיאום שיחת היכרות',
     stats: [
@@ -52,11 +52,11 @@ const COPY = {
       { pre: '', b: '10', post: ' מפעילים ישראליים' },
       { pre: 'עדכון מחירים ', b: '×2 ביום', post: '' },
       { pre: 'התקנה תוך ', b: '48 שעות', post: '' },
-      { pre: '', b: '0', post: ' תפעול למלון' },
+      { pre: '', b: 'ללא', post: ' תפעול שוטף למלון' },
     ],
     demoKicker: 'הדגמה חיה',
     demoTitle: 'ככה זה נראה לאורח שלכם',
-    demoLead: 'זה לא סרטון - זה הפורטל עצמו, על דאטה חיה. ממותג בצבעי המלון, ולכל מותג ברשת אפשר פורטל בצבעים שלו באותה קלות. החליפו מותג ושפה ותראו.',
+    demoLead: 'זה לא סרטון - זה הפורטל עצמו, על נתונים אמיתיים שמתעדכנים פעמיים ביום. ממותג בצבעי המלון, ולכל מותג ברשת אפשר פורטל בצבעים שלו באותה קלות. החליפו מותג ושפה ותראו.',
     demoBrandHeading: 'בחרו מותג (מיתוג חי)',
     demoGuestLang: 'שפת האורח:',
     demoOpenFull: 'פתיחה במסך מלא ↗',
@@ -64,16 +64,16 @@ const COPY = {
     howTitle: 'שלושה צעדים, אפס תפעול',
     steps: [
       { emoji: '📱', h: 'QR בחדר ובצ׳ק-אין', p: 'מעמדים ממותגים בחדרים ובדלפק, קישור באתר ובהודעת הוואטסאפ שלפני ההגעה. אנחנו מספקים את הכל מעוצב ומוכן להדפסה.' },
-      { emoji: '🛒', h: 'האורח משווה ורוכש', p: 'בוחר משך שהות ונפח גלישה, מקבל את ההצעות המשתלמות בשוק - בשפה שלו, במחיר של היום - ורוכש ישירות מהספק. התמיכה על הספק, לא עליכם.' },
-      { emoji: '💰', h: 'המלון מרוויח ולומד', p: 'כל רכישה מתויגת בקוד ההפניה של המלון ומזכה אתכם בעמלה. בנוסף - דשבורד אנליטיקה על קהל האורחים: מדינות מקור, ביקושים ושעות שיא.' },
+      { emoji: '🛒', h: 'האורח משווה ורוכש', p: 'בוחר משך שהות ונפח גלישה, מקבל הצעות מ-38 ספקים - בשפה שלו, במחיר העדכני - ורוכש ישירות מהספק. התמיכה על הספק, לא עליכם.' },
+      { emoji: '💰', h: 'המלון מרוויח ולומד', p: 'רכישה שמתחילה מהפורטל מתויגת בקוד ההפניה של המלון ומזכה אתכם בעמלה כשהיא מיוחסת אליו. בנוסף - דשבורד אנליטיקה על קהל האורחים: מדינות מקור, ביקושים ושעות שיא.' },
     ],
     valueKicker: 'למה זה משתלם',
     valueTitle: 'חמישה דברים שהמלון מקבל',
     values: [
       { ic: '🛎️', h: 'שירות לאורח', p: 'תשובה מקצועית ועדכנית לשאלה הנפוצה ביותר בדלפק - בלי להעסיק את הקבלה.' },
-      { ic: '💸', h: 'הכנסה פסיבית', p: 'עמלת הפניה על כל רכישת eSIM שמקורה ב-QR של המלון. חלוקה שקופה 50/50.' },
+      { ic: '💸', h: 'הכנסה פסיבית', p: 'עמלת הפניה על רכישות eSIM שמיוחסות ל-QR של המלון. חלוקה שקופה 50/50, לפי ההסכם.' },
       { ic: '🎨', h: 'מיתוג מלא', p: 'הפורטל בצבעי המלון ובלוגו שלו - נראה כשירות של המלון, לא של צד שלישי.' },
-      { ic: '🧘', h: 'אפס תפעול', p: 'אין מלאי, אין סים פיזי, אין תמיכה טכנית. הספק מטפל בלקוח מקצה לקצה.' },
+      { ic: '🧘', h: 'תפעול מינימלי', p: 'אין מלאי, אין סים פיזי ואין תמיכה טכנית מצד המלון. הספק מטפל בלקוח מקצה לקצה.' },
       { ic: '📊', h: 'אנליטיקה', p: 'כמה סרקו, מה חיפשו ומאילו מדינות הגיעו - דאטה שיווקי אנונימי על קהל האורחים.' },
     ],
     roiKicker: 'מחשבון רווח',
@@ -89,14 +89,14 @@ const COPY = {
     roiYear: 'הכנסת עמלות שנתית',
     roiPerYear: ' / שנה',
     roiSaved: 'פניות דלפק שנחסכות בשנה',
-    roiAssume: 'הנחות שמרניות, מכוילות בפיילוט: 15% מהלינות הרלוונטיות סורקות · 20% מהסורקים רוכשים · חלק המלון 50% מהעמלה · 30.4 לילות בחודש. בנוסף לעמלות: שיפור חוויית האורח והביקורות - בלי עלות תפעולית.',
+    roiAssume: 'הערכה בלבד, לא תחזית: הנחות עבודה לדוגמה שאפשר לשנות במחוונים - 15% מהלינות הרלוונטיות סורקות · 20% מהסורקים רוכשים · חלק המלון 50% מהעמלה · 30.4 לילות בחודש. בנוסף לעמלות: שיפור חוויית האורח והביקורות - בלי עלות תפעולית.',
     pricingKicker: 'תמחור',
     pricingTitle: 'מסלולים פשוטים, בלי הפתעות',
-    pilotH: 'פיילוט 60 יום בנכס אחד - חינם לחלוטין',
-    pilotP: 'בלי כרטיס אשראי · התקנה ביום אחד · יציאה בהודעה של 30 יום · מרחיבים רק כשהדאטה מצדיקה',
+    pilotH: 'פיילוט 60 יום בנכס אחד - ללא עלות',
+    pilotP: 'בלי כרטיס אשראי · התקנה תוך 48 שעות · יציאה בהודעה של 30 יום · מרחיבים רק כשהנתונים מצדיקים',
     pilotBtn: 'מתחילים פיילוט',
-    popTag: 'הכי פופולרי',
-    perProp: ' / חודש לנכס',
+    popTag: 'מומלץ',
+    perProp: ' / חודש לנכס, לפני מע"מ',
     tierBtn: 'דברו איתנו',
     tiers: [
       { name: 'Starter', aud: 'הוסטל · מלון בוטיק קטן', price: '₪290', pop: false, feats: ['פורטל אורח ממותג + QR', 'השוואה חיה, עדכון פעמיים ביום', '2 שפות (אנגלית + עברית)', 'חלוקת עמלות 50/50'] },
@@ -105,13 +105,13 @@ const COPY = {
     ],
     faqs: [
       { q: 'צריך צוות טכני או אינטגרציה מצד המלון?', a: 'לא. ה-onboarding כולו עלינו: דף ממותג, קוד QR ומעמדים מעוצבים - מוכנים תוך 48 שעות. אין התקנה במערכות המלון ואין תלות ב-PMS.' },
-      { q: 'מה עם פרטיות האורחים (GDPR)?', a: 'הפורטל פתוח ללא הרשמה וללא איסוף פרטים אישיים. האנליטיקה אנונימית ומצרפית בלבד - מספרי סריקות, שפות ומדינות מקור, לעולם לא זהות של אורח.' },
-      { q: 'יש לנו כבר שיתוף פעולה עם מפעיל', a: 'מצוין - אפשר להציג את ההצעה שלכם ראשונה ולתת לאורח שקיפות על כל השאר. השוואה ניטרלית בונה אמון. וכשהאורח קונה בכל מקרה - עדיף שהמלון ירוויח.' },
-      { q: 'המחירים באמת מתעדכנים? מי עומד מאחורי זה?', a: 'כן. Guest Connect רץ על MOCA - מערכת מודיעין תחרותי שסורקת את כל שוק הסלולר הישראלי ו-38 ספקי eSIM גלובליים פעמיים ביום.' },
+      { q: 'מה עם פרטיות האורחים (GDPR)?', a: 'הפורטל פתוח ללא הרשמה וללא איסוף פרטים מזהים (ראו מדיניות הפרטיות). האנליטיקה מצרפית בלבד - מספרי סריקות, שפות ומדינות מקור, לא זהות של אורח.' },
+      { q: 'יש לנו כבר שיתוף פעולה עם מפעיל', a: 'מצוין - אפשר להציג את ההצעה שלכם ראשונה ולתת לאורח שקיפות על כל השאר. השוואה שמדורגת לפי מחיר והתאמה, לא לפי עמלה, בונה אמון. וכשהאורח קונה בכל מקרה - עדיף שהמלון ירוויח.' },
+      { q: 'המחירים באמת מתעדכנים? מי עומד מאחורי זה?', a: 'כן. Guest Connect רץ על MOCA - מערכת מודיעין תחרותי שסורקת את 10 מפעילי הסלולר בישראל ו-38 ספקי eSIM גלובליים פעמיים ביום.' },
     ],
     contactKicker: 'בואו נתחיל',
     contactTitle: 'פיילוט 60 יום, בלי עלות ובלי התחייבות',
-    contactLead: 'השאירו פרטים ונחזור אליכם עם דמו ממותג בצבעי המלון שלכם והצעת פיילוט. אם האורחים לא משתמשים - נפרדים כידידים. אם כן - יש לכם שירות חדש לאורח ומקור הכנסה חדש.',
+    contactLead: 'השאירו פרטים ונחזור אליכם עם דמו ממותג בצבעי המלון שלכם והצעת פיילוט. אם האורחים לא משתמשים - נפרדים כידידים. אם כן - יש לכם שירות חדש לאורח ואפשרות להכנסה נוספת.',
     contactWrite: 'מעדיפים לכתוב? ',
     fHotel: 'שם המלון / הרשת', fHotelPh: 'מלון לדוגמה',
     fContact: 'איש קשר', fContactPh: 'שם מלא',
@@ -122,10 +122,15 @@ const COPY = {
     submit: 'קבעו לי דמו ופיילוט ↗',
     submitting: 'שולח…',
     okMain: 'תודה! קיבלנו את הפנייה ונחזור אליכם בקרוב 🎉',
-    okSub: 'מייל אישור נשלח אם השארתם כתובת.',
+    okSub: 'נחזור אליכם למייל או לטלפון שהשארתם.',
     errNoContact: 'נא להשאיר אימייל או טלפון ליצירת קשר.',
     errFail: 'שליחה נכשלה - נסו שוב או כתבו ל-Helpdesk@mocaintel.com',
-    footerSmall: 'השוואת קישוריות חיה לתיירים בישראל · mocaintel.com · Helpdesk@mocaintel.com · המחירים בהדגמה נדגמים משוק חי ולהמחשה',
+    footerSmall: 'השוואת קישוריות לתיירים בישראל, מתעדכנת פעמיים ביום · mocaintel.com · Helpdesk@mocaintel.com · המחירים בהדגמה נדגמים מהשוק ולהמחשה בלבד',
+    consentLabel: 'אני מסכימ/ה שהפרטים שמסרתי יישמרו ויועברו לערוצי העבודה של MOCA (מייל וטלגרם פנימי) לצורך מענה על הפנייה, כמפורט ב',
+    consentErr: 'כדי לשלוח צריך לאשר את תיבת ההסכמה.',
+    privacyL: 'מדיניות הפרטיות', termsL: 'תנאי שימוש', cookiesL: 'מדיניות עוגיות', accessL: 'הצהרת נגישות',
+    skipL: 'דילוג לתוכן', iframeTitle: 'הדגמה חיה של פורטל האורח', external: 'נפתח בחלון חדש',
+    fRequiredHint: 'יש למלא אימייל או טלפון.',
   },
   en: {
     dir: 'ltr',
@@ -139,8 +144,8 @@ const COPY = {
     heroLine2pre: 'Your hotel answers - ',
     heroEm: 'and earns',
     heroLine2post: '.',
-    heroLead: 'A portal branded in your hotel’s colors that shows guests, in real time, every eSIM and tourist SIM deal in Israel - 38 global providers and 10 local operators, refreshed twice a day.',
-    heroLead2: 'No inventory, no operations - and a commission to the hotel on every purchase.',
+    heroLead: 'A portal branded in your hotel’s colors that compares eSIM and tourist-SIM deals in Israel from 38 global providers and 10 local operators, with prices refreshed twice a day.',
+    heroLead2: 'No inventory, no day-to-day operations - and a commission to the hotel on purchases attributed to its referral code.',
     heroCtaDemo: '▶ Watch the live demo',
     heroCtaContact: 'Book an intro call',
     stats: [
@@ -148,11 +153,11 @@ const COPY = {
       { pre: '', b: '10', post: ' Israeli operators' },
       { pre: 'Prices refresh ', b: '2× a day', post: '' },
       { pre: 'Live within ', b: '48 hours', post: '' },
-      { pre: '', b: '0', post: ' hotel operations' },
+      { pre: '', b: 'No', post: ' day-to-day hotel operations' },
     ],
     demoKicker: 'Live demo',
     demoTitle: 'This is what your guest sees',
-    demoLead: 'This isn’t a video - it’s the portal itself, on live data. Branded in your hotel’s colors, and every brand in your chain can have its own just as easily. Switch brand and language to see.',
+    demoLead: 'This isn’t a video - it’s the portal itself, on real data refreshed twice a day. Branded in your hotel’s colors, and every brand in your chain can have its own just as easily. Switch brand and language to see.',
     demoBrandHeading: 'Choose a brand (live theming)',
     demoGuestLang: 'Guest language:',
     demoOpenFull: 'Open full screen ↗',
@@ -160,16 +165,16 @@ const COPY = {
     howTitle: 'Three steps, zero operations',
     steps: [
       { emoji: '📱', h: 'QR in the room & at check-in', p: 'Branded stands in the rooms and at the desk, a link on your site and in the pre-arrival WhatsApp. We provide it all designed and print-ready.' },
-      { emoji: '🛒', h: 'The guest compares and buys', p: 'They pick a stay length and data amount, get the best offers on the market - in their language, at today’s price - and buy directly from the provider. Support is on the provider, not on you.' },
-      { emoji: '💰', h: 'The hotel earns and learns', p: 'Every purchase is tagged with the hotel’s referral code and earns you a commission. Plus an analytics dashboard on your guest audience: countries of origin, demand, and peak hours.' },
+      { emoji: '🛒', h: 'The guest compares and buys', p: 'They pick a stay length and data amount, get offers from 38 providers - in their language, at the current price - and buy directly from the provider. Support is on the provider, not on you.' },
+      { emoji: '💰', h: 'The hotel earns and learns', p: 'A purchase that starts from the portal is tagged with the hotel’s referral code and earns you a commission when it is attributed to it. Plus an analytics dashboard on your guest audience: countries of origin, demand, and peak hours.' },
     ],
     valueKicker: 'Why it pays off',
     valueTitle: 'Five things the hotel gets',
     values: [
       { ic: '🛎️', h: 'Guest service', p: 'A professional, up-to-date answer to the most common question at the desk - without tying up the front desk.' },
-      { ic: '💸', h: 'Passive income', p: 'A referral commission on every eSIM purchase that originates from the hotel’s QR. A transparent 50/50 split.' },
+      { ic: '💸', h: 'Passive income', p: 'A referral commission on eSIM purchases attributed to the hotel’s QR. A transparent 50/50 split, per the agreement.' },
       { ic: '🎨', h: 'Full branding', p: 'The portal in your hotel’s colors and logo - it looks like the hotel’s own service, not a third party’s.' },
-      { ic: '🧘', h: 'Zero operations', p: 'No inventory, no physical SIM, no tech support. The provider handles the customer end to end.' },
+      { ic: '🧘', h: 'Minimal operations', p: 'No inventory, no physical SIM and no tech support on the hotel’s side. The provider handles the customer end to end.' },
       { ic: '📊', h: 'Analytics', p: 'How many scanned, what they searched, and which countries they came from - anonymous marketing data on your guest audience.' },
     ],
     roiKicker: 'ROI calculator',
@@ -185,14 +190,14 @@ const COPY = {
     roiYear: 'Annual commission income',
     roiPerYear: ' / year',
     roiSaved: 'Desk inquiries saved per year',
-    roiAssume: 'Conservative assumptions, calibrated in pilots: 15% of relevant room-nights scan · 20% of scanners buy · hotel share 50% of the commission · 30.4 nights per month. On top of commissions: a better guest experience and reviews - at no operational cost.',
+    roiAssume: 'An estimate only, not a forecast: sample working assumptions you can change with the sliders - 15% of relevant room-nights scan · 20% of scanners buy · hotel share 50% of the commission · 30.4 nights per month. On top of commissions: a better guest experience and reviews - at no operational cost.',
     pricingKicker: 'Pricing',
     pricingTitle: 'Simple plans, no surprises',
-    pilotH: 'A 60-day pilot at one property - completely free',
-    pilotP: 'No credit card · live in one day · exit on 30 days’ notice · expand only when the data justifies it',
+    pilotH: 'A 60-day pilot at one property - at no cost',
+    pilotP: 'No credit card · live within 48 hours · exit on 30 days’ notice · expand only when the data justifies it',
     pilotBtn: 'Start a pilot',
-    popTag: 'Most popular',
-    perProp: ' / month per property',
+    popTag: 'Recommended',
+    perProp: ' / month per property, excl. VAT',
     tierBtn: 'Talk to us',
     tiers: [
       { name: 'Starter', aud: 'Hostel · small boutique hotel', price: '₪290', pop: false, feats: ['Branded guest portal + QR', 'Live comparison, refreshed twice a day', '2 languages (English + Hebrew)', '50/50 commission split'] },
@@ -201,13 +206,13 @@ const COPY = {
     ],
     faqs: [
       { q: 'Does the hotel need a tech team or integration?', a: 'No. The entire onboarding is on us: a branded page, a QR code, and designed stands - ready within 48 hours. No installation in the hotel’s systems and no dependency on the PMS.' },
-      { q: 'What about guest privacy (GDPR)?', a: 'The portal is open with no sign-up and no collection of personal details. The analytics are anonymous and aggregate only - scan counts, languages, and countries of origin, never a guest’s identity.' },
-      { q: 'We already work with an operator', a: 'Great - you can show your offer first and give the guest transparency on everything else. A neutral comparison builds trust. And since the guest buys anyway - better that the hotel earns from it.' },
-      { q: 'Do prices really update? Who’s behind this?', a: 'Yes. Guest Connect runs on MOCA - a competitive-intelligence system that scans the entire Israeli mobile market and 38 global eSIM providers twice a day.' },
+      { q: 'What about guest privacy (GDPR)?', a: 'The portal is open with no sign-up and no collection of identifying details (see the privacy policy). The analytics are aggregate only - scan counts, languages, and countries of origin, not a guest’s identity.' },
+      { q: 'We already work with an operator', a: 'Great - you can show your offer first and give the guest transparency on everything else. A comparison ranked by price and fit, not by commission, builds trust. And since the guest buys anyway - better that the hotel earns from it.' },
+      { q: 'Do prices really update? Who’s behind this?', a: 'Yes. Guest Connect runs on MOCA - a competitive-intelligence system that scans the 10 Israeli mobile carriers and 38 global eSIM providers twice a day.' },
     ],
     contactKicker: 'Let’s get started',
     contactTitle: 'A 60-day pilot - no cost, no commitment',
-    contactLead: 'Leave your details and we’ll get back to you with a demo branded in your hotel’s colors and a pilot offer. If guests don’t use it - we part as friends. If they do - you’ve got a new guest service and a new revenue stream.',
+    contactLead: 'Leave your details and we’ll get back to you with a demo branded in your hotel’s colors and a pilot offer. If guests don’t use it - we part as friends. If they do - you’ve got a new guest service and a possible extra revenue line.',
     contactWrite: 'Prefer to write? ',
     fHotel: 'Hotel / chain name', fHotelPh: 'Sample Hotel',
     fContact: 'Contact name', fContactPh: 'Full name',
@@ -218,28 +223,42 @@ const COPY = {
     submit: 'Set up my demo & pilot ↗',
     submitting: 'Sending…',
     okMain: 'Thank you! We got your request and will be in touch soon 🎉',
-    okSub: 'A confirmation email was sent if you left an address.',
+    okSub: 'We will get back to you at the email or phone you left.',
     errNoContact: 'Please leave an email or phone number so we can reach you.',
     errFail: 'Submission failed - please try again or email Helpdesk@mocaintel.com',
-    footerSmall: 'Live connectivity comparison for tourists in Israel · mocaintel.com · Helpdesk@mocaintel.com · Demo prices are sampled from a live market, for illustration',
+    footerSmall: 'Connectivity comparison for tourists in Israel, refreshed twice a day · mocaintel.com · Helpdesk@mocaintel.com · Demo prices are sampled from the market, for illustration only',
+    consentLabel: 'I agree that the details I entered are stored and forwarded to MOCA’s work channels (email and an internal Telegram channel) to answer my enquiry, as described in the',
+    consentErr: 'Please tick the consent box to send.',
+    privacyL: 'privacy policy', termsL: 'Terms of use', cookiesL: 'Cookie policy', accessL: 'Accessibility statement',
+    skipL: 'Skip to content', iframeTitle: 'Live demo of the guest portal', external: 'opens in a new tab',
+    fRequiredHint: 'Email or phone is required.',
   },
 }
 
 const HL_CSS = `
-#hl-app{--bg:#f9f4ee;--cream:#f5ede0;--mist:#faf5ee;--sand:#e8d5bc;--border:#e0cdb5;--bolt:#5c3317;--dark:#4a2a13;--text:#3b1f0d;--sub:#8a6a4a;--muted:#a08468;--up:#b4472d;--down:#4a7c3f;--hot:#c9622f;--sh-card:0 4px 18px rgba(74,42,19,.07);--sh-hover:0 12px 34px rgba(74,42,19,.13);--font-display:'Assistant',system-ui,-apple-system,'Segoe UI',sans-serif;
+#hl-app{--bg:#f9f4ee;--cream:#f5ede0;--mist:#faf5ee;--sand:#e8d5bc;--border:#e0cdb5;--bolt:#5c3317;--dark:#4a2a13;--text:#3b1f0d;--sub:#7d5f40;--muted:#6f553b;--up:#b4472d;--down:#4a7c3f;--hot:#c9622f;--hot-text:#9a4419;--sh-card:0 4px 18px rgba(74,42,19,.07);--sh-hover:0 12px 34px rgba(74,42,19,.13);--font-display:'Assistant',system-ui,-apple-system,'Segoe UI',sans-serif;
   font-family:'Assistant',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 #hl-app *{box-sizing:border-box;margin:0;padding:0}
+#hl-app :focus-visible{outline:3px solid var(--bolt);outline-offset:2px}
+#hl-app .skip{position:absolute;inset-inline-start:-999px;top:8px;background:#fff;color:var(--bolt);padding:8px 14px;border-radius:8px;font-weight:800;z-index:100}
+#hl-app .skip:focus{inset-inline-start:12px}
+#hl-app .consent{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--text);line-height:1.5;margin:4px 0 12px;cursor:pointer}
+#hl-app .consent input{margin-top:3px;accent-color:var(--bolt);width:16px;height:16px;flex:none}
+#hl-app .consent a{color:var(--hot-text);text-decoration:underline}
+#hl-app .hint{font-size:12.5px;color:var(--sub);margin:-6px 0 12px}
+#hl-app .f-links{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:12.5px}
+#hl-app .f-links a{color:var(--hot-text)}
 #hl-app .wrap{max-width:1140px;margin:0 auto;padding:0 22px}
 #hl-app section{padding:70px 0}
 #hl-app section[id]{scroll-margin-top:80px}
 #hl-app h2.title{font-family:var(--font-display);font-size:clamp(26px,3.4vw,38px);font-weight:900;color:var(--dark);line-height:1.2}
-#hl-app .kicker{font-size:12.5px;font-weight:800;letter-spacing:2.5px;color:var(--hot);text-transform:uppercase;margin-bottom:12px}
+#hl-app .kicker{font-size:12.5px;font-weight:800;letter-spacing:2.5px;color:var(--hot-text);text-transform:uppercase;margin-bottom:12px}
 #hl-app .lead{font-size:17px;color:var(--sub);line-height:1.6;margin-top:14px;max-width:62ch}
 #hl-app .topbar{position:sticky;top:0;z-index:40;background:rgba(249,244,238,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
 #hl-app .topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
 #hl-app .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;color:var(--dark);text-decoration:none}
 #hl-app .logo .bolt{width:34px;height:34px;border-radius:11px;background:var(--bolt);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px}
-#hl-app .logo small{font-weight:700;color:var(--hot);font-size:11px;letter-spacing:1.6px;display:block;margin-top:1px}
+#hl-app .logo small{font-weight:700;color:var(--hot-text);font-size:11px;letter-spacing:1.6px;display:block;margin-top:1px}
 #hl-app nav{display:flex;gap:22px}
 #hl-app nav a{color:var(--sub);text-decoration:none;font-weight:700;font-size:14px}
 #hl-app nav a:hover{color:var(--dark)}
@@ -301,7 +320,8 @@ const HL_CSS = `
 #hl-app .sliders{display:flex;flex-direction:column;gap:18px}
 #hl-app .slider label{display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px}
 #hl-app .slider label output{color:var(--bolt);font-weight:800}
-#hl-app input[type=range]{width:100%;appearance:none;height:7px;border-radius:999px;background:var(--sand);outline:none;cursor:pointer}
+#hl-app input[type=range]{width:100%;appearance:none;height:7px;border-radius:999px;background:var(--sand);cursor:pointer}
+#hl-app input[type=range]:focus-visible{outline:3px solid var(--bolt);outline-offset:4px}
 #hl-app input[type=range]::-webkit-slider-thumb{appearance:none;width:22px;height:22px;border-radius:50%;background:var(--bolt);border:3px solid #fff;box-shadow:0 2px 8px rgba(74,42,19,.35)}
 #hl-app input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--bolt);border:3px solid #fff}
 #hl-app .results{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -321,7 +341,7 @@ const HL_CSS = `
 @media (max-width:900px){#hl-app .tiers{grid-template-columns:1fr}}
 #hl-app .tier{background:#fff;border:1.5px solid var(--border);border-radius:22px;padding:28px;box-shadow:var(--sh-card);position:relative;display:flex;flex-direction:column}
 #hl-app .tier.pop{border-color:var(--hot)}
-#hl-app .tier .pop-tag{position:absolute;top:-12px;inset-inline-start:24px;background:var(--hot);color:#fff;font-size:11.5px;font-weight:800;padding:4px 13px;border-radius:999px;letter-spacing:.6px}
+#hl-app .tier .pop-tag{position:absolute;top:-12px;inset-inline-start:24px;background:var(--hot-text);color:#fff;font-size:11.5px;font-weight:800;padding:4px 13px;border-radius:999px;letter-spacing:.6px}
 #hl-app .tier h3{font-size:17px;font-weight:800;color:var(--dark)}
 #hl-app .tier .aud{font-size:13px;color:var(--muted);font-weight:600;margin-top:2px}
 #hl-app .tier .price{font-family:var(--font-display);font-size:38px;font-weight:900;color:var(--dark);margin:16px 0 2px}
@@ -344,15 +364,15 @@ const HL_CSS = `
 @media (max-width:520px){#hl-app .frow{grid-template-columns:1fr}}
 #hl-app .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 #hl-app .field label{font-size:13px;font-weight:700;color:var(--text)}
-#hl-app .field input,#hl-app .field textarea{font:inherit;font-size:14px;padding:11px 13px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);width:100%}
-#hl-app .field input:focus,#hl-app .field textarea:focus{outline:none;border-color:var(--bolt)}
+#hl-app .field input,#hl-app .field textarea{font:inherit;font-size:14px;padding:11px 13px;border:1.5px solid #a08468;border-radius:12px;background:var(--bg);color:var(--text);width:100%}
+#hl-app .field input:focus-visible,#hl-app .field textarea:focus-visible{outline:3px solid var(--bolt);outline-offset:2px;border-color:var(--bolt)}
 #hl-app .form .btn{width:100%;margin-top:4px}
 #hl-app .ok{background:#e3f3e9;border:1px solid #bfe3cd;color:#246b43;border-radius:14px;padding:18px;font-weight:700;text-align:center;font-size:14.5px}
 #hl-app .err{color:var(--up);font-size:13px;font-weight:700;margin-top:8px}
 #hl-app footer{border-top:1px solid var(--border);background:var(--cream)}
 #hl-app footer .wrap{padding:26px 22px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
 #hl-app footer .f-logo{font-weight:800;color:var(--dark);font-size:15px}
-#hl-app footer .f-logo span{color:var(--hot)}
+#hl-app footer .f-logo span{color:var(--hot-text)}
 #hl-app footer small{color:var(--muted);font-size:12px;font-weight:600;line-height:1.5}
 `
 
@@ -409,7 +429,8 @@ export default function HotelsLandingPage() {
     html.lang = lang
     html.dir = t.dir
     const prev = html.style.scrollBehavior
-    html.style.scrollBehavior = 'smooth'
+    const reduce = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    html.style.scrollBehavior = reduce ? 'auto' : 'smooth'
     return () => { html.style.scrollBehavior = prev }
   }, [t.title, lang, t.dir])
 
@@ -473,13 +494,15 @@ export default function HotelsLandingPage() {
     return { scans, buys, hotelYear, saved: scans * 12 }
   }, [roi])
 
+  const [consent, setConsent] = useState(false)
   const submit = async (e) => {
     e.preventDefault()
     setErr('')
     if (!lead.email.trim() && !lead.phone.trim()) { setErr(t.errNoContact); return }
+    if (!consent) { setErr(t.consentErr); return }
     setSending(true)
     try {
-      await api.submitHotelLead(lead)
+      await api.submitHotelLead({ ...lead, consent: true, consent_version: '2026-09-11' })
       setSent(true)
     } catch (e2) {
       setErr(e2.message || t.errFail)
@@ -493,6 +516,7 @@ export default function HotelsLandingPage() {
   return (
     <div id="hl-app" dir={t.dir} lang={lang}>
       <style>{HL_CSS}</style>
+      <a href="#hl-main" className="skip">{t.skipL}</a>
 
       <div className="topbar">
         <div className="wrap">
@@ -532,6 +556,7 @@ export default function HotelsLandingPage() {
           </div>
         </div>
       </header>
+      <main id="hl-main">
 
       <section id="demo">
         <div className="wrap">
@@ -540,28 +565,28 @@ export default function HotelsLandingPage() {
           <p className="lead">{t.demoLead}</p>
           <div className="demo-grid">
             <div className="controls">
-              <h3>{t.demoBrandHeading}</h3>
-              <div className="brand-btns">
+              <h3 id="hl-brand-label">{t.demoBrandHeading}</h3>
+              <div className="brand-btns" role="group" aria-labelledby="hl-brand-label">
                 {DEMO_BRANDS.map((p) => (
-                  <button key={p.slug} type="button" className={`brand-btn${p.slug === brand ? ' on' : ''}`} onClick={() => setBrand(p.slug)}>
-                    <span className="sw" style={{ background: `linear-gradient(135deg, ${p.a} 50%, ${p.b} 50%)` }} />
+                  <button key={p.slug} type="button" className={`brand-btn${p.slug === brand ? ' on' : ''}`} aria-pressed={p.slug === brand} onClick={() => setBrand(p.slug)}>
+                    <span className="sw" aria-hidden="true" style={{ background: `linear-gradient(135deg, ${p.a} 50%, ${p.b} 50%)` }} />
                     <span>{p.label}<small>{p.sub[lang]}</small></span>
                   </button>
                 ))}
               </div>
               <div className="mini-row">
-                <h3 style={{ margin: 0 }}>{t.demoGuestLang}</h3>
-                <div className="seg">
-                  <button type="button" className={demoLang === 'en' ? 'on' : ''} onClick={() => setDemoLang('en')}>English</button>
-                  <button type="button" className={demoLang === 'he' ? 'on' : ''} onClick={() => setDemoLang('he')}>עברית</button>
+                <h3 style={{ margin: 0 }} id="hl-guestlang-label">{t.demoGuestLang}</h3>
+                <div className="seg" role="group" aria-labelledby="hl-guestlang-label">
+                  <button type="button" className={demoLang === 'en' ? 'on' : ''} aria-pressed={demoLang === 'en'} onClick={() => setDemoLang('en')} lang="en">English</button>
+                  <button type="button" className={demoLang === 'he' ? 'on' : ''} aria-pressed={demoLang === 'he'} onClick={() => setDemoLang('he')} lang="he">עברית</button>
                 </div>
-                <a className="open-full" href={guestUrl} target="_blank" rel="noopener">{t.demoOpenFull}</a>
+                <a className="open-full" href={guestUrl} target="_blank" rel="noopener noreferrer" aria-label={`${t.demoOpenFull} (${t.external})`}>{t.demoOpenFull}</a>
               </div>
             </div>
             <div className="phone-wrap">
               <div className="phone">
                 <div className="notch" />
-                <iframe key={guestUrl} src={guestUrl} title="Guest portal demo" />
+                <iframe key={guestUrl} src={guestUrl} title={t.iframeTitle} />
               </div>
             </div>
           </div>
@@ -574,7 +599,7 @@ export default function HotelsLandingPage() {
           <h2 className="title">{t.howTitle}</h2>
           <div className="steps">
             {t.steps.map((s, i) => (
-              <div className="stepc" key={i}><span className="emoji">{s.emoji}</span><div className="n">{i + 1}</div><h3>{s.h}</h3><p>{s.p}</p></div>
+              <div className="stepc" key={i}><span className="emoji" aria-hidden="true">{s.emoji}</span><div className="n">{i + 1}</div><h3>{s.h}</h3><p>{s.p}</p></div>
             ))}
           </div>
         </div>
@@ -586,7 +611,7 @@ export default function HotelsLandingPage() {
           <h2 className="title">{t.valueTitle}</h2>
           <div className="vgrid">
             {t.values.map((v, i) => (
-              <div className="vcard" key={i}><div className="ic">{v.ic}</div><h3>{v.h}</h3><p>{v.p}</p></div>
+              <div className="vcard" key={i}><div className="ic" aria-hidden="true">{v.ic}</div><h3>{v.h}</h3><p>{v.p}</p></div>
             ))}
           </div>
         </div>
@@ -599,11 +624,11 @@ export default function HotelsLandingPage() {
           <p className="lead">{t.roiLead}</p>
           <div className="roi-grid">
             <div className="sliders">
-              <div className="slider"><label>{t.roiProps} <output>{roi.props}</output></label><input type="range" min="1" max="40" step="1" value={roi.props} onChange={(e) => setRoi((s) => ({ ...s, props: +e.target.value }))} /></div>
-              <div className="slider"><label>{t.roiRooms} <output>{roi.rooms}</output></label><input type="range" min="20" max="400" step="5" value={roi.rooms} onChange={(e) => setRoi((s) => ({ ...s, rooms: +e.target.value }))} /></div>
-              <div className="slider"><label>{t.roiOcc} <output>{roi.occ}%</output></label><input type="range" min="40" max="95" step="1" value={roi.occ} onChange={(e) => setRoi((s) => ({ ...s, occ: +e.target.value }))} /></div>
-              <div className="slider"><label>{t.roiForeign} <output>{roi.foreign}%</output></label><input type="range" min="10" max="90" step="5" value={roi.foreign} onChange={(e) => setRoi((s) => ({ ...s, foreign: +e.target.value }))} /></div>
-              <div className="slider"><label>{t.roiComm} <output>₪{roi.comm}</output></label><input type="range" min="8" max="35" step="1" value={roi.comm} onChange={(e) => setRoi((s) => ({ ...s, comm: +e.target.value }))} /></div>
+              <div className="slider"><label htmlFor="roi-props">{t.roiProps} <output htmlFor="roi-props">{roi.props}</output></label><input id="roi-props" type="range" min="1" max="40" step="1" value={roi.props} onChange={(e) => setRoi((s) => ({ ...s, props: +e.target.value }))} /></div>
+              <div className="slider"><label htmlFor="roi-rooms">{t.roiRooms} <output htmlFor="roi-rooms">{roi.rooms}</output></label><input id="roi-rooms" type="range" min="20" max="400" step="5" value={roi.rooms} onChange={(e) => setRoi((s) => ({ ...s, rooms: +e.target.value }))} /></div>
+              <div className="slider"><label htmlFor="roi-occ">{t.roiOcc} <output htmlFor="roi-occ">{roi.occ}%</output></label><input id="roi-occ" type="range" min="40" max="95" step="1" value={roi.occ} onChange={(e) => setRoi((s) => ({ ...s, occ: +e.target.value }))} /></div>
+              <div className="slider"><label htmlFor="roi-foreign">{t.roiForeign} <output htmlFor="roi-foreign">{roi.foreign}%</output></label><input id="roi-foreign" type="range" min="10" max="90" step="5" value={roi.foreign} onChange={(e) => setRoi((s) => ({ ...s, foreign: +e.target.value }))} /></div>
+              <div className="slider"><label htmlFor="roi-comm">{t.roiComm} <output htmlFor="roi-comm">₪{roi.comm}</output></label><input id="roi-comm" type="range" min="8" max="35" step="1" value={roi.comm} onChange={(e) => setRoi((s) => ({ ...s, comm: +e.target.value }))} /></div>
             </div>
             <div>
               <div className="results">
@@ -612,7 +637,7 @@ export default function HotelsLandingPage() {
                 <div className="rcard money"><div className="lbl">{t.roiYear}</div><div className="val">₪{fmtIL(calc.hotelYear)}<small>{t.roiPerYear}</small></div></div>
                 <div className="rcard"><div className="lbl">{t.roiSaved}</div><div className="val">{fmtIL(calc.saved)}</div></div>
               </div>
-              <p className="assume">{t.roiAssume}</p>
+              <p className="assume" aria-live="off">{t.roiAssume}</p>
             </div>
           </div>
         </div>
@@ -636,7 +661,7 @@ export default function HotelsLandingPage() {
                 <h3>{tier.name}</h3><div className="aud">{tier.aud}</div>
                 <div className="price">{tier.price}<small>{t.perProp}</small></div>
                 <ul>{tier.feats.map((f, i) => <li key={i}>{f}</li>)}</ul>
-                <a className={`btn${tier.pop ? '' : ' ghost'}`} href="#contact">{t.tierBtn}</a>
+                <a className={`btn${tier.pop ? '' : ' ghost'}`} href="#contact" aria-label={`${t.tierBtn} - ${tier.name}`}>{t.tierBtn}</a>
               </div>
             ))}
           </div>
@@ -658,31 +683,45 @@ export default function HotelsLandingPage() {
               <p className="lead" style={{ fontSize: 14.5 }}>{t.contactWrite}<a href="mailto:Helpdesk@mocaintel.com?subject=MOCA Guest Connect" style={{ color: 'var(--bolt)', fontWeight: 800 }}>Helpdesk@mocaintel.com</a></p>
             </div>
             {sent ? (
-              <div className="form"><div className="ok">{t.okMain}<br />{t.okSub}</div></div>
+              <div className="form"><div className="ok" role="status">{t.okMain}<br />{t.okSub}</div></div>
             ) : (
-              <form className="form" onSubmit={submit}>
+              <form className="form" onSubmit={submit} aria-describedby="hl-lead-hint">
                 <div className="frow">
-                  <div className="field"><label>{t.fHotel}</label><input value={lead.hotel_name} onChange={upd('hotel_name')} placeholder={t.fHotelPh} /></div>
-                  <div className="field"><label>{t.fContact}</label><input value={lead.contact_name} onChange={upd('contact_name')} placeholder={t.fContactPh} /></div>
+                  <div className="field"><label htmlFor="hl-hotel">{t.fHotel}</label><input id="hl-hotel" autoComplete="organization" value={lead.hotel_name} onChange={upd('hotel_name')} placeholder={t.fHotelPh} /></div>
+                  <div className="field"><label htmlFor="hl-contact">{t.fContact}</label><input id="hl-contact" autoComplete="name" value={lead.contact_name} onChange={upd('contact_name')} placeholder={t.fContactPh} /></div>
                 </div>
                 <div className="frow">
-                  <div className="field"><label>{t.fEmail}</label><input type="email" value={lead.email} onChange={upd('email')} placeholder={t.fEmailPh} /></div>
-                  <div className="field"><label>{t.fPhone}</label><input type="tel" value={lead.phone} onChange={upd('phone')} placeholder={t.fPhonePh} /></div>
+                  <div className="field"><label htmlFor="hl-email">{t.fEmail}</label><input id="hl-email" type="email" autoComplete="email" dir="ltr" value={lead.email} onChange={upd('email')} placeholder={t.fEmailPh} /></div>
+                  <div className="field"><label htmlFor="hl-phone">{t.fPhone}</label><input id="hl-phone" type="tel" autoComplete="tel" dir="ltr" value={lead.phone} onChange={upd('phone')} placeholder={t.fPhonePh} /></div>
                 </div>
-                <div className="field"><label>{t.fRooms}</label><input type="number" min="1" value={lead.rooms} onChange={upd('rooms')} placeholder={t.fRoomsPh} /></div>
-                <div className="field"><label>{t.fMsg}</label><textarea rows="3" value={lead.message} onChange={upd('message')} placeholder={t.fMsgPh} /></div>
-                <button className="btn" type="submit" disabled={sending}>{sending ? t.submitting : t.submit}</button>
-                {err && <div className="err">{err}</div>}
+                <p className="hint" id="hl-lead-hint">{t.fRequiredHint}</p>
+                <div className="field"><label htmlFor="hl-rooms">{t.fRooms}</label><input id="hl-rooms" type="number" min="1" value={lead.rooms} onChange={upd('rooms')} placeholder={t.fRoomsPh} /></div>
+                <div className="field"><label htmlFor="hl-msg">{t.fMsg}</label><textarea id="hl-msg" rows="3" value={lead.message} onChange={upd('message')} placeholder={t.fMsgPh} /></div>
+                <label className="consent">
+                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} aria-required="true" />
+                  <span>{t.consentLabel} <a href={`/privacy${lang === 'en' ? '?lang=en' : ''}`} target="_blank" rel="noopener noreferrer">{t.privacyL}</a>.</span>
+                </label>
+                <button className="btn" type="submit" disabled={sending} aria-busy={sending}>{sending ? t.submitting : t.submit}</button>
+                {err && <div className="err" role="alert">{err}</div>}
               </form>
             )}
           </div>
         </div>
       </section>
+      </main>
 
       <footer>
         <div className="wrap">
-          <div className="f-logo">MOCA <span>Guest Connect</span> ⚡</div>
-          <small>{t.footerSmall}</small>
+          <div className="f-logo">MOCA <span>Guest Connect</span> <span aria-hidden="true">⚡</span></div>
+          <div>
+            <small>{t.footerSmall}</small>
+            <div className="f-links">
+              <a href={`/privacy${lang === 'en' ? '?lang=en' : ''}`}>{t.privacyL}</a>
+              <a href={`/terms${lang === 'en' ? '?lang=en' : ''}`}>{t.termsL}</a>
+              <a href={`/cookies${lang === 'en' ? '?lang=en' : ''}`}>{t.cookiesL}</a>
+              <a href={`/accessibility${lang === 'en' ? '?lang=en' : ''}`}>{t.accessL}</a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

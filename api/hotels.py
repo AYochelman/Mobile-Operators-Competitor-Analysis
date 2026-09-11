@@ -223,6 +223,11 @@ def api_hotels_lead():
     phone = (data.get("phone") or "").strip()
     if not email and not phone:
         return jsonify({"error": "email or phone required"}), 400
+    # Documented consent: the form's unchecked-by-default box (see privacy policy
+    # "פניות מבתי מלון"); the lead is stored and forwarded to the operator's
+    # internal channels (email/Telegram) only after it.
+    if data.get("consent") is not True:
+        return jsonify({"error": "consent required"}), 400
     try:
         rooms = int(data["rooms"]) if str(data.get("rooms", "")).strip() else None
     except (ValueError, TypeError):
@@ -232,6 +237,8 @@ def api_hotels_lead():
         "contact_name": (data.get("contact_name") or "")[:200],
         "email": email[:200], "phone": phone[:60], "rooms": rooms,
         "message": (data.get("message") or "")[:2000], "source": "/hotels",
+        "consent_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "consent_version": str(data.get("consent_version") or "")[:40] or "unversioned",
     }
     core.save_hotel_lead(lead, db_path=core._db_path())
     _notify_hotel_lead(lead)

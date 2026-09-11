@@ -824,6 +824,24 @@ def init_db(db_path=None):
                 conn.commit()
             except Exception:
                 pass  # column already exists
+        # Migration (2026-09-11, privacy/anti-spam compliance): documented consent
+        # on every personal-data signup. consent_at/consent_version = when and
+        # which wording the user accepted; marketing_ok = SEPARATE opt-in for the
+        # periodic marketing mails (monthly market pulse, renewal follow-up) -
+        # Communications Law s.30A requires explicit prior consent per purpose.
+        for col, sql in (("consent_at", "TEXT"), ("consent_version", "TEXT"),
+                         ("marketing_ok", "INTEGER DEFAULT 0")):
+            try:
+                conn.execute(f"ALTER TABLE mobile_reminders ADD COLUMN {col} {sql}")
+                conn.commit()
+            except Exception:
+                pass
+        for col, sql in (("consent_at", "TEXT"), ("consent_version", "TEXT")):
+            try:
+                conn.execute(f"ALTER TABLE hotel_leads ADD COLUMN {col} {sql}")
+                conn.commit()
+            except Exception:
+                pass
         # Migration: promo pricing on domestic plans (e.g. "3 חודשים ראשונים ב-39 ₪")
         for col, sql in (("promo_price", "REAL"), ("promo_months", "INTEGER")):
             try:
@@ -1434,11 +1452,13 @@ def save_hotel_lead(data, db_path=None):
     conn = _connect(db_path)
     try:
         conn.execute(
-            "INSERT INTO hotel_leads (hotel_name, contact_name, email, phone, rooms, message, source, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO hotel_leads (hotel_name, contact_name, email, phone, rooms, message, source, created_at, "
+            " consent_at, consent_version) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (data.get("hotel_name"), data.get("contact_name"), data.get("email"),
              data.get("phone"), data.get("rooms"), data.get("message"),
-             data.get("source", "/hotels"), datetime.now(timezone.utc).isoformat())
+             data.get("source", "/hotels"), datetime.now(timezone.utc).isoformat(),
+             data.get("consent_at"), data.get("consent_version"))
         )
         conn.commit()
     finally:
@@ -2562,14 +2582,16 @@ def save_mobile_reminders(token, rows, db_path=None):
                 "INSERT INTO mobile_reminders "
                 "(token, email, phone, channel, kind, plan_type, carrier, plan_name, price, "
                 " data_gb, unlimited, days, end_date, remind_days_before, include_offers, "
-                " lang, paid_price, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " lang, paid_price, created_at, consent_at, consent_version, marketing_ok) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (token, r.get("email"), r.get("phone"), r.get("channel") or "email",
                  r["kind"], r.get("plan_type") or "domestic", r["carrier"], r["plan_name"],
                  r.get("price"), r.get("data_gb"),
                  1 if r.get("unlimited") else 0, r.get("days"), r.get("end_date"),
                  r.get("remind_days_before"), 0 if r.get("include_offers") is False else 1,
-                 r.get("lang") or "he", r.get("paid_price"), now))
+                 r.get("lang") or "he", r.get("paid_price"), now,
+                 r.get("consent_at") or now, r.get("consent_version"),
+                 1 if r.get("marketing_ok") else 0))
         conn.commit()
     finally:
         conn.close()

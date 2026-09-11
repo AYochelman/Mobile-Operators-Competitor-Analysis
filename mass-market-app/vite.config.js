@@ -28,7 +28,7 @@ export default defineConfig({
         // clean-URLs match (→ privacy.html), but /privacy?lang=en does NOT (the
         // query breaks the precache key match) and fell into the SPA 404 - so
         // deny both entirely and let the Netlify redirect serve the static page.
-        navigateFallbackDenylist: [/^\/esim\//, /^\/go\//, /^\/privacy/, /^\/terms/],
+        navigateFallbackDenylist: [/^\/esim\//, /^\/go\//, /^\/privacy/, /^\/terms/, /^\/cookies/, /^\/accessibility/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {

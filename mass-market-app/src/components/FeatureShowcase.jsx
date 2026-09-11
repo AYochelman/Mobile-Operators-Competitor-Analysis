@@ -19,14 +19,14 @@ function FeatureRow({ ic, h, p, img, overlay, flip, w, h2, ow, oh }) {
     <div className={`flex flex-col gap-7 lg:gap-14 items-center ${flip ? 'lg:flex-row-reverse' : 'lg:flex-row'}`}>
       <div className="lg:w-[44%] text-start">
         <div className="w-12 h-12 rounded-[14px] grid place-items-center text-2xl bg-moca-cream mb-4"
-             style={{ boxShadow: 'var(--sh-card)' }}>{ic}</div>
+             style={{ boxShadow: 'var(--sh-card)' }} aria-hidden="true">{ic}</div>
         <h3 className="font-display text-2xl md:text-[26px] text-moca-dark mb-2.5">{h}</h3>
         <p className="text-moca-sub text-[15px] md:text-base leading-relaxed max-w-[440px]">{p}</p>
       </div>
       <div className="lg:w-[56%] w-full fs-persp flex justify-center">
         <div className="fs-stack" data-tilt={flip ? 'r' : 'l'}>
           <div className="fs-shot">
-            <img src={src} alt={h} loading="lazy" decoding="async" width={w} height={h2} />
+            <img src={src} alt="" loading="lazy" decoding="async" width={w} height={h2} />
             {!img && <span className="fs-ph">{tt('תמונה זמנית - כאן ייכנס צילום המסך שלך', 'Placeholder image - your screenshot goes here')}</span>}
           </div>
           {overlay && (

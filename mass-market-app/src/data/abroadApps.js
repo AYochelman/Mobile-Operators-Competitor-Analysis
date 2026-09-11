@@ -6,19 +6,21 @@
 
 import { carrierLabel } from './carrierLabels'
 
-const WHATSAPP   = { name: 'WhatsApp',    logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg' };
-const INSTAGRAM  = { name: 'Instagram',   logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg' };
-const FACEBOOK   = { name: 'Facebook',    logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg' };
-const TIKTOK     = { name: 'TikTok',      logo: 'https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg' };
-const GMAPS      = { name: 'Google Maps', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/bd/Google_Maps_Logo_2020.svg' };
-const WAZE       = { name: 'Waze',        logo: '/app-icons/waze.png' };
-const SNAPCHAT   = { name: 'Snapchat',    logo: 'https://upload.wikimedia.org/wikipedia/en/c/c4/Snapchat_logo.svg' };
-const TRIPADV    = { name: 'Tripadvisor', logo: '/app-icons/tripadvisor.png' };
-const YOUTUBE    = { name: 'YouTube',     logo: 'https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg' };
-const NETFLIX    = { name: 'Netflix',     logo: 'https://upload.wikimedia.org/wikipedia/commons/7/75/Netflix_icon.svg' };
-const CHATGPT    = { name: 'ChatGPT',     logo: 'https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg' };
-const GEMINI     = { name: 'Gemini',      logo: 'https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg' };
-const SPOTIFY    = { name: 'Spotify',     logo: 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg' };
+// Logo URLs were removed 2026-09-11 (Wikimedia hot-links of third-party marks);
+// AppsModal renders the names as text chips.
+const WHATSAPP   = { name: 'WhatsApp' };
+const INSTAGRAM  = { name: 'Instagram' };
+const FACEBOOK   = { name: 'Facebook' };
+const TIKTOK     = { name: 'TikTok' };
+const GMAPS      = { name: 'Google Maps' };
+const WAZE       = { name: 'Waze' };
+const SNAPCHAT   = { name: 'Snapchat' };
+const TRIPADV    = { name: 'Tripadvisor' };
+const YOUTUBE    = { name: 'YouTube' };
+const NETFLIX    = { name: 'Netflix' };
+const CHATGPT    = { name: 'ChatGPT' };
+const GEMINI     = { name: 'Gemini' };
+const SPOTIFY    = { name: 'Spotify' };
 
 export const CELLCOM_APPS   = [WHATSAPP, INSTAGRAM, FACEBOOK, TIKTOK, GMAPS, WAZE];
 export const PELEPHONE_APPS = [FACEBOOK, WAZE, SNAPCHAT, INSTAGRAM, WHATSAPP, GMAPS, TRIPADV, YOUTUBE, NETFLIX, TIKTOK, CHATGPT, GEMINI];
