@@ -5,8 +5,8 @@
   --color-moca-espresso: #5c3317;  /* alias for bolt — used by Login/PriceHistoryModal/ScrapeToast/GlobalSearch */
   --color-moca-dark:    #4a2a13;
   --color-moca-text:   #3b1f0d;
-  --color-moca-sub:    #8a6a4a;
-  --color-moca-muted:  #a08468;
+  --color-moca-sub:    #7d5f40;   /* was #8a6a4a - 4.26:1 on cream failed AA (2026-09-11) */
+  --color-moca-muted:  #6f553b;   /* was #a08468 - 3.2:1 failed AA for small text */
   --color-moca-cream:  #f5ede0;
   --color-moca-bg:     #f9f4ee;
   --color-moca-border: #e0cdb5;
@@ -17,7 +17,8 @@
   /* Semantic — price/change indicators */
   --color-moca-up:     #b4472d;  /* price up = bad for us */
   --color-moca-down:   #4a7c3f;  /* price down = good for us */
-  --color-moca-hot:    #c9622f;  /* attention, NEW tags */
+  --color-moca-hot:    #c9622f;
+  --color-moca-hot-text: #9a4419;  /* AA-safe orange for TEXT on light surfaces; keep --color-moca-hot for fills */  /* attention, NEW tags */
 
   /* Type families (utility classes: font-display, font-body).
      font-display now maps to Assistant too: the serif (Frank Ruhl Libre) was

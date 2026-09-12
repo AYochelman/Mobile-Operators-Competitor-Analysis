@@ -1,4 +1,4 @@
-export default function FilterTag({ label, active, onClick, count }) {
+export default function FilterTag({ label, active, onClick }) {
   return (
     <button
       onClick={onClick}

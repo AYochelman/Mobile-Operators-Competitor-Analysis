@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && vite build --ssr src/entry-landing.jsx --outDir dist-ssr && node scripts/prerender-landing.mjs && vite build --ssr src/entry-hotels.jsx --outDir dist-ssr-hotels && node scripts/prerender-hotels.mjs && node scripts/prerender-esim.mjs && node scripts/prerender-mobile.mjs && node scripts/stamp-sitemap.mjs && node scripts/prerender-esim-dests.mjs",
+    "build": "vite build && vite build --ssr src/entry-landing.jsx --outDir dist-ssr && node scripts/prerender-landing.mjs && vite build --ssr src/entry-hotels.jsx --outDir dist-ssr-hotels && node scripts/prerender-hotels.mjs && node scripts/prerender-esim.mjs && node scripts/prerender-mobile.mjs && node scripts/stamp-sitemap.mjs && node scripts/prerender-esim-dests.mjs && node scripts/stamp-legal.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -24,12 +24,13 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "ajv": "^8.20.0",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
     "tailwindcss": "^4.2.2",
     "vite": "^8.0.4",
-    "vite-plugin-pwa": "^1.2.0"
+    "vite-plugin-pwa": "^1.3.0"
   }
 }

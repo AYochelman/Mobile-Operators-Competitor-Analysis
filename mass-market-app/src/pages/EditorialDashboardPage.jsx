@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import { useVisibleCarriers } from '../hooks/useHiddenCarrier'
 import { useWatchlist } from '../hooks/useWatchlist'
 import { useDashboardData } from '../hooks/useDashboardData'
-import { DOMESTIC_LABELS, carrierLabel } from '../data/carrierLabels'
+import { DOMESTIC_LABELS } from '../data/carrierLabels'
 import {
   CarrierChip,
   EditorialHero,
@@ -14,7 +13,7 @@ import {
   Tag,
   MyCarrierModal,
 } from '../components/moca'
-import { getCarrierColor, getCarrierName } from '../components/moca/carrierMeta'
+import { getCarrierName } from '../components/moca/carrierMeta'
 import Spinner from '../components/ui/Spinner'
 import { useLang } from '../hooks/useLanguage'
 
@@ -156,7 +155,7 @@ function benefitSignature(s) {
   const segments = String(s)
     .toLowerCase()
     .replace(/(?<=\d),(?=\d)/g, '')               // 6,000 → 6000 before splitting on comma
-    .split(/\s*(?:[,;\/|•·]|ו-)\s*/)         // independent list items
+    .split(/\s*(?:[,;/|•·]|ו-)\s*/)         // independent list items
     .map((seg) => seg
       .replace(/[:."'()[\]\-–—]/g, ' ')           // strip remaining punctuation
       .split(/\s+/)
@@ -239,7 +238,7 @@ function BenefitDiffRows({ diff }) {
           unicodeBidi: 'isolate',
         }}
       >
-        {/* Normalize whitespace: scraped values embed NBSP ( ) which
+        {/* Normalize whitespace: scraped values embed NBSP (U+00A0) which
             force-glues "100 ₪ לרכישת" into one non-breaking run that can't wrap
             and reorders badly in some browsers. Collapse to plain spaces. */}
         {String(text).replace(/\s+/g, ' ').trim()}
@@ -624,7 +623,6 @@ function OursPinned({ carrierId, isAdmin, isSuperAdmin, onOpenCarrierModal }) {
 export default function EditorialDashboardPage() {
   const { tt } = useLang()
   const { workspace, isAdmin, isSuperAdmin } = useAuth()
-  const flags = useFeatureFlags()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [carrierModalOpen, setCarrierModalOpen] = useState(false)

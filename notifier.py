@@ -1280,7 +1280,7 @@ def _rem_email_shell(lang, unsub, inner_rows, hero_url=None, share_url=None):
 {share_row}
 <tr><td style="padding:18px 16px 4px;text-align:center;">
 <p style="margin:0;color:#a08468;font-size:11.5px;line-height:1.8;">{footer_note}<br>
-<a href="{unsub}" style="color:#8a6a4a;">{unsub_label}</a> &middot; MOCA</p>
+<a href="{unsub}" style="color:#8a6a4a;">{unsub_label}</a> &middot; {_sender_identity(lang)}</p>
 </td></tr>
 </table></td></tr></table></body></html>'''
 
@@ -1657,11 +1657,58 @@ def _build_renewal_html(rem, offers, config):
                             share_url=_rem_share_url(rem, config))
 
 
-def _rem_send(rem, subject, text_lines, config, html=None):
+_CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+_cfg_cache = {"mtime": None, "data": {}}
+
+
+def _cfg_cached():
+    """config.json, re-read when its mtime changes (mirrors app.load_config,
+    which can't be imported here without a circular import)."""
+    try:
+        mtime = os.path.getmtime(_CONFIG_PATH)
+        if _cfg_cache["mtime"] != mtime:
+            with open(_CONFIG_PATH, encoding="utf-8") as f:
+                _cfg_cache["data"] = json.load(f)
+            _cfg_cache["mtime"] = mtime
+    except (OSError, ValueError):
+        pass
+    return _cfg_cache["data"]
+
+
+def _sender_identity(lang, config=None):
+    """Sender identification block required on marketing messages
+    (Communications Law s.30A(e)): business name, contact and address.
+    Values come from config.json: business_name, business_id (ח.פ./ע.מ.),
+    business_address, business_email. Missing keys are simply omitted."""
+    cfg = config or _cfg_cached()
+    name = cfg.get("business_name") or "MOCA"
+    parts = [name]
+    if cfg.get("business_id"):
+        parts.append(("Reg. no. " if lang == "en" else "מס' עוסק/ח.פ. ") + str(cfg["business_id"]))
+    if cfg.get("business_address"):
+        parts.append(str(cfg["business_address"]))
+    parts.append(cfg.get("business_email") or "Helpdesk@mocaintel.com")
+    return " · ".join(parts)
+
+
+def _promo_subject(subject, lang):
+    """s.30A(e): the word 'פרסומת' must open the subject of any marketing email."""
+    tag = "Advertisement (פרסומת): " if lang == "en" else "פרסומת: "
+    return subject if subject.startswith(tag) else tag + subject
+
+
+def _rem_send(rem, subject, text_lines, config, html=None, promo=False):
     """Deliver one reminder over its chosen channel(s). Returns True if at least
     one channel accepted the message. `html` overrides the plain generated email
-    body (the WhatsApp text always comes from text_lines)."""
+    body (the WhatsApp text always comes from text_lines).
+
+    promo=True marks the message as advertising (it promotes other carriers'
+    plans): the subject gets the legally required 'פרסומת' label, the WhatsApp
+    text opens with it, and both channels carry the sender identification."""
     lang = rem.get("lang") or "he"
+    if promo:
+        subject = _promo_subject(subject, lang)
+    sender = _sender_identity(lang, config)
     utm, unsub = _rem_links(rem, config)
     share_line = (("Know someone paying too much? Send them: " if lang == "en"
                    else "מכירים מישהו שמשלם יותר מדי? שלחו להם: ") + _rem_share_url(rem, config))
@@ -1670,19 +1717,20 @@ def _rem_send(rem, subject, text_lines, config, html=None):
     channel = rem.get("channel") or "email"
     if channel in ("email", "both") and rem.get("email"):
         footer = ("Unsubscribe: " if lang == "en" else "להסרה מהעדכונים: ") + unsub
-        text = "\n".join(body_lines + ["", footer, "", "MOCA"])
+        text = "\n".join(body_lines + ["", footer, "", sender])
         if html is None:
             dir_attr = "ltr" if lang == "en" else "rtl"
             html_body = "".join(f"<p style='margin:6px 0'>{ln}</p>" for ln in body_lines if ln)
             html = (f"<div dir='{dir_attr}' style='font-family:Arial,sans-serif;font-size:15px;color:#3b1f0d'>"
                     f"{html_body}"
                     f"<p style='margin:14px 0 0;font-size:12px;color:#8a6a4a'>"
-                    f"<a href='{unsub}'>{'Unsubscribe' if lang == 'en' else 'להסרה מהעדכונים'}</a> · MOCA</p></div>")
+                    f"<a href='{unsub}'>{'Unsubscribe' if lang == 'en' else 'להסרה מהעדכונים'}</a> · {sender}</p></div>")
         if _send_email(config, rem["email"], subject, text=text, html=html):
             ok = True
     if channel in ("whatsapp", "both") and rem.get("phone"):
         footer = ("Unsubscribe: " if lang == "en" else "להסרה: ") + unsub
-        if _send_whatsapp_direct(rem["phone"], "\n".join(body_lines + [footer]), config):
+        wa_lines = (["פרסומת" if lang != "en" else "Advertisement (פרסומת)"] if promo else []) + body_lines
+        if _send_whatsapp_direct(rem["phone"], "\n".join(wa_lines + [footer, sender]), config):
             ok = True
     return ok
 
@@ -1787,7 +1835,7 @@ def notify_mobile_better_deals(plans, config, db_path=None):
                 cname = CARRIER_DISPLAY_NAMES.get(r["carrier"], r["carrier"])
                 tail.append(f"• {rname} ({cname}) - {r['plan_name']}: ₪{_rem_fmt_price(r['price'])}")
         html = _build_better_deal_html(rem, base, deals, config, btl=btl)
-        if _rem_send(rem, subject, head + _rem_deal_lines(deals, lang, ptype) + tail, config, html=html):
+        if _rem_send(rem, subject, head + _rem_deal_lines(deals, lang, ptype) + tail, config, html=html, promo=True):
             mark_mobile_reminder_notified(rem["id"], best_price=best, db_path=db_path)
             sent += 1
     return sent
@@ -1867,7 +1915,7 @@ def notify_mobile_plan_end_reminders(plans, config, db_path=None):
             if offers:
                 lines += ["", offers_title] + _rem_deal_lines(offers, lang, ptype)
         html = _build_plan_end_html(rem, head, offers, config)
-        if _rem_send(rem, subject, lines, config, html=html):
+        if _rem_send(rem, subject, lines, config, html=html, promo=bool(offers)):
             mark_mobile_reminder_notified(rem["id"], done=True, db_path=db_path)
             sent += 1
         else:
@@ -1896,6 +1944,10 @@ def notify_mobile_heartbeat(plans, config, db_path=None):
         if (rem.get("plan_type") or "domestic") != "domestic":
             continue
         if not rem.get("email") or (rem.get("channel") or "email") == "whatsapp":
+            continue
+        # The monthly pulse is marketing, not the alert the user asked for: it
+        # goes only to rows with the separate marketing_ok opt-in (2026-09-11).
+        if not rem.get("marketing_ok"):
             continue
         marks = [m for m in (rem.get("last_heartbeat_at"), rem.get("last_notified_at"),
                              rem.get("created_at")) if m]
@@ -1947,7 +1999,7 @@ def notify_mobile_heartbeat(plans, config, db_path=None):
             lines.append("ברגע שתופיע חבילה שמנצחת את שלכם - נעדכן מיד.")
         html = _build_heartbeat_html(rem, base, pct, stats[:4], config)
         # Email-only nudge — never spend WhatsApp quota on a heartbeat.
-        if _rem_send(dict(rem, channel="email"), subject, lines, config, html=html):
+        if _rem_send(dict(rem, channel="email"), subject, lines, config, html=html, promo=True):
             touch_mobile_reminder_heartbeat(rem["id"], db_path=db_path)
             sent += 1
     return sent
@@ -1974,7 +2026,8 @@ def notify_mobile_renewal_followups(plans, config, db_path=None):
             continue
         if today < end + timedelta(days=7):
             continue
-        if not rem.get("email"):
+        if not rem.get("email") or not rem.get("marketing_ok"):
+            # No address, or no separate marketing opt-in: close out silently.
             mark_mobile_reminder_followup(rem["id"], db_path=db_path)
             continue
         base = {"carrier": rem["carrier"], "plan_name": rem["plan_name"],
@@ -1999,7 +2052,7 @@ def notify_mobile_renewal_followups(plans, config, db_path=None):
         # nudge is an email product (and consumer WhatsApp is quota-blocked).
         email_rem = dict(rem, channel="email")
         html = _build_renewal_html(rem, offers, config)
-        if _rem_send(email_rem, subject, lines, config, html=html):
+        if _rem_send(email_rem, subject, lines, config, html=html, promo=True):
             mark_mobile_reminder_followup(rem["id"], db_path=db_path)
             sent += 1
     return sent

@@ -40,16 +40,6 @@ const LOGO_WIDTHS = {
 // AFFILIATE_PROVIDERS + AFFILIATE_URLS now live in ../data/affiliateLinks (shared
 // with PlanCard) so the Saily/Voye tracking links can't drift between the two views.
 
-function slugify(str) {
-  if (!str) return 'plan'
-  return str
-    .toLowerCase()
-    .replace(/[–—]/g, '-')
-    .replace(/\s+/g, '-')
-    .replace(/[^\w-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '') || 'plan'
-}
 
 // GLOBAL_LABELS + GLOBAL_COLORS now live in ../data/carrierLabels (single source of
 // truth, shared with PlanCard + ComparePage + DashboardPage) so newly added eSIM

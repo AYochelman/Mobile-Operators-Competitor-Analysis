@@ -261,7 +261,7 @@ plan to the map. The same MAP→AUTO upgrade as Partner:
 4. **Did NOT invent a URL** for the new plan (same call as the 500GB case below) — the terms
    come from Cellcom's own API on the next scrape or not at all. A plan that still resolves
    to nothing now emits a `logger.warning` naming it, alongside the Telegram alert.
-5. **Verified offline** (`tests/test_cellcom_abroad_terms.py`, 14 tests, no network): the
+5. **Verified offline** (`tests/test_cellcom_abroad_terms.py`, 15 tests, no network): the
    recorded API response as a fixture + a fake Page; the regression test asserts a card whose
    SOC appears **only** in the page HTML gets the right PDF, and that an unrelated
    (non-`/globalassets/`) PDF is never linked as terms.

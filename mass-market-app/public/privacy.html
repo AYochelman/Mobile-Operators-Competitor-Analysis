@@ -8,161 +8,284 @@
   <link rel="apple-touch-icon" href="/icons/icon-180.png" />
   <link rel="stylesheet" href="/fonts/fonts.css" />
   <title>מדיניות פרטיות | MOCA</title>
-  <meta name="description" content="מדיניות הפרטיות של שירותי ההשוואה של MOCA (eSIM וחבילות סלולר): בלי הרשמה, בלי איסוף פרטים מזהים, IP נשמר בגיבוב חד-כיווני בלבד." />
+  <meta name="description" content="מדיניות הפרטיות של MOCA: איזה מידע נאסף בשירותי ההשוואה, בפורטלי האורחים ובפלטפורמה העסקית, למי הוא מועבר, כמה זמן נשמר ואילו זכויות יש לכם לפי חוק הגנת הפרטיות." />
   <link rel="canonical" href="https://mocaintel.com/privacy" />
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Assistant',system-ui,-apple-system,'Segoe UI',sans-serif;background:#f9f4ee;color:#3b1f0d;line-height:1.75;-webkit-font-smoothing:antialiased}
-    .wrap{max-width:760px;margin:0 auto;padding:0 20px}
+    .wrap{max-width:780px;margin:0 auto;padding:0 20px}
     header{background:#5c3317;color:#fff;padding:14px 0}
     header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .brand{display:flex;align-items:baseline;gap:8px;color:#fff;text-decoration:none}
     .brand b{font-size:17px;font-weight:800;letter-spacing:.3px}
-    .brand span{font-size:11px;letter-spacing:2px;opacity:.75;font-weight:600}
-    .lang{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:5px 14px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+    .brand span{font-size:12px;letter-spacing:1.5px;opacity:.92;font-weight:600}
+    .lang{border:1.5px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:5px 14px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+    .skip{position:absolute;inset-inline-start:-999px;top:8px;background:#fff;color:#4a2a13;padding:8px 14px;border-radius:8px;font-weight:700;z-index:100}
+    .skip:focus{inset-inline-start:12px}
+    :focus-visible{outline:3px solid #5c3317;outline-offset:2px}
+    header :focus-visible{outline-color:#fff}
     main{padding:34px 0 10px}
     h1{font-size:29px;font-weight:800;color:#4a2a13;margin-bottom:4px}
-    .updated{font-size:13px;color:#8a6a4a;font-weight:600;margin-bottom:22px}
+    .updated{font-size:13px;color:#6f553b;font-weight:600;margin-bottom:18px}
     .tldr{background:#fff;border:1.5px solid #e0cdb5;border-radius:16px;padding:16px 18px;margin-bottom:26px;font-size:15px}
     .tldr b{color:#4a2a13}
+    .operator{background:#fff;border:1.5px solid #e0cdb5;border-radius:12px;padding:12px 16px;margin:8px 0 22px;font-size:14.5px}
+    .operator b{color:#4a2a13}
     h2{font-size:18.5px;font-weight:800;color:#4a2a13;margin:26px 0 8px}
-    p,li{font-size:15px;color:#3b1f0d}
+    h3{font-size:16px;font-weight:700;color:#4a2a13;margin:16px 0 6px}
+    p,li,td,th{font-size:15px;color:#3b1f0d}
     ul{padding-inline-start:22px;display:flex;flex-direction:column;gap:6px;margin:6px 0}
-    a{color:#c9622f}
-    footer{margin:40px 0 30px;font-size:13px;color:#8a6a4a;border-top:1px solid #e8d5bc;padding-top:16px}
-    footer a{margin-inline-end:14px}
+    a{color:#8f3f16;text-decoration:underline}
+    table{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:14px;background:#fff}
+    th,td{border:1px solid #e0cdb5;padding:7px 9px;text-align:start;vertical-align:top}
+    th{background:#f5ede0;color:#4a2a13;font-weight:800}
+    .tablewrap{overflow-x:auto}
+    footer{margin:40px 0 30px;font-size:13.5px;color:#6f553b;border-top:1px solid #e8d5bc;padding-top:16px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
   </style>
 </head>
 <body>
+  <a class="skip" href="#main" data-skip>דילוג לתוכן</a>
   <header>
     <div class="wrap">
-      <a class="brand" href="/esim-deals"><b>MOCA</b><span data-tag>השוואת eSIM</span></a>
-      <button type="button" class="lang" id="lang-btn">EN</button>
+      <a class="brand" href="/esim-deals" aria-label="MOCA - לעמוד השוואת ה-eSIM" data-brand-aria><b>MOCA</b><span data-tag>השוואת eSIM</span></a>
+      <button type="button" class="lang" id="lang-btn" aria-label="Switch to English">EN</button>
     </div>
   </header>
-  <main class="wrap">
+  <main class="wrap" id="main">
 
     <article data-lang="he">
       <h1>מדיניות פרטיות</h1>
-      <div class="updated">עדכון אחרון: 4 באוגוסט 2026</div>
-      <div class="tldr"><b>בקצרה:</b> שירותי ההשוואה של MOCA עובדים בלי הרשמה ובלי חשבון. לא נאסף שם, אימייל, טלפון או כל פרט מזהה אחר. נשמרות סטטיסטיקות שימוש אנונימיות בלבד, וכתובת ה-IP נשמרת אך ורק בגיבוב חד-כיווני שלא ניתן לשחזור.</div>
+      <div class="updated">עדכון אחרון: 11 בספטמבר 2026</div>
+      <div class="tldr"><b>בקצרה:</b> עמודי ההשוואה של MOCA עובדים בלי הרשמה ובלי חשבון, ואיננו אוספים בהם שם, אימייל או טלפון אלא אם מסרתם אותם מיוזמתכם (לתזכורות או לפנייה). נתוני השימוש נשמרים בצורה אנונימית: כתובת ה-IP נשמרת רק כגיבוב חד-כיווני. מידע מועבר לספקי משנה רק לצורך הפעלת השירות, ומחיקה או הסרה מדיוור אפשריות בכל עת. מסירת מידע היא תמיד מרצון ואינה נדרשת על פי חוק.</div>
 
-      <h2>1. על מה חלה המדיניות</h2>
-      <p>המדיניות חלה על השירותים הציבוריים של MOCA: עמוד השוואת ה-eSIM (mocaintel.com/esim-deals והכתובת esim.mocaintel.com), מדריכי היעדים תחת mocaintel.com/esim/, עמוד השוואת חבילות הסלולר בישראל (mocaintel.com/mobile-deals), והאפליקציות המותקנות המבוססות עליהם. פלטפורמת המודיעין העסקית של MOCA (בחשבונות מנוהלים ללקוחות עסקיים) כפופה להסכם נפרד מול הלקוח.</p>
+      <h2>1. מי אנחנו ועל מה חלה המדיניות</h2>
+      <div class="operator"><!--OPERATOR:he:start--><b>מפעיל השירות ובעל מאגר המידע:</b> MOCA · <a href="mailto:Helpdesk@mocaintel.com">Helpdesk@mocaintel.com</a><!--OPERATOR:he:end--></div>
+      <p>מדיניות זו חלה על כל השירותים של MOCA: עמוד השוואת ה-eSIM (mocaintel.com/esim-deals והכתובת esim.mocaintel.com) ומדריכי היעדים תחת mocaintel.com/esim/, עמוד השוואת חבילות הסלולר בישראל (/mobile-deals), עמוד המידע לבתי מלון (/hotels) ופורטלי האורחים (/guest/), האפליקציות המותקנות (PWA) המבוססות על עמודים אלה, וכן פלטפורמת המודיעין העסקי שלנו (חשבונות ללקוחות עסקיים). היא נכתבה בהתאם לחוק הגנת הפרטיות, התשמ"א-1981 (כולל תיקון מס' 13) ולתקנות הגנת הפרטיות (אבטחת מידע), התשע"ז-2017.</p>
 
-      <h2>2. מידע שנאסף אוטומטית</h2>
+      <h2>2. עקרונות: מסירה מרצון, מטרות מוגדרות</h2>
       <ul>
-        <li><b>אירועי שימוש אנונימיים:</b> צפייה בעמוד, בחירת יעד או לשונית, מעבר לאתר ספק או מפעיל, התקנת האפליקציה והפעלת התראת מחיר - יחד עם שפת הממשק, מקור ההגעה (למשל פרמטרי utm או האתר המפנה), מזהה סשן אקראי שנוצר בדפדפן וזמן האירוע.</li>
-        <li><b>כתובת IP:</b> נשמרת אך ורק כגיבוב חד-כיווני (HMAC-SHA256). לא ניתן לשחזר ממנו את הכתובת, והוא משמש לספירת מבקרים ולסינון תעבורה אוטומטית.</li>
-        <li><b>לחיצה על קישור רכישה:</b> נרשמות זהות הספק, החבילה, היעד, זמן הלחיצה, מחרוזת זיהוי הדפדפן (User Agent, לצורך סינון בוטים) וגיבוב ה-IP כאמור.</li>
+        <li>אינכם חייבים על פי חוק למסור לנו מידע כלשהו. מסירת פרטי קשר היא מרצונכם בלבד, ובלעדיה לא נוכל לספק את השירות הספציפי שביקשתם (תזכורת, מענה לפנייה).</li>
+        <li>מידע נאסף ומעובד רק למטרות המפורטות במדיניות זו: הפעלת השירות ושיפורו, שליחת ההודעות שביקשתם, אבטחה וסינון תעבורה אוטומטית, מדידת עמלות שותפים, וטיפול בפניות.</li>
+        <li>איננו מוכרים מידע אישי ואיננו מעבירים אותו לצדדים שלישיים לצורכי השיווק שלהם.</li>
       </ul>
 
-      <h2>3. התראות ירידת מחיר</h2>
-      <p>הפעלת התראה היא בהסכמה מפורשת. עם ההפעלה נשמרים: כתובת המנוי הטכנית שהדפדפן מנפיק (Push Endpoint), מפתחות ההצפנה של המנוי, היעד או המפעיל שנבחרו והשפה. אלה נתונים טכניים בלבד - אין בהם שם או פרטי קשר. אפשר לבטל בכל רגע בכפתור הביטול בעמוד או בהגדרות האתר בדפדפן; הביטול מוחק את המנוי משרתינו, ומנוי שהדפדפן ביטל נמחק אוטומטית.</p>
-
-      <h2>3א. תזכורות במייל או בוואטסאפ (השוואת חבילות הסלולר)</h2>
-      <p>בהרשמה לעדכונים על מסלול, חבילת חו"ל או שירות תוכן - חבילה או שירות דומים במחיר טוב יותר אצל מפעיל אחר, או תזכורת לקראת תאריך הסיום - נשמרים בהסכמתכם המפורשת: כתובת האימייל או מספר הוואטסאפ שמסרתם, פרטי המסלול שנבחר (מפעיל, שם החבילה, מחיר ונפח גלישה), המחיר שאתם משלמים בפועל אם בחרתם למסור אותו, תאריך הסיום שהזנתם והעדפות התזכורת. הפרטים משמשים אך ורק לשליחת העדכונים שביקשתם ואינם מועברים לאף גורם אחר. בכל הודעה יש קישור הסרה; ההסרה מוחקת את פרטי הקשר ואת התזכורות משרתינו לצמיתות.</p>
-
-      <h2>4. אחסון במכשיר שלכם</h2>
-      <p>השירות שומר העדפות באחסון המקומי של הדפדפן (localStorage/sessionStorage): שפה, הגדרת ההתראה (יעד או מפעיל), מזהה הסשן ודחיית ההצעה להתקנה. אלה אינן עוגיות מעקב והן משמשות את השירות בלבד.</p>
-
-      <h2>5. צדדים שלישיים</h2>
+      <h2>3. מידע שנאסף אוטומטית בעמודי ההשוואה</h2>
       <ul>
-        <li><b>רכישה אצל הספק:</b> הרכישה עצמה מתבצעת באתר ספק ה-eSIM או המפעיל הסלולרי ובכפוף למדיניות הפרטיות שלו. חלק מהקישורים בהשוואת ה-eSIM הם קישורי שותפים - אנחנו עשויים לקבל עמלה על רכישה, ללא עלות נוספת לכם; בעת המעבר לאתר הספק, רשתות שותפים (למשל Impact) עשויות להציב עוגיות למדידת העמלה. בהשוואת חבילות הסלולר בישראל הקישורים מובילים ישירות לאתר הרשמי של המפעיל ואינם קישורי שותפים.</li>
-        <li><b>תשתיות:</b> האתר מאוחסן ב-Netlify ומוגש דרך Cloudflare. ספקי התשתית מעבדים תעבורת רשת (כולל כתובות IP) לצורכי אבטחה וביצועים, כמקובל.</li>
-        <li><b>תוכן חזותי:</b> דגלים ולוגואים של ספקים נטענים משרתי CDN חיצוניים (למשל flagcdn.com), שמקבלים את בקשת הרשת ישירות מהדפדפן.</li>
-        <li><b>פיקסלים שיווקיים:</b> בקמפיינים מסוימים עשוי לפעול בעמוד פיקסל מדידה (למשל TikTok Pixel) למדידת יעילות פרסום. נכון למועד העדכון האחרון - כבוי.</li>
+        <li><b>אירועי שימוש אנונימיים:</b> צפייה בעמוד, בחירת יעד או לשונית, מעבר לאתר ספק או מפעיל, התקנת האפליקציה והפעלת התראת מחיר, יחד עם שפת הממשק, מקור ההגעה (פרמטרי utm או שם האתר המפנה בלבד), מזהה סשן אקראי שנוצר בדפדפן וזמן האירוע.</li>
+        <li><b>כתובת IP:</b> נשמרת אך ורק כגיבוב חד-כיווני (HMAC-SHA256 עם מפתח סודי). לא ניתן לשחזר ממנו את הכתובת. הוא משמש לספירת מבקרים ולסינון בוטים.</li>
+        <li><b>לחיצה על קישור רכישה:</b> נרשמים הספק, החבילה, היעד, זמן הלחיצה, מחרוזת זיהוי הדפדפן (User Agent, לסינון בוטים) וגיבוב ה-IP.</li>
+        <li><b>פורטלי האורחים בבתי מלון:</b> בנוסף לאמור, נרשמים מזהה המלון ושפת הדפדפן. המלון מקבל מאיתנו נתונים מצרפיים בלבד (סריקות, צפיות, מעברים לספקים) ולעולם לא נתונים על אורח מסוים.</li>
       </ul>
 
-      <h2>6. למה משמש המידע</h2>
-      <p>תפעול ושיפור השירות, סטטיסטיקות שימוש, מדידת עמלות שותפים, אבטחה וסינון בוטים, ושליחת התראות המחיר שביקשתם. איננו מוכרים מידע ואיננו מעבירים אותו לגורם שלישי מעבר למפורט למעלה.</p>
+      <h2>4. התראות ירידת מחיר (Push)</h2>
+      <p>הפעלת התראה היא בהסכמה מפורשת (אישור בדפדפן ולחיצה על הכפתור). נשמרים: כתובת המנוי הטכנית שהדפדפן מנפיק, מפתחות ההצפנה של המנוי, היעד או המפעיל שנבחרו והשפה. אין בהם שם או פרטי קשר. ביטול אפשרי בכל רגע בכפתור בעמוד או בהגדרות הדפדפן; ביטול מוחק את המנוי מהשרתים שלנו, ומנויים שהדפדפן ביטל נמחקים אוטומטית.</p>
 
-      <h2>7. שמירת מידע ואבטחה</h2>
-      <p>נתוני השימוש האנונימיים נשמרים לצרכים סטטיסטיים; מנויי התראות ותזכורות נשמרים עד לביטולם או הסרתם. התקשורת עם השירות מוצפנת (HTTPS). מעבר לפרטי הקשר שנמסרים בהסכמה לצורך תזכורות (סעיף 3א), איננו אוספים פרטים מזהים ואין לנו יכולת לשייך את נתוני השימוש לאדם מסוים.</p>
+      <h2>5. תזכורות במייל או בוואטסאפ (השוואת חבילות הסלולר)</h2>
+      <p>בהרשמה לתזכורת על מסלול, חבילת חו"ל או שירות תוכן נשמרים, בהסכמתכם המפורשת: כתובת האימייל או מספר הוואטסאפ שמסרתם, פרטי המסלול שנבחר (מפעיל, שם, מחיר ונפח גלישה), המחיר שאתם משלמים בפועל אם בחרתם למסור אותו, תאריך הסיום שהזנתם, העדפות התזכורת, וכן <b>תיעוד ההסכמה</b> (מועד ההסכמה וגרסת הנוסח שאושר).</p>
+      <ul>
+        <li><b>סוגי הודעות:</b> (א) התראה כשמופיעה חבילה דומה במחיר טוב יותר אצל מפעיל אחר; (ב) תזכורת לקראת תאריך הסיום, עם הצעות דומות אם ביקשתם. (ג) עדכוני שוק תקופתיים (כחודשיים) ומעקב אחרי חידוש המסלול נשלחים <b>רק</b> למי שסימנו במפורש את תיבת הסימון הנפרדת לכך בטופס.</li>
+        <li><b>סימון "פרסומת":</b> הודעה שמציגה הצעות של מפעילים אחרים היא "דבר פרסומת" לפי סעיף 30א לחוק התקשורת, ולכן נושא ההודעה מתחיל במילה "פרסומת" וההודעה כוללת את פרטי השולח.</li>
+        <li><b>הסרה:</b> בכל הודעה יש קישור הסרה. הסרה מוחקת את כל התזכורות שנרשמו יחד איתה, ללא עלות. אפשר גם לכתוב לנו.</li>
+        <li><b>ספקי המשלוח:</b> מיילים נשלחים דרך Resend (ובגיבוי SendGrid); הודעות וואטסאפ נשלחות דרך שירות Green API אל תשתית WhatsApp (Meta). לצורך המשלוח, המספר שמסרתם מועבר לספק ונבדק מולו האם הוא רשום בוואטסאפ.</li>
+      </ul>
 
-      <h2>8. זכויותיכם ופניות</h2>
-      <p>אנו פועלים בהתאם לחוק הגנת הפרטיות, התשמ"א-1981. לכל שאלה או בקשה בנושא פרטיות אפשר לפנות אלינו: <a href="mailto:Helpdesk@mocaintel.com">Helpdesk@mocaintel.com</a>.</p>
+      <h2>6. פניות מבתי מלון (טופס בעמוד /hotels)</h2>
+      <p>בטופס נשמרים, בהסכמתכם: שם המלון, שם איש הקשר, אימייל או טלפון, מספר החדרים והודעתכם. הפנייה נשמרת אצלנו ומועברת מיידית לערוצי העבודה הפנימיים שלנו (אימייל וערוץ טלגרם פנימי) כדי שנוכל לחזור אליכם. הפרטים משמשים למענה על הפנייה ולהצעת השירות שביקשתם בלבד.</p>
 
-      <h2>9. קטינים</h2>
-      <p>השירות אינו אוסף ביודעין מידע אישי מקטינים; פרטי קשר נשמרים רק כשנמסרו ביוזמת המשתמש לצורך תזכורות, וניתן להסירם בכל רגע.</p>
+      <h2>7. משתמשי הפלטפורמה העסקית (חשבונות)</h2>
+      <ul>
+        <li><b>חשבון:</b> כתובת אימייל, סיסמה (מוצפנת), תפקיד ושיוך למרחב עבודה (workspace). ניהול הזהות מתבצע באמצעות Supabase.</li>
+        <li><b>יומן פעילות:</b> מועדי כניסה, העמודים שנצפו, פעולות כמו יצירת התראה או הוספה לרשימת מעקב, ומחרוזת זיהוי הדפדפן. היומן משמש לאבטחה ולשיפור המוצר וזמין למפעיל השירות ולמנהל מרחב העבודה שלכם. משתמשי-על של המפעיל אינם נרשמים.</li>
+        <li><b>עוזר ה-AI:</b> שאלות שאתם מקלידים בצ'אט נשלחות, יחד עם נתוני השוואה, לשירות Claude של Anthropic לצורך יצירת התשובה. Anthropic אינה משתמשת בתוכן ה-API לאימון מודלים לפי תנאי השירות המסחריים שלה. השימוש (ללא תוכן השאלה) נרשם מול כתובת האימייל שלכם לצורכי בקרת עלויות.</li>
+        <li><b>הודעות:</b> התראות דחיפה של הפלטפורמה נשמרות יחד עם כתובת האימייל; סיכומים שבועיים נשלחים במייל למשתמשי מרחב העבודה, עם אפשרות ביטול בהגדרות; טופס "צור קשר" מועבר במייל למפעיל.</li>
+      </ul>
 
-      <h2>10. עדכונים למדיניות</h2>
-      <p>נעדכן עמוד זה מעת לעת; התאריך בראש העמוד משקף את הגרסה התקפה.</p>
+      <h2>8. עוגיות ואחסון מקומי</h2>
+      <p>עמודי ההשוואה משתמשים כברירת מחדל באחסון מקומי הכרחי בלבד (שפה, הגדרת התראה, מזהה סשן, דחיית ההצעה להתקנה). הפלטפורמה העסקית משתמשת בעוגיית התחברות הכרחית. פיקסל מדידה שיווקי (TikTok) נטען רק אם אישרתם זאת בבאנר ההסכמה. פירוט מלא, כולל איך לשנות את הבחירה, ב<a href="/cookies">מדיניות העוגיות</a>.</p>
+
+      <h2>9. למי מועבר המידע (ספקי משנה)</h2>
+      <p>המידע מאוחסן ומעובד אצל ספקי תשתית שפועלים מטעמנו ובכפוף להתחייבויות סודיות ואבטחה. חלקם פועלים מחוץ לישראל (בעיקר בארצות הברית ובאיחוד האירופי), ולכן מידע עשוי להיות מועבר למדינות אלה בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מחוץ לגבולות המדינה).</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th scope="col">ספק</th><th scope="col">תפקיד</th><th scope="col">אילו נתונים</th></tr></thead>
+        <tbody>
+          <tr><td>Netlify, Cloudflare, ngrok</td><td>אחסון האתר, רשת הגשה ותעלת API</td><td>תעבורת רשת, כולל כתובות IP, כמקובל בתשתיות אינטרנט</td></tr>
+          <tr><td>Supabase</td><td>ניהול זהויות ומסד נתוני החשבונות (פלטפורמה עסקית)</td><td>אימייל, סיסמה מוצפנת, תפקיד, מרחב עבודה</td></tr>
+          <tr><td>Resend, SendGrid</td><td>שליחת מיילים</td><td>כתובת אימייל ותוכן ההודעה</td></tr>
+          <tr><td>Green API / WhatsApp (Meta)</td><td>שליחת הודעות וואטסאפ</td><td>מספר טלפון ותוכן ההודעה</td></tr>
+          <tr><td>Telegram</td><td>ערוץ התראות פנימי של המפעיל</td><td>פרטי פניות מבתי מלון (סעיף 6) ודיווחי מערכת</td></tr>
+          <tr><td>Anthropic</td><td>עוזר AI (פלטפורמה עסקית)</td><td>תוכן השאלה בצ'אט ונתוני שוק</td></tr>
+          <tr><td>Google (Drive)</td><td>גיבוי תפעולי של מסד הנתונים</td><td>עותקי גיבוי של הנתונים המפורטים במדיניות זו, בחשבון מאובטח של המפעיל</td></tr>
+          <tr><td>ספקי eSIM ומפעילים, רשת השותפים Impact</td><td>המעבר לאתר הספק בלחיצה על קישור</td><td>הרשת והספק עשויים להציב עוגיות לשיוך העמלה; הרכישה עצמה כפופה למדיניות הספק</td></tr>
+          <tr><td>flagcdn.com, icons.duckduckgo.com</td><td>דגלים ולוגואים</td><td>הדפדפן מבקש את התמונה ישירות מהשרת, שרואה את כתובת ה-IP</td></tr>
+          <tr><td>TikTok</td><td>פיקסל מדידה שיווקי</td><td>נטען רק לאחר הסכמה בבאנר; ראו מדיניות העוגיות</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2>10. כמה זמן נשמר המידע</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th scope="col">סוג מידע</th><th scope="col">תקופת שמירה</th></tr></thead>
+        <tbody>
+          <tr><td>אירועי שימוש אנונימיים ולחיצות על קישורים (עמודי ההשוואה ופורטלי האורחים)</td><td>עד 13 חודשים, ואז נמחקים אוטומטית</td></tr>
+          <tr><td>מנויי התראות דחיפה</td><td>עד לביטול, או עד שהדפדפן מבטל את המנוי</td></tr>
+          <tr><td>תזכורות במייל/וואטסאפ (כולל תיעוד ההסכמה)</td><td>עד להסרה; תזכורות שהסתיימו נמחקות תוך 90 יום</td></tr>
+          <tr><td>פניות מבתי מלון</td><td>עד 24 חודשים ממועד הפנייה</td></tr>
+          <tr><td>יומן פעילות של משתמשי הפלטפורמה</td><td>180 יום</td></tr>
+          <tr><td>חשבון בפלטפורמה העסקית</td><td>כל עוד החשבון פעיל; נמחק לבקשת הלקוח או בסיום ההתקשרות</td></tr>
+          <tr><td>גיבויים</td><td>עותקים מתגלגלים של 14 יום</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2>11. אבטחת מידע</h2>
+      <p>התקשורת עם השירות מוצפנת (HTTPS). כתובות IP נשמרות רק בגיבוב, סיסמאות נשמרות מוצפנות, הגישה למידע מוגבלת למפעיל ולמורשים מטעמו, ומידע רגיש אינו נשמר. אנו פועלים בהתאם לתקנות הגנת הפרטיות (אבטחת מידע), התשע"ז-2017, ומדווחים על אירועי אבטחה כנדרש בדין.</p>
+
+      <h2>12. הזכויות שלכם</h2>
+      <ul>
+        <li><b>עיון:</b> זכותכם לעיין במידע עליכם השמור אצלנו (סעיף 13 לחוק).</li>
+        <li><b>תיקון ומחיקה:</b> זכותכם לבקש תיקון או מחיקה של מידע שאינו נכון, שלם או מעודכן (סעיף 14 לחוק). נמחק פרטי קשר לבקשתכם בכל עת.</li>
+        <li><b>ביטול הסכמה והסרה מדיוור:</b> קישור ההסרה בכל הודעה, כפתור הביטול בעמוד ההתראות, או פנייה אלינו.</li>
+        <li><b>איך פונים:</b> במייל אל <a href="mailto:Helpdesk@mocaintel.com">Helpdesk@mocaintel.com</a>. נשיב בהקדם ולא יאוחר מ-30 יום. אפשר גם לפנות לרשות להגנת הפרטיות.</li>
+      </ul>
+
+      <h2>13. קטינים</h2>
+      <p>השירותים מיועדים לבני 18 ומעלה. איננו אוספים ביודעין מידע אישי מקטינים; אם נודע לנו על מידע כזה, נמחק אותו.</p>
+
+      <h2>14. עדכונים למדיניות</h2>
+      <p>נעדכן עמוד זה מעת לעת; התאריך בראש העמוד משקף את הגרסה התקפה. שינוי מהותי באיסוף המידע יוצג בבאנר ההסכמה או בהודעה בעמוד.</p>
 
       <footer>
         <a href="/esim-deals">להשוואת ה-eSIM</a>
         <a href="/terms">תנאי שימוש</a>
-        MOCA · Helpdesk@mocaintel.com
+        <a href="/cookies">מדיניות עוגיות</a>
+        <a href="/accessibility">הצהרת נגישות</a>
+        <span><!--OPERATOR:he:footer-->MOCA · Helpdesk@mocaintel.com<!--/OPERATOR--></span>
       </footer>
     </article>
 
     <article data-lang="en" hidden>
       <h1>Privacy Policy</h1>
-      <div class="updated">Last updated: August 4, 2026</div>
-      <div class="tldr"><b>In short:</b> MOCA's comparison services work with no sign-up and no account. We do not collect your name, email, phone number or any other identifying detail. Only anonymous usage statistics are kept, and IP addresses are stored solely as a one-way hash that cannot be reversed.</div>
+      <div class="updated">Last updated: September 11, 2026</div>
+      <div class="tldr"><b>In short:</b> MOCA's comparison pages work with no sign-up and no account, and we do not collect your name, email or phone unless you choose to give them to us (for reminders or an enquiry). Usage data is kept anonymously: IP addresses are stored only as a one-way hash. Data goes to sub-processors only to run the service, and deletion or unsubscribing is possible at any time. Providing data is always voluntary and never required by law.</div>
 
-      <h2>1. Scope</h2>
-      <p>This policy covers MOCA's public services: the eSIM comparison page (mocaintel.com/esim-deals and esim.mocaintel.com), the destination guides under mocaintel.com/esim/, the Israeli mobile-plan comparison page (mocaintel.com/mobile-deals), and the installable apps built on them. MOCA's business intelligence platform (managed accounts for business customers) is governed by a separate customer agreement.</p>
+      <h2>1. Who we are and what this policy covers</h2>
+      <div class="operator"><!--OPERATOR:en:start--><b>Service operator and database owner:</b> MOCA · <a href="mailto:Helpdesk@mocaintel.com">Helpdesk@mocaintel.com</a><!--OPERATOR:en:end--></div>
+      <p>This policy covers all MOCA services: the eSIM comparison page (mocaintel.com/esim-deals and esim.mocaintel.com) and the destination guides under mocaintel.com/esim/, the Israeli mobile-plan comparison page (/mobile-deals), the hotels information page (/hotels) and the guest portals (/guest/), the installable apps (PWA) built on these pages, and our business-intelligence platform (accounts for business customers). It is written in line with Israel's Protection of Privacy Law, 5741-1981 (including Amendment 13) and the Protection of Privacy (Data Security) Regulations, 5777-2017.</p>
 
-      <h2>2. Data collected automatically</h2>
+      <h2>2. Principles: voluntary, purpose-bound</h2>
       <ul>
-        <li><b>Anonymous usage events:</b> page views, destination or tab picks, click-throughs to a provider or carrier site, app installs and price-alert activations - together with interface language, acquisition source (e.g. utm parameters or referring site), a random browser-generated session token, and the event time.</li>
-        <li><b>IP address:</b> stored only as a one-way hash (HMAC-SHA256). The address cannot be recovered from it; it is used for visitor counting and filtering automated traffic.</li>
-        <li><b>Clicks on purchase links:</b> we record the provider, plan, destination, click time, browser identification string (User Agent, for bot filtering) and the hashed IP as above.</li>
+        <li>You are under no legal obligation to give us any data. Contact details are provided voluntarily; without them we cannot deliver the specific service you asked for (a reminder, a reply to an enquiry).</li>
+        <li>Data is collected and processed only for the purposes listed here: running and improving the service, sending the messages you requested, security and bot filtering, affiliate-commission measurement, and handling enquiries.</li>
+        <li>We do not sell personal data and do not pass it to third parties for their own marketing.</li>
       </ul>
 
-      <h2>3. Price-drop alerts</h2>
-      <p>Alerts are strictly opt-in. When enabled we store: the technical subscription address issued by your browser (push endpoint), the subscription's encryption keys, your chosen destination or carrier, and language. These are technical values only - they contain no name or contact details. You can cancel at any time using the cancel button on the page or your browser's site settings; cancelling deletes the subscription from our servers, and subscriptions revoked by the browser are removed automatically.</p>
-
-      <h2>3a. Email / WhatsApp reminders (Israeli mobile-plan comparison)</h2>
-      <p>When you sign up for updates on a plan, roaming package or content service - a similar plan or service at a better price from another carrier, or a reminder before its end date - we store, with your explicit consent: the email address or WhatsApp number you provided, the selected plan's details (carrier, plan name, price and data), the price you actually pay if you chose to provide it, the end date you entered and your reminder preferences. These details are used solely to send the updates you asked for and are never shared. Every message includes an unsubscribe link; unsubscribing permanently deletes your contact details and reminders from our servers.</p>
-
-      <h2>4. Storage on your device</h2>
-      <p>The service keeps preferences in your browser's local storage (localStorage/sessionStorage): language, alert setting (destination or carrier), session token and install-prompt dismissal. These are not tracking cookies and serve the service only.</p>
-
-      <h2>5. Third parties</h2>
+      <h2>3. Data collected automatically on the comparison pages</h2>
       <ul>
-        <li><b>Purchasing from a provider:</b> the purchase itself happens on the eSIM provider's or mobile carrier's site under its own privacy policy. Some links in the eSIM comparison are affiliate links - we may earn a commission on purchases, at no extra cost to you; when you continue to a provider's site, affiliate networks (e.g. Impact) may set cookies to attribute the commission. In the Israeli mobile-plan comparison, links lead directly to the carrier's official site and are not affiliate links.</li>
-        <li><b>Infrastructure:</b> the site is hosted on Netlify and served through Cloudflare. These infrastructure providers process network traffic (including IP addresses) for security and performance, as is standard.</li>
-        <li><b>Visual content:</b> flags and provider logos load from external CDNs (e.g. flagcdn.com), which receive the network request directly from your browser.</li>
-        <li><b>Marketing pixels:</b> during certain campaigns a measurement pixel (e.g. TikTok Pixel) may run on the page to measure ad performance. As of the last update it is off.</li>
+        <li><b>Anonymous usage events:</b> page views, destination or tab picks, click-throughs to a provider or carrier site, app installs and price-alert activations, together with interface language, acquisition source (utm parameters or the referring site's hostname only), a random browser-generated session token and the event time.</li>
+        <li><b>IP address:</b> stored only as a one-way hash (HMAC-SHA256 with a secret key). The address cannot be recovered from it; it is used for visitor counting and bot filtering.</li>
+        <li><b>Clicks on purchase links:</b> provider, plan, destination, click time, browser identification string (User Agent, for bot filtering) and the hashed IP.</li>
+        <li><b>Hotel guest portals:</b> additionally the hotel identifier and the browser language. The hotel receives aggregate figures only (scans, views, provider click-throughs), never data about an individual guest.</li>
       </ul>
 
-      <h2>6. How the data is used</h2>
-      <p>Operating and improving the service, usage statistics, affiliate commission attribution, security and bot filtering, and sending the price alerts you asked for. We do not sell data and do not share it with third parties beyond the above.</p>
+      <h2>4. Price-drop alerts (push)</h2>
+      <p>Alerts are strictly opt-in (browser permission plus a button press). We store the technical subscription address issued by your browser, its encryption keys, your chosen destination or carrier and the language. They contain no name or contact details. Cancel any time from the page or your browser settings; cancelling deletes the subscription from our servers, and subscriptions revoked by the browser are removed automatically.</p>
 
-      <h2>7. Retention and security</h2>
-      <p>Anonymous usage data is kept for statistical purposes; alert subscriptions and reminders are kept until cancelled or unsubscribed. Communication with the service is encrypted (HTTPS). Beyond the contact details provided with consent for reminders (section 3a), we collect no identifying details and cannot link the usage data to a specific person.</p>
+      <h2>5. Email / WhatsApp reminders (Israeli mobile-plan comparison)</h2>
+      <p>When you sign up for a reminder about a plan, roaming package or content service we store, with your explicit consent: the email address or WhatsApp number you provided, the selected plan's details (carrier, name, price, data), the price you actually pay if you chose to give it, the end date you entered, your reminder preferences, and a <b>record of the consent</b> (time and version of the wording you accepted).</p>
+      <ul>
+        <li><b>Message types:</b> (a) an alert when a similar plan appears at a better price from another carrier; (b) a reminder before the end date, with similar offers if requested. (c) Periodic market updates (roughly monthly) and a renewal follow-up are sent <b>only</b> to people who ticked the separate box for them in the form.</li>
+        <li><b>"Advertisement" label:</b> a message presenting other carriers' offers is advertising under section 30A of the Israeli Communications Law, so its subject starts with the word "פרסומת" (advertisement) and it carries the sender's details.</li>
+        <li><b>Unsubscribe:</b> every message has an unsubscribe link. It deletes every reminder registered with it, free of charge. You can also write to us.</li>
+        <li><b>Delivery providers:</b> email is sent via Resend (SendGrid as fallback); WhatsApp messages via the Green API service onto WhatsApp (Meta) infrastructure. For delivery, the number you gave is passed to the provider and checked against WhatsApp registration.</li>
+      </ul>
 
-      <h2>8. Your rights and contact</h2>
-      <p>We operate in accordance with the Israeli Protection of Privacy Law, 1981. For any privacy question or request contact us: <a href="mailto:Helpdesk@mocaintel.com">Helpdesk@mocaintel.com</a>.</p>
+      <h2>6. Hotel enquiries (the form on /hotels)</h2>
+      <p>With your consent the form stores: hotel name, contact name, email or phone, number of rooms and your message. The enquiry is saved with us and forwarded immediately to our internal work channels (email and an internal Telegram channel) so we can get back to you. The details are used only to answer the enquiry and offer the service you asked about.</p>
 
-      <h2>9. Children</h2>
-      <p>The service does not knowingly collect personal information from children; contact details are stored only when submitted by the user for reminders, and can be removed at any time.</p>
+      <h2>7. Business-platform users (accounts)</h2>
+      <ul>
+        <li><b>Account:</b> email address, password (hashed), role and workspace assignment. Identity management runs on Supabase.</li>
+        <li><b>Activity log:</b> login times, pages viewed, actions such as creating an alert or adding to a watchlist, and the browser identification string. The log serves security and product improvement and is visible to the service operator and to your workspace administrator. The operator's own super-admin users are not recorded.</li>
+        <li><b>AI assistant:</b> questions you type into the chat are sent, together with comparison data, to Anthropic's Claude service to generate the answer. Under its commercial terms Anthropic does not train models on API content. Usage (not the question text) is logged against your email for cost control.</li>
+        <li><b>Messages:</b> platform push subscriptions are stored with your email; weekly digests are emailed to workspace users and can be switched off in settings; the contact form is emailed to the operator.</li>
+      </ul>
 
-      <h2>10. Changes to this policy</h2>
-      <p>We may update this page from time to time; the date at the top reflects the current version.</p>
+      <h2>8. Cookies and local storage</h2>
+      <p>By default the comparison pages use only essential local storage (language, alert setting, session token, install-prompt dismissal). The business platform uses an essential login cookie. A marketing measurement pixel (TikTok) is loaded only if you accept it in the consent bar. Full details, including how to change your choice, in the <a href="/cookies?lang=en">cookie policy</a>.</p>
+
+      <h2>9. Recipients of the data (sub-processors)</h2>
+      <p>Data is stored and processed by infrastructure providers acting on our behalf under confidentiality and security commitments. Some operate outside Israel (mainly in the United States and the European Union), so data may be transferred to those countries in accordance with the Israeli regulations on transferring data abroad.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th scope="col">Provider</th><th scope="col">Role</th><th scope="col">Data involved</th></tr></thead>
+        <tbody>
+          <tr><td>Netlify, Cloudflare, ngrok</td><td>Site hosting, CDN and API tunnel</td><td>Network traffic including IP addresses, as is standard for internet infrastructure</td></tr>
+          <tr><td>Supabase</td><td>Identity management and account database (business platform)</td><td>Email, hashed password, role, workspace</td></tr>
+          <tr><td>Resend, SendGrid</td><td>Email delivery</td><td>Email address and message content</td></tr>
+          <tr><td>Green API / WhatsApp (Meta)</td><td>WhatsApp delivery</td><td>Phone number and message content</td></tr>
+          <tr><td>Telegram</td><td>Operator's internal notification channel</td><td>Hotel enquiry details (section 6) and system reports</td></tr>
+          <tr><td>Anthropic</td><td>AI assistant (business platform)</td><td>Chat question text and market data</td></tr>
+          <tr><td>Google (Drive)</td><td>Operational backup of the database</td><td>Backup copies of the data described in this policy, in the operator's secured account</td></tr>
+          <tr><td>eSIM providers and carriers, the Impact affiliate network</td><td>The click-through to a provider's site</td><td>The network and provider may set cookies to attribute the commission; the purchase itself is under the provider's policy</td></tr>
+          <tr><td>flagcdn.com, icons.duckduckgo.com</td><td>Flags and logos</td><td>Your browser requests the image directly from their server, which sees your IP address</td></tr>
+          <tr><td>TikTok</td><td>Marketing measurement pixel</td><td>Loaded only after consent in the bar; see the cookie policy</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2>10. How long we keep data</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th scope="col">Data</th><th scope="col">Retention</th></tr></thead>
+        <tbody>
+          <tr><td>Anonymous usage events and link clicks (comparison pages and guest portals)</td><td>Up to 13 months, then deleted automatically</td></tr>
+          <tr><td>Push-alert subscriptions</td><td>Until cancelled, or until the browser revokes the subscription</td></tr>
+          <tr><td>Email/WhatsApp reminders (including the consent record)</td><td>Until unsubscribed; finished reminders are deleted within 90 days</td></tr>
+          <tr><td>Hotel enquiries</td><td>Up to 24 months from the enquiry</td></tr>
+          <tr><td>Business-platform activity log</td><td>180 days</td></tr>
+          <tr><td>Business-platform account</td><td>While the account is active; deleted on the customer's request or when the engagement ends</td></tr>
+          <tr><td>Backups</td><td>Rolling 14-day copies</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2>11. Security</h2>
+      <p>Communication with the service is encrypted (HTTPS). IP addresses are stored only hashed, passwords only hashed, access to data is limited to the operator and authorised persons, and no sensitive data is kept. We follow the Protection of Privacy (Data Security) Regulations, 5777-2017, and report security incidents as the law requires.</p>
+
+      <h2>12. Your rights</h2>
+      <ul>
+        <li><b>Access:</b> you may inspect the data we hold about you (section 13 of the Law).</li>
+        <li><b>Correction and deletion:</b> you may ask us to correct or delete data that is inaccurate, incomplete or outdated (section 14). We delete contact details on request at any time.</li>
+        <li><b>Withdrawing consent / unsubscribing:</b> the unsubscribe link in every message, the cancel button on the alerts page, or a message to us.</li>
+        <li><b>How to contact us:</b> email <a href="mailto:Helpdesk@mocaintel.com">Helpdesk@mocaintel.com</a>. We answer promptly and within 30 days at most. You may also contact the Israeli Privacy Protection Authority.</li>
+      </ul>
+
+      <h2>13. Children</h2>
+      <p>The services are intended for people aged 18 and over. We do not knowingly collect personal data from minors; if we learn of such data, we delete it.</p>
+
+      <h2>14. Changes to this policy</h2>
+      <p>We update this page from time to time; the date at the top reflects the current version. A material change in what we collect will be shown in the consent bar or in a notice on the page.</p>
 
       <footer>
         <a href="/esim-deals">eSIM comparison</a>
         <a href="/terms?lang=en">Terms of use</a>
-        MOCA · Helpdesk@mocaintel.com
+        <a href="/cookies?lang=en">Cookie policy</a>
+        <a href="/accessibility?lang=en">Accessibility statement</a>
+        <span><!--OPERATOR:en:footer-->MOCA · Helpdesk@mocaintel.com<!--/OPERATOR--></span>
       </footer>
     </article>
-
   </main>
+
   <script>
     (function () {
       var btn = document.getElementById('lang-btn')
       var cur = 'he'
+      var titles = { he: 'מדיניות פרטיות | MOCA', en: 'Privacy Policy | MOCA' }
       function setLang(l) {
         cur = l
         document.querySelectorAll('[data-lang]').forEach(function (el) { el.hidden = el.getAttribute('data-lang') !== l })
         document.documentElement.lang = l
         document.documentElement.dir = l === 'he' ? 'rtl' : 'ltr'
         btn.textContent = l === 'he' ? 'EN' : 'עב'
+        btn.setAttribute('aria-label', l === 'he' ? 'Switch to English' : 'עבור לעברית')
         document.querySelector('[data-tag]').textContent = l === 'he' ? 'השוואת eSIM' : 'eSIM Compare'
-        document.title = l === 'he' ? 'מדיניות פרטיות | MOCA' : 'Privacy Policy | MOCA'
+        document.querySelector('[data-brand-aria]').setAttribute('aria-label', l === 'he' ? 'MOCA - לעמוד השוואת ה-eSIM' : 'MOCA - to the eSIM comparison page')
+        document.querySelector('[data-skip]').textContent = l === 'he' ? 'דילוג לתוכן' : 'Skip to content'
+        document.title = titles[l]
         try { localStorage.setItem('esim_lang', l) } catch (e) { /* ignore */ }
       }
       try {

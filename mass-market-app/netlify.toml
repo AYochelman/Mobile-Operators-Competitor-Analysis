@@ -39,6 +39,18 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/cookies"
+  to = "/cookies.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/accessibility"
+  to = "/accessibility.html"
+  status = 200
+  force = true
+
 # Everything else falls through to the SPA.
 [[redirects]]
   from = "/*"
@@ -51,7 +63,7 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://terra-nonrestrained-overpiteously.ngrok-free.dev https://gmfefvjdmgzluwffzrzj.supabase.co wss://gmfefvjdmgzluwffzrzj.supabase.co; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://analytics.tiktok.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://terra-nonrestrained-overpiteously.ngrok-free.dev https://gmfefvjdmgzluwffzrzj.supabase.co wss://gmfefvjdmgzluwffzrzj.supabase.co https://analytics.tiktok.com https://open.er-api.com; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; upgrade-insecure-requests"
     X-Frame-Options = "SAMEORIGIN"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"

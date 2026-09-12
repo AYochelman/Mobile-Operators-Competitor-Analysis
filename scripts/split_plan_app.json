@@ -1,0 +1,128 @@
+{
+  "monolith": "app.py",
+  "core": "app",
+  "package": "api",
+  "kind": "flask",
+  "local_aliases": [
+    "logger"
+  ],
+  "modules": {
+    "esim": {
+      "ranges": [
+        [
+          2043,
+          2172
+        ]
+      ],
+      "doc": "Public /esim-deals consumer API: destinations, compare feed, event beacons, destination price-drop push alerts, analytics."
+    },
+    "mobile": {
+      "ranges": [
+        [
+          2200,
+          2600
+        ]
+      ],
+      "doc": "Public /mobile-deals consumer API: normalized domestic feed, event beacons, carrier push alerts, email/WhatsApp reminders + the daily reminders job."
+    },
+    "hotels": {
+      "ranges": [
+        [
+          2605,
+          2830
+        ]
+      ],
+      "doc": "Hotel Guest Connect: /api/guest/<slug> portal + QR, hotel CRUD, analytics and lead capture."
+    },
+    "scrape": {
+      "ranges": [
+        [
+          2834,
+          3225
+        ],
+        [
+          4165,
+          4248
+        ]
+      ],
+      "doc": "Manual scrape triggers (/api/scrape-*-now), scrape progress SSE stream + the change-feed endpoints they share."
+    },
+    "jobs": {
+      "ranges": [
+        [
+          3226,
+          3982
+        ]
+      ],
+      "doc": "Scheduled jobs (social sentiment, executive summary, news, resellers, morning digest, scraper drift) and their refresh / preview endpoints."
+    },
+    "banners": {
+      "ranges": [
+        [
+          3983,
+          4164
+        ]
+      ],
+      "doc": "Carrier / e-store / global-provider banner screenshots and the Time Machine archive endpoints."
+    },
+    "engagement": {
+      "ranges": [
+        [
+          4251,
+          4735
+        ]
+      ],
+      "doc": "Per-user engagement: alerts, watchlist, saved views, activity beacons, annotations, coupons, provider deals CRM."
+    },
+    "chat": {
+      "ranges": [
+        [
+          4758,
+          4993
+        ]
+      ],
+      "doc": "/api/chat - Claude-powered assistant over the live plan data (rate-limited per user)."
+    },
+    "account": {
+      "ranges": [
+        [
+          4994,
+          5210
+        ]
+      ],
+      "doc": "Session / account endpoints: VAPID key, auth cookie session, Web Push subscriptions, my-role, preferences, context, contact form."
+    },
+    "workspaces": {
+      "ranges": [
+        [
+          5213,
+          6110
+        ]
+      ],
+      "doc": "Super-admin + workspace-admin management: users (direct-DB provisioning), workspaces, invites, digest trigger, branding, Slack test, audit log."
+    },
+    "history": {
+      "ranges": [
+        [
+          6111,
+          6135
+        ],
+        [
+          6230,
+          6460
+        ]
+      ],
+      "doc": "Price history: change log, market movers, per-plan series + batch sparklines, daily aggregates (price_history_daily), maintenance trigger, AI analysis."
+    },
+    "usage": {
+      "ranges": [
+        [
+          6461,
+          6860
+        ]
+      ],
+      "doc": "Super-admin analytics: Claude API usage + budget, official Anthropic cost, user-activity overview, notification settings."
+    }
+  },
+  "latebind_imports": []
+}

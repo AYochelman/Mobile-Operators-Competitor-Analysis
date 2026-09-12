@@ -82,13 +82,16 @@ const CSS = `
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Assistant',system-ui,sans-serif;background:#f9f4ee;color:#3b1f0d;line-height:1.65;font-size:17px}
 a{color:#5c3317}
+:focus-visible{outline:3px solid #5c3317;outline-offset:2px}
+.skip{position:absolute;inset-inline-start:-999px;top:8px;background:#fff;color:#4a2a13;padding:8px 14px;border-radius:8px;font-weight:700;z-index:100}
+.skip:focus{inset-inline-start:12px}
 .wrap{max-width:860px;margin:0 auto;padding:0 20px}
 header.top{background:#fff;border-bottom:1px solid #e0cdb5;padding:14px 0}
 header.top .wrap{display:flex;justify-content:space-between;align-items:center}
 .brand{font-weight:800;font-size:22px;color:#4a2a13;text-decoration:none}
 .brand span{color:#c9622f}
-.crumbs{font-size:13px;color:#8a6a4a;margin:14px 0 0}
-.crumbs a{color:#8a6a4a}
+.crumbs{font-size:13px;color:#6f553b;margin:14px 0 0}
+.crumbs a{color:#6f553b}
 .hero{border-radius:16px;overflow:hidden;position:relative;margin:14px 0 22px;min-height:210px;display:flex;align-items:flex-end;background:#4a2a13 center/cover no-repeat}
 .hero .shade{position:absolute;inset:0;background:linear-gradient(0deg,rgba(30,15,5,.78),rgba(30,15,5,.15))}
 .hero .inner{position:relative;padding:22px;color:#fff}
@@ -137,11 +140,12 @@ ${schemas.map(jsonLd).join('\n')}
 <style>${CSS}</style>
 </head>
 <body>
-<header class="top"><div class="wrap"><a class="brand" href="/">MOCA<span>.</span></a><a href="/esim-deals" style="font-size:14px">להשוואה האינטראקטיבית ←</a></div></header>
-<div class="wrap">
+<a class="skip" href="#main">דילוג לתוכן</a>
+<header class="top"><div class="wrap"><a class="brand" href="/" aria-label="MOCA - לעמוד הבית">MOCA<span aria-hidden="true">.</span></a><a href="/esim-deals" style="font-size:14px">להשוואה האינטראקטיבית ←</a></div></header>
+<main class="wrap" id="main">
 ${body}
 <footer>המחירים נאספים אוטומטית מאתרי הספקים ועודכנו לאחרונה ב-${todayHe}. חלק מהקישורים הם קישורי שותפים - המחיר עבורכם זהה, ואנחנו עשויים לקבל עמלה שמממנת את ההשוואה. MOCA - השוואת eSIM וסלולר · <a href="/esim/destinations/">כל היעדים</a> · <a href="/esim-deals">השוואה חיה</a> · <a href="/privacy">מדיניות פרטיות</a> · <a href="/terms">תנאי שימוש</a></footer>
-</div>
+</main>
 </body>
 </html>`
 }
@@ -241,22 +245,22 @@ async function main() {
       const c = coupons[dl.provider]
       const go = `${GO_BASE}/${dl.provider}?dest=${encodeURIComponent(he)}&src=esim&campaign=seo_dest`
       return `<div class="deal">
-<img src="/logos/${esc(dl.provider)}.png" alt="${esc(provName(dl.provider))}" loading="lazy" onerror="this.style.display='none'">
+<img src="/logos/${esc(dl.provider)}.png" alt="" loading="lazy" onerror="this.style.display='none'">
 <div class="info"><div class="prov">${esc(provName(dl.provider))}</div>
 <div class="meta">${esc(gbFmt(dl.gb))} · ${esc(daysFmt(dl.days))}</div>
 ${c ? `<span class="coupon">קופון ${esc(c.code)} - ${esc(c.discount_label || 'הנחה')}</span>` : ''}</div>
 <div class="price">${priceFmt(dl.price)}</div>
-<a class="buy" href="${go}" rel="sponsored nofollow noopener" target="_blank">לרכישה</a>
+<a class="buy" href="${go}" rel="sponsored nofollow noopener noreferrer" target="_blank" aria-label="לרכישה אצל ${esc(provName(dl.provider))} - ${esc(gbFmt(dl.gb))}, ${esc(daysFmt(dl.days))} (אתר חיצוני, נפתח בחלון חדש)">לרכישה ↗</a>
 </div>`
     }).join('\n')
 
     const body = `
-<nav class="crumbs"><a href="/">MOCA</a> › <a href="/esim/destinations/">eSIM לחו"ל</a> › ${esc(he)}</nav>
+<nav class="crumbs" aria-label="ניווט"><a href="/">MOCA</a> <span aria-hidden="true">›</span> <a href="/esim/destinations/">eSIM לחו"ל</a> <span aria-hidden="true">›</span> ${esc(he)}</nav>
 <div class="hero" style="background-image:url('${ogImage}')"><div class="shade"></div><div class="inner">
 <h1>eSIM ל${esc(he)} - השוואת מחירים</h1>
 <p>${stats.total} חבילות מ-${stats.providers} ספקים · החל מ-${priceFmt(stats.low)} · עודכן ${todayHe}</p>
 </div></div>
-<h2>החבילות המשתלמות ביותר ל${esc(he)}</h2>
+<h2>החבילות המומלצות ל${esc(he)}</h2>
 ${dealsHtml}
 <a class="cta" href="/esim-deals?dest=${encodeURIComponent(he)}">לכל ${stats.total} החבילות ל${esc(he)} בהשוואה החיה ←</a>
 <h2>שאלות נפוצות</h2>
@@ -276,9 +280,9 @@ ${faq.map(f => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></detai
     '@context': 'https://schema.org', '@type': 'CollectionPage', name: hubTitle, description: hubDesc, url: `${SITE}/esim/destinations/`,
   }]
   const hubBody = `
-<nav class="crumbs"><a href="/">MOCA</a> › eSIM לחו"ל</nav>
+<nav class="crumbs" aria-label="ניווט"><a href="/">MOCA</a> <span aria-hidden="true">›</span> eSIM לחו"ל</nav>
 <h1 style="margin-top:14px">eSIM לחו"ל - השוואת מחירים לפי יעד</h1>
-<p style="margin-top:6px;color:#5a3a20">בחרו את היעד שלכם להשוואת כל חבילות ה-eSIM הזמינות - מחירים שנאספים אוטומטית מ-38 ספקים, עם קודי קופון בלעדיים.</p>
+<p style="margin-top:6px;color:#5a3a20">בחרו את היעד שלכם להשוואת כל חבילות ה-eSIM הזמינות - מחירים שנאספים אוטומטית מ-38 ספקים, עם קודי קופון כשיש.</p>
 <div class="grid">
 ${pages.map(p => `<a href="/esim/${p.slug}/">eSIM ל${esc(p.he)}<span class="mn">מ-${priceFmt(p.stats.low)} · ${p.stats.total} חבילות</span></a>`).join('\n')}
 </div>

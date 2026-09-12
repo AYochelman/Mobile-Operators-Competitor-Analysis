@@ -342,7 +342,7 @@ DEALS = [
         "contact": "partnerships.mkt@holafly.com (הופנינו לכאן ע\"י צוות ה-Affiliate; לפני כן: Impact dashboard)", "program_network": "Impact",
         "agreement_status": "none", "commission_pct": None,
         "commission_note": "אין הסכם פעיל (הוגש ב-Impact 06-13, ללא אישור).",
-        "coupon_note": "3 קופוני צד-ג' (ADAMANDLINDS וכו') הושבתו 07-03 - כבר לא מרונדרים. אין קוד MOCA משלנו עד לחוזה.",
+        "coupon_note": "3 קופוני צד-ג' (ADAMANDLINDS וכו') נמחקו סופית 2026-09-11 לבקשת המפעיל. אין קוד MOCA משלנו עד לחוזה.",
         "has_tracking_link": False, "is_leak": False, "priority": "med",
         "next_actions": "בוצע ניקוי הדליפה (11/07): holafly ירד מ-AFFILIATE_PROVIDERS + הוסר בלוק ה-?ref המזויף מ-config → עכשיו כרטיס מידע בלבד. ממתינים לתשובת partnerships.mkt@holafly.com; אם שקט עד ~18/07 תזכורת. אם יאשרו חוזה - לחווט לינק Impact אמיתי + קוד MOCA ולהחזיר את holafly ל-AFFILIATE_PROVIDERS.",
         "notes": "10/07 - צוות ה-Affiliate החזיר את מייל המעקב (30/06) כ'מחלקה לא נכונה' והפנה ל-partnerships.mkt@holafly.com. 11/07 - נשלח מעקב ממוען מחדש לכתובת הנכונה. 11/07 - נוקתה הדליפה: holafly ירד מ-AFFILIATE_PROVIDERS/URLS (נפרס ל-Netlify, chunk PlanCard-uWxE5ZeK, fingerprint main-D3F6MnW8) + הוסר בלוק ה-?ref המזויף מ-config.json (/go/holafly → esim.holafly.com/esim-israel/ אמיתי) + 3 קופוני צד-ג' מושבתים ב-DB. אפס דליפה - כרטיס מידע בלבד.",

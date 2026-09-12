@@ -53,7 +53,7 @@ const head = `<meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#5c3317" />
     <title>MOCA Guest Connect - eSIM concierge for your hotel guests</title>
-    <meta name="description" content="A guest-facing portal, branded in your hotel's colors, that compares every eSIM &amp; tourist-SIM deal in Israel in real time - 38 global providers and 10 local operators. No inventory, no operations, and a commission to the hotel on every purchase." />
+    <meta name="description" content="A guest-facing portal, branded in your hotel's colors, that compares eSIM &amp; tourist-SIM deals in Israel from 38 global providers and 10 local operators, refreshed twice a day. No inventory, no day-to-day operations, and a commission to the hotel on attributed purchases." />
     <link rel="canonical" href="https://mocaintel.com/hotels" />
     <link rel="alternate" hreflang="he" href="https://mocaintel.com/hotels" />
     <link rel="alternate" hreflang="en" href="https://mocaintel.com/hotels?lang=en" />
@@ -62,7 +62,7 @@ const head = `<meta charset="UTF-8" />
     <link rel="apple-touch-icon" href="/icons/icon-180.png" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="MOCA Guest Connect - Wi-Fi &amp; eSIM concierge for hotel guests" />
-    <meta property="og:description" content="A portal branded in your hotel's colors that shows guests the best eSIM &amp; SIM deals in Israel, live. Zero operations - and a commission on every purchase." />
+    <meta property="og:description" content="A portal branded in your hotel's colors that compares eSIM &amp; SIM deals in Israel for your guests, refreshed twice a day. No day-to-day operations - and a commission on attributed purchases." />
     <meta property="og:url" content="https://mocaintel.com/hotels" />
     <meta property="og:image" content="https://mocaintel.com/icons/icon-512.png" />
     <meta property="og:locale" content="he_IL" />
