@@ -1,4 +1,4 @@
-# MOCA - Morning health check (every 10 min via Task Scheduler)
+﻿# MOCA - Morning health check (every 10 min via Task Scheduler)
 # Verifies the three runtime services and restarts whichever is down:
 #   - Flask (port 5000)  -> relaunches via flask_watchdog.bat
 #   - ngrok public EDGE  -> https://<reserved-domain>/api/ping must return {"ok":true};
@@ -110,15 +110,39 @@ $NgrokEdgeUrl = "https://terra-nonrestrained-overpiteously.ngrok-free.dev/api/pi
 # PS 5.1 safety: make sure TLS 1.2 is enabled for the HTTPS probe
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
+# IPv6 GOTCHA (2026-09-18): the ngrok edge publishes an AAAA record and this box gets
+# global IPv6 addresses from the router, but IPv6 has NO working upstream here (curl -6 to
+# google times out too). .NET's HttpWebRequest (Invoke-WebRequest) tries the IPv6 address
+# first and burns the whole timeout, so the old probe reported DOWN for an hour while curl
+# (Happy Eyeballs -> IPv4) answered fine -- and every 10 minutes the "recovery" recycled a
+# perfectly healthy tunnel. The probe therefore uses the Windows-bundled curl.exe pinned to
+# IPv4 (-4); Invoke-WebRequest stays only as a fallback when curl.exe is missing.
+$CurlExe = Join-Path $env:SystemRoot "System32\curl.exe"
+
+function Invoke-EdgeProbe {
+    # Returns the response body (string) or throws with a short reason.
+    if (Test-Path $CurlExe) {
+        $out = & $CurlExe -4 -s -S -m 15 -H "ngrok-skip-browser-warning: true" -w "`n%{http_code}" $NgrokEdgeUrl 2>&1
+        if ($LASTEXITCODE -ne 0) { throw "curl exit $LASTEXITCODE`: $(($out | Out-String).Trim())" }
+        $lines = @(($out | Out-String).Trim() -split "`n")
+        $code  = $lines[-1].Trim()
+        $body  = ($lines[0..([Math]::Max(0, $lines.Count - 2))] -join "`n").Trim()
+        if ($code -ne '200') { throw "HTTP $code`: $body" }
+        return $body
+    }
+    $resp = Invoke-WebRequest -Uri $NgrokEdgeUrl -Headers @{ "ngrok-skip-browser-warning" = "true" } -UseBasicParsing -TimeoutSec 15
+    return [string]$resp.Content
+}
+
 function Test-NgrokEdge {
     # $true only when the PUBLIC url answers with {"ok":true}, i.e. Flask was reached
     # THROUGH the tunnel. Retries give a transient blip a chance to pass (no alert spam).
     param([int]$Attempts = 1, [int]$DelaySeconds = 10)
     for ($i = 1; $i -le $Attempts; $i++) {
         try {
-            $resp = Invoke-WebRequest -Uri $NgrokEdgeUrl -Headers @{ "ngrok-skip-browser-warning" = "true" } -UseBasicParsing -TimeoutSec 15
-            if ($resp.Content -match '"ok"\s*:\s*true') { return $true }
-            Write-Log "ngrok edge probe ${i}/${Attempts}: HTTP $($resp.StatusCode) but body is not {""ok"":true}: $($resp.Content)"
+            $body = Invoke-EdgeProbe
+            if ($body -match '"ok"\s*:\s*true') { return $true }
+            Write-Log "ngrok edge probe ${i}/${Attempts}: HTTP 200 but body is not {""ok"":true}: $body"
         } catch {
             Write-Log "ngrok edge probe ${i}/${Attempts}: $($_.Exception.Message)"
         }
