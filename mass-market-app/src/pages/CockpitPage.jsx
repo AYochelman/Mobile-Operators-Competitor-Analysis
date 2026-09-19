@@ -81,6 +81,15 @@ function TrendPct({ value }) {
   )
 }
 
+/** Gap-vs-market clause: |gap| < 1% reads as "in line with", never "0% above". */
+function gapClause(pct, tt, kind) {
+  if (pct == null) return ''
+  if (Math.abs(pct) < 1) return tt('כמו השוק', 'in line with market')
+  const n = Math.abs(pct).toFixed(0)
+  if (kind === 'volume') return tt(`${n}% ${pct > 0 ? 'יותר' : 'פחות'} מהשוק`, `${n}% ${pct > 0 ? 'more' : 'less'} than market`)
+  return tt(`${n}% ${pct > 0 ? 'מעל' : 'מתחת'} לשוק`, `${n}% ${pct > 0 ? 'above' : 'below'} market`)
+}
+
 /** LTR-isolated number run inside Hebrew prose (keeps ₪/GB glued to digits). */
 function Num({ children, style }) {
   return <span className="tnum" style={{ direction: 'ltr', unicodeBidi: 'isolate', display: 'inline-block', ...style }}>{children}</span>
@@ -191,6 +200,7 @@ function VerdictBar({ data, oursCarrier, onPickCarrier, canPickCarrier }) {
   let headline
   if (ours) {
     const pricier = cv.costGapPct != null && cv.costGapPct > 0
+    const inLine = cv.costGapPct != null && Math.abs(cv.costGapPct) < 1
     const gap = cv.costGapPct == null ? null : Math.abs(cv.costGapPct).toFixed(0)
     headline = (
       <>
@@ -201,7 +211,8 @@ function VerdictBar({ data, oursCarrier, onPickCarrier, canPickCarrier }) {
           <>{tt('חבילה טיפוסית:', 'typical package:')}{' '}</>
         )}
         <Num style={{ fontWeight: 700 }}>{fmtIls(ours.cost)}</Num> {tt('לחודש', '/month')}
-        {gap != null && (
+        {gap != null && inLine && <>{', '}{tt('בקו אחד עם חציון השוק', 'in line with the market median')}</>}
+        {gap != null && !inLine && (
           <>
             {', '}
             <span style={{ color: pricier ? 'var(--color-moca-up)' : 'var(--color-moca-down)', fontWeight: 700 }}>
@@ -308,16 +319,16 @@ function KpiRow({ data }) {
 
   const costSub = ours
     ? tt(
-        (cv.rankCost != null ? `מקום ${cv.rankCost}/${cv.total} מהזול` : `מתוך ${cv.total} מפעילים`) + (cv.costGapPct != null ? ` · ${Math.abs(cv.costGapPct).toFixed(0)}% ${cv.costGapPct > 0 ? 'מעל' : 'מתחת'} לשוק` : ''),
-        (cv.rankCost != null ? `#${cv.rankCost}/${cv.total} cheapest` : `of ${cv.total} carriers`) + (cv.costGapPct != null ? ` · ${Math.abs(cv.costGapPct).toFixed(0)}% ${cv.costGapPct > 0 ? 'above' : 'below'} market` : ''),
-      )
+        (cv.rankCost != null ? `מקום ${cv.rankCost}/${cv.total} מהזול` : `מתוך ${cv.total} מפעילים`),
+        (cv.rankCost != null ? `#${cv.rankCost}/${cv.total} cheapest` : `of ${cv.total} carriers`),
+      ) + (cv.costGapPct != null ? ` · ${gapClause(cv.costGapPct, tt, 'cost')}` : '')
     : cv.cheapest ? <ChipName id={cv.cheapest.carrier} /> : null
 
   const volSub = ours
     ? tt(
-        (cv.rankVol != null ? `מקום ${cv.rankVol}/${cv.total} מהנדיב` : `מתוך ${cv.total} מפעילים`) + (ours.unlimitedCount ? ` · ${ours.unlimitedCount} ללא הגבלה` : '') + (cv.volumeGapPct != null ? ` · ${Math.abs(cv.volumeGapPct).toFixed(0)}% ${cv.volumeGapPct >= 0 ? 'יותר' : 'פחות'} מהשוק` : ''),
-        (cv.rankVol != null ? `#${cv.rankVol}/${cv.total} most data` : `of ${cv.total} carriers`) + (ours.unlimitedCount ? ` · ${ours.unlimitedCount} unlimited` : '') + (cv.volumeGapPct != null ? ` · ${Math.abs(cv.volumeGapPct).toFixed(0)}% ${cv.volumeGapPct >= 0 ? 'more' : 'less'} than market` : ''),
-      )
+        (cv.rankVol != null ? `מקום ${cv.rankVol}/${cv.total} מהנדיב` : `מתוך ${cv.total} מפעילים`) + (ours.unlimitedCount ? ` · ${ours.unlimitedCount} ללא הגבלה` : ''),
+        (cv.rankVol != null ? `#${cv.rankVol}/${cv.total} most data` : `of ${cv.total} carriers`) + (ours.unlimitedCount ? ` · ${ours.unlimitedCount} unlimited` : ''),
+      ) + (cv.volumeGapPct != null ? ` · ${gapClause(cv.volumeGapPct, tt, 'volume')}` : '')
     : cv.mostGenerous ? <ChipName id={cv.mostGenerous.carrier} /> : null
 
   return (
