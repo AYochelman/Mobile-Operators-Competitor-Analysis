@@ -73,9 +73,11 @@ function fmtAgoTs(ts, tt) {
 /** Neutral first→last % for a price series — a move's direction is not good or bad
  *  by itself (it depends on who you are), so no red/green here. */
 function TrendPct({ value }) {
+  const style = { fontSize: 11, fontWeight: 700, color: 'var(--color-moca-sub)', direction: 'ltr', unicodeBidi: 'isolate' }
+  if (!value) return <span className="tnum" style={style}>0%</span> // flat (or rounded to zero): no arrow
   const up = value > 0
   return (
-    <span className="tnum" style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-moca-sub)', direction: 'ltr', unicodeBidi: 'isolate' }}>
+    <span className="tnum" style={style}>
       {up ? '▲' : '▼'} {up ? '+' : ''}{value}%
     </span>
   )
@@ -259,7 +261,7 @@ function VerdictBar({ data, oursCarrier, onPickCarrier, canPickCarrier }) {
           <CarrierChip id={oursCarrier} size={40} />
         </span>
       )}
-      <div style={{ flex: 1, minWidth: 260 }}>
+      <div style={{ flex: 1, minWidth: 220 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: 'var(--color-moca-muted)' }}>
             {tt('שורה תחתונה', 'Bottom line')}
@@ -549,13 +551,13 @@ function LadderCard({ data, oursCarrier }) {
     <Card title={tt('סולם המיצוב', 'Positioning ladder')} hint={tt('מחיר חציוני · נפח טיפוסי', 'median price · typical volume')}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
         <span style={{ width: 14, flexShrink: 0 }} />
-        <span style={{ width: 104, flexShrink: 0 }} />
+        <span style={{ flex: '0 1 104px', minWidth: 30 }} />
         <span style={{ ...colHead, flex: 1 }}>{tt('מחיר חבילה', 'Package price')}</span>
         <span style={{ ...colHead, width: 44, textAlign: 'end' }}>₪</span>
         <span style={{ ...colHead, width: 82, textAlign: 'end' }}>{tt('נפח', 'Volume')}</span>
       </div>
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {cv.rows.map((row, i) => {
+        {cv.rows.map((row) => {
           const isOurs = oursCarrier && row.carrier === oursCarrier
           const pct = maxCost > 0 ? Math.max(3, (row.cost / maxCost) * 100) : 0
           const title = `${getCarrierName(row.carrier)} · ${fmtIls(row.cost)} · ${fmtGb(row.volume, tt)} · ${row.packages} ${tt('חבילות', 'packages')}`
@@ -564,8 +566,8 @@ function LadderCard({ data, oursCarrier }) {
             + (row.excluded ? ` · ${row.excluded} ${tt('קול/עד 1GB לא נספרו', 'voice/sub-1GB excluded')}` : '')
           return (
             <li key={row.carrier} title={title} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '3px 6px', margin: '0 -6px', borderRadius: 9, ...(isOurs ? OURS_TINT : null) }}>
-              <span className="tnum" style={{ fontSize: 10, color: 'var(--color-moca-muted)', width: 14, textAlign: 'center', flexShrink: 0, fontWeight: 700 }}>{i + 1}</span>
-              <span style={{ width: 104, flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+              <span className="tnum" style={{ fontSize: 10, color: 'var(--color-moca-muted)', width: 14, textAlign: 'center', flexShrink: 0, fontWeight: 700 }}>{row.rank}</span>
+              <span style={{ flex: '0 1 104px', minWidth: 30, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ display: 'inline-flex', borderRadius: 8, boxShadow: isOurs ? `0 0 0 2px ${CV.barOurs}` : 'none', flexShrink: 0 }}>
                   <CarrierChip id={row.carrier} size={24} />
                 </span>
@@ -640,7 +642,7 @@ function TrendTooltip({ active, payload, label, tt, lang, oursCarrier }) {
   )
 }
 
-function TrendCard({ data, oursCarrier, days, setDays }) {
+function TrendCard({ data, oursCarrier, days, setDays, busy }) {
   const { tt, lang } = useLang()
   const { trend, marketTrendPct, oursTrendPct } = data
   const last = trend.length ? trend[trend.length - 1] : null
@@ -705,7 +707,7 @@ function TrendCard({ data, oursCarrier, days, setDays }) {
           </div>
 
           {/* LTR wrapper: a time axis reads left→right even inside the RTL shell. */}
-          <div style={{ direction: 'ltr', width: '100%', height: 220 }}>
+          <div aria-busy={busy || undefined} style={{ direction: 'ltr', width: '100%', height: 220, opacity: busy ? 0.45 : 1, transition: 'opacity 150ms ease' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trend} margin={{ top: 8, right: 48, left: -8, bottom: 0 }}>
                 <CartesianGrid stroke={CV.grid} vertical={false} />
@@ -752,7 +754,7 @@ function FreshnessStrip({ data }) {
         {tt('טריות הנתונים', 'Data freshness')}
       </span>
       {freshness.map((f) => {
-        const stale = f.hours != null && f.hours > f.limit
+        const stale = f.hours == null || f.hours > f.limit
         return (
           <span key={f.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5 }}>
             <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: stale ? 'var(--color-moca-up)' : 'var(--color-moca-down)' }} />
@@ -779,7 +781,7 @@ export default function CockpitPage() {
   const [days, setDays] = useState(30)
   const [carrierModalOpen, setCarrierModalOpen] = useState(false)
   const oursCarrier = workspace?.mvno_carrier || null
-  const { loading, error, data, reload } = useCockpitData(oursCarrier, days)
+  const { loading, trendLoading, error, data, reload } = useCockpitData(oursCarrier, days)
 
   return (
     <>
@@ -792,7 +794,7 @@ export default function CockpitPage() {
         )}
       />
 
-      <div style={{ padding: '18px 32px 40px', maxWidth: 1320, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="cockpit-page" style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
         {loading && (
           <div style={{ padding: '70px 0', textAlign: 'center' }} role="status" aria-live="polite">
             <Spinner />
@@ -821,7 +823,7 @@ export default function CockpitPage() {
               <LadderCard data={data} oursCarrier={oursCarrier} />
             </div>
 
-            <TrendCard data={data} oursCarrier={oursCarrier} days={days} setDays={setDays} />
+            <TrendCard data={data} oursCarrier={oursCarrier} days={days} setDays={setDays} busy={trendLoading} />
             <FreshnessStrip data={data} />
           </>
         )}
@@ -830,11 +832,13 @@ export default function CockpitPage() {
       <MyCarrierModal open={carrierModalOpen} onClose={() => setCarrierModalOpen(false)} />
 
       <style>{`
+        .cockpit-page { padding: 18px 32px 40px; }
         .cockpit-split { grid-template-columns: 1fr; }
         @media (min-width: 1000px) {
           .cockpit-split { grid-template-columns: 1.35fr 1fr; align-items: start; }
         }
         @media (max-width: 560px) {
+          .cockpit-page { padding: 14px 16px 32px; }
           .wk-row { flex-wrap: wrap; }
           .wk-ago { display: none; }
         }

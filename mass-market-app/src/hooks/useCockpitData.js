@@ -152,6 +152,10 @@ export function buildCostVolume(plans, oursCarrier) {
     })
   }
   rows.sort((a, b) => a.cost - b.cost || a.carrier.localeCompare(b.carrier))
+  // Competition ranking: carriers with the same median price share a rank
+  // (Israeli .9 pricing makes ties common), matching rankVolOf's convention.
+  const rankCostOf = (row) => 1 + rows.filter((o) => o.cost < row.cost).length
+  for (const r of rows) r.rank = rankCostOf(r)
 
   const n = rows.length
   const marketCost = round(median(rows.map((r) => r.cost)), 1)
@@ -166,7 +170,7 @@ export function buildCostVolume(plans, oursCarrier) {
   // A rank among 1-2 carriers is not a positioning — the workspace hidden-carrier
   // filter can shrink the set that far. Suppress rather than print 'מקום 1 מתוך 2'.
   const rankable = n >= 3
-  const rankCost = ours && rankable ? rows.indexOf(ours) + 1 : null
+  const rankCost = ours && rankable ? rankCostOf(ours) : null
   const rankVol = ours && rankable && ours.volume != null ? rankVolOf(ours) : null
 
   const cheapest = rows[0] || null
@@ -387,40 +391,48 @@ function isoDay(offsetDays) {
  * @param {string|null} oursCarrier  workspace.mvno_carrier — null renders the
  *                                   whole page at market level (no "us" lines).
  * @param {number} days              lookback window for the price trend (7/30/90)
+ * @returns {{loading, trendLoading, error, data, reload}}
  */
 export function useCockpitData(oursCarrier, days = 30) {
   const [raw, setRaw] = useState(null)
+  const [daily, setDaily] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [trendLoading, setTrendLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), [])
 
+  // Core feeds. Secondary sources degrade independently (a dead roaming feed
+  // must not blank the page), but a failed PRIMARY feed (/api/plans) is a
+  // dead backend, not a partial dataset — it raises the Retry card rather
+  // than rendering an empty, all-green cockpit.
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
-
-    // Each source degrades independently — one dead endpoint must not blank
-    // the page. The executive summary 404s until the 08:05 job has run once,
-    // and /api/history/daily is empty until maintenance.run_daily has.
-    const soft = (p) => p.then((v) => v).catch(() => null)
+    const failed = []
+    const soft = (p, id) => p.then((v) => v).catch(() => { failed.push(id); return null })
 
     Promise.all([
-      soft(api.getPlans()),
-      soft(api.getChanges(500)),
-      soft(api.getAbroadPlans()),
-      soft(api.getAbroadChanges(500)),
-      soft(api.getHistoryDaily('domestic', { from: isoDay(days) })),
+      soft(api.getPlans(), 'plans'),
+      soft(api.getChanges(500), 'changes'),
+      soft(api.getAbroadPlans(), 'abroadPlans'),
+      soft(api.getAbroadChanges(500), 'abroadChanges'),
     ])
-      .then(([plans, changes, abroadPlans, abroadChanges, daily]) => {
+      .then(([plans, changes, abroadPlans, abroadChanges]) => {
         if (cancelled) return
+        if (plans === null) {
+          setError('primary feed failed')
+          setLoading(false)
+          return
+        }
         setRaw({
           plans: Array.isArray(plans) ? plans : [],
           changes: Array.isArray(changes) ? changes : [],
           abroadPlans: Array.isArray(abroadPlans) ? abroadPlans : [],
           abroadChanges: Array.isArray(abroadChanges) ? abroadChanges : [],
-          daily: daily?.rows || [],
+          failed,
           fetchedAt: Date.now(),
         })
         setLoading(false)
@@ -432,6 +444,20 @@ export function useCockpitData(oursCarrier, days = 30) {
       })
 
     return () => { cancelled = true }
+  }, [reloadKey])
+
+  // History window — the only thing the 7/30/90 picker affects. Kept apart so
+  // changing the window re-requests one endpoint and never unmounts the page
+  // (expanded groups and scroll position survive). Empty until
+  // maintenance.run_daily has built the table.
+  useEffect(() => {
+    let cancelled = false
+    setTrendLoading(true)
+    api.getHistoryDaily('domestic', { from: isoDay(days) })
+      .then((res) => { if (!cancelled) setDaily(res?.rows || []) })
+      .catch(() => { if (!cancelled) setDaily([]) })
+      .finally(() => { if (!cancelled) setTrendLoading(false) })
+    return () => { cancelled = true }
   }, [days, reloadKey])
 
   const derived = useMemo(() => {
@@ -439,7 +465,7 @@ export function useCockpitData(oursCarrier, days = 30) {
     const now = raw.fetchedAt
 
     const costVolume = buildCostVolume(raw.plans, oursCarrier)
-    const trend = buildPriceTrend(raw.daily, oursCarrier)
+    const trend = buildPriceTrend(daily || [], oursCarrier)
     const weekly = buildWeeklyChanges({ domestic: raw.changes, abroad: raw.abroadChanges }, oursCarrier, now)
 
     // 36h mirrors the backend's morning_check_stale_hours. Global eSIM is not
@@ -449,7 +475,8 @@ export function useCockpitData(oursCarrier, days = 30) {
       { id: 'domestic', label: 'סלולר', labelEn: 'Domestic', hours: hoursSince(raw.plans, now), limit: 36 },
       { id: 'abroad', label: 'חו״ל', labelEn: 'Roaming', hours: hoursSince(raw.abroadPlans, now), limit: 36 },
     ]
-    const stale = freshness.filter((f) => f.hours != null && f.hours > f.limit)
+    // No data at all (empty or failed feed) is not "fresh" — it is the worst case.
+    const stale = freshness.filter((f) => f.hours == null || f.hours > f.limit)
 
     return {
       costVolume,
@@ -465,9 +492,9 @@ export function useCockpitData(oursCarrier, days = 30) {
         carriers: costVolume.total,
       },
     }
-  }, [raw, oursCarrier])
+  }, [raw, daily, oursCarrier])
 
-  return { loading, error, data: derived, reload }
+  return { loading, trendLoading, error, data: derived, reload }
 }
 
 export default useCockpitData
