@@ -17,7 +17,7 @@ import CarrierChip from './CarrierChip'
  *
  * Requires super_admin (the underlying endpoint is gated at the backend).
  */
-export default function MyCarrierModal({ open, onClose }) {
+export default function MyCarrierModal({ open, onClose, onSaved }) {
   const { workspace, isSuperAdmin } = useAuth()
   const { tt } = useLang()
   // For super_admins without a user_roles.workspace_id, fetch the workspace
@@ -89,6 +89,10 @@ export default function MyCarrierModal({ open, onClose }) {
           }))
         } catch { /* quota — ignore */ }
       }
+      // Let the caller drop any local view override before the page reloads
+      // (the cockpit's per-browser "compare against" pick would otherwise keep
+      // winning over the workspace value that was just saved).
+      try { onSaved?.(selected || null) } catch { /* caller's problem */ }
       // Force a reload so useAuth re-fetches /api/my-context with the new value.
       window.location.reload()
     } catch (e) {

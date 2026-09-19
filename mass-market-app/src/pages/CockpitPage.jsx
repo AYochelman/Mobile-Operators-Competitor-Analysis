@@ -8,6 +8,7 @@ import { useLang } from '../hooks/useLanguage'
 import { useCockpitData } from '../hooks/useCockpitData'
 import { CarrierChip, PageHeader, Delta, MyCarrierModal } from '../components/moca'
 import { getCarrierName } from '../components/moca/carrierMeta'
+import { DOMESTIC_LABELS } from '../data/carrierLabels'
 import Spinner from '../components/ui/Spinner'
 
 /**
@@ -25,6 +26,11 @@ import Spinner from '../components/ui/Spinner'
  * a weekly competitor-changes section. Reads only existing endpoints; the whole
  * data layer lives in hooks/useCockpitData.js.
  */
+
+// Per-browser "compare against" pick from the verdict bar. Deliberately NOT
+// the workspace's mvno_carrier: writing that needs super_admin, and this is a
+// view preference, not account configuration.
+const OURS_KEY = 'moca_cockpit_ours_carrier'
 
 // ── chart palette ────────────────────────────────────────────────────────
 // Validated with the dataviz skill's validate_palette.js against the white
@@ -190,11 +196,84 @@ function weeklyClause(totals, tt, competitorsOnly) {
 }
 
 /**
- * The single sentence the exec reads first. Never invents a position: with no
- * mvno_carrier (or our carrier absent from the feed) it states the market
- * instead and offers the one-click fix.
+ * Inline "my carrier" picker for the verdict bar.
+ *
+ * The workspace-level `mvno_carrier` is super_admin-only (the API gates it), so
+ * everyone else used to get a dead-end sentence here ("ask an admin"). This
+ * select gives every reader the relative view on the spot: it sets a LOCAL
+ * preference (kept in localStorage by CockpitPage) and never touches the
+ * workspace. A super_admin still gets the link that makes the pick permanent
+ * for the whole account, through MyCarrierModal.
  */
-function VerdictBar({ data, oursCarrier, onPickCarrier, canPickCarrier }) {
+function CarrierPicker({ value, tracked, onChange, canPickCarrier, onPickCarrier }) {
+  const { tt } = useLang()
+  // Always list the full domestic registry (not only the carriers that happen
+  // to rank today) so a workspace bound to a quiet carrier still shows itself.
+  const options = useMemo(
+    () => Object.keys(DOMESTIC_LABELS)
+      .map((id) => ({ id, label: getCarrierName(id) }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'he')),
+    [],
+  )
+  const known = options.some((o) => o.id === value)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 176 }}>
+      <label
+        htmlFor="cockpit-ours-carrier"
+        style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: 'var(--color-moca-muted)' }}
+      >
+        {tt('השוואה מול', 'Compare against')}
+      </label>
+      <select
+        id="cockpit-ours-carrier"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          background: 'var(--color-moca-white, #fff)', color: 'var(--color-moca-dark)',
+          border: '1px solid var(--color-moca-border)', borderRadius: 10,
+          padding: '9px 12px', fontSize: 13, fontWeight: 700,
+          fontFamily: 'inherit', cursor: 'pointer', maxWidth: 220,
+        }}
+      >
+        <option value="">{tt('כל השוק (ללא ספק שלי)', 'The whole market (no carrier)')}</option>
+        {!known && value && <option value={value}>{getCarrierName(value)}</option>}
+        {options.map((o) => (
+          <option key={o.id} value={o.id}>{o.label}</option>
+        ))}
+      </select>
+      {value && !tracked && (
+        <span style={{ fontSize: 11, color: 'var(--color-moca-up)', maxWidth: 220, lineHeight: 1.45 }}>
+          {tt('אין כרגע נתונים לספק הזה', 'No data for this carrier right now')}
+        </span>
+      )}
+      {canPickCarrier ? (
+        <button
+          type="button"
+          onClick={onPickCarrier}
+          style={{
+            background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+            fontFamily: 'inherit', fontSize: 11, fontWeight: 700, textAlign: 'start',
+            color: 'var(--color-moca-bolt)', maxWidth: 220, lineHeight: 1.45,
+          }}
+        >
+          {tt('קבעו כספק הקבוע של החשבון', 'Set as the account default')}
+        </button>
+      ) : (
+        <span style={{ fontSize: 11, color: 'var(--color-moca-muted)', maxWidth: 220, lineHeight: 1.45 }}>
+          {tt('הבחירה נשמרת בדפדפן הזה בלבד', 'Saved in this browser only')}
+        </span>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The single sentence the exec reads first. Never invents a position: with no
+ * carrier picked (or that carrier absent from the feed) it states the market
+ * instead and offers the picker.
+ */
+function VerdictBar({ data, oursCarrier, onPickCarrier, canPickCarrier, onSelectCarrier }) {
   const { tt } = useLang()
   const { costVolume: cv, weekly, stale } = data
   const ours = cv.ours
@@ -289,25 +368,13 @@ function VerdictBar({ data, oursCarrier, onPickCarrier, canPickCarrier }) {
           {weeklyClause(weekly.totals, tt, !!oursCarrier)}
         </p>
       </div>
-      {!ours && canPickCarrier && (
-        <button
-          onClick={onPickCarrier}
-          style={{
-            background: 'var(--color-moca-bolt)', color: '#fff', border: 'none',
-            borderRadius: 10, padding: '9px 15px', fontSize: 12.5,
-            fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-          }}
-        >
-          {tt('הגדר את הספק שלי', 'Set my carrier')}
-        </button>
-      )}
-      {!ours && !canPickCarrier && (
-        <span style={{ fontSize: 11.5, color: 'var(--color-moca-muted)', maxWidth: 200, lineHeight: 1.5 }}>
-          {oursCarrier
-            ? tt('הספק שלכם אינו במעקב כרגע', 'Your carrier is not being tracked right now')
-            : tt('לתצוגה יחסית — בקשו ממנהל המערכת להגדיר את הספק שלכם', 'For a relative view, ask an admin to set your carrier')}
-        </span>
-      )}
+      <CarrierPicker
+        value={oursCarrier || ''}
+        tracked={!!ours}
+        onChange={onSelectCarrier}
+        canPickCarrier={canPickCarrier}
+        onPickCarrier={onPickCarrier}
+      />
     </div>
   )
 }
@@ -780,7 +847,21 @@ export default function CockpitPage() {
   const { workspace, isSuperAdmin } = useAuth()
   const [days, setDays] = useState(30)
   const [carrierModalOpen, setCarrierModalOpen] = useState(false)
-  const oursCarrier = workspace?.mvno_carrier || null
+  // A reader without super_admin cannot write workspace.mvno_carrier, so the
+  // verdict bar's picker keeps a per-browser override instead. Empty string =
+  // "explicitly no carrier" (market view), null = "never picked, follow the
+  // workspace" — they are NOT the same, hence the `?? `.
+  const [carrierOverride, setCarrierOverride] = useState(() => {
+    try { return localStorage.getItem(OURS_KEY) } catch { return null }
+  })
+  const oursCarrier = (carrierOverride ?? workspace?.mvno_carrier) || null
+  const pickCarrier = (id) => {
+    setCarrierOverride(id)
+    try {
+      if (id) localStorage.setItem(OURS_KEY, id)
+      else localStorage.setItem(OURS_KEY, '')
+    } catch { /* private mode / quota - the pick just won't survive a reload */ }
+  }
   const { loading, trendLoading, error, data, reload } = useCockpitData(oursCarrier, days)
 
   return (
@@ -814,7 +895,13 @@ export default function CockpitPage() {
 
         {!loading && !error && data && (
           <>
-            <VerdictBar data={data} oursCarrier={oursCarrier} canPickCarrier={isSuperAdmin} onPickCarrier={() => setCarrierModalOpen(true)} />
+            <VerdictBar
+              data={data}
+              oursCarrier={oursCarrier}
+              canPickCarrier={isSuperAdmin}
+              onPickCarrier={() => setCarrierModalOpen(true)}
+              onSelectCarrier={pickCarrier}
+            />
             <KpiRow data={data} />
 
             {/* The weekly rubric is the page's action list — it gets the wider column. */}
@@ -829,7 +916,11 @@ export default function CockpitPage() {
         )}
       </div>
 
-      <MyCarrierModal open={carrierModalOpen} onClose={() => setCarrierModalOpen(false)} />
+      <MyCarrierModal
+        open={carrierModalOpen}
+        onClose={() => setCarrierModalOpen(false)}
+        onSaved={() => { try { localStorage.removeItem(OURS_KEY) } catch { /* nothing to clear */ } }}
+      />
 
       <style>{`
         .cockpit-page { padding: 18px 32px 40px; }
