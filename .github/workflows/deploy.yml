@@ -1,0 +1,141 @@
+name: Deploy (Netlify)
+
+# Why this exists: deploying used to require Alon's own machine — the Netlify
+# CLI is only logged in there, and `.env.production` is gitignored. That made
+# every frontend change a manual step that was easy to forget, and it blocks
+# any agent/CI from shipping (a sandboxed runner cannot reach api.netlify.com).
+# A GitHub runner can, so the deploy moves here.
+#
+# ONE-TIME SETUP — repo → Settings → Secrets and variables → Actions:
+#   NETLIFY_AUTH_TOKEN      Netlify → User settings → Applications → New access token
+#   NETLIFY_SITE_ID         39164e5d-2df9-4254-82e1-a1e9d825a240
+#   VITE_SUPABASE_URL       https://gmfefvjdmgzluwffzrzj.supabase.co
+#   VITE_SUPABASE_ANON_KEY  the anon key (public, but keep it with the rest)
+#   VITE_API_URL            https://api.mocaintel.com
+#   VITE_API_KEY            the Flask api_key from config.json
+# Until they exist the job stops at "Check secrets" with a clear message —
+# it never ships a half-configured bundle.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mass-market-app/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why are you deploying manually?'
+        required: false
+        default: 'manual redeploy'
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false   # never abort a half-finished deploy
+
+jobs:
+  deploy:
+    name: Build + deploy to mocaintel.com
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mass-market-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: |
+          missing=""
+          for v in NETLIFY_AUTH_TOKEN NETLIFY_SITE_ID VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY VITE_API_URL; do
+            [ -z "${!v}" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repo secrets:$missing — see the header of .github/workflows/deploy.yml"
+            exit 1
+          fi
+          echo "All required secrets present."
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mass-market-app/package-lock.json
+
+      - run: npm ci
+
+      - name: Build
+        # Same local build that has always been the canonical artifact — the vars
+        # come from repo secrets, NOT from Netlify's dashboard (a stale dashboard
+        # VITE_API_URL once shipped a bundle pointing at a dead ngrok host).
+        # prerender-esim-dests.mjs calls VITE_API_URL live; a GitHub runner can
+        # reach api.mocaintel.com, so the ~160 destination pages are included
+        # whenever the Cloudflare tunnel is up. If it is down the script warns
+        # and exits 0 — the guard below catches the resulting dead bundle.
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
+          VITE_DEV_AUTH: 'false'
+        run: npm run build
+
+      - name: Guard the artifact
+        # Refuse to ship a build that is missing a prerendered page or that does
+        # not actually point at the configured API.
+        # NB: match ngrok DOMAINS only — every bundle legitimately contains the
+        # string "ngrok-skip-browser-warning" (a legacy request header kept
+        # after the ngrok→Cloudflare move), so a bare `grep ngrok` blocks every
+        # deploy. Verified against a real dist: 7 hits, all the header.
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: |
+          for f in index.html landing.html hotels.html esim.html _redirects; do
+            test -f "dist/$f" || { echo "::error::dist/$f missing"; exit 1; }
+          done
+          if grep -rqiE 'ngrok\.(io|app)|ngrok-free' dist/assets/*.js; then
+            echo "::error::bundle points at an ngrok host — check VITE_API_URL"; exit 1
+          fi
+          host="${VITE_API_URL%/}"
+          if ! grep -rqF "$host" dist/assets/*.js; then
+            echo "::error::bundle does not contain $host — the API base did not make it into the build"; exit 1
+          fi
+          fp=$(grep -o 'assets/main-[^\"]*\.js' dist/index.html | head -1)
+          [ -n "$fp" ] || { echo "::error::no entry bundle in dist/index.html"; exit 1; }
+          echo "FINGERPRINT=$fp" >> "$GITHUB_ENV"
+          echo "Artifact fingerprint: $fp  ·  API base: $host"
+
+      - name: Deploy
+        # --no-build is mandatory: without it the CLI rebuilds using Netlify's
+        # dashboard env vars instead of the artifact verified above.
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: npx --yes netlify-cli@latest deploy --prod --dir=dist --no-build
+
+      - name: Verify it is actually live
+        # A deploy is not done until the live entry bundle matches what we built.
+        # /home is an SPA route; / serves the static landing.html (no main bundle).
+        run: |
+          for i in 1 2 3 4 5 6; do
+            live=$(curl -s https://mocaintel.com/home | grep -o 'assets/main-[^"]*\.js' | head -1 || true)
+            if [ "$live" = "$FINGERPRINT" ]; then
+              echo "Live matches build: $live"; exit 0
+            fi
+            echo "attempt $i — live=[$live] expected=[$FINGERPRINT], retrying in 10s"; sleep 10
+          done
+          echo "::error::Live bundle never matched the build ($FINGERPRINT). CDN lag, or the deploy did not land."
+          exit 1
+
+      - name: Backend reachability (informational)
+        if: always()
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' https://api.mocaintel.com/api/ping || echo 000)
+          echo "api.mocaintel.com/api/ping → HTTP $code"
+          [ "$code" = "200" ] || echo "::warning::Flask/tunnel is not answering — the site will load but show no data."

@@ -37,6 +37,7 @@ Supplements the root CLAUDE.md when working in `mass-market-app/`. Moved here so
 | components/GlobalSearch.jsx | Cmd+K / Ctrl+K full-app plan search, portal-rendered |
 | components/AnnotationsModal.jsx | Team notes per plan — pinned to (carrier, plan_name) |
 | components/ScrapeProgressPanel.jsx | Live scrape progress indicator (SSE stream) |
+| components/AuthDegradedBanner.jsx | Red bar shown when `useAuth().contextDegraded` is set — i.e. the role on screen is a FALLBACK, not the server's answer. `/api/my-context` failing (Flask/tunnel down, timeout, 401/403) or answering without an identity (`reason: no_jwt`/`no_email`) used to drop the user to `viewer` **silently**, so every admin menu vanished and it looked like a permissions change. The app still runs in the degraded role, but names the reason and offers `retryContext()` — no sign-out needed. |
 | components/ViewAsBanner.jsx | Super-admin "viewing as workspace X" banner. Rendered inside Layout (above the sidebar+main flex row) — not sticky |
 | components/CarrierAIInsights.jsx | Per-carrier AI summary widget. Used inline in DashboardPage; `/ai-insights` page uses its own feed-style layout |
 | components/MarketMoversWidget.jsx | Biggest price changes since last scrape |

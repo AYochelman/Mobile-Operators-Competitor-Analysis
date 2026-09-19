@@ -175,12 +175,19 @@ def api_my_context():
     Identity is taken exclusively from the verified JWT. API-key callers
     have no user identity and receive an empty context (no escalation via
     the X-User-Email request header)."""
+    # `reason` marks a viewer that is a FALLBACK (we could not identify the
+    # caller) rather than a real viewer account. Without it the frontend cannot
+    # tell "you are a viewer" from "we do not know who you are", and an
+    # identity-less token silently strips every admin menu. Additive field —
+    # older clients ignore it.
     payload = getattr(g, 'jwt_payload', None)
     if not payload:
-        return jsonify({"role": "viewer", "workspace_id": None, "workspace": None})
+        return jsonify({"role": "viewer", "workspace_id": None, "workspace": None,
+                        "reason": "no_jwt"})
     email = (payload.get('email') or '').strip().lower()
     if not email:
-        return jsonify({"role": "viewer", "workspace_id": None, "workspace": None})
+        return jsonify({"role": "viewer", "workspace_id": None, "workspace": None,
+                        "reason": "no_email"})
     return jsonify(core._get_user_context(email))
 
 
