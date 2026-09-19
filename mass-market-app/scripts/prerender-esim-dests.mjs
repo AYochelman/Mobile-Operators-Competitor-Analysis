@@ -59,7 +59,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
 // on 429 instead of dropping the destination.
 async function getJson(path, tries = 8) {
   for (let i = 0; i < tries; i++) {
-    const r = await fetch(`${API}${path}`, { signal: AbortSignal.timeout(30000) })
+    // The header lets the build reach the API through the ngrok edge (the
+    // GitHub Actions deploy does), which otherwise answers with an interstitial.
+    const r = await fetch(`${API}${path}`, {
+      signal: AbortSignal.timeout(30000),
+      headers: { 'ngrok-skip-browser-warning': 'true' },
+    })
     if (r.status === 429) { await sleep(15000); continue }
     if (!r.ok) throw new Error(`${path} -> HTTP ${r.status}`)
     return r.json()

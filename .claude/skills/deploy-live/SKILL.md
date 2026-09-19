@@ -19,6 +19,23 @@ linked to the production site - so deploy it yourself and verify, don't hand it 
 **Site**: `lucent-kulfi-f037ad` (id `39164e5d-2df9-4254-82e1-a1e9d825a240`) →
 https://mocaintel.com (+ esim.mocaintel.com subdomain, served from the same deploy).
 
+## 0. No Windows box at hand? Deploy from GitHub Actions
+
+Since 2026-09-19 `.github/workflows/deploy-frontend.yml` does steps 1-4 below on a
+GitHub runner (same `npm run build`, `netlify-cli deploy --prod --no-build`,
+fingerprint match after). Use it from a cloud session (no CLI, no `.env.production`,
+no egress to Netlify there) or whenever the box is off. Actions tab → "Deploy
+frontend to Netlify" → Run workflow, or the workflow-dispatch API. One-time setup:
+the `NETLIFY_AUTH_TOKEN` repository secret (Netlify personal access token). It
+refuses to ship a bundle whose API origin is not in the built JS + CSP, a sitemap
+on mocaintel.com, or a build with 0 `/esim/<dest>/` pages (needs the API edge up;
+`require_dest_pages=false` overrides). The run summary carries the fingerprint and
+the Netlify deploy log URL - that is the proof of delivery.
+
+**Live host while mocaintel.com is offline (since 2026-07-13):** verify against
+`https://lucent-kulfi-f037ad.netlify.app` - the `mocaintel.com` URLs below do not
+resolve (apex has no A/AAAA record) until the domain is restored.
+
 ## 1. Build
 
 ```bash
