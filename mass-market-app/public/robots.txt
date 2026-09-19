@@ -42,6 +42,6 @@ Disallow: /notifications
 # "*" policy above - MOCA wants its public comparison pages cited by AI answer
 # engines. Do not add blanket blocks for these user-agents.
 # A machine-readable site summary for LLMs is published at:
-#   https://mocaintel.com/llms.txt
+#   https://lucent-kulfi-f037ad.netlify.app/llms.txt
 
-Sitemap: https://mocaintel.com/sitemap.xml
+Sitemap: https://lucent-kulfi-f037ad.netlify.app/sitemap.xml

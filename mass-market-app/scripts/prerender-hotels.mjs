@@ -24,6 +24,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { SITE_ORIGIN } from '../src/data/siteOrigin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const ssrEntry = resolve(root, 'dist-ssr-hotels/entry-hotels.js')
@@ -54,17 +55,17 @@ const head = `<meta charset="UTF-8" />
     <meta name="theme-color" content="#5c3317" />
     <title>MOCA Guest Connect - eSIM concierge for your hotel guests</title>
     <meta name="description" content="A guest-facing portal, branded in your hotel's colors, that compares eSIM &amp; tourist-SIM deals in Israel from 38 global providers and 10 local operators, refreshed twice a day. No inventory, no day-to-day operations, and a commission to the hotel on attributed purchases." />
-    <link rel="canonical" href="https://mocaintel.com/hotels" />
-    <link rel="alternate" hreflang="he" href="https://mocaintel.com/hotels" />
-    <link rel="alternate" hreflang="en" href="https://mocaintel.com/hotels?lang=en" />
-    <link rel="alternate" hreflang="x-default" href="https://mocaintel.com/hotels" />
+    <link rel="canonical" href="${SITE_ORIGIN}/hotels" />
+    <link rel="alternate" hreflang="he" href="${SITE_ORIGIN}/hotels" />
+    <link rel="alternate" hreflang="en" href="${SITE_ORIGIN}/hotels?lang=en" />
+    <link rel="alternate" hreflang="x-default" href="${SITE_ORIGIN}/hotels" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/icon-180.png" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="MOCA Guest Connect - Wi-Fi &amp; eSIM concierge for hotel guests" />
     <meta property="og:description" content="A portal branded in your hotel's colors that compares eSIM &amp; SIM deals in Israel for your guests, refreshed twice a day. No day-to-day operations - and a commission on attributed purchases." />
-    <meta property="og:url" content="https://mocaintel.com/hotels" />
-    <meta property="og:image" content="https://mocaintel.com/icons/icon-512.png" />
+    <meta property="og:url" content="${SITE_ORIGIN}/hotels" />
+    <meta property="og:image" content="${SITE_ORIGIN}/icons/icon-512.png" />
     <meta property="og:locale" content="he_IL" />
     <meta property="og:locale:alternate" content="en_US" />
     <meta name="twitter:card" content="summary_large_image" />

@@ -22,17 +22,18 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { SITE_ORIGIN } from '../src/data/siteOrigin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distIndex = resolve(root, 'dist/index.html')
 if (!existsSync(distIndex)) throw new Error('prerender-esim: missing ' + distIndex + ' - run the client build first')
 
-const CANON = 'https://mocaintel.com/esim-deals'
+const CANON = `${SITE_ORIGIN}/esim-deals`
 const TITLE = 'השוואת מחירי eSIM לטיול בחו"ל - חינם | MOCA'
 const DESC = 'השוואת מחירי eSIM חינמית לטיול בחו"ל, בלי הרשמה. מוצאים חבילה מתאימה מתוך ההצעות של 38 ספקי eSIM גלובליים, מתעדכן פעמיים ביום.'
 const OG_TITLE = 'השוואת מחירי eSIM לטיול בחו"ל | MOCA'
 const OG_DESC = 'מוצאים חבילת eSIM מתאימה לטיול, מושווה על פני 38 ספקים גלובליים ומתעדכן פעמיים ביום. חינם, בלי הרשמה.'
-const OG_IMG = 'https://mocaintel.com/og/og-esim.png'
+const OG_IMG = `${SITE_ORIGIN}/og/og-esim.png`
 
 // FAQ — rendered BOTH as visible content in #root (crawlable) and as FAQPage
 // JSON-LD (rich-result eligible). Keep the two lists identical.
@@ -104,7 +105,7 @@ const faqJsonLd = {
       name: OG_TITLE,
       description: DESC,
       inLanguage: 'he-IL',
-      isPartOf: { '@id': 'https://mocaintel.com/#website' },
+      isPartOf: { '@id': `${SITE_ORIGIN}/#website` },
     },
     {
       '@type': 'FAQPage',
