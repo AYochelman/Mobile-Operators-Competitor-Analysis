@@ -65,6 +65,9 @@ jobs:
       VITE_DEV_AUTH: "false"
     steps:
       - name: Refuse to run without a Netlify token
+        # Runs before checkout, so the job-level working-directory (mass-market-app)
+        # does not exist yet - stay at the workspace root.
+        working-directory: ${{ github.workspace }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
         run: |
@@ -161,6 +164,8 @@ jobs:
 
       - name: Summary
         if: always()
+        # Also runs when checkout was skipped - same reason as the guard above.
+        working-directory: ${{ github.workspace }}
         run: |
           {
             echo "## Netlify production deploy"
