@@ -31,6 +31,9 @@ const Icons = {
   dashboard: (
     <svg {...ICON_PROPS}><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
   ),
+  cockpit: (
+    <svg {...ICON_PROPS}><path d="M3 20h18"/><path d="M5 20V9l7-5 7 5v11"/><path d="M9 20v-6h6v6"/><circle cx="12" cy="9" r="1" fill="currentColor"/></svg>
+  ),
   exec: (
     <svg {...ICON_PROPS}><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="14 3 14 9 20 9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
   ),
@@ -303,11 +306,14 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
 
       <nav style={{ padding: '4px 8px 10px', display: 'flex', flexDirection: 'column', gap: 1 }}>
         {/* ─── Monitoring ─── */}
-        {(visible('/') || visible('/executive-summary') || visible('/positioning') || visible('/history') || visible('/alerts')) && (
+        {(visible('/') || visible('/cockpit') || visible('/executive-summary') || visible('/positioning') || visible('/history') || visible('/alerts')) && (
           <GroupLabel>{tt('ניטור', 'Monitoring')}</GroupLabel>
         )}
         {visible('/') && (
           <NavItem to="/" end icon={Icons.dashboard} label={tt('דשבורד', 'Dashboard')} isActive={isPath('/')} onAfterNav={afterNav} />
+        )}
+        {visible('/cockpit') && (
+          <NavItem to="/cockpit" icon={Icons.cockpit} label={tt('חדר מצב', 'Situation room')} isActive={isPath('/cockpit')} onAfterNav={afterNav} />
         )}
         {visible('/executive-summary') && (
           <NavItem to="/executive-summary" icon={Icons.exec} label={tt('דוח מנהלים', 'Executive report')} isActive={isPath('/executive-summary')} onAfterNav={afterNav} />
