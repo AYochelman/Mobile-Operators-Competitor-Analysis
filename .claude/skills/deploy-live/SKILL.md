@@ -5,11 +5,50 @@ description: >-
   deploy actually landed. Use after ANY React/JS/CSS change in mass-market-app,
   whenever the user says "תעלה לאוויר", "תפרוס", "deploy", "גרור ל-Netlify", asks
   why a change isn't showing on the live site, or when a session ends with a built
-  dist that was never deployed. Claude can now deploy DIRECTLY via the authenticated
-  Netlify CLI - never end a frontend task with "נשאר לך לגרור את dist" again.
+  dist that was never deployed. Claude can deploy DIRECTLY via the authenticated
+  Netlify CLI **from the local Windows session only** - a cloud/web session has no
+  CLI, no .env.production and no network route to Netlify, and must say so instead
+  of promising a deploy.
 ---
 
 # Deploy Live (Netlify, mocaintel.com)
+
+## FIRST: can this session deploy at all?
+
+Everything below assumes the **local Windows session** (`D:\השוואת MASS MARKET`),
+which is the only machine with a logged-in Netlify CLI and a `.env.production`.
+A Claude Code **web/cloud session is a different machine** and CANNOT deploy:
+
+    which netlify                      -> not installed
+    ls mass-market-app/.env.production -> missing (gitignored, 0 commits)
+    curl https://api.netlify.com       -> CONNECT tunnel failed, 403 (network policy)
+
+Even with a token pasted in, the sandbox blocks `api.netlify.com`, so a cloud
+session must NOT promise a deploy. Run the three checks above before saying
+"I'll deploy it". If any fails, say so plainly and use the Git path below —
+never leave the user thinking a deploy happened.
+
+## The permanent fix: let Netlify build from Git
+
+The site (`lucent-kulfi-f037ad`) already holds all four `VITE_*` env vars, but
+as of 2026-09 its **repository is "Not linked"** — so merges to `main` deploy
+nothing and every release depends on one laptop. Linking it at
+`Developer settings -> Repository -> Link repository` makes any merge deploy
+itself, from any machine or session:
+
+    Branch to deploy   main
+    Base directory     (LEAVE EMPTY - see the netlify.toml trap below)
+    Build command      cd mass-market-app && npm install && npm run build
+    Publish directory  mass-market-app/dist
+
+**netlify.toml trap** — `mass-market-app/netlify.toml` (8 rules) has drifted out
+of sync with `public/_redirects` (15 rules), despite the comment claiming
+otherwise. Missing from the toml: `/go/*` (affiliate attribution), `/tt`, and
+the five `esim.mocaintel.com` host rules — while it DOES carry a `/*` catch-all.
+Setting `Base directory = mass-market-app` makes Netlify read that file, whose
+catch-all can then swallow `/go/*` and break affiliate links. With the field
+empty, Netlify looks for `netlify.toml` at the repo root (absent) and ignores
+it, leaving `dist/_redirects` as the sole router — byte-identical to today.
 
 Committed ≠ built ≠ live. Historically every frontend change ended with a manual
 drag-deploy that was forgotten or done with a stale folder. Since 2026-07-09 the
