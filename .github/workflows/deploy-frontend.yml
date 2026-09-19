@@ -1,0 +1,177 @@
+# Build the MOCA frontend and deploy it to the production Netlify site from a
+# GitHub runner, so a deploy no longer depends on the one Windows box that holds
+# the logged-in Netlify CLI and .env.production. It is the CI twin of
+# .claude/skills/deploy-live/SKILL.md: a local-style `npm run build` (never the
+# CLI's own build - `--no-build`), a fingerprint taken before the deploy and
+# matched against the live site after it.
+#
+# Manual trigger only: Actions -> "Deploy frontend to Netlify" -> Run workflow,
+# or the workflow-dispatch API. Nothing here runs on push. To make every merge
+# to main go live, add under `on:`:
+#   push:
+#     branches: [main]
+#     paths: [mass-market-app/**]
+#
+# One-time setup - repository secret (Settings -> Secrets and variables ->
+# Actions -> Secrets):
+#   NETLIFY_AUTH_TOKEN   personal access token: app.netlify.com -> User settings
+#                        -> Applications -> Personal access tokens
+# Optional repository VARIABLES (same page -> Variables); the defaults are what
+# the live site uses today:
+#   VITE_API_URL           Flask API origin the bundle talks to. It must ALSO be
+#                          in the CSP connect-src of public/_headers + netlify.toml
+#                          or the browser blocks every request - the pre-flight
+#                          step refuses to deploy otherwise.
+#   VITE_SUPABASE_URL      fall back to the values baked into src/lib/supabase.js
+#   VITE_SUPABASE_ANON_KEY (the anon key is public by design); set the key as a
+#                          SECRET if you override it.
+#   VITE_TIKTOK_PIXEL_ID   empty = pixel off.
+name: Deploy frontend to Netlify
+
+on:
+  workflow_dispatch:
+    inputs:
+      require_dest_pages:
+        description: "Fail if the /esim/<destination>/ pages could not be prerendered (needs the Flask API reachable at VITE_API_URL)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+# Two deploys must never interleave; a second run waits for the first.
+concurrency:
+  group: netlify-production
+  cancel-in-progress: false
+
+env:
+  NETLIFY_SITE_ID: 39164e5d-2df9-4254-82e1-a1e9d825a240
+  SITE_URL: https://lucent-kulfi-f037ad.netlify.app
+
+jobs:
+  deploy:
+    name: Build + deploy (production)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: mass-market-app
+    env:
+      VITE_API_URL: ${{ vars.VITE_API_URL || 'https://terra-nonrestrained-overpiteously.ngrok-free.dev' }}
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      VITE_TIKTOK_PIXEL_ID: ${{ vars.VITE_TIKTOK_PIXEL_ID }}
+      # Never true in a production bundle (see CLAUDE.md -> Production Build).
+      VITE_DEV_AUTH: "false"
+    steps:
+      - name: Refuse to run without a Netlify token
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: |
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "::error::Repository secret NETLIFY_AUTH_TOKEN is not set. Create a personal access token at app.netlify.com -> User settings -> Applications -> Personal access tokens, then add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          echo "token present; deploying to site $NETLIFY_SITE_ID ($SITE_URL) with API $VITE_API_URL"
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mass-market-app/package-lock.json
+
+      - run: npm ci
+
+      - name: Build (same chain as a local `npm run build`)
+        env:
+          # prerender-esim-dests.mjs pulls the live deals for the ~160
+          # /esim/<destination>/ pages from the Flask API.
+          ESIM_API_BASE: ${{ env.VITE_API_URL }}
+        run: npm run build
+
+      - name: Pre-flight - refuse to ship a broken bundle
+        id: preflight
+        env:
+          REQUIRE_DEST_PAGES: ${{ inputs.require_dest_pages }}
+        run: |
+          set -euo pipefail
+          for f in index.html landing.html hotels.html esim.html _redirects _headers sitemap.xml robots.txt sw.js; do
+            test -f "dist/$f" || { echo "::error::dist/$f missing - the build chain did not complete"; exit 1; }
+          done
+
+          # The deploy fingerprint (Vite content-hashes the entry bundle).
+          fp=$(grep -o 'assets/main-[^"]*\.js' dist/index.html | head -1)
+          test -n "$fp" || { echo "::error::no assets/main-*.js entry in dist/index.html"; exit 1; }
+          echo "fingerprint=$fp" >> "$GITHUB_OUTPUT"
+          echo "fingerprint: $fp"
+
+          # The bundle must talk to the API host we intend, and the CSP that
+          # ships next to it must allow that host - the 2026-07-09 incident was
+          # a bundle built against the wrong API origin.
+          grep -rlq "$VITE_API_URL" dist/assets/ \
+            || { echo "::error::VITE_API_URL ($VITE_API_URL) is not in the built bundle"; exit 1; }
+          grep -o 'connect-src[^;]*' dist/_headers | grep -q "$VITE_API_URL" \
+            || { echo "::error::CSP connect-src in dist/_headers does not allow $VITE_API_URL - the browser would block every API call"; exit 1; }
+          ! grep -rq 'example.supabase.co' dist/assets/ \
+            || { echo "::error::CI dummy Supabase URL found in the bundle"; exit 1; }
+
+          # Every self-URL must sit on the origin that actually serves.
+          bad=$(grep -c '<loc>https://mocaintel\.com' dist/sitemap.xml || true)
+          test "$bad" = "0" || { echo "::error::sitemap.xml still lists $bad mocaintel.com URLs"; exit 1; }
+
+          dests=0
+          [ -d dist/esim ] && dests=$(find dist/esim -mindepth 1 -maxdepth 1 -type d | wc -l)
+          echo "dest_pages=$dests" >> "$GITHUB_OUTPUT"
+          echo "destination pages prerendered: $dests"
+          if [ "$dests" = "0" ] && [ "$REQUIRE_DEST_PAGES" = "true" ]; then
+            echo "::error::0 /esim/<destination>/ pages were prerendered - the Flask API at $VITE_API_URL was unreachable from the runner. Fix the tunnel, or re-run with require_dest_pages=false to ship without them."
+            exit 1
+          fi
+
+      - name: Deploy to Netlify (production, --no-build)
+        id: deploy
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          npx --yes netlify-cli deploy --prod --dir=dist --no-build \
+            --message "GitHub Actions ${GITHUB_SHA::7} (${GITHUB_REF_NAME}) - ${{ steps.preflight.outputs.fingerprint }}" \
+            --json > deploy.json
+          jq -r '"deploy_id=" + .deploy_id, "deploy_url=" + .deploy_url, "logs=" + .logs' deploy.json >> "$GITHUB_OUTPUT"
+          jq -r '"site: " + .url, "deploy: " + .deploy_url, "logs: " + .logs' deploy.json
+
+      - name: Verify - the deploy is not done until the live fingerprint matches
+        run: |
+          set -euo pipefail
+          want="${{ steps.preflight.outputs.fingerprint }}"
+          live=""
+          for i in 1 2 3 4 5 6; do
+            live=$(curl -fsS --max-time 20 "$SITE_URL/home" | grep -o 'assets/main-[^"]*\.js' | head -1 || true)
+            [ "$live" = "$want" ] && break
+            echo "attempt $i: live=$live want=$want - waiting for the CDN"; sleep 10
+          done
+          [ "$live" = "$want" ] || { echo "::error::live fingerprint ($live) != built ($want) - the deploy did not land"; exit 1; }
+          echo "live fingerprint matches: $live"
+
+          locs=$(curl -fsS --max-time 20 "$SITE_URL/sitemap.xml" | grep -c "<loc>$SITE_URL" || true)
+          echo "sitemap <loc> entries on $SITE_URL: $locs"
+          curl -fsSI --max-time 20 "$SITE_URL/robots.txt" | head -1
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Netlify production deploy"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| site | $SITE_URL |"
+            echo "| commit | \`${GITHUB_SHA::7}\` (${GITHUB_REF_NAME}) |"
+            echo "| API origin | $VITE_API_URL |"
+            echo "| fingerprint | \`${{ steps.preflight.outputs.fingerprint }}\` |"
+            echo "| destination pages | ${{ steps.preflight.outputs.dest_pages }} |"
+            echo "| deploy | ${{ steps.deploy.outputs.deploy_url }} |"
+            echo "| Netlify log | ${{ steps.deploy.outputs.logs }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
