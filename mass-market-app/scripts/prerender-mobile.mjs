@@ -14,12 +14,13 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { SITE_ORIGIN } from '../src/data/siteOrigin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distIndex = resolve(root, 'dist/index.html')
 if (!existsSync(distIndex)) throw new Error('prerender-mobile: missing ' + distIndex + ' - run the client build first')
 
-const CANON = 'https://mocaintel.com/mobile-deals'
+const CANON = `${SITE_ORIGIN}/mobile-deals`
 const TITLE = 'השוואת חבילות סלולר בישראל - כל המפעילים במקום אחד | MOCA'
 const DESC = 'השוואת מחירים חינמית של חבילות סלולר בישראל, בלי הרשמה. מחירים, נפחי גלישה, 5G והטבות מכל 10 המפעילים, מתעדכן פעמיים ביום.'
 const OG_TITLE = 'השוואת חבילות סלולר בישראל | MOCA'
@@ -89,7 +90,7 @@ const faqJsonLd = {
       name: OG_TITLE,
       description: DESC,
       inLanguage: 'he-IL',
-      isPartOf: { '@id': 'https://mocaintel.com/#website' },
+      isPartOf: { '@id': `${SITE_ORIGIN}/#website` },
     },
     {
       '@type': 'FAQPage',

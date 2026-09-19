@@ -17,9 +17,10 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { DEST_BG_BY_HE } from '../src/data/destBg.js'
 import { GLOBAL_LABELS } from '../src/data/carrierLabels.js'
+import { SITE_ORIGIN } from '../src/data/siteOrigin.js'
 
 const API = process.env.ESIM_API_BASE || 'http://localhost:5000'
-const SITE = 'https://mocaintel.com'
+const SITE = SITE_ORIGIN
 const GO_BASE = 'https://api.mocaintel.com/go'
 const DIST = 'dist'
 const MAX_PAGES = 160
@@ -313,7 +314,7 @@ ${pages.map(p => `<a href="/esim/${p.slug}/">eSIM ל${esc(p.he)}<span class="mn"
     let sm = readFileSync(smPath, 'utf8')
     // Idempotent: strip any /esim/<something> entries from a previous run first
     // (the pattern requires a slash after "esim", so /esim-deals never matches).
-    sm = sm.replace(/  <url>\s*<loc>https:\/\/mocaintel\.com\/esim\/[\s\S]*?<\/url>\n/g, '')
+    sm = sm.replace(/  <url>\s*<loc>https?:\/\/[^/]+\/esim\/[\s\S]*?<\/url>\n/g, '')
     const urls = [`  <url>\n    <loc>${SITE}/esim/destinations/</loc>\n    <lastmod>${todayISO}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`]
     for (const p of pages) {
       urls.push(`  <url>\n    <loc>${SITE}/esim/${p.slug}/</loc>\n    <lastmod>${todayISO}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`)

@@ -6,17 +6,20 @@
  *   node scripts/indexnow-ping.mjs
  *
  * The key file public/847f1f3063de3170789ee85703e90cf6.txt must be live at
- * https://mocaintel.com/<key>.txt (it ships inside dist/ automatically) -
- * IndexNow validates ownership by fetching it. A 200/202 response = accepted.
+ * <SITE_ORIGIN>/<key>.txt (it ships inside dist/ automatically) - IndexNow
+ * validates ownership by fetching it. A 200/202 response = accepted. The host
+ * must be the one that actually serves, so it is derived from SITE_ORIGIN.
  */
+import { SITE_ORIGIN } from '../src/data/siteOrigin.js'
+
 const KEY = '847f1f3063de3170789ee85703e90cf6'
-const HOST = 'mocaintel.com'
+const HOST = new URL(SITE_ORIGIN).host
 const URLS = [
-  'https://mocaintel.com/',
-  'https://mocaintel.com/esim-deals',
-  'https://mocaintel.com/esim-deals?lang=en',
-  'https://mocaintel.com/hotels',
-  'https://mocaintel.com/llms.txt',
+  `${SITE_ORIGIN}/`,
+  `${SITE_ORIGIN}/esim-deals`,
+  `${SITE_ORIGIN}/esim-deals?lang=en`,
+  `${SITE_ORIGIN}/hotels`,
+  `${SITE_ORIGIN}/llms.txt`,
 ]
 
 // Programmatic destination pages (dist/esim-pages.json is written by

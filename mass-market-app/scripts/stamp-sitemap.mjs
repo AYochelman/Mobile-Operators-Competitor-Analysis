@@ -11,6 +11,9 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { SITE_ORIGIN } from '../src/data/siteOrigin.js'
+
+const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const sitemapPath = resolve(root, 'dist/sitemap.xml')
@@ -28,7 +31,7 @@ const STAMP_PATHS = ['esim-deals']
 for (const p of STAMP_PATHS) {
   let stamped = 0
   xml = xml.replace(
-    new RegExp(`(<loc>https://mocaintel\\.com/${p}[^<]*</loc>[\\s\\S]*?<lastmod>)[^<]+(</lastmod>)`, 'g'),
+    new RegExp(`(<loc>${reEsc(SITE_ORIGIN)}/${p}[^<]*</loc>[\\s\\S]*?<lastmod>)[^<]+(</lastmod>)`, 'g'),
     (_, pre, post) => {
       stamped += 1
       return pre + today + post

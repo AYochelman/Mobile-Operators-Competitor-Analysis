@@ -19,6 +19,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { SITE_ORIGIN } from '../src/data/siteOrigin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distIndex = resolve(root, 'dist/index.html')
@@ -97,9 +98,9 @@ const langHeadScript =
 // language by the body script below, so the two URLs index as language alternates
 // rather than the English one folding into the Hebrew canonical.
 const seoI18n =
-  `<link rel="alternate" hreflang="he" href="https://mocaintel.com/" />` +
-  `<link rel="alternate" hreflang="en" href="https://mocaintel.com/?lang=en" />` +
-  `<link rel="alternate" hreflang="x-default" href="https://mocaintel.com/" />` +
+  `<link rel="alternate" hreflang="he" href="${SITE_ORIGIN}/" />` +
+  `<link rel="alternate" hreflang="en" href="${SITE_ORIGIN}/?lang=en" />` +
+  `<link rel="alternate" hreflang="x-default" href="${SITE_ORIGIN}/" />` +
   `<meta property="og:locale" content="he_IL" />` +
   `<meta property="og:locale:alternate" content="en_US" />`
 
@@ -110,7 +111,7 @@ const seoI18n =
 const langBodyScript =
   `<script>(function(){` +
   `var T={he:${JSON.stringify(TITLE_HE)},en:${JSON.stringify(TITLE_EN)}};` +
-  `function setCanon(l){var c=document.querySelector('link[rel="canonical"]');if(c)c.href=l==='en'?'https://mocaintel.com/?lang=en':'https://mocaintel.com/';}` +
+  `function setCanon(l){var c=document.querySelector('link[rel="canonical"]');if(c)c.href=l==='en'?'${SITE_ORIGIN}/?lang=en':'${SITE_ORIGIN}/';}` +
   `function setLang(l){var d=document.documentElement;d.setAttribute('data-lang',l);d.lang=l;` +
   `d.dir=l==='en'?'ltr':'rtl';if(T[l])document.title=T[l];setCanon(l);try{localStorage.setItem('moca_lang',l);}catch(e){}}` +
   `var cur=document.documentElement.getAttribute('data-lang')==='en'?'en':'he';document.title=T[cur];setCanon(cur);` +

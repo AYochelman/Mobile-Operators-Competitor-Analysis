@@ -5,55 +5,55 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://mocaintel.com/</loc>
-    <xhtml:link rel="alternate" hreflang="he" href="https://mocaintel.com/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://mocaintel.com/?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://mocaintel.com/"/>
+    <loc>https://lucent-kulfi-f037ad.netlify.app/</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://lucent-kulfi-f037ad.netlify.app/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lucent-kulfi-f037ad.netlify.app/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lucent-kulfi-f037ad.netlify.app/"/>
     <lastmod>2026-06-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://mocaintel.com/?lang=en</loc>
-    <xhtml:link rel="alternate" hreflang="he" href="https://mocaintel.com/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://mocaintel.com/?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://mocaintel.com/"/>
+    <loc>https://lucent-kulfi-f037ad.netlify.app/?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://lucent-kulfi-f037ad.netlify.app/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lucent-kulfi-f037ad.netlify.app/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lucent-kulfi-f037ad.netlify.app/"/>
     <lastmod>2026-06-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mocaintel.com/hotels</loc>
-    <xhtml:link rel="alternate" hreflang="he" href="https://mocaintel.com/hotels"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://mocaintel.com/hotels?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://mocaintel.com/hotels"/>
+    <loc>https://lucent-kulfi-f037ad.netlify.app/hotels</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://lucent-kulfi-f037ad.netlify.app/hotels"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lucent-kulfi-f037ad.netlify.app/hotels?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lucent-kulfi-f037ad.netlify.app/hotels"/>
     <lastmod>2026-06-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mocaintel.com/hotels?lang=en</loc>
-    <xhtml:link rel="alternate" hreflang="he" href="https://mocaintel.com/hotels"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://mocaintel.com/hotels?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://mocaintel.com/hotels"/>
+    <loc>https://lucent-kulfi-f037ad.netlify.app/hotels?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://lucent-kulfi-f037ad.netlify.app/hotels"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lucent-kulfi-f037ad.netlify.app/hotels?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lucent-kulfi-f037ad.netlify.app/hotels"/>
     <lastmod>2026-06-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mocaintel.com/esim-deals</loc>
-    <xhtml:link rel="alternate" hreflang="he" href="https://mocaintel.com/esim-deals"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://mocaintel.com/esim-deals?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://mocaintel.com/esim-deals"/>
+    <loc>https://lucent-kulfi-f037ad.netlify.app/esim-deals</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://lucent-kulfi-f037ad.netlify.app/esim-deals"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lucent-kulfi-f037ad.netlify.app/esim-deals?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lucent-kulfi-f037ad.netlify.app/esim-deals"/>
     <lastmod>2026-07-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mocaintel.com/esim-deals?lang=en</loc>
-    <xhtml:link rel="alternate" hreflang="he" href="https://mocaintel.com/esim-deals"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://mocaintel.com/esim-deals?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://mocaintel.com/esim-deals"/>
+    <loc>https://lucent-kulfi-f037ad.netlify.app/esim-deals?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="he" href="https://lucent-kulfi-f037ad.netlify.app/esim-deals"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lucent-kulfi-f037ad.netlify.app/esim-deals?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lucent-kulfi-f037ad.netlify.app/esim-deals"/>
     <lastmod>2026-07-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>

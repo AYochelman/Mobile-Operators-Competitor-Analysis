@@ -6,6 +6,7 @@ import { CARRIER_LOGOS, getCarrierColor } from '../components/moca/carrierMeta'
 import { CARRIER_HOME_URLS } from '../data/carrierHomeUrls'
 import { getCountriesForAbroadPlan } from '../data/abroadCountries'
 import { getAppsForPlan } from '../data/abroadApps'
+import { SITE_ORIGIN } from '../data/siteOrigin'
 import BoltMark from '../components/BoltMark'
 import CookieBanner from '../components/CookieBanner'
 import { miniMarkup } from '../lib/miniMarkup'
@@ -964,7 +965,7 @@ export default function MobileComparePage() {
   // self-referencing apex URL + a page-specific description (same fix as
   // /esim-deals; the prerendered mobile.html shell carries these in raw HTML).
   useEffect(() => {
-    const CANON = 'https://mocaintel.com/mobile-deals'
+    const CANON = `${SITE_ORIGIN}/mobile-deals`
     const DESC = lang === 'he'
       ? 'השוואת מחירים חינמית של חבילות סלולר בישראל, בלי הרשמה. מחירים, נפחי גלישה, 5G והטבות מכל 10 המפעילים, מתעדכן פעמיים ביום.'
       : 'Free comparison of Israeli mobile plans, no sign-up. Prices, data, 5G and perks across all 10 carriers, refreshed twice a day.'

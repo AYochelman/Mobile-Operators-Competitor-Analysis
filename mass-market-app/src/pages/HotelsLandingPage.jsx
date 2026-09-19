@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/api'
 import BoltMark from '../components/BoltMark'
+import { SITE_ORIGIN } from '../data/siteOrigin'
 
 /* ════════════════════════════════════════════════════════════════════════
    MOCA Guest Connect — public marketing landing  (route: /hotels)
@@ -444,7 +445,7 @@ export default function HotelsLandingPage() {
   // /hotels. Cleanup restores the original canonical and removes only OUR tags.
   useEffect(() => {
     const head = document.head
-    const BASE = 'https://mocaintel.com/hotels'
+    const BASE = `${SITE_ORIGIN}/hotels`
     let canon = head.querySelector('link[rel="canonical"]')
     const createdCanon = !canon
     const prevCanon = canon ? canon.getAttribute('href') : null
@@ -474,7 +475,7 @@ export default function HotelsLandingPage() {
   // Keep the canonical self-referencing the active language variant.
   useEffect(() => {
     const canon = document.head.querySelector('link[rel="canonical"]')
-    if (canon) canon.setAttribute('href', lang === 'en' ? 'https://mocaintel.com/hotels?lang=en' : 'https://mocaintel.com/hotels')
+    if (canon) canon.setAttribute('href', lang === 'en' ? `${SITE_ORIGIN}/hotels?lang=en` : `${SITE_ORIGIN}/hotels`)
   }, [lang])
 
   function toggleLang() {

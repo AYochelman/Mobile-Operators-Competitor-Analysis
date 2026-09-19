@@ -5,6 +5,7 @@ import { initTikTokPixel, trackTikTok } from '../lib/tiktokPixel'
 import { DEST_ISO_BY_HE, DEST_BY_HE, destLabel, destInHe } from '../data/hotelDestinations'
 import { DEST_BG_BY_HE } from '../data/destBg'
 import { PROVIDER_LOGOS } from '../data/providerLogos'
+import { SITE_ORIGIN } from '../data/siteOrigin'
 import BoltMark from '../components/BoltMark'
 import CookieBanner from '../components/CookieBanner'
 import { miniMarkup } from '../lib/miniMarkup'
@@ -678,7 +679,7 @@ export default function EsimComparePage() {
   // esim.html shell already carries the same tags for the raw (pre-JS) HTML; this
   // covers the SPA index.html shell (subdomain root, super-admin preview, etc.).
   useEffect(() => {
-    const CANON = 'https://mocaintel.com/esim-deals'
+    const CANON = `${SITE_ORIGIN}/esim-deals`
     const DESC = lang === 'he'
       ? 'השוואת מחירי eSIM חינמית לטיול בחו"ל, בלי הרשמה. מוצאים חבילה מתאימה מתוך ההצעות של 38 ספקי eSIM גלובליים, מתעדכן פעמיים ביום.'
       : 'Free eSIM price comparison for your trip abroad, no sign-up. Find a plan that fits from 38 global eSIM providers, refreshed twice a day.'
