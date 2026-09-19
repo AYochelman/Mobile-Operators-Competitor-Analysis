@@ -25,6 +25,7 @@ const DashboardPage         = lazy(() => import('./pages/DashboardPage'))
 const ComparePage           = lazy(() => import('./pages/ComparePage'))
 const AlertsPage            = lazy(() => import('./pages/AlertsPage'))
 const ExecutiveSummaryPage  = lazy(() => import('./pages/ExecutiveSummaryPage'))
+const CockpitPage           = lazy(() => import('./pages/CockpitPage'))
 const ArchivePage           = lazy(() => import('./pages/ArchivePage'))
 const SettingsPage          = lazy(() => import('./pages/SettingsPage'))
 const PreferencesPage       = lazy(() => import('./pages/PreferencesPage'))
@@ -255,6 +256,7 @@ export default function App() {
             <Route path="positioning" element={<PositioningPage />} />
             <Route path="alerts" element={<AlertsPage />} />
             <Route path="executive-summary" element={<ExecutiveSummaryPage />} />
+            <Route path="cockpit" element={<CockpitPage />} />
             <Route path="archive" element={<ArchivePage />} />
             <Route path="settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
             <Route path="preferences" element={<PreferencesPage />} />

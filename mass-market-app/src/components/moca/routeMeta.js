@@ -26,6 +26,7 @@ export const ROUTE_META = [
   { match: '/positioning',       kicker: { he: 'ניטור',        en: 'Monitoring' },    title: { he: 'מיצוב תחרותי',         en: 'Competitive positioning' } },
   { match: '/alerts',            kicker: { he: 'ניטור',        en: 'Monitoring' },    title: { he: 'התראות',               en: 'Alerts' } },
   { match: '/executive-summary', kicker: { he: 'ניטור',        en: 'Monitoring' },    title: { he: 'דוח מנהלים שבועי',     en: 'Weekly executive report' } },
+  { match: '/cockpit',           kicker: { he: 'הנהלה',        en: 'Executive' },     title: { he: 'חדר מצב',              en: 'Situation room' } },
   { match: '/ai-insights',       kicker: { he: 'תובנות',       en: 'Insights' },      title: { he: 'AI Insights',          en: 'AI Insights' } },
   { match: '/archive',           kicker: { he: 'תובנות',       en: 'Insights' },      title: { he: 'מכונת זמן',            en: 'Time Machine' } },
   { match: '/preferences',       kicker: { he: 'כלים',         en: 'Tools' },         title: { he: 'העדפות',               en: 'Preferences' } },
