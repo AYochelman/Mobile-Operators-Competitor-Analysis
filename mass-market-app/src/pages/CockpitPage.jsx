@@ -620,8 +620,9 @@ function LadderCard({ data, oursCarrier }) {
         <span style={{ width: 14, flexShrink: 0 }} />
         <span style={{ flex: '0 1 104px', minWidth: 30 }} />
         <span style={{ ...colHead, flex: 1 }}>{tt('מחיר חבילה', 'Package price')}</span>
-        <span style={{ ...colHead, width: 44, textAlign: 'end' }}>₪</span>
-        <span style={{ ...colHead, width: 82, textAlign: 'end' }}>{tt('נפח', 'Volume')}</span>
+        {/* Same direction/shrink as the value cells below, so "end" is the same edge for header and numbers. */}
+        <span style={{ ...colHead, width: 44, textAlign: 'end', direction: 'ltr', flexShrink: 0 }}>₪</span>
+        <span style={{ ...colHead, width: 82, textAlign: 'end', direction: 'ltr', flexShrink: 0 }}>{tt('נפח', 'Volume')}</span>
       </div>
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
         {cv.rows.map((row) => {
