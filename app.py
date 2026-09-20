@@ -621,8 +621,16 @@ def _get_user_context(email):
         _USER_CONTEXT_CACHE[email] = (_time.time(), _result)
         return _result
     except Exception as e:
+        # Supabase unreachable, bad credentials, IPv6-only direct host, etc. This
+        # is NOT "the user is a viewer" - it is "we could not find out". Tag it
+        # so /api/my-context callers can tell the two apart; without the tag a
+        # dead DB link silently demoted every admin (seen live 2026-09-20: the
+        # user_roles row said super_admin, the app showed viewer, and nothing
+        # in the UI said why). Deliberately NOT cached, so the first request
+        # after the link recovers gets the real role.
         logger.error(f"_get_user_context({email!r}) failed: {e}")
-        return {"role": "viewer", "workspace_id": None, "workspace": None, "digest_opt_out": False}
+        return {"role": "viewer", "workspace_id": None, "workspace": None,
+                "digest_opt_out": False, "reason": "db_error"}
 
 
 def require_api_key_or_query(f):
@@ -881,14 +889,60 @@ def _verify_supabase_jwt(token: str):
 
 
 def _supabase_conn():
-    """Get a psycopg2 connection to Supabase DB using credentials from config."""
+    """Get a psycopg2 connection to Supabase DB using credentials from config.
+
+    config.json keys (env-var fallback in parentheses; all but host/password
+    optional):
+      supabase_db_host      (SUPABASE_DB_HOST)      required
+      supabase_db_password  (SUPABASE_DB_PASSWORD)  required
+      supabase_db_user      (SUPABASE_DB_USER)      default 'postgres'
+      supabase_db_port      (SUPABASE_DB_PORT)      default 5432
+      supabase_db_name      (SUPABASE_DB_NAME)      default 'postgres'
+
+    IPv6 GOTCHA (bit us 2026-09-18..20): Supabase's DIRECT host
+    `db.<ref>.supabase.co` publishes an AAAA record only - no IPv4 on the free
+    tier. Timeline, for the record:
+      2026-09-18  the Windows host's IPv6 upstream broke (router still handed
+                  out global addresses; `curl -6` to google timed out - see the
+                  note in scripts/morning_health_check.ps1 / commit fbc8cbe).
+                  From that moment every connect() here HUNG until the OS TCP
+                  timeout, and _get_user_context answered viewer.
+      same day    IPv6 was then DISABLED on the host, on advice, to cure the
+                  slowness - without checking what depended on it. This did.
+                  The hang became an instant "could not translate host name
+                  ... Name or service not known"; the outcome (silent viewer
+                  for EVERY user) was the same either way.
+    Re-enabling IPv6 does NOT fix it - it restores the hang. The only fix is
+    the Session Pooler, which is dual-stack and works over IPv4. Lesson:
+    production auth must never depend on a home/office box having IPv6, and
+    any change to the host's networking must be checked against this file's
+    host first. The fix is Supabase's Session
+    Pooler (Dashboard -> Connect -> Session pooler), which is dual-stack:
+        supabase_db_host = aws-0-<region>.pooler.supabase.com
+        supabase_db_user = postgres.<project-ref>     <- tenant suffix REQUIRED
+        supabase_db_port = 5432                       (session mode; 6543 is
+                                                       transaction mode, which
+                                                       breaks prepared stmts)
+    That is why `user` and `port` are configurable here instead of hardcoded.
+    """
     import psycopg2
     cfg = load_config()
+    env = os.environ.get
+    def _int(v, default):
+        try:
+            return int(v) if v not in (None, "") else default
+        except (TypeError, ValueError):
+            return default
+    port    = _int(cfg.get("supabase_db_port") or env("SUPABASE_DB_PORT"), 5432)
+    timeout = _int(cfg.get("supabase_db_connect_timeout") or env("SUPABASE_DB_CONNECT_TIMEOUT"), 10)
     return psycopg2.connect(
-        host=cfg.get("supabase_db_host", os.environ.get("SUPABASE_DB_HOST", "")),
-        port=5432, dbname='postgres', user='postgres',
-        password=cfg.get("supabase_db_password", os.environ.get("SUPABASE_DB_PASSWORD", "")),
-        sslmode='require'
+        host=cfg.get("supabase_db_host", env("SUPABASE_DB_HOST", "")),
+        port=port,
+        dbname=cfg.get("supabase_db_name") or env("SUPABASE_DB_NAME") or "postgres",
+        user=cfg.get("supabase_db_user") or env("SUPABASE_DB_USER") or "postgres",
+        password=cfg.get("supabase_db_password", env("SUPABASE_DB_PASSWORD", "")),
+        sslmode='require',
+        connect_timeout=timeout,
     )
 
 

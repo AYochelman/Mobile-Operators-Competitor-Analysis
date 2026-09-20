@@ -21,32 +21,63 @@ const DEFAULT_WORKSPACE = {
   active: true,
 }
 
+/**
+ * Resolve the signed-in user's role + workspace from the backend.
+ *
+ * Always returns a usable context so the app keeps working, but ALSO reports
+ * whether that context is authoritative. Four different situations used to
+ * collapse into a bare `role: 'viewer'` that the UI could not tell apart from
+ * a real viewer account — so a dead Flask / tunnel silently stripped the admin
+ * menus and looked like a permissions change:
+ *   1. the request failed (offline, tunnel down, CORS, 5xx)
+ *   2. it timed out
+ *   3. it returned 200 with no `role` field
+ *   4. the backend answered `viewer` because the JWT carried no identity
+ *      (api/account.py returns `reason: no_jwt | no_email` for those)
+ * `degraded` marks 1-4; only a clean answer with a real role is authoritative.
+ */
 async function fetchContextFromBackend(accessToken, userEmail) {
+  let res
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 5000)
-    const res = await fetch(`${API_BASE}/api/my-context`, {
-      signal: controller.signal,
-      credentials: 'include',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'ngrok-skip-browser-warning': 'true',
-      },
-    })
-    clearTimeout(timeout)
+    try {
+      res = await fetch(`${API_BASE}/api/my-context`, {
+        signal: controller.signal,
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'ngrok-skip-browser-warning': 'true',
+        },
+      })
+    } finally {
+      clearTimeout(timeout)
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
+    // 200 but the server could not identify the caller, or sent no role at all.
+    const serverReason = data?.reason || (data?.role ? null : 'no_role_in_response')
     return {
       role: data?.role || 'viewer',
       workspaceId: data?.workspace_id || null,
       workspace: data?.workspace || null,
+      degraded: serverReason ? { reason: serverReason, status: res.status } : null,
     }
-  } catch {
-    // Backend unreachable — degrade gracefully.
-    // Local email shortcut gives you admin access if network is down.
+  } catch (err) {
+    // Backend unreachable — keep the app usable, but say so out loud.
+    // The local email shortcut still grants admin so the operator is not locked
+    // out of their own tooling while the tunnel is down.
     const fallbackRole = (userEmail && ADMIN_EMAILS.includes(userEmail.toLowerCase()))
       ? 'admin' : 'viewer'
-    return { role: fallbackRole, workspaceId: null, workspace: DEFAULT_WORKSPACE }
+    const reason = err?.name === 'AbortError' ? 'timeout'
+      : /^HTTP /.test(err?.message || '') ? err.message.toLowerCase().replace(' ', '_')
+      : 'unreachable'
+    return {
+      role: fallbackRole,
+      workspaceId: null,
+      workspace: DEFAULT_WORKSPACE,
+      degraded: { reason, status: res?.status ?? null, fallbackRole },
+    }
   }
 }
 
@@ -58,6 +89,9 @@ export function AuthProvider({ children }) {
   const [workspace, setWorkspace] = useState(null)
   const [workspaceId, setWorkspaceId] = useState(null)
   const [loading, setLoading]     = useState(true)
+  // Non-null when the role on screen is a fallback rather than the server's
+  // answer — drives <AuthDegradedBanner> so missing menus are explained.
+  const [contextDegraded, setContextDegraded] = useState(null)
   const [viewAs, setViewAs]       = useState(() => {
     try {
       const raw = sessionStorage.getItem(VIEW_AS_STORAGE_KEY)
@@ -82,6 +116,7 @@ export function AuthProvider({ children }) {
         setUser({ email: 'alon.yoch@gmail.com', id: 'dev' })
         setRole('super_admin')
         setWorkspace(DEFAULT_WORKSPACE)
+        setContextDegraded(null)
       }
       setLoading(false)
       return
@@ -95,8 +130,16 @@ export function AuthProvider({ children }) {
       localStorage.setItem('auth_token', session.access_token)
       api.setSessionCookie(session.access_token).catch(() => {})
       fetchContextFromBackend(session.access_token, session.user.email)
-        .then(ctx => { setRole(ctx.role); setWorkspace(ctx.workspace); setWorkspaceId(ctx.workspaceId) })
-        .catch(() => { setRole('viewer'); setWorkspace(DEFAULT_WORKSPACE); setWorkspaceId(null) })
+        .then(ctx => {
+          setRole(ctx.role); setWorkspace(ctx.workspace); setWorkspaceId(ctx.workspaceId)
+          setContextDegraded(ctx.degraded || null)
+        })
+        .catch((err) => {
+          // fetchContextFromBackend handles its own errors; this only fires on a
+          // bug in the .then above. Never silently pretend the user is a viewer.
+          setRole('viewer'); setWorkspace(DEFAULT_WORKSPACE); setWorkspaceId(null)
+          setContextDegraded({ reason: 'client_error', status: null, detail: err?.message })
+        })
     }
 
     // Supabase v2 auto-refreshes tokens in the background and fires
@@ -136,6 +179,7 @@ export function AuthProvider({ children }) {
           setRole(null)
           setWorkspace(null)
           setWorkspaceId(null)
+          setContextDegraded(null)
           localStorage.removeItem('auth_token')
           try { sessionStorage.removeItem('moca_login_beaconed') } catch { /* ignore */ }
           api.clearSessionCookie().catch(() => {})
@@ -214,6 +258,22 @@ export function AuthProvider({ children }) {
     if (error) throw error
   }
 
+  /**
+   * Re-resolve role + workspace from the backend. Exposed so the degraded
+   * banner can offer "נסו שוב" instead of making the user sign out and back
+   * in just to pick up a role the server failed to return the first time.
+   */
+  const retryContext = async () => {
+    if (!supabase) return
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) return
+    const ctx = await fetchContextFromBackend(session.access_token, session.user.email)
+    setRole(ctx.role)
+    setWorkspace(ctx.workspace)
+    setWorkspaceId(ctx.workspaceId)
+    setContextDegraded(ctx.degraded || null)
+  }
+
   // View-as: super_admin may impersonate a workspace's visual context
   // (brand, feature_flags, visible_carriers). Role stays super_admin so they
   // can still navigate admin pages and exit view-as at any time.
@@ -222,6 +282,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     user, role, workspaceId, loading, signIn, signOut, changePassword, sendPasswordReset,
+    contextDegraded, retryContext,
     workspace: effectiveWorkspace,
     realWorkspace: workspace,
     viewAs: (isSuperAdmin ? viewAs : null),

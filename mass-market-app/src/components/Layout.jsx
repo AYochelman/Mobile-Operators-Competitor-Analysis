@@ -4,6 +4,7 @@ import Navbar from './Navbar'
 import ChatPanel from './ChatPanel'
 import ScrapeToast from './ScrapeToast'
 import ViewAsBanner from './ViewAsBanner'
+import AuthDegradedBanner from './AuthDegradedBanner'
 import ErrorBoundary from './ErrorBoundary'
 import Sidebar from './moca/Sidebar'
 import Topbar from './moca/Topbar'
@@ -19,6 +20,9 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-moca-bg">
+      {/* Role could not be verified (Flask/tunnel down) — explains missing menus
+          instead of letting the fallback role look like a permissions change */}
+      <AuthDegradedBanner />
       {/* Super-admin "viewing as workspace X" banner — stacks above shell */}
       <ViewAsBanner />
       {/* Records per-user page views (authed, non-super-admin) for the activity dashboard */}
