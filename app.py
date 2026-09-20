@@ -899,12 +899,24 @@ def _supabase_conn():
       supabase_db_port      (SUPABASE_DB_PORT)      default 5432
       supabase_db_name      (SUPABASE_DB_NAME)      default 'postgres'
 
-    IPv6 GOTCHA (bit us 2026-09-20): Supabase's DIRECT host
+    IPv6 GOTCHA (bit us 2026-09-18..20): Supabase's DIRECT host
     `db.<ref>.supabase.co` publishes an AAAA record only - no IPv4 on the free
-    tier. From a box without an IPv6 route (the Windows host, after its router
-    lost IPv6) libpq's getaddrinfo fails with "could not translate host name
-    ... Name or service not known", _get_user_context swallows it, and EVERY
-    signed-in user silently becomes a viewer. The fix is Supabase's Session
+    tier. Timeline, for the record:
+      2026-09-18  the Windows host's IPv6 upstream broke (router still handed
+                  out global addresses; `curl -6` to google timed out - see the
+                  note in scripts/morning_health_check.ps1 / commit fbc8cbe).
+                  From that moment every connect() here HUNG until the OS TCP
+                  timeout, and _get_user_context answered viewer.
+      same day    IPv6 was then DISABLED on the host, on advice, to cure the
+                  slowness - without checking what depended on it. This did.
+                  The hang became an instant "could not translate host name
+                  ... Name or service not known"; the outcome (silent viewer
+                  for EVERY user) was the same either way.
+    Re-enabling IPv6 does NOT fix it - it restores the hang. The only fix is
+    the Session Pooler, which is dual-stack and works over IPv4. Lesson:
+    production auth must never depend on a home/office box having IPv6, and
+    any change to the host's networking must be checked against this file's
+    host first. The fix is Supabase's Session
     Pooler (Dashboard -> Connect -> Session pooler), which is dual-stack:
         supabase_db_host = aws-0-<region>.pooler.supabase.com
         supabase_db_user = postgres.<project-ref>     <- tenant suffix REQUIRED
