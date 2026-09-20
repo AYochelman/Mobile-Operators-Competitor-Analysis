@@ -8,6 +8,8 @@ data/*.db-wal
 data/*.db-shm
 data/*.db-journal
 data/backups/
+# Supabase dumps: e-mail addresses + bcrypt password hashes. Never in git.
+data/supabase_backups/
 __pycache__/
 *.pyc
 .env
