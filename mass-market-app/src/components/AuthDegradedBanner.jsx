@@ -20,6 +20,7 @@ const REASON_TEXT = {
   no_jwt:             { he: 'הבקשה הגיעה בלי זהות משתמש',        en: 'the request carried no user identity' },
   no_email:           { he: 'לא נמצאה כתובת מייל בהזדהות',       en: 'the sign-in carried no email' },
   no_role_in_response:{ he: 'השרת לא החזיר תפקיד',               en: 'the server returned no role' },
+  db_error:           { he: 'השרת לא הצליח לקרוא את מסד ההרשאות', en: 'the server could not read the permissions database' },
   client_error:       { he: 'שגיאה בצד הדפדפן',                  en: 'a client-side error' },
 }
 

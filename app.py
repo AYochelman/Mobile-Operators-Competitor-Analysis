@@ -621,8 +621,16 @@ def _get_user_context(email):
         _USER_CONTEXT_CACHE[email] = (_time.time(), _result)
         return _result
     except Exception as e:
+        # Supabase unreachable, bad credentials, IPv6-only direct host, etc. This
+        # is NOT "the user is a viewer" - it is "we could not find out". Tag it
+        # so /api/my-context callers can tell the two apart; without the tag a
+        # dead DB link silently demoted every admin (seen live 2026-09-20: the
+        # user_roles row said super_admin, the app showed viewer, and nothing
+        # in the UI said why). Deliberately NOT cached, so the first request
+        # after the link recovers gets the real role.
         logger.error(f"_get_user_context({email!r}) failed: {e}")
-        return {"role": "viewer", "workspace_id": None, "workspace": None, "digest_opt_out": False}
+        return {"role": "viewer", "workspace_id": None, "workspace": None,
+                "digest_opt_out": False, "reason": "db_error"}
 
 
 def require_api_key_or_query(f):
