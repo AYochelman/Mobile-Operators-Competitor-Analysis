@@ -153,6 +153,61 @@ if (Test-Path $BannersSrc) {
     Write-Log "Copied $count banner PNGs"
 }
 
+# ---- 5.5 Backup Supabase (accounts, roles, workspaces) ----
+# The Supabase project is on the free tier, which keeps NO automatic backups.
+# auth.users / auth.identities / public.user_roles / public.workspaces exist
+# nowhere else, so a lost project means nobody can log in and plans.db cannot
+# help. scripts/backup_supabase.py dumps them to data/supabase_backups/ and we
+# carry the newest file off the box with everything else.
+$SupabaseScript = Join-Path $ScriptDir "backup_supabase.py"
+$SupabaseOutDir = Join-Path $ProjectRoot "data\supabase_backups"
+if (Test-Path $SupabaseScript) {
+    $sbOut  = ""
+    $sbCode = 1
+    try {
+        Push-Location $ProjectRoot
+        try {
+            $sbOut  = & python $SupabaseScript --out-dir $SupabaseOutDir --keep 30 2>&1 | Out-String
+            $sbCode = $LASTEXITCODE
+        } finally {
+            Pop-Location
+        }
+    } catch {
+        $sbOut  = "$_"
+        $sbCode = 1
+    }
+
+    $sbTrim = ($sbOut -replace "\s+$", "")
+    if ($sbCode -eq 0) {
+        Write-Log "Supabase dump OK"
+    } elseif ($sbCode -eq 3) {
+        Write-Log "Supabase dump completed WITH WARNINGS: $sbTrim"
+        [void]$Warnings.Add("Supabase dump completed with warnings: $sbTrim")
+    } else {
+        Write-Log "Supabase dump FAILED (exit $sbCode): $sbTrim"
+        [void]$Warnings.Add("Supabase dump FAILED (exit $sbCode) - accounts and roles are NOT backed up. Details: $sbTrim")
+    }
+
+    # Copy the newest dump into today's Drive folder even on a warning exit:
+    # a dump with warnings still restores, and an older one is better than none.
+    $SupabaseLatest = Join-Path $SupabaseOutDir "supabase-latest.json.gz"
+    if (Test-Path $SupabaseLatest) {
+        $age = (Get-Date) - (Get-Item $SupabaseLatest).LastWriteTime
+        Copy-Item $SupabaseLatest -Destination (Join-Path $BackupDir "supabase-latest.json.gz") -Force
+        $sbSize = (Get-Item $SupabaseLatest).Length
+        Write-Log "Copied supabase-latest.json.gz - $sbSize bytes, $([math]::Round($age.TotalHours,1))h old"
+        if ($age.TotalHours -gt 48) {
+            [void]$Warnings.Add("The Supabase dump copied to Drive is $([math]::Round($age.TotalHours,1)) hours old - the nightly dump has not succeeded recently.")
+        }
+    } else {
+        Write-Log "WARN: no Supabase dump found at $SupabaseLatest"
+        [void]$Warnings.Add("No Supabase dump exists at $SupabaseLatest - accounts and roles are NOT in this backup.")
+    }
+} else {
+    Write-Log "WARN: backup_supabase.py not found"
+    [void]$Warnings.Add("scripts/backup_supabase.py is missing - Supabase accounts and roles are NOT backed up.")
+}
+
 # ---- 6. Rotation - keep only last 14 days of dated folders ----
 $Cutoff = (Get-Date).AddDays(-14)
 Get-ChildItem $DrivePath -Directory | Where-Object {

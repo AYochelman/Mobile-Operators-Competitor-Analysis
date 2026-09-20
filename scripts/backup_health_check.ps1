@@ -123,6 +123,38 @@ except Exception as e:
                 [void]$Issues.Add("Could not run SQLite integrity check: $_")
             }
         }
+
+        # ---- Check 4b: Supabase dump present and readable ----
+        # Supabase's free tier keeps no backups of its own, so this file is the
+        # only copy of the accounts and roles. Verify the one that actually
+        # reached Drive, not the local original - a dump nobody can read back
+        # is not a backup.
+        $sbBackup = Join-Path $latest.FullName "supabase-latest.json.gz"
+        $sbScript = Join-Path $ScriptDir "backup_supabase.py"
+        if (-not (Test-Path $sbBackup)) {
+            [void]$Issues.Add("No Supabase dump in the latest backup ($($latest.Name)). Accounts, roles and workspaces are NOT recoverable.")
+        } elseif (-not (Test-Path $sbScript)) {
+            [void]$Issues.Add("scripts/backup_supabase.py is missing, so the Supabase dump cannot be verified.")
+        } else {
+            try {
+                $sbOut  = & python $sbScript --verify $sbBackup 2>&1 | Out-String
+                $sbCode = $LASTEXITCODE
+                if ($sbCode -ne 0) {
+                    [void]$Issues.Add("Supabase dump FAILED verification: $($sbOut -replace '\s+$','')")
+                } else {
+                    $sbSize = (Get-Item $sbBackup).Length
+                    [void]$Info.Add("Supabase dump OK ($([math]::Round($sbSize/1KB,1)) KB)")
+                    foreach ($line in ($sbOut -split "`r?`n")) {
+                        if ($line -match '^\s+\S+\.\S+:\s') { [void]$Info.Add("  $($line.Trim())") }
+                    }
+                    if ($sbOut -match 'no-secrets') {
+                        [void]$Issues.Add("The Supabase dump was taken with --no-secrets: accounts would restore without passwords.")
+                    }
+                }
+            } catch {
+                [void]$Issues.Add("Could not verify the Supabase dump: $_")
+            }
+        }
     }
 }
 
