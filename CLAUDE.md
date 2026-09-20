@@ -288,6 +288,7 @@ PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global
 ### Flask (.env or config.json)
 - `FLASK_HOST` — bind address (default: 127.0.0.1)
 - `ALLOWED_ORIGINS` — comma-separated CORS origins
+- **Supabase Postgres (`_supabase_conn()` in app.py — the ONLY connection site; every `api/*.py` blueprint goes through it):** `supabase_db_host` + `supabase_db_password` (required), `supabase_db_user` (default `postgres`), `supabase_db_port` (default 5432), `supabase_db_name` (default `postgres`), `supabase_db_connect_timeout` (10s). Each has a `SUPABASE_DB_*` env fallback. **Use the Session Pooler, not the direct host (2026-09-20):** the direct `db.<ref>.supabase.co` is IPv6-only on the free tier, so a box without an IPv6 route gets `could not translate host name … Name or service not known`, `_get_user_context` swallows it and returns `viewer`, and EVERY signed-in user — admins and super_admin included — silently loses their role (that was the "I log in as viewer" incident; `hide_self_carrier` silently switches off too). Dashboard → **Connect** → *Session pooler* gives `supabase_db_host = aws-0-<region>.pooler.supabase.com`, `supabase_db_user = postgres.<project-ref>` (the tenant suffix is mandatory), port 5432 (session mode — 6543 is transaction mode, which breaks prepared statements). Quick health check from the box, no restart needed: `python -c "import app; app._supabase_conn(); print('DB OK')"`.
 
 ### Telegram (config.json)
 - `telegram_api_id` / `telegram_api_hash` — from https://my.telegram.org → API development tools
