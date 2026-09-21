@@ -149,9 +149,9 @@ function Empty({ children }) {
   )
 }
 
-function Stat({ label, value, sub, accent }) {
+function Stat({ label, value, sub, accent, title }) {
   return (
-    <div style={{
+    <div title={title} style={{
       background: '#fff', border: '1px solid var(--color-moca-border)',
       borderRadius: 14, padding: '13px 15px', boxShadow: 'var(--sh-card)', minWidth: 0,
     }}>
@@ -381,6 +381,37 @@ function VerdictBar({ data, oursCarrier, onPickCarrier, canPickCarrier, onSelect
 
 // ── 2. KPI tiles — cost × volume, market × ours ──────────────────────────
 
+// Every tile on this row is a MEDIAN, and the two "ours" tiles are medians of
+// OUR OWN packages, not one real package - the price and the volume can come
+// from two different rows. The labels are too short to carry that, so the
+// tooltips do.
+const MEDIAN_HINT = {
+  cost: (tt) => tt(
+    'לכל מפעיל מחושב תחילה חציון מחירי המחירון של חבילותיו, והערך כאן הוא החציון של המפעילים. כל מפעיל נספר פעם אחת, בלי קשר לכמות החבילות שלו. חבילות ללא גלישה וחבילות מתחת ל-1GB לא נכללות.',
+    "Each carrier's median list price first, then the median across carriers. Every carrier counts once, however many packages it sells. Voice-only and sub-GB rows are excluded.",
+  ),
+  volume: (tt) => tt(
+    'לכל מפעיל מחושב תחילה חציון הנפחים של חבילותיו, והערך כאן הוא החציון של המפעילים. חבילה ללא הגבלה נספרת כאינסוף.',
+    "Each carrier's median volume first, then the median across carriers. An unlimited package counts as infinity.",
+  ),
+  oursCost: (tt) => tt(
+    'חציון מחירי המחירון של החבילות שלנו, לא מחיר של חבילה מסוימת. המחיר והנפח עשויים להגיע משתי חבילות שונות.',
+    'The median list price of our packages, not the price of any one package. This tile and the volume tile can come from two different packages.',
+  ),
+  oursVolume: (tt) => tt(
+    'חציון הנפחים של החבילות שלנו, לא נפח של חבילה מסוימת. המחיר והנפח עשויים להגיע משתי חבילות שונות.',
+    'The median volume of our packages, not the volume of any one package. This tile and the price tile can come from two different packages.',
+  ),
+  carrierCost: (tt) => tt(
+    'החציון הפנימי של אותו מפעיל, לא מחיר של חבילה מסוימת.',
+    "That carrier's own median, not the price of any one package.",
+  ),
+  carrierVolume: (tt) => tt(
+    'החציון הפנימי של אותו מפעיל, לא נפח של חבילה מסוימת.',
+    "That carrier's own median, not the volume of any one package.",
+  ),
+}
+
 function KpiRow({ data }) {
   const { tt } = useLang()
   const cv = data.costVolume
@@ -406,25 +437,30 @@ function KpiRow({ data }) {
         label={tt('מחיר חבילה בשוק', 'Market package price')}
         value={fmtIls(cv.marketCost)}
         sub={tt(`חציון של ${cv.total} מפעילים · מחירי מחירון`, `median of ${cv.total} carriers · list prices`)}
+        title={MEDIAN_HINT.cost(tt)}
       />
       <Stat
         label={tt('נפח חבילה בשוק', 'Market package volume')}
         value={fmtGb(cv.marketVolume, tt)}
-        sub={cv.unlimitedCarriers
-          ? tt(`${cv.unlimitedCarriers} מתוך ${cv.total} מפעילים — ללא הגבלה`, `${cv.unlimitedCarriers} of ${cv.total} carriers — unlimited`)
-          : tt(`חציון של ${cv.total} מפעילים`, `median of ${cv.total} carriers`)}
+        sub={tt(`חציון של ${cv.total} מפעילים`, `median of ${cv.total} carriers`)
+          + (cv.unlimitedCarriers
+            ? tt(` · ${cv.unlimitedCarriers === 1 ? 'מפעיל אחד' : `${cv.unlimitedCarriers} מפעילים`} ללא הגבלה`, ` · ${cv.unlimitedCarriers} unlimited`)
+            : '')}
+        title={MEDIAN_HINT.volume(tt)}
       />
       <Stat
-        label={ours ? tt('המחיר שלנו', 'Our price') : tt('הזול בשוק', 'Cheapest in market')}
+        label={ours ? tt('המחיר החציוני שלנו', 'Our median price') : tt('הזול בשוק', 'Cheapest in market')}
         value={fmtIls(ours ? ours.cost : cv.cheapest?.cost)}
         accent={ours ? 'var(--color-moca-hot-text)' : undefined}
         sub={costSub}
+        title={ours ? MEDIAN_HINT.oursCost(tt) : MEDIAN_HINT.carrierCost(tt)}
       />
       <Stat
-        label={ours ? tt('הנפח שלנו', 'Our volume') : tt('הנדיב בשוק', 'Most data in market')}
+        label={ours ? tt('הנפח החציוני שלנו', 'Our median volume') : tt('הנדיב בשוק', 'Most data in market')}
         value={fmtGb(ours ? ours.volume : cv.mostGenerous?.volume, tt)}
         accent={ours ? 'var(--color-moca-hot-text)' : undefined}
         sub={volSub}
+        title={ours ? MEDIAN_HINT.oursVolume(tt) : MEDIAN_HINT.carrierVolume(tt)}
       />
     </div>
   )
