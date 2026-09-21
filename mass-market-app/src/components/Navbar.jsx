@@ -153,6 +153,8 @@ export default function Navbar({ onMobileMenuOpen }) {
       label: tt('ניתוח', 'Analysis'),
       items: [
         { to: '/',        label: tt('דשבורד', 'Dashboard'), visible: visible('/') },
+        // Same slot as the desktop sidebar's "ניטור" group — right after the dashboard
+        { to: '/cockpit', label: tt('חדר מצב', 'Situation room'), visible: visible('/cockpit') },
         { to: '/compare', label: tt('השוואה', 'Compare'), visible: visible('/compare') },
         { to: '/alerts',  label: tt('התראות', 'Alerts'), visible: visible('/alerts') },
       ],
