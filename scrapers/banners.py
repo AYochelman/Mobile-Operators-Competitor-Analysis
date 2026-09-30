@@ -91,6 +91,8 @@ _BANNER_ERROR_INDICATORS = (
     "cloudflare",
     "checking your browser",
     "are you a robot",
+    "i am human",          # hCaptcha widget (pelephone.co.il, 2026-09-30)
+    "hcaptcha",
     "התחברות נכשלה",
 )
 
@@ -600,18 +602,33 @@ def scrape_carrier_banners(output_dir: str) -> list[dict]:
                 out_path = os.path.join(output_dir, f"{carrier}.png")
                 scraped_at = datetime.now(timezone.utc).isoformat()
                 page = context.new_page()  # fresh page per carrier — avoids cross-navigation pollution
+                success = False
                 try:
                     page.goto(url, timeout=30000, wait_until="domcontentloaded")
                     page.wait_for_timeout(2000)  # let hero images render
-                    _dismiss_popups(page)
-                    page.screenshot(path=out_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
-                    results.append({"carrier": carrier, "scraped_at": scraped_at, "success": True})
-                    logger.info("Banner screenshot saved: %s", out_path)
+                    # A bot-challenge page (e.g. Pelephone's hCaptcha) must never
+                    # overwrite the last good banner - skip and keep the old PNG.
+                    is_err, reason = _is_error_page(page)
+                    if is_err:
+                        logger.warning("Banner %s: skipping bad page (%s); previous banner preserved", carrier, reason)
+                    else:
+                        _dismiss_popups(page)
+                        tmp_path = out_path + ".new.png"
+                        page.screenshot(path=tmp_path, clip={"x": 0, "y": 0, "width": 1280, "height": 720})
+                        file_size = os.path.getsize(tmp_path) if os.path.exists(tmp_path) else 0
+                        if file_size < _MIN_BANNER_FILE_BYTES:
+                            logger.warning("Banner %s: screenshot too small (%d bytes); previous banner preserved",
+                                           carrier, file_size)
+                            os.remove(tmp_path)
+                        else:
+                            os.replace(tmp_path, out_path)
+                            success = True
+                            logger.info("Banner screenshot saved: %s (%d bytes)", out_path, file_size)
                 except Exception as exc:
                     logger.warning("Banner screenshot failed for %s: %s", carrier, exc)
-                    results.append({"carrier": carrier, "scraped_at": scraped_at, "success": False})
                 finally:
                     page.close()
+                results.append({"carrier": carrier, "scraped_at": scraped_at, "success": success})
         finally:
             browser.close()
 
