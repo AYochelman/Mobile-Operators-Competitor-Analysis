@@ -22,6 +22,7 @@ def scrape_pelephone_globalsim(page):
         page.wait_for_selector(".packs > div[id^='p'] .pack_top .price", timeout=25000)
     except Exception:
         logger.warning("Pelephone GlobalSIM: plan cards did not render within 25s")
+        core.log_pelephone_page_state(page, "scrape_pelephone_globalsim")
     page.wait_for_timeout(1500)
     plans = []
     seen_gb_days = set()
