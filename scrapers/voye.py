@@ -26,7 +26,7 @@ def scrape_voye_global(_page=None, usd_rate=None):
     if usd_rate is None:
         usd_rate = core._get_usd_to_ils()
 
-    all_plans = []
+    by_name = {}   # plan_name -> (product id, plan)
     page_num = 1
     while True:
         url = f"https://voyeglobal.com/wp-json/wc/store/v1/products?per_page=100&page={page_num}"
@@ -64,11 +64,15 @@ def scrape_voye_global(_page=None, usd_rate=None):
 
             # Parse data — GB (incl. decimals like 1.5GB), MB (e.g. 500MB → fraction of GB),
             # or "Unlimited" (3GB/day high-speed + unlimited throttled)
-            gb_match = re.search(r"(\d+(?:\.\d+)?)\s*GB", name, re.IGNORECASE)
+            # "55+3GB" = base + bonus (slug global-365-days-58gb) - sum them, the old
+            # regex read it as 3GB and filed a $140 plan as "גלובלי – 3GB".
+            gb_match = re.search(r"(\d+(?:\.\d+)?)(?:\s*\+\s*(\d+(?:\.\d+)?))?\s*GB", name, re.IGNORECASE)
             mb_match = re.search(r"(\d+(?:\.\d+)?)\s*MB(?![/a-z])", name, re.IGNORECASE)
             is_unlimited = "unlimited" in name.lower()
-            if gb_match:
-                gb_val = float(gb_match.group(1))
+            if is_unlimited and re.search(r"Unlimited\s*\(\d+(?:\.\d+)?\s*GB\)", name, re.IGNORECASE):
+                data_gb = None  # "Unlimited (5GB)": 5GB is the daily high-speed cap, not the bundle
+            elif gb_match:
+                gb_val = float(gb_match.group(1)) + float(gb_match.group(2) or 0)
                 data_gb = int(gb_val) if gb_val == int(gb_val) else gb_val
             elif mb_match:
                 # CLAUDE.md convention: MB stored as fraction of GB (X / 1024)
@@ -109,6 +113,16 @@ def scrape_voye_global(_page=None, usd_rate=None):
             if name.startswith("Global Light") or name.startswith("Global Voice"):
                 plan_type = "global"
                 dest_heb = "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9"
+            # Global / Global Light / Global Voice are separate tiers that share
+            # extras[0]="גלובלי" and the same GB+days ladder ("Global – 7 Days – 3GB"
+            # vs "Global Light – 7 Days – 3GB"). Without a tier label they collided on
+            # one plan_name and the stored price flipped with the API's product order
+            # (the 2026-10-04 digest: ₪15.27 → ₪70.25). Same trick as esimplus.
+            name_label = None
+            if name.startswith("Global Light"):
+                name_label = "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9 Light"   # גלובלי Light
+            elif name.startswith("Global Voice"):
+                name_label = "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9 Voice"   # גלובלי Voice
 
             if plan_type == "country":
                 # Find country slug from categories (not region/global)
@@ -172,7 +186,13 @@ def scrape_voye_global(_page=None, usd_rate=None):
                         country_slug_lower = cs
                         break
 
-                if country_slug_lower in _VOYE_2GB_COUNTRIES or (dest_heb and dest_heb in _VOYE_2GB_COUNTRIES):
+                # Newer listings name their high-speed cap: "Turkey 7 Days Unlimited (5GB)"
+                # sells next to the older "Turkey 7 Days Unlimited" (country default),
+                # so the cap in the name wins and the two tiers get distinct plan_names.
+                cap_m = re.search(r"Unlimited\s*\((\d+(?:\.\d+)?)\s*GB\)", name, re.IGNORECASE)
+                if cap_m:
+                    daily_gb = cap_m.group(1)
+                elif country_slug_lower in _VOYE_2GB_COUNTRIES or (dest_heb and dest_heb in _VOYE_2GB_COUNTRIES):
                     daily_gb = "2"
                 elif country_slug_lower in _VOYE_15GB_COUNTRIES or (dest_heb and dest_heb in _VOYE_15GB_COUNTRIES):
                     daily_gb = "1.5"
@@ -190,19 +210,28 @@ def scrape_voye_global(_page=None, usd_rate=None):
                     gb_str = f"{int(data_gb)}GB" if data_gb == int(data_gb) else f"{data_gb}GB"
 
             days_str = f"{days} \u05d9\u05de\u05d9\u05dd" if days else ""
-            plan_name = f"{dest_heb} \u2013 {gb_str}"
+            plan_name = f"{name_label or dest_heb} \u2013 {gb_str}"
             if days_str:
                 plan_name += f" \u2013 {days_str}"
 
-            all_plans.append(core._make_global_plan(
+            plan = core._make_global_plan(
                 "voye", plan_name, price_ils, "USD", price_usd,
                 data_gb=data_gb, days=days, minutes=minutes, sms=sms,
                 esim=True, extras=plan_extras
-            ))
+            )
+            # One row per plan_name (the DB key). VOYE keeps superseded copies of a
+            # product live in the Store API ("global-light-365-days-3gb" $13 next to
+            # "...-3gb-2" $15); keep the NEWEST product id so the pick is stable
+            # run to run instead of following the API's ordering.
+            pid = prod.get("id") or 0
+            prev = by_name.get(plan_name)
+            if prev is None or pid > prev[0]:
+                by_name[plan_name] = (pid, plan)
 
         page_num += 1
         if len(products) < 100:
             break
 
+    all_plans = [plan for _, plan in by_name.values()]
     logger.info(f"VOYE global: {len(all_plans)} plans")
     return all_plans
