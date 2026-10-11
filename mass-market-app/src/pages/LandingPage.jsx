@@ -15,7 +15,7 @@ import featAiChat from '../assets/feat-ai-chat.webp'
    MOCA public marketing landing page (served at "/" for anonymous
    visitors; logged-in users are redirected to /home). Content ported
    from pitch/index.html with the code-verified numbers (10 operators,
-   38 eSIM, 2×/day).
+   about 40 eSIM, 2×/day).
 
    BILINGUAL (he/en): all copy lives in COPY[lang]. The page is rendered
    in two ways and the toggle must work in BOTH:
@@ -52,11 +52,11 @@ const COPY = {
     h1a: 'כל מהלך תחרותי בשוק הסלולר -',
     h1b: 'על המסך שלך, לפני שהוא משפיע עליך.',
     heroSub:
-      'מערכת מודיעין תחרותי שעוקבת אוטומטית אחרי 10 מפעילי הסלולר ו-38 ספקי eSIM - פעמיים ביום - ושולחת התראה אחרי כל סריקה שבה מתחרה הזיז מחיר, החליף קמפיין או השיק חבילה.',
+      'מערכת מודיעין תחרותי שעוקבת אוטומטית אחרי 10 מפעילי הסלולר וכ-40 ספקי eSIM - פעמיים ביום - ושולחת התראה אחרי כל סריקה שבה מתחרה הזיז מחיר, החליף קמפיין או השיק חבילה.',
     heroAlt: 'מערכת MOCA - קיר הבאנרים של המתחרים כפי שנסרק היום',
     stats: [
       { n: '10', l: 'מפעילים סלולריים' },
-      { n: '38', l: 'ספקי eSIM גלובליים' },
+      { n: 'כ-40', l: 'ספקי eSIM גלובליים' },
       { n: '2×', l: 'סריקות מלאות ביום' },
       { n: 'דקות', l: 'מסריקה להתראה' },
     ],
@@ -75,7 +75,7 @@ const COPY = {
     features: [
       { h: 'מעקב מחירים שוטף', p: 'כל חבילה אצל כל מתחרה. שינוי מסומן אדום (רע לנו) / ירוק (טוב לנו) ונשלח להתראה.' },
       { h: 'ניטור קמפיינים', p: 'צילום יומי של עמודי הבית וה-e-stores. רואים מתי כל מתחרה החליף באנר ומה הוא דוחף.' },
-      { h: 'הגנת נדידה ו-eSIM', p: '38 ספקי eSIM גלובליים על יותר מ-150 מדינות - בדיוק היכן שהכנסות הנדידה נשחקות.' },
+      { h: 'הגנת נדידה ו-eSIM', p: 'כ-40 ספקי eSIM גלובליים על יותר מ-150 מדינות - בדיוק היכן שהכנסות הנדידה נשחקות.' },
       { h: 'התראות אחרי כל סריקה', p: 'וואטסאפ / טלגרם / מייל / Web Push. דדופ חכם - בלי ספאם, רק אירועים אמיתיים.' },
       { h: 'מכונת זמן', p: 'בחר מתחרה ותאריך - וראה איך נראה האתר, החבילות והמחירים שלו באותו יום.' },
       { h: 'ניתוח AI', p: 'צ\'אט חכם, מטריצת מיצוב תחרותי, "מי זז הכי הרבה" ומגמות מחיר - לא רק נתון גולמי.' },
@@ -84,13 +84,14 @@ const COPY = {
     spotH: 'הכנסות הנדידה נשחקות - וקשה לראות את מי שאוכל אותן',
     spotP:
       'ספקי ה-eSIM הגלובליים (Airalo, Holafly, Saily, Orbit ועוד) מתמחרים מתחת לחבילות הנדידה שלך, מדינה אחר מדינה. MOCA מרכזת את התמחור שלהם מול שלך במקום אחד, מתעדכן פעמיים ביום.',
+    spotN: 'כ-40',
     spotStat: 'ספקי eSIM גלובליים',
     spotStatSub: 'על יותר מ-150 מדינות, מנוטרים אוטומטית',
     cmpKicker: 'למה MOCA ולא Excel או חברת מחקר',
     cmpH: 'הבידול',
     cmpCols: { cat: 'קטגוריה', old: 'מה שיש היום', neu: 'MOCA' },
     compare: [
-      { k: 'תדירות', old: 'בדיקה ידנית, מתי שמתפנים', neu: 'אוטומטי, פעמיים ביום, 10 מפעילים + 38 ספקי eSIM' },
+      { k: 'תדירות', old: 'בדיקה ידנית, מתי שמתפנים', neu: 'אוטומטי, פעמיים ביום, 10 מפעילים + כ-40 ספקי eSIM' },
       { k: 'היקף', old: 'מחירים בלבד', neu: 'מחיר + קריאייטיב + חדשות + משווקים + eSIM' },
       { k: 'מהירות תגובה', old: 'תלוי מתי בודקים', neu: 'התראה אוטומטית אחרי כל סריקה (פעמיים ביום)' },
       { k: 'היסטוריה', old: 'אין', neu: 'ארכיון מלא + מכונת זמן' },
@@ -99,7 +100,7 @@ const COPY = {
     pilotBadge: 'הצעת הפיילוט',
     pilotH: 'שבוע. חיבור מלא למערכת. ללא עלות וללא התחייבות.',
     pilotP:
-      'אנחנו מחברים מעקב על 10 המפעילים ו-38 ספקי ה-eSIM, ושולחים לצוות התראות לוואטסאפ אחרי כל סריקה. בסוף השבוע מחליטים ביחד אם זה שווה לכם.',
+      'אנחנו מחברים מעקב על 10 המפעילים וכ-40 ספקי ה-eSIM, ושולחים לצוות התראות לוואטסאפ אחרי כל סריקה. בסוף השבוע מחליטים ביחד אם זה שווה לכם.',
     pilotCta: 'קביעת פגישה (נפתח ביומן Google, בחלון חדש)',
     pilotNote: 'בוחרים שעה פנויה - ישר ביומן, אישור מיידי',
     footer: 'MOCA · Mobile Operators Competitor Analysis · מודיעין תחרותי לשוק הסלולר הישראלי',
@@ -118,11 +119,11 @@ const COPY = {
     h1a: 'Every competitive move in the mobile market -',
     h1b: 'on your screen, before it reaches you.',
     heroSub:
-      'A competitive-intelligence platform that automatically tracks the 10 mobile carriers and 38 eSIM providers - twice a day - and alerts you after every scan in which a competitor moved a price, swapped a campaign, or launched a plan.',
+      'A competitive-intelligence platform that automatically tracks the 10 mobile carriers and about 40 eSIM providers - twice a day - and alerts you after every scan in which a competitor moved a price, swapped a campaign, or launched a plan.',
     heroAlt: 'The MOCA platform - the wall of competitors’ marketing banners as scanned today',
     stats: [
       { n: '10', l: 'mobile operators' },
-      { n: '38', l: 'global eSIM providers' },
+      { n: '~40', l: 'global eSIM providers' },
       { n: '2×', l: 'full scans per day' },
       { n: 'minutes', l: 'from scan to alert' },
     ],
@@ -141,7 +142,7 @@ const COPY = {
     features: [
       { h: 'Ongoing price tracking', p: 'Every plan from every competitor. Each change flagged red (bad for you) or green (good for you) and pushed to an alert.' },
       { h: 'Campaign monitoring', p: 'Daily screenshots of every homepage and e-store. See exactly when a competitor swaps a banner - and what they’re pushing.' },
-      { h: 'Roaming & eSIM defense', p: '38 global eSIM providers across 150+ countries - exactly where your roaming revenue is being eroded.' },
+      { h: 'Roaming & eSIM defense', p: 'About 40 global eSIM providers across 150+ countries - exactly where your roaming revenue is being eroded.' },
       { h: 'Alerts after every scan', p: 'WhatsApp / Telegram / email / web push. Smart dedup - no spam, only the events that matter.' },
       { h: 'Time machine', p: 'Pick a competitor and a date - and see exactly how their site, plans, and prices looked that day.' },
       { h: 'AI analysis', p: 'A smart chat, a competitive-positioning matrix, a “who moved most” view, and price trends - not just raw data.' },
@@ -150,13 +151,14 @@ const COPY = {
     spotH: 'Global eSIMs are undercutting your roaming - and you’re flying blind',
     spotP:
       'Global eSIM providers (Airalo, Holafly, Saily, Orbit, and more) price below your roaming bundles, country by country. MOCA puts their pricing against yours in one place, refreshed twice a day.',
+    spotN: '~40',
     spotStat: 'global eSIM providers',
     spotStatSub: 'across 150+ countries, monitored automatically',
     cmpKicker: 'Why MOCA, not Excel or a research firm',
     cmpH: 'The difference',
     cmpCols: { cat: 'Category', old: 'What you have today', neu: 'MOCA' },
     compare: [
-      { k: 'Frequency', old: 'Manual checks, whenever there’s time', neu: 'Automatic, twice a day, 10 carriers + 38 eSIM providers' },
+      { k: 'Frequency', old: 'Manual checks, whenever there’s time', neu: 'Automatic, twice a day, 10 carriers + ~40 eSIM providers' },
       { k: 'Scope', old: 'Prices only', neu: 'Price + creative + news + resellers + eSIM' },
       { k: 'Reaction speed', old: 'Depends on when someone checks', neu: 'Automatic alert after every scan (twice a day)' },
       { k: 'History', old: 'None', neu: 'Full archive + time machine' },
@@ -165,7 +167,7 @@ const COPY = {
     pilotBadge: 'The pilot offer',
     pilotH: 'One week. Full access. No cost, no commitment.',
     pilotP:
-      'We connect tracking across the 10 carriers and 38 eSIM providers and send your team WhatsApp alerts after every scan. At the end of the week we decide together whether it is worth it for you.',
+      'We connect tracking across the 10 carriers and about 40 eSIM providers and send your team WhatsApp alerts after every scan. At the end of the week we decide together whether it is worth it for you.',
     pilotCta: 'Book a meeting (opens Google Calendar in a new tab)',
     pilotNote: 'Pick an open slot - straight into the calendar, instant confirmation',
     footer: 'MOCA · Mobile Operators Competitor Analysis · Competitive intelligence for the Israeli mobile market',
@@ -384,7 +386,7 @@ export default function LandingPage({ forceLang }) {
               </p>
             </div>
             <div className="text-center">
-              <div className="font-display font-black leading-none text-[64px]" style={{ color: HILITE }}>38</div>
+              <div className="font-display font-black leading-none text-[64px]" style={{ color: HILITE }}>{t.spotN}</div>
               <div className="mt-2 text-base text-[#e8d5bc]">{t.spotStat}<br />{t.spotStatSub}</div>
             </div>
           </div>

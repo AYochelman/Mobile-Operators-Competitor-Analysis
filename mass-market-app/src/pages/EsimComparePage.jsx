@@ -13,7 +13,7 @@ import { miniMarkup } from '../lib/miniMarkup'
 /* ════════════════════════════════════════════════════════════════════════
    MOCA eSIM — public B2C price-comparison page  (route: /esim-deals)
    A free, no-login consumer tool: pick where you're flying, get the cheapest
-   live global-eSIM deals, compared across 38 providers. Monetized through the
+   live global-eSIM deals, compared across about 40 providers. Monetized through the
    Flask /go affiliate redirect (no hotel attribution). MOCA-branded, HE default
    + EN, mobile-first. Standalone visual world — all CSS scoped under #esim-app.
    Data: /api/esim/destinations (picker) + /api/esim/compare?destination=<he>.
@@ -73,7 +73,7 @@ const T = {
     brandTag: 'השוואת eSIM',
     heroTitle: 'כמה תשלמו על אינטרנט בטיול הבא?',
     heroTitleDest: 'חבילות eSIM {inCountry}',
-    heroSub: 'השוואת מחירים חינמית, בלי הרשמה. מוצאים חבילה מתאימה לטיול מתוך ההצעות של 38 ספקי eSIM גלובליים.',
+    heroSub: 'השוואת מחירים חינמית, בלי הרשמה. מוצאים חבילה מתאימה לטיול מתוך ההצעות של כ-40 ספקי eSIM גלובליים.',
     updated: 'המחירים עודכנו',
     pickTitle: 'לאן טסים?',
     pickSub: 'בחרו יעד ונראה לכם את החבילות הזולות ביותר',
@@ -96,7 +96,7 @@ const T = {
     h2b: 'סורקים QR שמגיע במייל', h2s: 'הטלפון מתקין את החבילה אוטומטית.',
     h3b: 'נוחתים מחוברים', h3s: 'וואטסאפ והמספר מהבית ממשיכים לעבוד במקביל.',
     compat: 'עובד באייפון XS ומעלה, גלקסי S20 ומעלה, פיקסל 3 ומעלה. מתקינים עוד לפני הטיסה ונוחתים כבר עם אינטרנט.',
-    trust: 'מושווה על פני <b>38 ספקי eSIM גלובליים</b><br>מתעדכן פעמיים ביום על ידי מנוע המודיעין של MOCA',
+    trust: 'מושווה על פני <b>כ-40 ספקי eSIM גלובליים</b><br>מתעדכן פעמיים ביום על ידי מנוע המודיעין של MOCA',
     disclaim: 'מדגם ממחירי השוק החיים. המחיר הסופי מוצג בעמוד הספק. ייתכן שנקבל עמלה על רכישה דרך הקישורים, ללא עלות נוספת לכם.',
     days: [{ v: 3, l: '3 ימים' }, { v: 7, l: 'שבוע' }, { v: 14, l: 'שבועיים' }, { v: 30, l: 'חודש' }],
     data: [{ v: 3, l: 'קל', s: '3GB · ניווט והודעות' }, { v: 10, l: 'רגיל', s: '10GB · + רשתות' }, { v: 20, l: 'כבד', s: '20GB · + וידאו' }, { v: 'unl', l: 'ללא הגבלה', s: 'בלי לחשוב' }],
@@ -131,7 +131,7 @@ const T = {
     brandTag: 'eSIM Compare',
     heroTitle: 'How much will data cost on your next trip?',
     heroTitleDest: 'eSIM plans for {country}',
-    heroSub: 'Free price comparison, no sign-up. Find a plan that fits your trip from the offers of 38 global eSIM providers.',
+    heroSub: 'Free price comparison, no sign-up. Find a plan that fits your trip from the offers of about 40 global eSIM providers.',
     updated: 'Prices updated',
     pickTitle: 'Where are you flying?',
     pickSub: 'Pick a destination and we’ll show the cheapest plans',
@@ -154,7 +154,7 @@ const T = {
     h2b: 'Scan the QR you get by email', h2s: 'Your phone installs the plan automatically.',
     h3b: 'Land connected', h3s: 'Keep WhatsApp and your home number active alongside.',
     compat: 'Works on iPhone XS and newer, Samsung Galaxy S20+, Google Pixel 3+. Install before you fly and you land already online.',
-    trust: 'Compared across <b>38 global eSIM providers</b><br>Refreshed twice a day by MOCA market intelligence',
+    trust: 'Compared across <b>about 40 global eSIM providers</b><br>Refreshed twice a day by MOCA market intelligence',
     disclaim: 'Sample of live market prices. Final price is shown on the provider’s page. We may earn a commission on purchases made through these links, at no extra cost to you.',
     days: [{ v: 3, l: '3 days' }, { v: 7, l: '1 week' }, { v: 14, l: '2 weeks' }, { v: 30, l: '1 month' }],
     data: [{ v: 3, l: 'Light', s: '3GB · maps & chat' }, { v: 10, l: 'Regular', s: '10GB · + social' }, { v: 20, l: 'Heavy', s: '20GB · + video' }, { v: 'unl', l: 'Unlimited', s: 'no limits' }],
@@ -681,8 +681,8 @@ export default function EsimComparePage() {
   useEffect(() => {
     const CANON = `${SITE_ORIGIN}/esim-deals`
     const DESC = lang === 'he'
-      ? 'השוואת מחירי eSIM חינמית לטיול בחו"ל, בלי הרשמה. מוצאים חבילה מתאימה מתוך ההצעות של 38 ספקי eSIM גלובליים, מתעדכן פעמיים ביום.'
-      : 'Free eSIM price comparison for your trip abroad, no sign-up. Find a plan that fits from 38 global eSIM providers, refreshed twice a day.'
+      ? 'השוואת מחירי eSIM חינמית לטיול בחו"ל, בלי הרשמה. מוצאים חבילה מתאימה מתוך ההצעות של כ-40 ספקי eSIM גלובליים, מתעדכן פעמיים ביום.'
+      : 'Free eSIM price comparison for your trip abroad, no sign-up. Find a plan that fits from about 40 global eSIM providers, refreshed twice a day.'
     const head = document.head
 
     let canon = head.querySelector('link[rel="canonical"]')
