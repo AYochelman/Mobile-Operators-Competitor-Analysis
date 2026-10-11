@@ -106,7 +106,9 @@ const seoI18n =
 
 // 4b. end-of-body script: keep document.title + canonical in sync with the active
 // language, wire the [data-lang-toggle] button to flip languages (persisting the
-// choice), and re-create the hero pointer-tilt (the React handler isn't shipped to
+// choice, and carrying scroll-reveal state into the copy being shown so nothing
+// re-animates), start the .lp-reveal observer, and re-create the hero pointer-tilt
+// (mouse only, motion allowed) (the React handler isn't shipped to
 // the static page) for EVERY rendered hero — there are two now (one per copy).
 const langBodyScript =
   `<script>(function(){` +
@@ -115,15 +117,24 @@ const langBodyScript =
   `function setLang(l){var d=document.documentElement;d.setAttribute('data-lang',l);d.lang=l;` +
   `d.dir=l==='en'?'ltr':'rtl';if(T[l])document.title=T[l];setCanon(l);try{localStorage.setItem('moca_lang',l);}catch(e){}}` +
   `var cur=document.documentElement.getAttribute('data-lang')==='en'?'en':'he';document.title=T[cur];setCanon(cur);` +
+  `function carry(from,to){var a=document.querySelectorAll('[data-lang-root="'+from+'"] .lp-reveal'),` +
+  `b=document.querySelectorAll('[data-lang-root="'+to+'"] .lp-reveal');` +
+  `for(var i=0;i<a.length&&i<b.length;i++)if(a[i].classList.contains('is-in'))b[i].classList.add('is-in');}` +
   `document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-lang-toggle]');` +
-  `if(!b)return;e.preventDefault();setLang(document.documentElement.getAttribute('data-lang')==='en'?'he':'en');});` +
-  `function tilt(stage){var f=stage.querySelector('.lhs-frame');if(!f)return;var M=20;` +
+  `if(!b)return;e.preventDefault();var d=document.documentElement,from=d.getAttribute('data-lang')==='en'?'en':'he',to=from==='en'?'he':'en';` +
+  `d.setAttribute('data-lang-switched','');carry(from,to);setLang(to);});` +
+  `var fine=window.matchMedia&&matchMedia('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');` +
+  `function tilt(stage){var f=stage.querySelector('.lhs-frame');if(!f||!fine||!fine.matches)return;var M=20;` +
   `stage.addEventListener('pointermove',function(e){var r=stage.getBoundingClientRect();` +
   `var px=(e.clientX-r.left)/r.width-0.5;var py=(e.clientY-r.top)/r.height-0.5;` +
   `f.style.transform='rotateY('+(px*2*M)+'deg) rotateX('+(-py*2*M)+'deg)';` +
   `f.style.setProperty('--gx',(px*70+50)+'%');f.style.setProperty('--gy',(py*70+50)+'%');});` +
   `stage.addEventListener('pointerleave',function(){f.style.transform='rotateY(-13deg) rotateX(8deg)';});}` +
   `var st=document.querySelectorAll('.lhs-stage');for(var i=0;i<st.length;i++)tilt(st[i]);` +
+  `if('IntersectionObserver' in window&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){` +
+  `document.documentElement.classList.add('lp-js');` +
+  `var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target);}});},{rootMargin:'0px 0px -8% 0px'});` +
+  `var rv=document.querySelectorAll('.lp-reveal');for(var j=0;j<rv.length;j++)io.observe(rv[j]);}` +
   `})();</script>`
 
 const html = `<!DOCTYPE html>

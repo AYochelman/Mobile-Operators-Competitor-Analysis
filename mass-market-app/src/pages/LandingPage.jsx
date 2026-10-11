@@ -184,6 +184,28 @@ const HILITE = '#f3b07a'
 // CTA: opens the public Google Calendar booking page to schedule a demo meeting.
 const MEETING_LINK = 'https://calendar.app.google/cbHs54g5MKzCi4A58'
 
+// Motion (static-safe: plain CSS, rendered into the prerender too).
+// • .lp-btn     — press feedback; explicit properties, never `transition: all`.
+// • .lp-enter   — one-time hero stagger on first paint (delay via --d). Skipped
+//                 after a language switch so the toggle never replays it.
+// • .lp-reveal  — below-the-fold blocks fade up once on scroll. Hidden ONLY
+//                 once JS adds html.lp-js, so no-JS / failed-JS stays visible.
+const LANDING_CSS = `
+.lp-root{ --lp-ease:cubic-bezier(.23,1,.32,1); }
+.lp-btn{ transition:background-color 150ms ease, border-color 150ms ease, transform 160ms var(--lp-ease); }
+.lp-btn:active{ transform:scale(.97); }
+@keyframes lpEnter{ from{ opacity:0; transform:translateY(12px); } }
+.lp-enter{ animation:lpEnter 700ms var(--lp-ease) var(--d,0ms) both; }
+html[data-lang-switched] .lp-enter{ animation:none; }
+.lp-js .lp-reveal{ opacity:0; transform:translateY(20px);
+  transition:opacity 700ms var(--lp-ease) var(--d,0ms), transform 700ms var(--lp-ease) var(--d,0ms); }
+.lp-js .lp-reveal.is-in{ opacity:1; transform:none; }
+@media (prefers-reduced-motion:reduce){
+  .lp-enter{ animation:none; }
+  .lp-js .lp-reveal{ transform:none; }
+}
+`
+
 // Initial language: forceLang (prerender) wins; otherwise honor ?lang= / a
 // stored preference so a link like mocaintel.com/?lang=en opens in English.
 function initialLang(forceLang) {
@@ -209,6 +231,24 @@ export default function LandingPage({ forceLang }) {
     document.documentElement.dir = t.dir
   }, [t.title])
 
+  // SPA twin of the reveal observer that prerender-landing.mjs ships to the
+  // static page. Reduced motion → never hide anything.
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const root = document.documentElement
+    root.classList.add('lp-js')
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue
+        e.target.classList.add('is-in')
+        io.unobserve(e.target)
+      }
+    }, { rootMargin: '0px 0px -8% 0px' })
+    document.querySelectorAll('.lp-reveal:not(.is-in)').forEach((el) => io.observe(el))
+    return () => { io.disconnect(); root.classList.remove('lp-js') }
+  }, [])
+
   function toggleLang() {
     const next = lang === 'he' ? 'en' : 'he'
     setLang(next)
@@ -224,7 +264,8 @@ export default function LandingPage({ forceLang }) {
   })
 
   return (
-    <div dir={t.dir} lang={lang} className="min-h-screen bg-moca-bg text-moca-text font-body">
+    <div dir={t.dir} lang={lang} className="lp-root min-h-screen bg-moca-bg text-moca-text font-body">
+      <style>{LANDING_CSS}</style>
       <a href="#landing-main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:start-2 focus:z-50 focus:bg-white focus:text-moca-dark focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold">{t.skipL}</a>
       {/* ── Top nav ── */}
       <nav className="absolute top-0 inset-x-0 z-10">
@@ -242,14 +283,14 @@ export default function LandingPage({ forceLang }) {
                     data-lang-toggle
                     onClick={toggleLang}
                     aria-label={t.toLangAria}
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#f5ede0] border border-[#f5ede0]/35 hover:border-[#f5ede0]/70 hover:bg-white/10 px-3.5 py-2 rounded-full transition-colors">
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#f5ede0] border border-[#f5ede0]/35 hover:border-[#f5ede0]/70 hover:bg-white/10 px-3.5 py-2 rounded-full lp-btn">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/>
               </svg>
               {t.toLang}
             </button>
             <Link to="/login"
-                  className="text-sm font-semibold text-[#3b1f0d] bg-[#f3b07a] hover:bg-[#f0a463] px-4 py-2 rounded-full transition-colors">
+                  className="text-sm font-semibold text-[#3b1f0d] bg-[#f3b07a] hover:bg-[#f0a463] px-4 py-2 rounded-full lp-btn">
               {t.signIn}
             </Link>
           </div>
@@ -264,17 +305,17 @@ export default function LandingPage({ forceLang }) {
         <div className="relative max-w-6xl mx-auto px-6">
           <div className="grid lg:grid-cols-[1.18fr_0.82fr] gap-10 lg:gap-6 items-center">
           <div>
-          <div className="text-[13px] font-semibold tracking-[3px] uppercase text-[#e8d5bc] mb-3.5">
+          <div className="lp-enter text-[13px] font-semibold tracking-[3px] uppercase text-[#e8d5bc] mb-3.5">
             {t.kicker}
           </div>
-          <h1 className="font-display font-medium text-white leading-[1.12] text-4xl md:text-[54px] max-w-[760px]">
+          <h1 style={{ '--d': '60ms' }} className="lp-enter font-display font-medium text-white leading-[1.12] text-4xl md:text-[54px] max-w-[760px]">
             {t.h1a}{' '}
             <span style={{ color: HILITE }}>{t.h1b}</span>
           </h1>
-          <p className="mt-5 text-lg md:text-xl font-light text-[#f0e2d0] max-w-[680px]">
+          <p style={{ '--d': '120ms' }} className="lp-enter mt-5 text-lg md:text-xl font-light text-[#f0e2d0] max-w-[680px]">
             {t.heroSub}
           </p>
-          <div className="mt-9 flex flex-wrap lg:flex-nowrap gap-x-6 gap-y-4">
+          <div style={{ '--d': '180ms' }} className="lp-enter mt-9 flex flex-wrap lg:flex-nowrap gap-x-6 gap-y-4">
             {t.stats.map((s) => (
               <div key={s.l}>
                 <div className="font-display font-black text-3xl md:text-[40px]" style={{ color: HILITE }}>{s.n}</div>
@@ -283,7 +324,7 @@ export default function LandingPage({ forceLang }) {
             ))}
           </div>
           </div>
-          <div className="mt-4 lg:mt-0 flex justify-center">
+          <div style={{ '--d': '160ms' }} className="lp-enter mt-4 lg:mt-0 flex justify-center">
             <LandingHeroShot alt="" />
           </div>
           </div>
@@ -302,8 +343,8 @@ export default function LandingPage({ forceLang }) {
             {t.painSub}
           </p>
           <div className="grid md:grid-cols-2 gap-5">
-            {t.pains.map((c) => (
-              <div key={c.t} className="bg-moca-bg border border-moca-border rounded-2xl p-6 shadow-card">
+            {t.pains.map((c, i) => (
+              <div key={i} style={{ '--d': `${(i % 2) * 70}ms` }} className="lp-reveal bg-moca-bg border border-moca-border rounded-2xl p-6 shadow-card">
                 <div className="flex items-center gap-2 text-moca-up font-extrabold text-[15px] mb-1.5">
                   <span aria-hidden="true">✕</span>{c.t}
                 </div>
@@ -329,7 +370,7 @@ export default function LandingPage({ forceLang }) {
       {/* ── eSIM spotlight ── */}
       <section className="pb-16">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="rounded-3xl p-8 md:p-12 grid md:grid-cols-[1.3fr_1fr] gap-10 items-center text-[#f5ede0]"
+          <div className="lp-reveal rounded-3xl p-8 md:p-12 grid md:grid-cols-[1.3fr_1fr] gap-10 items-center text-[#f5ede0]"
                style={{ background: SPOT_BG }}>
             <div>
               <div className="text-[13px] font-bold tracking-[2.5px] uppercase mb-2.5" style={{ color: HILITE }}>
@@ -357,7 +398,7 @@ export default function LandingPage({ forceLang }) {
             {t.cmpKicker}
           </div>
           <h2 className="font-display text-3xl md:text-4xl text-moca-dark mb-9">{t.cmpH}</h2>
-          <div className="overflow-x-auto">
+          <div className="lp-reveal overflow-x-auto">
             <table className="w-full border-separate border-spacing-0 border border-moca-border rounded-2xl overflow-hidden bg-white shadow-card">
               <caption className="sr-only">{t.cmpCaption}</caption>
               <thead>
@@ -383,7 +424,7 @@ export default function LandingPage({ forceLang }) {
 
       {/* ── Pilot offer ── */}
       <section className="py-16 bg-moca-cream border-t border-moca-border text-center">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="lp-reveal max-w-6xl mx-auto px-6">
           <span className="inline-block bg-moca-hot-text text-white text-[11px] font-bold tracking-wide uppercase px-2.5 py-1 rounded-md mb-4">
             {t.pilotBadge}
           </span>
@@ -392,7 +433,7 @@ export default function LandingPage({ forceLang }) {
             {t.pilotP}
           </p>
           <a href={MEETING_LINK} target="_blank" rel="noopener noreferrer"
-             className="inline-block mt-7 bg-moca-bolt hover:bg-moca-dark text-white font-bold text-[17px] px-10 py-4 rounded-full shadow-xl transition-colors">
+             className="inline-block mt-7 bg-moca-bolt hover:bg-moca-dark text-white font-bold text-[17px] px-10 py-4 rounded-full shadow-xl lp-btn">
             {t.pilotCta}
           </a>
           <p className="mt-3 text-sm text-moca-sub">{t.pilotNote}</p>

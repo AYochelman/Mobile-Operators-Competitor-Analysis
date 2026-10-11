@@ -12,13 +12,18 @@ import bannersWall from '../assets/banners-wall.webp'
 const REST = 'rotateY(-13deg) rotateX(8deg)'
 const MAX = 20 // deg — strengthened a touch per user; still legible
 
+// Tilt only for a real mouse and only when motion is welcome: touch fires
+// stray pointermoves while scrolling, and 20° of tracking is a lot of motion.
+// prerender-landing.mjs mirrors this gate in its vanilla tilt.
+const TILT_MQ = '(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)'
+
 export default function LandingHeroShot({ alt = '' }) {
   const stageRef = useRef(null)
   const frameRef = useRef(null)
 
   function onMove(e) {
     const stage = stageRef.current, frame = frameRef.current
-    if (!stage || !frame) return
+    if (!stage || !frame || !window.matchMedia(TILT_MQ).matches) return
     const r = stage.getBoundingClientRect()
     const px = (e.clientX - r.left) / r.width - 0.5
     const py = (e.clientY - r.top) / r.height - 0.5
@@ -46,7 +51,7 @@ export default function LandingHeroShot({ alt = '' }) {
 
 const CSS = `
 .lhs-stage{ perspective:1600px; display:inline-block; max-width:100%; }
-.lhs-frame{ transform-style:preserve-3d; transition:transform .25s ease; will-change:transform; }
+.lhs-frame{ transform-style:preserve-3d; transition:transform 400ms cubic-bezier(.23,1,.32,1); will-change:transform; }
 .lhs-shot{ position:relative; width:min(490px,86vw); border-radius:14px; overflow:hidden;
   border:1px solid rgba(255,255,255,.12);
   box-shadow:0 34px 64px -28px rgba(0,0,0,.62), 0 14px 26px -18px rgba(0,0,0,.5); }
