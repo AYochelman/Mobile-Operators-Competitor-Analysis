@@ -10,12 +10,76 @@ import re
 logger = core.logger
 
 
+# ── Dedicated browser session for pelephone.co.il ─────────────────────────
+# Every pelephone.co.il scrape (domestic, roaming, GlobalSIM) went dark on the
+# same day (2026-09-21) while the banner job, which uses a real-browser
+# context, kept capturing the homepage. The scrapers used to ride the shared
+# bare `browser.new_page()` (HeadlessChrome UA, en-US, no stealth), which a
+# domain-wide bot rule can drop. They now get their own stealth session with a
+# real Chrome UA + he-IL locale, like scrape_019, and log what the site served
+# when no plan card renders - so a block is named in the log instead of
+# surfacing 13 days later as a freshness warning.
+PELEPHONE_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36"
+)
+
+
+def run_pelephone_session(fn):
+    """Run `fn(page)` in a fresh pelephone.co.il browser session and return its result.
+
+    Opens its own sync_playwright, so call it OUTSIDE any other sync_playwright
+    block (or from a worker thread). playwright-stealth is used when installed.
+    """
+    try:
+        from playwright_stealth import Stealth
+        pw_cm = Stealth().use_sync(core.sync_playwright())
+    except ImportError:
+        pw_cm = core.sync_playwright()
+    with pw_cm as pw:
+        browser = pw.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"],
+        )
+        try:
+            context = browser.new_context(
+                user_agent=PELEPHONE_UA,
+                locale="he-IL",
+                viewport={"width": 1366, "height": 900},
+                extra_http_headers={"Accept-Language": "he-IL,he;q=0.9,en;q=0.8"},
+            )
+            page = context.new_page()
+            return fn(page)
+        finally:
+            browser.close()
+
+
+def log_pelephone_page_state(page, label):
+    """Log what pelephone.co.il actually served - URL, title, size, a body snippet."""
+    try:
+        html = page.content()
+        title = page.title()
+        body = page.evaluate("() => (document.body && document.body.innerText) || ''")
+        snippet = re.sub(r"\s+", " ", body)[:200]
+        logger.warning(
+            f"{label}: no plan cards - url={page.url} title={title!r} "
+            f"html={len(html)} bytes body={snippet!r}"
+        )
+    except Exception as exc:
+        logger.warning(f"{label}: no plan cards and the page could not be inspected: {exc}")
+
+
 def scrape_pelephone(page):
     page.goto(
         "https://www.pelephone.co.il/ds/heb/packages/mobile-packages/join-pelephone-online/",
         timeout=30000, wait_until="networkidle"
     )
-    page.wait_for_selector(".border_5 .item", timeout=15000)
+    try:
+        page.wait_for_selector(".border_5 .item", timeout=15000)
+    except Exception:
+        log_pelephone_page_state(page, "scrape_pelephone")
+        raise
 
     # Extract pid→PDF map: each card has a popup link with a pid, and its more-info page has a PDF
     pelephone_urls = {}
@@ -107,6 +171,8 @@ def scrape_pelephone_abroad(page):
     if more_btn and more_btn.is_visible():
         more_btn.click()
         page.wait_for_timeout(1500)
+    if not page.query_selector(".package"):
+        log_pelephone_page_state(page, "scrape_pelephone_abroad")
     plans = []
     seen = set()
     soc_map = {}   # plan name → socId (from each card's "מידע נוסף" link)

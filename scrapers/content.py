@@ -132,11 +132,8 @@ def scrape_all_content():
     UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
     results = []
 
-    with core.sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page(user_agent=UA)
-
-        for entry in CONTENT_SERVICES:
+    def _scrape_entries(page, entries):
+        for entry in entries:
             service    = entry["service"]
             carrier    = entry["carrier"]
             free_trial = entry.get("free_trial", "—")
@@ -209,7 +206,24 @@ def scrape_all_content():
                 logger.error(f"Content scrape failed {service}/{carrier}: {e}")
                 results.append(_result("שגיאה", "שגיאה"))
 
+    # pelephone.co.il pages run in their own real-browser session (see
+    # scrapers/pelephone.py: run_pelephone_session) - the bare shared page went
+    # dark on every Pelephone URL on 2026-09-21.
+    pele = [e for e in CONTENT_SERVICES
+            if e["carrier"] == "pelephone" and "pelephone.co.il" in (e.get("url") or "")]
+    rest = [e for e in CONTENT_SERVICES if e not in pele]
+
+    with core.sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(user_agent=UA)
+        _scrape_entries(page, rest)
         browser.close()
+
+    if pele:
+        try:
+            core.run_pelephone_session(lambda pg: _scrape_entries(pg, pele))
+        except Exception as e:
+            logger.error(f"Content: Pelephone session failed: {e}", exc_info=True)
 
     logger.info(f"scrape_all_content: {len(results)} results")
     return results

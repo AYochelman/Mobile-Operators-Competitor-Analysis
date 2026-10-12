@@ -141,7 +141,7 @@ def scrape_all():
             args=["--disable-blink-features=AutomationControlled"]
         )
         page = browser.new_page()
-        for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom]:
+        for fn in [scrape_partner, scrape_hotmobile, scrape_cellcom]:
             try:
                 result = fn(page)
                 if not result:
@@ -152,6 +152,17 @@ def scrape_all():
             except Exception as e:
                 logger.error(f"{fn.__name__} failed: {e}", exc_info=True)
         browser.close()
+
+    # Phase 3: Pelephone in its own real-browser session (see run_pelephone_session)
+    try:
+        result = run_pelephone_session(scrape_pelephone)
+        if not result:
+            logger.warning("scrape_pelephone: returned 0 plans — possible bot-block or selector change. Skipping to avoid false 'removed' alerts.")
+        else:
+            logger.info(f"scrape_pelephone: {len(result)} plans")
+            plans.extend(result)
+    except Exception as e:
+        logger.error(f"scrape_pelephone failed: {e}", exc_info=True)
 
     return plans
 
@@ -394,7 +405,6 @@ def scrape_all_global():
         ("scrape_airalo_global",       lambda pg: scrape_airalo_global(pg, usd_rate)),
         ("scrape_airalo_local",        lambda pg: scrape_airalo_local(pg, usd_rate)),
         ("scrape_airalo_regional",     lambda pg: scrape_airalo_regional(pg, usd_rate)),
-        ("scrape_pelephone_globalsim", scrape_pelephone_globalsim),
         ("scrape_simtlv_global",       scrape_simtlv_global),
         ("scrape_world8_global",       scrape_world8_global),
     ]
@@ -402,6 +412,7 @@ def scrape_all_global():
     # ── Parallel jobs: each creates its own browser / HTTP / REST ─────────
     parallel_jobs = [
         ("scrape_xphone_global",       lambda: scrape_xphone_global()),
+        ("scrape_pelephone_globalsim", lambda: run_pelephone_session(scrape_pelephone_globalsim)),  # own real-browser session
         ("scrape_saily_global",        lambda: scrape_saily_global(usd_rate=usd_rate)),
         ("scrape_saily_regions",       lambda: scrape_saily_regions(usd_rate=usd_rate)),
         ("scrape_yesim_global",        lambda: scrape_yesim_global(usd_rate=usd_rate)),
@@ -511,8 +522,7 @@ def scrape_all_abroad():
             args=["--disable-blink-features=AutomationControlled"]
         )
         page = browser.new_page()
-        for fn in [scrape_partner_abroad, scrape_pelephone_abroad,
-                   scrape_hotmobile_abroad, scrape_cellcom_abroad]:
+        for fn in [scrape_partner_abroad, scrape_hotmobile_abroad, scrape_cellcom_abroad]:
             try:
                 result = fn(page)
                 if not result:
@@ -523,6 +533,17 @@ def scrape_all_abroad():
             except Exception as e:
                 logger.error(f"{fn.__name__} failed: {e}", exc_info=True)
         browser.close()
+
+    # Phase 3: Pelephone in its own real-browser session (see run_pelephone_session)
+    try:
+        result = run_pelephone_session(scrape_pelephone_abroad)
+        if not result:
+            logger.warning("scrape_pelephone_abroad: returned 0 plans — possible bot-block or selector change. Skipping.")
+        else:
+            logger.info(f"scrape_pelephone_abroad: {len(result)} abroad plans")
+            plans.extend(result)
+    except Exception as e:
+        logger.error(f"scrape_pelephone_abroad failed: {e}", exc_info=True)
 
     return plans
 
@@ -591,6 +612,9 @@ from scrapers.partner import (  # noqa: E402,F401
 )
 from scrapers.pelephone import (  # noqa: E402,F401
     scrape_pelephone,
+    PELEPHONE_UA,
+    run_pelephone_session,
+    log_pelephone_page_state,
     _PELE_ABROAD_TERMS_RE,
     _PELE_ABROAD_TERMS_OVERRIDES,
     scrape_pelephone_abroad,

@@ -110,6 +110,12 @@ _ESIMPLUS_PLAN_PREFIX = {
 }
 
 
+# Per-run failure counters, reset by scrape_esimplus_global. Every page error used
+# to be logged at DEBUG only, so a dead scraper looked like "eSIM Plus: 0 plans"
+# with no reason (stale 471h by the 2026-10-04 digest).
+_ESIMPLUS_STATS = {"errors": 0, "no_payment_code": 0, "first_error": None}
+
+
 def _fetch_esimplus_country(slug, usd_rate):
     import urllib.request as _ur, base64 as _b64
     _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -129,6 +135,10 @@ def _fetch_esimplus_country(slug, usd_rate):
         )
         with _ur.urlopen(req, timeout=15) as r:
             html = r.read().decode("utf-8")
+        if "paymentCode=" not in html:
+            # The whole price extraction hangs on these embedded tokens; count the
+            # pages that lack them so a redesign shows up in the summary log line.
+            _ESIMPLUS_STATS["no_payment_code"] += 1
         if heb_name is None:
             title_m = re.search(r"<title>eSIM (?:for )?([^|]+)\|", html)
             heb_name = _html_unescape(title_m.group(1)).strip() if title_m else slug.replace("-", " ").title()
@@ -165,6 +175,8 @@ def _fetch_esimplus_country(slug, usd_rate):
         return plans
     except Exception as e:
         logger.debug(f"esimplus {slug}: {e}")
+        _ESIMPLUS_STATS["errors"] += 1
+        _ESIMPLUS_STATS["first_error"] = _ESIMPLUS_STATS["first_error"] or f"{slug}: {type(e).__name__}: {e}"
         return []
 
 
@@ -173,6 +185,7 @@ def scrape_esimplus_global(_page=None, usd_rate=None):
     from concurrent.futures import ThreadPoolExecutor, as_completed as _ac
     if usd_rate is None:
         usd_rate = core._get_usd_to_ils()
+    _ESIMPLUS_STATS.update(errors=0, no_payment_code=0, first_error=None)
     all_plans = []
     with ThreadPoolExecutor(max_workers=10) as ex:
         futures = {
@@ -185,4 +198,11 @@ def scrape_esimplus_global(_page=None, usd_rate=None):
             except Exception as e:
                 logger.debug(f"esimplus: {e}")
     logger.info(f"eSIM Plus: {len(all_plans)} plans from {len(ESIMPLUS_COUNTRY_SLUGS)} destinations")
+    n = len(ESIMPLUS_COUNTRY_SLUGS)
+    if _ESIMPLUS_STATS["errors"] or _ESIMPLUS_STATS["no_payment_code"] > n // 2:
+        logger.warning(
+            f"eSIM Plus: {_ESIMPLUS_STATS['errors']}/{n} pages failed, "
+            f"{_ESIMPLUS_STATS['no_payment_code']}/{n} pages had no paymentCode tokens "
+            f"(first error: {_ESIMPLUS_STATS['first_error']})"
+        )
     return all_plans
