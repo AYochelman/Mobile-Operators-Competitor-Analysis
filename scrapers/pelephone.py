@@ -103,9 +103,14 @@ def scrape_pelephone_abroad(page):
     page.goto("https://www.pelephone.co.il/digitalsite/heb/abroad/packages/",
               timeout=40000, wait_until="load")
     page.wait_for_timeout(3000)
+    # The cookie-notice bar (.wrap_cookies-consent) sits over the "more packages"
+    # button and swallowed every click from 2026-09-21 (30s timeout -> 0 plans for a
+    # month). Drop the overlay instead of clicking its "הבנתי", and click through JS
+    # so any other sticky bar can't intercept it either.
+    page.evaluate("() => document.querySelectorAll('.wrap_cookies-consent').forEach(e => e.remove())")
     more_btn = page.query_selector(".btn_more_packs.more_show")
     if more_btn and more_btn.is_visible():
-        more_btn.click()
+        more_btn.evaluate("el => el.click()")
         page.wait_for_timeout(1500)
     plans = []
     seen = set()

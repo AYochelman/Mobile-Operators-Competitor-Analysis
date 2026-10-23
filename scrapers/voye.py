@@ -19,6 +19,31 @@ VOYE_REGION_MAP = {
 }
 
 
+_VOYE_DAYS_SEG = re.compile(r"^\d+\s*Days?\b", re.IGNORECASE)
+# Known catalogs whose names don't follow the "<Brand> – <dest> – …" shape. "Recurring"
+# products are monthly auto-renew subscriptions, not one-off trip packages.
+_VOYE_PARTNER_PREFIX = re.compile(
+    r"^(?:WS|PW|Recurring|Israir|TRIPBTOZ|Arkia|Clal|Hertz|Cibus|BUSYTLV|Air Serbia)\b", re.IGNORECASE)
+
+
+def _voye_is_partner_product(name):
+    """Co-branded / wholesale catalogs that share VOYE's public store API:
+    "Arkia – Europe – 30 Days – 5GB", "WS – Europe – …", "WS United Kingdom 30 Days …",
+    "Clal Global Light – 365 Days – …" (also Hertz, Cibus, BUSYTLV, Air Serbia).
+    They are member/reseller prices below the public list and leaked in as English
+    "destinations" (59 of them by 2026-10). Public products are either undashed
+    ("Japan 30 Days 10GB") or start with Global ("Global Light – 365 Days – 3GB").
+    """
+    segs = [s.strip() for s in name.split("–")]
+    if _VOYE_PARTNER_PREFIX.match(name):
+        return True
+    if segs[0].startswith("Global"):
+        return False
+    if len(segs) >= 3 and not _VOYE_DAYS_SEG.match(segs[1]):
+        return True                                   # "<Brand> – <dest> – N Days – XGB"
+    return bool(re.match(r"^\S+ Global(?: Light)?$", segs[0]))   # "Clal Global – 30 Days – 5GB"
+
+
 def scrape_voye_global(_page=None, usd_rate=None):
     """Scrape VOYE global eSIM plans via WooCommerce Store API."""
     import urllib.request, json as _json, html as _html
@@ -54,7 +79,19 @@ def scrape_voye_global(_page=None, usd_rate=None):
             except (ValueError, TypeError):
                 continue
 
+            # $1000 is VOYE's "not for sale" placeholder on retired uncategorized
+            # products (Korea 10GB, Indonesia 3GB, North America 10GB) - it rendered
+            # as a ~3,100 ILS plan. No real VOYE package costs anywhere near that.
+            if price_usd >= 999:
+                continue
+            if _voye_is_partner_product(name):
+                continue
+
             cats_list = [c.get("slug", "") for c in prod.get("categories", [])]
+            # Family plans: one shared bundle for several lines with no published
+            # coverage list - not comparable to a single-traveller eSIM.
+            if "family_plans" in cats_list:
+                continue
             # Skip "zombie" products with no categories — these are old products VOYE
             # removed from the public site but the WooCommerce Store API still exposes.
             # They cause stale duplicates (e.g. an old "Europe 30 days 10GB @ $25" overwrites
@@ -64,10 +101,13 @@ def scrape_voye_global(_page=None, usd_rate=None):
 
             # Parse data — GB (incl. decimals like 1.5GB), MB (e.g. 500MB → fraction of GB),
             # or "Unlimited" (3GB/day high-speed + unlimited throttled)
+            bonus_match = re.search(r"(\d+)\s*\+\s*(\d+)\s*GB", name, re.IGNORECASE)  # "Global – 10+2GB Free"
             gb_match = re.search(r"(\d+(?:\.\d+)?)\s*GB", name, re.IGNORECASE)
             mb_match = re.search(r"(\d+(?:\.\d+)?)\s*MB(?![/a-z])", name, re.IGNORECASE)
             is_unlimited = "unlimited" in name.lower()
-            if gb_match:
+            if bonus_match:
+                data_gb = int(bonus_match.group(1)) + int(bonus_match.group(2))
+            elif gb_match:
                 gb_val = float(gb_match.group(1))
                 data_gb = int(gb_val) if gb_val == int(gb_val) else gb_val
             elif mb_match:
@@ -80,7 +120,9 @@ def scrape_voye_global(_page=None, usd_rate=None):
 
             # Parse days
             days_match = re.search(r"(\d+)\s*Days?", name, re.IGNORECASE)
-            days = int(days_match.group(1)) if days_match else None
+            if not days_match:   # "+NGB Free" names omit it; the slug carries it (global-365-days-12gb)
+                days_match = re.search(r"(\d+)-days?", prod.get("permalink", ""), re.IGNORECASE)
+            days =int(days_match.group(1)) if days_match else None
 
             # Parse minutes
             min_match = re.search(r"(\d+)\s*[Mm]in", name)
@@ -106,7 +148,7 @@ def scrape_voye_global(_page=None, usd_rate=None):
                     break
 
             # Check if it's a Global Light plan (name starts with "Global Light")
-            if name.startswith("Global Light") or name.startswith("Global Voice"):
+            if name.startswith("Global"):   # Global / Global Light / Global Voice / "Global – 10+2GB Free"
                 plan_type = "global"
                 dest_heb = "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9"
 
@@ -193,6 +235,8 @@ def scrape_voye_global(_page=None, usd_rate=None):
             plan_name = f"{dest_heb} \u2013 {gb_str}"
             if days_str:
                 plan_name += f" \u2013 {days_str}"
+            if re.search(r"\bVoice\b", name):   # "Global Voice …" / "United States Voice …" bundle calls
+                plan_name += " \u2013 \u05db\u05d5\u05dc\u05dc \u05e9\u05d9\u05d7\u05d5\u05ea"  # " \u2013 \u05db\u05d5\u05dc\u05dc \u05e9\u05d9\u05d7\u05d5\u05ea"
 
             all_plans.append(core._make_global_plan(
                 "voye", plan_name, price_ils, "USD", price_usd,
@@ -203,6 +247,19 @@ def scrape_voye_global(_page=None, usd_rate=None):
         page_num += 1
         if len(products) < 100:
             break
+
+    # Several products share one plan_name (Global Light / Global / an older copy of
+    # the same GB+days). The Store API's order varies between calls, so "last one wins"
+    # flipped the stored price every scrape (גלובלי 3GB 7 ימים: $5 <-> $23, 2026-10).
+    # Keep the cheapest per plan_name - deterministic, and what a buyer actually pays.
+    best = {}
+    for p in all_plans:
+        cur = best.get(p["plan_name"])
+        if cur is None or p["price"] < cur["price"]:
+            best[p["plan_name"]] = p
+    if len(best) < len(all_plans):
+        logger.info(f"VOYE global: collapsed {len(all_plans) - len(best)} same-name duplicates (kept cheapest)")
+    all_plans = list(best.values())
 
     logger.info(f"VOYE global: {len(all_plans)} plans")
     return all_plans

@@ -107,6 +107,14 @@ export const COUNTRIES_GOLAN = [
 // by plan_name before falling back to the worldwide list.
 export const GOLAN_SPECIFIC = [
   { match: 'מצרים וירדן', countries: ['מצרים', 'ירדן'], title: 'מצרים וירדן' },
+  // per-package lists from the site's GetPackagePopular API (countrySupportedList), 2026-10
+  { match: 'TAVERNA TRIP', countries: ['קפריסין', 'יוון'], title: 'קפריסין ויוון' },
+  { match: 'COUPLE GETAWAY', title: 'אירופה (31 מדינות)', countries: [
+    'אוסטריה','אירלנד','איטליה','אלבניה','אסטוניה','בולגריה','בלגיה','בריטניה','גיאורגיה',
+    'גרמניה','דנמרק','הולנד','הונגריה','יוון','לטביה','ליטא','מונטנגרו','מלטה','סלובניה',
+    'סלובקיה','ספרד','סרביה','פולין','פורטוגל','צ\'כיה','צרפת','קפריסין','קרואטיה','רומניה',
+    'שבדיה','שוויץ',
+  ] },
 ];
 
 // ── Rami Levy ────────────────────────────────────────────────────────
