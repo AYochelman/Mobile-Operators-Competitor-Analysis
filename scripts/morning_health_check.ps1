@@ -34,9 +34,21 @@ function Send-Alert {
 }
 
 function Test-Port {
+    # A real TCP connect, not Get-NetTCPConnection -State Listen: after the 2026-10-29 reboot
+    # Windows reported every listener with State=0 (not a valid enum value), the -State filter
+    # matched nothing, and this check spawned a new Flask+Vite watchdog pair every 10 min while
+    # both were up. Vite binds ::1 only (localhost), Flask 127.0.0.1 - so try both loopbacks.
     param([int]$Port)
-    $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-    return [bool]$conn
+    foreach ($addr in '127.0.0.1', '::1') {
+        $client = New-Object System.Net.Sockets.TcpClient($(if ($addr -eq '::1') { 'InterNetworkV6' } else { 'InterNetwork' }))
+        try {
+            if ($client.ConnectAsync($addr, $Port).Wait(2000) -and $client.Connected) { return $true }
+        } catch {
+        } finally {
+            $client.Dispose()
+        }
+    }
+    return $false
 }
 
 function Restart-Service {
