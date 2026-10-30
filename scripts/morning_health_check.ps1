@@ -16,6 +16,9 @@ $AlertScript   = Join-Path $ScriptDir "alert.py"
 $FlaskWatchdog = Join-Path $ScriptDir "flask_watchdog.bat"
 $ViteWatchdog  = Join-Path $ScriptDir "vite_watchdog.bat"
 $ViteWorkDir   = Join-Path $ProjectRoot "mass-market-app"
+# A port must miss this many extra probes, $ConfirmDelaySeconds apart, before it counts as DOWN.
+$ConfirmProbes       = 3
+$ConfirmDelaySeconds = 5
 
 function Write-Log {
     param([string]$Message)
@@ -61,6 +64,17 @@ function Restart-Service {
     if (Test-Port $Port) {
         Write-Log "$Name (port $Port): UP"
         return $null
+    }
+    # Confirm before relaunching (2026-10-30): one 2s connect is not proof of DOWN. At 07:50
+    # the box was so loaded this run started 36s late and the ngrok probe timed out; the single
+    # Vite connect missed, and the "restart" opened a 2nd Vite on 5174 next to the healthy one
+    # (the tell: "SUCCESS after 2s" - a fresh Vite takes ~30s). Re-probe for ~20s first.
+    for ($i = 1; $i -le $ConfirmProbes; $i++) {
+        Start-Sleep -Seconds $ConfirmDelaySeconds
+        if (Test-Port $Port) {
+            Write-Log "$Name (port $Port): UP (missed first probe, answered on recheck $i/$ConfirmProbes)"
+            return $null
+        }
     }
     Write-Log "$Name (port $Port): DOWN -- attempting restart"
     try {
