@@ -125,8 +125,8 @@ except Exception as e:
         }
 
         # ---- Check 4b: Supabase dump present and readable ----
-        # Supabase's free tier keeps no backups of its own, so this file is the
-        # only copy of the accounts and roles. Verify the one that actually
+        # Supabase Pro's own backups last 7 days and live inside Supabase, so this
+        # file is the only off-site copy of the accounts and roles. Verify the one that actually
         # reached Drive, not the local original - a dump nobody can read back
         # is not a backup.
         $sbBackup = Join-Path $latest.FullName "supabase-latest.json.gz"

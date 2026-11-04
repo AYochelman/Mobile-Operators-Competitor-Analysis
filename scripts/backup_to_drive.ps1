@@ -154,7 +154,7 @@ if (Test-Path $BannersSrc) {
 }
 
 # ---- 5.5 Backup Supabase (accounts, roles, workspaces) ----
-# The Supabase project is on the free tier, which keeps NO automatic backups.
+# Supabase Pro (since 2026-11-03) keeps daily backups for only 7 days, inside Supabase.
 # auth.users / auth.identities / public.user_roles / public.workspaces exist
 # nowhere else, so a lost project means nobody can log in and plans.db cannot
 # help. scripts/backup_supabase.py dumps them to data/supabase_backups/ and we

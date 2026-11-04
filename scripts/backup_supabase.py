@@ -2,8 +2,10 @@
 
 WHY THIS EXISTS
 ---------------
-The Supabase project runs on the NANO/free tier, which keeps **no automatic
-backups** (the project dashboard says "No backups" in plain text). Everything
+The Supabase project ran on the NANO/free tier, which keeps **no automatic
+backups**. Since 2026-11-03 the org is on Pro (daily backups, 7-day
+retention), but those live inside Supabase - this dump is the off-site copy
+with a longer history, and the only one that survives losing the account. Everything
 else MOCA owns is already covered by `scripts/backup_to_drive.ps1` - config.json,
 the SQLite plan database and the banner PNGs - but the identity and permission
 data lives only in Supabase:
@@ -544,7 +546,7 @@ def notify(subject: str, body: str) -> None:
 # --------------------------------------------------------------------------
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
-        description="Back up / restore the Supabase auth + roles data (the free tier keeps no backups)."
+        description="Back up / restore the Supabase auth + roles data (the off-site copy of Supabase identity data)."
     )
     ap.add_argument("--out-dir", default=str(PROJECT_ROOT / "data" / "supabase_backups"),
                     help="where dumps live (default: data/supabase_backups)")
