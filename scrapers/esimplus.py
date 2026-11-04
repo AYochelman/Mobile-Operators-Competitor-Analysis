@@ -168,6 +168,31 @@ def _fetch_esimplus_country(slug, usd_rate):
         return []
 
 
+def _esimplus_block_reason():
+    """Probe one page; return why the site can't be scraped, or None if it answers 200.
+
+    Since ~2026-09-15 esimplus.me answers every request (pages, sitemap) with a
+    Cloudflare managed challenge (403 + `cf-mitigated: challenge`). Every per-country
+    fetch then failed at debug level and the scraper returned [] silently for 6 weeks.
+    """
+    import urllib.request as _ur, urllib.error as _ue
+    req = _ur.Request(
+        "https://esimplus.me/esim-france",
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+    )
+    try:
+        with _ur.urlopen(req, timeout=15):
+            return None
+    except _ue.HTTPError as e:
+        if (e.headers.get("cf-mitigated") or "").lower() == "challenge":
+            return f"Cloudflare challenge (HTTP {e.code})"
+        if e.code >= 500:
+            return f"site down (HTTP {e.code})"
+        return f"HTTP {e.code}"
+    except Exception as e:
+        return f"unreachable ({e})"
+
+
 def scrape_esimplus_global(_page=None, usd_rate=None):
     """Scrape eSIM Plus plans via per-country pages (~214 destinations)."""
     from concurrent.futures import ThreadPoolExecutor, as_completed as _ac
@@ -184,5 +209,7 @@ def scrape_esimplus_global(_page=None, usd_rate=None):
                 all_plans.extend(fut.result() or [])
             except Exception as e:
                 logger.debug(f"esimplus: {e}")
+    if not all_plans:
+        logger.warning(f"eSIM Plus: 0 plans - {_esimplus_block_reason() or 'site reachable, parser found nothing'}")
     logger.info(f"eSIM Plus: {len(all_plans)} plans from {len(ESIMPLUS_COUNTRY_SLUGS)} destinations")
     return all_plans

@@ -65,12 +65,39 @@ def _yesim_get_pp(url):
         return None
 
 
-def _yesim_plans_from_pp(pp, usd_rate, heb_override=None):
-    out = []
+def _yesim_page_rate(pp):
     try:
-        rate = float((pp.get("currency") or {}).get("rate", 1)) or 1.0
+        return float((pp.get("currency") or {}).get("rate", 1)) or 1.0
     except (TypeError, ValueError):
-        rate = 1.0
+        return 1.0
+
+
+def _yesim_run_rate(pps, label):
+    """One geo rate for the whole run.
+
+    Yesim's backend multiplies vanillaPrice by a per-visitor geo rate (1.2 for an
+    Israeli IP since 2026-07, rendered on the page as e.g. $4.20 for a 350-cent
+    plan). Some responses intermittently come back with rate 1.0 instead - a
+    single page (the 36-plan europe bundle, Sep 2026) or the whole catalog (3,500
+    rows on 2026-10-05) - which flapped every plan by x0.833 / x1.2. 1.0 is the
+    fallback, so take the highest rate seen in the run and apply it to every page.
+    """
+    rates = [_yesim_page_rate(pp) for pp in pps if pp]
+    if not rates:
+        return 1.0
+    run_rate = max(rates)
+    if min(rates) != run_rate:
+        logger.warning(f"Yesim {label}: pages disagree on geo rate {sorted(set(rates))}"
+                       f" - pricing all at {run_rate}")
+    if run_rate == 1.0:
+        logger.warning(f"Yesim {label}: every page returned geo rate 1.0 (fallback?)")
+    return run_rate
+
+
+def _yesim_plans_from_pp(pp, usd_rate, heb_override=None, rate=None):
+    out = []
+    if rate is None:
+        rate = _yesim_page_rate(pp)
     for key in ("standardPlans", "unlimitedPlans"):
         for p in (pp.get(key) or []):
             if heb_override:
@@ -110,6 +137,16 @@ def _yesim_plans_from_pp(pp, usd_rate, heb_override=None):
     return out
 
 
+def _yesim_dedup(plans):
+    """Unique plan_name, cheapest wins (deterministic, unlike first-come from as_completed)."""
+    best = {}
+    for plan in plans:
+        k = plan["plan_name"]
+        if k not in best or plan["original_price"] < best[k]["original_price"]:
+            best[k] = plan
+    return list(best.values())
+
+
 def scrape_yesim_global(_page=None, usd_rate=None):
     """Yesim single-country eSIM plans from the site's embedded __NEXT_DATA__ JSON
     (browser UA required; urllib/empty-UA gets a 202). Enumerates countries from
@@ -125,21 +162,20 @@ def scrape_yesim_global(_page=None, usd_rate=None):
     urls = ["https://yesim.app" + (c.get("url") or "")
             for c in (seed.get("popularCountries") or [])
             if (c.get("url") or "").startswith("/country/")]
-    all_plans, seen = [], set()
+    pps = {}
     with ThreadPoolExecutor(max_workers=8) as ex:
         futs = {ex.submit(_yesim_get_pp, u): u for u in urls}
         for f in as_completed(futs):
             try:
-                pp = f.result()
-                if not pp:
-                    continue
-                for plan in _yesim_plans_from_pp(pp, usd_rate):
-                    k = (plan["carrier"], plan["plan_name"])
-                    if k not in seen:
-                        seen.add(k)
-                        all_plans.append(plan)
+                pps[futs[f]] = f.result()
             except Exception as exc:
                 logger.warning(f"Yesim country {futs[f]}: {exc}")
+    rate = _yesim_run_rate(list(pps.values()) + [seed], "global")
+    all_plans = _yesim_dedup(
+        plan
+        for u in sorted(pps) if pps[u]
+        for plan in _yesim_plans_from_pp(pps[u], usd_rate, rate=rate)
+    )
     logger.info(f"Yesim global: {len(all_plans)} plans from {len(urls)} countries")
     return all_plans
 
@@ -150,23 +186,21 @@ def scrape_yesim_regions(_page=None, usd_rate=None):
     from concurrent.futures import ThreadPoolExecutor, as_completed
     if usd_rate is None:
         usd_rate = core._get_usd_to_ils()
-    all_plans, seen = [], set()
-
-    def _one(slug, heb):
-        pp = _yesim_get_pp(f"https://yesim.app/regions/{slug}/")
-        return _yesim_plans_from_pp(pp, usd_rate, heb_override=heb) if pp else []
-
+    pps = {}
     with ThreadPoolExecutor(max_workers=6) as ex:
-        futs = {ex.submit(_one, slug, heb): slug
-                for slug, heb in _YESIM_REGION_TO_HEBREW.items()}
+        futs = {ex.submit(_yesim_get_pp, f"https://yesim.app/regions/{slug}/"): slug
+                for slug in _YESIM_REGION_TO_HEBREW}
         for f in as_completed(futs):
             try:
-                for plan in f.result():
-                    k = (plan["carrier"], plan["plan_name"])
-                    if k not in seen:
-                        seen.add(k)
-                        all_plans.append(plan)
+                pps[futs[f]] = f.result()
             except Exception as exc:
                 logger.warning(f"Yesim region {futs[f]}: {exc}")
+    rate = _yesim_run_rate(list(pps.values()), "regions")
+    all_plans = _yesim_dedup(
+        plan
+        for slug in sorted(pps) if pps[slug]
+        for plan in _yesim_plans_from_pp(pps[slug], usd_rate,
+                                         heb_override=_YESIM_REGION_TO_HEBREW[slug], rate=rate)
+    )
     logger.info(f"Yesim regions: {len(all_plans)} plans from {len(_YESIM_REGION_TO_HEBREW)} regions")
     return all_plans

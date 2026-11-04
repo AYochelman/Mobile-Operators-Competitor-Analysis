@@ -730,6 +730,9 @@ from scrapers.yesim import (  # noqa: E402,F401
     _yesim_iso_to_heb,
     _yesim_get_pp,
     _yesim_plans_from_pp,
+    _yesim_page_rate,
+    _yesim_run_rate,
+    _yesim_dedup,
     scrape_yesim_global,
     scrape_yesim_regions,
 )
