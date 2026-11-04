@@ -12,7 +12,10 @@ logger = core.logger
 
 def scrape_hotmobile(page):
     import json as _json
-    page.goto("https://www.hotmobile.co.il/saleslobby", timeout=30000, wait_until="networkidle")
+    # domcontentloaded, NOT networkidle: since ~2026-11-04 the page keeps a
+    # connection open, so networkidle never fires and goto timed out after 30s.
+    # The plan cards are server-rendered, so the selector wait below is enough.
+    page.goto("https://www.hotmobile.co.il/saleslobby", timeout=30000, wait_until="domcontentloaded")
     page.wait_for_selector(".package-wrap.js-plan-filter", timeout=15000)
     plans = []
     # query_selector_all returns ALL elements including display:none (hidden tabs)
