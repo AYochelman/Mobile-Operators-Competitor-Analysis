@@ -65,3 +65,6 @@ twa/*.apk
 twa/*.aab
 twa/*.idsig
 twa/node_modules/
+
+# forecast readiness verdict + history (scripts/forecast_backtest.py --readiness)
+/data/forecast_readiness*.json*

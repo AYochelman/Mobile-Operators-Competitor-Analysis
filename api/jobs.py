@@ -6,6 +6,8 @@ monkeypatching `app.<name>` in tests keeps working; app.py re-exports
 everything defined here.
 """
 import app as core  # noqa: E402  (the monolith; imported at its bottom)
+import json
+import os
 from datetime import datetime, timezone, timedelta
 from flask import Flask, jsonify, render_template, request, make_response, send_from_directory, g, abort, redirect, Response
 logger = core.logger
@@ -680,6 +682,54 @@ def run_scraper_drift_job(send=True):
         except Exception as e:
             logger.error(f"Scraper drift Telegram failed: {e}")
     return {"checked": len(results), "off": bad, "results": results, "message": message, "sent": sent}
+
+
+def run_forecast_readiness_job(send=True):
+    """Monthly go/no-go check for an eSIM price-drop forecast model (1st, 06:00).
+
+    Runs scripts/forecast_backtest.py --readiness in a child process (it
+    re-extracts every archive snapshot, ~5 min and a few hundred MB, so it stays
+    out of the Flask process), then reports the verdict it wrote to
+    data/forecast_readiness.json. READY means a full year of history AND a model
+    that clears the READINESS bar on the held-out window - the cue to build it.
+    """
+    import subprocess
+    import sys
+    import notifier
+    root = os.path.dirname(os.path.abspath(core.__file__))
+    proc = subprocess.run(
+        [sys.executable, os.path.join(root, "scripts", "forecast_backtest.py"), "--readiness"],
+        cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace",
+        timeout=3600)
+    if proc.returncode != 0:
+        tail = (proc.stderr or proc.stdout)[-800:]
+        logger.error(f"Forecast readiness check failed: {tail}")
+        verdict, message = None, f"⚠️ בדיקת מוכנות מודל חיזוי נכשלה\n{tail}"
+    else:
+        with open(os.path.join(root, "data", "forecast_readiness.json"), encoding="utf-8") as f:
+            verdict = json.load(f)
+        ready = verdict["verdict"] == "READY"
+        lines = [("✅ מודל חיזוי מחירים: מוכן לבנייה" if ready
+                  else "\U0001f4c8 מודל חיזוי מחירים: עדיין לא מוכן"),
+                 f"היסטוריה: {verdict['history_days']} ימים "
+                 f"(נדרשים {verdict['criteria']['min_history_days']}, "
+                 f"הכי מוקדם {verdict['earliest_ready_date']})"]
+        for key, t in verdict["tasks"].items():
+            lines.append(f"{key}: AUC {t['auc']}, lift {t['lift_top5']}, "
+                         f"skill {t['brier_skill']}, pos {t['test_positives']} "
+                         f"{'PASS' if t['passes'] else 'fail'}")
+        if ready:
+            lines.append("לבנות את המודל: " + ", ".join(verdict["ready_tasks"]))
+        message = "\n".join(lines)
+        logger.info(f"Forecast readiness: {verdict['verdict']} ({verdict['history_days']}d)")
+    sent = False
+    config = core.load_config()
+    if send and config.get("telegram_bot_token"):
+        try:
+            sent = notifier.send_notification(message, config)
+        except Exception as e:
+            logger.error(f"Forecast readiness Telegram failed: {e}")
+    return {"verdict": verdict, "message": message, "sent": sent}
 
 
 @bp.route("/api/scraper-drift/now", methods=["GET", "POST"])

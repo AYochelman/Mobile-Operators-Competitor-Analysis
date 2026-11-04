@@ -20,6 +20,13 @@ lookup table, and an L2 logistic regression (numpy only - no sklearn here).
     python scripts/forecast_backtest.py              # uses the cache if present
     python scripts/forecast_backtest.py --rebuild    # re-extract from the DB (~5 min)
     python scripts/forecast_backtest.py --json out.json
+    python scripts/forecast_backtest.py --readiness  # rebuild + go/no-go verdict
+
+--readiness writes data/forecast_readiness.json and appends one line per run to
+data/forecast_readiness_log.jsonl. The verdict is READY only when the history
+covers a full year (seasonality) AND a model beats the base rate on the rolling
+held-out window by the margins in READINESS. The monthly scheduled task
+"forecast-model-readiness" runs this and builds the model when it says READY.
 """
 import argparse
 import datetime as dt
@@ -44,9 +51,23 @@ CACHE = os.path.join(ROOT, "data", "_forecast_backtest_cache.pkl.gz")
 H = 14                  # forecast horizon, days
 STEP = 7                # days between cutoffs
 WARMUP = 45             # days of history before the first cutoff
-SPLIT_DAY = "2026-08-25"
+TEST_DAYS = 90          # rolling held-out window: the last TEST_DAYS of history
+SPLIT_DAY = None        # set in main(): last day - TEST_DAYS (or --split)
 MIN_PLAN_PCT = 0.02     # plan move smaller than this = noise
 FLOOR_PCT, FLOOR_ILS = 0.05, 2.0   # same threshold as notify_esim_price_drops
+
+# Go/no-go bar for building a user-facing forecast. A forecast that is wrong
+# most of the time misleads B2C users, so all of these must hold on the
+# held-out window for at least one task (A = plan drop, B = destination floor).
+READINESS = {
+    "min_history_days": 365,    # one full seasonal cycle (summer peak, holidays)
+    "min_auc": 0.70,
+    "min_lift_top5": 3.0,       # top-5% scored rows drop >= 3x as often as average
+    "min_brier_skill": 0.05,    # calibrated probabilities beat the base rate
+    "min_test_positives": {"plans_y_drop": 200, "floor": 100},
+}
+READINESS_JSON = os.path.join(ROOT, "data", "forecast_readiness.json")
+READINESS_LOG = os.path.join(ROOT, "data", "forecast_readiness_log.jsonl")
 
 
 def d2i(s):
@@ -424,6 +445,43 @@ def run_task_floor(rows):
     return res, coefs, savings, len(tr), len(te)
 
 
+# ---------------------------------------------------------------- readiness
+def readiness(out, history_days):
+    """Go/no-go verdict over the backtest results (see READINESS)."""
+    bar = READINESS
+    tasks = {}
+    for key in ("plans_y_drop", "floor"):
+        task = out[key]
+        best = max((r for r in task["results"] if r["model"] != "constant base rate"),
+                   key=lambda r: r["auc"])
+        positives = int(round(best["prevalence"] * task["n_test"]))
+        checks = {
+            "auc": best["auc"] >= bar["min_auc"],
+            "lift_top5": (best["lift_top5"] or 0) >= bar["min_lift_top5"],
+            "brier_skill": (best["brier_skill_vs_base"] or -1) >= bar["min_brier_skill"],
+            "test_positives": positives >= bar["min_test_positives"][key],
+        }
+        tasks[key] = {"best_model": best["model"], "auc": best["auc"],
+                      "lift_top5": best["lift_top5"],
+                      "brier_skill": best["brier_skill_vs_base"],
+                      "test_positives": positives, "checks": checks,
+                      "passes": all(checks.values())}
+    history_ok = history_days >= bar["min_history_days"]
+    ready_tasks = [k for k, t in tasks.items() if t["passes"]] if history_ok else []
+    return {
+        "checked_at": dt.datetime.now().isoformat(timespec="seconds"),
+        "verdict": "READY" if ready_tasks else "NOT_READY",
+        "ready_tasks": ready_tasks,
+        "history_days": history_days,
+        "history_ok": history_ok,
+        "earliest_ready_date": i2d(d2i(dt.date.today().isoformat())
+                                   + max(0, bar["min_history_days"] - history_days)),
+        "split_day": SPLIT_DAY,
+        "criteria": bar,
+        "tasks": tasks,
+    }
+
+
 # ---------------------------------------------------------------- main
 def print_table(title, res):
     print(f"\n{title}")
@@ -438,8 +496,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--rebuild", action="store_true")
     ap.add_argument("--json")
+    ap.add_argument("--split", help="override the train/test split day (YYYY-MM-DD)")
+    ap.add_argument("--readiness", action="store_true",
+                    help="rebuild, then write the go/no-go verdict (see READINESS)")
     args = ap.parse_args()
-    data = load(args.rebuild)
+    data = load(args.rebuild or args.readiness)
+    global SPLIT_DAY
+    seen_days = sorted({d for v in data["seen_days"].values() for d in v})
+    history_days = seen_days[-1] - seen_days[0] + 1
+    SPLIT_DAY = args.split or i2d(seen_days[-1] - TEST_DAYS)
+    print(f"history: {i2d(seen_days[0])} .. {i2d(seen_days[-1])} ({history_days} days)")
     n_ev = sum(len(r["events"]) for r in data["plans"].values())
     print(f"plans tracked: {len(data['plans']):,}, real price events (>= {MIN_PLAN_PCT:.0%}, FX-free): {n_ev:,}")
     print(f"horizon {H}d, split {SPLIT_DAY} (test = cutoffs after it)")
@@ -452,7 +518,8 @@ def main():
         print_table(f"TASK A - plan {label} within {H}d (train {ntr:,} / test {nte:,})", res)
         print(f"  logistic coefs (standardized): {coefs}")
         print(f"  test positives by carrier (top 5 share): {conc}")
-        out[f"plans_{target}"] = {"results": res, "coefs": coefs, "concentration": conc}
+        out[f"plans_{target}"] = {"results": res, "coefs": coefs, "concentration": conc,
+                                  "n_test": nte}
 
     rows_b = task_floor(data)
     res, coefs, savings, ntr, nte = run_task_floor(rows_b)
@@ -460,7 +527,23 @@ def main():
                 f"within {H}d (train {ntr:,} / test {nte:,})", res)
     print(f"  logistic coefs (standardized): {coefs}")
     print(f"  size of the drops that happened (test): {savings}")
-    out["floor"] = {"results": res, "coefs": coefs, "savings": savings}
+    out["floor"] = {"results": res, "coefs": coefs, "savings": savings, "n_test": nte}
+    if args.readiness:
+        verdict = readiness(out, history_days)
+        with open(READINESS_JSON, "w", encoding="utf-8") as f:
+            json.dump({**verdict, "backtest": out}, f, ensure_ascii=False, indent=2)
+        with open(READINESS_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps({k: verdict[k] for k in
+                                ("checked_at", "verdict", "ready_tasks", "history_days")}
+                               | {k: {m: t[m] for m in ("auc", "lift_top5", "brier_skill",
+                                                       "test_positives", "passes")}
+                                  for k, t in verdict["tasks"].items()},
+                               ensure_ascii=False) + "\n")
+        print(f"\nREADINESS: {verdict['verdict']} (history {history_days}d, "
+              f"earliest possible {verdict['earliest_ready_date']}); "
+              + ", ".join(f"{k}: auc {t['auc']} lift {t['lift_top5']} skill {t['brier_skill']}"
+                          f" pos {t['test_positives']} {'PASS' if t['passes'] else 'fail'}"
+                          for k, t in verdict["tasks"].items()))
     if args.json:
         with open(args.json, "w", encoding="utf-8") as f:
             json.dump(out, f, ensure_ascii=False, indent=2)

@@ -2401,6 +2401,7 @@ from api.jobs import (  # noqa: E402,F401
     scrape_resellers_job,
     run_morning_check_job,
     run_scraper_drift_job,
+    run_forecast_readiness_job,
     api_scraper_drift_now,
     api_morning_check_now,
     api_executive_summary,
@@ -2988,6 +2989,9 @@ if __name__ == "__main__":
     # Weekly scraper drift probe (fixture URL sets re-fetched live) - see run_scraper_drift_job
     scheduler.add_job(run_scraper_drift_job, "cron", day_of_week="sun", hour=6, minute=30,
                       id="scraper_drift", **_job_defaults)
+    # Monthly go/no-go for an eSIM price-drop forecast model - see run_forecast_readiness_job
+    scheduler.add_job(run_forecast_readiness_job, "cron", day=1, hour=6, minute=0,
+                      id="forecast_readiness", **_job_defaults)
     # /mobile-deals consumer reminders (email/WhatsApp) — after the 07:30 scrape
     # so better-deal checks run against fresh prices
     scheduler.add_job(run_mobile_reminders_job, "cron", hour=9, minute=15,
