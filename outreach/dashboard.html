@@ -1,0 +1,934 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOCA Guest Connect — מעקב פניות לרשתות מלונות</title>
+<style>
+:root{
+  --bg:#f9f4ee; --card:#ffffff; --cream:#f5ede0; --sand:#e8d5bc; --border:#e0cdb5;
+  --bolt:#5c3317; --dark:#4a2a13; --text:#3b1f0d; --sub:#8a6a4a; --muted:#a08468;
+  --up:#b4472d; --down:#4a7c3f; --hot:#c9622f;
+  --v-bg:#e3f3e9; --v-t:#246b43;
+  --i-bg:#fdf0dc; --i-t:#8a5a1a;
+  --n-bg:#f0e8dd; --n-t:#8a6a4a;
+  --sh:0 4px 18px rgba(74,42,19,.07); --sh-hover:0 10px 28px rgba(74,42,19,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1b1410; --card:#261d16; --cream:#2f241b; --sand:#40301f; --border:#4a3826;
+    --bolt:#d8a468; --dark:#f0e2d0; --text:#e8d9c6; --sub:#bd9d7d; --muted:#96795c;
+    --up:#e07a5c; --down:#7fbf70; --hot:#e08a4e;
+    --v-bg:#1e3a2a; --v-t:#8fd8a8; --i-bg:#3d2f14; --i-t:#e6c37a; --n-bg:#33291d; --n-t:#bd9d7d;
+    --sh:0 4px 18px rgba(0,0,0,.35); --sh-hover:0 10px 28px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f9f4ee; --card:#ffffff; --cream:#f5ede0; --sand:#e8d5bc; --border:#e0cdb5;
+  --bolt:#5c3317; --dark:#4a2a13; --text:#3b1f0d; --sub:#8a6a4a; --muted:#a08468;
+  --up:#b4472d; --down:#4a7c3f; --hot:#c9622f;
+  --v-bg:#e3f3e9; --v-t:#246b43; --i-bg:#fdf0dc; --i-t:#8a5a1a; --n-bg:#f0e8dd; --n-t:#8a6a4a;
+  --sh:0 4px 18px rgba(74,42,19,.07); --sh-hover:0 10px 28px rgba(74,42,19,.12);
+}
+:root[data-theme="dark"]{
+  --bg:#1b1410; --card:#261d16; --cream:#2f241b; --sand:#40301f; --border:#4a3826;
+  --bolt:#d8a468; --dark:#f0e2d0; --text:#e8d9c6; --sub:#bd9d7d; --muted:#96795c;
+  --up:#e07a5c; --down:#7fbf70; --hot:#e08a4e;
+  --v-bg:#1e3a2a; --v-t:#8fd8a8; --i-bg:#3d2f14; --i-t:#e6c37a; --n-bg:#33291d; --n-t:#bd9d7d;
+  --sh:0 4px 18px rgba(0,0,0,.35); --sh-hover:0 10px 28px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{direction:rtl}
+body{
+  background:var(--bg); color:var(--text); min-height:100vh;
+  font-family:"Segoe UI","Assistant","Arial Hebrew","Noto Sans Hebrew",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased; padding:28px 20px 80px;
+}
+.wrap{max-width:1240px;margin:0 auto}
+header.page{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+.brand{display:flex;gap:14px;align-items:center}
+.bolt-badge{width:46px;height:46px;border-radius:14px;background:var(--bolt);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+.kicker{font-size:11.5px;font-weight:800;letter-spacing:2.4px;color:var(--hot);text-transform:uppercase}
+h1{font-size:clamp(20px,3vw,28px);font-weight:800;color:var(--dark);line-height:1.2;text-wrap:balance}
+.subtitle{font-size:13.5px;color:var(--sub);margin-top:4px;max-width:70ch}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button,select,input,textarea{font:inherit;color:inherit}
+.btn{border:1.5px solid var(--border);background:var(--card);color:var(--bolt);font-weight:700;font-size:13px;
+  padding:9px 14px;border-radius:11px;cursor:pointer;transition:border-color .15s, background .15s}
+.btn:hover{border-color:var(--bolt);background:var(--cream)}
+.btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+.btn.primary{background:var(--bolt);color:var(--bg);border-color:var(--bolt)}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:22px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--sh)}
+.stat .lbl{font-size:12px;font-weight:700;color:var(--sub)}
+.stat .val{font-size:27px;font-weight:800;color:var(--dark);font-variant-numeric:tabular-nums;line-height:1.25}
+.stat.money .val{color:var(--down)}
+
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar input[type=search]{flex:1;min-width:220px;background:var(--card);border:1.5px solid var(--border);
+  border-radius:11px;padding:9px 13px;font-size:14px}
+.toolbar select{background:var(--card);border:1.5px solid var(--border);border-radius:11px;padding:9px 12px;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer}
+
+.chain{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--sh);margin-bottom:14px;overflow:hidden}
+.chain-head{display:flex;align-items:center;gap:14px;padding:15px 18px;cursor:pointer;flex-wrap:wrap}
+.chain-head:hover{background:var(--cream)}
+.chain-logo{width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:15px;color:#fff}
+.chain-name{font-size:16.5px;font-weight:800;color:var(--dark)}
+.chain-meta{font-size:12.5px;color:var(--muted);font-weight:600}
+.chain-meta a{color:var(--sub)}
+.chain-right{margin-inline-start:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{font-size:11.5px;font-weight:800;padding:4px 11px;border-radius:999px;letter-spacing:.3px;white-space:nowrap}
+.chev{color:var(--muted);font-size:13px;transition:transform .18s}
+.chain.open .chev{transform:rotate(90deg)}
+.chain-body{display:none;border-top:1px solid var(--border)}
+.chain.open .chain-body{display:block}
+
+.contact{display:grid;grid-template-columns:210px 1fr 170px 150px minmax(160px,1fr);gap:12px;align-items:center;
+  padding:13px 18px;border-bottom:1px solid var(--cream)}
+.contact:last-of-type{border-bottom:0}
+@media(max-width:920px){.contact{grid-template-columns:1fr 1fr;row-gap:10px}}
+@media(max-width:560px){.contact{grid-template-columns:1fr}}
+.c-role{font-size:11px;font-weight:800;color:var(--hot);letter-spacing:1.2px;text-transform:uppercase}
+.c-name{font-size:14.5px;font-weight:800;color:var(--dark)}
+.c-name a{color:inherit;text-decoration:none;border-bottom:1px dashed var(--sand)}
+.c-email{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.email-txt{font-size:13px;font-weight:600;direction:ltr;unicode-bidi:embed;color:var(--text);word-break:break-all}
+.chip{font-size:10.5px;font-weight:800;padding:2.5px 9px;border-radius:999px;white-space:nowrap}
+.chip.v{background:var(--v-bg);color:var(--v-t)}
+.chip.i{background:var(--i-bg);color:var(--i-t)}
+.chip.n{background:var(--n-bg);color:var(--n-t)}
+.mini{border:1px solid var(--border);background:transparent;border-radius:8px;font-size:11.5px;font-weight:700;
+  color:var(--sub);padding:3px 9px;cursor:pointer}
+.mini:hover{border-color:var(--bolt);color:var(--bolt)}
+.status-sel{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:7px 9px;font-size:12.5px;font-weight:700;
+  background:var(--card);cursor:pointer}
+.s-0{color:var(--muted)} .s-1{color:var(--hot)} .s-2{color:var(--bolt)} .s-3{color:var(--down)}
+.s-4{color:var(--down);font-weight:800} .s-5{color:var(--down);font-weight:800} .s-6{color:var(--up)}
+.c-date{font-size:11.5px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.c-notes input{width:100%;border:1.5px solid transparent;background:var(--cream);border-radius:10px;
+  padding:7px 10px;font-size:12.5px}
+.c-notes input:focus{border-color:var(--border);background:var(--card)}
+.chain-notes{padding:10px 18px 15px;font-size:12.5px;color:var(--sub);line-height:1.55;background:var(--cream);border-top:1px solid var(--border)}
+.chain-notes b{color:var(--dark)}
+
+section.tpl{margin-top:38px}
+section.tpl h2{font-size:19px;font-weight:800;color:var(--dark);margin-bottom:4px}
+.tpl-lead{font-size:13px;color:var(--sub);margin-bottom:14px}
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:860px){.tpl-grid{grid-template-columns:1fr}}
+.tpl-card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--sh);overflow:hidden}
+.tpl-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--cream)}
+.tpl-head h3{font-size:14px;font-weight:800;color:var(--dark)}
+.tpl-body{padding:14px 16px;max-height:300px;overflow:auto;font-size:12.8px;line-height:1.65;color:var(--sub);white-space:pre-wrap}
+.tpl-body[dir=ltr]{text-align:left}
+.toast{position:fixed;bottom:26px;inset-inline-start:50%;transform:translateX(50%);background:var(--dark);color:var(--bg);
+  font-size:13.5px;font-weight:700;padding:11px 22px;border-radius:999px;box-shadow:var(--sh-hover);opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.show{opacity:1}
+footer{margin-top:44px;text-align:center;font-size:12px;color:var(--muted);font-weight:600;line-height:1.7}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="page">
+    <div class="brand">
+      <div class="bolt-badge">⚡</div>
+      <div>
+        <div class="kicker">MOCA GUEST CONNECT · OUTREACH</div>
+        <h1>מעקב פניות לרשתות מלונות בישראל</h1>
+        <div class="subtitle">מנכ"לים וסמנכ"לי שיווק · הסטטוסים וההערות נשמרים בדפדפן שלך (localStorage) · מיילים מסומנים: <span class="chip v">מאומת</span> פורסם בפומבי · <span class="chip i">משוער</span> נבנה מתבנית הדומיין · <span class="chip n">כללי</span> כתובת משרד/כללית</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="exportCsv">⬇ ייצוא CSV</button>
+      <button class="btn" id="resetAll">איפוס סטטוסים</button>
+    </div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="חיפוש רשת או איש קשר…" aria-label="חיפוש">
+    <select id="statusFilter" aria-label="סינון לפי סטטוס">
+      <option value="">כל הסטטוסים</option>
+    </select>
+  </div>
+
+  <div id="chains"></div>
+
+  <section class="tpl">
+    <h2>תבניות מייל</h2>
+    <p class="tpl-lead">לחיצה על ✉️ ליד איש קשר פותחת מייל מוכן עם השם ושם הרשת. אפשר גם להעתיק תבנית מלאה מכאן. הקבצים המלאים: <code>outreach/email-he.md</code> · <code>outreach/email-en.md</code></p>
+    <div class="tpl-grid" id="tplGrid"></div>
+  </section>
+
+  <footer>
+    הנתונים נאספו ממקורות פומביים ביולי 2026 — מומלץ לאמת תפקיד ומייל לפני שליחה.<br>
+    MOCA — Mobile Operators Competitor Analysis · mocaintel.com/hotels
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const CHAINS = [
+ {
+  "id": "fattal",
+  "chain_he": "רשת מלונות פתאל",
+  "chain_en": "Fattal Hotels / Leonardo",
+  "website": "https://www.fattal.co.il",
+  "phone": "03-5110000",
+  "general_email": "info@fattal.co.il",
+  "email_pattern": "firstname@fattal.co.il (מאומת: liatme@, gr@)",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "נדב ואסף פתאל",
+    "name_en": "Nadav & Asaf Fattal",
+    "title": "מנכ\"לים משותפים — פתאל ישראל",
+    "email": "nadav@fattal.co.il",
+    "email_status": "inferred",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": "מאיה שלו",
+    "name_en": "Maya Shalev",
+    "title": "סמנכ\"לית שיווק ומכירות",
+    "email": "maya@fattal.co.il",
+    "email_status": "inferred",
+    "linkedin": null
+   }
+  ],
+  "notes": "ספט' 2025: דוד פתאל מינה את בניו נדב ואסף למנכ\"לים משותפים של פעילות ישראל (החליפו את אביה מגן); דוד פתאל נותר מנכ\"ל הקבוצה. מאיה שלו מונתה ב-2025. מיילי המנהלים משוערים מהתבנית המאומתת firstname@fattal.co.il (גם asaf@fattal.co.il). מייל קשרי אורחים מאומת: gr@fattal.co.il, טל' 03-6081888."
+ },
+ {
+  "id": "isrotel",
+  "chain_he": "ישרוטל",
+  "chain_en": "Isrotel",
+  "website": "https://www.isrotel.co.il",
+  "phone": "03-5197777",
+  "general_email": null,
+  "email_pattern": "first.last@isrotel.com או liorr@isrotel.co.il — שתי תבניות לא מאומתות",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "ליאור רביב",
+    "name_en": "Lior Raviv",
+    "title": "מנכ\"ל",
+    "email": "lior.raviv@isrotel.com",
+    "email_status": "inferred",
+    "linkedin": "https://www.linkedin.com/in/lior-raviv-7a623533/"
+   },
+   {
+    "role": "cmo",
+    "name_he": "בני לוי",
+    "name_en": "Beni Levi",
+    "title": "סמנכ\"ל שיווק ומכירות",
+    "email": "beni.levi@isrotel.com",
+    "email_status": "inferred",
+    "linkedin": "https://linkedin.com/in/beni-levi-a1b08188"
+   }
+  ],
+  "notes": "רביב מנכ\"ל ~14 שנה, מאומת כמכהן ב-2025 (דוחות H1-2025, הסכם הילטון). בני לוי חזר לישרוטל כסמנכ\"ל שיווק ומכירות (החליף את נחום קרא); ראיון מ-15.3.2026 מאשר כהונה. חלופת מייל: liorr@ / bennyl@isrotel.co.il. מטה: המרד 29 ת\"א. טופס קשר באתר."
+ },
+ {
+  "id": "dan",
+  "chain_he": "מלונות דן",
+  "chain_en": "Dan Hotels",
+  "website": "https://www.danhotels.co.il",
+  "phone": "03-5202552",
+  "general_email": "management@danhotels.com",
+  "email_pattern": "first.last@danhotels.com (~65%)",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "שלומי טחן",
+    "name_en": "Shlomi Tahan",
+    "title": "מנכ\"ל",
+    "email": "shlomi.tahan@danhotels.com",
+    "email_status": "inferred",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": "טלי קידר",
+    "name_en": "Tali Kider",
+    "title": "סמנכ\"לית שיווק ודיגיטל",
+    "email": "tali.kider@danhotels.com",
+    "email_status": "inferred",
+    "linkedin": null
+   }
+  ],
+  "notes": "טחן מנכ\"ל מפבר' 2022 (החליף את רונן ניסנבאום), מאומת כמכהן ביוני 2025. קידר בתפקיד מ-2019, מופיעה בסיקור קמפיין קיץ 2025. מייל מאומת שפורסם: management@danhotels.com (וגם reservations@, incoming@). מיילי המנהלים משוערים."
+ },
+ {
+  "id": "israel_canada_brown",
+  "chain_he": "ישראל קנדה מלונות / בראון",
+  "chain_en": "Israel-Canada Hotels / Brown",
+  "website": "https://brownhotels.com",
+  "phone": "04-6728578",
+  "general_email": "res@ichotels.co.il",
+  "email_pattern": "לא ידועה — @ichotels.co.il",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "שני אזולאי",
+    "name_en": "Shani Azoulai",
+    "title": "מנכ\"לית פעילות ישראל (~24 מלונות)",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": "ענת אהרון",
+    "name_en": "Anat Aharon",
+    "title": "משנה למנכ\"ל וסמנכ\"לית שיווק ומכירות גלובלית",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   }
+  ],
+  "notes": "ישראל קנדה השלימה את רכישת בראון (פבר' 2025). מנכ\"ל הקבוצה ושותף: ראובן אלקס; שני אזולאי מנהלת את פעילות ישראל וקולקציית בראון. ענת אהרון (לשעבר פתאל) מונתה אוק' 2025; יש גם סמנכ\"לית שיווק — יעל בידרמן. res@ichotels.co.il מאומת (פוענח מהאתר)."
+ },
+ {
+  "id": "atlas",
+  "chain_he": "רשת מלונות אטלס",
+  "chain_en": "Atlas Boutique Hotels",
+  "website": "https://www.atlas.co.il",
+  "phone": "03-5425644",
+  "general_email": "management@atlashotels.co.il",
+  "email_pattern": "@atlashotels.co.il — תבנית אישית לא מאומתת (שימו לב: הדומיין שונה מהאתר)",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "ירון וליאור ליפמן",
+    "name_en": "Yaron & Lior Lifman",
+    "title": "מנכ\"לים משותפים",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": "ליטל פופלבסקי",
+    "name_en": "Lital Poplavsky",
+    "title": "סמנכ\"לית שיווק",
+    "email": "lital.poplavsky@atlashotels.co.il",
+    "email_status": "inferred",
+    "linkedin": null
+   }
+  ],
+  "notes": "~16 מלונות בוטיק (ת\"א, ירושלים, אילת) — קהל תיירים מובהק. האחים ליפמן מונו ב-2025 לאחר פרישת דני ליפמן. פופלבסקי מונתה 2025. management@atlashotels.co.il מאומת (פורסם באתר). הזמנות: *3411, עסקי/קבוצות: 03-5425556."
+ },
+ {
+  "id": "afi",
+  "chain_he": "אפריקה ישראל מלונות (AFI)",
+  "chain_en": "Africa Israel Hotels — Crowne Plaza / VERT / Indigo",
+  "website": "https://www.afi-hotels.co.il",
+  "phone": "03-5390829",
+  "general_email": "bayview@afi-hotels.co.il",
+  "email_pattern": "@afi-hotels.co.il — קודי תפקיד, לא שמות (VERT: @vert-hotels.co.il)",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "שרון אלון",
+    "name_en": "Sharon Alon",
+    "title": "מנכ\"ל",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": null,
+    "name_en": null,
+    "title": "סמנכ\"ל שיווק — התפקיד פנוי",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   }
+  ],
+  "notes": "משפחת דיין; זיכיון IHG בישראל (Crowne Plaza, VERT, Indigo) + מותג Poli. שרון אלון מאומת בעמוד ההנהלה (2025). אסף בן-דב (סמנכ\"ל שיווק ומכירות) עזב 1.7.2025 לג'ייקוב — לא פורסם מחליף; כדאי לפנות ישירות למנכ\"ל. bayview@ = קשרי אורחים רשתי, מאומת."
+ },
+ {
+  "id": "prima",
+  "chain_he": "מלונות פרימה",
+  "chain_en": "Prima Hotels",
+  "website": "https://www.prima.co.il",
+  "phone": "*9995",
+  "general_email": "millennium@prima.co.il",
+  "email_pattern": "@prima.co.il — משוער firstname@ (אימות חלקי: a***@)",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "אבי דור",
+    "name_en": "Avi Dor",
+    "title": "מנכ\"ל",
+    "email": "avi@prima.co.il",
+    "email_status": "inferred",
+    "linkedin": "https://www.linkedin.com/in/avi-dor-93346331/"
+   },
+   {
+    "role": "cmo",
+    "name_he": "חיים דוק",
+    "name_en": "Haim Dok",
+    "title": "סמנכ\"ל שיווק",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   }
+  ],
+  "notes": "דור מנכ\"ל מ-2017, מאומת בפבר' 2025 (16 מלונות). דוק סמנכ\"ל שיווק ותיק (~12 שנים) — אין אישור 2025-2026, לאמת לפני פנייה. מיילי מלונות: <hotelname>@prima.co.il. טופס קשר: prima.co.il/contact-us."
+ },
+ {
+  "id": "astral",
+  "chain_he": "רשת מלונות אסטרל",
+  "chain_en": "Astral Hotels (Eilat)",
+  "website": "https://www.astralhotels.co.il",
+  "phone": null,
+  "general_email": "info@astralhotels.co.il",
+  "email_pattern": "@astralhotels.co.il — תבנית לא מאומתת",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "בני זרח",
+    "name_en": "Benny Zerach",
+    "title": "בעלים ומנכ\"ל",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": "ליאור ברנמן",
+    "name_en": "Lior Brenman",
+    "title": "סמנכ\"לית שיווק",
+    "email": "lior@astralhotels.co.il",
+    "email_status": "inferred",
+    "linkedin": null
+   }
+  ],
+  "notes": "11 מלונות באילת. זרח — מייסד-שותף, בעלים ומנכ\"ל (אין אישור מפורש 2025-2026). ברנמן מונתה יוני 2023. info@ משוער (עמוד הקשר חסם גישה אוטומטית) — לאמת לפני שליחה."
+ },
+ {
+  "id": "club_hotel",
+  "chain_he": "קלאב הוטל",
+  "chain_en": "Club Hotel",
+  "website": "https://www.clubhotels.co.il",
+  "phone": "*8771",
+  "general_email": null,
+  "email_pattern": "@clubhotel.co.il — כנראה שם+אות (מדגם: Linas@); הדומיין שונה מהאתר",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "נור עאמר",
+    "name_en": "Noor Aamer",
+    "title": "מנכ\"ל",
+    "email": "noora@clubhotel.co.il",
+    "email_status": "inferred",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": null,
+    "name_en": null,
+    "title": "אין סמנכ\"ל שיווק רשתי מפורסם",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   }
+  ],
+  "notes": "רשת סוויטות — אילת (2 מלונות) + טבריה (עבר לניהול ישראל קנדה ב-2025). עאמר מנכ\"ל מ-2017, נבחר יוני 2025 ליו\"ר התאחדות מלונות אילת. שיווק דיגיטלי במיקור חוץ (MXI). וואטסאפ: 053-703-8371."
+ },
+ {
+  "id": "herbert_samuel",
+  "chain_he": "הרברט סמואל / אורכידאה / סטאי",
+  "chain_en": "Herbert Samuel / Orchid / The Setai (Nakash Group)",
+  "website": "https://herbertsamuel.com",
+  "phone": "03-5263332",
+  "general_email": "res@herbertsamuel.com",
+  "email_pattern": "@herbertsamuel.com — כתובות תפקיד בלבד",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "אבי חורמרו",
+    "name_en": "Avi Hormaru",
+    "title": "מנכ\"ל הקבוצה (בתהליך עזיבה — לאמת)",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": "ענת סטריק-דהאן",
+    "name_en": "Anat Strik-Dahan",
+    "title": "משנה למנכ\"ל — שיווק ומסחר",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   }
+  ],
+  "notes": "קבוצת יוקרה של האחים נקש (ג'ורדאש): הרברט סמואל, אורכידאה, סטאי. חורמרו בסכסוך מדווח עם הבעלים ולפי גלובס בתהליך יציאה — איש הקשר האפקטיבי היא סטריק-דהאן (לשעבר ממקימות פתאל), שמונתה משנה למנכ\"ל ואחראית שיווק. res@ מאומת (פוענח מהאתר). הזמנות: 03-5197112."
+ },
+ {
+  "id": "jacob",
+  "chain_he": "רשת מלונות ג'ייקוב",
+  "chain_en": "JACOB Hotels",
+  "website": "https://jacobhotels.com",
+  "phone": "*6367",
+  "general_email": "reservation@jacobhotels.com",
+  "email_pattern": "לא ידועה (רק reservation@ מפורסם)",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": null,
+    "name_en": null,
+    "title": "הבעלים אנונימי — אין מנכ\"ל מפורסם",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": "אסף בן-דב",
+    "name_en": "Assaf Ben-Dov",
+    "title": "משנה למנכ\"ל שיווק ומכירות",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   }
+  ],
+  "notes": "רשת צומחת — 11 נכסים (נווה אטי\"ב, אוהלו כנרת, שינקין ת\"א, מצפה רמון ועוד). איש הקשר הבכיר: אסף בן-דב, מונה 22.4.2025 ונכנס 1.7.2025 (בעברו 5 שנים סמנכ\"ל שיווק באפריקה ישראל מלונות). reservation@ מאומת (פוענח מהאתר)."
+ },
+ {
+  "id": "caesar",
+  "chain_he": "רשת מלונות קיסר פרמייר",
+  "chain_en": "Caesar Premier Hotels",
+  "website": "https://www.caesarpremier.com",
+  "phone": "03-6930000",
+  "general_email": null,
+  "email_pattern": "firstname@caesarhotels.co.il (מאומת: ofer@, sharon@); וריאנט firstname_lastinitial@",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "אבי אלה",
+    "name_en": "Avi Ella",
+    "title": "מנכ\"ל",
+    "email": "avi@caesarhotels.co.il",
+    "email_status": "inferred",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": "ישראל חיאט",
+    "name_en": "Israel Hayat",
+    "title": "סמנכ\"ל שיווק",
+    "email": "israel_h@caesarhotels.co.il",
+    "email_status": "verified",
+    "linkedin": null
+   }
+  ],
+  "notes": "⭐ עמוד ההנהלה הרשמי מפרסם מיילים ישירים (חי ביולי 2026) — מייל סמנכ\"ל השיווק מאומת מהאתר! 3 מלונות: אילת, ירושלים, טבריה. חלופה למנכ\"ל: avi_e@caesarhotels.co.il. סמנכ\"ל כספים מאומת: ofer@caesarhotels.co.il."
+ },
+ {
+  "id": "abraham",
+  "chain_he": "אברהם הוסטלס",
+  "chain_en": "Abraham Hostels / Abraham Group",
+  "website": "https://www.abraham.travel",
+  "phone": null,
+  "general_email": null,
+  "email_pattern": "כנראה firstname@abrahamhostels.com (לא מאומת)",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "גלעד שאולוף",
+    "name_en": "Gilad Shauloff",
+    "title": "מנכ\"ל הקבוצה",
+    "email": "gilad@abrahamhostels.com",
+    "email_status": "inferred",
+    "linkedin": "https://il.linkedin.com/in/gilad-shauloff-070378320"
+   },
+   {
+    "role": "cmo",
+    "name_he": null,
+    "name_en": null,
+    "title": "אין סמנכ\"ל שיווק מפורסם",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   }
+  ],
+  "notes": "🎯 קהל יעד מושלם — תיירים צעירים מחו\"ל (ת\"א, אילת). מנכ\"ל מאומת בעמוד ההנהלה הרשמי (ספט' 2025); אין CMO בעמוד ההנהלה. גייסו לאחרונה 30 מ' ש\"ח. יצירת קשר דרך טופס באתר בלבד."
+ },
+ {
+  "id": "c_hotels",
+  "chain_he": "רשת מלונות C הוטלס",
+  "chain_en": "C-Hotels Israel",
+  "website": "https://c-hotels.co.il",
+  "phone": "073-3400-44",
+  "general_email": "info@c-hotels.co.il",
+  "email_pattern": "לא ידועה (רק info@/spa@ מפורסמים)",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": "דודו עוז",
+    "name_en": "Dudu Oz",
+    "title": "מנכ\"ל",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": "אור ברקת",
+    "name_en": "Or Bareket",
+    "title": "סמנכ\"לית שיווק (לא מאומת עדכני)",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   }
+  ],
+  "notes": "3 מלונות (נווה אילן, האסיינדה ביער, Almond). עוז מנכ\"ל מ-2019, אוזכר לאחרונה פבר' 2024 — לאמת. אור ברקת — מקור יחיד לא מתוארך, ייתכן שאינה בתפקיד. info@c-hotels.co.il מאומת."
+ },
+ {
+  "id": "tamares",
+  "chain_he": "רשת מלונות טמרס",
+  "chain_en": "Tamares Hotels (Daniel Herzliya)",
+  "website": "https://www.tamareshotels.co.il",
+  "phone": "09-9520808",
+  "general_email": "reservation@tamareshotels.co.il",
+  "email_pattern": "לא ידועה",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": null,
+    "name_en": null,
+    "title": "אין מנכ\"ל מפורסם מאז 2020",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": null,
+    "name_en": null,
+    "title": "אין סמנכ\"ל שיווק מפורסם",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   }
+  ],
+  "notes": "בבעלות קבוצת Tamares (פויו זבלודוביץ'). הצטמצמה — כיום בעיקר דניאל הרצליה + Shizen Spa. reservation@ מאומת (פוענח מהאתר). עדיפות נמוכה."
+ },
+ {
+  "id": "rimonim",
+  "chain_he": "רשת מלונות רימונים",
+  "chain_en": "Rimonim Hotels",
+  "website": null,
+  "phone": "*6333",
+  "general_email": null,
+  "email_pattern": "לא ידועה",
+  "contacts": [
+   {
+    "role": "ceo",
+    "name_he": null,
+    "name_en": null,
+    "title": "בניהול נאמנים — אין הנהלה פעילה",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   },
+   {
+    "role": "cmo",
+    "name_he": null,
+    "name_en": null,
+    "title": "—",
+    "email": null,
+    "email_status": "not_found",
+    "linkedin": null
+   }
+  ],
+  "notes": "⚠️ לא רלוונטית לפנייה: הרשת קרסה (הקפאת הליכים אוק' 2023, ניהול נאמנים, 3 מלונות בלבד); הדומיין rimonim.com נתפס. מומלץ לסמן 'לא רלוונטי'."
+ }
+];
+
+const STATUSES = ['לא נשלח','נשלח מייל','פולו-אפ','התקבל מענה','נקבעה פגישה','פיילוט 🎉','לא רלוונטי'];
+const CHAIN_COLORS = ['#5c3317','#0e2a47','#1d4d3b','#7a2d3e','#3d3d6b','#8a5a1a','#2d5f6b','#6b3d2d','#44506b','#4a6b2d','#6b2d5f','#2d3a6b','#815c2e','#376057'];
+
+const TPLS = [
+  { id:'he_full',  title:'מייל מלא — עברית',  dir:'rtl', subject:'הכנסה חדשה לרשת מכל אורח מחו״ל — בלי מלאי ובלי תפעול' },
+  { id:'he_short', title:'פולו-אפ קצר — עברית', dir:'rtl', subject:'MOCA Guest Connect — שווה 15 דקות?' },
+  { id:'en_full',  title:'Full email — English', dir:'ltr', subject:'A new revenue stream from every international guest — zero operations' },
+  { id:'en_short', title:'Short follow-up — English', dir:'ltr', subject:'MOCA Guest Connect — worth 15 minutes?' },
+];
+const TPL_BODY = {
+he_full: `שלום [שם פרטי],
+
+השאלה הנפוצה ביותר שאורח מחו"ל שואל בצ'ק-אין היא "איך מתחברים לאינטרנט?" — והיום המלון עונה עליה בלי להרוויח ממנה דבר.
+
+אני מבקש להציג בפניכם את MOCA Guest Connect — פורטל דיגיטלי ממותג בצבעי [שם הרשת], שמציג לאורח בזמן אמת השוואה של כל חבילות ה-eSIM והסים לתיירים בישראל: למעלה מ-30 ספקים גלובליים ו-10 מפעילים מקומיים, במחירים שמתעדכנים פעמיים ביום ובשפה של האורח.
+
+מה הרשת מקבלת:
+• הכנסה פסיבית חדשה — עמלה על כל רכישה שמקורה ב-QR של המלון, בחלוקה שקופה של 50/50.
+• אפס תפעול — אין מלאי, אין סים פיזי, אין תמיכה טכנית. האורח רוכש ישירות מהספק.
+• שירות ומיתוג — הפורטל נראה כשירות של המלון, ועונה מקצועית על השאלה שהכי מעסיקה את הדלפק.
+• אנליטיקה על קהל האורחים — מדינות מקור, ביקושים ושעות שיא, ברמת הנכס וברמת הרשת.
+• ניהול מרוכז לרשת — פורטל ממותג לכל מותג ברשת, עם SLA ומנהל לקוח ייעודי.
+
+ההתקנה אינה נוגעת במערכות המלון (ללא אינטגרציית PMS) — הכל מוכן תוך 48 שעות.
+
+ההצעה שלי: פיילוט של 60 יום בנכס אחד לבחירתכם — ללא עלות, ללא כרטיס אשראי וללא התחייבות.
+
+הדגמה חיה: https://mocaintel.com/hotels
+
+אשמח לשיחת היכרות קצרה של 15 דקות, או לשלוח דמו ממותג בצבעי [שם הרשת].
+
+בברכה,
+אלון יוכלמן
+מייסד, MOCA — Mobile Operators Competitor Analysis
+Helpdesk@mocaintel.com | mocaintel.com`,
+he_short: `שלום [שם פרטי],
+
+כל אורח מחו"ל שואל בצ'ק-אין "איך מתחברים לאינטרנט?" — MOCA Guest Connect הופך את התשובה למקור הכנסה: פורטל ממותג בצבעי המלון שמשווה בזמן אמת 30+ ספקי eSIM, והמלון מקבל עמלה על כל רכישה. אפס תפעול, אפס אינטגרציה.
+
+מציע פיילוט 60 יום חינם בנכס אחד. הדגמה חיה: https://mocaintel.com/hotels
+
+שווה 15 דקות?
+
+אלון יוכלמן · MOCA · Helpdesk@mocaintel.com`,
+en_full: `Hi [First name],
+
+The most common question an international guest asks at check-in is "How do I get online?" — and today your hotel answers it without earning anything from it.
+
+I'd like to introduce MOCA Guest Connect — a digital portal branded in [Chain name]'s colors that shows your guests a real-time comparison of every eSIM and tourist SIM deal in Israel: over 30 global providers and 10 local operators, refreshed twice a day, in the guest's own language.
+
+What the chain gets:
+• A new passive revenue stream — a commission on every purchase from the hotel's QR, with a transparent 50/50 split.
+• Zero operations — no inventory, no physical SIMs, no support burden.
+• Service & branding — the portal looks like the hotel's own service.
+• Guest-audience analytics — countries of origin, demand and peak hours, per property and chain-wide.
+• Centralized chain management with a dedicated SLA and account manager.
+
+Setup touches none of your systems (no PMS integration) — live within 48 hours.
+
+My offer: a 60-day pilot at one property of your choice — free, no credit card, no commitment.
+
+Live demo: https://mocaintel.com/hotels?lang=en
+
+I'd be glad to schedule a short 15-minute intro call, or send a demo branded in [Chain name]'s colors.
+
+Best regards,
+Alon Yochelman
+Founder, MOCA — Mobile Operators Competitor Analysis
+Helpdesk@mocaintel.com | mocaintel.com`,
+en_short: `Hi [First name],
+
+Every international guest asks at check-in: "How do I get online?" MOCA Guest Connect turns that answer into revenue: a portal branded in your hotel's colors comparing 30+ eSIM providers in real time — and the hotel earns a commission on every purchase. Zero operations, zero integration.
+
+I'm offering a free 60-day pilot at one property. Live demo: https://mocaintel.com/hotels?lang=en
+
+Worth 15 minutes?
+
+Alon Yochelman · MOCA · Helpdesk@mocaintel.com`,
+};
+
+/* ─── state ─── */
+const LS_KEY = 'moca_hotel_outreach_v1';
+let state = {};
+try { state = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e){ state = {}; }
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+function cs(id){ return state[id] || (state[id] = { status:0, notes:'', date:'' }); }
+
+/* ─── helpers ─── */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function firstName(he){ return (he || '').trim().split(/\s+/)[0] || ''; }
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+function copy(text, msg){
+  navigator.clipboard.writeText(text).then(()=>toast(msg || 'הועתק ✓')).catch(()=>toast('ההעתקה נכשלה'));
+}
+function chipFor(status){
+  if (status === 'verified') return '<span class="chip v">מאומת</span>';
+  if (status === 'inferred') return '<span class="chip i">משוער</span>';
+  if (status === 'general')  return '<span class="chip n">כללי</span>';
+  return '';
+}
+function contactId(chain, role){ return chain.id + ':' + role; }
+
+/* ─── mailto ─── */
+function mailtoFor(chain, contact){
+  const heb = true;
+  const tpl = TPL_BODY.he_full;
+  const subj = 'הכנסה חדשה ל' + chain.chain_he + ' מכל אורח מחו"ל — MOCA Guest Connect';
+  const body = tpl
+    .replaceAll('[שם פרטי]', firstName(contact.name_he) || 'רב')
+    .replaceAll('[שם הרשת]', chain.chain_he);
+  const to = contact.email || chain.general_email || '';
+  return 'mailto:' + encodeURIComponent(to) + '?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(body);
+}
+
+/* ─── render ─── */
+function statusCounts(){
+  const counts = STATUSES.map(()=>0);
+  let total = 0;
+  CHAINS.forEach(ch => ch.contacts.forEach(c => { counts[cs(contactId(ch,c.role)).status]++; total++; }));
+  return { counts, total };
+}
+function renderStats(){
+  const { counts, total } = statusCounts();
+  const chainsContacted = CHAINS.filter(ch => ch.contacts.some(c => cs(contactId(ch,c.role)).status >= 1 && cs(contactId(ch,c.role)).status !== 6)).length;
+  const el = document.getElementById('stats');
+  el.innerHTML = `
+    <div class="stat"><div class="lbl">רשתות</div><div class="val">${CHAINS.length}</div></div>
+    <div class="stat"><div class="lbl">אנשי קשר</div><div class="val">${total}</div></div>
+    <div class="stat"><div class="lbl">רשתות שנפנו</div><div class="val">${chainsContacted}</div></div>
+    <div class="stat"><div class="lbl">נשלח / פולו-אפ</div><div class="val">${counts[1]+counts[2]}</div></div>
+    <div class="stat"><div class="lbl">מענה + פגישות</div><div class="val">${counts[3]+counts[4]}</div></div>
+    <div class="stat money"><div class="lbl">פיילוטים</div><div class="val">${counts[5]}</div></div>`;
+}
+function pillFor(ch){
+  const sts = ch.contacts.map(c => cs(contactId(ch,c.role)).status);
+  const max = Math.max(...sts);
+  const bg = ['var(--n-bg)','var(--i-bg)','var(--i-bg)','var(--v-bg)','var(--v-bg)','var(--v-bg)','var(--n-bg)'][max];
+  const t  = ['var(--n-t)','var(--i-t)','var(--i-t)','var(--v-t)','var(--v-t)','var(--v-t)','var(--up)'][max];
+  return `<span class="pill" style="background:${bg};color:${t}">${STATUSES[max]}</span>`;
+}
+function renderChains(){
+  const q = (document.getElementById('q').value || '').trim();
+  const sf = document.getElementById('statusFilter').value;
+  const host = document.getElementById('chains');
+  host.innerHTML = '';
+  CHAINS.forEach((ch, idx) => {
+    const hay = [ch.chain_he, ch.chain_en, ...ch.contacts.map(c => (c.name_he||'')+' '+(c.name_en||''))].join(' ');
+    if (q && !hay.includes(q)) return;
+    if (sf !== '' && !ch.contacts.some(c => cs(contactId(ch,c.role)).status === +sf)) return;
+
+    const color = CHAIN_COLORS[idx % CHAIN_COLORS.length];
+    const open = state['open:'+ch.id] ? ' open' : '';
+    const div = document.createElement('div');
+    div.className = 'chain' + open;
+    div.innerHTML = `
+      <div class="chain-head" data-open="${esc(ch.id)}" role="button" tabindex="0" aria-expanded="${open?'true':'false'}">
+        <div class="chain-logo" style="background:${color}">${esc((ch.chain_he||'?').replace(/^(מלונות|רשת)\s+/,'').slice(0,2))}</div>
+        <div>
+          <div class="chain-name">${esc(ch.chain_he)} <span style="font-weight:600;color:var(--muted);font-size:13px">· ${esc(ch.chain_en)}</span></div>
+          <div class="chain-meta">
+            ${ch.website ? `<a href="${esc(ch.website)}" target="_blank" rel="noopener" dir="ltr">${esc(ch.website.replace(/^https?:\/\/(www\.)?/,'').replace(/\/$/,''))}</a>` : ''}
+            ${ch.phone ? ` · <span dir="ltr">${esc(ch.phone)}</span>` : ''}
+            ${ch.general_email ? ` · <span dir="ltr">${esc(ch.general_email)}</span>` : ''}
+          </div>
+        </div>
+        <div class="chain-right">${pillFor(ch)}<span class="chev">◀</span></div>
+      </div>
+      <div class="chain-body">
+        ${ch.contacts.map(c => renderContact(ch, c)).join('')}
+        ${ch.notes ? `<div class="chain-notes"><b>הערות מחקר:</b> ${esc(ch.notes)}</div>` : ''}
+      </div>`;
+    host.appendChild(div);
+  });
+  renderStats();
+  wire(host);
+}
+function renderContact(ch, c){
+  const id = contactId(ch, c.role);
+  const s = cs(id);
+  const roleLabel = c.role === 'ceo' ? 'מנכ"ל' : (c.title || 'סמנכ"ל שיווק');
+  const email = c.email || '';
+  const emailBlock = email
+    ? `<span class="email-txt">${esc(email)}</span>${chipFor(c.email_status)}
+       <button class="mini" data-copy="${esc(email)}">העתק</button>
+       <a class="mini" style="text-decoration:none" href="${mailtoFor(ch, c)}" title="פתח מייל מוכן">✉️ הכן מייל</a>`
+    : `<span class="email-txt" style="color:var(--muted)">— לא נמצא מייל פומבי —</span>${ch.general_email ? `
+       <button class="mini" data-copy="${esc(ch.general_email)}">העתק כללי</button>
+       <a class="mini" style="text-decoration:none" href="${mailtoFor(ch, c)}" title="פתח מייל לכתובת הכללית">✉️ הכן מייל</a>` : ''}`;
+  return `
+    <div class="contact">
+      <div>
+        <div class="c-role">${esc(roleLabel)}</div>
+        <div class="c-name">${c.linkedin ? `<a href="${esc(c.linkedin)}" target="_blank" rel="noopener" title="LinkedIn">${esc(c.name_he || c.name_en || '—')}</a>` : esc(c.name_he || c.name_en || '—')}</div>
+        ${c.name_en && c.name_he ? `<div style="font-size:11.5px;color:var(--muted)">${esc(c.name_en)}</div>` : ''}
+      </div>
+      <div class="c-email">${emailBlock}</div>
+      <div>
+        <select class="status-sel s-${s.status}" data-status="${esc(id)}" aria-label="סטטוס">
+          ${STATUSES.map((st,i)=>`<option value="${i}" ${i===s.status?'selected':''}>${st}</option>`).join('')}
+        </select>
+      </div>
+      <div class="c-date">${s.date ? 'עודכן: '+s.date : ''}</div>
+      <div class="c-notes"><input data-notes="${esc(id)}" value="${esc(s.notes)}" placeholder="הערות…" aria-label="הערות"></div>
+    </div>`;
+}
+function wire(host){
+  host.querySelectorAll('[data-open]').forEach(el => {
+    const toggle = () => {
+      const ch = el.closest('.chain');
+      ch.classList.toggle('open');
+      state['open:'+el.dataset.open] = ch.classList.contains('open') ? 1 : 0;
+      el.setAttribute('aria-expanded', ch.classList.contains('open'));
+      save();
+    };
+    el.addEventListener('click', e => { if (e.target.closest('a,button,select,input')) return; toggle(); });
+    el.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); toggle(); } });
+  });
+  host.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => copy(b.dataset.copy)));
+  host.querySelectorAll('[data-status]').forEach(sel => sel.addEventListener('change', () => {
+    const s = cs(sel.dataset.status);
+    s.status = +sel.value;
+    s.date = new Date().toLocaleDateString('he-IL');
+    save(); renderChains();
+  }));
+  host.querySelectorAll('[data-notes]').forEach(inp => inp.addEventListener('input', () => {
+    cs(inp.dataset.notes).notes = inp.value; save(); renderStats();
+  }));
+}
+
+/* ─── templates ─── */
+function renderTpls(){
+  const g = document.getElementById('tplGrid');
+  g.innerHTML = TPLS.map(t => `
+    <div class="tpl-card">
+      <div class="tpl-head"><h3>${esc(t.title)}</h3>
+        <div style="display:flex;gap:6px">
+          <button class="mini" data-copy-tpl="${t.id}" data-what="subject">העתק נושא</button>
+          <button class="mini" data-copy-tpl="${t.id}" data-what="body">העתק גוף</button>
+        </div>
+      </div>
+      <div class="tpl-body" dir="${t.dir}">${esc(TPL_BODY[t.id])}</div>
+    </div>`).join('');
+  g.querySelectorAll('[data-copy-tpl]').forEach(b => b.addEventListener('click', () => {
+    const t = TPLS.find(x => x.id === b.dataset.copyTpl);
+    copy(b.dataset.what === 'subject' ? t.subject : TPL_BODY[t.id], 'התבנית הועתקה ✓');
+  }));
+}
+
+/* ─── export ─── */
+document.getElementById('exportCsv').addEventListener('click', () => {
+  const rows = [['רשת','Chain','תפקיד','שם','Name','מייל','סוג מייל','לינקדאין','טלפון רשת','מייל כללי','סטטוס','עודכן','הערות']];
+  CHAINS.forEach(ch => ch.contacts.forEach(c => {
+    const s = cs(contactId(ch,c.role));
+    rows.push([ch.chain_he, ch.chain_en, c.role==='ceo'?'מנכ"ל':(c.title||'סמנכ"ל שיווק'),
+      c.name_he||'', c.name_en||'', c.email||'', c.email_status||'', c.linkedin||'',
+      ch.phone||'', ch.general_email||'', STATUSES[s.status], s.date, s.notes]);
+  }));
+  const csv = '﻿' + rows.map(r => r.map(v => '"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = 'moca-hotel-outreach.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+});
+document.getElementById('resetAll').addEventListener('click', () => {
+  if (!confirm('לאפס את כל הסטטוסים וההערות?')) return;
+  state = {}; save(); renderChains();
+});
+
+/* ─── filters ─── */
+const sf = document.getElementById('statusFilter');
+STATUSES.forEach((s,i) => { const o = document.createElement('option'); o.value = i; o.textContent = s; sf.appendChild(o); });
+sf.addEventListener('change', renderChains);
+document.getElementById('q').addEventListener('input', renderChains);
+
+renderChains();
+renderTpls();
+</script>
