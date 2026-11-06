@@ -55,6 +55,7 @@ const FLAG_DEFINITIONS = [
   { key: 'hide_social',            label: 'הסתר רשתות חברתיות',   en: 'Hide social media' },
   // עמודים / תובנות
   { key: 'hide_compare',           label: 'הסתר עמוד השוואה',     en: 'Hide compare page' },
+  { key: 'hide_agent_desk',        label: 'הסתר עמדת נציג',       en: 'Hide agent desk' },
   { key: 'hide_positioning',       label: 'הסתר מיצוב תחרותי',    en: 'Hide competitive positioning' },
   { key: 'hide_alerts',            label: 'הסתר עמוד התראות',     en: 'Hide alerts page' },
   { key: 'hide_executive_summary', label: 'הסתר תקציר מנהלים',    en: 'Hide executive summary' },

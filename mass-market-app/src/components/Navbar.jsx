@@ -155,6 +155,7 @@ export default function Navbar({ onMobileMenuOpen }) {
         { to: '/',        label: tt('דשבורד', 'Dashboard'), visible: visible('/') },
         // Same slot as the desktop sidebar's "ניטור" group — right after the dashboard
         { to: '/cockpit', label: tt('חדר מצב', 'Situation room'), visible: visible('/cockpit') },
+        { to: '/agent-desk', label: tt('עמדת נציג', 'Agent desk'), visible: visible('/agent-desk') },
         { to: '/compare', label: tt('השוואה', 'Compare'), visible: visible('/compare') },
         { to: '/alerts',  label: tt('התראות', 'Alerts'), visible: visible('/alerts') },
       ],

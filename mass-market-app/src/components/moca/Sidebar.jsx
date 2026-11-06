@@ -34,6 +34,9 @@ const Icons = {
   cockpit: (
     <svg {...ICON_PROPS}><path d="M3 20h18"/><path d="M5 20V9l7-5 7 5v11"/><path d="M9 20v-6h6v6"/><circle cx="12" cy="9" r="1" fill="currentColor"/></svg>
   ),
+  agentDesk: (
+    <svg {...ICON_PROPS}><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/><path d="M19 19a3 3 0 0 1-3 3h-3"/></svg>
+  ),
   exec: (
     <svg {...ICON_PROPS}><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="14 3 14 9 20 9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
   ),
@@ -306,7 +309,7 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
 
       <nav style={{ padding: '4px 8px 10px', display: 'flex', flexDirection: 'column', gap: 1 }}>
         {/* ─── Monitoring ─── */}
-        {(visible('/') || visible('/cockpit') || visible('/executive-summary') || visible('/positioning') || visible('/history') || visible('/alerts')) && (
+        {(visible('/') || visible('/cockpit') || visible('/agent-desk') || visible('/executive-summary') || visible('/positioning') || visible('/history') || visible('/alerts')) && (
           <GroupLabel>{tt('ניטור', 'Monitoring')}</GroupLabel>
         )}
         {visible('/') && (
@@ -314,6 +317,9 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
         )}
         {visible('/cockpit') && (
           <NavItem to="/cockpit" icon={Icons.cockpit} label={tt('חדר מצב', 'Situation room')} isActive={isPath('/cockpit')} onAfterNav={afterNav} />
+        )}
+        {visible('/agent-desk') && (
+          <NavItem to="/agent-desk" icon={Icons.agentDesk} label={tt('עמדת נציג', 'Agent desk')} isActive={isPath('/agent-desk')} onAfterNav={afterNav} />
         )}
         {visible('/executive-summary') && (
           <NavItem to="/executive-summary" icon={Icons.exec} label={tt('דוח מנהלים', 'Executive report')} isActive={isPath('/executive-summary')} onAfterNav={afterNav} />

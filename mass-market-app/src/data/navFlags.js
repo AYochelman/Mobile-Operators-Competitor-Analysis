@@ -23,6 +23,7 @@ export const FLAG_FOR_PATH = {
   '/compare':           'hide_compare',
   // תובנות
   '/cockpit':           'hide_cockpit',
+  '/agent-desk':        'hide_agent_desk',
   '/executive-summary': 'hide_executive_summary',
   '/positioning':       'hide_positioning',
   '/ai-insights':       'hide_ai_insights',
@@ -40,7 +41,7 @@ export const FLAG_FOR_PATH = {
 // (no flag) so this never returns nothing / loops.
 const HOME_FALLBACK_ORDER = [
   '/plans', '/roaming', '/esim', '/esim-banners', '/usa', '/resellers', '/content',
-  '/cockpit', '/executive-summary', '/positioning', '/compare', '/ai-insights',
+  '/cockpit', '/agent-desk', '/executive-summary', '/positioning', '/compare', '/ai-insights',
   '/news', '/social', '/banners', '/archive', '/history', '/alerts',
 ]
 
