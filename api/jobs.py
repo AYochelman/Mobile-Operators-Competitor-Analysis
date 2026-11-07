@@ -537,7 +537,7 @@ def scrape_news_job():
 
 # pelephon4u_scraper SILENCED 2026-07-26: pelephon4u.co.il returns 403 since
 # ~2026-07-12 (Cloudways domain unmapped). Re-add if the site comes back.
-RESELLER_SCRAPER_MODULES = ("pelephone_join_scraper", "btl_scrapers")
+RESELLER_SCRAPER_MODULES = ("pelephone_join_scraper", "btl_scrapers", "fb_ads_scraper")
 
 
 def scrape_resellers_job():

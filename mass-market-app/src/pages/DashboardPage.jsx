@@ -150,6 +150,11 @@ const RESELLERS = [
     source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=\u05e4\u05dc\u05d0\u05e4\u05d5\u05df&search_type=keyword_unordered' },
   { id: 'analizer',       label: '\u05d0\u05e0\u05dc\u05d9\u05d9\u05d6\u05e8 \u2014 \u05de\u05ea\u05d5\u05d5\u05da (\u05e1\u05dc\u05e7\u05d5\u05dd)', underlying: 'cellcom',
     source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=\u05d0\u05e0\u05dc\u05d9\u05d9\u05d6\u05e8&search_type=keyword_unordered' },
+  // Daily-scraped from the Meta Ad Library by fb_ads_scraper.py (lead-form ads, no landing page)
+  { id: 'fb_pelephone_join',  label: '\u05d4\u05e6\u05d8\u05e8\u05e4\u05d5\u05ea \u05dc\u05e4\u05dc\u05d0\u05e4\u05d5\u05df - \u05de\u05d5\u05d3\u05e2\u05ea \u05e4\u05d9\u05d9\u05e1\u05d1\u05d5\u05e7', underlying: 'pelephone',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%94%D7%A6%D7%98%D7%A8%D7%A4%D7%95%D7%AA%20%D7%9C%D7%A4%D7%9C%D7%90%D7%A4%D7%95%D7%9F&search_type=keyword_unordered&media_type=all' },
+  { id: 'fb_pelephone_deals', label: '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df \u05de\u05d1\u05e6\u05e2\u05d9\u05dd \u05d7\u05d3\u05e9\u05d9\u05dd - \u05de\u05d5\u05d3\u05e2\u05ea \u05e4\u05d9\u05d9\u05e1\u05d1\u05d5\u05e7', underlying: 'pelephone',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%A4%D7%9C%D7%90%D7%A4%D7%95%D7%9F%20%D7%9E%D7%91%D7%A6%D7%A2%D7%99%D7%9D%20%D7%97%D7%93%D7%A9%D7%99%D7%9D&search_type=keyword_unordered&media_type=all' },
 ]
 
 // US operators on the "\u05e0\u05d5\u05d7\u05ea\u05d9\u05dd \u05d1\u05d0\u05e8\u05d4"\u05d1" tab. `net` groups them by the underlying
@@ -1203,6 +1208,46 @@ export default function DashboardPage() {
               {tab === 'resellers' && (
                 <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[11px] font-medium text-gray-500">{tt('ספק', 'Carrier')}</p>
+                    <button
+                      onClick={() => setFilter('carrier', 'all')}
+                      aria-pressed={filters.carrier === 'all'}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
+                        filters.carrier === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                      }`}
+                    >
+                      {tt('כולם', 'All')}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
+                    {CARRIERS.map(c => {
+                      const cnt = plans.resellers?.filter(p => p.carrier === c.id).length || 0
+                      if (cnt === 0) return null
+                      return (
+                        <button
+                          key={c.id}
+                          aria-pressed={filters.carrier === c.id}
+                          onClick={() => {
+                            // A reseller of another carrier would leave the list empty - reset it.
+                            const r = RESELLERS.find(x => x.id === filters.reseller)
+                            if (r && r.underlying !== c.id) setFilter('reseller', 'all')
+                            setFilter('carrier', c.id)
+                          }}
+                          className={`px-1 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
+                            filters.carrier === c.id ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                          }`}
+                        >
+                          {c.label} ({cnt})
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {tab === 'resellers' && (
+                <div className="border border-moca-border/60 rounded-xl p-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[11px] font-medium text-gray-500">{tt('משווקים', 'Resellers')}</p>
                     <button
                       onClick={() => setFilter('reseller', 'all')}
@@ -1215,7 +1260,10 @@ export default function DashboardPage() {
                   </div>
                   <div className="grid grid-cols-1 gap-1">
                     {RESELLERS.map(r => {
-                      const cnt = plans.resellers?.filter(p => p.reseller_id === r.id).length || 0
+                      const cnt = plans.resellers?.filter(p => p.reseller_id === r.id &&
+                        (filters.carrier === 'all' || p.carrier === filters.carrier)).length || 0
+                      // With a carrier picked, list only that carrier's resellers.
+                      if (filters.carrier !== 'all' && cnt === 0) return null
                       return (
                         <button
                           key={r.id}

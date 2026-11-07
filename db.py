@@ -4011,6 +4011,7 @@ AUTO_SCRAPED_RESELLER_IDS = {
     "wecom_site", "rami_levy_landing",         # btl_scrapers — carrier pages
     "tikshoretishit", "clubdeal",
     "rami_levy_hever", "partner_site",         # btl_scrapers — JS (Playwright)
+    "fb_pelephone_join", "fb_pelephone_deals", # fb_ads_scraper — Meta Ad Library
 }
 
 
@@ -4093,6 +4094,8 @@ ALWAYS_SHOW_RESELLER_IDS = {
     "clubdeal",           # Pelephone-owned members club
     "pelephone_fb",       # official FB-ad campaign
     "analizer",           # FB-ad broker disclosure (continuation pricing)
+    # fb_pelephone_join / fb_pelephone_deals are deliberately NOT here: their
+    # offers must beat the Pelephone rate card to be shown (user request 2026-11-07).
     "kamaze",             # only BTL-marked rows are scraped (multi-line/ladder)
     "kamazeole",          # 3-line family bundle — total-price dominance is unfair
 }

@@ -349,6 +349,8 @@ RESELLER_NAMES = {
     "pelephone_cellphone":  "פלאפון Deal",
     "pelephone_fb":         "פלאפון — קמפיין פייסבוק",
     "analizer":             "אנלייזר (מתווך)",
+    "fb_pelephone_join":    "הצטרפות לפלאפון (מודעת פייסבוק)",
+    "fb_pelephone_deals":   "פלאפון מבצעים חדשים (מודעת פייסבוק)",
     "cellcomshefamr":       "סלקום שפרעם",
     "zorro":                "זורו",
 }
