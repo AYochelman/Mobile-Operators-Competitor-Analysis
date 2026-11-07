@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useLang } from '../hooks/useLanguage'
-import { useAgentDeskData, matchCompetitorPlans, counterOffers, talkingPoints } from '../hooks/useAgentDeskData'
+import { useAgentDeskData, matchCompetitorPlans, counterOffers, talkingPoints, callScript, OBJECTIONS } from '../hooks/useAgentDeskData'
 import { CarrierChip, PageHeader } from '../components/moca'
 import { getCarrierName } from '../components/moca/carrierMeta'
 import { DOMESTIC_LABELS } from '../data/carrierLabels'
@@ -224,7 +224,7 @@ function ClaimChecker({ data, ours, target, setTarget, claim, setClaim, tt }) {
           </div>
         </div>
 
-        <OurAnswer key={effective?.key || 'none'} data={data} ours={ours} target={effective} tt={tt} />
+        <OurAnswer key={effective?.key || 'none'} data={data} ours={ours} target={effective} claimPrice={claim.price} tt={tt} />
       </div>
     </Card>
   )
@@ -236,18 +236,28 @@ const TAG_LABEL = {
   cheaper: ['זול יותר, פחות גלישה', 'Cheaper, less data'],
 }
 
-function OurAnswer({ data, ours, target, tt }) {
+function OurAnswer({ data, ours, target, claimPrice, tt }) {
   const offers = useMemo(() => counterOffers(data.ours, target), [data.ours, target])
   const [pick, setPick] = useState(0)
   const [copied, setCopied] = useState(false)
   const chosen = (offers[pick] || offers[0])?.plan || null
   const points = useMemo(() => talkingPoints(chosen, target, tt), [chosen, target, tt])
+  const [view, setView] = useState('script')
+  const [step, setStep] = useState(0)
+  const [objection, setObjection] = useState(null)
+  const tag = (offers[pick] || offers[0])?.tag
+  const script = useMemo(
+    () => callScript(chosen, target, { tag, offers, theirName: target ? getCarrierName(target.carrier) : '', claimPrice, objection }, tt),
+    [chosen, target, tag, offers, claimPrice, objection, tt],
+  )
 
   const copy = () => {
+    const obj = OBJECTIONS.find((o) => o.id === objection)
     const text = [
       `${getCarrierName(target.carrier)} - ${target.plan_name}: ${ils(target.promoPrice || target.price)}, ${fmtGb(target.gb, tt)}`,
       `${tt('הצעה', 'Offer')}: ${chosen.plan_name}: ${ils(chosen.promoPrice || chosen.price)}, ${fmtGb(chosen.gb, tt)}`,
       ...points.map((p) => `• ${p.text}`),
+      ...(obj ? [`${tt('התנגדות', 'Pushback')}: ${tt(obj.he, obj.en)}`] : []),
     ].join('\n')
     navigator.clipboard?.writeText(text).then(() => setCopied(true)).catch(() => {})
   }
@@ -292,15 +302,76 @@ function OurAnswer({ data, ours, target, tt }) {
             <span className="ad-subhead" style={{ margin: 0 }}>{tt('מה להגיד ללקוח', 'What to tell the customer')}</span>
             <button type="button" className="ad-link" style={{ marginInlineStart: 'auto' }} onClick={copy}>{copied ? tt('הועתק ✓', 'Copied ✓') : tt('העתקה לתיעוד', 'Copy for notes')}</button>
           </div>
-          <ul className="ad-points">
-            {points.map((p, i) => (
-              <li key={i} className={p.tone}>
-                <span aria-hidden="true" className="ic">{p.tone === 'win' ? '✓' : p.tone === 'warn' ? '!' : '–'}</span>
-                <span>{p.text}</span>
-              </li>
-            ))}
-          </ul>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }} role="tablist" aria-label={tt('תצוגה', 'View')}>
+            <button type="button" role="tab" aria-selected={view === 'script'} className={`ad-tab ${view === 'script' ? 'on' : ''}`} onClick={() => setView('script')}>{tt('תסריט שיחה', 'Call script')}</button>
+            <button type="button" role="tab" aria-selected={view === 'points'} className={`ad-tab ${view === 'points' ? 'on' : ''}`} onClick={() => setView('points')}>{tt('נקודות מהירות', 'Quick points')}</button>
+          </div>
+          {view === 'script' ? (
+            <CallScript stages={script} step={step} setStep={setStep} objection={objection} setObjection={setObjection} tt={tt} />
+          ) : (
+            <ul className="ad-points">
+              {points.map((p, i) => (
+                <li key={i} className={p.tone}>
+                  <span aria-hidden="true" className="ic">{p.tone === 'win' ? '✓' : p.tone === 'warn' ? '!' : '–'}</span>
+                  <span>{p.text}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The live call script: numbered stages, the current one expanded, the ones
+ * already said collapsed. Picking a pushback appends a tailored answer stage
+ * and jumps to it. Content comes from callScript() and rebuilds whenever the
+ * competitor plan or the chosen offer changes.
+ */
+function CallScript({ stages, step, setStep, objection, setObjection, tt }) {
+  const cur = Math.min(step, stages.length - 1)
+  const closeIdx = stages.findIndex((s) => s.id === 'close')
+  return (
+    <div className="ad-script">
+      <ol>
+        {stages.map((s, i) => {
+          const state = i === cur ? 'cur' : i < cur ? 'done' : 'next'
+          return (
+            <li key={s.id} className={state}>
+              <button type="button" className="ad-script-h" aria-expanded={state === 'cur'} onClick={() => setStep(i)}>
+                <span className="n" aria-hidden="true">{state === 'done' ? '✓' : i + 1}</span>
+                <span>{s.title}</span>
+              </button>
+              {state === 'cur' && (
+                <div className="ad-script-b">
+                  {s.lines.map((l, j) => (
+                    l.kind === 'say'
+                      ? <p key={j} className="say">{l.text}</p>
+                      : <p key={j} className="note"><b>{tt('לנציג:', 'Rep:')}</b> {l.text}</p>
+                  ))}
+                  {i < stages.length - 1 && (
+                    <button type="button" className="ad-link" onClick={() => setStep(i + 1)}>{tt('נאמר, לשלב הבא ←', 'Said it, next step →')}</button>
+                  )}
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ol>
+      {cur >= closeIdx && (
+        <div style={{ marginTop: 10 }}>
+          <div className="ad-subhead" style={{ marginBottom: 6 }}>{tt('יש התנגדות? בחרו מה נאמר:', 'Pushback? Pick what was said:')}</div>
+          <div className="ad-chips" role="group" aria-label={tt('התנגדות', 'Pushback')}>
+            {OBJECTIONS.map((o) => (
+              <button key={o.id} type="button" aria-pressed={objection === o.id} className={`ad-chip ${objection === o.id ? 'on' : ''}`}
+                onClick={() => { const next = objection === o.id ? null : o.id; setObjection(next); setStep(next ? closeIdx + 1 : closeIdx) }}>
+                {tt(o.he, o.en)}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )
@@ -629,6 +700,17 @@ export default function AgentDeskPage() {
         .ad-pill.loss { background: #f6e1db; color: #8f3520; white-space: normal; }
         .ad-pill.muted { background: var(--color-moca-cream); color: var(--color-moca-sub); }
         .ad-link { background: none; border: none; padding: 0; font: inherit; font-size: 12px; font-weight: 700; color: var(--color-moca-bolt); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+        .ad-script ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+        .ad-script li { background: #fff; border: 1px solid var(--color-moca-border); border-radius: 10px; overflow: hidden; }
+        .ad-script li.cur { border-color: var(--color-moca-bolt); box-shadow: 0 0 0 1px var(--color-moca-bolt); }
+        .ad-script li.done .ad-script-h { color: var(--color-moca-sub); }
+        .ad-script-h { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 0; padding: 7px 10px; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--color-moca-dark); cursor: pointer; text-align: start; }
+        .ad-script-h .n { flex: 0 0 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; background: var(--color-moca-cream); color: var(--color-moca-sub); }
+        .ad-script li.cur .n { background: var(--color-moca-bolt); color: #fff; }
+        .ad-script li.done .n { background: #e5efe0; color: #3d6a33; }
+        .ad-script-b { padding: 0 12px 10px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+        .ad-script-b .say { margin: 0; font-size: 14px; line-height: 1.6; color: var(--color-moca-text); background: var(--color-moca-mist); border-inline-start: 3px solid var(--color-moca-bolt); border-radius: 6px; padding: 7px 10px; align-self: stretch; }
+        .ad-script-b .note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--color-moca-sub); }
         .ad-points { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
         .ad-points li { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: var(--color-moca-text); background: #fff; border-radius: 8px; padding: 6px 9px; border: 1px solid var(--color-moca-border); }
         .ad-points .ic { flex: 0 0 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; margin-top: 1px; }

@@ -230,6 +230,180 @@ export function talkingPoints(ours, theirs, tt) {
   return pts.sort((x, y) => order[x.tone] - order[y.tone])
 }
 
+// ── call script ──────────────────────────────────────────────────────────
+
+/** The customer pushbacks the script has an answer for (labels = customer's words). */
+export const OBJECTIONS = [
+  { id: 'price', he: 'עדיין יקר לי', en: 'Still too expensive' },
+  { id: 'data', he: 'אצלם יותר גלישה', en: 'They give more data' },
+  { id: 'perks', he: 'אצלם יש חו"ל / 5G', en: 'They have roaming / 5G' },
+  { id: 'think', he: 'רוצה לחשוב על זה', en: 'Wants to think about it' },
+  { id: 'leave', he: 'רוצה לעזוב בכל מקרה', en: 'Leaving anyway' },
+]
+
+const ilsR = (n) => `₪${Math.round(n).toLocaleString('en-US')}`
+const ilsP = (n) => `₪${Number.isInteger(n) ? n : n.toFixed(1)}`
+
+function gbText(gb, tt) {
+  if (gb === Infinity) return tt('גלישה ללא הגבלה', 'unlimited data')
+  if (gb == null) return tt('שיחות בלבד', 'calls only')
+  return `${Math.round(gb)}GB`
+}
+
+/** Short spoken phrases for what our plan has that theirs lacks. */
+export function perksOf(ours, theirs, tt) {
+  if (!ours || !theirs) return []
+  const out = []
+  if (ours.gb === Infinity && theirs.gb !== Infinity) out.push(tt('גלישה ללא הגבלה', 'unlimited data'))
+  else if (ours.gb != null && theirs.gb != null && ours.gb !== Infinity && gbKey(ours.gb) > gbKey(theirs.gb)) out.push(tt(`${Math.round(ours.gb - theirs.gb)}GB יותר גלישה`, `${Math.round(ours.gb - theirs.gb)}GB more data`))
+  if (ours.abroadGb > theirs.abroadGb) out.push(tt(`${ours.abroadGb}GB גלישה בחו"ל כלולה`, `${ours.abroadGb}GB roaming included`))
+  const rank = { none: 0, basic: 1, max: 2 }
+  if (rank[ours.network] > rank[theirs.network]) out.push(ours.network === 'max' ? tt('5G עם תעדוף ברשת בשעות עומס', '5G with priority at peak times') : tt('רשת 5G', '5G network'))
+  if (ours.minutes === Infinity && theirs.minutes != null && theirs.minutes !== Infinity) out.push(tt('דקות ללא הגבלה', 'unlimited minutes'))
+  return out
+}
+
+/**
+ * A staged call script for the current comparison. Lines are either 'say'
+ * (read to the customer, gender-neutral Hebrew) or 'note' (an instruction to
+ * the rep). Like talkingPoints, every number comes from the scraped plans -
+ * the script never promises discounts or terms the data doesn't show.
+ *
+ * opts: { tag, offers, theirName, claimPrice, objection }
+ * Returns [{ id, title, lines: [{ kind, text }] }].
+ */
+export function callScript(ours, theirs, opts, tt) {
+  if (!ours || !theirs) return []
+  const { tag, offers = [], theirName = '', claimPrice, objection } = opts || {}
+  const say = (he, en) => ({ kind: 'say', text: tt(he, en) })
+  const note = (he, en) => ({ kind: 'note', text: tt(he, en) })
+  const tEff = theirs.promoPrice || theirs.price
+  const oEff = ours.promoPrice || ours.price
+  const yearDiff = theirs.yearCost - ours.yearCost
+  const monthDiff = oEff - tEff
+  const perks = perksOf(ours, theirs, tt)
+  const perksLine = perks.length ? say(`ובנוסף: ${perks.join(', ')}.`, `Plus: ${perks.join(', ')}.`) : null
+  const others = offers.map((o) => o.plan).filter((p) => p.key !== ours.key)
+  const cheaperAlt = others.filter((p) => p.yearCost < ours.yearCost).sort((a, b) => a.yearCost - b.yearCost)[0] || null
+  const biggerAlt = others.filter((p) => gbKey(p.gb) > gbKey(ours.gb)).sort((a, b) => a.yearCost - b.yearCost)[0] || null
+  const stages = []
+
+  stages.push({
+    id: 'open',
+    title: tt('פתיחה', 'Opening'),
+    lines: [
+      say('תודה ששיתפת. חשוב לנו שהמחיר יהיה הוגן, אז נבדוק את זה יחד עכשיו.', 'Thanks for telling me. We want your price to be fair, so let\'s check it together right now.'),
+      note('הקשיבו עד הסוף לפני שמציגים הצעה. אם לא נאמר - שאלו באיזו חברה ובכמה.', 'Let the customer finish before offering. If not mentioned, ask which carrier and what price.'),
+    ],
+  })
+
+  const verify = [
+    say(
+      `בדקתי: ב${theirName} התוכנית "${theirs.plan_name}" עולה ${ilsP(tEff)} לחודש וכוללת ${gbText(theirs.gb, tt)}.`,
+      `I checked: at ${theirName}, "${theirs.plan_name}" costs ${ilsP(tEff)}/month with ${gbText(theirs.gb, tt)}.`,
+    ),
+  ]
+  if (theirs.promoPrice && theirs.promoMonths) {
+    verify.push(say(
+      `חשוב לדעת שהמחיר הזה הוא רק ל-${theirs.promoMonths} חודשים. אחר כך הוא עולה ל-${ilsP(theirs.price)}, כלומר ${ilsR(theirs.yearCost)} בשנה הראשונה.`,
+      `Worth knowing: that price is only for ${theirs.promoMonths} months, then ${ilsP(theirs.price)} - ${ilsR(theirs.yearCost)} over the first year.`,
+    ))
+  }
+  if (theirs.source === 'reseller') {
+    verify.push(say('זו הצעה של משווק ולא המחירון הרשמי שלהם, כדאי לבדוק את התנאים לפני שמחליטים.', 'That\'s a reseller offer, not their official price list - worth checking its terms before deciding.'))
+  }
+  if (Number(claimPrice) > 0 && Number(claimPrice) < tEff * 0.9) {
+    verify.push(note(
+      `המחיר שהלקוח ציין (${ilsP(Number(claimPrice))}) נמוך מכל מה שמפורסם אצלם. ייתכן שזו הצעה אישית - שאלו מאיפה ההצעה.`,
+      `The quoted ${ilsP(Number(claimPrice))} is below anything they publish. It may be a personal offer - ask where it came from.`,
+    ))
+  }
+  stages.push({ id: 'verify', title: tt('אימות ההצעה שלהם', 'Check their offer'), lines: verify })
+
+  const offer = []
+  if (tag === 'beats') {
+    offer.push(say(
+      `יש לי בשבילך הצעה טובה יותר: "${ours.plan_name}" עם ${gbText(ours.gb, tt)} ב-${ilsP(oEff)} לחודש.`,
+      `I have a better option for you: "${ours.plan_name}" with ${gbText(ours.gb, tt)} for ${ilsP(oEff)}/month.`,
+    ))
+    offer.push(yearDiff >= 6
+      ? say(`זה חיסכון של ${ilsR(yearDiff)} בשנה הראשונה לעומת ההצעה שלהם, ובלי לעבור חברה.`, `That saves ${ilsR(yearDiff)} in the first year compared with their offer, without switching carriers.`)
+      : say('במחיר כמעט זהה, ובלי הטרחה של מעבר חברה.', 'For practically the same price, without the hassle of switching.'))
+    if (perksLine) offer.push(perksLine)
+  } else if (tag === 'more') {
+    offer.push(say(
+      `כדי לקבל ${gbText(theirs.gb, tt)} ומעלה, התוכנית המתאימה אצלנו היא "${ours.plan_name}" ב-${ilsP(oEff)} לחודש.`,
+      `For ${gbText(theirs.gb, tt)} or more, our matching plan is "${ours.plan_name}" at ${ilsP(oEff)}/month.`,
+    ))
+    if (perks.length) {
+      offer.push(say(
+        `זה ${ilsP(Math.abs(monthDiff))} יותר בחודש, ובתמורה: ${perks.join(', ')}.`,
+        `That's ${ilsP(Math.abs(monthDiff))} more per month, and in return: ${perks.join(', ')}.`,
+      ))
+    }
+    offer.push(offers.some((o) => o.tag === 'beats')
+      ? note('זו הצעת שדרוג. אם המחיר חשוב ללקוח - חזרו ללשונית "משתלם יותר".', 'This is an upsell. If price matters to the customer, go back to the "better value" tab.')
+      : note('אין לנו תוכנית זולה יותר עם אותה גלישה. הדגישו את היתרונות, אל תתחרו על המחיר.', 'We have nothing cheaper with the same data. Lead with the advantages, don\'t fight on price.'))
+  } else {
+    offer.push(say('כמה גלישה יוצאת לך בפועל בחודש?', 'How much data do you actually use per month?'))
+    offer.push(say(
+      `אם זה פחות מ-${gbText(ours.gb, tt)}, יש לנו "${ours.plan_name}" ב-${ilsP(oEff)} לחודש, זול יותר מההצעה שלהם.`,
+      `If it's under ${gbText(ours.gb, tt)}, we have "${ours.plan_name}" at ${ilsP(oEff)}/month - cheaper than their offer.`,
+    ))
+    offer.push(note('הצעה זו מתאימה רק אם הצריכה בפועל נמוכה. אחרת - בחרו את הלשונית "יותר גלישה".', 'Only fits if actual usage is low. Otherwise switch to the "more data" tab.'))
+  }
+  stages.push({ id: 'offer', title: tt('ההצעה שלנו', 'Our offer'), lines: offer })
+
+  stages.push({
+    id: 'close',
+    title: tt('סגירה', 'Close'),
+    lines: [
+      tag === 'more' && perks.length
+        ? say(`שווה לך ${ilsP(Math.abs(monthDiff))} בחודש בשביל ${perks[0]}? אפשר לעדכן את התוכנית כבר עכשיו.`, `Is ${perks[0]} worth ${ilsP(Math.abs(monthDiff))} a month to you? I can update the plan right now.`)
+        : say('מתאים לך? אפשר לעדכן את התוכנית כבר עכשיו.', 'Does that work for you? I can update the plan right now.'),
+      note('הסכמה ← עדכנו את התוכנית ותעדו ("העתקה לתיעוד"). התנגדות ← בחרו אותה למטה.', 'Agreed → update the plan and log it ("Copy for notes"). Pushback → pick it below.'),
+    ],
+  })
+
+  if (objection) {
+    const lines = []
+    if (objection === 'price') {
+      if (cheaperAlt) lines.push(say(`אם המחיר הוא העיקר, יש גם "${cheaperAlt.plan_name}" ב-${ilsP(cheaperAlt.promoPrice || cheaperAlt.price)} לחודש, עם ${gbText(cheaperAlt.gb, tt)}.`, `If price matters most, there's also "${cheaperAlt.plan_name}" at ${ilsP(cheaperAlt.promoPrice || cheaperAlt.price)}/month with ${gbText(cheaperAlt.gb, tt)}.`))
+      if (theirs.promoPrice) lines.push(say(`כדאי להסתכל על כל השנה: אצלם ${ilsR(theirs.yearCost)} בשנה הראשונה, אצלנו ${ilsR(ours.yearCost)}.`, `Look at the whole year: ${ilsR(theirs.yearCost)} with them in year one, ${ilsR(ours.yearCost)} with us.`))
+      if (!cheaperAlt && !theirs.promoPrice) lines.push(say('ברור לי. אשמח לבדוק אם יש אפשרות להצעה מותאמת יותר.', 'I understand. Let me check whether a more tailored offer is possible.'))
+      lines.push(note('אם הלקוח עדיין מתלבט - העבירו לשימור לבדיקת הצעה אישית. אל תבטיחו הנחה שאינה קיימת.', 'Still hesitant → escalate to retention for a personal offer. Never promise a discount that doesn\'t exist.'))
+    } else if (objection === 'data') {
+      if (ours.gb === Infinity) lines.push(say('אצלנו הגלישה ללא הגבלה, אין צורך לספור ג\'יגה.', 'Our data is unlimited - no need to count gigabytes.'))
+      else if (biggerAlt) lines.push(say(`אם צריך יותר גלישה, "${biggerAlt.plan_name}" כוללת ${gbText(biggerAlt.gb, tt)} ב-${ilsP(biggerAlt.promoPrice || biggerAlt.price)} לחודש.`, `If you need more data, "${biggerAlt.plan_name}" has ${gbText(biggerAlt.gb, tt)} for ${ilsP(biggerAlt.promoPrice || biggerAlt.price)}/month.`))
+      lines.push(say('כדאי לבדוק כמה גלישה יוצאת לך בפועל בחודש - ייתכן שהחבילה שלנו מספיקה בהחלט.', 'It\'s worth checking your actual monthly usage - our plan may be plenty.'))
+      lines.push(note('בדקו את הצריכה בפועל בתיק הלקוח. אם היא באמת גבוהה ואין תוכנית מתאימה - שימור.', 'Check actual usage on the account. If it really is high and nothing fits → retention.'))
+    } else if (objection === 'perks') {
+      const rank0 = { none: 0, basic: 1, max: 2 }
+      const extra = []
+      if (ours.abroadGb > theirs.abroadGb) extra.push(tt(`${ours.abroadGb}GB גלישה בחו"ל`, `${ours.abroadGb}GB roaming`))
+      if (rank0[ours.network] > rank0[theirs.network]) extra.push(ours.network === 'max' ? tt('5G עם תעדוף ברשת', '5G with network priority') : tt('רשת 5G', '5G network'))
+      if (extra.length) lines.push(say(`אצלנו כלול: ${extra.join(', ')}.`, `With us you get: ${extra.join(', ')}.`))
+      if (theirs.abroadGb > ours.abroadGb) lines.push(note(`אצלם ${theirs.abroadGb}GB בחו"ל כלולים. אפשר להציע חבילת חו"ל לפי נסיעה - ראו טבלת חו"ל למטה.`, `They bundle ${theirs.abroadGb}GB roaming. Offer a per-trip roaming pack - see the roaming table below.`))
+      const rank = { none: 0, basic: 1, max: 2 }
+      if (rank[theirs.network] > rank[ours.network]) lines.push(note('אצלם רשת 5G/תעדוף שאין בתוכנית הזו. בדקו אם תוכנית אחרת שלנו כוללת 5G.', 'They have 5G/priority this plan lacks. Check whether another plan of ours includes 5G.'))
+      if (!lines.length) lines.push(note('בתוכנית הזו אין יתרון חו"ל/5G על פני המתחרה. חזרו להשוואת המחיר השנתי.', 'No roaming/5G edge over them on this plan. Go back to the yearly price comparison.'))
+    } else if (objection === 'think') {
+      lines.push(say(
+        `בטח, זו החלטה חשובה. רק לסיכום: "${ours.plan_name}" ב-${ilsP(oEff)} לחודש, ${gbText(ours.gb, tt)}${yearDiff >= 6 ? `, חיסכון של ${ilsR(yearDiff)} בשנה הראשונה` : ''}.`,
+        `Of course, it's an important decision. To recap: "${ours.plan_name}" at ${ilsP(oEff)}/month, ${gbText(ours.gb, tt)}${yearDiff >= 6 ? `, saving ${ilsR(yearDiff)} in year one` : ''}.`,
+      ))
+      lines.push(say('אשמח לרשום את ההצעה בתיק, כך שתהיה זמינה גם בפעם הבאה שנדבר.', 'I\'ll note the offer on your account so it\'s there next time we talk.'))
+      lines.push(note('תעדו את ההצעה בתיק ("העתקה לתיעוד").', 'Log the offer on the account ("Copy for notes").'))
+    } else if (objection === 'leave') {
+      lines.push(say('חבל לשמוע. לפני שמחליטים, אשמח להעביר אותך לצוות שיכול לבדוק הצעה מותאמת אישית.', 'Sorry to hear that. Before you decide, let me transfer you to the team that can look at a personal offer.'))
+      lines.push(note('העבירו לשימור עם סיכום ההשוואה ("העתקה לתיעוד").', 'Transfer to retention with the comparison summary ("Copy for notes").'))
+    }
+    const label = OBJECTIONS.find((o) => o.id === objection)
+    stages.push({ id: 'objection', title: tt(`התנגדות: ${label?.he || ''}`, `Pushback: ${label?.en || ''}`), lines })
+  }
+  return stages
+}
+
 // ── the hook ─────────────────────────────────────────────────────────────
 
 function newestTs(list) {
