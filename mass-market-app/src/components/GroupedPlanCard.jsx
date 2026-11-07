@@ -8,7 +8,8 @@ import { useWatchlist } from '../hooks/useWatchlist'
 import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
 import { useCoupons } from '../hooks/useCoupons'
 import { AFFILIATE_PROVIDERS, AFFILIATE_URLS } from '../data/affiliateLinks'
-import { GLOBAL_LABELS, GLOBAL_COLORS } from '../data/carrierLabels'
+import { GLOBAL_LABELS } from '../data/carrierLabels'
+import CarrierBadge from './ui/CarrierBadge'
 import { CARRIER_LOGOS } from './moca/carrierMeta'
 import { useLang } from '../hooks/useLanguage'
 import { localizeDest } from '../data/destI18n'
@@ -41,7 +42,7 @@ const LOGO_WIDTHS = {
 // with PlanCard) so the Saily/Voye tracking links can't drift between the two views.
 
 
-// GLOBAL_LABELS + GLOBAL_COLORS now live in ../data/carrierLabels (single source of
+// GLOBAL_LABELS now lives in ../data/carrierLabels (single source of
 // truth, shared with PlanCard + ComparePage + DashboardPage) so newly added eSIM
 // providers can't drift out of sync.
 
@@ -142,7 +143,6 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
     setSelectedDays(first?.days ?? null)
   }, [dataOptions, plans])
   const label = GLOBAL_LABELS[carrier] || carrier
-  const badgeColor = GLOBAL_COLORS[carrier] || 'gray'
   const countryData = getCountriesForPlan(selectedPlan)
 
   const watchKey = { carrier, plan_name: selectedPlan.plan_name || '', plan_type: 'global' }
@@ -174,7 +174,7 @@ function GroupedPlanCard({ carrier, destination, plans, trendInfo, isInCompare, 
 
       {/* Carrier badges — absolute top-right */}
       <div className="absolute top-3 right-3 flex items-center gap-1 flex-wrap max-w-[140px]">
-        <Badge color={badgeColor}>{label}</Badge>
+        <CarrierBadge carrier={carrier}>{label}</CarrierBadge>
         {trendInfo && (
           <span className="inline-flex items-center gap-0.5">
             <Delta value={Math.round(trendInfo.pct_change)} size="sm" suffix="%" />

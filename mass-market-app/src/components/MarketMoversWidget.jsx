@@ -1,20 +1,8 @@
 import { useState, useEffect, memo } from 'react'
 import { api } from '../lib/api'
-import Badge from './ui/Badge'
+import CarrierBadge from './ui/CarrierBadge'
 import { ALL_CARRIER_LABELS as CARRIER_LABELS } from '../data/carrierLabels'
 import { useLang } from '../hooks/useLanguage'
-
-const CARRIER_COLORS = {
-  // domestic
-  partner: 'pink', pelephone: 'blue', hotmobile: 'orange', cellcom: 'green',
-  mobile019: 'purple', xphone: 'orange', wecom: 'amber', neptucom: 'purple',
-  // global — warm palette so widget looks consistent across tabs
-  tuki: 'amber', terminalesim: 'orange', airalo: 'orange', pelephone_global: 'orange',
-  esimo: 'amber', simtlv: 'pink', world8: 'amber', xphone_global: 'orange',
-  saily: 'pink', holafly: 'orange', esimio: 'orange', sparks: 'amber',
-  voye: 'pink', orbit: 'amber', travelsim: 'amber',
-  yesim: 'orange', nomad: 'amber', ubigi: 'orange', alosim: 'pink',
-}
 
 function formatPrice(p) {
   return `₪${Number(p).toFixed(Number(p) % 1 === 0 ? 0 : 2)}`
@@ -50,7 +38,7 @@ const MoverCard = memo(function MoverCard({ mover, onClick, isAllowedCarrier }) 
       </div>
 
       <div className="mb-1">
-        <Badge color={CARRIER_COLORS[mover.carrier] || 'gray'}>{label}</Badge>
+        <CarrierBadge carrier={mover.carrier}>{label}</CarrierBadge>
       </div>
       <p className="text-[13px] font-semibold text-gray-800 truncate leading-tight mt-1">{mover.plan_name}</p>
 

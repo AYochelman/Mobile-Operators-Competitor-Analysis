@@ -1,7 +1,8 @@
 import { useState, useCallback, lazy, Suspense, memo } from 'react'
 import Badge from './ui/Badge'
 import Delta from './moca/Delta'
-import { getCarrierColor, CARRIER_LOGOS } from './moca/carrierMeta'
+import { CARRIER_LOGOS } from './moca/carrierMeta'
+import CarrierBadge from './ui/CarrierBadge'
 import CountryModal from './CountryModal'
 import Modal from './ui/Modal'
 import { getCountriesForPlan } from '../data/globalCountries'
@@ -16,7 +17,7 @@ import { useAnnotationCounts } from '../hooks/useAnnotationCounts'
 import { useCoupons } from '../hooks/useCoupons'
 import { AFFILIATE_PROVIDERS, AFFILIATE_URLS } from '../data/affiliateLinks'
 import { alosimUrlFor } from '../data/alosimCountries'
-import { GLOBAL_LABELS, GLOBAL_COLORS } from '../data/carrierLabels'
+import { GLOBAL_LABELS } from '../data/carrierLabels'
 import { CARRIER_HOME_URLS } from '../data/carrierHomeUrls'
 import { useLang } from '../hooks/useLanguage'
 import { localizeDest } from '../data/destI18n'
@@ -25,17 +26,12 @@ import { localizeDest } from '../data/destI18n'
 const PriceHistoryModal = lazy(() => import('./PriceHistoryModal'))
 
 
-const CARRIER_COLORS = {
-  partner: 'pink', pelephone: 'blue', hotmobile: 'orange', cellcom: 'green',
-  mobile019: 'purple', xphone: 'teal', wecom: 'amber', neptucom: 'indigo',
-  golan: 'teal', rami_levy: 'red',
-}
 const CARRIER_LABELS = {
   partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום',
   mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', neptucom: 'Neptucom',
   golan: 'גולן טלקום', rami_levy: 'רמי לוי תקשורת',
 }
-// GLOBAL_LABELS + GLOBAL_COLORS now live in ../data/carrierLabels (single source of
+// GLOBAL_LABELS now lives in ../data/carrierLabels (single source of
 // truth, shared with GroupedPlanCard + ComparePage + DashboardPage) so newly added
 // eSIM providers can't drift out of sync.
 // US operators for the נוחתים בארה"ב tab (type='usa')
@@ -46,13 +42,6 @@ const USA_LABELS = {
   simple_mobile: 'Simple Mobile', cricket: 'Cricket Wireless', h2o: 'H2O Wireless',
   visible: 'Visible', us_mobile: 'US Mobile', red_pocket: 'Red Pocket',
   straight_talk: 'Straight Talk', total_wireless: 'Total Wireless', boost: 'Boost Mobile',
-}
-const USA_COLORS = {
-  tmobile_prepaid: 'pink', att_prepaid: 'blue', verizon_prepaid: 'red',
-  mint: 'green', ultra: 'purple', lyca_usa: 'blue', tello: 'violet',
-  metro: 'purple', simple_mobile: 'emerald', cricket: 'green', h2o: 'cyan',
-  visible: 'indigo', us_mobile: 'sky', red_pocket: 'red',
-  straight_talk: 'teal', total_wireless: 'orange', boost: 'amber',
 }
 
 // CARRIER_LOGOS now lives in moca/carrierMeta.js (shared with <CarrierChip logo />)
@@ -262,9 +251,6 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
   const label = isUsa
     ? (USA_LABELS[carrier] || carrier)
     : isGlobal ? (GLOBAL_LABELS[carrier] || carrier) : (CARRIER_LABELS[carrier] || carrier)
-  const badgeColor = isUsa
-    ? (USA_COLORS[carrier] || 'gray')
-    : isGlobal ? (GLOBAL_COLORS[carrier] || 'gray') : (CARRIER_COLORS[carrier] || 'gray')
   // For reseller/USA plans, link out to the source post/plan page instead of the
   // (Israeli) carrier homepage map. Must be declared AFTER `carrier`.
   const providerUrl = (isReseller || isUsa) && plan.source_url ? plan.source_url : CARRIER_HOME_URLS[carrier]
@@ -379,19 +365,7 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
 
       {/* Carrier badge — absolute top-right */}
       <div className={`flex items-center gap-1 flex-wrap ${CARRIER_LOGOS[carrier] ? 'absolute top-3 right-3 max-w-[140px]' : 'mb-3'}`}>
-        {isContent ? (
-          <span
-            className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold tracking-wide"
-            style={{
-              backgroundColor: getCarrierColor(carrier) + '22',
-              color: getCarrierColor(carrier),
-            }}
-          >
-            {label}
-          </span>
-        ) : (
-          <Badge color={badgeColor}>{label}</Badge>
-        )}
+        <CarrierBadge carrier={carrier}>{label}</CarrierBadge>
         {trendInfo && (
           <span className="inline-flex items-center gap-0.5">
             <Delta value={Math.round(trendInfo.pct_change)} size="sm" suffix="%" />

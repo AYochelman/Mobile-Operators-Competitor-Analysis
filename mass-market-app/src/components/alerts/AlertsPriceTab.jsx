@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useHiddenCarrier } from '../../hooks/useHiddenCarrier'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
+import CarrierBadge from '../ui/CarrierBadge'
 import SearchableSelect from '../ui/SearchableSelect'
 import { GLOBAL_PROVIDERS } from '../../data/carrierLabels'
 import { useLang } from '../../hooks/useLanguage'
@@ -43,18 +44,7 @@ const CARRIERS = [
 ]
 
 // GLOBAL_PROVIDERS is derived from the single source of truth in data/carrierLabels —
-// add a provider there, not here. (The local CARRIER_COLORS below stays separate.)
-
-const CARRIER_COLORS = {
-  partner: 'blue', pelephone: 'orange', hotmobile: 'red', cellcom: 'purple',
-  mobile019: 'teal', xphone: 'pink', wecom: 'amber',
-  tuki: 'blue', terminalesim: 'green', airalo: 'orange', pelephone_global: 'orange',
-  esimo: 'purple', simtlv: 'teal', world8: 'pink', saily: 'blue', holafly: 'green',
-  esimio: 'blue', xphone_global: 'teal', sparks: 'amber', voye: 'pink',
-  orbit: 'indigo', travelsim: 'teal', gomoworld: 'cyan', tasim: 'purple',
-  maya: 'teal', esim70: 'emerald', jetpack: 'sky', besim: 'teal',
-  yesim: 'orange', nomad: 'green', ubigi: 'sky', alosim: 'red',
-}
+// add a provider there, not here.
 
 const TAB_LABELS = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי' }
 
@@ -331,9 +321,9 @@ export default function AlertsPriceTab() {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <Badge color={CARRIER_COLORS[a.carrier] || 'gray'}>
+                  <CarrierBadge carrier={a.carrier}>
                     {carrierLabel(a.carrier)}
-                  </Badge>
+                  </CarrierBadge>
                   <Badge color="blue">{TAB_UI_LABELS[a.tab] ? tt(TAB_UI_LABELS[a.tab][0], TAB_UI_LABELS[a.tab][1]) : (TAB_LABELS[a.tab] || a.tab)}</Badge>
                   {a.plan_pattern && (
                     <span className="text-[11px] text-gray-400 truncate max-w-[140px]" title={a.plan_pattern}>

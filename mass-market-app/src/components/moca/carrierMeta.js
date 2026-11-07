@@ -10,7 +10,7 @@
  */
 
 import { MVNO_BRAND_COLORS } from '../../data/mvnoBrandColors'
-import { ALL_CARRIER_LABELS } from '../../data/carrierLabels'
+import { ALL_CARRIER_LABELS, GLOBAL_PROVIDERS_REGISTRY } from '../../data/carrierLabels'
 
 const CHIP_LETTERS = {
   partner:    'פר',
@@ -29,6 +29,34 @@ const FALLBACK_COLOR = '#a08468'
 
 export function getCarrierColor(id) {
   return MVNO_BRAND_COLORS[id]?.primary || FALLBACK_COLOR
+}
+
+// US operators (נוחתים בארה"ב tab) — approximate logo colors.
+const USA_BRAND_COLORS = {
+  tmobile_prepaid: '#e20074', att_prepaid: '#009fdb', verizon_prepaid: '#cd040b',
+  mint: '#3fa535', ultra: '#f26522', lyca_usa: '#0f3c8c', tello: '#6c3fc5',
+  metro: '#6d2c91', simple_mobile: '#e31837', cricket: '#00a94f', h2o: '#0096d6',
+  visible: '#2400ff', us_mobile: '#1f6bff', red_pocket: '#d71920',
+  straight_talk: '#c8102e', total_wireless: '#4b2c8a', boost: '#f7901e',
+}
+
+// Global eSIM providers: the registry's per-provider hex (logo-derived), incl. aliases.
+const GLOBAL_BRAND_COLORS = Object.fromEntries(
+  GLOBAL_PROVIDERS_REGISTRY.flatMap(p => [
+    [p.id, p.chartColor],
+    ...(p.aliases || []).map(a => [a, p.chartColor]),
+  ])
+)
+
+/**
+ * Logo color for ANY provider id (domestic carrier, global eSIM provider, US
+ * operator). Drives the small provider-name pill on cards (<CarrierBadge>).
+ */
+export function getBrandColor(id) {
+  return MVNO_BRAND_COLORS[id]?.primary
+    || GLOBAL_BRAND_COLORS[id]
+    || USA_BRAND_COLORS[id]
+    || FALLBACK_COLOR
 }
 
 export function getCarrierLetter(id) {
