@@ -57,9 +57,15 @@ def _parse_extras(body: str) -> tuple[int | None, int | None, list[str]]:
     m_min = re.search(r"(\d{3,5})\s*דק", body)
     if m_min:
         minutes = int(m_min.group(1))
-    m_sms = re.search(r"SMS\s*(\d{3,5})", body) or re.search(r"(\d{3,5})\s*SMS", body)
-    if m_sms:
-        sms = int(m_sms.group(1))
+    # "5000 דק' שיחה ו- SMS" = the same allowance for both. Checked first so the
+    # roaming line that follows ("SMS 100 דקות שיחה ו- SMS לחו"ל") is not read
+    # as the SMS count.
+    if minutes and re.search(r"\d{3,5}\s*דק[^\d]{0,12}ו-?\s*SMS", body):
+        sms = minutes
+    else:
+        m_sms = re.search(r"SMS\s*(\d{3,5})(?!\s*דק)", body) or re.search(r"(\d{3,5})\s*SMS", body)
+        if m_sms:
+            sms = int(m_sms.group(1))
 
     feats = []
     if "Disney" in body or "דיסני" in body:
@@ -90,14 +96,22 @@ def scrape() -> list[dict]:
 
     plans = []
     seen = set()
-    for m in _PLAN_BLOCK.finditer(text):
+    matches = list(_PLAN_BLOCK.finditer(text))
+    for i, m in enumerate(matches):
         tier = m.group("tier")
         gb = int(m.group("gb"))
         price = float(m.group("price"))
         if (tier, gb, price) in seen:
             continue
         seen.add((tier, gb, price))
-        minutes, sms, feats = _parse_extras(m.group("body"))
+        # The minutes and the lines condition ("5 מנויים ומעלה להצטרפות") come
+        # AFTER the price, so also read the block's tail: up to its "להצטרפות"
+        # CTA, never past the next plan block.
+        nxt = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        tail = text[m.end():min(nxt, m.end() + 250)]
+        cta = tail.find("להצטרפות")
+        tail = tail[:cta] if cta >= 0 else tail[:150]
+        minutes, sms, feats = _parse_extras(m.group("body") + " " + tail)
 
         # Friendly plan name
         tier_label = {"4G": "4G", "5G": "5G", "MAX": "5G Max"}.get(tier, tier)

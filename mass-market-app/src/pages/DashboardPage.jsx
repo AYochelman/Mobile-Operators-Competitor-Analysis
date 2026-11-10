@@ -3,7 +3,7 @@ import { useSearchParams, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useScrape } from '../hooks/useScrape'
 import { useVisibleCarriers } from '../hooks/useHiddenCarrier'
-import { useDashboardPlans } from '../hooks/useDashboardPlans'
+import { useDashboardPlans, gbFilterApplies } from '../hooks/useDashboardPlans'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import PlanCard from '../components/PlanCard'
 import BannerMosaic from '../components/moca/BannerMosaic'
@@ -279,7 +279,7 @@ export default function DashboardPage() {
   const [filters, setFilters] = useState({
     carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', roaming: 'all',
     globalProvider: 'all', destination: 'all', region: 'all', days: 'all',
-    israeliProvider: 'all', contentCarrier: 'all', contentService: 'all', reseller: 'all',
+    israeliProvider: 'all', contentCarrier: 'all', contentService: 'all', reseller: 'all', lines: 'all',
     usaOperator: 'all', usaNetwork: 'all',
   })
   const [countryModal, setCountryModal] = useState(null)
@@ -328,13 +328,15 @@ export default function DashboardPage() {
     if (tab === 'resellers') {
       if (filters.reseller !== 'all') count++
       if (filters.carrier !== 'all') count++
+      if (filters.gen !== 'all') count++
+      if (filters.lines !== 'all') count++
     }
     if (tab === 'usa') {
       if (filters.usaOperator !== 'all') count++
       if (filters.usaNetwork !== 'all') count++
     }
     if (tab !== 'content') {
-      if (filters.gb !== 'all') count++
+      if (gbFilterApplies(tab, filters.gb)) count++
       if (filters.days !== 'all') count++
     }
     return count
@@ -606,7 +608,7 @@ export default function DashboardPage() {
     startTransition(() => {
       setFilters({ carrier: 'all', gb: 'all', sort: 'price_asc', gen: 'all', roaming: 'all',
         globalProvider: 'all', destination: 'all', region: 'all', days: 'all',
-        israeliProvider: 'all', contentCarrier: 'all', contentService: 'all', reseller: 'all',
+        israeliProvider: 'all', contentCarrier: 'all', contentService: 'all', reseller: 'all', lines: 'all',
         usaOperator: 'all', usaNetwork: 'all' })
       setVisibleCount(50)
     })
@@ -871,8 +873,59 @@ export default function DashboardPage() {
         {/* Expandable filter rows — 2-column layout */}
         {filtersOpen && (
           <div className={`grid grid-cols-1 ${tab === 'resellers' ? '' : 'md:grid-cols-[1fr_280px]'} gap-3 py-3 border-t border-gray-100 animate-slide-down items-start relative`} style={{overflow: 'visible'}}>
-            {/* Right column — Filters (the resellers tab has none, so its carrier/reseller boxes take the full width) */}
-            <div className={`space-y-2 ${tab === 'resellers' ? 'hidden' : ''}`} style={{overflow: 'visible'}}>
+            {/* Right column — Filters. On the resellers tab the grid is one column: these
+                rows sit on top and the carrier/reseller boxes keep the full width below. */}
+            <div className="space-y-2" style={{overflow: 'visible'}}>
+              {/* Resellers: Row 1 = גלישה | קווים. GB steps fit this data (almost every
+                  offer is >100GB); no "unlimited" chip - a null data_gb here means a
+                  voice-only line or an unpublished volume, not unlimited data. */}
+              {tab === 'resellers' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('גלישה', 'Data')}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {[['all', tt('הכל', 'All')], ['0-300', tt('עד 300GB', 'Up to 300GB')], ['300-500', '300-500GB'], ['500-1000', '500-1000GB'], ['1000+', '1000GB+']].map(([v, label]) => (
+                        <FilterTag key={v} label={label} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('קווים', 'Lines')}</p>
+                    <div className="flex flex-wrap gap-1">
+                      <FilterTag label={tt('הכל', 'All')} active={filters.lines === 'all'} onClick={() => setFilter('lines', 'all')} />
+                      <FilterTag label={tt('קו בודד', 'Single line')} active={filters.lines === 'single'} onClick={() => setFilter('lines', 'single')} />
+                      <FilterTag label={tt('רב-קווי (2+)', 'Multi-line (2+)')} active={filters.lines === 'multi'} onClick={() => setFilter('lines', 'multi')} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Resellers: Row 2 = דור רשת | מיון (same chips as the domestic tab) */}
+              {tab === 'resellers' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('דור רשת', 'Network gen')}</p>
+                    <div className="flex flex-wrap gap-1">
+                      <FilterTag label={tt('כולם', 'All')} active={filters.gen === 'all'} onClick={() => setFilter('gen', 'all')} />
+                      <FilterTag label="4G" active={filters.gen === '4g'} onClick={() => setFilter('gen', '4g')} />
+                      <FilterTag label="5G" active={filters.gen === '5g'} onClick={() => setFilter('gen', '5g')} />
+                      <FilterTag label={tt('5G מתועדף', '5G Priority')} active={filters.gen === '5g_priority'} onClick={() => setFilter('gen', '5g_priority')} />
+                    </div>
+                  </div>
+                  <div className="border border-moca-border/60 rounded-xl p-2.5">
+                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('מיון', 'Sort')}</p>
+                    <div className="flex flex-wrap gap-1">
+                      <FilterTag label={tt('מחיר ↑', 'Price ↑')} active={filters.sort === 'price_asc'} onClick={() => setFilter('sort', 'price_asc')} />
+                      <FilterTag label={tt('מחיר ↓', 'Price ↓')} active={filters.sort === 'price_desc'} onClick={() => setFilter('sort', 'price_desc')} />
+                      <FilterTag label="GB ↑" active={filters.sort === 'gb_asc'} onClick={() => setFilter('sort', 'gb_asc')} />
+                      <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
+                      <FilterTag label="₪/GB ↑" active={filters.sort === 'ppgb_asc'} onClick={() => setFilter('sort', 'ppgb_asc')} />
+                      <FilterTag label="₪/GB ↓" active={filters.sort === 'ppgb_desc'} onClick={() => setFilter('sort', 'ppgb_desc')} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Domestic: Row 1 = גלישה | גלישה בחו"ל */}
               {tab === 'domestic' && (
                 <div className="grid grid-cols-2 gap-3">

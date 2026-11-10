@@ -26,6 +26,53 @@ function scopeToProvider(plansGlobal, globalProvider) {
   return plansGlobal.filter(p => ids.includes(p.carrier))
 }
 
+/**
+ * Resellers tab: does this offer require joining with 2+ lines?
+ * The condition lives in free text, so the plan NAME decides first
+ * ("קו בודד" / "1-4 מנויים" = a single line qualifies; "5 מנויים ומעלה",
+ * "ב-2 קווים", "זוג", "טריפל", "משפחתי", "רב-קווי", "4 ב-100" = multi-line),
+ * then a required-lines clause in the extras ("בצירוף 3 מנויים ומעלה").
+ * Extras that only quote the single-line price as an alternative
+ * ("מנוי בודד: 39.9 ₪") are not a condition and are ignored.
+ */
+export function resellerIsMultiLine(plan) {
+  const name = plan.plan_name || ''
+  if (/קו בודד|מנוי בודד|\b1\s*-\s*\d+\s*(?:מנויים|קווים)/.test(name)) return false
+  if (/זוג|טריפל|משפחת|רב-?קו|family/i.test(name)) return true
+  if (/(?:^|\s)(\d+)\s*ב-?\s*\d/.test(name) && Number(name.match(/(?:^|\s)(\d+)\s*ב-?\s*\d/)[1]) >= 2) return true
+  const named = name.match(/(\d+)\+?\s*(?:מנויים|קווים|קווי)/)
+  if (named && Number(named[1]) >= 2) return true
+  if (/שני קווים|שתי מנויים/.test(name)) return true
+  const extras = (plan.extras || []).filter(e => !String(e).startsWith('משווק:')).join(' | ')
+  const req = extras.match(/(?:בצירוף|בהצטרפות)\s*(\d+)\+?\s*(?:מנויים|קווים)|(\d+)\+?\s*(?:מנויים|קווים)\s*ומעלה/)
+  return !!req && Number(req[1] || req[2]) >= 2
+}
+
+// GB filter values -> predicate. The first five are the domestic/abroad/global
+// chips; the 300/500/1000 steps are the resellers tab's, whose plans almost all
+// sit above 100GB. data_gb=null means unlimited (or, on resellers, unknown).
+const GB_RANGES = {
+  unlimited: g => g === null,
+  '0-5': g => g !== null && g <= 5,
+  '5-15': g => g !== null && g > 5 && g <= 15,
+  '15-100': g => g !== null && g > 15 && g <= 100,
+  '100+': g => g !== null && g > 100,
+  '0-300': g => g !== null && g <= 300,
+  '300-500': g => g !== null && g > 300 && g <= 500,
+  '500-1000': g => g !== null && g > 500 && g <= 1000,
+  '1000+': g => g !== null && g > 1000,
+}
+
+const RESELLER_GB = new Set(['0-300', '300-500', '500-1000', '1000+'])
+
+/** The gb filter value is shared by every tab, but each tab only shows its own
+ *  chips - so a value picked on another tab is ignored rather than filtering
+ *  invisibly (and isn't counted as an active filter). */
+export function gbFilterApplies(tab, gb) {
+  if (!gb || gb === 'all' || tab === 'content' || !GB_RANGES[gb]) return false
+  return tab === 'resellers' ? RESELLER_GB.has(gb) : !RESELLER_GB.has(gb)
+}
+
 const pricePerGb = (p) => {
   const pr = Number(p.price)
   const gb = Number(p.data_gb)
@@ -55,7 +102,7 @@ export function filterAndSortPlans(tabPlans, tab, f, ctx) {
   if (tab === 'domestic' || tab === 'abroad') {
     if (f.carrier !== 'all') result = result.filter(p => p.carrier === f.carrier)
   }
-  if (tab === 'domestic' && f.gen !== 'all') {
+  if ((tab === 'domestic' || tab === 'resellers') && f.gen !== 'all') {
     // "5G" = basic 5G only (excludes priority); "5G מתועדף" = priority only
     if (f.gen === '5g') result = result.filter(p => has5G(p) && !hasMaxPriority(p))
     if (f.gen === '5g_priority') result = result.filter(hasMaxPriority)
@@ -114,6 +161,8 @@ export function filterAndSortPlans(tabPlans, tab, f, ctx) {
   if (tab === 'resellers') {
     if (f.reseller !== 'all') result = result.filter(p => p.reseller_id === f.reseller)
     if (f.carrier !== 'all') result = result.filter(p => p.carrier === f.carrier)
+    if (f.lines === 'single') result = result.filter(p => !resellerIsMultiLine(p))
+    if (f.lines === 'multi') result = result.filter(resellerIsMultiLine)
   }
   if (tab === 'usa') {
     if (f.usaOperator !== 'all') result = result.filter(p => p.carrier === f.usaOperator)
@@ -123,12 +172,8 @@ export function filterAndSortPlans(tabPlans, tab, f, ctx) {
     }
   }
 
-  if (f.gb !== 'all' && tab !== 'content') {
-    if (f.gb === 'unlimited') result = result.filter(p => p.data_gb === null)
-    else if (f.gb === '0-5') result = result.filter(p => p.data_gb !== null && p.data_gb <= 5)
-    else if (f.gb === '5-15') result = result.filter(p => p.data_gb !== null && p.data_gb > 5 && p.data_gb <= 15)
-    else if (f.gb === '15-100') result = result.filter(p => p.data_gb !== null && p.data_gb > 15 && p.data_gb <= 100)
-    else if (f.gb === '100+') result = result.filter(p => p.data_gb !== null && p.data_gb > 100)
+  if (gbFilterApplies(tab, f.gb)) {
+    result = result.filter(p => GB_RANGES[f.gb](p.data_gb))
   }
 
   if (f.days !== 'all' && (tab === 'abroad' || tab === 'global' || tab === 'usa')) {
