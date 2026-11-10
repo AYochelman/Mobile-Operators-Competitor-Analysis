@@ -155,6 +155,13 @@ const RESELLERS = [
     source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%94%D7%A6%D7%98%D7%A8%D7%A4%D7%95%D7%AA%20%D7%9C%D7%A4%D7%9C%D7%90%D7%A4%D7%95%D7%9F&search_type=keyword_unordered&media_type=all' },
   { id: 'fb_pelephone_deals', label: '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df \u05de\u05d1\u05e6\u05e2\u05d9\u05dd \u05d7\u05d3\u05e9\u05d9\u05dd - \u05de\u05d5\u05d3\u05e2\u05ea \u05e4\u05d9\u05d9\u05e1\u05d1\u05d5\u05e7', underlying: 'pelephone',
     source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%A4%D7%9C%D7%90%D7%A4%D7%95%D7%9F%20%D7%9E%D7%91%D7%A6%D7%A2%D7%99%D7%9D%20%D7%97%D7%93%D7%A9%D7%99%D7%9D&search_type=keyword_unordered&media_type=all' },
+  { id: 'fb_pelephone_promos', label: 'פלאפון- מבצעים - מודעת פייסבוק', underlying: 'pelephone',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%A4%D7%9C%D7%90%D7%A4%D7%95%D7%9F-%20%D7%9E%D7%91%D7%A6%D7%A2%D7%99%D7%9D&search_type=keyword_unordered&media_type=all' },
+  // Price-comparison site: the scraper reads the carrier from each ad (currently Pelephone offers)
+  { id: 'fb_simpel', label: 'סימפל השוואת מחירים - מודעת פייסבוק', underlying: 'pelephone',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%A1%D7%99%D7%9E%D7%A4%D7%9C%20%D7%90%D7%AA%D7%A8%20%D7%94%D7%A9%D7%95%D7%95%D7%90%D7%AA%20%D7%9E%D7%97%D7%99%D7%A8%D7%99%D7%9D&search_type=keyword_unordered&media_type=all' },
+  { id: 'fb_rami_levy_branches', label: 'רמי לוי תקשורת סניפים - מודעת פייסבוק', underlying: 'rami_levy',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%A8%D7%9E%D7%99%20%D7%9C%D7%95%D7%99%20%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA%20-%20%D7%A1%D7%A0%D7%99%D7%A4%D7%99%D7%9D&search_type=keyword_unordered&media_type=all' },
 ]
 
 // US operators on the "\u05e0\u05d5\u05d7\u05ea\u05d9\u05dd \u05d1\u05d0\u05e8\u05d4"\u05d1" tab. `net` groups them by the underlying
@@ -863,9 +870,9 @@ export default function DashboardPage() {
 
         {/* Expandable filter rows — 2-column layout */}
         {filtersOpen && (
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-3 py-3 border-t border-gray-100 animate-slide-down items-start relative" style={{overflow: 'visible'}}>
-            {/* Right column — Filters */}
-            <div className="space-y-2" style={{overflow: 'visible'}}>
+          <div className={`grid grid-cols-1 ${tab === 'resellers' ? '' : 'md:grid-cols-[1fr_280px]'} gap-3 py-3 border-t border-gray-100 animate-slide-down items-start relative`} style={{overflow: 'visible'}}>
+            {/* Right column — Filters (the resellers tab has none, so its carrier/reseller boxes take the full width) */}
+            <div className={`space-y-2 ${tab === 'resellers' ? 'hidden' : ''}`} style={{overflow: 'visible'}}>
               {/* Domestic: Row 1 = גלישה | גלישה בחו"ל */}
               {tab === 'domestic' && (
                 <div className="grid grid-cols-2 gap-3">
@@ -1204,8 +1211,9 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Resellers */}
+              {/* Resellers: carrier box + reseller box side by side on desktop */}
               {tab === 'resellers' && (
+                <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] gap-3 items-start">
                 <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[11px] font-medium text-gray-500">{tt('ספק', 'Carrier')}</p>
@@ -1243,9 +1251,7 @@ export default function DashboardPage() {
                     })}
                   </div>
                 </div>
-              )}
 
-              {tab === 'resellers' && (
                 <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[11px] font-medium text-gray-500">{tt('משווקים', 'Resellers')}</p>
@@ -1258,7 +1264,7 @@ export default function DashboardPage() {
                       {tt('כולם', 'All')}
                     </button>
                   </div>
-                  <div className="grid grid-cols-1 gap-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1">
                     {RESELLERS.map(r => {
                       const cnt = plans.resellers?.filter(p => p.reseller_id === r.id &&
                         (filters.carrier === 'all' || p.carrier === filters.carrier)).length || 0
@@ -1267,6 +1273,7 @@ export default function DashboardPage() {
                       return (
                         <button
                           key={r.id}
+                          title={r.label}
                           onClick={() => cnt > 0 ? setFilter('reseller', r.id) : null}
                           className={`px-1 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
                             filters.reseller === r.id ? 'bg-gray-900 text-white' :
@@ -1279,6 +1286,7 @@ export default function DashboardPage() {
                       )
                     })}
                   </div>
+                </div>
                 </div>
               )}
             </div>

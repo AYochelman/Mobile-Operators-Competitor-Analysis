@@ -351,6 +351,9 @@ RESELLER_NAMES = {
     "analizer":             "אנלייזר (מתווך)",
     "fb_pelephone_join":    "הצטרפות לפלאפון (מודעת פייסבוק)",
     "fb_pelephone_deals":   "פלאפון מבצעים חדשים (מודעת פייסבוק)",
+    "fb_pelephone_promos":  "פלאפון- מבצעים (מודעת פייסבוק)",
+    "fb_simpel":            "סימפל השוואת מחירים (מודעת פייסבוק)",
+    "fb_rami_levy_branches": "רמי לוי תקשורת סניפים (מודעת פייסבוק)",
     "cellcomshefamr":       "סלקום שפרעם",
     "zorro":                "זורו",
 }
