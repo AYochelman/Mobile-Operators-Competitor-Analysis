@@ -13,4 +13,5 @@ Pillow==12.1.1
 qrcode==8.2
 psycopg2-binary==2.9.11
 gunicorn==23.0.0
+numpy==2.4.6
 pytest
