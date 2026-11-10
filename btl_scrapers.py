@@ -372,6 +372,11 @@ _RAMI_CARD = re.compile(
 
 
 def scrape_rami_landing() -> list[dict]:
+    """The page advertises bundle TOTALS ("4 ב-100" = 100 ₪ for all 4 lines),
+    but every reseller row stores the PER-LINE price (2026-11-10), so the
+    resellers tab sorts and compares like with like. The line count is the
+    number before "ב-" in the package name; the total goes to extras.
+    data_gb is already per line on this page (each card's נפח גלישה)."""
     text = _fetch_text(RAMI_LANDING_URL)
     gift = "חודש במתנה למצטרפים חדשים" in text
     plans = []
@@ -379,18 +384,19 @@ def scrape_rami_landing() -> list[dict]:
         gb, title, mins, sms, price, tail, term = m.groups()
         title = re.sub(r"ב-\s+", "ב-", title.strip())
         name = title if "ב-" in title else f"{title} – {gb}GB"
+        total = float(price)
+        n = re.search(r"(\d+)\s*ב-", name)
+        lines = int(n.group(1)) if n else (2 if "לשני קווים" in tail else 1)
+        per_line = round(total / lines, 2) if lines > 1 else total
         extras = [f"תוקף: {term} חודשים"]
-        per_line = re.search(r"(\d{1,3}(?:\.\d{1,2})?)\s*₪ לכל קו", tail)
-        if "לשני קווים" in tail:
-            extras.insert(0, f"₪{price} לשני הקווים יחד")
-        elif per_line:
-            extras.insert(0, f"₪{price} לכל הקווים יחד ({per_line.group(1)} ₪ לקו)")
+        if lines > 1:
+            extras.insert(0, f"{per_line:g} ₪ לקו בהצטרפות {lines} קווים (סה\"כ {total:g} ₪)")
         if gift and "זוגות" in name:
             extras.append("חודש במתנה למצטרפים חדשים")
         extras.append("בכפוף לתקנון המבצע והסכם ההתקשרות (ט.ל.ח)")
         plans.append({
             "reseller_id": "rami_levy_landing", "carrier": "rami_levy",
-            "plan_name": name, "price": float(price), "data_gb": float(gb),
+            "plan_name": name, "price": per_line, "data_gb": float(gb),
             "minutes": int(mins), "sms": int(sms),
             "extras": extras, "source_url": RAMI_LANDING_URL, "seen_at": _today(),
         })

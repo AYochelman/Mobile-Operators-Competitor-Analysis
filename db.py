@@ -4101,7 +4101,7 @@ ALWAYS_SHOW_RESELLER_IDS = {
     # shown (user request 2026-11-07).
     "fb_rami_levy_branches",  # same kosher-plan (data_gb=None) problem as the rami_levy_* rows above
     "kamaze",             # only BTL-marked rows are scraped (multi-line/ladder)
-    "kamazeole",          # 3-line family bundle — total-price dominance is unfair
+    "kamazeole",          # 3-line family bundle (manual seed, shown regardless; price is per line since 2026-11-10)
 }
 
 

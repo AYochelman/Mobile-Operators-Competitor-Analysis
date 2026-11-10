@@ -87,14 +87,16 @@ PLANS = [
     # filter, which would then dominate every priced rami_levy reseller plan) —
     # reseller_id "rami_levy_landing" is whitelisted in
     # db.ALWAYS_SHOW_RESELLER_IDS so all 3 stay visible in the משווקים tab.
-    # Prices are the headline totals the page advertises (the package names
-    # encode them: "2 ב-40", "3 ב-80").
+    # Prices are PER LINE (2026-11-10): the package names encode the headline
+    # total ("2 ב-40", "3 ב-80") and the extras spell it out. NB: these rows are
+    # superseded by btl_scrapers.scrape_rami_landing (daily), which deletes the
+    # ones the page no longer lists.
     # ─────────────────────────────────────────────────────────────────────
     {
         "reseller_id": "rami_levy_landing",
         "carrier": "rami_levy",
         "plan_name": "זוגות 2 ב-40",
-        "price": 40.0,
+        "price": 20.0,
         "data_gb": 200,
         "minutes": 2500,
         "sms": 2500,
@@ -112,7 +114,7 @@ PLANS = [
         "reseller_id": "rami_levy_landing",
         "carrier": "rami_levy",
         "plan_name": "טריפל 3 ב-80",
-        "price": 80.0,
+        "price": 26.67,
         "data_gb": 600,
         "minutes": 5000,
         "sms": 5000,
@@ -167,18 +169,19 @@ PLANS = [
         "seen_at": "2026-06-11",
     },
     {
-        # kamazeole — Golan family bundle (3 lines). The dominance filter would
-        # hide it (total ₪99 > any single-line plan) so the id is whitelisted
-        # in db.ALWAYS_SHOW_RESELLER_IDS; structurally it's a per-line winner.
+        # kamazeole — Golan family bundle (3 lines). Stored PER LINE like every
+        # reseller row (2026-11-10): 33 ₪ / 500GB a line, the 99 ₪ / 1500GB
+        # family total in extras (the name keeps "1500GB" so the row key is
+        # unchanged). Whitelisted in db.ALWAYS_SHOW_RESELLER_IDS.
         "reseller_id": "kamazeole",
         "carrier": "golan",
         "plan_name": "משפחתית — 3 קווים 1500GB",
-        "price": 99.0,
-        "data_gb": 1500,
+        "price": 33.0,
+        "data_gb": 500,
         "minutes": None,
         "sms": None,
         "extras": [
-            "99 ₪ לחודש בהצטרפות 3 קווים (33 ₪ לקו)",
+            "33 ₪ לקו בהצטרפות 3 קווים (סה\"כ 99 ₪, 1500GB למשפחה)",
             "500GB גלישה לכל קו במשפחה",
             "1GB גלישה בחו\"ל מתנה בכל חודש",
             "חיבור eSIM מיידי",
@@ -234,11 +237,12 @@ PLANS = [
         "reseller_id": "rami_levy_cc",
         "carrier": "rami_levy",
         "plan_name": "זוג קווים ב-50 ₪ — הטבת כרטיס אשראי",
-        "price": 50.0,
+        "price": 25.0,                 # per line (2026-11-10); total in extras
         "data_gb": 250,
         "minutes": None,
         "sms": None,
         "extras": [
+            "25 ₪ לקו בזוג קווים (סה\"כ 50 ₪)",
             "חודשיים ראשונים + דמי חיבור חינם — למשלמים בכרטיס אשראי רמי לוי בלבד",
             "לאחר מכן 22 חודשים ב-50 ₪ לזוג קווים",
             "דמי מעבר חד-פעמיים 9.90 ₪",
