@@ -768,6 +768,7 @@ from scrapers.voye import (  # noqa: E402,F401
 from scrapers.orbit import (  # noqa: E402,F401
     ORBIT_NAME_TO_HEBREW,
     ORBIT_ZONE_TO_HEBREW,
+    ORBIT_PASS_TO_HEBREW,
     scrape_orbit_global,
 )
 from scrapers.travelsim import (  # noqa: E402,F401

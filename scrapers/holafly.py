@@ -6,6 +6,7 @@ monkeypatching `scraper.<name>` in tests keeps working; scraper.py re-exports
 everything defined here.
 """
 import scraper as core  # noqa: E402  (the monolith; imported at its bottom)
+import threading
 import re
 logger = core.logger
 
@@ -200,24 +201,54 @@ HOLAFLY_SLUG_TO_HEBREW = {
 _HOLAFLY_KEY_DAYS = {1, 3, 5, 7, 10, 15, 20, 30, 60, 90}
 
 
+# -- Paced Shopify fetch ------------------------------------------------------
+# holafly-esim.myshopify.com rate-limits the product .json endpoint. The two
+# scrapers below used to fire ~190 requests at 5/s (and they run CONCURRENTLY in
+# the scrape_all_global pool), so from ~2026-11 two thirds of the calls came back
+# HTTP 429 and were dropped: 553 plans / 59 countries instead of ~1,600 / 173,
+# and 3 of 16 regions. All Holafly requests now share one pace (lock + minimum
+# gap) and a 429 is retried with backoff, honoring Retry-After when sent.
+_HOLAFLY_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+               "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+_HOLAFLY_MIN_GAP = 0.6          # seconds between any two Holafly requests
+_holafly_lock = threading.Lock()
+_holafly_last = [0.0]
+
+
+def _holafly_get_json(url):
+    import urllib.request, urllib.error, json as _json, time as _time
+    backoff = 5
+    for attempt in range(5):
+        with _holafly_lock:
+            wait = _HOLAFLY_MIN_GAP - (_time.monotonic() - _holafly_last[0])
+            if wait > 0:
+                _time.sleep(wait)
+            _holafly_last[0] = _time.monotonic()
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": _HOLAFLY_UA})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                return _json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and attempt < 4:
+                retry_after = e.headers.get("Retry-After") or ""
+                _time.sleep(min(int(retry_after) if retry_after.isdigit() else backoff, 60))
+                backoff *= 2
+                continue
+            raise
+
+
 def scrape_holafly_global(_page=None, usd_rate=None):
     """Scrape Holafly eSIM plans via Shopify product JSON API (no Playwright needed).
     All Holafly plans offer unlimited data. Filters to key durations only."""
-    import urllib.request, json as _json, time as _time
-
     if usd_rate is None:
         usd_rate = core._get_usd_to_ils()
 
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     all_plans = []
     success_count = 0
 
     for slug, country_heb in HOLAFLY_SLUG_TO_HEBREW.items():
         try:
-            url = f"https://holafly-esim.myshopify.com/products/esim-{slug}.json"
-            req = urllib.request.Request(url, headers={"User-Agent": ua})
-            with urllib.request.urlopen(req, timeout=12) as resp:
-                data = _json.loads(resp.read())
+            data = _holafly_get_json(f"https://holafly-esim.myshopify.com/products/esim-{slug}.json")
 
             variants = data.get("product", {}).get("variants", [])
             for v in variants:
@@ -243,7 +274,6 @@ def scrape_holafly_global(_page=None, usd_rate=None):
                 ))
 
             success_count += 1
-            _time.sleep(0.2)
 
         except Exception as exc:
             logger.warning(f"Holafly {slug}: {exc}")
@@ -287,21 +317,15 @@ _HOLAFLY_NON_SHOPIFY_REGIONS = {
 def scrape_holafly_regions(_page=None, usd_rate=None):
     """Scrape Holafly regional eSIM plans via Shopify product JSON API (no Playwright needed).
     All Holafly regional plans offer unlimited data. Filters to key durations only."""
-    import urllib.request, json as _json, time as _time
-
     if usd_rate is None:
         usd_rate = core._get_usd_to_ils()
 
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     all_plans = []
     success_count = 0
 
     for slug, region_heb in HOLAFLY_REGIONS.items():
         try:
-            url = f"https://holafly-esim.myshopify.com/products/{slug}.json"
-            req = urllib.request.Request(url, headers={"User-Agent": ua})
-            with urllib.request.urlopen(req, timeout=12) as resp:
-                data = _json.loads(resp.read())
+            data = _holafly_get_json(f"https://holafly-esim.myshopify.com/products/{slug}.json")
 
             variants = data.get("product", {}).get("variants", [])
             for v in variants:
@@ -329,7 +353,6 @@ def scrape_holafly_regions(_page=None, usd_rate=None):
                 ))
 
             success_count += 1
-            _time.sleep(0.2)
 
         except Exception as exc:
             logger.warning(f"Holafly region {slug}: {exc}")

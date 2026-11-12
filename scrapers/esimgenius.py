@@ -29,6 +29,7 @@ ESIMGENIUS_SLUG_OVERRIDES = {
     "ivory-coast": "חוף השנהב",
     "madeira": "מדיירה",
     "rhodes": "רודוס",
+    "russia": "רוסיה",
     "saint-pierre-miquelon": "סן פייר ומיקלון",
     "sardinia": "סרדיניה",
     "scotland": "סקוטלנד",
@@ -52,6 +53,7 @@ ESIMGENIUS_REGION_TO_HEBREW = {
 _ESIMGENIUS_SKIP_SLUGS = {
     "advisor", "contact", "destinations", "how-it-works", "privacy",
     "refund-policy", "terms", "travel-esim-guide", "palestine",
+    "articles", "business", "global-monthly",
 }
 
 
@@ -74,7 +76,18 @@ def scrape_esimgenius_global(_page=None, usd_rate=None):
     slugs = set(ESIMGENIUS_REGION_TO_HEBREW)
     try:
         sitemap = core._esimo_fetch("https://esimgenius.ai/sitemap.xml", timeout=30)
-        slugs.update(re.findall(r"<loc>https://esimgenius\.ai/([a-z0-9-]+)</loc>", sitemap))
+        # Since ~2026-10 sitemap.xml is a sitemap INDEX (one child per language);
+        # the destination pages moved into sitemap-en.xml. The old single-file
+        # regex matched nothing there, so only the 5 regional pages were scraped
+        # (62 plans instead of ~2,300) with no warning.
+        children = re.findall(r"<loc>(https://esimgenius\.ai/[^<]+\.xml)</loc>", sitemap)
+        if children:
+            english = [u for u in children if re.search(r"sitemap-en\.xml$", u)] or children
+            sitemap = " ".join(core._esimo_fetch(u, timeout=30) for u in english)
+        found = re.findall(r"<loc>https://esimgenius\.ai/([a-z0-9-]+)</loc>", sitemap)
+        if not found:
+            logger.warning("eSIM Genius: sitemap lists no destination pages - scraping regional pages only")
+        slugs.update(found)
     except Exception as exc:
         logger.warning(f"eSIM Genius sitemap fetch failed ({exc}) — scraping regional pages only")
     slugs -= _ESIMGENIUS_SKIP_SLUGS
