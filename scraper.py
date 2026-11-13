@@ -621,6 +621,7 @@ from scrapers.mobile019 import (  # noqa: E402,F401
 from scrapers.tuki import (  # noqa: E402,F401
     scrape_tuki_global,
     TUKI_REGIONS,
+    TUKI_ZONE_TO_HEBREW,
     scrape_tuki_regions,
     scrape_tuki_local,
 )

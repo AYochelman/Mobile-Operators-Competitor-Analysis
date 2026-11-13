@@ -9,96 +9,145 @@ import scraper as core  # noqa: E402  (the monolith; imported at its bottom)
 logger = core.logger
 
 
+_TUKI_API = "https://www.tuki-esim.co.il/ds/api/globalsim/data/?lcid=1037&pageControlId=21412"
+
+# Multi-country zone (API English name) -> the Hebrew region label already stored
+# in global_plans, so plan_name keys and their price history carry over.
+TUKI_ZONE_TO_HEBREW = {
+    "Africa":            "אפריקה",                                      # אפריקה
+    "Asia":              "אסיה",                                              # אסיה
+    "Central America":   "אמריקה הלטינית",          # אמריקה הלטינית
+    "Europe-multi-IMSI": "אירופה",                                      # אירופה
+    "GLOBAL":            "גלובלי",                                      # גלובלי
+    "North America":     "צפון אמריקה",                    # צפון אמריקה
+    "Oceania":           "אוקיאניה",                                # אוקיאניה
+    "South America":     "אמריקה הדרומית",          # אמריקה הדרומית
+}
+
+
+def _tuki_fetch_data():
+    """Tuki's whole catalog in one public JSON(P) document: countries, zones, packages."""
+    import urllib.request, json as _json
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124"
+    req = urllib.request.Request(_TUKI_API, headers={"User-Agent": ua})
+    raw = urllib.request.urlopen(req, timeout=30).read().decode("utf-8")
+    # Response is a JS assignment: datasource.globalsimData={...}
+    return _json.loads(raw.split("=", 1)[1])
+
+
+def _tuki_zone_packages(data):
+    """{Hebrew region: {(gb, days): usd}} for the multi-country zones of the API."""
+    out = {}
+    unknown = []
+    for zone in data.get("zones", []):
+        if len(zone.get("countries") or []) < 2 or zone.get("isHide"):
+            continue
+        heb = TUKI_ZONE_TO_HEBREW.get(zone.get("name"))
+        if not heb:
+            unknown.append(zone.get("name"))
+            continue
+        tiers = {}
+        for pkg in data.get("packages", []):
+            if pkg.get("locationZoneId") != zone.get("id"):
+                continue
+            try:
+                gb = float(pkg.get("gigaDataByte") or 0)
+                days = int(pkg.get("validityPeriodDays") or 0)
+                usd = float(pkg.get("price") or 0)
+            except (ValueError, TypeError):
+                continue
+            if gb > 0 and days > 0 and usd > 0:
+                tiers[(int(gb) if gb == int(gb) else gb, days)] = usd
+        if tiers:
+            out[heb] = tiers
+    if unknown:
+        logger.warning(f"Tuki: unmapped zones {unknown} - add them to TUKI_ZONE_TO_HEBREW")
+    return out
+
+
+def _tuki_regions_live():
+    """Live zone price table, or the last-known static one if the API is down."""
+    try:
+        live = _tuki_zone_packages(_tuki_fetch_data())
+        if live:
+            return live, True
+        logger.warning("Tuki: API returned no zone packages - using the static table")
+    except Exception as e:
+        logger.warning(f"Tuki zones API failed ({e}) - using the static table")
+    return TUKI_REGIONS, False
+
+
 def scrape_tuki_global(page, usd_rate):
-    page.goto(
-        "https://www.tuki-esim.co.il/ds/heb/hp/regional-packages/global/",
-        timeout=30000, wait_until="networkidle"
-    )
-    page.wait_for_timeout(2000)
+    """Tuki's GLOBAL zone as the "Tuki Global" rows (139-country coverage card).
+
+    Read from the catalog API since 2026-11: the Playwright scrape of the
+    regional-packages page returned 0 cards on some runs (17:00 on 2026-11-12),
+    leaving these rows to age. `page` is unused and kept for the call signature.
+    """
+    regions, _live = _tuki_regions_live()
     plans = []
-    for card in page.query_selector_all(".blue5, .blue15, .blue30"):
-        gb_el    = card.query_selector(".gb span")
-        price_el = card.query_selector(".price span:last-child")
-        valid_el = card.query_selector(".valid span")
-        if not gb_el or not price_el:
-            continue
-        gb_text    = gb_el.inner_text().strip()
-        price_text = price_el.inner_text().strip()
-        valid_text = valid_el.inner_text().strip() if valid_el else ""
-        gb      = core._parse_gb(gb_text)
-        days    = core._parse_days(valid_text)
-        usd_val = core._parse_price(price_text)
-        if usd_val is None:
-            continue
-        price_ils = round(usd_val * usd_rate, 2)
-        name = f"Tuki Global {gb_text}"
-        if days:
-            name += f" {days}d"
+    for (gb, days), usd_val in regions.get("גלובלי", {}).items():  # גלובלי
         plans.append(core._make_global_plan(
-            "tuki", name, price_ils, "USD", usd_val,
-            gb, days, extras=["139 מדינות", "eSIM בלבד"]
+            "tuki", f"Tuki Global {gb:g}GB {days}d", round(usd_val * usd_rate, 2), "USD", usd_val,
+            float(gb), days, extras=["139 מדינות", "eSIM בלבד"]
         ))
     logger.info(f"Tuki global: {len(plans)} plans")
     return plans
 
 
+# Fallback only (API down). Last synced with the API 2026-11-12: Tuki dropped the
+# 2GB/15-day tier everywhere on 2026-10-25, but this table kept emitting it for
+# two more weeks as plans nobody could buy.
 TUKI_REGIONS = {
-    "\u05d0\u05d5\u05e7\u05d9\u05d0\u05e0\u05d9\u05d4": {  # אוקיאניה
+    "אוקיאניה": {  # אוקיאניה
         (1, 7): 12.0, (3, 30): 33.0, (5, 30): 46.5, (10, 30): 69.3, (20, 30): 115.5,
     },
-    "\u05d0\u05d9\u05e8\u05d5\u05e4\u05d4": {  # אירופה
-        (1, 7): 5.0, (2, 15): 9.5, (3, 30): 13.0, (5, 30): 20.0, (10, 30): 37.0, (20, 30): 49.0, (50, 90): 100.0, (100, 180): 185.0,
+    "אירופה": {  # אירופה
+        (1, 7): 5.0, (3, 30): 13.0, (5, 30): 20.0, (10, 30): 37.0, (20, 30): 49.0, (50, 90): 100.0, (100, 180): 185.0,
     },
-    "\u05d0\u05de\u05e8\u05d9\u05e7\u05d4 \u05d4\u05d3\u05e8\u05d5\u05de\u05d9\u05ea": {  # אמריקה הדרומית
-        (1, 7): 15.0, (2, 15): 28.0, (3, 30): 39.0, (5, 30): 60.0,
+    "אמריקה הדרומית": {  # אמריקה הדרומית
+        (1, 7): 15.0, (3, 30): 39.0, (5, 30): 60.0,
     },
-    "\u05d0\u05de\u05e8\u05d9\u05e7\u05d4 \u05d4\u05dc\u05d8\u05d9\u05e0\u05d9\u05ea": {  # אמריקה הלטינית (Central/Caribbean)
-        (1, 7): 6.5, (2, 15): 12.0, (3, 30): 17.0, (5, 30): 25.5, (10, 30): 46.0, (20, 30): 65.0,
+    "אמריקה הלטינית": {  # אמריקה הלטינית (Central/Caribbean)
+        (1, 7): 6.5, (3, 30): 17.0, (5, 30): 25.5, (10, 30): 46.0, (20, 30): 65.0,
     },
-    "\u05e6\u05e4\u05d5\u05df \u05d0\u05de\u05e8\u05d9\u05e7\u05d4": {  # צפון אמריקה
-        (1, 7): 6.5, (2, 15): 12.0, (3, 30): 17.0, (5, 30): 25.5, (10, 30): 46.0,
+    "צפון אמריקה": {  # צפון אמריקה
+        (1, 7): 6.5, (3, 30): 17.0, (5, 30): 25.5, (10, 30): 46.0,
     },
-    "\u05d0\u05e1\u05d9\u05d4": {  # אסיה
-        (1, 7): 5.0, (2, 15): 9.5, (3, 30): 13.0, (5, 30): 20.0, (10, 30): 37.0, (20, 30): 49.0, (50, 90): 100.0, (100, 180): 185.0,
+    "אסיה": {  # אסיה
+        (1, 7): 5.0, (3, 30): 13.0, (5, 30): 20.0, (10, 30): 37.0, (20, 30): 49.0, (50, 90): 100.0, (100, 180): 185.0,
     },
-    "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4": {  # אפריקה
-        (1, 30): 27.0, (2, 30): 38.0, (3, 30): 59.0,
+    "אפריקה": {  # אפריקה
+        (1, 30): 27.0, (3, 30): 59.0,
     },
-    "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9": {  # גלובלי
-        (1, 7): 9.0, (2, 15): 17.0, (3, 30): 24.0, (5, 60): 35.0, (10, 180): 59.0, (20, 365): 69.0,
+    "גלובלי": {  # גלובלי
+        (1, 7): 9.0, (3, 30): 24.0, (5, 60): 35.0, (10, 180): 59.0, (20, 365): 69.0,
     },
 }
 
 
 def scrape_tuki_regions(page, usd_rate):
-    """Tuki regional eSIM plans — hardcoded prices (USD)."""
+    """Tuki regional eSIM plans (USD) from the catalog API's multi-country zones."""
     all_plans = []
-    for region_heb, plans_data in TUKI_REGIONS.items():
+    regions, live = _tuki_regions_live()
+    for region_heb, plans_data in regions.items():
         for (gb, days), price_usd in plans_data.items():
             price_ils = round(price_usd * usd_rate, 2)
-            plan_name = f"{region_heb} \u2013 {gb}GB \u2013 {days} \u05d9\u05de\u05d9\u05dd"
+            plan_name = f"{region_heb} – {gb:g}GB – {days} ימים"
             all_plans.append(core._make_global_plan(
                 "tuki", plan_name, price_ils, "USD", price_usd,
                 data_gb=gb, days=days, esim=True, extras=[region_heb]
             ))
-    logger.info(f"Tuki regions: {len(all_plans)} plans from {len(TUKI_REGIONS)} regions")
+    logger.info(f"Tuki regions: {len(all_plans)} plans from {len(regions)} regions ({'API' if live else 'static table'})")
     return all_plans
 
 
 def scrape_tuki_local(page, usd_rate):
     """Scrape Tuki per-country eSIM plans via their JSON API."""
-    import urllib.request, json as _json
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124"
     all_plans = []
 
     try:
-        url = "https://www.tuki-esim.co.il/ds/api/globalsim/data/?lcid=1037&pageControlId=21412"
-        req = urllib.request.Request(url, headers={"User-Agent": ua})
-        resp = urllib.request.urlopen(req, timeout=30)
-        raw = resp.read().decode("utf-8")
-        # Response is JS assignment: datasource.globalsimData={...}
-        json_str = raw.split("=", 1)[1]
-        data = _json.loads(json_str)
+        data = _tuki_fetch_data()
 
         countries = data.get("countries", [])
         packages = data.get("packages", [])

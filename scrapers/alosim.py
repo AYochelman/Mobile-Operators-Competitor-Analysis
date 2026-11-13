@@ -7,6 +7,7 @@ everything defined here.
 """
 import scraper as core  # noqa: E402  (the monolith; imported at its bottom)
 import re
+import threading
 logger = core.logger
 
 
@@ -43,19 +44,59 @@ def _alosim_resolve(slug):
     return core.SAILY_SLUG_TO_HEBREW.get(base) or _ALOSIM_EXTRA.get(slug)
 
 
-def _alosim_page_plans(url, heb, usd_rate):
-    import requests, time as _t
-    html = None
-    for attempt in range(3):  # aloSIM (Wordfence/Cloudflare) rate-limits at scale → retry
+# aloSIM answers 429 once a client passes roughly 45 page requests a minute
+# (measured 2026-11-12: 1 req/s -> first 429 at request 45; 1 req / 2s -> none
+# in 50). The old code ran 4 workers flat out with a 1.5-4.5s retry, far inside
+# the limit window, so every run lost a different ~15-20% of the destinations
+# and their rows aged in place. All workers now share one pacing gate.
+_ALOSIM_MIN_GAP = 1.7
+_alosim_lock = threading.Lock()
+_alosim_next = [0.0]
+
+
+def _alosim_wait(penalty=0.0):
+    """Reserve the next request slot (shared by all workers) and sleep until it."""
+    import time as _t
+    with _alosim_lock:
+        now = _t.monotonic()
+        slot = max(now, _alosim_next[0]) + penalty
+        _alosim_next[0] = slot + _ALOSIM_MIN_GAP
+    delay = slot - _t.monotonic()
+    if delay > 0:
+        _t.sleep(delay)
+
+
+def _alosim_page_plans(url, heb, usd_rate, stats=None):
+    import requests
+    html, penalty, sold_nothing = None, 0.0, False
+    for attempt in range(4):
+        _alosim_wait(penalty)
+        penalty = 0.0
         try:
             r = requests.get(url, headers={"User-Agent": core._YESIM_UA}, timeout=30)
-            if r.status_code == 200 and "data-package-id" in r.text:
-                html = r.text
-                break
         except Exception:
-            pass
-        _t.sleep(1.5 * (attempt + 1))
+            continue
+        if r.status_code == 200:
+            sold_nothing = "data-package-id" not in r.text
+            if "data-package-id" in r.text:
+                html = r.text
+            elif stats is not None:
+                stats["no_packages"] += 1      # page exists but sells nothing (Africa, Oceania, Middle East)
+            break
+        if r.status_code == 429:
+            # over the limit: push EVERY worker back, not just this one
+            try:
+                penalty = float(r.headers.get("Retry-After") or 0)
+            except ValueError:
+                penalty = 0.0
+            penalty = min(max(penalty, 30.0 * (attempt + 1)), 120.0)
+            if stats is not None:
+                stats["rate_limited"] += 1
+            continue
+        break                                   # 404 / 5xx: not worth retrying
     if not html:
+        if stats is not None and not sold_nothing:
+            stats["failed"].append(url.rstrip("/").rsplit("/", 1)[-1])
         return []
     prices = dict(re.findall(r'data-location-package-id="([^"]+)"[^>]*>\s*([\d.]+)\s*<', html))
     pkgs = re.findall(
@@ -119,8 +160,9 @@ def scrape_alosim_global(_page=None, usd_rate=None):
         elif not heb:
             unmapped.add(l.get("slug"))
     best = {}
+    stats = {"no_packages": 0, "rate_limited": 0, "failed": []}
     with ThreadPoolExecutor(max_workers=4) as ex:
-        futs = {ex.submit(_alosim_page_plans, link, heb, usd_rate): link for (link, heb) in targets}
+        futs = {ex.submit(_alosim_page_plans, link, heb, usd_rate, stats): link for (link, heb) in targets}
         for f in as_completed(futs):
             try:
                 for (pn, pil, pusd, gb, days, heb) in f.result():
@@ -132,5 +174,14 @@ def scrape_alosim_global(_page=None, usd_rate=None):
         logger.warning(f"aloSIM: skipped unmapped {sorted(unmapped)[:30]}")
     all_plans = [core._make_global_plan("alosim", pn, pil, "USD", pusd, gb, days, esim=True, extras=[heb])
                  for pn, (pil, pusd, gb, days, heb) in best.items()]
-    logger.info(f"aloSIM global: {len(all_plans)} plans from {len(targets)} destinations")
+    if stats["failed"]:
+        logger.warning(
+            f"aloSIM: {len(stats['failed'])} of {len(targets)} destinations not scraped "
+            f"({stats['rate_limited']} rate-limit responses): {sorted(stats['failed'])[:30]}"
+        )
+    logger.info(
+        f"aloSIM global: {len(all_plans)} plans from {len(targets)} destinations "
+        f"({stats['no_packages']} without packages, {len(stats['failed'])} failed, "
+        f"{stats['rate_limited']} rate-limit responses)"
+    )
     return all_plans
