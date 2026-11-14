@@ -162,6 +162,15 @@ const RESELLERS = [
     source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%A1%D7%99%D7%9E%D7%A4%D7%9C%20%D7%90%D7%AA%D7%A8%20%D7%94%D7%A9%D7%95%D7%95%D7%90%D7%AA%20%D7%9E%D7%97%D7%99%D7%A8%D7%99%D7%9D&search_type=keyword_unordered&media_type=all' },
   { id: 'fb_rami_levy_branches', label: 'רמי לוי תקשורת סניפים - מודעת פייסבוק', underlying: 'rami_levy',
     source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%A8%D7%9E%D7%99%20%D7%9C%D7%95%D7%99%20%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA%20-%20%D7%A1%D7%A0%D7%99%D7%A4%D7%99%D7%9D&search_type=keyword_unordered&media_type=all' },
+  // Added 2026-11-14. SmartCut is a comparison site (carrier read per ad, currently WeCom)
+  { id: 'fb_smartcut', label: 'SmartCut השוואת מחירים - מודעת פייסבוק', underlying: 'wecom',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%A1%D7%9E%D7%90%D7%A8%D7%98%20%D7%A7%D7%90%D7%98&search_type=keyword_unordered&media_type=all' },
+  { id: 'fb_hot_deals', label: 'HOT מבצעים חדשים - מודעת פייסבוק', underlying: 'hotmobile',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=HOT%20%D7%9E%D7%91%D7%A6%D7%A2%D7%99%D7%9D%20%D7%97%D7%93%D7%A9%D7%99%D7%9D&search_type=keyword_unordered&media_type=all' },
+  { id: 'fb_golan', label: 'גולן טלקום - מודעת פייסבוק', underlying: 'golan',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%92%D7%95%D7%9C%D7%9F%20%D7%98%D7%9C%D7%A7%D7%95%D7%9D&search_type=keyword_unordered&media_type=all' },
+  { id: 'fb_golan_packages', label: 'Golan חבילות - מודעת פייסבוק', underlying: 'golan',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%92%D7%95%D7%9C%D7%9F%20%D7%98%D7%9C%D7%A7%D7%95%D7%9D&search_type=keyword_unordered&media_type=all' },
 ]
 
 // US operators on the "\u05e0\u05d5\u05d7\u05ea\u05d9\u05dd \u05d1\u05d0\u05e8\u05d4"\u05d1" tab. `net` groups them by the underlying

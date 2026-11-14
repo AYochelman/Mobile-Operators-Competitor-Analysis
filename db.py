@@ -4014,6 +4014,8 @@ AUTO_SCRAPED_RESELLER_IDS = {
     "fb_pelephone_join", "fb_pelephone_deals", # fb_ads_scraper — Meta Ad Library
     "fb_pelephone_promos", "fb_simpel",
     "fb_rami_levy_branches",
+    "fb_smartcut", "fb_hot_deals",             # added 2026-11-14
+    "fb_golan", "fb_golan_packages",
 }
 
 

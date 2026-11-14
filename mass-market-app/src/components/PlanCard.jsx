@@ -275,7 +275,10 @@ function PlanCard({ plan, type = 'domestic', changeType, highlighted, trendInfo,
 
   // Build info line: data + period, dot-separated
   const infoParts = []
-  if (!isContent) infoParts.push(formatGB(plan.data_gb, tt))
+  // A Facebook-ad reseller row whose ad states no data allowance (fb_ads_scraper
+  // names it "נפח גלישה לא צוין") - null there means unknown, not unlimited.
+  const gbUnknown = isReseller && plan.data_gb == null && /נפח גלישה לא צוין/.test(plan.plan_name || '')
+  if (!isContent) infoParts.push(gbUnknown ? tt('נפח גלישה לא צוין', 'Data not stated') : formatGB(plan.data_gb, tt))
   if ((isAbroad || isGlobal || isUsa) && plan.days) infoParts.push(formatDays(plan.days, tt))
   if (plan.minutes) infoParts.push(`${Number(plan.minutes).toLocaleString('en-US')} ${tt('דקות', 'minutes')}`)
   if (plan.sms) infoParts.push(`${plan.sms} SMS`)

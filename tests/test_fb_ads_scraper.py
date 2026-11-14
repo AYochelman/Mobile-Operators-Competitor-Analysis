@@ -165,3 +165,86 @@ def test_new_ids_are_registered_everywhere():
         assert rid in notifier.RESELLER_NAMES
     assert "fb_rami_levy_branches" in db.ALWAYS_SHOW_RESELLER_IDS
     assert "fb_simpel" not in db.ALWAYS_SHOW_RESELLER_IDS
+
+
+# ── advertisers added 2026-11-14 (real ad copy from the Ad Library) ─────────
+SMARTCUT_WECOM = """ממומן
+🍂📱 מבצע נובמבר של WeCom הגיע — ואסור לכם לפספס!
+✅ 10,000GB
+✅ החל מ־25 ₪ לחודש בלבד!
+✅ 3,000 דקות שיחה
+✅ 3,000 SMS
+SmartCut הוא אתר השוואת מחירים עצמאי ואינו ספק שירות."""
+SMARTCUT_TV = """ממומן
+✅ Netflix Standard
+✅ אפשרות לאינטרנט עד 1,000Mb
+💥 החל מ-49 ₪ לחודש!"""
+HOT_PAIR = """ממומן
+📱 2 קווי סלולר ב-55 ₪ לחודש
+💰 27.5 ₪ לחודש לכל קו
+ללקוחות חדשים בלבד. 2 קווים ב-55 ₪ לחודש בסך הכול (27.50 ₪ לחודש לקו). השירות מסופק ע"י HOT mobile."""
+GOLAN_FOUR = """ממומן
+הכי משתלם בגולן טלקום!
+חבילת 4 קווים, 250GB לכל קו, רק ב-130 ₪ לחודש."""
+GOLAN_THREE = """ממומן
+3 קווים עם 500GB לכל קו רק ב-99 ₪ בחודש."""
+GOLAN_SINGLE = "ממומן\nמבצע קיץ בגולן טלקום! מצטרפים עכשיו ונהנים מחבילת סלולר רק ב-29.90 ₪ לחודש עם 350GB גלישה."
+GOLAN_ROAMING = "ממומן\nחבילה אחת עם 6GB ועד 100 דקות שיחה, ועוד חבילה עם 4GB.\nחבילת חו\"ל ב- 49₪ בלבד"
+GOLANPK_750 = """ממומן
+‏🔹 750 GB גלישה מהירה ברשת ה-5G
+‏🔹 5000 דקות שיחה
+‏הכול ב-39 ₪ לחודש — ‏לתקופה בלתי קצובה! ✅
+‏רק 39 ₪ לחודש — ‏לתקופה בלתי קצובה!"""
+GOLANPK_750_B = "ממומן\n750GB ברשת 5G של גולן טלקום, ב־39 ₪ לחודש לכל קו."
+GOLANPK_PAIR = "ממומן\nשני קווים ב־60 ₪ בחבילת 4G של גולן טלקום, על גבי רשת סלקום."
+
+
+def _rows(rid, *ads):
+    adv = ADV[rid]
+    plans = f.plans_from_body(adv, _body(adv["page_name"], *ads), "u")
+    return sorted(((p["carrier"], p["plan_name"], p["price"], p["data_gb"]) for p in plans),
+                  key=lambda r: r[1])
+
+
+def test_smartcut_wecom_from_price_and_comma_gb():
+    assert _rows("fb_smartcut", SMARTCUT_TV, SMARTCUT_WECOM) == [
+        ("wecom", "10000GB – קו בודד – קמפיין פייסבוק", 25.0, 10000.0)]
+    adv = ADV["fb_smartcut"]
+    p = f.plans_from_body(adv, _body(adv["page_name"], SMARTCUT_WECOM), "u")[0]
+    assert any("החל מ-" in e for e in p["extras"])
+    assert p["minutes"] == 3000
+
+
+def test_hot_pair_without_gb():
+    assert _rows("fb_hot_deals", HOT_PAIR) == [
+        ("hotmobile", "נפח גלישה לא צוין – 2 מנויים ומעלה – קמפיין פייסבוק", 27.5, None)]
+    assert f.parse_offers(HOT_PAIR) == []          # GB-less stays opt-in
+
+
+def test_golan_official_bundle_total_is_not_a_single_line_price():
+    assert _rows("fb_golan", GOLAN_FOUR, GOLAN_THREE, GOLAN_SINGLE, GOLAN_ROAMING) == [
+        ("golan", "250GB – 4 מנויים ומעלה – קמפיין פייסבוק", 32.5, 250.0),
+        ("golan", "350GB – קו בודד – קמפיין פייסבוק", 29.9, 350.0),
+        ("golan", "500GB – 3 מנויים ומעלה – קמפיין פייסבוק", 33.0, 500.0),
+    ]
+
+
+def test_golan_packages_page():
+    assert _rows("fb_golan_packages", GOLANPK_750, GOLANPK_750_B, GOLANPK_PAIR) == [
+        ("golan", "750GB – קו בודד – קמפיין פייסבוק", 39.0, 750.0),
+        ("golan", "נפח גלישה לא צוין – 2 מנויים ומעלה – קמפיין פייסבוק", 30.0, None),
+    ]
+    assert f.parse_offers(GOLANPK_750_B)[0]["price"] == 39.0
+    # the two Golan pages share one search, so the advertiser line must separate them
+    body = _body("Golan חבילות", GOLANPK_750) + _body("גולן טלקום Golan Telecom", GOLAN_FOUR)
+    assert len(f.plans_from_body(ADV["fb_golan"], body, "u")) == 1
+
+
+def test_2026_11_14_ids_are_registered_everywhere():
+    import db
+    import notifier
+    for rid in ("fb_smartcut", "fb_hot_deals", "fb_golan", "fb_golan_packages"):
+        assert rid in ADV
+        assert rid in db.AUTO_SCRAPED_RESELLER_IDS
+        assert rid in notifier.RESELLER_NAMES
+        assert rid not in db.ALWAYS_SHOW_RESELLER_IDS   # must beat the carrier's rate card

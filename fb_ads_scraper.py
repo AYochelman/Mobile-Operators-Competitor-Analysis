@@ -14,6 +14,10 @@ Advertisers tracked (ADVERTISERS below):
   fb_pelephone_promos    "פלאפון- מבצעים"                          (added 2026-11-10)
   fb_simpel              "סימפל אתר השוואת מחירים"                 (comparison site; carrier read per ad)
   fb_rami_levy_branches  "רמי לוי תקשורת - סניפים"                 (Rami Levy branches page)
+  fb_smartcut            "SmartCut השוואת מחירים - סמארט קאט"      (comparison site; carrier read per ad; added 2026-11-14)
+  fb_hot_deals           "HOT מבצעים חדשים"                        (HOT mobile lead-gen page; ads may state no GB)
+  fb_golan               "גולן טלקום Golan Telecom"                (Golan's own page: lead-form family bundles)
+  fb_golan_packages      "Golan חבילות"                            (golan-israel.online lead-gen page)
 
 Offer extraction is regex over the ad text, tolerant of the copy variants these
 pages rotate through:
@@ -90,13 +94,44 @@ ADVERTISERS = [
         "page_name": "רמי לוי תקשורת - סניפים",
         "query": "רמי לוי תקשורת - סניפים",
     },
+    {
+        # Comparison site (also advertises TV / water bars - those ads name no
+        # cellular carrier and carry no GB, so they fall out by themselves).
+        "reseller_id": "fb_smartcut",
+        "carrier": "wecom",
+        "detect_carrier": True,
+        "page_name": "SmartCut השוואת מחירים - סמארט קאט",
+        "query": "סמארט קאט",
+    },
+    {
+        # The ads quote a multi-line price with no data allowance, so a GB-less
+        # offer is kept (data_gb=None, named "נפח גלישה לא צוין").
+        "reseller_id": "fb_hot_deals",
+        "carrier": "hotmobile",
+        "allow_no_gb": True,
+        "page_name": "HOT מבצעים חדשים",
+        "query": "HOT מבצעים חדשים",
+    },
+    {
+        "reseller_id": "fb_golan",
+        "carrier": "golan",
+        "page_name": "גולן טלקום Golan Telecom",
+        "query": "גולן טלקום",
+    },
+    {
+        "reseller_id": "fb_golan_packages",
+        "carrier": "golan",
+        "allow_no_gb": True,
+        "page_name": "Golan חבילות",
+        "query": "גולן טלקום",
+    },
 ]
 
 _LINES = r"(?:מנויים|קווים|קווי(?:\s*סלולר)?)"   # מנויים / קווים / קווי סלולר
 _AND_UP = "ומעלה"                 # ומעלה
 _NIS = r"(?:₪|ש\"ח|ש״ח)"      # ₪ / ש"ח
 _NUM = r"(\d+(?:\.\d+)?)"
-_GB = r"(\d{2,4})\s*(?:GB|ג['׳]?י['׳]?גה)"      # 400GB / 400 גיגה / 400 גי'גה
+_GB = r"(\d{1,2},\d{3}|\d{2,5})\s*(?:G[Bb]|ג['׳]?י['׳]?גה)"   # 400GB / 10,000Gb / 400 גיגה / 400 גי'גה
 # Line counts written as words ("שני קווי סלולר"). Longest spelling first.
 _WORD_NUM = {"שלושה": 3, "שלוש": 3, "ארבעה": 4, "ארבע": 4, "חמישה": 5, "חמש": 5,
              "שישה": 6, "שש": 6, "שני": 2, "שתי": 2}
@@ -112,8 +147,8 @@ _BUNDLE_RE = re.compile(
 # Carrier names for advertisers that sell more than one carrier (detect_carrier).
 _CARRIER_WORDS = [
     ("pelephone", r"פלאפון"), ("cellcom", r"סלקום"), ("partner", r"פרטנר"),
-    ("hotmobile", r"הוט\s*מובייל"), ("golan", r"גולן"), ("rami_levy", r"רמי\s*לוי"),
-    ("mobile019", r"019"), ("xphone", r"אקספון|XPhone"), ("wecom", r"וי-?קום|We4G"),
+    ("hotmobile", r"הוט\s*מובייל|HOT\s*mobile"), ("golan", r"גולן"), ("rami_levy", r"רמי\s*לוי"),
+    ("mobile019", r"019"), ("xphone", r"אקספון|XPhone"), ("wecom", r"וי-?קום|We4G|WeCom"),
 ]
 
 
@@ -176,14 +211,17 @@ def ad_texts_for(body: str, page_name: str) -> list[str]:
     return texts
 
 
-def parse_offers(text: str) -> list[dict]:
+def parse_offers(text: str, allow_no_gb: bool = False) -> list[dict]:
     """Extract offer tiers from one ad's copy.
-    Returns [{data_gb, min_lines, max_lines, price, after_price, minutes, gen5}]."""
-    t = text.replace("–", "-").replace("—", "-").replace("־", "-")
-    gbs = [int(g) for g in re.findall(_GB, t)]
-    if not gbs:
+    Returns [{data_gb, min_lines, max_lines, price, after_price, minutes, gen5}].
+    An ad stating no data allowance yields nothing unless `allow_no_gb` (then
+    data_gb is None = "not stated", for advertisers whose ads quote only a price)."""
+    t = (text.replace("–", "-").replace("—", "-").replace("־", "-")
+         .replace("\u200f", "").replace("\u200e", ""))
+    gbs = [int(g.replace(",", "")) for g in re.findall(_GB, t)]
+    if not gbs and not allow_no_gb:
         return []
-    data_gb = gbs[0]
+    data_gb = gbs[0] if gbs else None
     m = re.search(r"([\d,]{3,})\s*דקות", t)                       # דקות
     minutes = int(m.group(1).replace(",", "")) if m else None
     m = (re.search(r"(?:לאחר (?:שנה|\d+ חודשים)|אחר כך|לאחר מכן)[:\s-]*" + _NUM + r"\s*" + _NIS, t)
@@ -197,15 +235,22 @@ def parse_offers(text: str) -> list[dict]:
     m = re.search(r"דמי חיבור[^|\n\d]{0,15}" + _NUM, t)
     if m:
         perks.append(f"דמי חיבור חד-פעמיים {float(m.group(1)):g} ₪ לקו")
+    if "בלתי קצובה" in t:
+        perks.append("המחיר לתקופה בלתי קצובה")
 
     tiers: dict[int, dict] = {}
 
-    def add(min_lines, price, max_lines=None, total=None):
+    def add(min_lines, price, max_lines=None, total=None, from_price=False):
         price = round(float(price), 2)
         if not (5 <= price <= 300) or min_lines < 1 or min_lines > 10:
             return
         tiers.setdefault(min_lines, {"min_lines": min_lines, "max_lines": max_lines,
-                                     "price": price, "total": total})
+                                     "price": price, "total": total, "from_price": from_price})
+
+    bundles = _BUNDLE_RE.findall(t)
+    # A bundle TOTAL ("4 קווים ... רק ב-130 ₪ לחודש") must not be re-read below
+    # as a single-line "רק X ₪ לחודש" price.
+    totals = {float(price) for _n, price, per_line in bundles if not per_line}
 
     # 1) explicit tier disclosure: "1-4 מנויים: 29.90 ₪" / "5 מנויים ומעלה: 20 ₪"
     for a, b, p in re.findall(r"(\d+)\s*-\s*(\d+)\s*" + _LINES + r"\s*:\s*" + _NUM, t):
@@ -213,13 +258,22 @@ def parse_offers(text: str) -> list[dict]:
     for n, p in re.findall(r"(\d+)\s*" + _LINES + r"\s*" + _AND_UP + r"\s*:\s*" + _NUM, t):
         add(int(n), p)
     # 2) "רק 20 ₪ לחודש ..." + optional "למצטרפים 5 מנויים ומעלה"
-    m = re.search(r"רק\s*" + _NUM + r"\s*" + _NIS + r"\s*לחודש", t)
-    if m:
+    m = re.search(r"רק\s*(?:ב-?\s*)?" + _NUM + r"\s*" + _NIS + r"\s*לחודש", t)
+    if m and float(m.group(1)) not in totals:
         n = re.search(r"(\d+)\s*" + _LINES + r"\s*" + _AND_UP, t)
         add(int(n.group(1)) if n else 1, m.group(1))
+    # 2b) "ב-39 ₪ לחודש לכל קו" (per-line price, no line count) /
+    #     "החל מ-25 ₪ לחודש" (a "from" price: the conditions are not in the ad)
+    m = re.search(r"(?<![א-ת])ב-?\s*" + _NUM + r"\s*" + _NIS
+                  + r"\s*לחודש\s*(?:לכל\s*(?:מנוי|קו)|לקו|למנוי)(?![א-ת])", t)
+    if m:
+        add(1, m.group(1))
+    m = re.search(r"החל\s*מ-?\s*" + _NUM + r"\s*" + _NIS + r"\s*לחודש", t)
+    if m and data_gb:
+        add(1, m.group(1), from_price=True)
     # 3) bundle total: "5 מנויים ב-100 ₪" / "שני קווי סלולר ב-55 ₪" (a price
     #    followed by "למנוי"/"לקו" is per line, not a total)
-    for n, price, per_line in _BUNDLE_RE.findall(t):
+    for n, price, per_line in bundles:
         n = _count(n)
         if n < 2:
             continue
@@ -263,7 +317,8 @@ def _plan_name(o: dict) -> str:
                  if o.get("max_lines") else "קו בודד")     # קו בודד
     else:
         lines = f"{o['min_lines']} מנויים ומעלה"
-    return f"{o['data_gb']}GB – {lines} – קמפיין פייסבוק"
+    gb = f"{o['data_gb']}GB" if o.get("data_gb") else "נפח גלישה לא צוין"
+    return f"{gb} – {lines} – קמפיין פייסבוק"
 
 
 def _to_plan(adv: dict, o: dict, url: str) -> dict:
@@ -275,6 +330,10 @@ def _to_plan(adv: dict, o: dict, url: str) -> dict:
                       f"(סה\"כ {total:g} ₪)")
     elif o.get("max_lines"):
         extras.append(f"{o['price']:g} ₪ למנוי ב-{o['min_lines']}-{o['max_lines']} מנויים")
+    if o.get("from_price"):
+        extras.append(f"מחיר \"החל מ-\" {o['price']:g} ₪ - תנאי הזכאות למחיר לא פורטו במודעה")
+    if not o.get("data_gb"):
+        extras.append("נפח הגלישה לא צוין במודעה")
     months = o.get("months")
     if o.get("after_price"):
         extras.append(f"לאחר {_months_label(months or 12)}: {o['after_price']:g} ₪ לחודש למנוי")
@@ -287,7 +346,8 @@ def _to_plan(adv: dict, o: dict, url: str) -> dict:
     extras.append("למצטרפים חדשים, הצטרפות דרך טופס לידים במודעה")
     return {
         "reseller_id": adv["reseller_id"], "carrier": o.get("carrier") or adv["carrier"],
-        "plan_name": _plan_name(o), "price": o["price"], "data_gb": float(o["data_gb"]),
+        "plan_name": _plan_name(o), "price": o["price"],
+        "data_gb": float(o["data_gb"]) if o.get("data_gb") else None,
         "minutes": o.get("minutes"), "sms": o.get("minutes"),
         "extras": extras, "source_url": url, "seen_at": _today(),
     }
@@ -303,10 +363,10 @@ def plans_from_body(adv: dict, body: str, url: str) -> list[dict]:
         if adv.get("detect_carrier"):
             carrier = detect_carrier(text)
             if carrier is None:
-                if parse_offers(text):
+                if parse_offers(text, adv.get("allow_no_gb", False)):
                     logger.info(f"fb_ads {adv['reseller_id']}: skipped an ad naming no single carrier")
                 continue
-        for o in parse_offers(text):
+        for o in parse_offers(text, adv.get("allow_no_gb", False)):
             o["carrier"] = carrier
             key = (carrier, o["data_gb"], o["min_lines"])
             if key not in merged:

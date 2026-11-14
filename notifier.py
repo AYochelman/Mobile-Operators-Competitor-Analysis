@@ -354,6 +354,10 @@ RESELLER_NAMES = {
     "fb_pelephone_promos":  "פלאפון- מבצעים (מודעת פייסבוק)",
     "fb_simpel":            "סימפל השוואת מחירים (מודעת פייסבוק)",
     "fb_rami_levy_branches": "רמי לוי תקשורת סניפים (מודעת פייסבוק)",
+    "fb_smartcut":          "SmartCut השוואת מחירים (מודעת פייסבוק)",
+    "fb_hot_deals":         "HOT מבצעים חדשים (מודעת פייסבוק)",
+    "fb_golan":             "גולן טלקום (מודעת פייסבוק)",
+    "fb_golan_packages":    "Golan חבילות (מודעת פייסבוק)",
     "cellcomshefamr":       "סלקום שפרעם",
     "zorro":                "זורו",
 }
