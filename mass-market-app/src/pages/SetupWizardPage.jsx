@@ -200,6 +200,9 @@ export default function SetupWizardPage() {
   const [done, setDone] = useState(false)
   const [presetApplied, setPresetApplied] = useState(false)
   const [testState, setTestState] = useState({})
+  const [confirmReset, setConfirmReset] = useState(null)   // null | 'user' | 'workspace'
+  const [resetting, setResetting] = useState(false)
+  const [resetMsg, setResetMsg] = useState(null)
   const headingRef = useRef(null)
 
   const load = () => {
@@ -380,6 +383,37 @@ export default function SetupWizardPage() {
     try { await api.dismissDashboardSetup() } catch { /* the prompt may show once more */ }
     try { sessionStorage.setItem(SETUP_CHECKED_KEY, user?.id || '') } catch { /* ignore */ }
     navigate('/home', { replace: true })
+  }
+
+  // Reset: erase saved answers. The server keeps a "dismissed" marker for a
+  // personal reset, so the first-login prompt does not come back.
+  const hasUserSetup = !loadFailed && !!meta?.user?.completed_at
+  const hasWsSetup = !loadFailed && canEditWs && !!meta?.workspace?.completed_at
+  const doReset = async (kind) => {
+    setResetting(true)
+    try {
+      if (kind === 'workspace') {
+        await api.resetDashboardSetupWorkspace()
+        await retryContext?.()
+      } else {
+        await api.resetDashboardSetupUser()
+      }
+      setResetMsg({
+        ok: true,
+        text: kind === 'workspace'
+          ? tt('תצוגת הארגון אופסה לברירת המחדל.', 'The organization view was reset to the default.')
+          : tt('ההתראות האישיות אופסו, והפרטים נמחקו.', 'Your personal alerts were reset and the details deleted.'),
+      })
+      setStepIdx(0)
+      setPresetApplied(false)
+      setTestState({})
+      load()
+    } catch (e) {
+      setResetMsg({ ok: false, text: errText(e.message) })
+    } finally {
+      setResetting(false)
+      setConfirmReset(null)
+    }
   }
 
   const finish = () => {
@@ -875,6 +909,60 @@ export default function SetupWizardPage() {
           )}
         </div>
       </div>
+
+      {/* Reset - only when something was saved before */}
+      {(hasUserSetup || hasWsSetup) && (
+        <section aria-label={tt('איפוס', 'Reset')} className="mt-6 rounded-2xl border border-moca-border/60 bg-white p-5 md:px-7">
+          <h2 className="text-[15px] font-bold text-moca-text mb-1">{tt('איפוס', 'Reset')}</h2>
+          <ul className="divide-y divide-moca-border/50">
+            {[
+              hasUserSetup && {
+                kind: 'user',
+                title: tt('איפוס ההתראות שלי', 'Reset my alerts'),
+                desc: tt('מוחק את הערוצים, הכתובת, מספר הטלפון וכל שאר הבחירות האישיות. לא יישלחו עוד התראות.',
+                         'Deletes your channels, address, phone number and every other personal choice. No more alerts are sent.'),
+              },
+              hasWsSetup && {
+                kind: 'workspace',
+                title: tt('איפוס תצוגת הארגון', 'Reset the organization view'),
+                desc: tt('מחזיר את התפריט, עמוד הפתיחה והמתחרים במוקד לברירת המחדל, לכל המשתמשים בארגון. ההתראות האישיות של המשתמשים לא משתנות.',
+                         'Returns the menu, landing page and focus competitors to the default for everyone in your organization. Members\' personal alerts are not changed.'),
+              },
+            ].filter(Boolean).map(row => (
+              <li key={row.kind} className="py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="text-[14px] font-semibold text-moca-text">{row.title}</div>
+                  <div className="text-[12.5px] text-moca-sub">{row.desc}</div>
+                </div>
+                {confirmReset === row.kind ? (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button type="button" onClick={() => doReset(row.kind)} disabled={resetting}
+                      className="px-4 py-2 rounded-full bg-moca-up text-white text-[13px] font-bold hover:opacity-90 disabled:opacity-60">
+                      {resetting ? tt('מאפס…', 'Resetting…') : tt('כן, לאפס', 'Yes, reset')}
+                    </button>
+                    <button type="button" onClick={() => setConfirmReset(null)} disabled={resetting}
+                      className="px-4 py-2 rounded-full border border-moca-border text-[13px] text-moca-text hover:bg-moca-cream">
+                      {tt('ביטול', 'Cancel')}
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => { setResetMsg(null); setConfirmReset(row.kind) }}
+                    className="self-start sm:self-auto px-4 py-2 rounded-full border border-moca-up/50 text-[13px] font-semibold text-moca-up hover:bg-moca-cream shrink-0">
+                    {tt('איפוס', 'Reset')}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p role="status" className={`text-[13px] min-h-[20px] ${resetMsg?.ok === false ? 'text-moca-up' : 'text-moca-down'}`}>
+            {resetMsg?.text}
+          </p>
+        </section>
+      )}
+      {/* The confirmation of the LAST reset must stay visible after the section above disappears */}
+      {!(hasUserSetup || hasWsSetup) && resetMsg && (
+        <p role="status" className={`mt-4 text-[13px] ${resetMsg.ok === false ? 'text-moca-up' : 'text-moca-down'}`}>{resetMsg.text}</p>
+      )}
     </div>
   )
 }

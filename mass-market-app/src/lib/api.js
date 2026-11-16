@@ -234,6 +234,11 @@ export const api = {
   saveDashboardSetupWorkspace: (cfg) => fetchApi('/api/dashboard-setup/workspace', { method: 'PUT', body: JSON.stringify(cfg) }),
   saveDashboardSetupUser:   (cfg) => fetchApi('/api/dashboard-setup/user', { method: 'PUT', body: JSON.stringify(cfg) }),
   dismissDashboardSetup:    () => fetchApi('/api/dashboard-setup/dismiss', { method: 'POST', body: '{}' }),
+  resetDashboardSetupUser:  () => fetchApi('/api/dashboard-setup/user', { method: 'DELETE' }),
+  resetDashboardSetupWorkspace: () => fetchApi('/api/dashboard-setup/workspace', { method: 'DELETE' }),
+  // super_admin: reset a customer's wizard answers (optionally every member's personal alerts too)
+  resetWorkspaceDashboardSetup: (workspaceId, includeUsers = false) =>
+    fetchApi(`/api/workspaces/${workspaceId}/dashboard-setup${includeUsers ? '?include_users=true' : ''}`, { method: 'DELETE' }),
   testDashboardChannel:     (payload) => fetchApi('/api/dashboard-setup/test', { method: 'POST', body: JSON.stringify(payload) }),
 
   // Market movers — top biggest % price moves. planTypes: array/string of 'domestic','abroad','global'

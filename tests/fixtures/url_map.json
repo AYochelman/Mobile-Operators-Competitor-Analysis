@@ -260,11 +260,25 @@
 "endpoint": "dashsetup.api_dashboard_setup_user"
 },
 {
+"rule": "/api/dashboard-setup/user",
+"methods": [
+"DELETE"
+],
+"endpoint": "dashsetup.api_dashboard_setup_user_reset"
+},
+{
 "rule": "/api/dashboard-setup/workspace",
 "methods": [
 "PUT"
 ],
 "endpoint": "dashsetup.api_dashboard_setup_workspace"
+},
+{
+"rule": "/api/dashboard-setup/workspace",
+"methods": [
+"DELETE"
+],
+"endpoint": "dashsetup.api_dashboard_setup_workspace_reset"
 },
 {
 "rule": "/api/esim/analytics",
@@ -895,6 +909,13 @@
 "PATCH"
 ],
 "endpoint": "workspaces.api_update_workspace"
+},
+{
+"rule": "/api/workspaces/<workspace_id>/dashboard-setup",
+"methods": [
+"DELETE"
+],
+"endpoint": "dashsetup.api_workspace_dashboard_setup_reset"
 },
 {
 "rule": "/api/workspaces/<workspace_id>/invite",

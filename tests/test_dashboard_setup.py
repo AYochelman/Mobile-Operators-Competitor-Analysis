@@ -299,6 +299,81 @@ def test_api_roundtrip_and_permissions(client, path):
     assert c.get("/api/dashboard-setup", headers=h).get_json()["user"]["dismissed_at"]
 
 
+def test_api_resets(client, path, monkeypatch):
+    import app as core
+    import api.setup as setup_mod
+    c, state, h = client
+    # super-admin-only routes: the regular API key is deliberately not enough
+    sa = {**h, "X-Server-Admin-Key": core._get_server_admin_key()}
+    c.put("/api/dashboard-setup/workspace", headers=h, json={"sections": {"/news": "hidden"}})
+    c.put("/api/dashboard-setup/user", headers=h,
+          json={"channels": {"whatsapp": {"enabled": True, "phone": "0541234567"}}})
+
+    # personal reset: contact details and cursors are gone, and no first-login prompt returns
+    assert c.delete("/api/dashboard-setup/user", headers=h).status_code == 200
+    mine = c.get("/api/dashboard-setup", headers=h).get_json()["user"]
+    assert mine["config"] == {} and mine["completed_at"] is None and mine["dismissed_at"]
+    assert db.get_alert_cursors("admin@x.io", db_path=path) == {}
+    assert db.list_dashboard_user_setups(db_path=path) == []
+
+    # workspace reset is for its admins only
+    state["role"] = "viewer"
+    assert c.delete("/api/dashboard-setup/workspace", headers=h).status_code == 403
+    state["role"] = "admin"
+    assert c.delete("/api/dashboard-setup/workspace", headers=h).status_code == 200
+    assert db.get_dashboard_setup("workspace", "ws-1", db_path=path) is None
+
+    # operator reset, including every member's personal preferences
+    db.save_dashboard_setup("workspace", "ws-1", {"sections": {}}, db_path=path)
+    db.save_dashboard_setup("user", "a@x.io", {"channels": {}}, db_path=path)
+    db.save_dashboard_setup("user", "other@y.io", {"channels": {}}, db_path=path)
+    monkeypatch.setattr(setup_mod, "_workspace_member_emails", lambda ws: ["a@x.io", "never-set@x.io"])
+    assert c.delete("/api/workspaces/ws-1/dashboard-setup", headers=h).status_code in (401, 403)
+    r = c.delete("/api/workspaces/ws-1/dashboard-setup", query_string={"include_users": "true"}, headers=sa)
+    assert r.status_code == 200 and r.get_json() == {"status": "reset", "workspace_reset": True, "users_reset": 1}
+    assert db.get_dashboard_setup("user", "a@x.io", db_path=path) is None
+    assert db.get_dashboard_setup("user", "other@y.io", db_path=path) is not None   # another workspace's user
+
+    # a failed member lookup deletes nothing
+    db.save_dashboard_setup("workspace", "ws-1", {"sections": {}}, db_path=path)
+
+    def boom(ws):
+        raise RuntimeError("supabase down")
+    monkeypatch.setattr(setup_mod, "_workspace_member_emails", boom)
+    r = c.delete("/api/workspaces/ws-1/dashboard-setup", query_string={"include_users": "true"}, headers=sa)
+    assert r.status_code == 500
+    assert db.get_dashboard_setup("workspace", "ws-1", db_path=path) is not None
+
+
+def test_deleting_a_user_erases_their_setup(client, path, monkeypatch):
+    import app as core
+    c, _state, h = client
+    db.save_dashboard_setup("user", "gone@x.io", {"channels": {}}, db_path=path)
+    db.set_alert_cursor("gone@x.io", "email", "2026-11-15T07:00:00", db_path=path)
+
+    class _Cur:
+        def execute(self, sql, params=None):
+            pass
+
+        def fetchone(self):
+            return ("gone@x.io",)
+
+    class _Conn:
+        autocommit = False
+
+        def cursor(self):
+            return _Cur()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(core, "_supabase_conn", lambda: _Conn())
+    sa = {**h, "X-Server-Admin-Key": core._get_server_admin_key()}
+    assert c.delete("/api/users/some-uuid", headers=sa).status_code == 200
+    assert db.get_dashboard_setup("user", "gone@x.io", db_path=path) is None
+    assert db.get_alert_cursors("gone@x.io", db_path=path) == {}
+
+
 def test_api_test_message_validates_target(client, monkeypatch):
     c, _state, h = client
     sent = []

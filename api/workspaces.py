@@ -174,9 +174,23 @@ def api_delete_user(user_id):
         conn = core._supabase_conn()
         conn.autocommit = True
         cur = conn.cursor()
+        # Remember the address before the row is gone: the user's /setup wizard
+        # answers (alert e-mail, phone number, cursors) are keyed by it in SQLite.
+        cur.execute('SELECT LOWER(email) FROM auth.users WHERE id = %s', (user_id,))
+        _row = cur.fetchone()
+        _deleted_email = _row[0] if _row else None
         cur.execute('DELETE FROM public.user_roles WHERE user_id = %s', (user_id,))
         cur.execute('DELETE FROM auth.users WHERE id = %s', (user_id,))
         conn.close()
+        if _deleted_email:
+            try:
+                from db import delete_dashboard_setup
+                delete_dashboard_setup("user", _deleted_email, db_path=core._db_path())
+                core._USER_CONTEXT_CACHE.pop(_deleted_email, None)
+            except Exception as _ce:
+                # The account is already deleted; leftover preferences are inert
+                # (the dispatcher skips users with no workspace) but say so.
+                logger.warning(f"delete_user: dashboard setup cleanup failed: {_ce}")
         logger.info(f"AUDIT delete_user: user_id={user_id!r} by_ip={request.remote_addr}")
         return jsonify({"status": "deleted"})
     except Exception as e:

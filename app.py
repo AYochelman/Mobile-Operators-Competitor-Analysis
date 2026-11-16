@@ -2538,6 +2538,9 @@ from api.setup import (  # noqa: E402,F401
     api_dashboard_setup_dismiss,
     api_dashboard_setup_test,
     api_dashboard_setup_run_now,
+    api_dashboard_setup_user_reset,
+    api_dashboard_setup_workspace_reset,
+    api_workspace_dashboard_setup_reset,
     run_dashboard_alerts_job,
 )
 import api.setup as _setup_bp_mod  # noqa: E402

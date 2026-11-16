@@ -170,6 +170,92 @@ def api_dashboard_setup_test():
     return jsonify({"status": "sent"})
 
 
+@bp.route("/api/dashboard-setup/user", methods=["DELETE"])
+@core.require_auth
+@core.limiter.limit("10 per minute")
+def api_dashboard_setup_user_reset():
+    """Erase the caller's own alert preferences (address, number, cursors).
+    The row is replaced by a bare "dismissed" marker so the first-login prompt
+    does not come back for someone who reset on purpose."""
+    import db
+    email, _ctx = _setup_identity()
+    if not email:
+        return jsonify({"error": "auth required"}), 401
+    db.delete_dashboard_setup("user", email, db_path=core._db_path())
+    db.dismiss_dashboard_setup("user", email, db_path=core._db_path())
+    logger.info(f"AUDIT dashboard_setup_user_reset: by={email!r}")
+    return jsonify({"status": "reset"})
+
+
+@bp.route("/api/dashboard-setup/workspace", methods=["DELETE"])
+@core.require_auth
+@core.limiter.limit("10 per minute")
+def api_dashboard_setup_workspace_reset():
+    """Back to the default dashboard for the caller's whole workspace (admins
+    only). Members' personal alert preferences are not touched."""
+    import db
+    email, ctx = _setup_identity()
+    if not email:
+        return jsonify({"error": "auth required"}), 401
+    ws_id = ctx.get("workspace_id")
+    if not ws_id or ctx.get("role") not in ("admin", "super_admin"):
+        return jsonify({"error": "Unauthorized"}), 403
+    db.delete_dashboard_setup("workspace", ws_id, db_path=core._db_path())
+    core._USER_CONTEXT_CACHE.clear()
+    core.log_audit('dashboard_setup_reset', actor_email=email, workspace_id=ws_id,
+                   details='workspace view reset by its admin', db_path=core._db_path())
+    return jsonify({"status": "reset"})
+
+
+def _workspace_member_emails(workspace_id):
+    """Lower-cased e-mails of every user assigned to a workspace (Supabase)."""
+    conn = core._supabase_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT LOWER(u.email) FROM auth.users u
+            JOIN public.user_roles r ON r.user_id = u.id
+            WHERE r.workspace_id = %s
+        """, (workspace_id,))
+        return [r[0] for r in cur.fetchall() if r[0]]
+    finally:
+        conn.close()
+
+
+@bp.route("/api/workspaces/<workspace_id>/dashboard-setup", methods=["DELETE"])
+@core.require_super_admin
+@core.limiter.limit("10 per minute")
+def api_workspace_dashboard_setup_reset(workspace_id):
+    """Operator reset of a customer's wizard answers. Always clears the
+    workspace-level view; `?include_users=true` also erases every member's
+    personal alert preferences (they are prompted by the wizard again)."""
+    import db
+    include_users = (request.args.get("include_users") or "").lower() == "true"
+    emails = []
+    if include_users:
+        try:
+            # Resolve the members BEFORE deleting anything: a failed lookup
+            # must not leave the reset half done.
+            emails = _workspace_member_emails(workspace_id)
+        except Exception as e:
+            logger.error(f"dashboard setup reset: member lookup failed: {e}", exc_info=True)
+            return jsonify({"error": "Internal server error"}), 500
+    path = core._db_path()
+    had_workspace = db.get_dashboard_setup("workspace", workspace_id, db_path=path) is not None
+    db.delete_dashboard_setup("workspace", workspace_id, db_path=path)
+    users_reset = 0
+    for em in emails:
+        if db.get_dashboard_setup("user", em, db_path=path) is not None:
+            db.delete_dashboard_setup("user", em, db_path=path)
+            users_reset += 1
+    core._USER_CONTEXT_CACHE.clear()
+    core.log_audit('dashboard_setup_reset', actor_email=core._current_user_email() or '',
+                   workspace_id=workspace_id,
+                   details=f'operator reset: workspace={had_workspace} users={users_reset}',
+                   db_path=path)
+    return jsonify({"status": "reset", "workspace_reset": had_workspace, "users_reset": users_reset})
+
+
 def run_dashboard_alerts_job(dry_run=False, only_email=None):
     """Scheduled every 15 minutes: deliver the personal change alerts that are
     due (see dashboard_setup.run_dispatch). Returns the dispatch report."""

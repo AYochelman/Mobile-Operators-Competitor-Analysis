@@ -300,6 +300,42 @@ function WorkspaceRow({ ws, onChange }) {
   const [bulkResults, setBulkResults]     = useState(null)
   const [bulkCopiedAll, setBulkCopiedAll] = useState(false)
 
+  // Reset of the customer's /setup wizard answers (workspace view, optionally
+  // every member's personal alerts too).
+  const [resetOpen, setResetOpen]     = useState(false)
+  const [resetUsers, setResetUsers]   = useState(false)
+  const [resetBusy, setResetBusy]     = useState(false)
+  const [resetResult, setResetResult] = useState(null)
+  // After a reset we do NOT reload the list (that remounts the row and loses the
+  // result message); the cleared view is tracked locally instead.
+  const [viewCleared, setViewCleared] = useState(false)
+  const dashCfg = (viewCleared ? null : ws.dashboard_config) || {}
+  const hasWizardView = Object.keys(dashCfg.sections || {}).length > 0
+    || !!dashCfg.landing || (dashCfg.focus_carriers || []).length > 0
+
+  const resetPersonalization = async () => {
+    const question = resetUsers
+      ? tt(`לאפס את ההתאמה האישית של "${ws.name}", כולל ההתראות האישיות של כל המשתמשים? אי אפשר לבטל את הפעולה.`,
+           `Reset the personalization of "${ws.name}", including every member's personal alerts? This cannot be undone.`)
+      : tt(`לאפס את תצוגת הדשבורד של "${ws.name}" לברירת המחדל? אי אפשר לבטל את הפעולה.`,
+           `Reset the dashboard view of "${ws.name}" to the default? This cannot be undone.`)
+    if (!confirm(question)) return
+    setResetBusy(true); setResetResult(null)
+    try {
+      const res = await api.resetWorkspaceDashboardSetup(ws.id, resetUsers)
+      const parts = [res.workspace_reset
+        ? tt('תצוגת הארגון אופסה', 'Organization view reset')
+        : tt('לא הייתה תצוגת ארגון שמורה', 'No saved organization view')]
+      if (resetUsers) parts.push(tt(`${res.users_reset ?? 0} משתמשים אופסו`, `${res.users_reset ?? 0} users reset`))
+      setResetResult({ ok: true, msg: parts.join(' · ') })
+      setViewCleared(true)
+    } catch (e) {
+      setResetResult({ ok: false, msg: e.message })
+    } finally {
+      setResetBusy(false)
+    }
+  }
+
   const sendDigest = async () => {
     setDigestSending(true); setDigestResult(null)
     try {
@@ -486,6 +522,8 @@ function WorkspaceRow({ ws, onChange }) {
                     feature_flags: ws.feature_flags || {},
                     hide_self_carrier: ws.hide_self_carrier,
                     visible_carriers: ws.visible_carriers || [],
+                    // what the customer's own admin set in the /setup wizard
+                    dashboard_config: dashCfg,
                     active: true,
                   })
                   navigate('/')
@@ -506,10 +544,40 @@ function WorkspaceRow({ ws, onChange }) {
               <Button onClick={() => setExpanded(e => !e)} variant="ghost" size="sm" className="border border-moca-border/60">
                 {expanded ? tt('סגור משתמשים', 'Close users') : tt('ניהול משתמשים', 'Manage users')}
               </Button>
+              <Button onClick={() => { setResetOpen(o => !o); setResetResult(null) }} variant="ghost" size="sm" className="border border-moca-border/60"
+                title={tt('איפוס מה שהלקוח הגדיר באשף ההתאמה האישית', 'Reset what the customer set in the personalization wizard')}>
+                {resetOpen ? tt('סגור איפוס', 'Close reset') : tt('איפוס התאמה אישית', 'Reset personalization')}
+              </Button>
             </>
           )}
         </div>
       </div>
+      {resetOpen && (
+        <div className="bg-moca-cream/50 rounded-lg p-4 mt-3">
+          <h4 className="text-sm font-semibold mb-1">{tt('איפוס התאמה אישית', 'Reset personalization')}</h4>
+          <p className="text-xs text-gray-600 mb-3">
+            {hasWizardView
+              ? tt('מחזיר את התפריט, עמוד הפתיחה והמתחרים במוקד של הלקוח לברירת המחדל. הדגלים שהגדרת כאן לא משתנים.',
+                   'Returns the customer\'s menu, landing page and focus competitors to the default. The flags you set here are not changed.')
+              : tt('ללקוח הזה אין כרגע התאמת תצוגה שמורה. אפשר עדיין לאפס את ההתראות האישיות של המשתמשים.',
+                   'This customer has no saved view customization right now. You can still reset the members\' personal alerts.')}
+          </p>
+          <label className="flex items-start gap-2 text-xs text-gray-700 mb-3 cursor-pointer">
+            <input type="checkbox" checked={resetUsers} onChange={e => setResetUsers(e.target.checked)} className="mt-0.5 accent-moca-bolt" />
+            <span>{tt('למחוק גם את ההתראות האישיות של כל המשתמשים (ערוצים, כתובות ומספרי טלפון). האשף ייפתח להם שוב בכניסה הבאה.',
+                      'Also delete every member\'s personal alerts (channels, addresses and phone numbers). The wizard opens for them again on their next sign-in.')}</span>
+          </label>
+          <Button onClick={resetPersonalization} disabled={resetBusy || (!hasWizardView && !resetUsers)} variant="ghost" size="sm"
+            className="border border-red-300 text-red-600 hover:bg-red-50">
+            {resetBusy ? tt('מאפס…', 'Resetting…') : tt('איפוס', 'Reset')}
+          </Button>
+          {resetResult && (
+            <p role="status" className={`text-xs mt-2 px-3 py-1.5 rounded-lg ${resetResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+              {resetResult.msg}
+            </p>
+          )}
+        </div>
+      )}
       {digestResult && (
         <p className={`text-xs mt-2 px-3 py-1.5 rounded-lg ${
           digestResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
