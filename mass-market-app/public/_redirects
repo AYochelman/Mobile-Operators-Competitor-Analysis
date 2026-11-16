@@ -41,4 +41,43 @@ https://esim.mocaintel.com/*  /esim.html  200
 /esim-deals  /esim.html      200!
 # Short branded link for the TikTok bio → the tagged eSIM compare page.
 /tt          /esim-deals?utm_source=tiktok&utm_campaign=tiktok_bio   302
-/*           /index.html     200
+# SPA routes. Every route in src/App.jsx is listed EXPLICITLY (instead of one
+# "/* -> index.html 200" catch-all) so that an unknown URL gets a real 404 and
+# not the app shell with status 200 (a soft 404: 2026-11 SEO audit).
+# ADDING A ROUTE TO App.jsx? Add it here and in netlify.toml too -
+# scripts/check-redirects.mjs fails the build when one is missing.
+/admin/*               /index.html  200
+/agent-desk            /index.html  200
+/ai-insights           /index.html  200
+/alerts                /index.html  200
+/archive               /index.html  200
+/banners               /index.html  200
+/cockpit               /index.html  200
+/compare               /index.html  200
+/content               /index.html  200
+/esim                  /index.html  200
+/esim-banners          /index.html  200
+/executive-summary     /index.html  200
+/guest/*               /index.html  200
+/history               /index.html  200
+/home                  /index.html  200
+/invite/*              /index.html  200
+/login                 /index.html  200
+/mobile-deals          /index.html  200
+/news                  /index.html  200
+/notifications         /index.html  200
+/plans                 /index.html  200
+/positioning           /index.html  200
+/preferences           /index.html  200
+/resellers             /index.html  200
+/reset-password        /index.html  200
+/roaming               /index.html  200
+/settings              /index.html  200
+/setup                 /index.html  200
+/social                /index.html  200
+/usa                   /index.html  200
+/usage                 /index.html  200
+/workspace/*           /index.html  200
+# Anything else that is not a real file: a real 404. Not forced, so existing
+# files (assets, /esim/<dest>/, sitemap.xml ...) are still served first.
+/*                     /404.html    404

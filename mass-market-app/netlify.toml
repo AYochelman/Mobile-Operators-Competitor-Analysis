@@ -51,11 +51,172 @@
   status = 200
   force = true
 
-# Everything else falls through to the SPA.
+# SPA routes - mirror of public/_redirects (see the note there).
 [[redirects]]
-  from = "/*"
+  from = "/admin/*"
   to = "/index.html"
   status = 200
+
+[[redirects]]
+  from = "/agent-desk"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/ai-insights"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/alerts"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/archive"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/banners"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/cockpit"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/compare"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/content"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/esim"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/esim-banners"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/executive-summary"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/guest/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/history"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/home"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/invite/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/mobile-deals"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/news"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/notifications"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/plans"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/positioning"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/preferences"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/resellers"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/reset-password"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/roaming"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/settings"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/setup"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/social"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/usa"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/usage"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/workspace/*"
+  to = "/index.html"
+  status = 200
+
+# Anything else that is not a real file: a real 404.
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
 
 # Security headers. Mirror of public/_headers (the live source on drag-deploy;
 # THIS file only takes effect on a future CI/Git deploy). Keep the two in sync.
@@ -75,3 +236,19 @@
   for = "/dest-bg/*"
   [headers.values]
     Cache-Control = "public, max-age=2592000"
+
+# Long-lived caching - mirror of public/_headers.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+[[headers]]
+  for = "/logos/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

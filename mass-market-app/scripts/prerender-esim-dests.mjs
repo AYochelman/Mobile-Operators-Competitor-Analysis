@@ -21,7 +21,10 @@ import { SITE_ORIGIN } from '../src/data/siteOrigin.js'
 
 const API = process.env.ESIM_API_BASE || 'http://localhost:5000'
 const SITE = SITE_ORIGIN
-const GO_BASE = 'https://api.mocaintel.com/go'
+// Same-origin: public/_redirects proxies /go/* to the live API, so the static
+// pages never hardcode an API host (api.mocaintel.com went offline and left
+// every buy button on these pages dead - 2026-11 SEO audit).
+const GO_BASE = '/go'
 const DIST = 'dist'
 const MAX_PAGES = 160
 const MIN_PLANS = 8
@@ -72,17 +75,36 @@ async function getJson(path, tries = 8) {
   throw new Error(`${path} -> HTTP 429 after ${tries} retries`)
 }
 
+// A "trip-sized" deal: enough data and validity for an actual holiday. The raw
+// catalog minimum is a ~100MB / 1-day package (about 1 NIS) that nobody buys for
+// a trip, so headlining it read as bait. Same floor as db.get_esim_alert_floor.
+const TRIP_MIN_GB = 5
+const TRIP_MIN_DAYS = 7
+const MIN_TRIP_DEALS = 3
+const isTripDeal = d => (d.gb == null || d.gb >= TRIP_MIN_GB) && d.days >= TRIP_MIN_DAYS
+const TRIP_LABEL = `${TRIP_MIN_GB}GB ומעלה, לשבוע ומעלה`
+
 function pickDeals(deals) {
   const sorted = deals.filter(d => d.price > 0).sort((a, b) => a.price - b.price)
+  const trip = sorted.filter(isTripDeal)
+  const hasTrip = trip.length >= MIN_TRIP_DEALS
   const perProv = {}
   const picked = []
-  for (const d of sorted) {
+  for (const d of (hasTrip ? trip : sorted)) {
     perProv[d.provider] = (perProv[d.provider] || 0) + 1
     if (perProv[d.provider] <= MAX_PER_PROVIDER) picked.push(d)
     if (picked.length >= DEALS_SHOWN) break
   }
-  return { picked, low: sorted[0]?.price, high: sorted[sorted.length - 1]?.price, total: sorted.length, providers: new Set(sorted.map(d => d.provider)).size }
+  return {
+    picked, hasTrip, cheapest: sorted[0], tripLow: hasTrip ? trip[0].price : null,
+    low: sorted[0]?.price, high: sorted[sorted.length - 1]?.price, total: sorted.length,
+    providers: new Set(sorted.map(d => d.provider)).size,
+  }
 }
+// "5GB ל-30 ימים" / "1GB" when the provider states no validity.
+const planFmt = d => d.days ? `${gbFmt(d.gb)} ${d.days === 1 ? 'ליום אחד' : `ל-${d.days} ימים`}` : gbFmt(d.gb)
+// The headline price of a destination: trip-sized when there is one.
+const headPrice = st => st.hasTrip ? st.tripLow : st.low
 
 const CSS = `
 *{margin:0;padding:0;box-sizing:border-box}
@@ -117,6 +139,7 @@ h2{font-size:22px;color:#4a2a13;margin:30px 0 12px}
 details{background:#fff;border:1px solid #e0cdb5;border-radius:12px;padding:14px 18px;margin-bottom:10px}
 summary{font-weight:700;cursor:pointer}
 details p{margin-top:8px;color:#5a3a20;font-size:15px}
+.note{font-size:14px;color:#6f553b;margin:-4px 0 12px}
 .links{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 8px}
 .links a{background:#fff;border:1px solid #e0cdb5;border-radius:999px;padding:6px 14px;font-size:14px;text-decoration:none}
 footer{margin:36px 0 26px;font-size:13px;color:#a08468;border-top:1px solid #e8d5bc;padding-top:14px}
@@ -160,7 +183,9 @@ function faqItems(dest, cheapest, stats) {
   return [
     {
       q: `כמה עולה eSIM ל${dest}?`,
-      a: `נכון ל-${todayHe}, חבילת eSIM ל${dest} מתחילה ב-${priceFmt(stats.low)} (${gbFmt(cheapest.gb)} ל${daysFmt(cheapest.days)} אצל ${provName(cheapest.provider)}). בהשוואה שלנו ${stats.total} חבילות מ-${stats.providers} ספקים, והמחירים מתעדכנים אוטומטית.`,
+      a: stats.hasTrip
+        ? `נכון ל-${todayHe}, חבילת eSIM ל${dest} שמתאימה לטיול (${TRIP_LABEL}) מתחילה ב-${priceFmt(stats.tripLow)}: ${planFmt(cheapest)} אצל ${provName(cheapest.provider)}. החבילה הזולה ביותר בכלל עולה ${priceFmt(stats.low)} (${planFmt(stats.cheapest)}). בהשוואה שלנו ${stats.total} חבילות מ-${stats.providers} ספקים, והמחירים מתעדכנים אוטומטית.`
+        : `נכון ל-${todayHe}, חבילת eSIM ל${dest} מתחילה ב-${priceFmt(stats.low)} (${planFmt(cheapest)} אצל ${provName(cheapest.provider)}). בהשוואה שלנו ${stats.total} חבילות מ-${stats.providers} ספקים, והמחירים מתעדכנים אוטומטית.`,
     },
     {
       q: 'מה זה eSIM ולמה זה משתלם יותר מחבילת גלישה של המפעיל?',
@@ -206,7 +231,7 @@ async function main() {
     await Promise.all(entries.slice(i, i + CONC).map(async ([slug, d]) => {
       const he = d.destination
       try {
-        const cmp = await getJson(`/api/esim/compare?dest=${encodeURIComponent(he)}`)
+        const cmp = await getJson(`/api/esim/compare?destination=${encodeURIComponent(he)}`)
         const stats = pickDeals(cmp.deals || [])
         if (!stats.picked.length) return
         pages.push({ slug, he, stats, coupons: cmp.coupons || {}, count: d.count })
@@ -214,6 +239,20 @@ async function main() {
         console.warn(`  skip ${he}: ${e.message}`)
       }
     }))
+  }
+  // Guard: the API falls back to its default destination when the query param
+  // is not the one it reads, which once shipped 160 pages carrying identical
+  // (wrong) data. Refuse to build when most pages share one price signature.
+  if (pages.length >= 10) {
+    const sig = {}
+    for (const p of pages) {
+      const k = `${p.stats.low}|${p.stats.high}|${p.stats.total}`
+      sig[k] = (sig[k] || 0) + 1
+    }
+    const [topKey, topN] = Object.entries(sig).sort((a, b) => b[1] - a[1])[0]
+    if (topN / pages.length > 0.3) {
+      throw new Error(`prerender-esim-dests: ${topN}/${pages.length} destination pages share the same low|high|count (${topKey}) - the API is ignoring the destination. Not writing pages.`)
+    }
   }
   pages.sort((a, b) => b.count - a.count)
 
@@ -223,8 +262,12 @@ async function main() {
     const canonical = `${SITE}/esim/${slug}/`
     const ogImage = DEST_BG_BY_HE[he]
     const cheapest = stats.picked[0]
-    const title = `eSIM ל${he} - השוואת מחירים מ-${priceFmt(stats.low)} | MOCA`
-    const desc = `השוואת חבילות eSIM ל${he}: ${stats.total} חבילות מ-${stats.providers} ספקים, החל מ-${priceFmt(stats.low)}. מחירים שנאספים אוטומטית, קודי קופון והזמנה מיידית.`
+    const title = stats.hasTrip
+      ? `eSIM ל${he}: ${TRIP_MIN_GB}GB ומעלה מ-${priceFmt(stats.tripLow)} - השוואת מחירים | MOCA`
+      : `eSIM ל${he} - השוואת מחירים מ-${priceFmt(stats.low)} | MOCA`
+    const desc = stats.hasTrip
+      ? `השוואת ${stats.total} חבילות eSIM ל${he} מ-${stats.providers} ספקים. חבילה לטיול (${TRIP_LABEL}) מ-${priceFmt(stats.tripLow)}: ${planFmt(cheapest)} אצל ${provName(cheapest.provider)}. מחירים שנאספים אוטומטית וקודי קופון.`
+      : `השוואת חבילות eSIM ל${he}: ${stats.total} חבילות מ-${stats.providers} ספקים, החל מ-${priceFmt(stats.low)}. מחירים שנאספים אוטומטית, קודי קופון והזמנה מיידית.`
     const faq = faqItems(he, cheapest, stats)
 
     const schemas = [
@@ -253,10 +296,10 @@ async function main() {
       return `<div class="deal">
 <img src="/logos/${esc(dl.provider)}.png" alt="" loading="lazy" onerror="this.style.display='none'">
 <div class="info"><div class="prov">${esc(provName(dl.provider))}</div>
-<div class="meta">${esc(gbFmt(dl.gb))} · ${esc(daysFmt(dl.days))}</div>
+<div class="meta">${esc(gbFmt(dl.gb))} · ${esc(daysFmt(dl.days) || 'תוקף לא צוין')}</div>
 ${c ? `<span class="coupon">קופון ${esc(c.code)} - ${esc(c.discount_label || 'הנחה')}</span>` : ''}</div>
 <div class="price">${priceFmt(dl.price)}</div>
-<a class="buy" href="${go}" rel="sponsored nofollow noopener noreferrer" target="_blank" aria-label="לרכישה אצל ${esc(provName(dl.provider))} - ${esc(gbFmt(dl.gb))}, ${esc(daysFmt(dl.days))} (אתר חיצוני, נפתח בחלון חדש)">לרכישה ↗</a>
+<a class="buy" href="${go}" rel="sponsored nofollow noopener noreferrer" target="_blank" aria-label="לרכישה אצל ${esc(provName(dl.provider))} - ${esc(gbFmt(dl.gb))}, ${esc(daysFmt(dl.days) || 'תוקף לא צוין')} (אתר חיצוני, נפתח בחלון חדש)">לרכישה ↗</a>
 </div>`
     }).join('\n')
 
@@ -264,9 +307,10 @@ ${c ? `<span class="coupon">קופון ${esc(c.code)} - ${esc(c.discount_label |
 <nav class="crumbs" aria-label="ניווט"><a href="/">MOCA</a> <span aria-hidden="true">›</span> <a href="/esim/destinations/">eSIM לחו"ל</a> <span aria-hidden="true">›</span> ${esc(he)}</nav>
 <div class="hero" style="background-image:url('${ogImage}')"><div class="shade"></div><div class="inner">
 <h1>eSIM ל${esc(he)} - השוואת מחירים</h1>
-<p>${stats.total} חבילות מ-${stats.providers} ספקים · החל מ-${priceFmt(stats.low)} · עודכן ${todayHe}</p>
+<p>${stats.total} חבילות מ-${stats.providers} ספקים · ${stats.hasTrip ? `${TRIP_MIN_GB}GB ומעלה מ-${priceFmt(stats.tripLow)}` : `החל מ-${priceFmt(stats.low)}`} · עודכן ${todayHe}</p>
 </div></div>
-<h2>החבילות המומלצות ל${esc(he)}</h2>
+<h2>${stats.hasTrip ? 'חבילות הטיול הזולות' : 'החבילות הזולות'} ל${esc(he)}</h2>
+${stats.hasTrip ? `<p class="note">מוצגות החבילות הזולות ביותר עם ${TRIP_LABEL}, עד ${MAX_PER_PROVIDER} לכל ספק. חבילות קטנות וקצרות יותר, החל מ-${priceFmt(stats.low)}, נמצאות בהשוואה החיה.</p>` : ''}
 ${dealsHtml}
 <a class="cta" href="/esim-deals?dest=${encodeURIComponent(he)}">לכל ${stats.total} החבילות ל${esc(he)} בהשוואה החיה ←</a>
 <h2>שאלות נפוצות</h2>
@@ -288,9 +332,9 @@ ${faq.map(f => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></detai
   const hubBody = `
 <nav class="crumbs" aria-label="ניווט"><a href="/">MOCA</a> <span aria-hidden="true">›</span> eSIM לחו"ל</nav>
 <h1 style="margin-top:14px">eSIM לחו"ל - השוואת מחירים לפי יעד</h1>
-<p style="margin-top:6px;color:#5a3a20">בחרו את היעד שלכם להשוואת כל חבילות ה-eSIM הזמינות - מחירים שנאספים אוטומטית מכ-40 ספקים, עם קודי קופון כשיש.</p>
+<p style="margin-top:6px;color:#5a3a20">בחרו את היעד שלכם להשוואת כל חבילות ה-eSIM הזמינות - מחירים שנאספים אוטומטית מכ-40 ספקים, עם קודי קופון כשיש. המחיר ליד כל יעד הוא של החבילה הזולה ביותר עם ${TRIP_LABEL}, כשיש כזו.</p>
 <div class="grid">
-${pages.map(p => `<a href="/esim/${p.slug}/">eSIM ל${esc(p.he)}<span class="mn">מ-${priceFmt(p.stats.low)} · ${p.stats.total} חבילות</span></a>`).join('\n')}
+${pages.map(p => `<a href="/esim/${p.slug}/">eSIM ל${esc(p.he)}<span class="mn">מ-${priceFmt(headPrice(p.stats))} · ${p.stats.total} חבילות</span></a>`).join('\n')}
 </div>
 <a class="cta" href="/esim-deals">להשוואה האינטראקטיבית המלאה ←</a>`
   mkdirSync(join(DIST, 'esim', 'destinations'), { recursive: true })
