@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import { useWatchlist } from '../hooks/useWatchlist'
 import { useLang } from '../hooks/useLanguage'
-import { FLAG_FOR_PATH } from '../data/navFlags'
+import { FLAG_FOR_PATH, focusPaths } from '../data/navFlags'
 import Logo from './Logo'
 import LangToggle from './LangToggle'
 import NavDropdown from './NavDropdown'
@@ -78,6 +78,7 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
         <div className="absolute top-full mt-1 min-w-[200px] bg-white rounded-xl shadow-popover border border-moca-border/40 p-1.5 z-50 animate-fade-in" style={{ insetInlineEnd: 0 }}>
           <button onClick={() => go('/preferences')} className={itemCls}>{tt('העדפות', 'Preferences')}</button>
           <button onClick={() => go('/alerts?tab=watchlist')} className={itemCls}>{tt('הגדרות התראות', 'Alert settings')}</button>
+          <button onClick={() => go('/setup')} className={itemCls}>{tt('התאמה אישית', 'Personalize')}</button>
           {isAdmin && !isSuperAdmin && (
             <>
               <div className="h-px bg-moca-border/30 my-1" />
@@ -133,7 +134,7 @@ const dropdownItemCls = ({ isActive }) =>
   }`
 
 export default function Navbar({ onMobileMenuOpen }) {
-  const { user, isAdmin, isSuperAdmin, signOut, workspace } = useAuth()
+  const { user, isAdmin, isSuperAdmin, signOut, workspace, viewAs } = useAuth()
   const flags = useFeatureFlags()
   const { changesCount } = useWatchlist()
   const { tt } = useLang()
@@ -145,6 +146,9 @@ export default function Navbar({ onMobileMenuOpen }) {
   const logoUrl  = workspace?.brand_config?.logo_url  || null
 
   const visible = (path) => !FLAG_FOR_PATH[path] || !flags[FLAG_FOR_PATH[path]]
+  // Sections the workspace admin marked as their focus in the /setup wizard
+  // lead their group here, mirroring the pinned group of the desktop sidebar.
+  const focus = new Set(isSuperAdmin && !viewAs ? [] : focusPaths(workspace, flags))
 
   // ---------- Group definitions (used by both desktop dropdowns and mobile sheet) ----------
   const groups = [
@@ -189,7 +193,11 @@ export default function Navbar({ onMobileMenuOpen }) {
       ],
     },
   ]
-    .map(g => ({ ...g, items: g.items.filter(i => i.visible) }))
+    .map(g => ({
+      ...g,
+      items: g.items.filter(i => i.visible)
+        .sort((a, b) => Number(focus.has(b.to)) - Number(focus.has(a.to))),
+    }))
     .filter(g => g.items.length > 0)
 
   function isGroupActive(group) {

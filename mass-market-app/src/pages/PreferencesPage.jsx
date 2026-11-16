@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { api } from '../lib/api'
 import { useLang } from '../hooks/useLanguage'
+import { Link } from 'react-router-dom'
 
 export default function PreferencesPage() {
   const { user } = useAuth()
@@ -44,6 +45,11 @@ export default function PreferencesPage() {
       {/* Page identity is owned by the Topbar (kicker + title); we keep
           only contextual meta here (the user's email) to avoid a duplicate H1. */}
       <p className="text-sm text-gray-500 mb-5">{user?.email}</p>
+
+      <Link to="/setup" className="block bg-white border border-moca-border/60 rounded-xl p-5 mb-4 hover:bg-moca-mist transition-colors">
+        <h2 className="text-sm font-semibold mb-1">{tt('התאמה אישית של הדשבורד וההתראות', 'Personalize the dashboard and alerts')}</h2>
+        <p className="text-xs text-gray-500">{tt('מה להציג, על מה להתריע, באיזה ערוץ ובאיזו תדירות.', 'What to show, what to alert on, through which channel and how often.')}</p>
+      </Link>
 
       <div className="bg-white border border-moca-border/60 rounded-xl p-5">
         <h2 className="text-sm font-semibold mb-1">{tt('התראות דוא"ל', 'Email notifications')}</h2>

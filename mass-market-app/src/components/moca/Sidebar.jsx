@@ -1,11 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, Fragment } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useFeatureFlags } from '../../hooks/useFeatureFlags'
 import { useWatchlist } from '../../hooks/useWatchlist'
 import { useLang } from '../../hooks/useLanguage'
-import { FLAG_FOR_PATH } from '../../data/navFlags'
+import { FLAG_FOR_PATH, NAV_GROUPS, NAV_SECTIONS, focusPaths } from '../../data/navFlags'
 import Logo from '../Logo'
 
 /**
@@ -103,6 +103,30 @@ const Icons = {
   deals: (
     <svg {...ICON_PROPS}><path d="M4 7h16v13H4z"/><path d="M2 7h20"/><path d="M12 20V7"/><path d="M12 7S11 2 7.5 2a2.5 2.5 0 0 0 0 5H12z"/><path d="M12 7s1-5 4.5-5a2.5 2.5 0 0 1 0 5H12z"/></svg>
   ),
+}
+
+// Nav path -> icon. Labels + grouping come from NAV_SECTIONS (data/navFlags).
+const ICON_FOR_PATH = {
+  '/': Icons.dashboard,
+  '/cockpit': Icons.cockpit,
+  '/agent-desk': Icons.agentDesk,
+  '/executive-summary': Icons.exec,
+  '/positioning': Icons.positioning,
+  '/history': Icons.history,
+  '/alerts': Icons.alerts,
+  '/ai-insights': Icons.ai,
+  '/news': Icons.news,
+  '/social': Icons.social,
+  '/banners': Icons.banners,
+  '/archive': Icons.archive,
+  '/plans': Icons.plans,
+  '/roaming': Icons.roaming,
+  '/esim': Icons.esim,
+  '/esim-banners': Icons.banners,
+  '/usa': Icons.usa,
+  '/resellers': Icons.resellers,
+  '/content': Icons.content,
+  '/compare': Icons.compare,
 }
 
 function NavItem({ to, icon, label, badge, badgeColor, end, onClick, isActive, onAfterNav }) {
@@ -220,7 +244,7 @@ function GroupLabel({ children }) {
  * Mobile:   <Sidebar mobile open onClose={...} /> — portal drawer
  */
 export default function Sidebar({ className = '', mobile = false, open = false, onClose }) {
-  const { workspace } = useAuth()
+  const { workspace, isSuperAdmin, viewAs } = useAuth()
   const flags = useFeatureFlags()
   const { changesCount } = useWatchlist()
   const { dir, tt } = useLang()
@@ -269,6 +293,29 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
   // they don't trigger a route change.
   const afterNav = mobile ? onClose : undefined
 
+  // "במוקד" pins: chosen by the workspace admin in the /setup wizard. A
+  // super-admin outside "view as" sees the plain, unpinned nav.
+  const pinned = (isSuperAdmin && !viewAs ? [] : focusPaths(workspace, flags))
+    .map(p => NAV_SECTIONS.find(s => s.path === p))
+  const pinnedSet = new Set(pinned.map(s => s.path))
+
+  const renderItem = (s) => {
+    const alerts = s.path === '/alerts'
+    return (
+      <NavItem
+        key={s.path}
+        to={alerts && changesCount > 0 ? '/alerts?tab=watchlist' : s.path}
+        end={s.path === '/'}
+        icon={ICON_FOR_PATH[s.path]}
+        label={tt(s.he, s.en)}
+        badge={alerts && changesCount > 0 ? (changesCount > 99 ? '99+' : changesCount) : null}
+        badgeColor={alerts ? 'var(--color-moca-up)' : undefined}
+        isActive={isPath(s.path)}
+        onAfterNav={afterNav}
+      />
+    )
+  }
+
   const body = (
     <>
       {/* Logo block */}
@@ -308,88 +355,24 @@ export default function Sidebar({ className = '', mobile = false, open = false, 
       </div>
 
       <nav style={{ padding: '4px 8px 10px', display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {/* ─── Monitoring ─── */}
-        {(visible('/') || visible('/cockpit') || visible('/agent-desk') || visible('/executive-summary') || visible('/positioning') || visible('/history') || visible('/alerts')) && (
-          <GroupLabel>{tt('ניטור', 'Monitoring')}</GroupLabel>
+        {/* Sections the customer's admin marked as their focus in the /setup
+            wizard - pinned on top, and left out of their usual group below. */}
+        {pinned.length > 0 && (
+          <>
+            <GroupLabel>{tt('במוקד', 'Focus')}</GroupLabel>
+            {pinned.map(renderItem)}
+          </>
         )}
-        {visible('/') && (
-          <NavItem to="/" end icon={Icons.dashboard} label={tt('דשבורד', 'Dashboard')} isActive={isPath('/')} onAfterNav={afterNav} />
-        )}
-        {visible('/cockpit') && (
-          <NavItem to="/cockpit" icon={Icons.cockpit} label={tt('חדר מצב', 'Situation room')} isActive={isPath('/cockpit')} onAfterNav={afterNav} />
-        )}
-        {visible('/agent-desk') && (
-          <NavItem to="/agent-desk" icon={Icons.agentDesk} label={tt('עמדת נציג', 'Agent desk')} isActive={isPath('/agent-desk')} onAfterNav={afterNav} />
-        )}
-        {visible('/executive-summary') && (
-          <NavItem to="/executive-summary" icon={Icons.exec} label={tt('דוח מנהלים', 'Executive report')} isActive={isPath('/executive-summary')} onAfterNav={afterNav} />
-        )}
-        {visible('/positioning') && (
-          <NavItem to="/positioning" icon={Icons.positioning} label={tt('מיצוב תחרותי', 'Positioning')} isActive={isPath('/positioning')} onAfterNav={afterNav} />
-        )}
-        {visible('/history') && (
-          <NavItem to="/history" icon={Icons.history} label={tt('היסטוריית שינויים', 'Change history')} isActive={isPath('/history')} onAfterNav={afterNav} />
-        )}
-        {visible('/alerts') && (
-          <NavItem
-            to={changesCount > 0 ? '/alerts?tab=watchlist' : '/alerts'}
-            icon={Icons.alerts}
-            label={tt('התראות', 'Alerts')}
-            badge={changesCount > 0 ? (changesCount > 99 ? '99+' : changesCount) : null}
-            badgeColor="var(--color-moca-up)"
-            isActive={isPath('/alerts')}
-            onAfterNav={afterNav}
-          />
-        )}
-
-        {/* ─── Insights ─── */}
-        {(visible('/ai-insights') || visible('/news') || visible('/social') || visible('/banners') || visible('/archive')) && (
-          <GroupLabel>{tt('תובנות', 'Insights')}</GroupLabel>
-        )}
-        {visible('/ai-insights') && (
-          <NavItem to="/ai-insights" icon={Icons.ai} label="AI Insights" isActive={isPath('/ai-insights')} onAfterNav={afterNav} />
-        )}
-        {visible('/news') && (
-          <NavItem to="/news" icon={Icons.news} label={tt('בחדשות', 'In the news')} isActive={isPath('/news')} onAfterNav={afterNav} />
-        )}
-        {visible('/social') && (
-          <NavItem to="/social" icon={Icons.social} label={tt('ברשתות החברתיות', 'On social')} isActive={isPath('/social')} onAfterNav={afterNav} />
-        )}
-        {visible('/banners') && (
-          <NavItem to="/banners" icon={Icons.banners} label={tt('באנרים', 'Banners')} isActive={isPath('/banners')} onAfterNav={afterNav} />
-        )}
-        {visible('/archive') && (
-          <NavItem to="/archive" icon={Icons.archive} label={tt('מכונת זמן', 'Time Machine')} isActive={isPath('/archive')} onAfterNav={afterNav} />
-        )}
-
-        {/* ─── Plans ─── */}
-        {(visible('/plans') || visible('/roaming') || visible('/esim') || visible('/usa') || visible('/resellers') || visible('/content') || visible('/compare')) && (
-          <GroupLabel>{tt('מסלולים', 'Plans')}</GroupLabel>
-        )}
-        {visible('/plans') && (
-          <NavItem to="/plans" icon={Icons.plans} label="Mass Market" isActive={isPath('/plans')} onAfterNav={afterNav} />
-        )}
-        {visible('/roaming') && (
-          <NavItem to="/roaming" icon={Icons.roaming} label={tt('חו״ל · Roaming', 'Roaming')} isActive={isPath('/roaming')} onAfterNav={afterNav} />
-        )}
-        {visible('/esim') && (
-          <NavItem to="/esim" icon={Icons.esim} label={tt('eSIM גלובלי', 'Global eSIM')} isActive={isPath('/esim')} onAfterNav={afterNav} />
-        )}
-        {visible('/esim-banners') && (
-          <NavItem to="/esim-banners" icon={Icons.banners} label={tt('באנרים גלובליים', 'Global banners')} isActive={isPath('/esim-banners')} onAfterNav={afterNav} />
-        )}
-        {visible('/usa') && (
-          <NavItem to="/usa" icon={Icons.usa} label={tt('נוחתים בארה״ב', 'USA')} isActive={isPath('/usa')} onAfterNav={afterNav} />
-        )}
-        {visible('/resellers') && (
-          <NavItem to="/resellers" icon={Icons.resellers} label={tt('משווקים', 'Resellers')} isActive={isPath('/resellers')} onAfterNav={afterNav} />
-        )}
-        {visible('/content') && (
-          <NavItem to="/content" icon={Icons.content} label={tt('תוכן', 'Content')} isActive={isPath('/content')} onAfterNav={afterNav} />
-        )}
-        {visible('/compare') && (
-          <NavItem to="/compare" icon={Icons.compare} label={tt('השוואת מחירים', 'Price compare')} isActive={isPath('/compare')} onAfterNav={afterNav} />
-        )}
+        {NAV_GROUPS.map(g => {
+          const items = NAV_SECTIONS.filter(s => s.group === g.key && visible(s.path) && !pinnedSet.has(s.path))
+          if (items.length === 0) return null
+          return (
+            <Fragment key={g.key}>
+              <GroupLabel>{tt(g.he, g.en)}</GroupLabel>
+              {items.map(renderItem)}
+            </Fragment>
+          )
+        })}
 
         {/* ─── Tools ─── */}
         <GroupLabel>{tt('כלים', 'Tools')}</GroupLabel>

@@ -30,6 +30,7 @@ export const ROUTE_META = [
   { match: '/cockpit',           kicker: { he: 'הנהלה',        en: 'Executive' },     title: { he: 'חדר מצב',              en: 'Situation room' } },
   { match: '/ai-insights',       kicker: { he: 'תובנות',       en: 'Insights' },      title: { he: 'AI Insights',          en: 'AI Insights' } },
   { match: '/archive',           kicker: { he: 'תובנות',       en: 'Insights' },      title: { he: 'מכונת זמן',            en: 'Time Machine' } },
+  { match: '/setup',             kicker: { he: 'כלים',         en: 'Tools' },         title: { he: 'התאמה אישית',          en: 'Personalize' } },
   { match: '/preferences',       kicker: { he: 'כלים',         en: 'Tools' },         title: { he: 'העדפות',               en: 'Preferences' } },
   { match: '/notifications',     kicker: { he: 'כלים',         en: 'Tools' },         title: { he: 'הגדרות התראות',        en: 'Notification settings' } },
   { match: '/settings',          kicker: { he: 'ניהול',        en: 'Admin' },         title: { he: 'הגדרות מערכת',         en: 'System settings' } },

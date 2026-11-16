@@ -96,3 +96,91 @@ export function detectDisplayPreset(flags = {}) {
   }
   return 'custom'
 }
+
+// ─── Section catalog + the /setup wizard's workspace answers ───────────────
+// One list of every hideable nav section: the Sidebar renders from it and the
+// dashboard-setup wizard (pages/SetupWizardPage.jsx) offers the same rows, so a
+// section can never exist in one and not the other. `desc` is the wizard's
+// one-line explanation. Mirror on the server: SECTION_FLAGS in dashboard_setup.py.
+export const NAV_GROUPS = [
+  { key: 'monitoring', he: 'ניטור',   en: 'Monitoring' },
+  { key: 'insights',   he: 'תובנות',  en: 'Insights' },
+  { key: 'plans',      he: 'מסלולים', en: 'Plans' },
+]
+
+export const NAV_SECTIONS = [
+  { path: '/',                  group: 'monitoring', he: 'דשבורד',             en: 'Dashboard',
+    desc: { he: 'תמונת מצב יומית של השוק והמתחרים', en: 'Daily snapshot of the market and competitors' } },
+  { path: '/cockpit',           group: 'monitoring', he: 'חדר מצב',            en: 'Situation room',
+    desc: { he: 'מסך אחד להנהלה: מחיר, נפח ושינויי השבוע', en: 'One executive screen: price, volume, weekly changes' } },
+  { path: '/agent-desk',        group: 'monitoring', he: 'עמדת נציג',          en: 'Agent desk',
+    desc: { he: 'מענה מהיר לנציג מול לקוח שמצטט מתחרה', en: 'Fast answers for a rep facing a competitor quote' } },
+  { path: '/executive-summary', group: 'monitoring', he: 'דוח מנהלים',         en: 'Executive report',
+    desc: { he: 'סיכום שוק מוכן להצגה, כולל ניתוח AI', en: 'Presentation-ready market summary with AI analysis' } },
+  { path: '/positioning',       group: 'monitoring', he: 'מיצוב תחרותי',       en: 'Positioning',
+    desc: { he: 'איפה כל מפעיל עומד ביחס מחיר ונפח', en: 'Where each carrier stands on price and volume' } },
+  { path: '/history',           group: 'monitoring', he: 'היסטוריית שינויים',  en: 'Change history',
+    desc: { he: 'כל שינוי מחיר, השקה והסרה לאורך זמן', en: 'Every price move, launch and removal over time' } },
+  { path: '/alerts',            group: 'monitoring', he: 'התראות',             en: 'Alerts',
+    desc: { he: 'התראות מחיר אישיות ורשימת מעקב', en: 'Personal price alerts and watchlist' } },
+
+  { path: '/ai-insights',       group: 'insights',   he: 'AI Insights',        en: 'AI Insights',
+    desc: { he: 'תובנות AI על כל מתחרה', en: 'AI insights on each competitor' } },
+  { path: '/news',              group: 'insights',   he: 'בחדשות',             en: 'In the news',
+    desc: { he: 'כתבות על המפעילים בתקשורת', en: 'Press coverage of the carriers' } },
+  { path: '/social',            group: 'insights',   he: 'ברשתות החברתיות',    en: 'On social',
+    desc: { he: 'מה נאמר על המפעילים ברשתות', en: 'What is being said about the carriers' } },
+  { path: '/banners',           group: 'insights',   he: 'באנרים',             en: 'Banners',
+    desc: { he: 'צילומי עמודי הבית והחנויות של המתחרים', en: 'Screenshots of competitor homepages and stores' } },
+  { path: '/archive',           group: 'insights',   he: 'מכונת זמן',          en: 'Time Machine',
+    desc: { he: 'איך נראה השוק בכל תאריך בעבר', en: 'What the market looked like on any past date' } },
+
+  { path: '/plans',             group: 'plans',      he: 'Mass Market',        en: 'Mass Market',
+    wizard: { he: 'חבילות סלולר (Mass Market)', en: 'Mobile plans (Mass Market)' },
+    desc: { he: 'כל חבילות הסלולר של המפעילים בישראל', en: 'Every mobile plan of the Israeli carriers' } },
+  { path: '/roaming',           group: 'plans',      he: 'חו״ל · Roaming',     en: 'Roaming',
+    desc: { he: 'חבילות חו״ל של המפעילים, לפי מדינה', en: 'Carrier roaming packages by country' } },
+  { path: '/esim',              group: 'plans',      he: 'eSIM גלובלי',        en: 'Global eSIM',
+    desc: { he: 'ספקי eSIM בינלאומיים, לפי יעד', en: 'International eSIM providers by destination' } },
+  { path: '/esim-banners',      group: 'plans',      he: 'באנרים גלובליים',    en: 'Global banners',
+    desc: { he: 'צילומי עמודי הבית של ספקי ה-eSIM', en: 'Screenshots of eSIM provider homepages' } },
+  { path: '/usa',               group: 'plans',      he: 'נוחתים בארה״ב',      en: 'USA',
+    desc: { he: 'חבילות פריפייד אמריקאיות לתיירים', en: 'US prepaid plans for tourists' } },
+  { path: '/resellers',         group: 'plans',      he: 'משווקים',            en: 'Resellers',
+    desc: { he: 'מבצעים מתחת לקו: משווקים, דפי נחיתה ופייסבוק', en: 'Below-the-line offers: resellers, landing pages, Facebook' } },
+  { path: '/content',           group: 'plans',      he: 'תוכן',               en: 'Content',
+    desc: { he: 'שירותי ערך מוסף: סייבר, שעון, תא קולי ועוד', en: 'Value-added services: cyber, watch, voicemail and more' } },
+  { path: '/compare',           group: 'plans',      he: 'השוואת מחירים',      en: 'Price compare',
+    desc: { he: 'גרפים להשוואת מחירים בין מפעילים', en: 'Charts comparing prices across carriers' } },
+]
+
+// Flags hidden by the customer's OWN admin in the wizard (workspace.dashboard_config),
+// as opposed to workspace.feature_flags which only the operator sets.
+export function wizardHiddenFlags(dashboardConfig) {
+  const sections = dashboardConfig?.sections || {}
+  const out = {}
+  for (const [path, state] of Object.entries(sections)) {
+    if (state === 'hidden' && FLAG_FOR_PATH[path]) out[FLAG_FOR_PATH[path]] = true
+  }
+  return out
+}
+
+// feature_flags ∪ wizard-hidden sections = what the nav actually hides.
+export function effectiveFlags(workspace) {
+  return { ...(workspace?.feature_flags || {}), ...wizardHiddenFlags(workspace?.dashboard_config) }
+}
+
+// Paths the admin marked "במוקד" - pinned to the top of the nav, in catalog order.
+export function focusPaths(workspace, flags = {}) {
+  const sections = workspace?.dashboard_config?.sections || {}
+  return NAV_SECTIONS
+    .map(s => s.path)
+    .filter(p => sections[p] === 'focus' && !flags[FLAG_FOR_PATH[p]])
+}
+
+// The landing page chosen in the wizard, when it is still visible.
+export function landingPath(workspace, flags = {}) {
+  const landing = workspace?.dashboard_config?.landing
+  if (!landing || !(landing in FLAG_FOR_PATH) || flags[FLAG_FOR_PATH[landing]]) return null
+  return landing
+}

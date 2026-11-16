@@ -616,6 +616,16 @@ def _get_user_context(email):
                 "trial_expired":     trial_expired,
                 "visible_carriers":  visible_carriers,
             }
+            # What the customer's own admin chose in the /setup wizard (sections
+            # to hide / emphasize, landing page, focus competitors). Local SQLite;
+            # a failure here must never cost the user their role.
+            try:
+                from db import get_dashboard_setup as _gds
+                _ds_row = _gds("workspace", workspace["id"], db_path=_db_path())
+                workspace["dashboard_config"] = (_ds_row or {}).get("config") or {}
+            except Exception as _dse:
+                logger.warning(f"dashboard_config lookup failed: {_dse}")
+                workspace["dashboard_config"] = {}
         _result = {"role": role, "workspace_id": str(ws_id) if ws_id else None,
                    "workspace": workspace, "digest_opt_out": digest_opt_out}
         _USER_CONTEXT_CACHE[email] = (_time.time(), _result)
@@ -2521,6 +2531,17 @@ from api.usage import (  # noqa: E402,F401
 )
 import api.usage as _usage_bp_mod  # noqa: E402
 app.register_blueprint(_usage_bp_mod.bp)
+from api.setup import (  # noqa: E402,F401
+    api_dashboard_setup_get,
+    api_dashboard_setup_workspace,
+    api_dashboard_setup_user,
+    api_dashboard_setup_dismiss,
+    api_dashboard_setup_test,
+    api_dashboard_setup_run_now,
+    run_dashboard_alerts_job,
+)
+import api.setup as _setup_bp_mod  # noqa: E402
+app.register_blueprint(_setup_bp_mod.bp)
 
 
 if __name__ == "__main__":
@@ -2996,6 +3017,12 @@ if __name__ == "__main__":
     # so better-deal checks run against fresh prices
     scheduler.add_job(run_mobile_reminders_job, "cron", hour=9, minute=15,
                       id="mobile_reminders", **_job_defaults)
+    # Personal change alerts configured in the /setup wizard (e-mail / WhatsApp,
+    # per-user frequency + quiet hours). Cursor based, so a 15-minute tick both
+    # delivers "immediate" alerts shortly after each scrape and releases
+    # anything held back by quiet hours.
+    scheduler.add_job(run_dashboard_alerts_job, "interval", minutes=15,
+                      id="dashboard_alerts", max_instances=1, **_job_defaults)
     if config.get("booking_ical_url"):
         try:
             from booking_notifier import check_new_bookings

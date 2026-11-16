@@ -2,7 +2,7 @@ import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { useFeatureFlags } from './hooks/useFeatureFlags'
-import { firstVisibleHome } from './data/navFlags'
+import { firstVisibleHome, landingPath } from './data/navFlags'
 import { ScrapeProvider } from './hooks/useScrape'
 import { getMvnoColors } from './data/mvnoBrandColors'
 import Layout from './components/Layout'
@@ -56,6 +56,7 @@ const EsimComparePage       = lazy(() => import('./pages/EsimComparePage'))
 const MobileComparePage     = lazy(() => import('./pages/MobileComparePage'))
 const EsimAnalyticsPage     = lazy(() => import('./pages/EsimAnalyticsPage'))
 const ProviderDealsPage     = lazy(() => import('./pages/ProviderDealsPage'))
+const SetupWizardPage       = lazy(() => import('./pages/SetupWizardPage'))
 
 function PageFallback() {
   return <div className="flex justify-center py-20"><Spinner /></div>
@@ -130,6 +131,19 @@ function AppShell() {
 // page with no nav link back to it.
 function HomeRoute() {
   const flags = useFeatureFlags()
+  const { role, workspace, isSuperAdmin, viewAs } = useAuth()
+  // Landing page chosen by the workspace admin in the /setup wizard: the first
+  // visit to home in a tab session goes there instead; after that "/" is the
+  // dashboard again, so the dashboard stays reachable from the nav.
+  const landing = (isSuperAdmin && !viewAs) ? null : landingPath(workspace, flags)
+  let landed = true
+  try { landed = !!sessionStorage.getItem('moca_landed') } catch { /* storage blocked: skip the redirect */ }
+  useEffect(() => {
+    // Mark only once the context is known, or the redirect would be skipped
+    // while the workspace is still loading.
+    if (role != null) { try { sessionStorage.setItem('moca_landed', '1') } catch { /* ignore */ } }
+  }, [role])
+  if (landing && landing !== '/' && !landed) return <Navigate to={landing} replace />
   if (flags.hide_dashboard) {
     const target = firstVisibleHome(flags)
     if (target !== '/') return <Navigate to={target} replace />
@@ -262,6 +276,7 @@ export default function App() {
             <Route path="archive" element={<ArchivePage />} />
             <Route path="settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
             <Route path="preferences" element={<PreferencesPage />} />
+            <Route path="setup" element={<SetupWizardPage />} />
             <Route path="workspace/users" element={<ProtectedRoute adminOnly><WorkspaceUsersPage /></ProtectedRoute>} />
             <Route path="workspace/settings" element={<ProtectedRoute adminOnly><WorkspaceBrandingPage /></ProtectedRoute>} />
             <Route path="admin/workspaces" element={<ProtectedRoute superAdminOnly><WorkspacesAdminPage /></ProtectedRoute>} />

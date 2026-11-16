@@ -296,9 +296,16 @@ def api_list_workspaces():
                 ws = e['workspace_id'] or ''
                 refresh_by_ws[ws] = refresh_by_ws.get(ws, 0) + 1
 
+        from db import get_dashboard_setup as _gds
         workspaces = []
         for row in rows:
             ws_id = str(row[0])
+            try:
+                # /setup wizard answers - needed so "view as" previews what the
+                # customer's own admin hid / emphasized, not only feature_flags.
+                _dash_cfg = (_gds("workspace", ws_id, db_path=core._db_path()) or {}).get("config") or {}
+            except Exception:
+                _dash_cfg = {}
             trial_ends_at = row[11]
             trial_expired = False
             if trial_ends_at:
@@ -323,6 +330,7 @@ def api_list_workspaces():
                 'trial_expired':     trial_expired,
                 'visible_carriers':  vc_list,
                 'digest_frequency':  row[13] or 'weekly',
+                'dashboard_config':  _dash_cfg,
                 'refresh_count_month': refresh_by_ws.get(ws_id, 0),
                 'refresh_limit':       None if row[1] == 'moca-internal' else core.MONTHLY_REFRESH_LIMIT,
             })

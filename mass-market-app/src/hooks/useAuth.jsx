@@ -228,6 +228,8 @@ export function AuthProvider({ children }) {
     setViewAs(null)
     try { sessionStorage.removeItem(VIEW_AS_STORAGE_KEY) } catch {}
     try { sessionStorage.removeItem('moca_login_beaconed') } catch {}
+    // Next sign-in in this tab re-runs the setup check + landing-page redirect
+    try { sessionStorage.removeItem('moca_setup_checked'); sessionStorage.removeItem('moca_landed') } catch {}
     localStorage.removeItem('auth_token')
     // Remember explicit logout for the tab session so DEV_MODE doesn't auto-re-login.
     sessionStorage.setItem('dev_logged_out', '1')

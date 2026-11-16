@@ -530,6 +530,29 @@ def init_db(db_path=None):
             );
             CREATE INDEX IF NOT EXISTS idx_mobile_reminders_token
                 ON mobile_reminders(token);
+            -- Dashboard setup wizard (/setup): one row per workspace (what the
+            -- dashboard shows / emphasizes) and one per user (alert channels,
+            -- recipients, frequency, quiet hours). `config` is validated JSON
+            -- (dashboard_setup.clean_workspace_config / clean_user_config).
+            CREATE TABLE IF NOT EXISTS dashboard_setup (
+                scope        TEXT NOT NULL,          -- workspace | user
+                owner        TEXT NOT NULL,          -- workspace uuid | lowercased e-mail
+                config       TEXT NOT NULL DEFAULT '{}',
+                completed_at TEXT,
+                dismissed_at TEXT,                   -- user pressed "skip" on the first-login prompt
+                updated_by   TEXT,
+                updated_at   TEXT NOT NULL,
+                PRIMARY KEY (scope, owner)
+            );
+            -- Per (user, channel) delivery cursor of the personal change alerts:
+            -- every change logged AFTER last_sent_at is still unsent.
+            CREATE TABLE IF NOT EXISTS dashboard_alert_cursor (
+                user_email       TEXT NOT NULL,
+                channel          TEXT NOT NULL,      -- email | whatsapp
+                last_sent_at     TEXT NOT NULL,
+                last_delivery_at TEXT,               -- last time a message really went out
+                PRIMARY KEY (user_email, channel)
+            );
             CREATE TABLE IF NOT EXISTS workspace_invites (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 token        TEXT NOT NULL UNIQUE,
@@ -4350,3 +4373,158 @@ def get_scrape_freshness(db_path=None):
         return out
     finally:
         conn.close()
+
+
+# ── Dashboard setup wizard (/setup) ──────────────────────────────────────────
+# Storage for dashboard_setup.py: the wizard's workspace-level and user-level
+# answers + the per-channel delivery cursors of the personal change alerts.
+
+def get_dashboard_setup(scope, owner, db_path=None):
+    """One wizard row as {config, completed_at, dismissed_at, updated_at,
+    updated_by}, or None when the wizard was never saved for this owner."""
+    if not owner:
+        return None
+    conn = _connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT config, completed_at, dismissed_at, updated_at, updated_by "
+            "FROM dashboard_setup WHERE scope=? AND owner=?", (scope, str(owner))).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return None
+    try:
+        cfg = json.loads(row[0] or "{}")
+    except (TypeError, ValueError):
+        cfg = {}
+    return {"config": cfg if isinstance(cfg, dict) else {}, "completed_at": row[1],
+            "dismissed_at": row[2], "updated_at": row[3], "updated_by": row[4]}
+
+
+def save_dashboard_setup(scope, owner, config, updated_by=None, db_path=None):
+    """UPSERT a COMPLETED wizard row (config must already be validated)."""
+    now = datetime.now().isoformat()
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO dashboard_setup (scope, owner, config, completed_at, updated_by, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(scope, owner) DO UPDATE SET config=excluded.config, "
+            "completed_at=COALESCE(dashboard_setup.completed_at, excluded.completed_at), "
+            "updated_by=excluded.updated_by, updated_at=excluded.updated_at",
+            (scope, str(owner), json.dumps(config, ensure_ascii=False), now, updated_by, now))
+        conn.commit()
+    finally:
+        conn.close()
+    return now
+
+
+def dismiss_dashboard_setup(scope, owner, db_path=None):
+    """Remember that the first-login prompt was skipped (never overwrites a saved config)."""
+    now = datetime.now().isoformat()
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO dashboard_setup (scope, owner, config, dismissed_at, updated_at) "
+            "VALUES (?, ?, '{}', ?, ?) "
+            "ON CONFLICT(scope, owner) DO UPDATE SET dismissed_at=excluded.dismissed_at",
+            (scope, str(owner), now, now))
+        conn.commit()
+    finally:
+        conn.close()
+    return now
+
+
+def delete_dashboard_setup(scope, owner, db_path=None):
+    """Remove a wizard row; for a user also drop the alert cursors (user deletion)."""
+    conn = _connect(db_path)
+    try:
+        conn.execute("DELETE FROM dashboard_setup WHERE scope=? AND owner=?", (scope, str(owner)))
+        if scope == "user":
+            conn.execute("DELETE FROM dashboard_alert_cursor WHERE user_email=?", (str(owner),))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def list_dashboard_user_setups(db_path=None):
+    """Every COMPLETED user-level wizard row: [{email, config}]."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT owner, config FROM dashboard_setup "
+            "WHERE scope='user' AND completed_at IS NOT NULL").fetchall()
+    finally:
+        conn.close()
+    out = []
+    for owner, raw in rows:
+        try:
+            cfg = json.loads(raw or "{}")
+        except (TypeError, ValueError):
+            continue
+        if isinstance(cfg, dict):
+            out.append({"email": owner, "config": cfg})
+    return out
+
+
+def get_alert_cursors(user_email, db_path=None):
+    """{channel: {last_sent_at, last_delivery_at}} for one user."""
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT channel, last_sent_at, last_delivery_at FROM dashboard_alert_cursor "
+            "WHERE user_email=?", (user_email,)).fetchall()
+    finally:
+        conn.close()
+    return {r[0]: {"last_sent_at": r[1], "last_delivery_at": r[2]} for r in rows}
+
+
+def set_alert_cursor(user_email, channel, sent_at, delivered=False, db_path=None):
+    """Advance a delivery cursor. `delivered` also stamps last_delivery_at."""
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO dashboard_alert_cursor (user_email, channel, last_sent_at, last_delivery_at) "
+            "VALUES (?, ?, ?, ?) "
+            "ON CONFLICT(user_email, channel) DO UPDATE SET last_sent_at=excluded.last_sent_at, "
+            "last_delivery_at=COALESCE(excluded.last_delivery_at, dashboard_alert_cursor.last_delivery_at)",
+            (user_email, channel, sent_at, sent_at if delivered else None))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+_CHANGE_FEEDS = (
+    # category, table, plan-name column, extra column (or None)
+    ("domestic",  "changes",          "plan_name", None),
+    ("abroad",    "abroad_changes",   "plan_name", None),
+    ("global",    "global_changes",   "plan_name", None),
+    ("content",   "content_changes",  "service",   None),
+    ("resellers", "reseller_changes", "plan_name", "reseller_id"),
+)
+
+
+def get_changes_since(since_iso, categories=None, db_path=None):
+    """All change-log rows logged strictly after `since_iso`, across the five
+    change tables, oldest first. Each row: {category, carrier, plan_name,
+    change_type, old_val, new_val, changed_at[, reseller_id]}."""
+    conn = _connect(db_path)
+    out = []
+    try:
+        for cat, table, name_col, extra in _CHANGE_FEEDS:
+            if categories is not None and cat not in categories:
+                continue
+            cols = f"carrier, {name_col}, change_type, old_val, new_val, changed_at"
+            if extra:
+                cols += f", {extra}"
+            for r in conn.execute(
+                    f"SELECT {cols} FROM {table} WHERE changed_at > ? ORDER BY changed_at, id",
+                    (since_iso,)):
+                row = {"category": cat, "carrier": r[0], "plan_name": r[1], "change_type": r[2],
+                       "old_val": r[3], "new_val": r[4], "changed_at": r[5]}
+                if extra:
+                    row[extra] = r[6]
+                out.append(row)
+    finally:
+        conn.close()
+    return out

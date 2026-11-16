@@ -133,6 +133,7 @@ function ProfileMenu({ user, isAdmin, isSuperAdmin, signOut, workspace }) {
         <div className="absolute top-full mt-1 min-w-[200px] bg-white rounded-xl shadow-popover border border-moca-border/40 p-1.5 z-50 animate-fade-in" style={{ insetInlineEnd: 0 }}>
           <button onClick={() => go('/preferences')} className={itemCls}>{tt('העדפות', 'Preferences')}</button>
           <button onClick={() => go('/alerts?tab=watchlist')} className={itemCls}>{tt('הגדרות התראות', 'Alert settings')}</button>
+          <button onClick={() => go('/setup')} className={itemCls}>{tt('התאמה אישית', 'Personalize')}</button>
           <button onClick={() => { setOpen(false); setShowChangePw(true) }} className={itemCls}>{tt('שינוי סיסמה', 'Change password')}</button>
           {isAdmin && !isSuperAdmin && (
             <>

@@ -10,6 +10,7 @@ import Sidebar from './moca/Sidebar'
 import Topbar from './moca/Topbar'
 import TimeMachineModal from './moca/TimeMachineModal'
 import RouteTracker from './RouteTracker'
+import SetupPrompt from './SetupPrompt'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
 
 export default function Layout() {
@@ -27,6 +28,8 @@ export default function Layout() {
       <ViewAsBanner />
       {/* Records per-user page views (authed, non-super-admin) for the activity dashboard */}
       <RouteTracker />
+      {/* First login: send the user to the dashboard setup wizard (once) */}
+      <SetupPrompt />
 
       <div className="flex-1 flex flex-col md:flex-row min-h-0">
         {/* Desktop sidebar (RTL: renders on the physical right as first flex-row child) */}

@@ -30,5 +30,11 @@ export function useVisibleCarriers(carrierIds) {
   const hidden = (workspace?.hide_self_carrier && workspace?.mvno_carrier) || null
   if (hidden) result = result.filter(c => c !== hidden)
 
+  // Competitors the workspace admin marked "in focus" in the /setup wizard lead the list
+  const focus = workspace?.dashboard_config?.focus_carriers
+  if (focus?.length && result.some(c => focus.includes(c))) {
+    result = [...result.filter(c => focus.includes(c)), ...result.filter(c => !focus.includes(c))]
+  }
+
   return result
 }

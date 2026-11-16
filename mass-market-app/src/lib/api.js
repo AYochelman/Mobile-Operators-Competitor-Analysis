@@ -229,6 +229,13 @@ export const api = {
   // User preferences
   updateMyPreferences: (prefs) => fetchApi('/api/my-preferences', { method: 'PATCH', body: JSON.stringify(prefs) }),
 
+  // Dashboard setup wizard (/setup): workspace-level view + per-user alert preferences
+  getDashboardSetup:        () => fetchApi('/api/dashboard-setup'),
+  saveDashboardSetupWorkspace: (cfg) => fetchApi('/api/dashboard-setup/workspace', { method: 'PUT', body: JSON.stringify(cfg) }),
+  saveDashboardSetupUser:   (cfg) => fetchApi('/api/dashboard-setup/user', { method: 'PUT', body: JSON.stringify(cfg) }),
+  dismissDashboardSetup:    () => fetchApi('/api/dashboard-setup/dismiss', { method: 'POST', body: '{}' }),
+  testDashboardChannel:     (payload) => fetchApi('/api/dashboard-setup/test', { method: 'POST', body: JSON.stringify(payload) }),
+
   // Market movers — top biggest % price moves. planTypes: array/string of 'domestic','abroad','global'
   getMarketMovers: (days = 7, limit = 5, planTypes = null) => {
     const qs = new URLSearchParams({ days: String(days), limit: String(limit) })
