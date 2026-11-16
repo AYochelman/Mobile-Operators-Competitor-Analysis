@@ -172,6 +172,9 @@ export const api = {
   // Workspaces — super_admin only
   getWorkspaces:        () => fetchApi('/api/workspaces'),
   createWorkspace:      (data) => fetchApi('/api/workspaces', { method: 'POST', body: JSON.stringify(data) }),
+  // super_admin: permanent. `users` = 'move' (to moca-internal) | 'delete' (their accounts too)
+  deleteWorkspace:      (id, confirmSlug, users) =>
+    fetchApi(`/api/workspaces/${id}`, { method: 'DELETE', body: JSON.stringify({ confirm_slug: confirmSlug, users }) }),
   updateWorkspace:      (id, data) => fetchApi(`/api/workspaces/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   getWorkspaceUsers:    (id) => fetchApi(`/api/workspaces/${id}/users`),
   assignWorkspaceUser:  (id, email, role) => fetchApi(`/api/workspaces/${id}/users`, { method: 'POST', body: JSON.stringify({ email, role }) }),

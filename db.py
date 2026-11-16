@@ -4528,3 +4528,53 @@ def get_changes_since(since_iso, categories=None, db_path=None):
     finally:
         conn.close()
     return out
+
+
+def delete_user_data(user_email, db_path=None):
+    """Erase everything keyed by a DELETED user's e-mail: /setup wizard answers
+    and alert cursors, price alerts (which would otherwise keep e-mailing the
+    address), watchlist, saved views and Web Push subscriptions. Audit and
+    activity history are kept (they have their own retention). Returns the
+    number of rows removed."""
+    email = (user_email or "").strip().lower()
+    if not email:
+        return 0
+    removed = 0
+    conn = _connect(db_path)
+    try:
+        for sql in (
+            "DELETE FROM dashboard_setup WHERE scope='user' AND owner=?",
+            "DELETE FROM dashboard_alert_cursor WHERE user_email=?",
+            "DELETE FROM price_alerts WHERE LOWER(user_email)=?",
+            "DELETE FROM watchlist WHERE LOWER(user_email)=?",
+            "DELETE FROM saved_views WHERE LOWER(user_email)=?",
+            "DELETE FROM push_subscriptions WHERE LOWER(user_email)=?",
+        ):
+            removed += conn.execute(sql, (email,)).rowcount
+        conn.commit()
+    finally:
+        conn.close()
+    return removed
+
+
+def delete_workspace_data(workspace_id, db_path=None):
+    """Erase the local rows that belong to a DELETED workspace: its /setup
+    wizard view, its invite links (used or not - an unused one would otherwise
+    point at a workspace that no longer exists) and its team notes. The audit
+    log is kept. Returns the number of rows removed."""
+    ws = str(workspace_id or "")
+    if not ws:
+        return 0
+    removed = 0
+    conn = _connect(db_path)
+    try:
+        for sql in (
+            "DELETE FROM dashboard_setup WHERE scope='workspace' AND owner=?",
+            "DELETE FROM workspace_invites WHERE workspace_id=?",
+            "DELETE FROM plan_annotations WHERE workspace_id=?",
+        ):
+            removed += conn.execute(sql, (ws,)).rowcount
+        conn.commit()
+    finally:
+        conn.close()
+    return removed

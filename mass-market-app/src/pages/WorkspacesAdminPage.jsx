@@ -336,6 +336,38 @@ function WorkspaceRow({ ws, onChange }) {
     }
   }
 
+  // Permanent deletion. moca-internal is where unassigned users land, so it is
+  // never offered. The operator must type the slug and, when the workspace has
+  // members, decide what happens to them - nothing is preselected.
+  const isProtected = ws.slug === 'moca-internal'
+  const memberCount = Number(ws.user_count) || 0
+  const [deleteOpen, setDeleteOpen]   = useState(false)
+  const [deleteSlug, setDeleteSlug]   = useState('')
+  const [deleteUsers, setDeleteUsers] = useState(null)   // null | 'delete' | 'move'
+  const [deleteBusy, setDeleteBusy]   = useState(false)
+  const [deleteErr, setDeleteErr]     = useState(null)
+  const canDelete = deleteSlug.trim().toLowerCase() === String(ws.slug || '').toLowerCase()
+    && (memberCount === 0 || deleteUsers !== null)
+
+  const deleteWorkspace = async () => {
+    if (!canDelete) return
+    setDeleteBusy(true); setDeleteErr(null)
+    try {
+      await api.deleteWorkspace(ws.id, deleteSlug.trim(), deleteUsers || 'move')
+      onChange && onChange()        // the row disappears with the reloaded list
+    } catch (e) {
+      const msg = e.message || ''
+      setDeleteErr(
+        msg.includes('super_admin')
+          ? tt('ב-workspace הזה יש משתמש super-admin. יש להעביר אותו ל-workspace אחר לפני המחיקה.',
+               'A super-admin belongs to this workspace. Move them to another workspace before deleting.')
+          : msg.includes('confirm_slug')
+            ? tt('המזהה שהוקלד אינו תואם.', 'The typed identifier does not match.')
+            : tt('המחיקה נכשלה, ושום דבר לא נמחק. נסו שוב.', 'The deletion failed and nothing was deleted. Try again.'))
+      setDeleteBusy(false)
+    }
+  }
+
   const sendDigest = async () => {
     setDigestSending(true); setDigestResult(null)
     try {
@@ -548,10 +580,57 @@ function WorkspaceRow({ ws, onChange }) {
                 title={tt('איפוס מה שהלקוח הגדיר באשף ההתאמה האישית', 'Reset what the customer set in the personalization wizard')}>
                 {resetOpen ? tt('סגור איפוס', 'Close reset') : tt('איפוס התאמה אישית', 'Reset personalization')}
               </Button>
+              {!isProtected && (
+                <Button onClick={() => { setDeleteOpen(o => !o); setDeleteErr(null); setDeleteSlug('') }} variant="ghost" size="sm"
+                  className="border border-red-300 text-red-600 hover:bg-red-50">
+                  {deleteOpen ? tt('סגור מחיקה', 'Close delete') : tt('מחיקה', 'Delete')}
+                </Button>
+              )}
             </>
           )}
         </div>
       </div>
+      {deleteOpen && !isProtected && (
+        <div className="bg-red-50/60 border border-red-200 rounded-lg p-4 mt-3">
+          <h4 className="text-sm font-semibold text-red-700 mb-1">{tt('מחיקת ה-workspace לצמיתות', 'Delete this workspace permanently')}</h4>
+          <p className="text-xs text-gray-700 mb-3">
+            {tt('הפעולה מוחקת את ה-workspace, את ההתאמה האישית שלו, את קישורי ההזמנה ואת הערות הצוות. אי אפשר לבטל אותה. אם המטרה היא רק לחסום גישה, עדיף להסיר את הסימון "פעיל" בעריכה.',
+                'This deletes the workspace, its personalization, its invite links and its team notes. It cannot be undone. To only block access, untick "Active" in Edit instead.')}
+          </p>
+          {memberCount > 0 && (
+            <fieldset className="mb-3">
+              <legend className="text-xs font-semibold text-gray-800 mb-1.5">
+                {memberCount === 1
+                  ? tt('מה לעשות עם המשתמש היחיד שלו?', 'What should happen to its one user?')
+                  : tt(`מה לעשות עם ${memberCount} המשתמשים שלו?`, `What should happen to its ${memberCount} users?`)}
+              </legend>
+              <label className="flex items-start gap-2 text-xs text-gray-700 mb-1.5 cursor-pointer">
+                <input type="radio" name={`del-users-${ws.id}`} checked={deleteUsers === 'delete'} onChange={() => setDeleteUsers('delete')} className="mt-0.5 accent-red-600" />
+                <span>{tt('למחוק את החשבונות, כולל ההתראות והנתונים האישיים', 'Delete the accounts, including alerts and personal data')}</span>
+              </label>
+              <label className="flex items-start gap-2 text-xs text-gray-700 cursor-pointer">
+                <input type="radio" name={`del-users-${ws.id}`} checked={deleteUsers === 'move'} onChange={() => setDeleteUsers('move')} className="mt-0.5 accent-red-600" />
+                <span>{tt('להעביר ל-moca-internal בהרשאת צופה. החשבונות ימשיכו להיכנס למערכת ויראו את התצוגה הפנימית.',
+                          'Move to moca-internal as viewers. The accounts keep signing in and see the internal view.')}</span>
+              </label>
+            </fieldset>
+          )}
+          <label htmlFor={`del-slug-${ws.id}`} className="block text-xs font-semibold text-gray-800 mb-1">
+            {tt('לאישור, הקלידו את המזהה: ', 'To confirm, type the identifier: ')}
+            <code dir="ltr" className="font-mono bg-white border border-red-200 rounded px-1">{ws.slug}</code>
+          </label>
+          <div className="flex gap-2 items-center flex-wrap">
+            <input id={`del-slug-${ws.id}`} type="text" dir="ltr" autoComplete="off" spellCheck={false}
+              value={deleteSlug} onChange={e => setDeleteSlug(e.target.value)}
+              className="px-2 py-1.5 text-sm border border-moca-border rounded bg-white w-56 max-w-full" />
+            <Button onClick={deleteWorkspace} disabled={!canDelete || deleteBusy} variant="ghost" size="sm"
+              className="border border-red-400 bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 disabled:border-red-300">
+              {deleteBusy ? tt('מוחק…', 'Deleting…') : tt('מחיקה לצמיתות', 'Delete permanently')}
+            </Button>
+          </div>
+          {deleteErr && <p role="alert" className="text-xs mt-2 text-red-700 font-semibold">{deleteErr}</p>}
+        </div>
+      )}
       {resetOpen && (
         <div className="bg-moca-cream/50 rounded-lg p-4 mt-3">
           <h4 className="text-sm font-semibold mb-1">{tt('איפוס התאמה אישית', 'Reset personalization')}</h4>

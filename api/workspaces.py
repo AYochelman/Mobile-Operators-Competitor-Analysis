@@ -184,13 +184,14 @@ def api_delete_user(user_id):
         conn.close()
         if _deleted_email:
             try:
-                from db import delete_dashboard_setup
-                delete_dashboard_setup("user", _deleted_email, db_path=core._db_path())
+                # Wizard answers, cursors, price alerts (they e-mail the address
+                # with no account check), watchlist, saved views, push endpoints.
+                from db import delete_user_data
+                delete_user_data(_deleted_email, db_path=core._db_path())
                 core._USER_CONTEXT_CACHE.pop(_deleted_email, None)
             except Exception as _ce:
-                # The account is already deleted; leftover preferences are inert
-                # (the dispatcher skips users with no workspace) but say so.
-                logger.warning(f"delete_user: dashboard setup cleanup failed: {_ce}")
+                # The account is already deleted; say what was left behind.
+                logger.warning(f"delete_user: local data cleanup failed: {_ce}")
         logger.info(f"AUDIT delete_user: user_id={user_id!r} by_ip={request.remote_addr}")
         return jsonify({"status": "deleted"})
     except Exception as e:
@@ -449,6 +450,118 @@ def api_update_workspace(workspace_id):
     except Exception as e:
         logger.error(f"update workspace failed: {e}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
+
+
+PROTECTED_WORKSPACE_SLUG = 'moca-internal'
+
+
+@bp.route("/api/workspaces/<workspace_id>", methods=["DELETE"])
+@core.require_super_admin
+@core.limiter.limit("5 per minute")
+def api_delete_workspace(workspace_id):
+    """Permanently delete a workspace. super_admin / server-admin-key ONLY.
+
+    Body: {confirm_slug, users: 'move' | 'delete'}
+      confirm_slug - must equal the workspace's slug (typed by the operator).
+      users        - what happens to its members: 'move' re-homes them in
+                     moca-internal as viewers (the same thing "unassign" does),
+                     'delete' removes their accounts.
+
+    Refused for moca-internal (every unassigned user lands there) and while a
+    super_admin is a member (moving would demote them, deleting would remove
+    the operator). The Supabase side is ONE transaction - a failure leaves the
+    workspace and its users exactly as they were. Local SQLite rows (wizard
+    view, invites, team notes, deleted users' personal data) are cleaned up
+    after the commit; the audit log is kept.
+    """
+    data = request.get_json(silent=True) or {}
+    mode = data.get('users')
+    if mode not in ('move', 'delete'):
+        return jsonify({"error": "users must be 'move' or 'delete'"}), 400
+    confirm_slug = (data.get('confirm_slug') or '').strip().lower()
+    conn = None
+    try:
+        conn = core._supabase_conn()
+        conn.autocommit = False
+        cur = conn.cursor()
+        cur.execute("SELECT slug, name FROM public.workspaces WHERE id = %s", (workspace_id,))
+        row = cur.fetchone()
+        if not row:
+            conn.rollback()
+            return jsonify({"error": "workspace not found"}), 404
+        slug, name = row[0], row[1]
+        if slug == PROTECTED_WORKSPACE_SLUG:
+            conn.rollback()
+            return jsonify({"error": "moca-internal cannot be deleted"}), 400
+        if confirm_slug != (slug or '').lower():
+            conn.rollback()
+            return jsonify({"error": "confirm_slug does not match"}), 400
+
+        cur.execute("""
+            SELECT r.user_id, LOWER(u.email), r.role
+            FROM public.user_roles r
+            LEFT JOIN auth.users u ON u.id = r.user_id
+            WHERE r.workspace_id = %s
+        """, (workspace_id,))
+        members = cur.fetchall()
+        if any(m[2] == 'super_admin' for m in members):
+            conn.rollback()
+            return jsonify({"error": "a super_admin belongs to this workspace - move them first"}), 409
+
+        deleted_emails = []
+        if members:
+            if mode == 'move':
+                cur.execute("SELECT id FROM public.workspaces WHERE slug = %s", (PROTECTED_WORKSPACE_SLUG,))
+                internal = cur.fetchone()
+                if not internal:
+                    conn.rollback()
+                    return jsonify({"error": "moca-internal workspace missing"}), 500
+                cur.execute("""
+                    UPDATE public.user_roles SET workspace_id = %s, role = 'viewer'
+                    WHERE workspace_id = %s
+                """, (internal[0], workspace_id))
+            else:
+                ids = [m[0] for m in members]
+                cur.execute("DELETE FROM public.user_roles WHERE workspace_id = %s", (workspace_id,))
+                for uid in ids:
+                    cur.execute("DELETE FROM auth.users WHERE id = %s", (uid,))
+                deleted_emails = [m[1] for m in members if m[1]]
+        cur.execute("DELETE FROM public.workspaces WHERE id = %s", (workspace_id,))
+        conn.commit()
+    except Exception as e:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        logger.error(f"delete workspace failed: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+    # Supabase is committed - the workspace is gone. Clean up the local rows.
+    cleanup_ok = True
+    try:
+        from db import delete_workspace_data, delete_user_data
+        delete_workspace_data(workspace_id, db_path=core._db_path())
+        for em in deleted_emails:
+            delete_user_data(em, db_path=core._db_path())
+    except Exception as ce:
+        cleanup_ok = False
+        logger.warning(f"delete workspace: local cleanup failed for {workspace_id}: {ce}")
+    core._USER_CONTEXT_CACHE.clear()
+    actor = core._current_user_email() or ''
+    core.log_audit('workspace_deleted', actor_email=actor, workspace_id=workspace_id,
+                   details=f'slug={slug!r} name={name!r} users={mode} count={len(members)}',
+                   db_path=core._db_path())
+    logger.info(f"AUDIT delete_workspace: id={workspace_id} slug={slug!r} users={mode} "
+                f"count={len(members)} by_ip={request.remote_addr}")
+    return jsonify({"status": "deleted", "users": mode, "user_count": len(members),
+                    "cleanup_ok": cleanup_ok})
 
 
 @bp.route("/api/workspaces/<workspace_id>/users", methods=["GET"])

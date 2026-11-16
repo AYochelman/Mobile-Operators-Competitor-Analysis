@@ -2490,6 +2490,7 @@ from api.workspaces import (  # noqa: E402,F401
     api_list_workspaces,
     api_create_workspace,
     api_update_workspace,
+    api_delete_workspace,
     api_workspace_users,
     api_assign_workspace_user,
     api_unassign_workspace_user,

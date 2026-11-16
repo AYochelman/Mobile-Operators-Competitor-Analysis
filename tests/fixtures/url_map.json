@@ -906,6 +906,13 @@
 {
 "rule": "/api/workspaces/<workspace_id>",
 "methods": [
+"DELETE"
+],
+"endpoint": "workspaces.api_delete_workspace"
+},
+{
+"rule": "/api/workspaces/<workspace_id>",
+"methods": [
 "PATCH"
 ],
 "endpoint": "workspaces.api_update_workspace"
