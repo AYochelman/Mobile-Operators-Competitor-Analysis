@@ -8,6 +8,7 @@ import { getCarrierColor } from '../components/moca/carrierMeta'
 import { getAppsForPlan } from '../data/abroadApps'
 import { useLang } from '../hooks/useLanguage'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
+import { USA_LABELS } from '../data/carrierLabels'
 
 const CARRIERS = [
   { id: 'partner',   label: 'פרטנר' },
@@ -125,6 +126,26 @@ const ROAMING_PRICE_BUCKETS = [
   { id: '350+',    label: 'מעל ₪350',    min: 350, max: Infinity },
 ]
 
+// ---- USA tourist axes ("נוחתים בארה"ב") ----
+// Rows are the US operators. Data steps match the dashboard's travel chips;
+// prices are the ILS-converted plan price (₪0-210 across the catalog).
+const USA_CARRIERS = Object.entries(USA_LABELS).map(([id, label]) => ({ id, label }))
+const USA_GB_BUCKETS = [
+  { id: 'u-5',     label: 'עד 5GB',    min: 0,  max: 5.01 },
+  { id: 'u-5-15',  label: '5-15GB',    min: 5.01, max: 15.01 },
+  { id: 'u-15-50', label: '15-50GB',   min: 15.01, max: 50.01 },
+  { id: 'u-50+',   label: 'מעל 50GB',  min: 50.01, max: Infinity },
+  { id: 'unlim',   label: 'ללא הגבלה', min: -1, max: -1 },
+]
+const USA_PRICE_BUCKETS = [
+  { id: 'u-p60',      label: 'פחות מ-₪60', min: 0,   max: 60 },
+  { id: 'u-p60-89',   label: '₪60-89',     min: 60,  max: 90 },
+  { id: 'u-p90-119',  label: '₪90-119',    min: 90,  max: 120 },
+  { id: 'u-p120-149', label: '₪120-149',   min: 120, max: 150 },
+  { id: 'u-p150-179', label: '₪150-179',   min: 150, max: 180 },
+  { id: 'u-p180+',    label: 'מעל ₪180',   min: 180, max: Infinity },
+]
+
 const DOMESTIC_AXES = [
   { id: 'price',    label: 'לפי מחיר' },
   { id: 'gb',       label: 'לפי גלישה' },
@@ -147,6 +168,11 @@ function getBuckets(domain, axis) {
     if (axis === 'days')  return ROAMING_DAYS_BUCKETS
     if (axis === 'price') return ROAMING_PRICE_BUCKETS
     return ROAMING_GB_BUCKETS
+  }
+  if (domain === 'usa') {
+    if (axis === 'days')  return ROAMING_DAYS_BUCKETS
+    if (axis === 'price') return USA_PRICE_BUCKETS
+    return USA_GB_BUCKETS
   }
   if (domain === 'resellers') return axis === 'gb' ? RESELLER_GB_BUCKETS : RESELLER_PRICE_BUCKETS
   if (axis === 'gb')       return GB_BUCKETS
@@ -199,8 +225,10 @@ export default function PositioningPage() {
   const [resellerPlans, setResellerPlans] = useState([])
   const flags = useFeatureFlags()
   const showResellers = !flags.hide_resellers
+  const [usaPlans, setUsaPlans] = useState([])
+  const showUsa = !flags.hide_usa
   const [loading, setLoading] = useState(true)
-  const [domain, setDomain] = useState('domestic') // 'domestic' | 'abroad' | 'resellers'
+  const [domain, setDomain] = useState('domestic') // 'domestic' | 'abroad' | 'resellers' | 'usa'
   const [axis, setAxis] = useState('price')         // axis id within the active domain
   const visibleCarrierIds = useVisibleCarriers(CARRIERS.map(c => c.id))
 
@@ -209,8 +237,10 @@ export default function PositioningPage() {
       api.getPlans().catch(() => []),
       api.getAbroadPlans().catch(() => []),
       api.getResellerPlans().catch(() => []),
+      api.getUsaPlans().catch(() => []),
     ])
-      .then(([dom, abr, res]) => {
+      .then(([dom, abr, res, usa]) => {
+        setUsaPlans(Array.isArray(usa) ? usa : (usa?.plans || []))
         setDomesticPlans(dom || [])
         setAbroadPlans(abr || [])
         setResellerPlans(Array.isArray(res) ? res : (res?.plans || []))
@@ -222,13 +252,17 @@ export default function PositioningPage() {
   // the requested view; price for domestic) so axis/bucket combos stay valid.
   const handleDomain = (d) => {
     setDomain(d)
-    setAxis(d === 'abroad' ? 'gb' : 'price')
+    setAxis(d === 'abroad' || d === 'usa' ? 'gb' : 'price')
   }
 
-  const sourcePlans = domain === 'abroad' ? abroadPlans : domain === 'resellers' ? resellerPlans : domesticPlans
-  const axes = domain === 'abroad' ? ABROAD_AXES : domain === 'resellers' ? RESELLER_AXES : DOMESTIC_AXES
+  const sourcePlans = domain === 'abroad' ? abroadPlans : domain === 'resellers' ? resellerPlans
+    : domain === 'usa' ? usaPlans : domesticPlans
+  // The USA tab shares the roaming axes (data / days / price).
+  const axes = domain === 'abroad' || domain === 'usa' ? ABROAD_AXES : domain === 'resellers' ? RESELLER_AXES : DOMESTIC_AXES
 
   const visibleCarriers = useMemo(() => {
+    // US operators are not part of the workspace's carrier scoping.
+    if (domain === 'usa') return USA_CARRIERS
     const base = domain === 'abroad' ? ABROAD_CARRIERS : CARRIERS
     return base.filter(c => visibleCarrierIds.includes(c.id))
   }, [visibleCarrierIds, domain])
@@ -318,7 +352,7 @@ export default function PositioningPage() {
   }, [abroadPlans, domain])
 
   const handleCellClick = (carrierId) => {
-    const path = domain === 'abroad' ? '/roaming' : domain === 'resellers' ? '/resellers' : '/plans'
+    const path = domain === 'abroad' ? '/roaming' : domain === 'resellers' ? '/resellers' : domain === 'usa' ? '/usa' : '/plans'
     navigate(`${path}?carrier=${carrierId}`)
   }
 
@@ -334,6 +368,10 @@ export default function PositioningPage() {
     'r-20': 'Up to ₪20', 'r-21-25': '₪21-25', 'r-26-30': '₪26-30', 'r-31-35': '₪31-35', 'r-36-40': '₪36-40', 'r-40+': 'Over ₪40',
     'r-250': 'Up to 250GB', 'r-251-399': '251-399GB', 'r-400-499': '400-499GB', 'r-500-799': '500-799GB',
     'r-800-1000': '800-1000GB', 'r-1000+': 'Over 1000GB',
+    // usa
+    'u-5': 'Up to 5GB', 'u-5-15': '5-15GB', 'u-15-50': '15-50GB', 'u-50+': 'Over 50GB',
+    'u-p60': 'Under ₪60', 'u-p60-89': '₪60-89', 'u-p90-119': '₪90-119', 'u-p120-149': '₪120-149',
+    'u-p150-179': '₪150-179', 'u-p180+': 'Over ₪180',
     // priority
     none: 'No 5G', basic: 'Basic 5G', max: 'Max priority',
     // roaming GB
@@ -353,6 +391,7 @@ export default function PositioningPage() {
     { id: 'domestic', label: tt('חבילות בארץ', 'Domestic plans') },
     { id: 'abroad',   label: tt('חבילות חו"ל', 'Roaming plans') },
     ...(showResellers ? [{ id: 'resellers', label: tt('חבילות משווקים', 'Reseller plans') }] : []),
+    ...(showUsa ? [{ id: 'usa', label: tt('נוחתים בארה"ב', 'Landing in USA') }] : []),
   ]
 
   return (
@@ -361,12 +400,14 @@ export default function PositioningPage() {
       <p className="text-xs text-gray-400 mb-5 text-right">
         {domain === 'abroad'
           ? tt('פיזור חבילות חו"ל לפי ספק ונפח גלישה - אתר את ה-white space', 'Distribution of roaming plans by provider and data volume - find the white space')
+          : domain === 'usa'
+          ? tt('פיזור חבילות התיירים בארה"ב לפי מפעיל - מחירים בשקלים', 'Distribution of US tourist plans by operator - prices in ILS')
           : domain === 'resellers'
           ? tt('פיזור הצעות המשווקים (מתחת לקו) לפי הספק שמאחורי ההצעה - מחיר לקו', 'Distribution of below-the-line reseller offers by the carrier behind the offer - price per line')
           : tt('פיזור חבילות סלולר לפי ספק וקטגוריה - אתר את ה-white space', 'Distribution of cellular plans by provider and category - find the white space')}
       </p>
 
-      {/* Domain tabs — בארץ / חו"ל / משווקים */}
+      {/* Domain tabs — בארץ / חו"ל / משווקים / ארה"ב */}
       <div className="mb-5 flex items-center gap-1 border-b border-moca-border/40">
         {DOMAIN_TABS.map(d => (
           <button
