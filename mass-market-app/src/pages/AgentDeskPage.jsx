@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useLang } from '../hooks/useLanguage'
-import { useAgentDeskData, matchCompetitorPlans, counterOffers, talkingPoints, callScript, OBJECTIONS } from '../hooks/useAgentDeskData'
+import { useAgentDeskData, matchCompetitorPlans, planFitsClaim, counterOffers, talkingPoints, callScript, OBJECTIONS } from '../hooks/useAgentDeskData'
 import { CarrierChip, PageHeader } from '../components/moca'
 import { getCarrierName } from '../components/moca/carrierMeta'
 import { DOMESTIC_LABELS } from '../data/carrierLabels'
@@ -154,16 +154,22 @@ function ClaimChecker({ data, ours, target, setTarget, claim, setClaim, tt }) {
   const competitorIds = useMemo(() => data.carriers.filter((c) => c !== ours).sort((a, b) => getCarrierName(a).localeCompare(getCarrierName(b), 'he')), [data.carriers, ours])
   const pool = claim.carrier === '__resellers' ? data.resellers : data.competitors
   const gbVal = claim.unlimited ? Infinity : Number(claim.gb) || null
-  const matches = useMemo(
-    () => matchCompetitorPlans(pool, { carrier: claim.carrier === '__resellers' ? null : claim.carrier, price: Number(claim.price) || null, gb: gbVal }).slice(0, 6),
-    [pool, claim.carrier, claim.price, gbVal],
-  )
   const typed = Number(claim.price) > 0 || gbVal
+  // Typing a price / data amount FILTERS the list to the plans that fit it;
+  // when nothing fits, the closest plans are offered separately (never
+  // auto-selected, so the answer panel is not built on a plan nobody quoted).
+  const { matches, nearest } = useMemo(() => {
+    const q = { price: Number(claim.price) || null, gb: gbVal }
+    const ranked = matchCompetitorPlans(pool, { carrier: claim.carrier === '__resellers' ? null : claim.carrier, ...q })
+    const fit = ranked.filter((p) => planFitsClaim(p, q))
+    return { matches: fit.slice(0, 8), nearest: typed && !fit.length ? ranked.slice(0, 3) : [] }
+  }, [pool, claim.carrier, claim.price, gbVal, typed])
   const active = claim.carrier || typed
 
   // An explicit pick (a clicked card / table row) wins; otherwise the best
   // match for what the rep typed. Typing clears the explicit pick (see set).
-  const shown = target && !matches.some((m) => m.key === target.key) ? [target, ...matches.slice(0, 5)] : matches
+  const shown = target && !matches.some((m) => m.key === target.key) ? [target, ...matches.slice(0, 7)] : matches
+  const nearestShown = nearest.filter((p) => p.key !== target?.key)
   const effective = target || (active ? matches[0] || null : null)
 
   const set = (patch) => { setTarget(null); setClaim((c) => ({ ...c, ...patch })) }
@@ -203,9 +209,11 @@ function ClaimChecker({ data, ours, target, setTarget, claim, setClaim, tt }) {
         <div>
           <div className="ad-subhead">{tt('אצל המתחרה', 'At the competitor')}</div>
           {!active && <Empty>{tt('בחרו מתחרה או הקלידו מחיר, או לחצו על כל תוכנית בטבלת השוק למטה.', 'Pick a competitor or type a price, or click any plan in the market table below.')}</Empty>}
-          {active && !matches.length && <Empty>{tt('לא נמצאה תוכנית תואמת. ייתכן שזו הצעה אישית או מבצע שאינו באתר.', 'No matching plan. It may be a personal offer or a promo not on their site.')}</Empty>}
+          {active && !shown.length && <Empty>{tt('לא נמצאה תוכנית תואמת. ייתכן שזו הצעה אישית או מבצע שאינו באתר.', 'No matching plan. It may be a personal offer or a promo not on their site.')}</Empty>}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {active && shown.map((p) => (
+            {active && [...shown, ...(nearestShown.length ? ['__near'] : []), ...nearestShown].map((p) => p === '__near' ? (
+              <div key="__near" className="ad-subhead" style={{ marginTop: 8 }}>{tt('התוכניות הקרובות ביותר', 'Closest plans')}</div>
+            ) : (
               <button key={p.key} type="button" aria-pressed={effective?.key === p.key} className={`ad-opt ${effective?.key === p.key ? 'on' : ''}`} onClick={() => setTarget(p)}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <CarrierChip id={p.carrier} size={18} showName bold />

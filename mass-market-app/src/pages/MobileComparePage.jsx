@@ -77,8 +77,8 @@ const T = {
     ],
     qGb: 'כמה גלישה צריך?',
     gb: [
-      { v: 'all', l: 'הכול' }, { v: '100', l: 'עד 100GB' },
-      { v: '500', l: '100-500GB' }, { v: '500+', l: '500GB ומעלה' },
+      { v: 'all', l: 'הכול' }, { v: '50', l: 'עד 50GB' }, { v: '200', l: '50-200GB' },
+      { v: '1000', l: '200-1000GB' }, { v: '1000+', l: 'מעל 1000GB' },
       { v: 'unl', l: 'ללא הגבלה' },
     ],
     qGen: 'איזו רשת?',
@@ -209,8 +209,8 @@ const T = {
     ],
     qGb: 'How much data?',
     gb: [
-      { v: 'all', l: 'Any' }, { v: '100', l: 'Up to 100GB' },
-      { v: '500', l: '100-500GB' }, { v: '500+', l: '500GB+' },
+      { v: 'all', l: 'Any' }, { v: '50', l: 'Up to 50GB' }, { v: '200', l: '50-200GB' },
+      { v: '1000', l: '200-1000GB' }, { v: '1000+', l: 'Over 1000GB' },
       { v: 'unl', l: 'Unlimited' },
     ],
     qGen: 'Network?',
@@ -1044,9 +1044,10 @@ export default function MobileComparePage() {
     if (!facetsOn.has('kosher')) rows = rows.filter((p) => !p.voice_only)
     if (budget !== 'all') rows = rows.filter((p) => (p.price ?? 9999) <= budget)
     if (gbTier === 'unl') rows = rows.filter((p) => p.unlimited)
-    else if (gbTier === '100') rows = rows.filter((p) => !p.unlimited && !p.voice_only && p.data_gb != null && p.data_gb <= 100)
-    else if (gbTier === '500') rows = rows.filter((p) => !p.unlimited && p.data_gb != null && p.data_gb > 100 && p.data_gb <= 500)
-    else if (gbTier === '500+') rows = rows.filter((p) => !p.unlimited && p.data_gb != null && p.data_gb > 500)
+    else if (gbTier === '50') rows = rows.filter((p) => !p.unlimited && !p.voice_only && p.data_gb != null && p.data_gb <= 50)
+    else if (gbTier === '200') rows = rows.filter((p) => !p.unlimited && p.data_gb != null && p.data_gb > 50 && p.data_gb <= 200)
+    else if (gbTier === '1000') rows = rows.filter((p) => !p.unlimited && p.data_gb != null && p.data_gb > 200 && p.data_gb <= 1000)
+    else if (gbTier === '1000+') rows = rows.filter((p) => !p.unlimited && p.data_gb != null && p.data_gb > 1000)
     if (gen === '5g') rows = rows.filter((p) => p.facets.five_g && !p.facets.five_g_priority)
     else if (gen === '5gp') rows = rows.filter((p) => p.facets.five_g_priority)
     if (facetsOn.has('roaming')) rows = rows.filter((p) => p.facets.roaming)

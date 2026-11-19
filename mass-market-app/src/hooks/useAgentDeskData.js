@@ -127,6 +127,28 @@ export function matchCompetitorPlans(plans, { carrier, price, gb }) {
 }
 
 /**
+ * Does a plan actually fit what the rep typed? Used to FILTER the competitor
+ * list while typing (matchCompetitorPlans only ranks it).
+ *   price - within 15% (at least ₪3) of the list OR the promo price, since a
+ *           customer quotes "30" for 29.9 and often quotes the promo price
+ *   gb    - Infinity = unlimited plans only; a number = within 25% of it
+ */
+export function planFitsClaim(p, { price, gb }) {
+  const x = Number(price)
+  if (x > 0) {
+    const tol = Math.max(3, x * 0.15)
+    const near = (v) => v != null && Math.abs(v - x) <= tol
+    if (!near(p.price) && !near(p.promoPrice)) return false
+  }
+  if (gb === Infinity) return p.gb === Infinity
+  if (Number(gb) > 0) {
+    if (p.gb == null || p.gb === Infinity) return false
+    if (Math.abs(p.gb - gb) > gb * 0.25) return false
+  }
+  return true
+}
+
+/**
  * Our answer to a target offer, ranked:
  *   'beats'   - at least the same data for no more money over the first year
  *   'more'    - at least the same data, but it costs more (gap shown)
