@@ -195,3 +195,31 @@ def scrape_pelephone_abroad(page):
         auto = terms_by_soc.get(str(p.pop("_soc", None)))
         p["terms_url"] = _PELE_ABROAD_TERMS_OVERRIDES.get(p["plan_name"], auto)
     return plans
+
+# -- Own browser session for pelephone.co.il (same pattern as scrapers/mobile019.py) --
+_PELE_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+
+_parse_pelephone = scrape_pelephone
+_parse_pelephone_abroad = scrape_pelephone_abroad
+
+
+def _pelephone_session(parse_fn):
+    from playwright_stealth import Stealth
+    with Stealth().use_sync(core.sync_playwright()) as pw:
+        browser = pw.chromium.launch(
+            headless=True, args=["--disable-blink-features=AutomationControlled"])
+        try:
+            ctx = browser.new_context(user_agent=_PELE_UA, locale="he-IL",
+                                      viewport={"width": 1366, "height": 900})
+            return parse_fn(ctx.new_page())
+        finally:
+            browser.close()
+
+
+def scrape_pelephone(_page=None):
+    return _pelephone_session(_parse_pelephone)
+
+
+def scrape_pelephone_abroad(_page=None):
+    return _pelephone_session(_parse_pelephone_abroad)

@@ -123,7 +123,7 @@ def scrape_all():
 
     # Phase 1: scrapers that open their own sync_playwright session — must run OUTSIDE
     # any outer sync_playwright context to avoid nested asyncio event-loop conflict.
-    for fn in [scrape_xphone, scrape_wecom, scrape_019, scrape_neptucom, scrape_golan, scrape_rami_levy]:
+    for fn in [scrape_xphone, scrape_wecom, scrape_019, scrape_neptucom, scrape_pelephone, scrape_golan, scrape_rami_levy]:
         try:
             result = fn()
             if not result:
@@ -141,7 +141,7 @@ def scrape_all():
             args=["--disable-blink-features=AutomationControlled"]
         )
         page = browser.new_page()
-        for fn in [scrape_partner, scrape_pelephone, scrape_hotmobile, scrape_cellcom]:
+        for fn in [scrape_partner, scrape_hotmobile, scrape_cellcom]:
             try:
                 result = fn(page)
                 if not result:
@@ -493,7 +493,7 @@ def scrape_all_abroad():
 
     # Phase 1: scrapers that open their own sync_playwright session — must run OUTSIDE
     # any outer sync_playwright context to avoid nested asyncio event-loop conflict.
-    for fn in [scrape_wecom_abroad, scrape_019_abroad, scrape_golan_abroad, scrape_rami_levy_abroad]:
+    for fn in [scrape_wecom_abroad, scrape_019_abroad, scrape_pelephone_abroad, scrape_golan_abroad, scrape_rami_levy_abroad]:
         try:
             result = fn()
             if not result:
@@ -511,7 +511,7 @@ def scrape_all_abroad():
             args=["--disable-blink-features=AutomationControlled"]
         )
         page = browser.new_page()
-        for fn in [scrape_partner_abroad, scrape_pelephone_abroad,
+        for fn in [scrape_partner_abroad,
                    scrape_hotmobile_abroad, scrape_cellcom_abroad]:
             try:
                 result = fn(page)
