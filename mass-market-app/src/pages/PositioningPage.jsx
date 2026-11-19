@@ -8,7 +8,7 @@ import { getCarrierColor } from '../components/moca/carrierMeta'
 import { getAppsForPlan } from '../data/abroadApps'
 import { useLang } from '../hooks/useLanguage'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
-import { USA_OPERATORS, USA_NETWORKS, USA_NETWORKS_EN } from '../data/carrierLabels'
+import { USA_OPERATORS, USA_NETWORKS, USA_NETWORKS_EN, GLOBAL_PROVIDERS_REGISTRY, GLOBAL_CHART_COLORS } from '../data/carrierLabels'
 
 const CARRIERS = [
   { id: 'partner',   label: 'פרטנר' },
@@ -133,6 +133,7 @@ const ROAMING_PRICE_BUCKETS = [
 const USA_GROUPS = USA_NETWORKS.map(net => ({
   id: net,
   label: net,
+  labelEn: USA_NETWORKS_EN[net],
   carriers: USA_OPERATORS.filter(o => o.net === net).map(o => ({ id: o.id, label: o.label })),
 }))
 const USA_CARRIERS = USA_GROUPS.flatMap(g => g.carriers)
@@ -150,6 +151,38 @@ const USA_PRICE_BUCKETS = [
   { id: 'u-p120-149', label: '₪120-149',   min: 120, max: 150 },
   { id: 'u-p150-179', label: '₪150-179',   min: 150, max: 180 },
   { id: 'u-p180+',    label: 'מעל ₪180',   min: 180, max: Infinity },
+]
+
+// ---- Global eSIM axes ----
+// Rows are the global providers, grouped Israeli / international (the same split
+// as the dashboard's "סוג ספק" filter). Alias carrier ids (airalo_local,
+// airalo_regional) are counted under their parent provider. Upper bounds are
+// inclusive (a 5GB plan reads "1-5GB"), hence the .01 edges.
+const GLOBAL_ALIAS = Object.fromEntries(
+  GLOBAL_PROVIDERS_REGISTRY.flatMap(p => (p.aliases || []).map(a => [a, p.id]))
+)
+const GLOBAL_GROUPS = [
+  { id: 'israeli', label: 'ספקים ישראליים',  labelEn: 'Israeli providers',       israeli: true },
+  { id: 'foreign', label: 'ספקים בינלאומיים', labelEn: 'International providers', israeli: false },
+].map(g => ({
+  ...g,
+  carriers: GLOBAL_PROVIDERS_REGISTRY.filter(p => !!p.israeli === g.israeli).map(p => ({ id: p.id, label: p.label })),
+}))
+const GLOBAL_GB_BUCKETS = [
+  { id: 'g-1',     label: 'עד 1GB',    min: 0,     max: 1.01 },
+  { id: 'g-1-5',   label: '1-5GB',     min: 1.01,  max: 5.01 },
+  { id: 'g-5-15',  label: '5-15GB',    min: 5.01,  max: 15.01 },
+  { id: 'g-15-50', label: '15-50GB',   min: 15.01, max: 50.01 },
+  { id: 'g-50+',   label: 'מעל 50GB',  min: 50.01, max: Infinity },
+  { id: 'unlim',   label: 'ללא הגבלה', min: -1,    max: -1 },
+]
+const GLOBAL_PRICE_BUCKETS = [
+  { id: 'g-p20',      label: 'פחות מ-₪20', min: 0,   max: 20 },
+  { id: 'g-p20-49',   label: '₪20-49',     min: 20,  max: 50 },
+  { id: 'g-p50-99',   label: '₪50-99',     min: 50,  max: 100 },
+  { id: 'g-p100-199', label: '₪100-199',   min: 100, max: 200 },
+  { id: 'g-p200-399', label: '₪200-399',   min: 200, max: 400 },
+  { id: 'g-p400+',    label: 'מעל ₪400',   min: 400, max: Infinity },
 ]
 
 const DOMESTIC_AXES = [
@@ -174,6 +207,11 @@ function getBuckets(domain, axis) {
     if (axis === 'days')  return ROAMING_DAYS_BUCKETS
     if (axis === 'price') return ROAMING_PRICE_BUCKETS
     return ROAMING_GB_BUCKETS
+  }
+  if (domain === 'global') {
+    if (axis === 'days')  return ROAMING_DAYS_BUCKETS
+    if (axis === 'price') return GLOBAL_PRICE_BUCKETS
+    return GLOBAL_GB_BUCKETS
   }
   if (domain === 'usa') {
     if (axis === 'days')  return ROAMING_DAYS_BUCKETS
@@ -233,8 +271,13 @@ export default function PositioningPage() {
   const showResellers = !flags.hide_resellers
   const [usaPlans, setUsaPlans] = useState([])
   const showUsa = !flags.hide_usa
+  // The global catalog is ~60K rows (a 20MB+ response), so it is fetched only
+  // when the tab is first opened, not with the other three on mount.
+  const [globalPlans, setGlobalPlans] = useState([])
+  const [globalLoaded, setGlobalLoaded] = useState(false)
+  const showGlobal = !flags.hide_global
   const [loading, setLoading] = useState(true)
-  const [domain, setDomain] = useState('domestic') // 'domestic' | 'abroad' | 'resellers' | 'usa'
+  const [domain, setDomain] = useState('domestic') // 'domestic' | 'abroad' | 'resellers' | 'usa' | 'global'
   const [axis, setAxis] = useState('price')         // axis id within the active domain
   const visibleCarrierIds = useVisibleCarriers(CARRIERS.map(c => c.id))
 
@@ -254,30 +297,53 @@ export default function PositioningPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  useEffect(() => {
+    if (domain !== 'global' || globalLoaded) return
+    let cancelled = false
+    api.getGlobalPlans().catch(() => [])
+      .then(g => {
+        if (cancelled) return
+        setGlobalPlans(Array.isArray(g) ? g : (g?.plans || []))
+        setGlobalLoaded(true)
+      })
+    return () => { cancelled = true }
+  }, [domain, globalLoaded])
+
   // Switching domain resets the axis to that domain's default (GB for roaming —
   // the requested view; price for domestic) so axis/bucket combos stay valid.
   const handleDomain = (d) => {
     setDomain(d)
-    setAxis(d === 'abroad' || d === 'usa' ? 'gb' : 'price')
+    setAxis(d === 'abroad' || d === 'usa' || d === 'global' ? 'gb' : 'price')
   }
 
   const sourcePlans = domain === 'abroad' ? abroadPlans : domain === 'resellers' ? resellerPlans
-    : domain === 'usa' ? usaPlans : domesticPlans
-  // The USA tab shares the roaming axes (data / days / price).
-  const axes = domain === 'abroad' || domain === 'usa' ? ABROAD_AXES : domain === 'resellers' ? RESELLER_AXES : DOMESTIC_AXES
+    : domain === 'usa' ? usaPlans : domain === 'global' ? globalPlans : domesticPlans
+  // The USA and global tabs share the roaming axes (data / days / price).
+  const axes = domain === 'abroad' || domain === 'usa' || domain === 'global' ? ABROAD_AXES : domain === 'resellers' ? RESELLER_AXES : DOMESTIC_AXES
+
+  // Global providers that currently have plans, in their Israeli / international groups.
+  const globalGroups = useMemo(() => {
+    const present = new Set(globalPlans.map(p => GLOBAL_ALIAS[p.carrier] || p.carrier))
+    return GLOBAL_GROUPS
+      .map(g => ({ ...g, carriers: g.carriers.filter(c => present.has(c.id)) }))
+      .filter(g => g.carriers.length > 0)
+  }, [globalPlans])
 
   const visibleCarriers = useMemo(() => {
     // US operators are not part of the workspace's carrier scoping.
     if (domain === 'usa') return USA_CARRIERS
+    if (domain === 'global') return globalGroups.flatMap(g => g.carriers)
     const base = domain === 'abroad' ? ABROAD_CARRIERS : CARRIERS
     return base.filter(c => visibleCarrierIds.includes(c.id))
-  }, [visibleCarrierIds, domain])
+  }, [visibleCarrierIds, domain, globalGroups])
 
   // Row groups: one unlabeled group everywhere except the USA tab, where the
   // operators sit under a network header row carrying the network's subtotals.
   const rowGroups = useMemo(() => (
-    domain === 'usa' ? USA_GROUPS : [{ id: 'all', label: null, carriers: visibleCarriers }]
-  ), [domain, visibleCarriers])
+    domain === 'usa' ? USA_GROUPS
+      : domain === 'global' ? globalGroups
+      : [{ id: 'all', label: null, carriers: visibleCarriers }]
+  ), [domain, visibleCarriers, globalGroups])
 
   const buckets = useMemo(() => getBuckets(domain, axis), [domain, axis])
 
@@ -289,10 +355,11 @@ export default function PositioningPage() {
       for (const b of buckets) m[c.id][b.id] = { count: 0, minPrice: Infinity, plans: [] }
     }
     for (const p of sourcePlans) {
-      if (!m[p.carrier]) continue
+      const key = GLOBAL_ALIAS[p.carrier] || p.carrier
+      if (!m[key]) continue
       const bucketId = classifyPlan(p, axis, buckets)
-      if (!bucketId || !m[p.carrier][bucketId]) continue
-      const cell = m[p.carrier][bucketId]
+      if (!bucketId || !m[key][bucketId]) continue
+      const cell = m[key][bucketId]
       cell.count++
       cell.plans.push(p)
       const price = Number(p.price)
@@ -364,7 +431,8 @@ export default function PositioningPage() {
   }, [abroadPlans, domain])
 
   const handleCellClick = (carrierId) => {
-    const path = domain === 'abroad' ? '/roaming' : domain === 'resellers' ? '/resellers' : domain === 'usa' ? '/usa' : '/plans'
+    const path = domain === 'abroad' ? '/roaming' : domain === 'resellers' ? '/resellers' : domain === 'usa' ? '/usa'
+      : domain === 'global' ? '/esim' : '/plans'
     navigate(`${path}?carrier=${carrierId}`)
   }
 
@@ -380,6 +448,10 @@ export default function PositioningPage() {
     'r-20': 'Up to ₪20', 'r-21-25': '₪21-25', 'r-26-30': '₪26-30', 'r-31-35': '₪31-35', 'r-36-40': '₪36-40', 'r-40+': 'Over ₪40',
     'r-250': 'Up to 250GB', 'r-251-399': '251-399GB', 'r-400-499': '400-499GB', 'r-500-799': '500-799GB',
     'r-800-1000': '800-1000GB', 'r-1000+': 'Over 1000GB',
+    // global
+    'g-1': 'Up to 1GB', 'g-1-5': '1-5GB', 'g-5-15': '5-15GB', 'g-15-50': '15-50GB', 'g-50+': 'Over 50GB',
+    'g-p20': 'Under ₪20', 'g-p20-49': '₪20-49', 'g-p50-99': '₪50-99', 'g-p100-199': '₪100-199',
+    'g-p200-399': '₪200-399', 'g-p400+': 'Over ₪400',
     // usa
     'u-5': 'Up to 5GB', 'u-5-15': '5-15GB', 'u-15-50': '15-50GB', 'u-50+': 'Over 50GB',
     'u-p60': 'Under ₪60', 'u-p60-89': '₪60-89', 'u-p90-119': '₪90-119', 'u-p120-149': '₪120-149',
@@ -404,7 +476,14 @@ export default function PositioningPage() {
     { id: 'abroad',   label: tt('חבילות חו"ל', 'Roaming plans') },
     ...(showResellers ? [{ id: 'resellers', label: tt('חבילות משווקים', 'Reseller plans') }] : []),
     ...(showUsa ? [{ id: 'usa', label: tt('נוחתים בארה"ב', 'Landing in USA') }] : []),
+    ...(showGlobal ? [{ id: 'global', label: tt('גלובלי', 'Global') }] : []),
   ]
+  const busy = loading || (domain === 'global' && !globalLoaded)
+  // The global catalog is very uneven (one provider lists 13K plans, another 2),
+  // so its heat scale is per provider row, not across the whole table.
+  const rowMax = (c) => (domain === 'global'
+    ? Math.max(0, ...buckets.map(b => matrix[c.id][b.id].count))
+    : maxCount)
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -412,6 +491,8 @@ export default function PositioningPage() {
       <p className="text-xs text-gray-400 mb-5 text-right">
         {domain === 'abroad'
           ? tt('פיזור חבילות חו"ל לפי ספק ונפח גלישה - אתר את ה-white space', 'Distribution of roaming plans by provider and data volume - find the white space')
+          : domain === 'global'
+          ? tt('פיזור חבילות ה-eSIM הגלובליות לפי ספק, בכל היעדים יחד - מחירים בשקלים', 'Distribution of global eSIM plans by provider, all destinations together - prices in ILS')
           : domain === 'usa'
           ? tt('פיזור חבילות התיירים בארה"ב לפי מפעיל - מחירים בשקלים', 'Distribution of US tourist plans by operator - prices in ILS')
           : domain === 'resellers'
@@ -419,7 +500,7 @@ export default function PositioningPage() {
           : tt('פיזור חבילות סלולר לפי ספק וקטגוריה - אתר את ה-white space', 'Distribution of cellular plans by provider and category - find the white space')}
       </p>
 
-      {/* Domain tabs — בארץ / חו"ל / משווקים / ארה"ב */}
+      {/* Domain tabs — בארץ / חו"ל / משווקים / ארה"ב / גלובלי */}
       <div className="mb-5 flex items-center gap-1 border-b border-moca-border/40">
         {DOMAIN_TABS.map(d => (
           <button
@@ -453,9 +534,9 @@ export default function PositioningPage() {
         <span className="mr-auto text-xs text-gray-400">{totalPlans} {tt('חבילות סך הכל', 'plans total')}</span>
       </div>
 
-      {loading && <div className="flex justify-center py-20"><Spinner /></div>}
+      {busy && <div className="flex justify-center py-20"><Spinner /></div>}
 
-      {!loading && (
+      {!busy && (
         <>
           {/* Matrix */}
           <div className="bg-white rounded-2xl border border-moca-border/40 overflow-hidden shadow-card">
@@ -478,7 +559,7 @@ export default function PositioningPage() {
                   {g.label && (
                     <tr className="bg-moca-cream/50 border-b border-moca-border/40">
                       <td className="px-3 py-1.5 text-[11px] font-bold text-moca-dark sticky right-0 bg-moca-cream/95 z-10 md:static md:bg-transparent">
-                        {USA_NETWORKS_EN[g.label] ? tt(g.label, USA_NETWORKS_EN[g.label]) : g.label}
+                        {g.labelEn ? tt(g.label, g.labelEn) : g.label}
                       </td>
                       {buckets.map(b => {
                         const n = g.carriers.reduce((sum, c) => sum + matrix[c.id][b.id].count, 0)
@@ -493,7 +574,7 @@ export default function PositioningPage() {
                     <tr key={c.id} className="border-b border-gray-50">
                       <td className="px-3 py-2.5 sticky right-0 bg-white z-10 md:static md:bg-transparent shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.06)] md:shadow-none">
                         <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full" style={{ background: getCarrierColor(c.id) }} />
+                          <span className="w-2 h-2 rounded-full" style={{ background: domain === 'global' ? (GLOBAL_CHART_COLORS[c.id] || '#9ca3af') : getCarrierColor(c.id) }} />
                           <span className="text-[12px] font-medium text-gray-700">{c.label}</span>
                           {domain === 'abroad' && carrierApps[c.id] && (
                             <span
@@ -515,7 +596,7 @@ export default function PositioningPage() {
                           <td
                             key={b.id}
                             onClick={() => cell.count > 0 && handleCellClick(c.id)}
-                            className={`px-2 py-2.5 text-center transition-all ${heatColor(cell.count, maxCount)} ${
+                            className={`px-2 py-2.5 text-center transition-all ${heatColor(cell.count, rowMax(c))} ${
                               cell.count > 0 ? 'cursor-pointer hover:opacity-80' : ''
                             }`}
                             title={cell.count > 0 ? tt(`${cell.count} חבילות, מ-₪${cell.minPrice}`, `${cell.count} plans, from ₪${cell.minPrice}`) : tt('אין חבילות', 'No plans')}
@@ -571,6 +652,7 @@ export default function PositioningPage() {
 
           <p className="text-[11px] text-gray-400 mt-4 text-right">
             {tt('לחץ על תא כדי לראות את החבילות בדשבורד · צבע ירוק כהה = ריבוי חבילות בקטגוריה', 'Click a cell to see the plans in the dashboard · dark green = many plans in the category')}
+            {domain === 'global' && tt(' · עוצמת הצבע יחסית לכל ספק בנפרד', ' · color intensity is relative to each provider')}
             {domain === 'resellers' && tt(' · מוצגות רק הצעות שמופיעות בלשונית המשווקים', ' · only offers shown on the Resellers tab are counted')}
             {domain === 'abroad' && tt(' · התג ▦ ליד שם הספק = גלישה חופשית באפליקציות (המספר = כמה אפליקציות)', ' · the ▦ tag next to a provider = free in-app browsing (the number = how many apps)')}
           </p>
