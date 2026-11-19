@@ -289,6 +289,8 @@ export default function ComparePage() {
       else if (gbFilter === '5-15') result = result.filter(p => p.data_gb !== null && p.data_gb > 5 && p.data_gb <= 15)
       else if (gbFilter === '15-100') result = result.filter(p => p.data_gb !== null && p.data_gb > 15 && p.data_gb <= 100)
       else if (gbFilter === '100+') result = result.filter(p => p.data_gb !== null && p.data_gb > 100)
+      else if (gbFilter === '15-50') result = result.filter(p => p.data_gb !== null && p.data_gb > 15 && p.data_gb <= 50)
+      else if (gbFilter === '50+') result = result.filter(p => p.data_gb !== null && p.data_gb > 50)
       else if (gbFilter === '0-50') result = result.filter(p => p.data_gb !== null && p.data_gb <= 50)
       else if (gbFilter === '50-200') result = result.filter(p => p.data_gb !== null && p.data_gb > 50 && p.data_gb <= 200)
       else if (gbFilter === '200-1000') result = result.filter(p => p.data_gb !== null && p.data_gb > 200 && p.data_gb <= 1000)
@@ -404,7 +406,7 @@ export default function ComparePage() {
 
   const GB_OPTIONS = tab === 'domestic'
     ? [['all', tt('הכל', 'All')], ['0-50', tt('עד 50GB', 'Up to 50GB')], ['50-200', '50-200GB'], ['200-1000', '200-1000GB'], ['1000+', tt('מעל 1000GB', 'Over 1000GB')], ['unlimited', tt('ללא הגבלה', 'Unlimited')]]
-    : [['all', tt('הכל', 'All')], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['unlimited', tt('ללא הגבלה', 'Unlimited')]]
+    : [['all', tt('הכל', 'All')], ['0-5', tt('עד 5GB', 'Up to 5GB')], ['5-15', '5-15GB'], ['15-50', '15-50GB'], ['50+', tt('מעל 50GB', 'Over 50GB')], ['unlimited', tt('ללא הגבלה', 'Unlimited')]]
 
   const TAB_LABELS = {
     domestic: tt('חבילות סלולר', 'Cellular Plans'),
