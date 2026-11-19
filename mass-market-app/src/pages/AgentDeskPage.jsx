@@ -389,9 +389,10 @@ function CallScript({ stages, step, setStep, objection, setObjection, tt }) {
 
 const GB_BUCKETS = [
   { id: 'all', he: 'הכל', en: 'All', test: () => true },
-  { id: 's', he: 'עד 50GB', en: '≤50GB', test: (p) => p.gb != null && p.gb !== Infinity && p.gb <= 50 },
-  { id: 'm', he: '51-300GB', en: '51-300GB', test: (p) => p.gb > 50 && p.gb <= 300 && p.gb !== Infinity },
-  { id: 'l', he: '300GB+', en: '300GB+', test: (p) => p.gb > 300 && p.gb !== Infinity },
+  { id: 's', he: 'עד 50GB', en: 'Up to 50GB', test: (p) => p.gb != null && p.gb !== Infinity && p.gb <= 50 },
+  { id: 'm', he: '50-200GB', en: '50-200GB', test: (p) => p.gb > 50 && p.gb <= 200 },
+  { id: 'l', he: '200-1000GB', en: '200-1000GB', test: (p) => p.gb > 200 && p.gb <= 1000 },
+  { id: 'xl', he: 'מעל 1000GB', en: 'Over 1000GB', test: (p) => p.gb > 1000 && p.gb !== Infinity },
   { id: 'u', he: 'ללא הגבלה', en: 'Unlimited', test: (p) => p.gb === Infinity },
   { id: 'v', he: 'כשר / שיחות', en: 'Kosher / voice', test: (p) => p.gb == null },
 ]
