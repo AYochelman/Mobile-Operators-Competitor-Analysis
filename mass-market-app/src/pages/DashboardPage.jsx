@@ -26,7 +26,7 @@ import Button from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
 import { useLang } from '../hooks/useLanguage'
 import { CRUISE_VALUE } from '../data/destI18n'
-import { ISRAELI_GLOBAL_PROVIDERS, USA_LABELS, GLOBAL_PROVIDERS } from '../data/carrierLabels'
+import { ISRAELI_GLOBAL_PROVIDERS, USA_LABELS, GLOBAL_PROVIDERS, USA_OPERATORS, USA_NETWORKS, USA_NETWORKS_EN } from '../data/carrierLabels'
 
 const TAB_ICONS = {
   domestic: (
@@ -173,29 +173,6 @@ const RESELLERS = [
     source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%92%D7%95%D7%9C%D7%9F%20%D7%98%D7%9C%D7%A7%D7%95%D7%9D&search_type=keyword_unordered&media_type=all' },
 ]
 
-// US operators on the "\u05e0\u05d5\u05d7\u05ea\u05d9\u05dd \u05d1\u05d0\u05e8\u05d4"\u05d1" tab. `net` groups them by the underlying
-// network for the network filter. Order: Big-3 / tourist-dedicated first.
-const USA_OPERATORS = [
-  { id: 'tmobile_prepaid', label: 'T-Mobile Prepaid', net: 'T-Mobile' },
-  { id: 'att_prepaid',     label: 'AT&T Prepaid',     net: 'AT&T' },
-  { id: 'verizon_prepaid', label: 'Verizon Prepaid',  net: 'Verizon' },
-  { id: 'ultra',           label: 'Ultra Mobile',     net: 'T-Mobile' },
-  { id: 'cricket',         label: 'Cricket Wireless', net: 'AT&T' },
-  { id: 'h2o',             label: 'H2O Wireless',     net: 'AT&T' },
-  { id: 'visible',         label: 'Visible',          net: 'Verizon' },
-  { id: 'us_mobile',       label: 'US Mobile',        net: '\u05e8\u05d1-\u05e8\u05e9\u05ea\u05d9' },
-  { id: 'red_pocket',      label: 'Red Pocket',       net: '\u05e8\u05d1-\u05e8\u05e9\u05ea\u05d9' },
-  { id: 'straight_talk',   label: 'Straight Talk',    net: 'Verizon' },
-  { id: 'total_wireless',  label: 'Total Wireless',   net: 'Verizon' },
-  { id: 'boost',           label: 'Boost Mobile',     net: 'Boost' },
-  { id: 'mint',            label: 'Mint Mobile',      net: 'T-Mobile' },
-  { id: 'tello',           label: 'Tello',            net: 'T-Mobile' },
-  { id: 'metro',           label: 'Metro by T-Mobile', net: 'T-Mobile' },
-  { id: 'lyca_usa',        label: 'Lycamobile USA',   net: 'T-Mobile' },
-  { id: 'simple_mobile',   label: 'Simple Mobile',    net: 'Verizon' },
-]
-const USA_NETWORKS = ['T-Mobile', 'AT&T', 'Verizon', 'Boost', '\u05e8\u05d1-\u05e8\u05e9\u05ea\u05d9']
-const USA_NETWORKS_EN = { '\u05e8\u05d1-\u05e8\u05e9\u05ea\u05d9': 'Multi-network' }
 
 const CARRIERS = [
   { id: 'partner', label: 'פרטנר' },

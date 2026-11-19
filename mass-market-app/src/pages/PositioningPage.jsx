@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import Spinner from '../components/ui/Spinner'
@@ -8,7 +8,7 @@ import { getCarrierColor } from '../components/moca/carrierMeta'
 import { getAppsForPlan } from '../data/abroadApps'
 import { useLang } from '../hooks/useLanguage'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
-import { USA_LABELS } from '../data/carrierLabels'
+import { USA_OPERATORS, USA_NETWORKS, USA_NETWORKS_EN } from '../data/carrierLabels'
 
 const CARRIERS = [
   { id: 'partner',   label: 'פרטנר' },
@@ -127,9 +127,15 @@ const ROAMING_PRICE_BUCKETS = [
 ]
 
 // ---- USA tourist axes ("נוחתים בארה"ב") ----
-// Rows are the US operators. Data steps match the dashboard's travel chips;
-// prices are the ILS-converted plan price (₪0-210 across the catalog).
-const USA_CARRIERS = Object.entries(USA_LABELS).map(([id, label]) => ({ id, label }))
+// Rows are the US operators, grouped under the network they run on (same
+// operator -> network list as the dashboard's USA tab). Data steps match the
+// dashboard's travel chips; prices are the ILS-converted plan price.
+const USA_GROUPS = USA_NETWORKS.map(net => ({
+  id: net,
+  label: net,
+  carriers: USA_OPERATORS.filter(o => o.net === net).map(o => ({ id: o.id, label: o.label })),
+}))
+const USA_CARRIERS = USA_GROUPS.flatMap(g => g.carriers)
 const USA_GB_BUCKETS = [
   { id: 'u-5',     label: 'עד 5GB',    min: 0,  max: 5.01 },
   { id: 'u-5-15',  label: '5-15GB',    min: 5.01, max: 15.01 },
@@ -266,6 +272,12 @@ export default function PositioningPage() {
     const base = domain === 'abroad' ? ABROAD_CARRIERS : CARRIERS
     return base.filter(c => visibleCarrierIds.includes(c.id))
   }, [visibleCarrierIds, domain])
+
+  // Row groups: one unlabeled group everywhere except the USA tab, where the
+  // operators sit under a network header row carrying the network's subtotals.
+  const rowGroups = useMemo(() => (
+    domain === 'usa' ? USA_GROUPS : [{ id: 'all', label: null, carriers: visibleCarriers }]
+  ), [domain, visibleCarriers])
 
   const buckets = useMemo(() => getBuckets(domain, axis), [domain, axis])
 
@@ -461,7 +473,23 @@ export default function PositioningPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleCarriers.map(c => (
+                  {rowGroups.map(g => (
+                  <Fragment key={g.id}>
+                  {g.label && (
+                    <tr className="bg-moca-cream/50 border-b border-moca-border/40">
+                      <td className="px-3 py-1.5 text-[11px] font-bold text-moca-dark sticky right-0 bg-moca-cream/95 z-10 md:static md:bg-transparent">
+                        {USA_NETWORKS_EN[g.label] ? tt(g.label, USA_NETWORKS_EN[g.label]) : g.label}
+                      </td>
+                      {buckets.map(b => {
+                        const n = g.carriers.reduce((sum, c) => sum + matrix[c.id][b.id].count, 0)
+                        return <td key={b.id} className="px-2 py-1.5 text-center text-[11px] font-bold text-moca-sub">{n || ''}</td>
+                      })}
+                      <td className="px-3 py-1.5 text-center text-[11px] font-bold text-moca-dark">
+                        {g.carriers.reduce((sum, c) => sum + carrierTotals[c.id], 0)}
+                      </td>
+                    </tr>
+                  )}
+                  {g.carriers.map(c => (
                     <tr key={c.id} className="border-b border-gray-50">
                       <td className="px-3 py-2.5 sticky right-0 bg-white z-10 md:static md:bg-transparent shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.06)] md:shadow-none">
                         <div className="flex items-center gap-2">
@@ -503,6 +531,8 @@ export default function PositioningPage() {
                         {carrierTotals[c.id]}
                       </td>
                     </tr>
+                  ))}
+                  </Fragment>
                   ))}
                   <tr className="bg-moca-cream/40">
                     <td className="px-3 py-2.5 text-[11px] font-semibold text-moca-sub sticky right-0 bg-moca-cream/95 backdrop-blur-sm z-10 md:static md:bg-transparent">{tt('סה"כ', 'Total')}</td>
