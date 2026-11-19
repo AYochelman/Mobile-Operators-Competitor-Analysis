@@ -154,6 +154,11 @@ _POPUP_HIDE_JS = r"""
     'div[class*="__ADORIC__"]',   // Adoric marketing popups + their full-page backdrop
     '[id^="adoric_smartbox"]',    // individual Adoric smartbox lightboxes
     '#popup1',                    // Partner homepage native promo ("ALL IN +")
+    // Pelephone cookie-consent modal (homepage + e-store, since ~2026-11): a
+    // centered dialog plus a white 80% backdrop that washed out the whole hero.
+    // Hidden, not clicked - "הבנתי" would accept the cookies.
+    '.wrap_cookies-consent',
+    '.overlay_cookies-consent',
   ];
   for (const s of sels) {
     for (const el of document.querySelectorAll(s)) {
