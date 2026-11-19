@@ -650,7 +650,7 @@ export default function DashboardPage() {
     const XLSX = await import('xlsx')
     const TAB_NAMES = { domestic: 'חבילות סלולר', abroad: 'חו"ל', global: 'גלובלי', content: 'תוכן', usa: 'נוחתים בארה"ב' }
     const CARRIER_HEB = { partner: 'פרטנר', pelephone: 'פלאפון', hotmobile: 'הוט מובייל', cellcom: 'סלקום', mobile019: '019', xphone: 'XPhone', wecom: 'We-Com', tuki: 'Tuki', terminalesim: 'Terminal eSIM', airalo: 'Airalo', pelephone_global: 'GlobalSIM', esimo: 'eSIMo', simtlv: 'SimTLV', world8: '8 World', xphone_global: 'XPhone Global', saily: 'Saily', holafly: 'Holafly', esimio: 'eSIM.io', sparks: 'Sparks', travelsim: 'Travel Sim', gomoworld: 'GoMoWorld', tasim: 'Tasim', maya: 'Maya Mobile', bcengi: 'Bcengi', esim70: 'eSIM70', jetpack: 'Jetpack', breez: 'Breez' }
-    const GB_HEB = { 'all': 'הכל', '0-5': '0-5GB', '5-15': '5-15GB', '15-100': '15-100GB', '100+': '100+GB', 'unlimited': 'ללא הגבלה' }
+    const GB_HEB = { 'all': 'הכל', '0-5': '0-5GB', '5-15': '5-15GB', '15-100': '15-100GB', '100+': '100+GB', '0-50': 'עד 50GB', '50-200': '50-200GB', '200-1000': '200-1000GB', '1000+': 'מעל 1000GB', '0-300': 'עד 300GB', '300-500': '300-500GB', '500-1000': '500-1000GB', 'unlimited': 'ללא הגבלה' }
     const DAYS_HEB = { 'all': 'הכל', '1-7': '1-7 ימים', '8-14': '8-14 ימים', '15-30': '15-30 ימים', '30+': '30+ ימים' }
 
     // Build filter summary title
@@ -941,8 +941,8 @@ export default function DashboardPage() {
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
                     <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('גלישה', 'Data')}</p>
                     <div className="flex flex-wrap gap-1">
-                      {['all', '0-5', '5-15', '15-100', '100+', 'unlimited'].map(v => (
-                        <FilterTag key={v} label={v === 'all' ? tt('הכל', 'All') : v === 'unlimited' ? tt('ללא הגבלה', 'Unlimited') : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
+                      {[['all', tt('הכל', 'All')], ['0-50', tt('עד 50GB', 'Up to 50GB')], ['50-200', '50-200GB'], ['200-1000', '200-1000GB'], ['1000+', tt('מעל 1000GB', 'Over 1000GB')], ['unlimited', tt('ללא הגבלה', 'Unlimited')]].map(([v, label]) => (
+                        <FilterTag key={v} label={label} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
                       ))}
                     </div>
                   </div>

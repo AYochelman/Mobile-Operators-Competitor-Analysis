@@ -48,29 +48,39 @@ export function resellerIsMultiLine(plan) {
   return !!req && Number(req[1] || req[2]) >= 2
 }
 
-// GB filter values -> predicate. The first five are the domestic/abroad/global
-// chips; the 300/500/1000 steps are the resellers tab's, whose plans almost all
-// sit above 100GB. data_gb=null means unlimited (or, on resellers, unknown).
+// GB filter values -> predicate. Three chip families: the small travel steps
+// (abroad / global / usa), the domestic steps (50 / 200 / 1000 - monthly
+// allowances keep growing) and the resellers tab's 300 / 500 / 1000 steps.
+// data_gb=null means unlimited (or, on resellers, unknown).
 const GB_RANGES = {
   unlimited: g => g === null,
   '0-5': g => g !== null && g <= 5,
   '5-15': g => g !== null && g > 5 && g <= 15,
   '15-100': g => g !== null && g > 15 && g <= 100,
   '100+': g => g !== null && g > 100,
+  '0-50': g => g !== null && g <= 50,
+  '50-200': g => g !== null && g > 50 && g <= 200,
+  '200-1000': g => g !== null && g > 200 && g <= 1000,
   '0-300': g => g !== null && g <= 300,
   '300-500': g => g !== null && g > 300 && g <= 500,
   '500-1000': g => g !== null && g > 500 && g <= 1000,
   '1000+': g => g !== null && g > 1000,
 }
 
-const RESELLER_GB = new Set(['0-300', '300-500', '500-1000', '1000+'])
+export const DOMESTIC_GB_STEPS = ['0-50', '50-200', '200-1000', '1000+']
+
+const TRAVEL_GB = new Set(['0-5', '5-15', '15-100', '100+', 'unlimited'])
+const GB_BY_TAB = {
+  domestic: new Set([...DOMESTIC_GB_STEPS, 'unlimited']),
+  resellers: new Set(['0-300', '300-500', '500-1000', '1000+']),
+}
 
 /** The gb filter value is shared by every tab, but each tab only shows its own
  *  chips - so a value picked on another tab is ignored rather than filtering
  *  invisibly (and isn't counted as an active filter). */
 export function gbFilterApplies(tab, gb) {
   if (!gb || gb === 'all' || tab === 'content' || !GB_RANGES[gb]) return false
-  return tab === 'resellers' ? RESELLER_GB.has(gb) : !RESELLER_GB.has(gb)
+  return (GB_BY_TAB[tab] || TRAVEL_GB).has(gb)
 }
 
 const pricePerGb = (p) => {

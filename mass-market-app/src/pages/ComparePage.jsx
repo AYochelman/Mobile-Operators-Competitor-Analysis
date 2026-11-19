@@ -289,6 +289,10 @@ export default function ComparePage() {
       else if (gbFilter === '5-15') result = result.filter(p => p.data_gb !== null && p.data_gb > 5 && p.data_gb <= 15)
       else if (gbFilter === '15-100') result = result.filter(p => p.data_gb !== null && p.data_gb > 15 && p.data_gb <= 100)
       else if (gbFilter === '100+') result = result.filter(p => p.data_gb !== null && p.data_gb > 100)
+      else if (gbFilter === '0-50') result = result.filter(p => p.data_gb !== null && p.data_gb <= 50)
+      else if (gbFilter === '50-200') result = result.filter(p => p.data_gb !== null && p.data_gb > 50 && p.data_gb <= 200)
+      else if (gbFilter === '200-1000') result = result.filter(p => p.data_gb !== null && p.data_gb > 200 && p.data_gb <= 1000)
+      else if (gbFilter === '1000+') result = result.filter(p => p.data_gb !== null && p.data_gb > 1000)
     }
 
     if (regionFilter !== 'all') {
@@ -399,7 +403,7 @@ export default function ComparePage() {
     + (appsFilter !== 'all' ? 1 : 0)
 
   const GB_OPTIONS = tab === 'domestic'
-    ? [['all', tt('הכל', 'All')], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['100+', '100+GB'], ['unlimited', tt('ללא הגבלה', 'Unlimited')]]
+    ? [['all', tt('הכל', 'All')], ['0-50', tt('עד 50GB', 'Up to 50GB')], ['50-200', '50-200GB'], ['200-1000', '200-1000GB'], ['1000+', tt('מעל 1000GB', 'Over 1000GB')], ['unlimited', tt('ללא הגבלה', 'Unlimited')]]
     : [['all', tt('הכל', 'All')], ['0-5', '0-5GB'], ['5-15', '5-15GB'], ['15-100', '15-100GB'], ['unlimited', tt('ללא הגבלה', 'Unlimited')]]
 
   const TAB_LABELS = {
