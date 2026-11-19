@@ -49,7 +49,7 @@ export function resellerIsMultiLine(plan) {
 }
 
 // GB filter values -> predicate. Chip families: the small travel steps
-// (abroad / global: 5 / 15 / 50; usa keeps 5 / 15 / 100), the domestic steps (50 / 200 / 1000 - monthly
+// (abroad / global / usa: 5 / 15 / 50), the domestic steps (50 / 200 / 1000 - monthly
 // allowances keep growing) and the resellers tab's 300 / 500 / 1000 steps.
 // data_gb=null means unlimited (or, on resellers, unknown).
 const GB_RANGES = {
@@ -73,7 +73,6 @@ export const DOMESTIC_GB_STEPS = ['0-50', '50-200', '200-1000', '1000+']
 
 const TRAVEL_GB = new Set(['0-5', '5-15', '15-50', '50+', 'unlimited'])
 const GB_BY_TAB = {
-  usa: new Set(['0-5', '5-15', '15-100', 'unlimited']),
   domestic: new Set([...DOMESTIC_GB_STEPS, 'unlimited']),
   resellers: new Set(['0-300', '300-500', '500-1000', '1000+']),
 }

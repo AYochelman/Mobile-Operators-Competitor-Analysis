@@ -1076,8 +1076,8 @@ export default function DashboardPage() {
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
                     <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('גלישה', 'Data')}</p>
                     <div className="flex flex-wrap gap-1">
-                      {['all', '0-5', '5-15', '15-100', 'unlimited'].map(v => (
-                        <FilterTag key={v} label={v === 'all' ? tt('הכל', 'All') : v === 'unlimited' ? tt('ללא הגבלה', 'Unlimited') : `${v}GB`} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
+                      {[['all', tt('הכל', 'All')], ['0-5', tt('עד 5GB', 'Up to 5GB')], ['5-15', '5-15GB'], ['15-50', '15-50GB'], ['50+', tt('מעל 50GB', 'Over 50GB')], ['unlimited', tt('ללא הגבלה', 'Unlimited')]].map(([v, label]) => (
+                        <FilterTag key={v} label={label} active={filters.gb === v} onClick={() => setFilter('gb', v)} />
                       ))}
                     </div>
                   </div>
