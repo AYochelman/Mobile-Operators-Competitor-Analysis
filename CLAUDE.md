@@ -235,6 +235,10 @@ The "משווקים" tab (between גלובלי and תוכן) shows below-the-lin
 
 PriceHistoryModal has a `HAS_HISTORY` whitelist (`['domestic', 'abroad', 'global', 'content']`). For other plan types (e.g. `resellers`) it skips the API call and renders the empty state — no error toast. The backend's `/api/history/price-series` rejects unknown plan_types with 400, so the whitelist must stay in sync.
 
+## Ski tab "גלישה לגולשים" (`/ski`, 2026-11-19 - built, NOT deployed yet)
+
+A VIEW, not a data source: `pages/SkiPage.jsx` cuts the existing global eSIM catalog (`/api/global-plans`) and the carriers' roaming packages (`/api/abroad-plans`) down to the 20 countries that have ski resorts on WeSki. No table, no scraper, no endpoint. `data/skiResorts.js` holds the resort list (308 resorts, collected from `weski.com/ski-resorts/<country>` on 2026-11-19; `RESORT_HE` = Hebrew names for the well-known ones) - refresh it by re-reading those pages. Coverage is sold per country, so a resort only selects its country (`?country=<id>&resort=<name>`). Country matching goes through `destKey` and multi-country bundles are expanded with `getPlanCoverage`, exactly like the /esim destination filter; filtering/sorting/grouping reuse `filterAndSortPlans` + `groupGlobalDisplayItems`. Default filter "שבוע סקי" = 7+ days and 5GB+ (on roaming rows NULL data_gb is a minutes package and is excluded); the country cards' "שבוע סקי מ-X" uses the same rule on eSIM rows. Flag `hide_ski` (navFlags.js, `SECTION_FLAGS` in dashboard_setup.py, `FLAG_DEFINITIONS`); the page also drops its eSIM / roaming half when `hide_global` / `hide_abroad` is set and applies `useVisibleCarriers` to roaming.
+
 ## Dashboard setup wizard (`/setup`, 2026-11-16 - built, NOT deployed yet)
 
 A wizard where the customer shapes their own dashboard and alerts. Answers live in SQLite (`dashboard_setup` table, JSON `config`, PK `(scope, owner)`), validated by `dashboard_setup.py`; endpoints in `api/setup.py` (blueprint `dashsetup`); page `pages/SetupWizardPage.jsx`.

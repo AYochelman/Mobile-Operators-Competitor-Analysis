@@ -44,6 +44,7 @@ const SuspendedPage         = lazy(() => import('./pages/SuspendedPage'))
 const NotFoundPage          = lazy(() => import('./pages/NotFoundPage'))
 const SocialPage            = lazy(() => import('./pages/SocialPage'))
 const GlobalBannersPage     = lazy(() => import('./pages/GlobalBannersPage'))
+const SkiPage               = lazy(() => import('./pages/SkiPage'))
 const ResetPasswordPage     = lazy(() => import('./pages/ResetPasswordPage'))
 // MOCA Guest Connect (hotels vertical) — public guest portal + marketing
 // landing (both outside the auth gate) and the super-admin operator console.
@@ -262,6 +263,7 @@ export default function App() {
             <Route path="esim"      element={<DashboardPage />} />
             <Route path="esim-banners" element={<GlobalBannersPage />} />
             <Route path="usa"       element={<DashboardPage />} />
+            <Route path="ski"       element={<SkiPage />} />
             <Route path="resellers" element={<DashboardPage />} />
             <Route path="content"   element={<DashboardPage />} />
             <Route path="news"      element={<DashboardPage />} />

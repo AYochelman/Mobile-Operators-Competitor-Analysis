@@ -18,6 +18,7 @@ export const FLAG_FOR_PATH = {
   '/esim':              'hide_global',
   '/esim-banners':      'hide_global_banners',
   '/usa':               'hide_usa',
+  '/ski':               'hide_ski',
   '/resellers':         'hide_resellers',
   '/content':           'hide_content',
   '/compare':           'hide_compare',
@@ -40,7 +41,7 @@ export const FLAG_FOR_PATH = {
 // primary section instead (priority order). '/preferences' is always available
 // (no flag) so this never returns nothing / loops.
 const HOME_FALLBACK_ORDER = [
-  '/plans', '/roaming', '/esim', '/esim-banners', '/usa', '/resellers', '/content',
+  '/plans', '/roaming', '/esim', '/esim-banners', '/usa', '/ski', '/resellers', '/content',
   '/cockpit', '/agent-desk', '/executive-summary', '/positioning', '/compare', '/ai-insights',
   '/news', '/social', '/banners', '/archive', '/history', '/alerts',
 ]
@@ -146,6 +147,8 @@ export const NAV_SECTIONS = [
     desc: { he: 'צילומי עמודי הבית של ספקי ה-eSIM', en: 'Screenshots of eSIM provider homepages' } },
   { path: '/usa',               group: 'plans',      he: 'נוחתים בארה״ב',      en: 'USA',
     desc: { he: 'חבילות פריפייד אמריקאיות לתיירים', en: 'US prepaid plans for tourists' } },
+  { path: '/ski',               group: 'plans',      he: 'גלישה לגולשים',      en: 'Ski trips',
+    desc: { he: 'חבילות גלישה לחופשת סקי, לפי מדינה ואתר סקי', en: 'Data packages for ski trips, by country and resort' } },
   { path: '/resellers',         group: 'plans',      he: 'משווקים',            en: 'Resellers',
     desc: { he: 'מבצעים מתחת לקו: משווקים, דפי נחיתה ופייסבוק', en: 'Below-the-line offers: resellers, landing pages, Facebook' } },
   { path: '/content',           group: 'plans',      he: 'תוכן',               en: 'Content',

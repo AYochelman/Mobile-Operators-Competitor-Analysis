@@ -35,6 +35,7 @@ SECTION_FLAGS = {
     "/esim": "hide_global",
     "/esim-banners": "hide_global_banners",
     "/usa": "hide_usa",
+    "/ski": "hide_ski",
     "/resellers": "hide_resellers",
     "/content": "hide_content",
     "/compare": "hide_compare",

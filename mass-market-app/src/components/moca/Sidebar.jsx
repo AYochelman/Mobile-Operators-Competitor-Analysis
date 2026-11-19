@@ -70,6 +70,9 @@ const Icons = {
   usa: (
     <svg {...ICON_PROPS}><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3.5c-.5-.5-2.5 0-4 1.5L13.5 8 5.2 6.2c-.5-.1-.9.2-.9.7l.3.5L8 11l-3 1-1 1 .5.5L8 15l1 3.5.5.5 1-1 1-3 3.5 2.7.5.3c.5 0 .8-.4.7-.9z"/></svg>
   ),
+  ski: (
+    <svg {...ICON_PROPS}><path d="m8 3 4 8 5-5 5 15H2L8 3z"/><path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19"/></svg>
+  ),
   resellers: (
     <svg {...ICON_PROPS}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
   ),
@@ -124,6 +127,7 @@ const ICON_FOR_PATH = {
   '/esim': Icons.esim,
   '/esim-banners': Icons.banners,
   '/usa': Icons.usa,
+  '/ski': Icons.ski,
   '/resellers': Icons.resellers,
   '/content': Icons.content,
   '/compare': Icons.compare,

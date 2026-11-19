@@ -47,6 +47,7 @@ const FLAG_DEFINITIONS = [
   { key: 'hide_global',            label: 'הסתר טאב גלובלי',      en: 'Hide global tab' },
   { key: 'hide_global_banners',    label: 'הסתר באנרים גלובליים', en: 'Hide global banners' },
   { key: 'hide_usa',               label: 'הסתר טאב ארה"ב',       en: 'Hide USA tab' },
+  { key: 'hide_ski',               label: 'הסתר גלישה לגולשים',   en: 'Hide ski trips tab' },
   { key: 'hide_resellers',         label: 'הסתר טאב משווקים',     en: 'Hide resellers tab' },
   { key: 'hide_content',           label: 'הסתר טאב תוכן',        en: 'Hide content tab' },
   { key: 'hide_banners',           label: 'הסתר טאב באנרים',      en: 'Hide banners tab' },

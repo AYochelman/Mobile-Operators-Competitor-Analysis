@@ -57,7 +57,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
   }, [open, updatePosition])
 
   const filtered = search
-    ? options.filter(o => o.label.includes(search))
+    ? options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()))
     : options
 
   // Cap initial render to avoid freezing the page when the list has thousands
