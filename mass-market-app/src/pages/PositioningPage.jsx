@@ -7,6 +7,7 @@ import { classifyPriority } from '../data/networkPriority'
 import { getCarrierColor } from '../components/moca/carrierMeta'
 import { getAppsForPlan } from '../data/abroadApps'
 import { useLang } from '../hooks/useLanguage'
+import { useFeatureFlags } from '../hooks/useFeatureFlags'
 
 const CARRIERS = [
   { id: 'partner',   label: 'פרטנר' },
@@ -56,6 +57,12 @@ const GB_BUCKETS = [
   { id: 'unlim',     label: 'ללא הגבלה',   min: -1,   max: -1 },
 ]
 
+// Below-the-line (reseller) offers: same GB scale, plus a column for ads that
+// quote a price without a data allowance (data_gb NULL + "לא צוין" in the name -
+// see fb_ads_scraper allow_no_gb). Reseller prices are per line.
+const RESELLER_GB_BUCKETS = [...GB_BUCKETS, { id: 'unknown', label: 'לא צוין', min: -1, max: -1 }]
+const gbNotStated = (p) => p.data_gb == null && /לא צוין/.test(p.plan_name || '')
+
 const PRIORITY_BUCKETS = [
   { id: 'none',    label: 'ללא 5G' },
   { id: 'basic',   label: '5G בסיסי' },
@@ -103,6 +110,11 @@ const DOMESTIC_AXES = [
   { id: 'priority', label: 'לפי תעדוף' },
 ]
 
+const RESELLER_AXES = [
+  { id: 'price', label: 'לפי מחיר' },
+  { id: 'gb',    label: 'לפי גלישה' },
+]
+
 const ABROAD_AXES = [
   { id: 'gb',    label: 'לפי גלישה' },
   { id: 'days',  label: 'לפי ימים' },
@@ -115,6 +127,7 @@ function getBuckets(domain, axis) {
     if (axis === 'price') return ROAMING_PRICE_BUCKETS
     return ROAMING_GB_BUCKETS
   }
+  if (domain === 'resellers') return axis === 'gb' ? RESELLER_GB_BUCKETS : PRICE_BUCKETS
   if (axis === 'gb')       return GB_BUCKETS
   if (axis === 'priority') return PRIORITY_BUCKETS
   return PRICE_BUCKETS
@@ -132,9 +145,10 @@ function classifyPlan(p, axis, buckets) {
   }
   if (axis === 'gb') {
     const gb = p.data_gb
+    if (gbNotStated(p) && buckets.some(b => b.id === 'unknown')) return 'unknown'
     if (gb === null || gb === undefined) return 'unlim'
     for (const b of buckets) {
-      if (b.id === 'unlim') continue
+      if (b.id === 'unlim' || b.id === 'unknown') continue
       if (gb >= b.min && gb < b.max) return b.id
     }
     return null
@@ -161,8 +175,11 @@ export default function PositioningPage() {
   const navigate = useNavigate()
   const [domesticPlans, setDomesticPlans] = useState([])
   const [abroadPlans, setAbroadPlans] = useState([])
+  const [resellerPlans, setResellerPlans] = useState([])
+  const flags = useFeatureFlags()
+  const showResellers = !flags.hide_resellers
   const [loading, setLoading] = useState(true)
-  const [domain, setDomain] = useState('domestic') // 'domestic' | 'abroad'
+  const [domain, setDomain] = useState('domestic') // 'domestic' | 'abroad' | 'resellers'
   const [axis, setAxis] = useState('price')         // axis id within the active domain
   const visibleCarrierIds = useVisibleCarriers(CARRIERS.map(c => c.id))
 
@@ -170,10 +187,12 @@ export default function PositioningPage() {
     Promise.all([
       api.getPlans().catch(() => []),
       api.getAbroadPlans().catch(() => []),
+      api.getResellerPlans().catch(() => []),
     ])
-      .then(([dom, abr]) => {
+      .then(([dom, abr, res]) => {
         setDomesticPlans(dom || [])
         setAbroadPlans(abr || [])
+        setResellerPlans(Array.isArray(res) ? res : (res?.plans || []))
       })
       .finally(() => setLoading(false))
   }, [])
@@ -185,8 +204,8 @@ export default function PositioningPage() {
     setAxis(d === 'abroad' ? 'gb' : 'price')
   }
 
-  const sourcePlans = domain === 'abroad' ? abroadPlans : domesticPlans
-  const axes = domain === 'abroad' ? ABROAD_AXES : DOMESTIC_AXES
+  const sourcePlans = domain === 'abroad' ? abroadPlans : domain === 'resellers' ? resellerPlans : domesticPlans
+  const axes = domain === 'abroad' ? ABROAD_AXES : domain === 'resellers' ? RESELLER_AXES : DOMESTIC_AXES
 
   const visibleCarriers = useMemo(() => {
     const base = domain === 'abroad' ? ABROAD_CARRIERS : CARRIERS
@@ -278,7 +297,7 @@ export default function PositioningPage() {
   }, [abroadPlans, domain])
 
   const handleCellClick = (carrierId) => {
-    const path = domain === 'abroad' ? '/roaming' : '/plans'
+    const path = domain === 'abroad' ? '/roaming' : domain === 'resellers' ? '/resellers' : '/plans'
     navigate(`${path}?carrier=${carrierId}`)
   }
 
@@ -289,7 +308,7 @@ export default function PositioningPage() {
     // domestic GB
     '0-50': 'Under 50GB', '51-200': '51-200GB', '201-500': '201-500GB', '501-999': '501-999GB',
     '1000-2000': '1000-2000GB', '2001-3000': '2001-3000GB', '3001-5000': '3001-5000GB', '5000+': 'Over 5000GB',
-    unlim: 'Unlimited',
+    unlim: 'Unlimited', unknown: 'Not stated',
     // priority
     none: 'No 5G', basic: 'Basic 5G', max: 'Max priority',
     // roaming GB
@@ -308,6 +327,7 @@ export default function PositioningPage() {
   const DOMAIN_TABS = [
     { id: 'domestic', label: tt('חבילות בארץ', 'Domestic plans') },
     { id: 'abroad',   label: tt('חבילות חו"ל', 'Roaming plans') },
+    ...(showResellers ? [{ id: 'resellers', label: tt('חבילות משווקים', 'Reseller plans') }] : []),
   ]
 
   return (
@@ -316,10 +336,12 @@ export default function PositioningPage() {
       <p className="text-xs text-gray-400 mb-5 text-right">
         {domain === 'abroad'
           ? tt('פיזור חבילות חו"ל לפי ספק ונפח גלישה - אתר את ה-white space', 'Distribution of roaming plans by provider and data volume - find the white space')
+          : domain === 'resellers'
+          ? tt('פיזור הצעות המשווקים (מתחת לקו) לפי הספק שמאחורי ההצעה - מחיר לקו', 'Distribution of below-the-line reseller offers by the carrier behind the offer - price per line')
           : tt('פיזור חבילות סלולר לפי ספק וקטגוריה - אתר את ה-white space', 'Distribution of cellular plans by provider and category - find the white space')}
       </p>
 
-      {/* Domain tabs — בארץ / חו"ל */}
+      {/* Domain tabs — בארץ / חו"ל / משווקים */}
       <div className="mb-5 flex items-center gap-1 border-b border-moca-border/40">
         {DOMAIN_TABS.map(d => (
           <button
@@ -453,6 +475,7 @@ export default function PositioningPage() {
 
           <p className="text-[11px] text-gray-400 mt-4 text-right">
             {tt('לחץ על תא כדי לראות את החבילות בדשבורד · צבע ירוק כהה = ריבוי חבילות בקטגוריה', 'Click a cell to see the plans in the dashboard · dark green = many plans in the category')}
+            {domain === 'resellers' && tt(' · מוצגות רק הצעות שמופיעות בלשונית המשווקים', ' · only offers shown on the Resellers tab are counted')}
             {domain === 'abroad' && tt(' · התג ▦ ליד שם הספק = גלישה חופשית באפליקציות (המספר = כמה אפליקציות)', ' · the ▦ tag next to a provider = free in-app browsing (the number = how many apps)')}
           </p>
         </>
