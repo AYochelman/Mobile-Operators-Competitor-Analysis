@@ -57,10 +57,31 @@ const GB_BUCKETS = [
   { id: 'unlim',     label: 'ללא הגבלה',   min: -1,   max: -1 },
 ]
 
-// Below-the-line (reseller) offers: same GB scale, plus a column for ads that
+// Below-the-line (reseller) offers: the GB axis carries a column for ads that
 // quote a price without a data allowance (data_gb NULL + "לא צוין" in the name -
 // see fb_ads_scraper allow_no_gb). Reseller prices are per line.
-const RESELLER_GB_BUCKETS = [...GB_BUCKETS, { id: 'unknown', label: 'לא צוין', min: -1, max: -1 }]
+// Reseller offers are cheaper and sit in a narrower band than the rate cards
+// (₪16-70 per line, 200-1,000GB), so both axes get their own tighter scale.
+// Price labels are inclusive upper bounds (₪29.9 and ₪30 both read "₪26-30"),
+// hence the .01 edges on the half-open [min, max) ranges.
+const RESELLER_PRICE_BUCKETS = [
+  { id: 'r-20',    label: 'עד ₪20',  min: 0,     max: 20.01 },
+  { id: 'r-21-25', label: '₪21-25',  min: 20.01, max: 25.01 },
+  { id: 'r-26-30', label: '₪26-30',  min: 25.01, max: 30.01 },
+  { id: 'r-31-35', label: '₪31-35',  min: 30.01, max: 35.01 },
+  { id: 'r-36-40', label: '₪36-40',  min: 35.01, max: 40.01 },
+  { id: 'r-40+',   label: 'מעל ₪40', min: 40.01, max: Infinity },
+]
+const RESELLER_GB_BUCKETS = [
+  { id: 'r-250',      label: 'עד 250GB',    min: 0,    max: 251 },
+  { id: 'r-251-399',  label: '251-399GB',   min: 251,  max: 400 },
+  { id: 'r-400-499',  label: '400-499GB',   min: 400,  max: 500 },
+  { id: 'r-500-799',  label: '500-799GB',   min: 500,  max: 800 },
+  { id: 'r-800-1000', label: '800-1000GB',  min: 800,  max: 1001 },
+  { id: 'r-1000+',    label: 'מעל 1000GB',  min: 1001, max: Infinity },
+  { id: 'unlim',      label: 'ללא הגבלה',   min: -1,   max: -1 },
+  { id: 'unknown',    label: 'לא צוין',     min: -1,   max: -1 },
+]
 const gbNotStated = (p) => p.data_gb == null && /לא צוין/.test(p.plan_name || '')
 
 const PRIORITY_BUCKETS = [
@@ -127,7 +148,7 @@ function getBuckets(domain, axis) {
     if (axis === 'price') return ROAMING_PRICE_BUCKETS
     return ROAMING_GB_BUCKETS
   }
-  if (domain === 'resellers') return axis === 'gb' ? RESELLER_GB_BUCKETS : PRICE_BUCKETS
+  if (domain === 'resellers') return axis === 'gb' ? RESELLER_GB_BUCKETS : RESELLER_PRICE_BUCKETS
   if (axis === 'gb')       return GB_BUCKETS
   if (axis === 'priority') return PRIORITY_BUCKETS
   return PRICE_BUCKETS
@@ -309,6 +330,10 @@ export default function PositioningPage() {
     '0-50': 'Under 50GB', '51-200': '51-200GB', '201-500': '201-500GB', '501-999': '501-999GB',
     '1000-2000': '1000-2000GB', '2001-3000': '2001-3000GB', '3001-5000': '3001-5000GB', '5000+': 'Over 5000GB',
     unlim: 'Unlimited', unknown: 'Not stated',
+    // resellers
+    'r-20': 'Up to ₪20', 'r-21-25': '₪21-25', 'r-26-30': '₪26-30', 'r-31-35': '₪31-35', 'r-36-40': '₪36-40', 'r-40+': 'Over ₪40',
+    'r-250': 'Up to 250GB', 'r-251-399': '251-399GB', 'r-400-499': '400-499GB', 'r-500-799': '500-799GB',
+    'r-800-1000': '800-1000GB', 'r-1000+': 'Over 1000GB',
     // priority
     none: 'No 5G', basic: 'Basic 5G', max: 'Max priority',
     // roaming GB

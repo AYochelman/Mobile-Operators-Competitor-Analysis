@@ -195,6 +195,7 @@ const USA_OPERATORS = [
   { id: 'simple_mobile',   label: 'Simple Mobile',    net: 'Verizon' },
 ]
 const USA_NETWORKS = ['T-Mobile', 'AT&T', 'Verizon', 'Boost', '\u05e8\u05d1-\u05e8\u05e9\u05ea\u05d9']
+const USA_NETWORKS_EN = { '\u05e8\u05d1-\u05e8\u05e9\u05ea\u05d9': 'Multi-network' }
 
 const CARRIERS = [
   { id: 'partner', label: 'פרטנר' },
@@ -881,7 +882,7 @@ export default function DashboardPage() {
 
         {/* Expandable filter rows — 2-column layout */}
         {filtersOpen && (
-          <div className={`grid grid-cols-1 ${tab === 'resellers' ? '' : 'md:grid-cols-[1fr_280px]'} gap-3 py-3 border-t border-gray-100 animate-slide-down items-start relative`} style={{overflow: 'visible'}}>
+          <div className={`grid grid-cols-1 ${tab === 'resellers' || tab === 'usa' ? '' : 'md:grid-cols-[1fr_280px]'} gap-3 py-3 border-t border-gray-100 animate-slide-down items-start relative`} style={{overflow: 'visible'}}>
             {/* Right column — Filters. On the resellers tab the grid is one column: these
                 rows sit on top and the carrier/reseller boxes keep the full width below. */}
             <div className="space-y-2" style={{overflow: 'visible'}}>
@@ -1092,9 +1093,8 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* USA: Row 2 = מיון | רשת */}
+              {/* USA: Row 2 = מיון (the network filter is the carrier box below) */}
               {tab === 'usa' && (
-                <div className="grid grid-cols-2 gap-3">
                   <div className="border border-moca-border/60 rounded-xl p-2.5">
                     <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('מיון', 'Sort')}</p>
                     <div className="flex flex-wrap gap-1">
@@ -1104,16 +1104,6 @@ export default function DashboardPage() {
                       <FilterTag label="GB ↓" active={filters.sort === 'gb_desc'} onClick={() => setFilter('sort', 'gb_desc')} />
                     </div>
                   </div>
-                  <div className="border border-moca-border/60 rounded-xl p-2.5">
-                    <p className="text-[11px] font-medium text-gray-500 mb-1.5">{tt('רשת', 'Network')}</p>
-                    <div className="flex flex-wrap gap-1">
-                      <FilterTag label={tt('כל הרשתות', 'All networks')} active={filters.usaNetwork === 'all'} onClick={() => { setFilter('usaNetwork', 'all'); setFilter('usaOperator', 'all') }} />
-                      {USA_NETWORKS.map(n => (
-                        <FilterTag key={n} label={n} active={filters.usaNetwork === n} onClick={() => { setFilter('usaNetwork', n); setFilter('usaOperator', 'all') }} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
               )}
 
               {/* Content service filter (content tab) */}
@@ -1206,13 +1196,48 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* USA operators */}
+              {/* USA: carrier (network) box + operator box side by side, like the resellers tab */}
               {tab === 'usa' && (
+                <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] gap-3 items-start">
+                <div className="border border-moca-border/60 rounded-xl p-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[11px] font-medium text-gray-500">{tt('ספק', 'Carrier')}</p>
+                    <button
+                      onClick={() => { setFilter('usaNetwork', 'all'); setFilter('usaOperator', 'all') }}
+                      aria-pressed={filters.usaNetwork === 'all'}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
+                        filters.usaNetwork === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                      }`}
+                    >
+                      {tt('כולם', 'All')}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
+                    {USA_NETWORKS.map(n => {
+                      const ops = new Set(USA_OPERATORS.filter(o => o.net === n).map(o => o.id))
+                      const cnt = plans.usa?.filter(p => ops.has(p.carrier)).length || 0
+                      if (cnt === 0) return null
+                      return (
+                        <button
+                          key={n}
+                          aria-pressed={filters.usaNetwork === n}
+                          onClick={() => { setFilter('usaNetwork', n); setFilter('usaOperator', 'all') }}
+                          className={`px-1 py-1 rounded-md text-[10px] font-medium text-center transition-all duration-150 truncate ${
+                            filters.usaNetwork === n ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
+                          }`}
+                        >
+                          {USA_NETWORKS_EN[n] ? tt(n, USA_NETWORKS_EN[n]) : n} ({cnt})
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
                 <div className="border border-moca-border/60 rounded-xl p-2.5">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[11px] font-medium text-gray-500">{tt('מפעילים', 'Operators')}</p>
                     <button
-                      onClick={() => { setFilter('usaOperator', 'all'); setFilter('usaNetwork', 'all') }}
+                      onClick={() => setFilter('usaOperator', 'all')}
                       className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all duration-150 ${
                         filters.usaOperator === 'all' ? 'bg-gray-900 text-white' : 'text-moca-sub hover:text-moca-text hover:bg-moca-cream'
                       }`}
@@ -1220,7 +1245,7 @@ export default function DashboardPage() {
                       {tt('כולם', 'All')}
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1">
                     {USA_OPERATORS
                       .filter(o => filters.usaNetwork === 'all' || o.net === filters.usaNetwork)
                       .map(o => {
@@ -1240,6 +1265,7 @@ export default function DashboardPage() {
                         )
                       })}
                   </div>
+                </div>
                 </div>
               )}
 
