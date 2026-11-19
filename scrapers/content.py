@@ -213,3 +213,61 @@ def scrape_all_content():
 
     logger.info(f"scrape_all_content: {len(results)} results")
     return results
+
+# -- Pelephone content pages: own browser session (same pattern as scrapers/pelephone.py) --
+_PELE_CONTENT_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+_scrape_all_content_shared = scrape_all_content
+
+
+def _pelephone_content_prices():
+    from playwright_stealth import Stealth
+    prices = {}
+    entries = [e for e in CONTENT_SERVICES
+               if e["carrier"] == "pelephone" and e["strategy"] == "keyword_scan"]
+    with Stealth().use_sync(core.sync_playwright()) as pw:
+        browser = pw.chromium.launch(
+            headless=True, args=["--disable-blink-features=AutomationControlled"])
+        try:
+            ctx = browser.new_context(user_agent=_PELE_CONTENT_UA, locale="he-IL",
+                                      viewport={"width": 1366, "height": 900})
+            page = ctx.new_page()
+            for e in entries:
+                try:
+                    page.goto(e["url"], timeout=45000)
+                    try:
+                        page.wait_for_load_state("networkidle", timeout=15000)
+                    except Exception:
+                        page.wait_for_timeout(2000)
+                    faq_q = e.get("faq_question")
+                    if faq_q:
+                        page.evaluate(
+                            """(q) => {
+                                const el = Array.from(document.querySelectorAll('*')).find(
+                                    x => (x.innerText || '').trim() === q && x.children.length === 0);
+                                if (el) { el.scrollIntoView(); el.click(); }
+                            }""", faq_q)
+                        page.wait_for_timeout(2000)
+                    price = _extract_content_price(page.inner_text("body"), e.get("price_keyword"))
+                    if price:
+                        prices[e["service"]] = price
+                    logger.info(f"Content {e['service']}/pelephone (own session): {price}")
+                except Exception as ex:
+                    logger.error(f"Content own-session failed {e['service']}/pelephone: {ex}")
+        finally:
+            browser.close()
+    return prices
+
+
+def scrape_all_content():
+    results = _scrape_all_content_shared()
+    try:
+        prices = _pelephone_content_prices()
+    except Exception as ex:
+        logger.error(f"Pelephone content session failed: {ex}")
+        prices = {}
+    for r in results:
+        if r["carrier"] == "pelephone" and r["service"] in prices:
+            r["price"] = prices[r["service"]]
+            r["status"] = "\u05e0\u05de\u05e6\u05d0"
+    return results
