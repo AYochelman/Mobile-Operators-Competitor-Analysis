@@ -721,7 +721,8 @@ from scrapers.holafly import (  # noqa: E402,F401
     _HOLAFLY_KEY_DAYS,
     scrape_holafly_global,
     HOLAFLY_REGIONS,
-    _HOLAFLY_NON_SHOPIFY_REGIONS,
+    _HOLAFLY_HANDLE_OVERRIDES,
+    _HOLAFLY_EXTRA_COUNTRIES,
     scrape_holafly_regions,
 )
 from scrapers.yesim import (  # noqa: E402,F401

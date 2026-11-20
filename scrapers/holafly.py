@@ -197,6 +197,51 @@ HOLAFLY_SLUG_TO_HEBREW = {
 }
 
 
+# The shop does not name every product "esim-<slug>": older ones carry Spanish
+# names or typos. Until 2026-11-20 these 19 destinations were asked for under the
+# wrong handle, got a 404 and were silently missing from the catalog.
+_HOLAFLY_HANDLE_OVERRIDES = {
+    "algeria": "esim-argeria",
+    "anguilla": "anguila",
+    "bahamas": "bahamas",
+    "belize": "esim-datos-belice",
+    "benin": "bni",
+    "bonaire": "bonaire",
+    "burkina-faso": "burkina-faso",
+    "french-polynesia": "polinesia-francesa",
+    "gabon": "gabon",
+    "guam": "guam",
+    "guinea": "guinea",
+    "guyana": "guyana",
+    "isle-of-man": "esim-isle-of-men",
+    "kazakhstan": "esim-kazakhastan",
+    "kenya": "esim-kenia",
+    "netherlands-antilles": "antillas-holandesas",
+    "niger": "niger",
+    "saint-martin": "esim-st-martin",
+    "suriname": "surinam",
+}
+
+# Destinations Holafly sells that HOLAFLY_SLUG_TO_HEBREW has no slug for: handle -> Hebrew
+_HOLAFLY_EXTRA_COUNTRIES = {
+    "esim-united-arab-emirates": "\u05d0\u05d9\u05d7\u05d5\u05d3 \u05d4\u05d0\u05de\u05d9\u05e8\u05d5\u05d9\u05d5\u05ea",  # איחוד האמירויות
+    "esim-iraq": "\u05e2\u05d9\u05e8\u05d0\u05e7",  # עיראק
+    "esim-hawaii": "\u05d4\u05d5\u05d5\u05d0\u05d9",  # הוואי
+    "monserrat": "\u05de\u05d5\u05e0\u05e1\u05e8\u05d0\u05d8",  # מונסראט
+    "islas-aland": "\u05d0\u05d9\u05d9 \u05d0\u05d5\u05dc\u05e0\u05d3",  # איי אולנד
+    "esim-st-pierre-and-miquelon": "\u05e1\u05df \u05e4\u05d9\u05d9\u05e8 \u05d5\u05de\u05d9\u05e7\u05dc\u05d5\u05df",  # סן פייר ומיקלון
+    "esim-british-cayman-island": "\u05d0\u05d9\u05d9 \u05e7\u05d9\u05d9\u05de\u05df",  # איי קיימן
+    "esim-british-virgin-island": "\u05d0\u05d9\u05d9 \u05d4\u05d1\u05ea\u05d5\u05dc\u05d4 (\u05d1\u05e8\u05d9\u05d8\u05e0\u05d9\u05d4)",  # איי הבתולה (בריטניה)
+}
+
+
+def _holafly_country_handles():
+    """[(shop handle, Hebrew destination)] for every per-country product."""
+    pairs = [(_HOLAFLY_HANDLE_OVERRIDES.get(slug, f"esim-{slug}"), heb)
+             for slug, heb in HOLAFLY_SLUG_TO_HEBREW.items()]
+    return pairs + list(_HOLAFLY_EXTRA_COUNTRIES.items())
+
+
 # Key durations to keep from Holafly's 1-90 day range
 _HOLAFLY_KEY_DAYS = {1, 3, 5, 7, 10, 15, 20, 30, 60, 90}
 
@@ -320,9 +365,10 @@ def scrape_holafly_global(_page=None, usd_rate=None):
         logger.warning(f"Holafly global: catalog fetch failed: {exc}")
         return []
 
-    for slug, country_heb in HOLAFLY_SLUG_TO_HEBREW.items():
+    handles = _holafly_country_handles()
+    for slug, country_heb in handles:
         try:
-            product = catalog.get(f"esim-{slug}")
+            product = catalog.get(slug)
             if not product:
                 continue          # not sold (or not listed) by Holafly
 
@@ -355,7 +401,7 @@ def scrape_holafly_global(_page=None, usd_rate=None):
             logger.warning(f"Holafly {slug}: {exc}")
             continue
 
-    logger.info(f"Holafly global: {len(all_plans)} plans from {success_count}/{len(HOLAFLY_SLUG_TO_HEBREW)} countries")
+    logger.info(f"Holafly global: {len(all_plans)} plans from {success_count}/{len(handles)} countries")
     return all_plans
 
 
@@ -374,19 +420,12 @@ HOLAFLY_REGIONS = {
     "centroamerica":                "\u05de\u05e8\u05db\u05d6 \u05d0\u05de\u05e8\u05d9\u05e7\u05d4",
     "balkans":                      "\u05d1\u05dc\u05e7\u05df",
     "europa-oriental":              "\u05de\u05d6\u05e8\u05d7 \u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",
-}
-
-
-# Middle East & Africa don't have Shopify API — hardcoded key prices (USD)
-_HOLAFLY_NON_SHOPIFY_REGIONS = {
-    "\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df": {  # המזרח התיכון
-        1: 9.90, 3: 25.90, 5: 36.90, 7: 42.90, 10: 52.90,
-        15: 79.90, 20: 106.90, 30: 161.90, 60: 256.90, 90: 322.90,
-    },
-    "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4": {  # אפריקה
-        1: 9.90, 3: 25.90, 5: 36.90, 7: 42.90, 10: 52.90,
-        15: 79.90, 20: 106.90, 30: 161.90, 60: 256.90, 90: 322.90,
-    },
+    # Until 2026-11-20 the next two were a price list typed into this file
+    # ("no Shopify API") - it had drifted from the shop (7 days: 42.90 vs 38.90)
+    # and its rows got a fresh scraped_at on every run, hiding a blocked scraper.
+    "medio-oriente-actualizado":    "\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df",  # המזרח התיכון
+    "africa-actualizado":           "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",  # אפריקה
+    "world":                        "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9",  # גלובלי
 }
 
 
@@ -402,7 +441,7 @@ def scrape_holafly_regions(_page=None, usd_rate=None):
     try:
         catalog = _holafly_catalog_by_handle()
     except HolaflyRateLimited:
-        logger.warning("Holafly regions: rate limited, only the fixed-price regions this run")
+        logger.warning("Holafly regions: rate limited, no plans this run")
         catalog = {}
     except Exception as exc:
         logger.warning(f"Holafly regions: catalog fetch failed: {exc}")
@@ -445,16 +484,5 @@ def scrape_holafly_regions(_page=None, usd_rate=None):
             logger.warning(f"Holafly region {slug}: {exc}")
             continue
 
-    # Add non-Shopify regions (Middle East & Africa) from hardcoded prices
-    for region_heb, prices in _HOLAFLY_NON_SHOPIFY_REGIONS.items():
-        for days, price_usd in prices.items():
-            price_ils = round(price_usd * usd_rate, 2)
-            plan_name = f"{region_heb} \u2013 \u05dc\u05dc\u05d0 \u05d4\u05d2\u05d1\u05dc\u05d4 \u2013 {days} \u05d9\u05de\u05d9\u05dd"
-            all_plans.append(core._make_global_plan(
-                "holafly", plan_name, price_ils, "USD", price_usd,
-                data_gb=None, days=days, esim=True, extras=[region_heb]
-            ))
-        success_count += 1
-
-    logger.info(f"Holafly regions: {len(all_plans)} plans from {success_count}/{len(HOLAFLY_REGIONS) + len(_HOLAFLY_NON_SHOPIFY_REGIONS)} regions")
+    logger.info(f"Holafly regions: {len(all_plans)} plans from {success_count}/{len(HOLAFLY_REGIONS)} regions")
     return all_plans

@@ -42,7 +42,9 @@ def test_total_throttle_stops_after_a_few_requests(monkeypatch):
     # the second scraper sees the cooldown and asks nothing more
     regions = holafly.scrape_holafly_regions(usd_rate=3.7)
     assert len(calls) == holafly._HOLAFLY_MAX_429
-    assert regions  # the hardcoded regions are still returned
+    # no fixed-price rows any more: a blocked run must leave every row to age,
+    # or MAX(scraped_at) keeps saying the carrier is fresh
+    assert regions == []
 
 
 def test_cooldown_expires(monkeypatch):
@@ -106,6 +108,10 @@ def test_one_catalog_request_serves_both_scrapers(monkeypatch):
         ]},
         {"handle": "esim-europe", "variants": [{"sku": "esim-europe-10-days", "price": "36.90"}]},
         {"handle": "test-ipad", "variants": [{"sku": "x-5-days", "price": "1.00"}]},
+        # a handle that is not "esim-<slug>", a destination without a slug, a live region
+        {"handle": "esim-kenia", "variants": [{"sku": "esim-kenia-30-days", "price": "116.90"}]},
+        {"handle": "esim-iraq", "variants": [{"sku": "esim-iraq-1-day", "price": "6.90"}]},
+        {"handle": "africa-actualizado", "variants": [{"sku": "esim-africa-7-days", "price": "38.90"}]},
     ]}
 
     def fake(req, timeout=None):
@@ -116,7 +122,23 @@ def test_one_catalog_request_serves_both_scrapers(monkeypatch):
     countries = holafly.scrape_holafly_global(usd_rate=3.0)
     regions = holafly.scrape_holafly_regions(usd_rate=3.0)
     assert calls == [holafly._HOLAFLY_CATALOG_URL.format(page=1)]
-    assert sorted(p["original_price"] for p in countries) == [3.79, 26.9]
-    assert {p["extras"][0] for p in countries} == {holafly.HOLAFLY_SLUG_TO_HEBREW["france"]}
-    live_regions = [p for p in regions if p["extras"][0] == holafly.HOLAFLY_REGIONS["esim-europe"]]
-    assert [p["original_price"] for p in live_regions] == [36.9]
+    by_dest = {}
+    for p in countries:
+        by_dest.setdefault(p["extras"][0], []).append(p["original_price"])
+    assert by_dest == {
+        holafly.HOLAFLY_SLUG_TO_HEBREW["france"]: [3.79, 26.9],
+        holafly.HOLAFLY_SLUG_TO_HEBREW["kenya"]: [116.9],
+        holafly._HOLAFLY_EXTRA_COUNTRIES["esim-iraq"]: [6.9],
+    }
+    assert {p["extras"][0]: p["original_price"] for p in regions} == {
+        holafly.HOLAFLY_REGIONS["esim-europe"]: 36.9,
+        holafly.HOLAFLY_REGIONS["africa-actualizado"]: 38.9,
+    }
+
+
+def test_every_handle_is_asked_once():
+    handles = [h for h, _ in holafly._holafly_country_handles()]
+    assert len(handles) == len(set(handles))
+    assert not set(handles) & set(holafly.HOLAFLY_REGIONS)
+    heb = [name for _, name in holafly._holafly_country_handles()]
+    assert len(heb) == len(set(heb))      # two handles on one name would collide on plan_name
