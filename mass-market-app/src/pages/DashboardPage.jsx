@@ -171,6 +171,13 @@ const RESELLERS = [
     source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%92%D7%95%D7%9C%D7%9F%20%D7%98%D7%9C%D7%A7%D7%95%D7%9D&search_type=keyword_unordered&media_type=all' },
   { id: 'fb_golan_packages', label: 'Golan חבילות - מודעת פייסבוק', underlying: 'golan',
     source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%92%D7%95%D7%9C%D7%9F%20%D7%98%D7%9C%D7%A7%D7%95%D7%9D&search_type=keyword_unordered&media_type=all' },
+  // Added 2026-11-20. Deallink is a comparison site (carrier read per ad, currently Pelephone)
+  { id: 'fb_cellcom_deals', label: 'סלקום מבצעים - מודעת פייסבוק', underlying: 'cellcom',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%A1%D7%9C%D7%A7%D7%95%D7%9D%20%D7%9E%D7%91%D7%A6%D7%A2%D7%99%D7%9D&search_type=keyword_unordered&media_type=all' },
+  { id: 'fb_neptucom', label: 'נפטוקום - מודעת פייסבוק', underlying: 'neptucom',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%A0%D7%A4%D7%98%D7%95%D7%A7%D7%95%D7%9D&search_type=keyword_unordered&media_type=all' },
+  { id: 'fb_deallink', label: 'דיללינק השוואת מחירים - מודעת פייסבוק', underlying: 'pelephone',
+    source_url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IL&q=%D7%93%D7%99%D7%9C%D7%9C%D7%99%D7%A0%D7%A7&search_type=keyword_unordered&media_type=all' },
 ]
 
 

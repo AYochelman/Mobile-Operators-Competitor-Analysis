@@ -358,6 +358,9 @@ RESELLER_NAMES = {
     "fb_hot_deals":         "HOT מבצעים חדשים (מודעת פייסבוק)",
     "fb_golan":             "גולן טלקום (מודעת פייסבוק)",
     "fb_golan_packages":    "Golan חבילות (מודעת פייסבוק)",
+    "fb_cellcom_deals":     "סלקום מבצעים (מודעת פייסבוק)",
+    "fb_neptucom":          "נפטוקום (מודעת פייסבוק)",
+    "fb_deallink":          "דיללינק השוואת מחירים (מודעת פייסבוק)",
     "cellcomshefamr":       "סלקום שפרעם",
     "zorro":                "זורו",
 }

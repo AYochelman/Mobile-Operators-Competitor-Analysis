@@ -4039,6 +4039,8 @@ AUTO_SCRAPED_RESELLER_IDS = {
     "fb_rami_levy_branches",
     "fb_smartcut", "fb_hot_deals",             # added 2026-11-14
     "fb_golan", "fb_golan_packages",
+    "fb_cellcom_deals", "fb_neptucom",         # added 2026-11-20
+    "fb_deallink",
 }
 
 

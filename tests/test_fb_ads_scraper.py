@@ -248,3 +248,107 @@ def test_2026_11_14_ids_are_registered_everywhere():
         assert rid in db.AUTO_SCRAPED_RESELLER_IDS
         assert rid in notifier.RESELLER_NAMES
         assert rid not in db.ALWAYS_SHOW_RESELLER_IDS   # must beat the carrier's rate card
+
+
+# --- added 2026-11-20: ad copy from the live Ad Library that day ---
+CELLCOM_FROM = """ממומן
+משלמים יותר מדי על הסלולר?📱
+הכירו את חבילות הסלולר של סלקום עם נפחי גלישה גדולים במיוחד ומחירים שכדאי להכיר.
+חבילות החל מ-₪34.90 לחודש ומגוון אפשרויות לבחירה בהתאם לצרכים שלכם.
+HTTPS://SALE.CELLCOM.CO.IL/
+לקבלת הצעה"""
+CELLCOM_FAMILY = """ממומן
+אבא, כמה קווי סלולר אתם משלמים בבית בכל חודש?
+הכירו את מגוון חבילות הסלולר של סלקום, החל מ־₪34.90 לחודש למנוי.
+חבילות סלולר מ-₪34.90 לחודש >>"""
+
+NEPTUCOM_SWELL = """ממומן
+כריסמס באירופה? חופשת סקי? אל תחכו לטיסה כדי להתחיל לצבור גלישה. ✈️
+מתניידים למסלול SwellWave של נפטוקום — קו סלולרי ישראלי ב־49 ₪ לחודש, עם גלישה ושיחות בחו״ל כלולות במחיר המנוי.
+בכל חודש נוספים 5GB לגלישה בחו״ל. לא ניצלתם אותם? הם מצטברים לחופשה הבאה, עד 60GB בשנת מנוי.
+וגם 100 דקות שיחה בחו״ל בכל חודש, עם המספר הישראלי שלכם.
+🎁 מבצע למצטרפים אונליין: 5GB גלישה נוספים בחו"ל במתנה!
+NEPTUCOM.COM
+קו ישראלי עם חו״ל כלול, גם גלישה וגם שיחות ב־49 ₪ לחודש."""
+NEPTUCOM_NO_PRICE = """ממומן
+למה לשלם מאות שקלים לחברות הסלולר על חבילות חו"ל בכל פעם מחדש?
+🎁 מבצע למצטרפים אונליין: 5GB גלישה נוספים בחו"ל במתנה!
+משלמים מעל 200 ₪ בשנה על חבילות חו״ל?"""
+
+DEALLINK_300 = """ממומן
+🔥📱 לא תאמינו כמה זה משתלם!
+עוברים לפלאפון ומקבלים חבילה ענקית במחיר קטן:
+✅ 300GB גלישה מהירה
+✅ מושלם לכל המשפחה – כמה קווים, מחיר אחד
+
+💰 רק 29.90 ₪ לחודש לקו (ברכישת 2 קווים ויותר)
+📲 קו בודד? רק 33 ₪ לחודש
+FB.ME"""
+DEALLINK_5G = """ממומן
+🚀📱 עוברים לרשת ה-5G הטובה בישראל!
+נפרדים מדור 3 ומצטרפים לפלאפון במסלול דור 5:
+✅ מחיר קבוע לשנה – בלי הפתעות
+
+💰 3 מנויים – רק 99 ₪ לחודש (33 ₪ לקו)
+👨‍👩‍👧 2 מנויים – 35 ₪ לקו | מנוי אחד – 39 ₪
+FB.ME
+פלאפון דור 5 ב-33₪ לקו 👇"""
+DEALLINK_FIBER = """ממומן
+🔒 בסלקום נועלים לכם את המחיר ל-3 שנים!
+🌐 אינטרנט סיבים 1,000 מגה ב-125₪ לחודש, קבוע ל-3 שנים
+סיבים 125₪ נעול ל-3 שנים 👇"""
+DEALLINK_TRIPLE = """ממומן
+💥 בסלקום הספורט כבר בפנים: טריפל ספורט ב-239₪ לחודש
+קו בודד? רק 33 ₪ לחודש"""
+DEALLINK_ALL = """ממומן
+📱 בדיללינק כל חבילות הסלולר במקום אחד: סלקום, פלאפון, פרטנר, הוט מובייל, גולן ועוד.
+קו בודד? רק 33 ₪ לחודש"""
+
+NO_GB = "נפח גלישה לא צוין"
+
+
+def test_cellcom_from_price_with_the_sign_before_the_number():
+    assert _rows("fb_cellcom_deals", CELLCOM_FROM, CELLCOM_FAMILY) == [
+        ("cellcom", NO_GB + " – קו בודד – קמפיין פייסבוק", 34.9, None)]
+    adv = ADV["fb_cellcom_deals"]
+    p = f.plans_from_body(adv, _body(adv["page_name"], CELLCOM_FROM), "u")[0]
+    assert any("החל מ-" in e for e in p["extras"])
+
+
+def test_neptucom_roaming_figures_are_not_the_plan_volume():
+    adv = ADV["fb_neptucom"]
+    plans = f.plans_from_body(adv, _body(adv["page_name"], NEPTUCOM_NO_PRICE, NEPTUCOM_SWELL), "u")
+    assert len(plans) == 1
+    p = plans[0]
+    assert (p["carrier"], p["price"], p["data_gb"], p["minutes"]) == ("neptucom", 49.0, None, None)
+    assert p["plan_name"] == NO_GB + " – קו בודד – קמפיין פייסבוק"
+    assert "מסלול SwellWave" in p["extras"]
+    assert "דור 5" not in p["extras"]              # "5GB" is not a 5G claim
+    assert '5GB גלישה בחו"ל בכל חודש, נצברים עד 60GB בשנה' in p["extras"]
+    assert '100 דקות שיחה בחו"ל בכל חודש' in p["extras"]
+    assert 'הטבה למצטרפים אונליין: 5GB גלישה נוספים בחו"ל' in p["extras"]
+
+
+def test_deallink_tiers_and_non_cellular_ads():
+    assert _rows("fb_deallink", DEALLINK_FIBER, DEALLINK_300, DEALLINK_TRIPLE,
+                 DEALLINK_5G, DEALLINK_ALL) == sorted([
+        ("pelephone", "300GB – 2 מנויים ומעלה – קמפיין פייסבוק", 29.9, 300.0),
+        ("pelephone", "300GB – קו בודד – קמפיין פייסבוק", 33.0, 300.0),
+        ("pelephone", NO_GB + " – 2 מנויים ומעלה – קמפיין פייסבוק", 35.0, None),
+        ("pelephone", NO_GB + " – 3 מנויים ומעלה – קמפיין פייסבוק", 33.0, None),
+        ("pelephone", NO_GB + " – קו בודד – קמפיין פייסבוק", 39.0, None),
+    ], key=lambda r: r[1])
+    adv = ADV["fb_deallink"]
+    three = [p for p in f.plans_from_body(adv, _body(adv["page_name"], DEALLINK_5G), "u")
+             if "3 מנויים" in p["plan_name"]][0]
+    assert any('סה"כ 99 ₪' in e for e in three["extras"])
+    assert "מחיר קבוע לשנה" in three["extras"] and "דור 5" in three["extras"]
+
+
+def test_2026_11_20_ids_are_registered_everywhere():
+    import db
+    import notifier
+    for rid in ("fb_cellcom_deals", "fb_neptucom", "fb_deallink"):
+        assert rid in ADV
+        assert rid in db.AUTO_SCRAPED_RESELLER_IDS
+        assert rid in notifier.RESELLER_NAMES
