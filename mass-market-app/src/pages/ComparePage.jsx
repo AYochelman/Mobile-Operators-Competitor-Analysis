@@ -12,7 +12,7 @@ import { getAppsForPlan } from '../data/abroadApps'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import {
   AIRALO_DISCOVER, AIRALO_REGION_MAP, TUKI_COUNTRIES, SIMTLV_COUNTRIES,
-  PELEPHONE_GLOBAL_COUNTRIES, ESIMO_COUNTRIES, WORLD8_WORLDWIDE, WORLD8_EUROPE_USA,
+  PELEPHONE_GLOBAL_COUNTRIES, ESIMO_COUNTRIES, WORLD8_WORLDWIDE, WORLD8_MAIN,
   XPHONE_EUROPE, XPHONE_WORLD, ORBIT_COUNTRIES, TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
   GIGSKY_GLOBAL, ESIMGENIUS_GLOBAL, ESIMAX_GLOBAL, VENTERRA_GLOBAL, SIMZOL_ALL_COUNTRIES,
   getCountriesForPlan
@@ -199,7 +199,7 @@ export default function ComparePage() {
     pelephone_global: PELEPHONE_GLOBAL_COUNTRIES,
     esimo: ESIMO_COUNTRIES,
     simtlv: SIMTLV_COUNTRIES,
-    world8: [...new Set([...WORLD8_WORLDWIDE, ...WORLD8_EUROPE_USA])],
+    world8: [...new Set([...WORLD8_WORLDWIDE, ...WORLD8_MAIN])],
     xphone_global: [...new Set([...XPHONE_EUROPE, ...XPHONE_WORLD])],
     orbit: ORBIT_COUNTRIES,
     travelsim: [...new Set([...TRAVELSIM_GLOBAL, ...TRAVELSIM_USA, ...TRAVELSIM_ME])],

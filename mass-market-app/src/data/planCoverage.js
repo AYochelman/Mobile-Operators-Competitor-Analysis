@@ -5,7 +5,7 @@
 import {
   TRAVELSIM_GLOBAL, TRAVELSIM_USA, TRAVELSIM_ME,
   SIMTLV_COUNTRIES, PELEPHONE_GLOBAL_COUNTRIES, ESIMO_REGION_MAP,
-  WORLD8_EUROPE_USA, WORLD8_WORLDWIDE,
+  WORLD8_MAIN, WORLD8_WORLDWIDE, isWorld8Wide,
   XPHONE_EUROPE, XPHONE_WORLD,
   AIRALO_DISCOVER,
   AIRALO_REGION_MAP,
@@ -62,7 +62,7 @@ export function getPlanCoverage(plan) {
     return dest === '127 מדינות' ? SIMTLV_COUNTRIES : null
   }
   if (carrier === 'world8') {
-    return (name.includes('אירופה') || name.includes('Europe')) ? WORLD8_EUROPE_USA : WORLD8_WORLDWIDE
+    return isWorld8Wide(name) ? WORLD8_WORLDWIDE : WORLD8_MAIN
   }
   if (carrier === 'airalo') return AIRALO_DISCOVER
   if (carrier === 'airalo_regional') return AIRALO_REGION_MAP[dest] || null
