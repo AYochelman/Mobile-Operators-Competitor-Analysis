@@ -912,7 +912,7 @@ from scrapers.bytesim import (  # noqa: E402,F401
     BYTESIM_HANDLE_TO_HEBREW,
     BYTESIM_ZONE_HANDLES,
     _parse_bytesim_option1,
-    _BYTESIM_JS,
+    _bytesim_variants_from_html,
     _BYTESIM_UA,
     _scrape_bytesim_batch,
     _scrape_bytesim_product_list,

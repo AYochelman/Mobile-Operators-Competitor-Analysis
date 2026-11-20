@@ -148,50 +148,86 @@ def _bytesim_build_plans(variants, plan_label, region_tag, usd_rate):
     ]
 
 
-_BYTESIM_JS = """() => {
-    const s = window.__PRELOAD_STATE__;
-    if (!s || !s.product) return null;
-    return s.product.variants
-        .filter(v => v.available)
-        .map(v => ({o1: v.option1, o2: v.option2, price: v.price}));
-}"""
-
-
 _BYTESIM_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+
+_BYTESIM_LD = re.compile(
+    r'<script type="application/ld\+json">\s*(\{.*?\})\s*</script>', re.S)
+
+
+def _bytesim_variants_from_html(html_text):
+    """Product page HTML -> [{'o1': option1, 'o2': days, 'price': cents}].
+
+    Until 2026-11 the variants were read in a browser from
+    `window.__PRELOAD_STATE__.product`; the store's theme stopped exposing that
+    object and every page parsed to nothing (catalog frozen from 2026-11-13).
+    The same data is in the page's schema.org `ProductGroup` JSON-LD: each
+    `hasVariant` is named "<product name> - <option1>/<days>" and carries an
+    offer with a USD price. option1 itself may hold "/" ("500MB/Day") and " - "
+    ("Unlimited Lite - 10Mbps Throughout"), so the product name is cut from the
+    front and the days from the last "/".
+    """
+    import json as _json
+    for raw in _BYTESIM_LD.findall(html_text or ""):
+        if '"ProductGroup"' not in raw:
+            continue
+        try:
+            group = _json.loads(raw)
+        except ValueError:
+            continue
+        if group.get("@type") != "ProductGroup":
+            continue
+        prefix = (group.get("name") or "") + " - "
+        out = []
+        for v in group.get("hasVariant") or []:
+            offer = v.get("offers") or {}
+            name = v.get("name") or ""
+            if not name.startswith(prefix) or "/" not in name:
+                continue
+            if "InStock" not in (offer.get("availability") or "InStock"):
+                continue
+            if (offer.get("priceCurrency") or "USD") != "USD":
+                continue   # never store a geo-converted price as USD
+            o1, o2 = name[len(prefix):].rsplit("/", 1)
+            try:
+                cents = round(float(offer.get("price")) * 100)
+            except (TypeError, ValueError):
+                continue
+            out.append({"o1": o1.strip(), "o2": o2.strip(), "price": cents})
+        return out
+    return None
 
 
 def _scrape_bytesim_batch(items, carrier_label, usd_rate):
-    """Fetch one batch of ByteSim product URLs in a single sequential browser session."""
-    core._ensure_event_loop()
+    """Fetch one batch of ByteSim product pages over plain HTTP, in order."""
+    import requests as _req
+    import time as _time
     batch_plans = []
-    with core.sync_playwright() as pw:
-        browser = pw.chromium.launch(
-            headless=True, args=["--disable-blink-features=AutomationControlled"]
-        )
-        page = browser.new_page(user_agent=_BYTESIM_UA)
-        for item in items:
-            url, heb_name = item[0], item[1]
-            # heb_name may be a (plan_label, region_tag) tuple for zone plans
-            if isinstance(heb_name, tuple):
-                plan_label, region_tag = heb_name
-            else:
-                plan_label = region_tag = heb_name
-            try:
-                page.goto(url, timeout=20000, wait_until="domcontentloaded")
-                page.wait_for_timeout(1000)
-                variants = page.evaluate(_BYTESIM_JS)
-                if not variants:
-                    continue
-                batch_plans.extend(_bytesim_build_plans(variants, plan_label, region_tag, usd_rate))
-            except Exception as exc:
-                logger.warning(f"ByteSim {carrier_label} {url}: {exc}")
-        browser.close()
+    for item in items:
+        url, heb_name = item[0], item[1]
+        # heb_name may be a (plan_label, region_tag) tuple for zone plans
+        if isinstance(heb_name, tuple):
+            plan_label, region_tag = heb_name
+        else:
+            plan_label = region_tag = heb_name
+        try:
+            r = _req.get(url, headers={"User-Agent": _BYTESIM_UA}, timeout=25)
+            if r.status_code == 429:
+                logger.warning(f"ByteSim {carrier_label}: rate limited, stopping this batch")
+                break
+            if r.status_code != 200:
+                continue          # a country ByteSim does not sell redirects / 404s
+            variants = _bytesim_variants_from_html(r.text)
+            if not variants:
+                continue
+            batch_plans.extend(_bytesim_build_plans(variants, plan_label, region_tag, usd_rate))
+        except Exception as exc:
+            logger.warning(f"ByteSim {carrier_label} {url}: {exc}")
+        _time.sleep(0.3)
     return batch_plans
 
 
 def _scrape_bytesim_product_list(url_iter, carrier_label, usd_rate):
-    """Split url_iter into 4 batches and fetch them in parallel browser sessions.
-    Reduces wall time from ~19 min (sequential) to ~5 min (4-way parallel)."""
+    """Split url_iter into 4 batches and fetch them in parallel."""
     from concurrent.futures import ThreadPoolExecutor, as_completed as _as_completed
     url_list = list(url_iter)
     batch_size = max(1, (len(url_list) + 3) // 4)

@@ -90,7 +90,13 @@ def scrape_hotmobile(page):
 
 
 def scrape_hotmobile_abroad(page):
-    page.goto("https://www.hotmobile.co.il/roaming", timeout=30000, wait_until="networkidle")
+    # Not "networkidle": since ~2026-11-18 the page keeps background requests open
+    # and never goes idle, so goto timed out and the roaming rows stopped updating.
+    page.goto("https://www.hotmobile.co.il/roaming", timeout=30000, wait_until="domcontentloaded")
+    try:
+        page.wait_for_selector(".lobby2022_dealsItem", timeout=15000)
+    except Exception:
+        logger.warning("scrape_hotmobile_abroad: no package cards after 15s")
     page.wait_for_timeout(2000)
     for el in page.query_selector_all("a, button, [role='button']"):
         try:

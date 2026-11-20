@@ -10,44 +10,77 @@ import re
 logger = core.logger
 
 
-def scrape_world8_global(page):
-    page.goto("https://world8.co.il/", timeout=35000, wait_until="networkidle")
-    page.wait_for_timeout(2000)
+_W8_TAG = re.compile(r"<[^>]+>")
+
+
+def _w8_text(fragment):
+    import html as _html
+    return re.sub(r"\s+", " ", _html.unescape(_W8_TAG.sub(" ", fragment or ""))).strip()
+
+
+def _w8_all(pattern, card):
+    return [_w8_text(m) for m in re.findall(pattern, card, re.S)]
+
+
+def _parse_world8_html(html_text):
+    """world8.co.il home page -> plan dicts.
+
+    The site was rebuilt in 2026-11 (Astro): the old `.price-card` markup is gone
+    and the offer is 3 `<article class="wf-card" data-price="...">` cards, all in
+    the server-rendered HTML. Per card: `.wf-title` (name), `.wf-big` (data),
+    `.wf-note` (validity lines), `.wf-extra li` (minutes / SMS / extra data),
+    `.wf-pill` (number of destinations), `.wf-ribbon` (badge).
+    """
     plans = []
-    for card in page.query_selector_all(".price-card.popup_btn, .price-card.pricing_content"):
-        name_el  = card.query_selector(".price-card--top h3")
-        price_li = card.query_selector("li.price span")
-        top_lis  = card.query_selector_all("li.top-text")
-        text_li  = card.query_selector("li.text")
-        badges   = card.query_selector_all(".notification-badge")
-        if not name_el or not price_li:
+    cards = re.findall(
+        r'<article\b[^>]*class="wf-card[^"]*"[^>]*data-price="([\d.]+)"[^>]*>(.*?)</article>',
+        html_text, re.S)
+    for price_raw, card in cards:
+        names = _w8_all(r'class="wf-title"[^>]*>(.*?)</h2>', card)
+        price = core._parse_price(price_raw)
+        if not names or not names[0] or not price:
             continue
-        name  = name_el.inner_text().strip()
-        price = core._parse_price(re.sub(r'[^\d.]', '', price_li.inner_text()))
-        gb, minutes, sms = None, None, None
-        for li in top_lis:
-            t = li.inner_text().strip()
-            # Each li may contain multiple values like "60 דקות / 60 סמס / 1GB"
-            # Parse GB only from explicit GB mention
-            gb_m = re.search(r'(\d+(?:\.\d+)?)\s*GB', t, re.IGNORECASE)
-            if gb_m and gb is None:
-                gb = float(gb_m.group(1))
-            min_m = re.search(r'(\d+)\s*דקות', t)
-            if min_m and minutes is None:
-                minutes = int(min_m.group(1))
-            sms_m = re.search(r'(\d+)\s*(?:סמס|SMS)', t, re.IGNORECASE)
-            if sms_m and sms is None:
-                sms = int(sms_m.group(1))
-        validity_text = text_li.inner_text().strip() if text_li else ""
-        days = core._parse_days(validity_text) if "ימים" in validity_text or "יום" in validity_text else None
-        extras = [b.inner_text().strip() for b in badges if b.inner_text().strip()]
-        if validity_text and validity_text not in extras:
-            extras.append(validity_text)
-        extras.append("120+ מדינות")
-        if price and (gb or minutes):
-            plans.append(core._make_global_plan(
-                "world8", name, price, "ILS", price,
-                gb, days, minutes=minutes, sms=sms, esim=True, extras=extras
-            ))
+        big = " ".join(_w8_all(r'class="wf-big[^"]*"[^>]*>(.*?)</p>', card))
+        notes = _w8_all(r'class="wf-note[^"]*"[^>]*>(.*?)</p>', card)
+        extra_items = _w8_all(r"<li[^>]*>(.*?)</li>",
+                              " ".join(re.findall(r'class="wf-extra[^"]*"[^>]*>(.*?)</div>', card, re.S)))
+        pill = " ".join(_w8_all(r'class="wf-pill"[^>]*>(.*?)</a>', card))
+        ribbon = " ".join(_w8_all(r'class="wf-ribbon"[^>]*>(.*?)</span>', card))
+
+        gb_m = re.search(r"(\d+(?:\.\d+)?)\s*GB", big, re.I)
+        gb = float(gb_m.group(1)) if gb_m else None
+        extra_text = " ".join(extra_items)
+        min_m = re.search(r"(\d+)\s*\u05d3\u05e7\u05d5\u05ea", extra_text)
+        sms_m = re.search(r"(\d+)\s*(?:\u05e1\u05de\u05e1|SMS)", extra_text, re.I)
+        minutes = int(min_m.group(1)) if min_m else None
+        sms = int(sms_m.group(1)) if sms_m else None
+        days = next((d for d in (core._parse_days(n) for n in notes) if d), None)
+
+        extras = [t for t in [ribbon] + notes if t]
+        if extra_items:
+            # "60 minutes + 60 SMS + 1GB" is on top of the data; "or 120 minutes or
+            # 120 SMS" is an alternative to it - keep the site's wording so the card
+            # does not read as data AND minutes
+            extras.append(" + ".join(extra_items))
+        if pill:
+            extras.append(pill)
+        if not (gb or minutes):
+            continue
+        plans.append(core._make_global_plan(
+            "world8", names[0], price, "ILS", price,
+            gb, days, minutes=minutes, sms=sms, esim=True, extras=extras
+        ))
+    return plans
+
+
+def scrape_world8_global(page):
+    page.goto("https://world8.co.il/", timeout=35000, wait_until="domcontentloaded")
+    try:
+        page.wait_for_selector("article.wf-card", timeout=15000)
+    except Exception:
+        pass
+    plans = _parse_world8_html(page.content())
+    if not plans:
+        logger.warning("World8 global: 0 plans - the page markup probably changed again")
     logger.info(f"World8 global: {len(plans)} plans")
     return plans
