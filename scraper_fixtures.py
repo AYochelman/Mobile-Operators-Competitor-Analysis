@@ -60,7 +60,7 @@ FIXTURE_DIR = os.path.join(ROOT, "tests", "fixtures", "http")
 FX = {"usd": 3.7, "eur": 4.0, "gbp": 4.7}
 
 DEFAULT_CAP = 12          # distinct URLs captured per provider
-MAX_BODY = 4 * 1024 * 1024  # per-response body cap (bytes) - bigger bodies are truncated + flagged
+MAX_BODY = 8 * 1024 * 1024  # per-response body cap (bytes) - bigger bodies are truncated + flagged (Holafly's one-request catalog is ~7.3 MB)
 
 
 def _u(rate): return {"usd_rate": FX["usd"]} if rate == "usd" else {"eur_rate": FX["eur"]} if rate == "eur" else {"gbp_rate": FX["gbp"]} if rate == "gbp" else {}

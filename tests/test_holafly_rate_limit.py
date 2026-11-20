@@ -1,5 +1,5 @@
-"""Holafly circuit breaker: a site that answers 429 to everything must end the
-scraper within a handful of requests instead of sleeping through ~200 URLs."""
+"""Holafly: the whole shop is read in ONE request shared by both scrapers, and a
+site that answers 429 to everything ends the run within a handful of requests."""
 import io
 import json
 import time
@@ -18,9 +18,11 @@ def _reset(monkeypatch):
     monkeypatch.setattr(holafly, "_HOLAFLY_MIN_GAP", 0)
     holafly._holafly_429_streak[0] = 0
     holafly._holafly_blocked_until[0] = 0.0
+    holafly._holafly_catalog["by_handle"] = None
     yield
     holafly._holafly_429_streak[0] = 0
     holafly._holafly_blocked_until[0] = 0.0
+    holafly._holafly_catalog["by_handle"] = None
 
 
 def _always_429(calls):
@@ -84,3 +86,37 @@ def test_occasional_429_is_still_retried(monkeypatch):
     for _ in range(10):
         assert "product" in holafly._holafly_get_json("https://example.invalid/a.json")
     assert holafly._holafly_blocked_until[0] == 0.0
+
+
+def test_one_catalog_request_serves_both_scrapers(monkeypatch):
+    calls = []
+
+    class _Resp(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    catalog = {"products": [
+        {"handle": "esim-france", "variants": [
+            {"sku": "esim-france-1-day", "price": "3.79"},
+            {"sku": "esim-france-2-days", "price": "7.58"},      # not a key duration
+            {"sku": "esim-france-7-days", "price": "26.90"},
+        ]},
+        {"handle": "esim-europe", "variants": [{"sku": "esim-europe-10-days", "price": "36.90"}]},
+        {"handle": "test-ipad", "variants": [{"sku": "x-5-days", "price": "1.00"}]},
+    ]}
+
+    def fake(req, timeout=None):
+        calls.append(req.full_url)
+        return _Resp(json.dumps(catalog).encode())
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake)
+    countries = holafly.scrape_holafly_global(usd_rate=3.0)
+    regions = holafly.scrape_holafly_regions(usd_rate=3.0)
+    assert calls == [holafly._HOLAFLY_CATALOG_URL.format(page=1)]
+    assert sorted(p["original_price"] for p in countries) == [3.79, 26.9]
+    assert {p["extras"][0] for p in countries} == {holafly.HOLAFLY_SLUG_TO_HEBREW["france"]}
+    live_regions = [p for p in regions if p["extras"][0] == holafly.HOLAFLY_REGIONS["esim-europe"]]
+    assert [p["original_price"] for p in live_regions] == [36.9]

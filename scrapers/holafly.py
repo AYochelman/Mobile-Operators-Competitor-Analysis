@@ -231,7 +231,7 @@ class HolaflyRateLimited(Exception):
     """Holafly is throttling every request - stop for this run."""
 
 
-def _holafly_get_json(url):
+def _holafly_get_json(url, timeout=15):
     import urllib.request, urllib.error, json as _json, time as _time
     backoff = 5
     for attempt in range(5):
@@ -244,7 +244,7 @@ def _holafly_get_json(url):
             _holafly_last[0] = _time.monotonic()
         try:
             req = urllib.request.Request(url, headers={"User-Agent": _HOLAFLY_UA})
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
                 data = _json.loads(resp.read())
             _holafly_429_streak[0] = 0
             return data
@@ -266,6 +266,42 @@ def _holafly_get_json(url):
             raise
 
 
+# The whole shop in ONE request. Until 2026-11-20 both scrapers asked for one
+# product JSON per destination (~215 requests a run, plus retries, twice a day).
+# Shopify answered that volume with "429 local_rate_limited" for our client on
+# every Shopify shop we read (Breeze's 3 requests included), for days. The
+# public /products.json listing carries the same handle + variants (sku, price)
+# for all ~210 products, so a run now costs one request shared by both scrapers.
+_HOLAFLY_CATALOG_URL = "https://holafly-esim.myshopify.com/products.json?limit=250&page={page}"
+_HOLAFLY_CATALOG_TTL = 20 * 60
+_holafly_catalog = {"at": 0.0, "by_handle": None}
+_holafly_catalog_lock = threading.Lock()
+
+
+def _holafly_catalog_by_handle():
+    """{handle: product} for the whole shop; cached so the country and region
+    scrapers of one run share a single request. Raises HolaflyRateLimited."""
+    import time as _time
+    with _holafly_catalog_lock:
+        cached = _holafly_catalog["by_handle"]
+        if cached is not None and _time.monotonic() - _holafly_catalog["at"] < _HOLAFLY_CATALOG_TTL:
+            return cached
+        by_handle = {}
+        for page in range(1, 6):
+            data = _holafly_get_json(_HOLAFLY_CATALOG_URL.format(page=page), timeout=90)
+            batch = data.get("products") or []
+            for product in batch:
+                if product.get("handle"):
+                    by_handle[product["handle"]] = product
+            if len(batch) < 250:
+                break
+        if not by_handle:
+            raise RuntimeError("Holafly catalog came back empty")
+        _holafly_catalog["by_handle"] = by_handle
+        _holafly_catalog["at"] = _time.monotonic()
+        return by_handle
+
+
 def scrape_holafly_global(_page=None, usd_rate=None):
     """Scrape Holafly eSIM plans via Shopify product JSON API (no Playwright needed).
     All Holafly plans offer unlimited data. Filters to key durations only."""
@@ -275,11 +311,22 @@ def scrape_holafly_global(_page=None, usd_rate=None):
     all_plans = []
     success_count = 0
 
+    try:
+        catalog = _holafly_catalog_by_handle()
+    except HolaflyRateLimited:
+        logger.warning("Holafly global: rate limited, no plans this run")
+        return []
+    except Exception as exc:
+        logger.warning(f"Holafly global: catalog fetch failed: {exc}")
+        return []
+
     for slug, country_heb in HOLAFLY_SLUG_TO_HEBREW.items():
         try:
-            data = _holafly_get_json(f"https://holafly-esim.myshopify.com/products/esim-{slug}.json")
+            product = catalog.get(f"esim-{slug}")
+            if not product:
+                continue          # not sold (or not listed) by Holafly
 
-            variants = data.get("product", {}).get("variants", [])
+            variants = product.get("variants", [])
             for v in variants:
                 sku = v.get("sku", "")
                 # Parse days from SKU: esim-{country}-{N}-day(s)
@@ -304,9 +351,6 @@ def scrape_holafly_global(_page=None, usd_rate=None):
 
             success_count += 1
 
-        except HolaflyRateLimited:
-            logger.warning(f"Holafly global: rate limited, stopping at {slug}")
-            break
         except Exception as exc:
             logger.warning(f"Holafly {slug}: {exc}")
             continue
@@ -355,11 +399,22 @@ def scrape_holafly_regions(_page=None, usd_rate=None):
     all_plans = []
     success_count = 0
 
+    try:
+        catalog = _holafly_catalog_by_handle()
+    except HolaflyRateLimited:
+        logger.warning("Holafly regions: rate limited, only the fixed-price regions this run")
+        catalog = {}
+    except Exception as exc:
+        logger.warning(f"Holafly regions: catalog fetch failed: {exc}")
+        catalog = {}
+
     for slug, region_heb in HOLAFLY_REGIONS.items():
         try:
-            data = _holafly_get_json(f"https://holafly-esim.myshopify.com/products/{slug}.json")
+            product = catalog.get(slug)
+            if not product:
+                continue
 
-            variants = data.get("product", {}).get("variants", [])
+            variants = product.get("variants", [])
             for v in variants:
                 sku = v.get("sku") or ""
                 title = v.get("title") or ""
@@ -386,9 +441,6 @@ def scrape_holafly_regions(_page=None, usd_rate=None):
 
             success_count += 1
 
-        except HolaflyRateLimited:
-            logger.warning(f"Holafly regions: rate limited, stopping at {slug}")
-            break
         except Exception as exc:
             logger.warning(f"Holafly region {slug}: {exc}")
             continue
