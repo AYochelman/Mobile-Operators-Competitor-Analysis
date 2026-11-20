@@ -1201,6 +1201,9 @@ _CRUISE_SOURCE_DESTS = (
     "קרוז - עולמי",
     "קרוז - המזרח התיכון",
     "קרוז - בים בלבד",
+    "קרוז - הים התיכון",   # Holafly cruise products ↓ (its Europe cruise shares "קרוז - אירופה")
+    "קרוז - קריביים",
+    "קרוז - אלסקה",
 )
 
 _HOTEL_COLS = ("slug", "name", "tagline", "brand_primary", "brand_secondary",

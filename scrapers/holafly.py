@@ -374,6 +374,8 @@ def scrape_holafly_global(_page=None, usd_rate=None):
 
             variants = product.get("variants", [])
             for v in variants:
+                if v.get("available") is False:
+                    continue
                 sku = v.get("sku", "")
                 # Parse days from SKU: esim-{country}-{N}-day(s)
                 m = re.search(r"-(\d+)-days?$", sku)
@@ -426,6 +428,12 @@ HOLAFLY_REGIONS = {
     "medio-oriente-actualizado":    "\u05d4\u05de\u05d6\u05e8\u05d7 \u05d4\u05ea\u05d9\u05db\u05d5\u05df",  # המזרח התיכון
     "africa-actualizado":           "\u05d0\u05e4\u05e8\u05d9\u05e7\u05d4",  # אפריקה
     "world":                        "\u05d2\u05dc\u05d5\u05d1\u05dc\u05d9",  # גלובלי
+    # Cruise (at sea) products. The "\u05e7\u05e8\u05d5\u05d6" prefix is what the frontend's
+    # isCruiseDest and db._CRUISE_SOURCE_DESTS key on - keep both in step.
+    "europe-cruise": "\u05e7\u05e8\u05d5\u05d6 - \u05d0\u05d9\u05e8\u05d5\u05e4\u05d4",  # קרוז - אירופה
+    "mediterranean-cruise": "\u05e7\u05e8\u05d5\u05d6 - \u05d4\u05d9\u05dd \u05d4\u05ea\u05d9\u05db\u05d5\u05df",  # קרוז - הים התיכון
+    "caribbean-cruise": "\u05e7\u05e8\u05d5\u05d6 - \u05e7\u05e8\u05d9\u05d1\u05d9\u05d9\u05dd",  # קרוז - קריביים
+    "alaska-cruise": "\u05e7\u05e8\u05d5\u05d6 - \u05d0\u05dc\u05e1\u05e7\u05d4",  # קרוז - אלסקה
 }
 
 
@@ -455,6 +463,8 @@ def scrape_holafly_regions(_page=None, usd_rate=None):
 
             variants = product.get("variants", [])
             for v in variants:
+                if v.get("available") is False:
+                    continue      # e.g. the Caribbean cruise sells 31 of its 90 durations
                 sku = v.get("sku") or ""
                 title = v.get("title") or ""
                 m = re.search(r"(\d+)-days?", sku)

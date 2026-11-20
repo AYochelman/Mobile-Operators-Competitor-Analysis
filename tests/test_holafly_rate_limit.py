@@ -112,6 +112,10 @@ def test_one_catalog_request_serves_both_scrapers(monkeypatch):
         {"handle": "esim-kenia", "variants": [{"sku": "esim-kenia-30-days", "price": "116.90"}]},
         {"handle": "esim-iraq", "variants": [{"sku": "esim-iraq-1-day", "price": "6.90"}]},
         {"handle": "africa-actualizado", "variants": [{"sku": "esim-africa-7-days", "price": "38.90"}]},
+        {"handle": "caribbean-cruise", "variants": [
+            {"sku": "esim-caribbean-cruise-7-days", "price": "36.90", "available": True},
+            {"sku": "esim-caribbean-cruise-10-days", "price": "49.90", "available": False},
+        ]},
     ]}
 
     def fake(req, timeout=None):
@@ -133,7 +137,17 @@ def test_one_catalog_request_serves_both_scrapers(monkeypatch):
     assert {p["extras"][0]: p["original_price"] for p in regions} == {
         holafly.HOLAFLY_REGIONS["esim-europe"]: 36.9,
         holafly.HOLAFLY_REGIONS["africa-actualizado"]: 38.9,
+        holafly.HOLAFLY_REGIONS["caribbean-cruise"]: 36.9,      # the unavailable duration is dropped
     }
+
+
+def test_cruise_products_reach_the_cruise_fold():
+    import db
+    cruises = [heb for handle, heb in holafly.HOLAFLY_REGIONS.items() if handle.endswith("-cruise")]
+    assert len(cruises) == 4
+    for heb in cruises:
+        assert heb.startswith(db._CRUISE_DEST_HE)        # what the frontend's isCruiseDest matches
+        assert heb in db._CRUISE_SOURCE_DESTS            # what the public cruise destination unions
 
 
 def test_every_handle_is_asked_once():
