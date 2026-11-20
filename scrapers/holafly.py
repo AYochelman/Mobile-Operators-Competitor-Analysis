@@ -214,11 +214,29 @@ _HOLAFLY_MIN_GAP = 0.6          # seconds between any two Holafly requests
 _holafly_lock = threading.Lock()
 _holafly_last = [0.0]
 
+# -- Circuit breaker (2026-11-20) ---------------------------------------------
+# When Holafly throttles EVERY request (429 + Retry-After: 60), the retry loop
+# above slept 4 x 60s per URL across ~200 URLs: one scrape run took ~10 hours and
+# held up everything after the global phase (content, banners, the next run).
+# After _HOLAFLY_MAX_429 consecutive 429 answers with no success in between, we
+# stop asking for _HOLAFLY_COOLDOWN seconds: both scrapers return what they have
+# and the stored rows simply keep their last prices until the site answers again.
+_HOLAFLY_MAX_429 = 5
+_HOLAFLY_COOLDOWN = 30 * 60
+_holafly_429_streak = [0]
+_holafly_blocked_until = [0.0]
+
+
+class HolaflyRateLimited(Exception):
+    """Holafly is throttling every request - stop for this run."""
+
 
 def _holafly_get_json(url):
     import urllib.request, urllib.error, json as _json, time as _time
     backoff = 5
     for attempt in range(5):
+        if _time.monotonic() < _holafly_blocked_until[0]:
+            raise HolaflyRateLimited("rate limited, cooling down")
         with _holafly_lock:
             wait = _HOLAFLY_MIN_GAP - (_time.monotonic() - _holafly_last[0])
             if wait > 0:
@@ -227,13 +245,24 @@ def _holafly_get_json(url):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": _HOLAFLY_UA})
             with urllib.request.urlopen(req, timeout=15) as resp:
-                return _json.loads(resp.read())
+                data = _json.loads(resp.read())
+            _holafly_429_streak[0] = 0
+            return data
         except urllib.error.HTTPError as e:
-            if e.code == 429 and attempt < 4:
-                retry_after = e.headers.get("Retry-After") or ""
-                _time.sleep(min(int(retry_after) if retry_after.isdigit() else backoff, 60))
-                backoff *= 2
-                continue
+            if e.code == 429:
+                _holafly_429_streak[0] += 1
+                if _holafly_429_streak[0] >= _HOLAFLY_MAX_429:
+                    _holafly_429_streak[0] = 0
+                    _holafly_blocked_until[0] = _time.monotonic() + _HOLAFLY_COOLDOWN
+                    logger.warning(
+                        f"Holafly: {_HOLAFLY_MAX_429} consecutive 429 answers - "
+                        f"stopping for {_HOLAFLY_COOLDOWN // 60} min")
+                    raise HolaflyRateLimited("rate limited") from e
+                if attempt < 4:
+                    retry_after = e.headers.get("Retry-After") or ""
+                    _time.sleep(min(int(retry_after) if retry_after.isdigit() else backoff, 60))
+                    backoff *= 2
+                    continue
             raise
 
 
@@ -275,6 +304,9 @@ def scrape_holafly_global(_page=None, usd_rate=None):
 
             success_count += 1
 
+        except HolaflyRateLimited:
+            logger.warning(f"Holafly global: rate limited, stopping at {slug}")
+            break
         except Exception as exc:
             logger.warning(f"Holafly {slug}: {exc}")
             continue
@@ -354,6 +386,9 @@ def scrape_holafly_regions(_page=None, usd_rate=None):
 
             success_count += 1
 
+        except HolaflyRateLimited:
+            logger.warning(f"Holafly regions: rate limited, stopping at {slug}")
+            break
         except Exception as exc:
             logger.warning(f"Holafly region {slug}: {exc}")
             continue
