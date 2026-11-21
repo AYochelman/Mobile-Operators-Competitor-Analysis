@@ -53,7 +53,9 @@ PAGE_SIZE = 250
 MAX_PAGES = 6
 MAX_AGE_HOURS = 14        # a cache older than this is not served to the scrapers
 FRESH_HOURS = 5           # collect() skips a source collected more recently than this
-RETRY_GAP = 120           # seconds between two attempts after a 429
+RETRY_GAP = 300           # seconds between two attempts after a 429. Was 120: the live run of
+                          # 2026-11-21 spent 18 of its 21 requests on 429s, because the budget
+                          # refills in ~20 min however often we ask.
 AFTER_SUCCESS_GAP = 18 * 60   # the budget refills in ~20 min; do not ask sooner
 MAX_MINUTES = 100         # whole-run deadline for collect()
 
