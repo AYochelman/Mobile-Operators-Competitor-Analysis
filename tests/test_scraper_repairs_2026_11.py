@@ -1,13 +1,10 @@
 """Offline tests for the scrapers repaired on 2026-11-20 (bytesim JSON-LD,
-world8 new markup, breez 429 retry). Markup below is cut from the live pages."""
+world8 new markup). Markup below is cut from the live pages. Breeze and Holafly
+are covered by tests/test_shopify_catalog.py."""
 import json
-import time
-
-import pytest
-import requests
 
 import scraper  # noqa: F401  (loads the scrapers package the way the app does)
-from scrapers import breez, bytesim, world8
+from scrapers import bytesim, world8
 
 
 def _clean(name):
@@ -103,62 +100,3 @@ def test_world8_new_markup():
 
 def test_world8_old_markup_gives_nothing():
     assert world8._parse_world8_html('<div class="price-card popup_btn"><h3>x</h3></div>') == []
-
-
-# ── breez ──────────────────────────────────────────────────────────────────
-
-class _Resp:
-    def __init__(self, status, payload=None, headers=None):
-        self.status_code = status
-        self._payload = payload or {}
-        self.headers = headers or {}
-
-    def raise_for_status(self):
-        if self.status_code >= 400:
-            raise requests.HTTPError(f"{self.status_code}", response=self)
-
-    def json(self):
-        return self._payload
-
-
-_BREEZ_PRODUCT = {"title": "Canada", "variants": [
-    {"sku": "esimd_1GB_7D_CA_V2", "price": "4.50", "available": True},
-    {"sku": "esimd_ULE_1D_CA_V2", "price": "3.00", "available": True},
-]}
-
-
-@pytest.fixture
-def no_sleep(monkeypatch):
-    slept = []
-    monkeypatch.setattr(time, "sleep", lambda s: slept.append(s))
-    return slept
-
-
-def test_breez_retries_a_429_then_reads_the_catalog(monkeypatch, no_sleep):
-    calls = []
-
-    def fake_get(url, params=None, timeout=None, **kw):
-        calls.append(url)
-        if len(calls) == 1:
-            return _Resp(429, headers={"Retry-After": "60"})
-        return _Resp(200, {"products": [_BREEZ_PRODUCT] if "country" in url else []})
-
-    monkeypatch.setattr(requests, "get", fake_get)
-    plans = breez.scrape_breez_global(usd_rate=3.0)
-    assert len(plans) == 2
-    assert no_sleep == [60]
-    assert {p["original_price"] for p in plans} == {4.5, 3.0}
-
-
-def test_breez_gives_up_when_throttled_for_good(monkeypatch, no_sleep):
-    calls = []
-
-    def fake_get(url, params=None, timeout=None, **kw):
-        calls.append(url)
-        return _Resp(429, headers={"Retry-After": "60"})
-
-    monkeypatch.setattr(requests, "get", fake_get)
-    assert breez.scrape_breez_global(usd_rate=3.0) == []
-    # 3 attempts on the first collection, the second collection is not asked at all
-    assert len(calls) == 3 and all("country-bundles" in u for u in calls)
-    assert no_sleep == [60, 60]

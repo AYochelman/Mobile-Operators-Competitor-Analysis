@@ -684,6 +684,28 @@ def run_scraper_drift_job(send=True):
     return {"checked": len(results), "off": bad, "results": results, "message": message, "sent": sent}
 
 
+def run_shopify_catalog_job():
+    """Collect the Shopify listings Holafly and Breeze are scraped from
+    (scheduled ~80 minutes before each scrape, see shopify_catalog.py).
+
+    Shopify allows our client about one storefront-listing request per ~20
+    minutes, so the three listings are gathered here, patiently, and the scrape
+    reads them from the cache instead of asking the shops itself. Runs for up to
+    ~100 minutes, almost all of it sleeping. A source that could not be
+    collected is logged; its rows then age and the morning check reports it.
+    """
+    import shopify_catalog
+    try:
+        results = shopify_catalog.collect()
+    except Exception as e:
+        logger.error(f"Shopify catalog job failed: {e}", exc_info=True)
+        return {"error": str(e)}
+    missed = [k for k, v in results.items() if v != "fresh" and not v.startswith("collected")]
+    if missed:
+        logger.warning(f"Shopify catalog job: not collected - {missed}")
+    return results
+
+
 def run_forecast_readiness_job(send=True):
     """Monthly go/no-go check for an eSIM price-drop forecast model (1st, 06:00).
 

@@ -2411,6 +2411,7 @@ from api.jobs import (  # noqa: E402,F401
     scrape_resellers_job,
     run_morning_check_job,
     run_scraper_drift_job,
+    run_shopify_catalog_job,
     run_forecast_readiness_job,
     api_scraper_drift_now,
     api_morning_check_now,
@@ -2981,6 +2982,12 @@ if __name__ == "__main__":
     for time_str in config.get("schedule_times", ["10:00", "16:00"]):
         hour, minute = map(int, time_str.split(":"))
         scheduler.add_job(_run_scrape_job_guarded, "cron", hour=hour, minute=minute, **_job_defaults)
+        # Shopify listings (Holafly, Breeze) are collected ahead of each scrape: the
+        # shop allows ~1 listing request per 20 min, so 3 listings need a head start.
+        _lead = config.get("shopify_catalog_lead_minutes", 80)
+        _sc_total = (hour * 60 + minute - int(_lead)) % (24 * 60)
+        scheduler.add_job(run_shopify_catalog_job, "cron", hour=_sc_total // 60, minute=_sc_total % 60,
+                          id=f"shopify_catalog_{time_str}", max_instances=1, **_job_defaults)
     report_time = config.get("email_report_time", "09:00")
     rh, rm = map(int, report_time.split(":"))
     scheduler.add_job(run_email_report_job, "cron", hour=rh, minute=rm, **_job_defaults)

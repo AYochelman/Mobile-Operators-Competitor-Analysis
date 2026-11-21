@@ -62,6 +62,12 @@ FX = {"usd": 3.7, "eur": 4.0, "gbp": 4.7}
 DEFAULT_CAP = 12          # distinct URLs captured per provider
 MAX_BODY = 8 * 1024 * 1024  # per-response body cap (bytes) - bigger bodies are truncated + flagged (Holafly's one-request catalog is ~7.3 MB)
 
+# Shopify gives our client about ONE storefront-listing request per ~20 minutes,
+# shared by every Shopify shop. A live drift probe of these providers would spend
+# the request the scheduled collector (shopify_catalog.collect) needs, so they are
+# replay-tested only; the morning freshness check covers them live.
+NO_LIVE_DRIFT = frozenset({"holafly_global", "holafly_regions", "breez_global"})
+
 
 def _u(rate): return {"usd_rate": FX["usd"]} if rate == "usd" else {"eur_rate": FX["eur"]} if rate == "eur" else {"gbp_rate": FX["gbp"]} if rate == "gbp" else {}
 
@@ -356,6 +362,10 @@ class _Interceptor:
         patch(scraper, "_get_usd_to_ils", lambda: FX["usd"])
         patch(scraper, "_get_eur_to_ils", lambda: FX["eur"])
         patch(scraper, "_get_gbp_to_ils", lambda: FX["gbp"])
+        # Holafly / Breeze read their listings from the shopify_catalog cache in
+        # production; under the harness they fetch directly so the capture is HTTP.
+        import shopify_catalog
+        patch(shopify_catalog, "LIVE", True)
         # Retry/backoff sleeps: a scraper that retries every capped-out country
         # 3x with 1.5s/3s/4.5s waits (aloSIM) turns a capture into a 7-minute
         # crawl. Replay = no sleeps at all; record/drift = clamp to 0.2s.
@@ -508,6 +518,8 @@ def replay(provider):
 def drift_check(provider, min_ratio=0.5):
     """Live probe restricted to the fixture's URL set. Returns a result dict:
     status: ok | drift | error | skipped."""
+    if provider in NO_LIVE_DRIFT:
+        return {"provider": provider, "status": "skipped", "reason": "listing budget belongs to shopify_catalog.collect()"}
     fx = load_fixture(provider)
     if fx is None or fx.get("playwright") or not fx.get("responses"):
         return {"provider": provider, "status": "skipped", "reason": "no http fixture"}

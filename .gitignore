@@ -68,3 +68,5 @@ twa/node_modules/
 
 # forecast readiness verdict + history (scripts/forecast_backtest.py --readiness)
 /data/forecast_readiness*.json*
+# listings collected by shopify_catalog.collect() (rebuilt twice a day)
+data/shopify_cache/

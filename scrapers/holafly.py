@@ -6,7 +6,6 @@ monkeypatching `scraper.<name>` in tests keeps working; scraper.py re-exports
 everything defined here.
 """
 import scraper as core  # noqa: E402  (the monolith; imported at its bottom)
-import threading
 import re
 logger = core.logger
 
@@ -246,105 +245,29 @@ def _holafly_country_handles():
 _HOLAFLY_KEY_DAYS = {1, 3, 5, 7, 10, 15, 20, 30, 60, 90}
 
 
-# -- Paced Shopify fetch ------------------------------------------------------
-# holafly-esim.myshopify.com rate-limits the product .json endpoint. The two
-# scrapers below used to fire ~190 requests at 5/s (and they run CONCURRENTLY in
-# the scrape_all_global pool), so from ~2026-11 two thirds of the calls came back
-# HTTP 429 and were dropped: 553 plans / 59 countries instead of ~1,600 / 173,
-# and 3 of 16 regions. All Holafly requests now share one pace (lock + minimum
-# gap) and a 429 is retried with backoff, honoring Retry-After when sent.
-_HOLAFLY_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-               "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
-_HOLAFLY_MIN_GAP = 0.6          # seconds between any two Holafly requests
-_holafly_lock = threading.Lock()
-_holafly_last = [0.0]
-
-# -- Circuit breaker (2026-11-20) ---------------------------------------------
-# When Holafly throttles EVERY request (429 + Retry-After: 60), the retry loop
-# above slept 4 x 60s per URL across ~200 URLs: one scrape run took ~10 hours and
-# held up everything after the global phase (content, banners, the next run).
-# After _HOLAFLY_MAX_429 consecutive 429 answers with no success in between, we
-# stop asking for _HOLAFLY_COOLDOWN seconds: both scrapers return what they have
-# and the stored rows simply keep their last prices until the site answers again.
-_HOLAFLY_MAX_429 = 5
-_HOLAFLY_COOLDOWN = 30 * 60
-_holafly_429_streak = [0]
-_holafly_blocked_until = [0.0]
-
-
+# -- Where the catalog comes from ---------------------------------------------
+# The scrape makes NO request to Holafly. Shopify allows our client about one
+# listing request every ~20 minutes (one budget for every Shopify shop we read),
+# so the listing is collected ahead of the scrape by shopify_catalog.collect()
+# and read here from its cache. History, for whoever is tempted to go back:
+#   - one product JSON per destination (~215 requests a run) got the client
+#     throttled on every Shopify shop for days (2026-11);
+#   - one live listing request per run worked for Holafly but starved Breeze,
+#     which asks in the same minute.
 class HolaflyRateLimited(Exception):
-    """Holafly is throttling every request - stop for this run."""
-
-
-def _holafly_get_json(url, timeout=15):
-    import urllib.request, urllib.error, json as _json, time as _time
-    backoff = 5
-    for attempt in range(5):
-        if _time.monotonic() < _holafly_blocked_until[0]:
-            raise HolaflyRateLimited("rate limited, cooling down")
-        with _holafly_lock:
-            wait = _HOLAFLY_MIN_GAP - (_time.monotonic() - _holafly_last[0])
-            if wait > 0:
-                _time.sleep(wait)
-            _holafly_last[0] = _time.monotonic()
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": _HOLAFLY_UA})
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                data = _json.loads(resp.read())
-            _holafly_429_streak[0] = 0
-            return data
-        except urllib.error.HTTPError as e:
-            if e.code == 429:
-                _holafly_429_streak[0] += 1
-                if _holafly_429_streak[0] >= _HOLAFLY_MAX_429:
-                    _holafly_429_streak[0] = 0
-                    _holafly_blocked_until[0] = _time.monotonic() + _HOLAFLY_COOLDOWN
-                    logger.warning(
-                        f"Holafly: {_HOLAFLY_MAX_429} consecutive 429 answers - "
-                        f"stopping for {_HOLAFLY_COOLDOWN // 60} min")
-                    raise HolaflyRateLimited("rate limited") from e
-                if attempt < 4:
-                    retry_after = e.headers.get("Retry-After") or ""
-                    _time.sleep(min(int(retry_after) if retry_after.isdigit() else backoff, 60))
-                    backoff *= 2
-                    continue
-            raise
-
-
-# The whole shop in ONE request. Until 2026-11-20 both scrapers asked for one
-# product JSON per destination (~215 requests a run, plus retries, twice a day).
-# Shopify answered that volume with "429 local_rate_limited" for our client on
-# every Shopify shop we read (Breeze's 3 requests included), for days. The
-# public /products.json listing carries the same handle + variants (sku, price)
-# for all ~210 products, so a run now costs one request shared by both scrapers.
-_HOLAFLY_CATALOG_URL = "https://holafly-esim.myshopify.com/products.json?limit=250&page={page}"
-_HOLAFLY_CATALOG_TTL = 20 * 60
-_holafly_catalog = {"at": 0.0, "by_handle": None}
-_holafly_catalog_lock = threading.Lock()
+    """No usable Holafly catalog for this run (not collected, or too old)."""
 
 
 def _holafly_catalog_by_handle():
-    """{handle: product} for the whole shop; cached so the country and region
-    scrapers of one run share a single request. Raises HolaflyRateLimited."""
-    import time as _time
-    with _holafly_catalog_lock:
-        cached = _holafly_catalog["by_handle"]
-        if cached is not None and _time.monotonic() - _holafly_catalog["at"] < _HOLAFLY_CATALOG_TTL:
-            return cached
-        by_handle = {}
-        for page in range(1, 6):
-            data = _holafly_get_json(_HOLAFLY_CATALOG_URL.format(page=page), timeout=90)
-            batch = data.get("products") or []
-            for product in batch:
-                if product.get("handle"):
-                    by_handle[product["handle"]] = product
-            if len(batch) < 250:
-                break
-        if not by_handle:
-            raise RuntimeError("Holafly catalog came back empty")
-        _holafly_catalog["by_handle"] = by_handle
-        _holafly_catalog["at"] = _time.monotonic()
-        return by_handle
+    """{handle: product} for the whole shop. Raises HolaflyRateLimited."""
+    import shopify_catalog
+    try:
+        products = shopify_catalog.products("holafly")
+    except shopify_catalog.RateLimited as exc:
+        raise HolaflyRateLimited(str(exc)) from exc
+    if not products:
+        raise HolaflyRateLimited("no fresh catalog in the Shopify cache")
+    return {p["handle"]: p for p in products if p.get("handle")}
 
 
 def scrape_holafly_global(_page=None, usd_rate=None):
@@ -358,8 +281,8 @@ def scrape_holafly_global(_page=None, usd_rate=None):
 
     try:
         catalog = _holafly_catalog_by_handle()
-    except HolaflyRateLimited:
-        logger.warning("Holafly global: rate limited, no plans this run")
+    except HolaflyRateLimited as exc:
+        logger.warning(f"Holafly global: no catalog this run ({exc})")
         return []
     except Exception as exc:
         logger.warning(f"Holafly global: catalog fetch failed: {exc}")
@@ -448,8 +371,8 @@ def scrape_holafly_regions(_page=None, usd_rate=None):
 
     try:
         catalog = _holafly_catalog_by_handle()
-    except HolaflyRateLimited:
-        logger.warning("Holafly regions: rate limited, no plans this run")
+    except HolaflyRateLimited as exc:
+        logger.warning(f"Holafly regions: no catalog this run ({exc})")
         catalog = {}
     except Exception as exc:
         logger.warning(f"Holafly regions: catalog fetch failed: {exc}")

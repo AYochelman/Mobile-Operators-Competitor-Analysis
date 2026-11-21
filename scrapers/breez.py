@@ -458,12 +458,10 @@ def scrape_breez_global(_page=None, usd_rate=None):
     fixed 2026-07-26). currency='USD' + original_price=USD lets
     change_detector compare the stable USD value.
     """
-    import requests as _req
     import re as _re
 
     if usd_rate is None:
         usd_rate = core._get_usd_to_ils()
-    base = "https://breezesim.com"
     all_plans = []
     seen_names = set()
 
@@ -479,53 +477,25 @@ def scrape_breez_global(_page=None, usd_rate=None):
             return int(gb_m.group(1)), days
         return None, None
 
-    throttled = [False]
-
-    def _get_page(collection_handle, page):
-        # Shopify answers "429 local_rate_limited" (Retry-After: 60) to this shop's
-        # JSON endpoints. Without a retry one 429 on page 1 ended the run with
-        # 0 plans and no log line - the catalog froze from 2026-11-18. Wait as the
-        # server asks, twice at most (the whole catalog is 3 requests), then give
-        # up for this run instead of holding the global scrape for minutes.
-        import time as _time
-        for attempt in range(3):
-            r = _req.get(
-                f"{base}/collections/{collection_handle}/products.json",
-                params={"limit": 250, "page": page},
-                timeout=25,
-            )
-            if r.status_code == 429:
-                if attempt < 2:
-                    retry_after = str(r.headers.get("Retry-After") or "")
-                    _time.sleep(min(int(retry_after) if retry_after.isdigit() else 30, 60))
-                    continue
-                throttled[0] = True
-            r.raise_for_status()
-            return r.json().get("products", [])
-        return []
-
-    def _fetch_products(collection_handle):
-        products, page = [], 1
-        while not throttled[0]:
-            try:
-                batch = _get_page(collection_handle, page)
-                if not batch:
-                    break
-                products.extend(batch)
-                if len(batch) < 250:
-                    break
-                page += 1
-            except Exception as exc:
-                logger.warning(f"Breez {collection_handle} page {page}: {exc}")
-                break
-        return products
+    def _fetch_products(key):
+        # No request to the shop from inside the scrape: Shopify allows our client
+        # about one listing request every ~20 minutes, so the two collections are
+        # gathered ahead of time by shopify_catalog.collect() and read from its cache.
+        import shopify_catalog
+        try:
+            return shopify_catalog.products(key)
+        except shopify_catalog.RateLimited:
+            return None
 
     try:
-        country_products = _fetch_products("country-bundles")
-        regional_products = _fetch_products("regional-bundles")
-        if throttled[0]:
-            # A partial catalog would look like a complete, smaller one
-            logger.warning("Breez: rate limited (429) after retries - returning no plans this run")
+        country_products = _fetch_products("breez_country")
+        regional_products = _fetch_products("breez_regional")
+        if not country_products or not regional_products:
+            # Both or nothing: half a catalog would look like a complete, smaller one
+            logger.warning(
+                "Breez: no fresh catalog in the Shopify cache "
+                f"(country={'ok' if country_products else 'missing'}, "
+                f"regional={'ok' if regional_products else 'missing'}) - no plans this run")
             return []
         logger.info(
             f"Breez: {len(country_products)} country products, "
