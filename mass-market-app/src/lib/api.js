@@ -137,7 +137,8 @@ export const api = {
   getClaudeUsageRecent:  (limit = 100) =>
     fetchApi(`/api/usage/recent?limit=${limit}`),
   // Set / clear the budget driving the remaining-balance + depletion estimate.
-  // total=null clears it. asOf (YYYY-MM-DD, optional) counts spend from that date.
+  // total=null clears it. asOf (optional): YYYY-MM-DD counts spend from that date,
+  // 'now' = the total is the balance at this moment (server stores the timestamp).
   setClaudeUsageBudget:  (total, asOf = null) =>
     fetchApi('/api/usage/budget', {
       method: 'POST',

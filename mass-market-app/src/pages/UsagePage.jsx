@@ -59,7 +59,8 @@ function fmtDays(n, tt = (he) => he) {
 function fmtDateHe(iso, locale = 'he-IL') {
   if (!iso) return ''
   try {
-    return new Date(`${iso}T00:00:00`).toLocaleDateString(locale, {
+    // a date (YYYY-MM-DD) or the full timestamp a "this is my balance now" sync stores
+    return new Date(iso.includes('T') ? iso : `${iso}T00:00:00`).toLocaleDateString(locale, {
       day: 'numeric', month: 'long', year: 'numeric',
     })
   } catch {
@@ -177,10 +178,13 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
     setAsOf(budget?.as_of ?? '')
   }, [budget?.total_usd, budget?.as_of])
 
-  const submit = async (clear = false) => {
+  // syncNow: the amount typed is the balance shown in the Anthropic Console at
+  // this moment, so the server counts spend from now on ('now' -> timestamp).
+  const submit = async (clear = false, syncNow = false) => {
     setBusy(true); setErr(null)
     try {
-      await onSave(clear ? null : Number(total), clear ? null : (asOf || null))
+      const date = (asOf || '').slice(0, 10) || null
+      await onSave(clear ? null : Number(total), clear ? null : (syncNow ? 'now' : date))
       setEditing(clear)  // after a clear, reopen the setup form; after save, close it
     } catch (e) {
       setErr(e?.message || tt('שגיאה בשמירה', 'Error saving'))
@@ -221,7 +225,7 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
           <label className="block text-right">
             <span className="block text-xs font-semibold mb-1" style={{ color: 'var(--color-moca-muted)' }}>{tt('ספירה מתאריך (אופציונלי)', 'Count from date (optional)')}</span>
             <input
-              type="date" value={asOf || ''}
+              type="date" value={(asOf || '').slice(0, 10)}
               onChange={(e) => setAsOf(e.target.value)}
               className="rounded-lg border border-moca-border px-3 py-2 text-sm tnum"
               style={{ background: 'var(--color-moca-mist)', color: 'var(--color-moca-dark)' }}
@@ -234,6 +238,15 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
             style={{ background: 'var(--color-moca-bolt)', color: '#fff' }}
           >
             {busy ? tt('שומר…', 'Saving…') : tt('שמירה', 'Save')}
+          </button>
+          <button
+            onClick={() => submit(false, true)}
+            disabled={busy || !total || Number(total) <= 0}
+            className="px-4 py-2 rounded-lg text-sm font-semibold border border-moca-border disabled:opacity-50"
+            style={{ color: 'var(--color-moca-bolt)', background: 'var(--color-moca-mist)' }}
+            title={tt('הסכום שהוזן הוא היתרה שמופיעה כרגע ב-Console. השימוש ייספר מרגע זה.', 'The amount entered is the balance shown in the Console right now. Usage is counted from this moment.')}
+          >
+            {tt('זו היתרה עכשיו', 'This is my balance now')}
           </button>
           {configured && (
             <>
@@ -255,7 +268,7 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
           )}
         </div>
         <p className="text-[11px] mt-3" style={{ color: 'var(--color-moca-muted)' }}>
-          {tt('תאריך הספירה שימושי אחרי טעינת קרדיט מחדש - השימוש נספר רק ממנו והלאה. ל-Anthropic אין API ליתרה; הסכום הרשמי ב-console.anthropic.com/settings/billing.', 'The count-from date is useful after a credit top-up - usage is only counted from it onward. Anthropic has no balance API; the official amount is at console.anthropic.com/settings/billing.')}
+          {tt('אחרי טעינת קרדיט: הזן את היתרה שמופיעה ב-Console ולחץ "זו היתרה עכשיו" - השימוש ייספר מרגע זה. "שמירה" סופרת מהתאריך שנבחר (או את כל השימוש, בלי תאריך). ל-Anthropic אין API ליתרה; הסכום הרשמי ב-console.anthropic.com/settings/billing.', 'After a credit top-up: enter the balance shown in the Console and press "This is my balance now" - usage is counted from this moment. "Save" counts from the chosen date (or all usage, with no date). Anthropic has no balance API; the official amount is at console.anthropic.com/settings/billing.')}
         </p>
         {err && <p className="text-xs mt-2 text-red-600">{err}</p>}
       </div>
@@ -297,6 +310,15 @@ function BudgetPanel({ budget, official, windowDays, onSave }) {
       <div className="mt-1.5 flex items-center justify-between text-xs" style={{ color: 'var(--color-moca-sub)' }}>
         <span className="tnum">{tt('נוצל', 'Used')} {fmtUSD(budget.spent_usd)} ({pct}%)</span>
         {budget.as_of && <span>{tt('נספר מ-', 'Counted from ')}{fmtDateHe(budget.as_of, dateLocale)}</span>}
+      </div>
+      <div className="mt-1.5 flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--color-moca-muted)' }} role="status">
+        <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-moca-down)' }} aria-hidden="true" />
+        <span>
+          {budget.source === 'anthropic'
+            ? tt('חי · לפי ההוצאה הרשמית של Anthropic', 'Live · from Anthropic official spend')
+            : tt('חי · לפי השימוש שנרשם במערכת', 'Live · from usage logged by this system')}
+          {budget.computed_at && <> · {tt('עודכן', 'updated')} <span className="tnum">{new Date(budget.computed_at).toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' })}</span></>}
+        </span>
       </div>
 
       {/* depletion forecast */}
@@ -340,8 +362,10 @@ export default function UsagePage() {
   const [error, setError]     = useState(null)
   const [official, setOfficial] = useState(null)
 
-  const load = useCallback(async () => {
-    setLoading(true); setError(null)
+  // silent = the once-a-minute refresh: no loading screen, and a failed poll
+  // keeps the numbers already on screen instead of replacing them with an error.
+  const load = useCallback(async (silent = false) => {
+    if (!silent) { setLoading(true); setError(null) }
     try {
       const [s, r, oc] = await Promise.all([
         api.getClaudeUsageSummary(days),
@@ -352,13 +376,21 @@ export default function UsagePage() {
       setRecent(r.calls || [])
       setOfficial(oc)
     } catch (e) {
-      setError(e.message || tt('שגיאה', 'Error'))
+      if (!silent) setError(e.message || tt('שגיאה', 'Error'))
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [days, tt])
 
   useEffect(() => { load() }, [load])
+
+  // Live balance: re-read every minute while the tab is visible.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') load(true)
+    }, 60_000)
+    return () => clearInterval(id)
+  }, [load])
 
   const saveBudget = useCallback(async (total, asOf) => {
     await api.setClaudeUsageBudget(total, asOf)
@@ -408,7 +440,7 @@ export default function UsagePage() {
             </button>
           ))}
           <button
-            onClick={load}
+            onClick={() => load()}
             className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-moca-border"
             style={{ color: 'var(--color-moca-sub)', background: 'var(--color-moca-mist)' }}
             title={tt('רענן', 'Refresh')}

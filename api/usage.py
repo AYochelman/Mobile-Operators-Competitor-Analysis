@@ -37,9 +37,41 @@ def _claude_budget_block(summary, db_path):
     if total <= 0:
         return {"configured": False, "total_usd": None, "as_of": as_of}
 
-    since_iso = f"{as_of}T00:00:00+00:00" if as_of else None
+    # as_of is a date (count from midnight UTC) or a full ISO timestamp (the
+    # "this is my balance right now" sync, so spend earlier that day is not
+    # deducted a second time).
+    if as_of and "T" in str(as_of):
+        since_iso = str(as_of)
+    else:
+        since_iso = f"{as_of}T00:00:00+00:00" if as_of else None
     spend = core.get_claude_spend(since_iso=since_iso, db_path=db_path)
     spent = float(spend["cost_usd"] or 0)
+    source = "local"
+
+    # With an org Admin key the spend comes from Anthropic itself: it covers
+    # every API key of the organization, not only the calls this server logged.
+    # The cost report has daily buckets only, so it is used when the baseline
+    # is a whole day; after a mid-day sync the local log is exact until the
+    # next day starts, and from then on the larger of the two figures wins.
+    official = None
+    try:
+        if as_of:
+            start_day = str(as_of)[:10]
+        else:
+            start_day = (datetime.now(timezone.utc) - timedelta(days=396)).strftime("%Y-%m-%d")
+        official = _fetch_anthropic_cost_usd(f"{start_day}T00:00:00Z")
+    except Exception as e:  # never let the official lookup break the panel
+        logger.warning("official cost lookup failed: %s", e)
+    if official and official.get("configured") and official.get("total_usd") is not None:
+        official_spent = float(official["total_usd"])
+        if as_of and "T" in str(as_of):
+            # the report includes the part of the sync day BEFORE the sync
+            before_sync = core.get_claude_spend(
+                since_iso=f"{str(as_of)[:10]}T00:00:00+00:00", db_path=db_path)
+            official_spent = max(0.0, official_spent - (float(before_sync["cost_usd"] or 0) - spent))
+        if official_spent >= spent or not (as_of and "T" in str(as_of)):
+            spent = official_spent
+            source = "anthropic"
     remaining = max(0.0, total - spent)
 
     forecast = {
@@ -79,6 +111,8 @@ def _claude_budget_block(summary, db_path):
         "remaining_usd": round(remaining, 6),
         "pct_used": round(min(100.0, (spent / total) * 100), 1),
         "calls_counted": spend["calls"],
+        "source": source,
+        "computed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "forecast": forecast,
     }
 
@@ -88,7 +122,7 @@ def _claude_budget_block(summary, db_path):
 _ANTHROPIC_COST_CACHE = {}   # (starting_at, ending_at) -> (epoch_ts, result_dict)
 
 
-_ANTHROPIC_COST_TTL = 600    # 10 minutes
+_ANTHROPIC_COST_TTL = 90     # the API allows one poll a minute; the page refreshes every 60s
 
 
 def _fetch_anthropic_cost_usd(starting_at, ending_at=None, force=False):
@@ -338,11 +372,14 @@ def api_usage_set_budget():
         if total < 0:
             return jsonify({"error": "total_usd must be >= 0"}), 400
 
-    if as_of:
+    if as_of == "now":
+        # "the balance I see in the Console right now": count spend from this second
+        as_of = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    elif as_of:
         try:
             datetime.strptime(as_of, "%Y-%m-%d")
         except ValueError:
-            return jsonify({"error": "as_of must be YYYY-MM-DD"}), 400
+            return jsonify({"error": "as_of must be YYYY-MM-DD or 'now'"}), 400
 
     try:
         with open(core.CONFIG_PATH, encoding="utf-8") as f:
