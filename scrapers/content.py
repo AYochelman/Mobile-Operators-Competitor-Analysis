@@ -7,9 +7,14 @@ everything defined here.
 """
 import scraper as core  # noqa: E402  (the monolith; imported at its bottom)
 import re
+import content_trial
 logger = core.logger
 
 
+# "free_trial" is the benefit text shown in the UI. It is a FIXED text unless the entry
+# carries "trial_scan": True - then the phrase found on the page (content_trial.py) wins and
+# the fixed text is only the fallback. Detection runs and is logged for every scanned page;
+# switch an entry on after checking it with scripts/content_trial_preview.py.
 CONTENT_SERVICES = [
     # ── eSIM שעון ──────────────────────────────────────────────────────────
     {"service": "eSIM שעון", "carrier": "cellcom",
@@ -23,7 +28,8 @@ CONTENT_SERVICES = [
      "strategy": "keyword_scan", "price_keyword": "15.90", "free_trial": "3 חודשים ללא עלות"},
     {"service": "eSIM שעון", "carrier": "pelephone",
      "url": "https://www.pelephone.co.il/ds/heb/eshop/campaigns/esim-watch/",
-     "strategy": "keyword_scan", "price_keyword": "19.90", "free_trial": "חצי שנה מתנה"},
+     "strategy": "keyword_scan", "price_keyword": "19.90", "free_trial": "חצי שנה מתנה",
+     "trial_scan": True},
     # ── סייבר ──────────────────────────────────────────────────────────────
     {"service": "סייבר", "carrier": "pelephone",
      "url": "https://www.pelephone.co.il/ds/heb/content-products/pelephonecyber/",
@@ -53,7 +59,8 @@ CONTENT_SERVICES = [
      "strategy": "cellcom_hub", "page_keyword": "נורטון מובייל", "free_trial": "ללא תקופת חינם"},
     {"service": "נורטון", "carrier": "wecom",
      "url": "https://we-com.co.il/norton360/",
-     "strategy": "keyword_scan", "price_keyword": "7.90", "free_trial": "חודש ראשון מתנה"},
+     "strategy": "keyword_scan", "price_keyword": "7.90", "free_trial": "חודש ראשון מתנה",
+     "trial_scan": True},
     {"service": "eSIM שעון", "carrier": "golan",
      "url": "https://www.golantelecom.co.il/esimwatchintro",
      "strategy": "manual_price", "price_value": "₪19.90", "free_trial": "חודש ראשון חינם"},
@@ -139,12 +146,18 @@ def scrape_all_content():
         for entry in CONTENT_SERVICES:
             service    = entry["service"]
             carrier    = entry["carrier"]
-            free_trial = entry.get("free_trial", "—")
             note       = entry.get("note", "")
 
-            def _result(price, status):
+            def _result(price, status, text=None):
+                detected = (content_trial.extract_free_trial(text, entry.get("price_keyword"))
+                            if text else None)
+                free_trial, source = content_trial.resolve_free_trial(entry, detected)
+                if text:
+                    logger.info(f"Content trial {service}/{carrier}: page={detected!r} "
+                                f"stored={free_trial!r} ({source})")
                 return {"service": service, "carrier": carrier, "price": price,
-                        "free_trial": free_trial, "note": note, "status": status}
+                        "free_trial": free_trial, "note": note, "status": status,
+                        "trial_detected": detected}
 
             if entry["strategy"] == "not_available":
                 results.append(_result("לא זמין", "לא זמין"))
@@ -183,7 +196,7 @@ def scrape_all_content():
                     stripped = re.sub(r'<[^>]+>', ' ', html)
                     stripped = re.sub(r'\s+', ' ', stripped)
                     price = _extract_content_price(stripped, entry.get("price_keyword"))
-                    results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא"))
+                    results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא", stripped))
 
                 # ── keyword_scan (default) ────────────────────────────────
                 else:
@@ -202,7 +215,7 @@ def scrape_all_content():
                         page.wait_for_timeout(2000)
                     body  = page.inner_text("body")
                     price = _extract_content_price(body, entry.get("price_keyword"))
-                    results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא"))
+                    results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא", body))
 
                 logger.info(f"Content {service}/{carrier}: {results[-1]['price']}")
             except Exception as e:
@@ -248,9 +261,13 @@ def _pelephone_content_prices():
                                 if (el) { el.scrollIntoView(); el.click(); }
                             }""", faq_q)
                         page.wait_for_timeout(2000)
-                    price = _extract_content_price(page.inner_text("body"), e.get("price_keyword"))
+                    body = page.inner_text("body")
+                    price = _extract_content_price(body, e.get("price_keyword"))
                     if price:
-                        prices[e["service"]] = price
+                        detected = content_trial.extract_free_trial(body, e.get("price_keyword"))
+                        prices[e["service"]] = (price, detected, e)
+                        logger.info(f"Content trial {e['service']}/pelephone (own session): "
+                                    f"page={detected!r}")
                     logger.info(f"Content {e['service']}/pelephone (own session): {price}")
                 except Exception as ex:
                     logger.error(f"Content own-session failed {e['service']}/pelephone: {ex}")
@@ -268,6 +285,9 @@ def scrape_all_content():
         prices = {}
     for r in results:
         if r["carrier"] == "pelephone" and r["service"] in prices:
-            r["price"] = prices[r["service"]]
+            price, detected, entry = prices[r["service"]]
+            r["price"] = price
             r["status"] = "\u05e0\u05de\u05e6\u05d0"
+            r["trial_detected"] = detected
+            r["free_trial"] = content_trial.resolve_free_trial(entry, detected)[0]
     return results
