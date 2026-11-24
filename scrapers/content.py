@@ -23,7 +23,7 @@ CONTENT_SERVICES = [
      "strategy": "keyword_scan", "price_keyword": "15.90", "free_trial": "3 חודשים ללא עלות"},
     {"service": "eSIM שעון", "carrier": "pelephone",
      "url": "https://www.pelephone.co.il/ds/heb/eshop/campaigns/esim-watch/",
-     "strategy": "keyword_scan", "price_keyword": "19.90", "free_trial": "חודשיים מתנה"},
+     "strategy": "keyword_scan", "price_keyword": "19.90", "free_trial": "חצי שנה מתנה"},
     # ── סייבר ──────────────────────────────────────────────────────────────
     {"service": "סייבר", "carrier": "pelephone",
      "url": "https://www.pelephone.co.il/ds/heb/content-products/pelephonecyber/",
