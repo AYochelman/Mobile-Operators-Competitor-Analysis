@@ -36,7 +36,8 @@ _FOR = r"(?:למשך\s+ה?-?\s*|ל-?\s*)"
 
 _PATTERNS = [
     # "50% הנחה ל-4 חודשים"
-    re.compile(r"\d{1,3}\s*%\s*הנחה\s+" + _FOR + _PERIOD + r"(?![" + _HE + r"])"),
+    # ... and "50% הנחה לחודש למשך 4 חודשים" (Hot Mobile Norton): the per-month wording first
+    re.compile(r"\d{1,3}\s*%\s*הנחה\s+(?:לחודש\s+(?=למשך))?" + _FOR + _PERIOD + r"(?![" + _HE + r"])"),
     # "חודש ראשון חינם", "3 חודשים ללא עלות", "חצי שנה מתנה"
     # (a leading "ו" - "וחודש ראשון מתנה" - is allowed and left out of the phrase)
     re.compile(r"(?<![" + _HE + r"\d])\u05d5?(" + _PERIOD + _SEP + _FREE + r")(?![" + _HE + r"])"),
