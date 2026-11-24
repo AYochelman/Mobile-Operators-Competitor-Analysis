@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useLang } from '../../hooks/useLanguage'
 import { useApiImage } from '../../hooks/useApiImage'
 import { getCarrierColor, getCarrierName } from './carrierMeta'
+import { campaignTypeLabel } from '../../data/campaignTypes'
 
 const CARRIER_GRADIENT = {
   partner:   'linear-gradient(135deg,#e8003d,#ff6b8a)',
@@ -52,6 +53,53 @@ function Fact({ label, value }) {
         {value}
       </div>
     </div>
+  )
+}
+
+/**
+ * The automatic reading of a banner: headline, offer, price, conditions. The
+ * text is a machine transcription of a screenshot, so it is labelled as such
+ * and a low-confidence reading says why instead of showing a guess.
+ */
+function BannerReading({ insight, tt }) {
+  const line = { fontSize: 13, color: 'var(--color-moca-text)', lineHeight: 1.55, margin: '6px 0 0' }
+  const unreadable = insight.confidence === 'low' || !insight.has_offer
+  return (
+    <section
+      style={{
+        marginTop: 16, background: 'var(--color-moca-white, #fff)',
+        border: '1px solid var(--color-moca-border)', borderRadius: 12, padding: '12px 14px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 10, color: 'var(--color-moca-muted)', fontWeight: 800, letterSpacing: 0.5 }}>
+          {tt('מה כתוב בבאנר', 'What the banner says')}
+        </span>
+        {!unreadable && (
+          <span style={{ fontSize: 11, fontWeight: 700, background: 'var(--color-moca-cream)', color: 'var(--color-moca-sub)', borderRadius: 999, padding: '1px 8px' }}>
+            {campaignTypeLabel(insight.campaign_type, tt)}
+          </span>
+        )}
+      </div>
+      {unreadable ? (
+        <p style={line}>
+          {insight.obstruction
+            ? `${tt('לא ניתן היה לקרוא את ההצעה', 'The offer could not be read')}: ${insight.obstruction}`
+            : tt('לא זוהתה הצעה שיווקית בצילום.', 'No promotional offer was found in the screenshot.')}
+        </p>
+      ) : (
+        <>
+          {insight.headline && <p style={{ ...line, fontSize: 15, fontWeight: 800, color: 'var(--color-moca-dark)' }}>{insight.headline}</p>}
+          {insight.offer && <p style={line}>{insight.offer}</p>}
+          {insight.price_text && <p style={{ ...line, fontWeight: 700 }}>{tt('מחיר', 'Price')}: {insight.price_text}</p>}
+          {insight.fine_print && <p style={{ ...line, fontSize: 12, color: 'var(--color-moca-sub)' }}>{tt('תנאים', 'Conditions')}: {insight.fine_print}</p>}
+          {insight.cta && <p style={{ ...line, fontSize: 12, color: 'var(--color-moca-sub)' }}>{tt('כפתור', 'Button')}: {insight.cta}</p>}
+        </>
+      )}
+      <p style={{ ...line, fontSize: 11, color: 'var(--color-moca-muted)' }}>
+        {tt('קריאה אוטומטית של הצילום. באתר עם באנר מתחלף מוצגת השקופית שנתפסה בצילום.', 'Automatic reading of the screenshot. On a rotating banner this is the slide the capture caught.')}
+      </p>
+    </section>
   )
 }
 
@@ -216,6 +264,9 @@ export default function BannerDrawer({ banner, onClose }) {
             </div>
           )}
         </div>
+
+        {/* What the screenshot says - read by banner_vision.py */}
+        {banner.insight && <BannerReading insight={banner.insight} tt={tt} />}
 
         {/* Facts */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 16 }}>

@@ -41,6 +41,7 @@ SECTION_FLAGS = {
     "/compare": "hide_compare",
     "/cockpit": "hide_cockpit",
     "/agent-desk": "hide_agent_desk",
+    "/simulator": "hide_simulator",
     "/executive-summary": "hide_executive_summary",
     "/positioning": "hide_positioning",
     "/ai-insights": "hide_ai_insights",

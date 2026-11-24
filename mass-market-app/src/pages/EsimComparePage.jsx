@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { initTikTokPixel, trackTikTok } from '../lib/tiktokPixel'
@@ -9,6 +9,10 @@ import { SITE_ORIGIN } from '../data/siteOrigin'
 import BoltMark from '../components/BoltMark'
 import CookieBanner from '../components/CookieBanner'
 import { miniMarkup } from '../lib/miniMarkup'
+
+// Lazy: the planner brings the per-provider coverage lists (globalCountries.js),
+// which the single-destination page never loads.
+const EsimTripPlanner = lazy(() => import('../components/EsimTripPlanner'))
 
 /* ════════════════════════════════════════════════════════════════════════
    MOCA eSIM — public B2C price-comparison page  (route: /esim-deals)
@@ -238,6 +242,9 @@ const CSS = `
 #esim-app .pop{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:#fff;border-radius:999px;cursor:pointer;padding:8px 13px;font:inherit;font-size:13.5px;font-weight:700;color:var(--ink);transition:all .14s}
 #esim-app .pop:hover{border-color:var(--c2);background:var(--cream)}
 #esim-app .pop .flag{font-size:16px}
+#esim-app .trip-entry{display:flex;flex-direction:column;gap:2px;width:100%;margin-top:16px;border:1.5px dashed var(--line);background:var(--bg);border-radius:14px;padding:12px 14px;font:inherit;text-align:start;cursor:pointer;color:var(--c1);font-weight:800;font-size:14px;transition:border-color .14s}
+#esim-app .trip-entry:hover{border-color:var(--c2)}
+#esim-app .trip-entry small{font-size:12px;font-weight:600;color:var(--sub)}
 #esim-app .dest-bar{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:var(--r);padding:14px 16px;box-shadow:0 6px 24px rgba(70,45,20,.07);position:relative;overflow:hidden}
 #esim-app .dest-bar>:not(.bar-bg){position:relative;z-index:1}
 #esim-app .bar-bg{position:absolute;inset:-8px;background-size:cover;background-position:center 22%;opacity:.25;filter:blur(2.1px);pointer-events:none;animation:wizbg .6s ease}
@@ -572,6 +579,7 @@ export default function EsimComparePage() {
   const [filter, setFilter] = useState('all')
   const [providerFilter, setProviderFilter] = useState('all') // 'all' or a provider id
   const [couponOnly, setCouponOnly] = useState(false)         // "עם קופון" pill toggle
+  const [tripOpen, setTripOpen] = useState(false)             // multi-destination planner
   const resultsRef = useRef(null)
   // Campaign tag captured from the landing URL (utm), forwarded to /go on each
   // deal tap so a click is attributable to the specific post/video that drove it.
@@ -1032,6 +1040,12 @@ export default function EsimComparePage() {
                   </div>
                 </>
               )}
+              {!tripOpen && (
+                <button type="button" className="trip-entry" onClick={() => setTripOpen(true)}>
+                  <span>{lang === 'he' ? 'טיול עם כמה יעדים?' : 'Visiting several countries?'}</span>
+                  <small>{lang === 'he' ? 'מוצאים את השילוב הזול ביותר לכל המסלול' : 'Find the cheapest combination for the whole route'}</small>
+                </button>
+              )}
             </section>
           ) : (
             <section className="dest-bar reveal" ref={resultsRef}>
@@ -1043,6 +1057,13 @@ export default function EsimComparePage() {
               </div>
               <button type="button" className="changeb" onClick={clearDest}>{t.change}</button>
             </section>
+          )}
+
+          {/* ── Multi-destination trip planner (opened from the picker) ──── */}
+          {!dest && tripOpen && (
+            <Suspense fallback={<div className="splash" role="status"><div className="spin" aria-hidden="true" /></div>}>
+              <EsimTripPlanner destList={destList} lang={lang} campaign={campaign} onClose={() => setTripOpen(false)} />
+            </Suspense>
           )}
 
           {/* ── Results (after a destination is chosen) ──────────────────── */}

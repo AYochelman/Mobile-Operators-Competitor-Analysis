@@ -37,6 +37,9 @@ const Icons = {
   agentDesk: (
     <svg {...ICON_PROPS}><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/><path d="M19 19a3 3 0 0 1-3 3h-3"/></svg>
   ),
+  simulator: (
+    <svg {...ICON_PROPS}><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2" fill="currentColor"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2" fill="currentColor"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="7" cy="18" r="2" fill="currentColor"/></svg>
+  ),
   exec: (
     <svg {...ICON_PROPS}><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="14 3 14 9 20 9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
   ),
@@ -113,6 +116,7 @@ const ICON_FOR_PATH = {
   '/': Icons.dashboard,
   '/cockpit': Icons.cockpit,
   '/agent-desk': Icons.agentDesk,
+  '/simulator': Icons.simulator,
   '/executive-summary': Icons.exec,
   '/positioning': Icons.positioning,
   '/history': Icons.history,

@@ -12,7 +12,7 @@ import BannerDrawer from './BannerDrawer'
  *
  * Encapsulates drawer state — caller only passes the banner array.
  */
-export default function BannerMosaic({ banners, source = 'home' }) {
+export default function BannerMosaic({ banners, source = 'home', insights = null }) {
   const [active, setActive] = useState(null)
 
   if (!banners || banners.length === 0) return null
@@ -21,11 +21,11 @@ export default function BannerMosaic({ banners, source = 'home' }) {
     // Per-banner kind wins; otherwise fall back to the mosaic's `source` prop.
     // (Archive views pre-tag each banner because the same mosaic mixes home
     // + store; the dashboard banners tab uses a single source per mosaic.)
-    if (banner?.kind === 'home' || banner?.kind === 'store') {
-      setActive(banner)
-    } else {
-      setActive({ ...banner, kind: source === 'store' ? 'store' : 'home' })
-    }
+    const kind = banner?.kind === 'home' || banner?.kind === 'store' ? banner.kind : (source === 'store' ? 'store' : 'home')
+    // `insights` = what the screenshot SAYS (banner_vision.py), keyed like the
+    // PNG files: <carrier> for the homepage, <carrier>_store for the e-store.
+    const insight = insights ? insights[kind === 'store' ? `${banner.carrier}_store` : banner.carrier] || null : null
+    setActive({ ...banner, kind, insight })
   }
 
   return (

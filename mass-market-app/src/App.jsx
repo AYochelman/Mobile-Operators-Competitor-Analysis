@@ -27,6 +27,7 @@ const AlertsPage            = lazy(() => import('./pages/AlertsPage'))
 const ExecutiveSummaryPage  = lazy(() => import('./pages/ExecutiveSummaryPage'))
 const CockpitPage           = lazy(() => import('./pages/CockpitPage'))
 const AgentDeskPage         = lazy(() => import('./pages/AgentDeskPage'))
+const SimulatorPage         = lazy(() => import('./pages/SimulatorPage'))
 const ArchivePage           = lazy(() => import('./pages/ArchivePage'))
 const SettingsPage          = lazy(() => import('./pages/SettingsPage'))
 const PreferencesPage       = lazy(() => import('./pages/PreferencesPage'))
@@ -275,6 +276,7 @@ export default function App() {
             <Route path="executive-summary" element={<ExecutiveSummaryPage />} />
             <Route path="cockpit" element={<CockpitPage />} />
             <Route path="agent-desk" element={<AgentDeskPage />} />
+            <Route path="simulator" element={<SimulatorPage />} />
             <Route path="archive" element={<ArchivePage />} />
             <Route path="settings" element={<ProtectedRoute adminOnly><SettingsPage /></ProtectedRoute>} />
             <Route path="preferences" element={<PreferencesPage />} />

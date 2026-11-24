@@ -128,6 +128,34 @@ def api_history_daily():
     return core._public_cache(resp, 300)
 
 
+@bp.route('/api/history/reactions')
+@core.limiter.limit('30 per minute')
+def api_history_reactions():
+    """Who moves after whom (reactions.py): per ordered carrier pair, how many of
+    the leader's moves were followed by the follower within `window` days, next
+    to the rate expected by chance. Reads the change log of the domestic,
+    roaming, reseller and content categories - never global eSIM.
+
+    ?days=30..180 (default 180 = the change-log retention) &window=3..30 (14)
+    """
+    import reactions as _rx
+    from datetime import datetime as _dt, timedelta as _td
+    try:
+        days = max(30, min(int(request.args.get('days', 180)), 180))
+    except (ValueError, TypeError):
+        days = 180
+    try:
+        window = max(3, min(int(request.args.get('window', 14)), 30))
+    except (ValueError, TypeError):
+        window = 14
+    since = (_dt.now() - _td(days=days + 1)).isoformat()
+    import db as _db
+    rows = _db.get_changes_since(since, categories=_rx.CATEGORIES, db_path=core._db_path())
+    out = _rx.reaction_map(rows, days=days, window=window,
+                           hidden_carrier=core._hidden_carrier_for_request())
+    return core._public_cache(jsonify(out), 600)
+
+
 @bp.route('/api/maintenance/run-now', methods=['GET', 'POST'])
 @core.require_api_key_or_query
 def api_maintenance_run_now():

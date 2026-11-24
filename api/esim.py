@@ -60,6 +60,46 @@ def api_esim_compare():
     return core._public_cache(jsonify(payload), 300)
 
 
+def _esim_fx():
+    try:
+        from scraper import _get_usd_to_ils, _get_eur_to_ils, _get_gbp_to_ils
+        return {"usd": round(_get_usd_to_ils(), 3), "eur": round(_get_eur_to_ils(), 3),
+                "gbp": round(_get_gbp_to_ils(), 3)}
+    except Exception:
+        return {"usd": 3.7, "eur": 4.0, "gbp": 4.7}
+
+
+@bp.route("/api/esim/trip", methods=["POST"])
+@core.limiter.limit("20 per minute")
+def api_esim_trip():
+    """Multi-destination trip planner feed (esim_trip.py). Body:
+    {legs: [{destination, days}, ...2-5], gb: <number>|"unl", bundles: [<he>, ...]}.
+    Returns, per contiguous stretch of the itinerary, the cheapest plans that
+    fit it; the page keeps the bundles that cover the stretch and picks the
+    cheapest split (lib/tripPlanner.js)."""
+    import esim_trip as _trip
+    try:
+        legs, gb, bundles = _trip.clean_request(request.get_json(silent=True))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    fx = _esim_fx()
+    segments, newest = _trip.trip_candidates(legs, gb, bundles, fx, db_path=core._db_path())
+    used = {d["provider"] for s in segments for d in s["own"] + s["bundles"]}
+    meta = core._GUEST_PROVIDER_META
+    providers = {p: {"label": meta.get(p, {}).get("label", core._HISTORY_CARRIER_NAMES.get(p, p)),
+                     "color": meta.get(p, {}).get("color", "#5c3317"),
+                     "domain": meta.get(p, {}).get("domain")} for p in used}
+    coupons = {}
+    for c in core.get_active_coupons(db_path=core._db_path()):
+        if c["carrier"] in used and c["carrier"] not in coupons:
+            coupons[c["carrier"]] = {"code": c["code"], "discount_label": c.get("discount_label"),
+                                     "external_offer_url": c.get("external_offer_url"),
+                                     "partner_name": c.get("partner_name")}
+    return jsonify({"legs": legs, "gb": gb, "segments": segments, "providers": providers,
+                    "coupons": coupons, "fx": fx,
+                    "updated_at": newest or datetime.now(timezone.utc).isoformat()})
+
+
 @bp.route("/api/esim/event", methods=["POST"])
 @core.limiter.limit("240 per minute")
 def api_esim_event():
