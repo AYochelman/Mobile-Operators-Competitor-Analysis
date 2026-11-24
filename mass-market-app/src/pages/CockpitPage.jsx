@@ -10,6 +10,7 @@ import { CarrierChip, PageHeader, Delta, MyCarrierModal } from '../components/mo
 import { getCarrierName } from '../components/moca/carrierMeta'
 import { DOMESTIC_LABELS } from '../data/carrierLabels'
 import Spinner from '../components/ui/Spinner'
+import ReactionsCard from '../components/ReactionsCard'
 
 /**
  * /cockpit — the executive (סמנכ"ל) situation room.
@@ -948,6 +949,7 @@ export default function CockpitPage() {
             </div>
 
             <TrendCard data={data} oursCarrier={oursCarrier} days={days} setDays={setDays} busy={trendLoading} />
+            <ReactionsCard oursCarrier={oursCarrier} />
             <FreshnessStrip data={data} />
           </>
         )}

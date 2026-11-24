@@ -147,6 +147,21 @@
 "endpoint": "account.api_auth_session"
 },
 {
+"rule": "/api/banner-insights",
+"methods": [
+"GET"
+],
+"endpoint": "banners.api_banner_insights"
+},
+{
+"rule": "/api/banner-insights/run-now",
+"methods": [
+"GET",
+"POST"
+],
+"endpoint": "banners.api_banner_insights_run_now"
+},
+{
 "rule": "/api/banners",
 "methods": [
 "GET"
@@ -324,6 +339,13 @@
 "endpoint": "esim.api_esim_push_unsubscribe"
 },
 {
+"rule": "/api/esim/trip",
+"methods": [
+"POST"
+],
+"endpoint": "esim.api_esim_trip"
+},
+{
 "rule": "/api/exchange-rates",
 "methods": [
 "GET"
@@ -427,6 +449,13 @@
 "GET"
 ],
 "endpoint": "history.api_history_price_series_batch"
+},
+{
+"rule": "/api/history/reactions",
+"methods": [
+"GET"
+],
+"endpoint": "history.api_history_reactions"
 },
 {
 "rule": "/api/hotels",

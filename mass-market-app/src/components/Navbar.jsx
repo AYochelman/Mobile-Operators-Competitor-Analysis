@@ -160,6 +160,7 @@ export default function Navbar({ onMobileMenuOpen }) {
         // Same slot as the desktop sidebar's "ניטור" group — right after the dashboard
         { to: '/cockpit', label: tt('חדר מצב', 'Situation room'), visible: visible('/cockpit') },
         { to: '/agent-desk', label: tt('עמדת נציג', 'Agent desk'), visible: visible('/agent-desk') },
+        { to: '/simulator', label: tt('סימולטור השקה', 'Launch simulator'), visible: visible('/simulator') },
         { to: '/compare', label: tt('השוואה', 'Compare'), visible: visible('/compare') },
         { to: '/alerts',  label: tt('התראות', 'Alerts'), visible: visible('/alerts') },
       ],

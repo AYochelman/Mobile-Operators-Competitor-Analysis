@@ -48,6 +48,7 @@ https://esim.mocaintel.com/*  /esim.html  200
 # scripts/check-redirects.mjs fails the build when one is missing.
 /admin/*               /index.html  200
 /agent-desk            /index.html  200
+/simulator             /index.html  200
 /ai-insights           /index.html  200
 /alerts                /index.html  200
 /archive               /index.html  200

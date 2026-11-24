@@ -88,6 +88,11 @@ export const api = {
     if (opts.to)          p.append('to', opts.to)
     return fetchApi(`/api/history/daily?${p}`)
   },
+  // Who moves after whom (reactions.py) - the situation room's reaction card.
+  getReactions: (windowDays = 7, days = 180) => fetchApi(`/api/history/reactions?days=${days}&window=${windowDays}`),
+  // What the daily banner screenshots SAY (banner_vision.py): latest reading
+  // per banner + the recent campaign changes.
+  getBannerInsights: (scope = 'domestic') => fetchApi(`/api/banner-insights?scope=${encodeURIComponent(scope)}`),
 
   // Scrape — admin only, triggers via JWT auth
   scrapeAll:        () => fetchApi('/api/scrape-all-now'),
@@ -325,6 +330,10 @@ export const api = {
   // Cheapest live global-eSIM deals for a destination (canonical Hebrew name).
   getEsimCompare: (destination) =>
     fetchApi(`/api/esim/compare${destination ? '?destination=' + encodeURIComponent(destination) : ''}`),
+  // Multi-destination trip planner (esim_trip.py): candidates per stretch of the
+  // itinerary. legs: [{destination, days}], gb: number | 'unl', bundles: [he].
+  getEsimTrip: (legs, gb, bundles) =>
+    fetchApi('/api/esim/trip', { method: 'POST', body: JSON.stringify({ legs, gb, bundles }) }),
   // Affiliate deep link: routes the click through Flask /go (no hotel attribution
   // — the consumer site earns directly). Returns an absolute URL (open new tab).
   esimGoUrl: (provider, plan, lang = 'he', dest = 'ישראל', campaign = '') => {

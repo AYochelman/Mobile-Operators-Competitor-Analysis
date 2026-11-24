@@ -7,6 +7,7 @@ import { useDashboardPlans, gbFilterApplies } from '../hooks/useDashboardPlans'
 import { useFeatureFlags } from '../hooks/useFeatureFlags'
 import PlanCard from '../components/PlanCard'
 import BannerMosaic from '../components/moca/BannerMosaic'
+import BannerCampaignChanges from '../components/BannerCampaignChanges'
 const HistoryTab = lazy(() => import('../components/HistoryTab'))
 const NewsTab    = lazy(() => import('../components/NewsTab'))
 import GroupedPlanCard from '../components/GroupedPlanCard'
@@ -291,6 +292,17 @@ export default function DashboardPage() {
   const [bannersLoaded, setBannersLoaded] = useState(false)
   const [storeBanners, setStoreBanners] = useState([])
   const [storeBannersLoaded, setStoreBannersLoaded] = useState(false)
+  // What the banner screenshots SAY (banner_vision.py): { latest, changes }.
+  // Optional - a failed load just leaves the tab as plain screenshots.
+  const [bannerInsights, setBannerInsights] = useState(null)
+  useEffect(() => {
+    if (tab !== 'banners' || bannerInsights) return
+    let cancelled = false
+    api.getBannerInsights('domestic')
+      .then((d) => { if (!cancelled) setBannerInsights(d || { latest: {}, changes: [] }) })
+      .catch(() => { if (!cancelled) setBannerInsights({ latest: {}, changes: [] }) })
+    return () => { cancelled = true }
+  }, [tab, bannerInsights])
 
   // Freshest scrape time of the plans currently shown — drives the "עדכון" stamp.
   // Plan tabs carry scraped_at; content/banners/history/news don't, so it hides there.
@@ -1491,6 +1503,8 @@ export default function DashboardPage() {
             </div>
           )}
 
+          <BannerCampaignChanges data={bannerInsights} />
+
           <h2
             style={{
               fontFamily: 'var(--font-display)',
@@ -1505,7 +1519,7 @@ export default function DashboardPage() {
             {tt('עמוד ראשי', 'Homepage')}
           </h2>
           <div className="mb-8">
-            <BannerMosaic banners={banners} source="home" />
+            <BannerMosaic banners={banners} source="home" insights={bannerInsights?.latest} />
           </div>
 
           {storeBanners.length > 0 && (
@@ -1523,7 +1537,7 @@ export default function DashboardPage() {
               >
                 {tt('חנות ציוד קצה', 'Device store')}
               </h2>
-              <BannerMosaic banners={storeBanners} source="store" />
+              <BannerMosaic banners={storeBanners} source="store" insights={bannerInsights?.latest} />
             </>
           )}
         </div>

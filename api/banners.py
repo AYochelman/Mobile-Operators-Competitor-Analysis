@@ -117,6 +117,83 @@ def api_global_banners():
     return core._public_cache(jsonify(core._filter_hidden_carrier(result)), 600)
 
 
+def banner_vision_sources(scope="domestic"):
+    """The screenshots banner_vision.py may read, as [{key, carrier, kind, name, file}].
+    scope: domestic (homepages + e-stores) | global | all."""
+    out = []
+    if scope in ("domestic", "all"):
+        for carrier, meta in core.CARRIER_DISPLAY.items():
+            out.append({"key": carrier, "carrier": carrier, "kind": "home",
+                        "name": meta["name"], "file": f"{carrier}.png"})
+        for carrier, meta in core.CARRIER_STORE_DISPLAY.items():
+            out.append({"key": f"{carrier}_store", "carrier": carrier, "kind": "store",
+                        "name": meta["name"], "file": f"{carrier}_store.png"})
+    if scope in ("global", "all"):
+        from scraper import GLOBAL_BANNER_URLS
+        for provider in GLOBAL_BANNER_URLS:
+            meta = core._GUEST_PROVIDER_META.get(provider, {})
+            out.append({"key": f"{provider}_global", "carrier": provider, "kind": "global",
+                        "name": meta.get("label") or provider, "file": f"{provider}_global.png"})
+    return out
+
+
+def run_banner_vision_job(config=None, dry_run=False, limit=None, scope=None, force=False):
+    """Read the banners whose image changed (banner_vision.py) and Telegram the
+    campaign switches. Called after the banner capture of every scheduled scrape."""
+    import banner_vision as _bv
+    config = config or core.load_config()
+    banners_dir = os.path.join(os.path.dirname(os.path.abspath(core.__file__)), "data", "banners")
+    scope = scope or config.get("banner_vision_scope") or "domestic"
+    out = _bv.run(config, banners_dir, banner_vision_sources(scope), db_path=core._db_path(),
+                  record=lambda model, body: core._record_claude_call("banner_vision", model, body),
+                  dry_run=dry_run, limit=limit, force=force)
+    if out.get("changed") and not dry_run and config.get("banner_vision_notify", True):
+        try:
+            from notifier import send_notification
+            send_notification(_bv.changes_message(out["changed"]), config)
+        except Exception as exc:
+            core.logger.warning("banner vision: notify failed: %s", exc)
+    return out
+
+
+@bp.route("/api/banner-insights")
+@core.limiter.limit("60 per minute")
+def api_banner_insights():
+    """What the banner screenshots say: the current reading per banner and the
+    campaign switches of the last `days` days (banner_vision.py).
+    ?scope=domestic|global|all &days=30"""
+    import banner_vision as _bv
+    scope = request.args.get("scope", "domestic")
+    if scope not in ("domestic", "global", "all"):
+        return jsonify({"error": "scope must be domestic/global/all"}), 400
+    try:
+        days = max(1, min(int(request.args.get("days", 30)), 180))
+    except (ValueError, TypeError):
+        days = 30
+    keys = {s["key"]: s for s in banner_vision_sources(scope)}
+    hidden = core._hidden_carrier_for_request()
+    ok = lambda r: r["banner_key"] in keys and r["carrier"] != hidden
+    name = lambda r: dict(r, name=keys[r["banner_key"]]["name"])
+    latest = {k: name(r) for k, r in _bv.latest_rows(core._db_path()).items() if ok(r)}
+    changes = [name(r) for r in _bv.recent_changes(days, core._db_path()) if ok(r)]
+    return core._public_cache(jsonify({"scope": scope, "days": days, "latest": latest, "changes": changes}), 300)
+
+
+@bp.route("/api/banner-insights/run-now", methods=["GET", "POST"])
+@core.require_api_key_or_query
+def api_banner_insights_run_now():
+    """Manual trigger / preview. &dry_run=true lists what WOULD be read (no API
+    call, no cost); &limit=N caps the readings; &scope=...; &force=true ignores
+    the unchanged-image and once-a-day guards."""
+    flag = lambda k: request.args.get(k, "").lower() in ("1", "true", "yes")
+    try:
+        limit = int(request.args["limit"]) if request.args.get("limit") else None
+    except ValueError:
+        limit = None
+    return jsonify(run_banner_vision_job(dry_run=flag("dry_run"), limit=limit,
+                                         scope=request.args.get("scope") or None, force=flag("force")))
+
+
 @bp.route("/api/archive")
 @core.limiter.limit("60 per minute")
 def api_archive():

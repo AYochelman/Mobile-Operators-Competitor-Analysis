@@ -63,6 +63,10 @@ CLAUDE_PRICING_DEFAULT = {
     "claude-sonnet-4-6":          {"input": 3.00, "output": 15.00, "cache_read": 0.30, "cache_write": 3.75},
     "claude-haiku-4-5-20251001":  {"input": 1.00, "output":  5.00, "cache_read": 0.10, "cache_write": 1.25},
     "claude-opus-4-7":            {"input": 15.00, "output": 75.00, "cache_read": 1.50, "cache_write": 18.75},
+    # Claude 5 family (banner_vision.py reads screenshots with claude-opus-5-5).
+    "claude-opus-5-5":            {"input": 4.00, "output": 20.00, "cache_read": 0.20, "cache_write": 5.00},
+    "claude-sonnet-5-5":          {"input": 2.00, "output": 10.00, "cache_read": 0.10, "cache_write": 2.50},
+    "claude-haiku-5-5":           {"input": 0.10, "output":  0.50, "cache_read": 0.01, "cache_write": 0.125},
 }
 
 
@@ -2323,6 +2327,7 @@ def api_health():
 from api.esim import (  # noqa: E402,F401
     api_esim_destinations,
     api_esim_compare,
+    api_esim_trip,
     api_esim_event,
     api_esim_push_subscribe,
     api_esim_push_unsubscribe,
@@ -2426,6 +2431,10 @@ from api.banners import (  # noqa: E402,F401
     api_banners,
     api_store_banners,
     api_global_banners,
+    banner_vision_sources,
+    run_banner_vision_job,
+    api_banner_insights,
+    api_banner_insights_run_now,
     api_archive,
     api_archive_date_range,
     _ARCHIVE_BANNER_ROOT,
@@ -2512,6 +2521,7 @@ from api.history import (  # noqa: E402,F401
     api_history_price_series,
     api_history_price_series_batch,
     api_history_daily,
+    api_history_reactions,
     api_maintenance_run_now,
     api_history_analyze,
 )
@@ -2852,6 +2862,12 @@ if __name__ == "__main__":
                 arc.archive_all_global_banners(banners_dir, list(GLOBAL_BANNER_URLS.keys()))
             except Exception as be:
                 logger.error(f"Banner capture failed in scheduled scrape: {be}", exc_info=True)
+
+            # ── Banner vision: read the offer on the banners that changed ─────
+            try:
+                run_banner_vision_job(config)
+            except Exception as ve:
+                logger.error(f"Banner vision failed in scheduled scrape: {ve}", exc_info=True)
 
             # ── Price alerts ───────────────────────────────────────────────────
             try:

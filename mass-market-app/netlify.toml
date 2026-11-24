@@ -63,6 +63,11 @@
   status = 200
 
 [[redirects]]
+  from = "/simulator"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
   from = "/ai-insights"
   to = "/index.html"
   status = 200

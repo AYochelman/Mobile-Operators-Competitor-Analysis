@@ -25,6 +25,7 @@ export const FLAG_FOR_PATH = {
   // תובנות
   '/cockpit':           'hide_cockpit',
   '/agent-desk':        'hide_agent_desk',
+  '/simulator':         'hide_simulator',
   '/executive-summary': 'hide_executive_summary',
   '/positioning':       'hide_positioning',
   '/ai-insights':       'hide_ai_insights',
@@ -42,7 +43,7 @@ export const FLAG_FOR_PATH = {
 // (no flag) so this never returns nothing / loops.
 const HOME_FALLBACK_ORDER = [
   '/plans', '/roaming', '/esim', '/esim-banners', '/usa', '/ski', '/resellers', '/content',
-  '/cockpit', '/agent-desk', '/executive-summary', '/positioning', '/compare', '/ai-insights',
+  '/cockpit', '/agent-desk', '/simulator', '/executive-summary', '/positioning', '/compare', '/ai-insights',
   '/news', '/social', '/banners', '/archive', '/history', '/alerts',
 ]
 
@@ -116,7 +117,9 @@ export const NAV_SECTIONS = [
     desc: { he: 'מסך אחד להנהלה: מחיר, נפח ושינויי השבוע', en: 'One executive screen: price, volume, weekly changes' } },
   { path: '/agent-desk',        group: 'monitoring', he: 'עמדת נציג',          en: 'Agent desk',
     desc: { he: 'מענה מהיר לנציג מול לקוח שמצטט מתחרה', en: 'Fast answers for a rep facing a competitor quote' } },
-  { path: '/executive-summary', group: 'monitoring', he: 'דוח מנהלים',         en: 'Executive report',
+  { path: '/simulator',         group: 'monitoring', he: 'סימולטור השקה',      en: 'Launch simulator',
+    desc: { he: 'איפה תעמוד חבילה חדשה בשוק, לפני שמשיקים אותה', en: 'Where a new plan would stand in the market, before launch' } },
+  { path: '/executive-summary', group: 'monitoring', he: 'דוח מנהלים',        en: 'Executive report',
     desc: { he: 'סיכום שוק מוכן להצגה, כולל ניתוח AI', en: 'Presentation-ready market summary with AI analysis' } },
   { path: '/positioning',       group: 'monitoring', he: 'מיצוב תחרותי',       en: 'Positioning',
     desc: { he: 'איפה כל מפעיל עומד ביחס מחיר ונפח', en: 'Where each carrier stands on price and volume' } },
