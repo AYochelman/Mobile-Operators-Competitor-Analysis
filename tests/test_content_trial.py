@@ -47,6 +47,12 @@ def test_no_benefit(text):
     assert extract_free_trial(text) is None
 
 
+def test_discount_period_is_never_cut_mid_word():
+    # "50% הנחה לחודשים הראשונים" used to come back as "50% הנחה לחודש"
+    assert extract_free_trial("50% הנחה לחודשים הראשונים") is None
+    assert extract_free_trial("50% הנחה לחודש הראשון") == "50% הנחה לחודש הראשון"
+
+
 def test_real_wecom_page():
     assert extract_free_trial(WECOM_NORTON, "7.90") == \
         "חודש ראשון מתנה"
