@@ -169,3 +169,46 @@ def test_pelephone_own_session_benefit(monkeypatch):
     # nothing detected on the page -> the fixed text
     rows = _run(monkeypatch, {}, pelephone={key[0]: ("₪19.90", None, entry)})
     assert rows[key]["free_trial"] == entry["free_trial"]
+
+
+# Pelephone "Pelephone Cyber TOTAL / Norton" card, read by the operator 2026-11-24.
+PELE_NORTON_CARD = ("הגנת סייבר מתקדמת\nלגלישה בטוחה בסמארטפון\nחודש ראשון חינם\n"
+                    'ואח"כ ב-7.90 ₪ לחודש\nלהצטרפות\nהגנה בגלישה סלולרית וב- WIFI בארץ ובחו"ל\n'
+                    "עם אפליקציית Norton Security")
+PELE_CYBER_CARD = ("הגנת סייבר רישתית\nבגלישה סלולרית\n3 חודשים חינם\n"
+                   'ואח"כ ב- 4.90 ₪ לחודש\nלהצטרפות\nהגנה מפני מתקפות סייבר בגלישה סלולרית\n'
+                   "הגנה מפני ניסיונות פישינג / גניבת זהות / תוכנות כופר\nבקרת הורים כלולה בשירות")
+
+
+def _pele_entry(service):
+    import scraper
+    return next(e for e in scraper.CONTENT_SERVICES
+                if e["carrier"] == "pelephone" and e["service"] == service)
+
+
+@pytest.mark.parametrize("page", [
+    PELE_CYBER_CARD + "\n" + PELE_NORTON_CARD,          # the two cards side by side, either order
+    PELE_NORTON_CARD + "\n" + PELE_CYBER_CARD,
+])
+def test_pelephone_norton_and_cyber_share_a_page(page):
+    from scrapers import content
+    norton, cyber = _pele_entry("נורטון"), _pele_entry("סייבר")
+    price, kw = content._scan_price(page, norton)
+    assert price == "₪7.90" and extract_free_trial(page, kw) == "חודש ראשון חינם"
+    price, kw = content._scan_price(page, cyber)
+    assert price == "₪4.90" and extract_free_trial(page, kw) == "3 חודשים חינם"
+
+
+def test_pelephone_norton_survives_a_changed_benefit():
+    from scrapers import content
+    page = PELE_NORTON_CARD.replace("חודש ראשון חינם", "חצי שנה מתנה")
+    norton = _pele_entry("נורטון")
+    price, kw = content._scan_price(page, norton)
+    assert price == "₪7.90"
+    assert resolve_free_trial(norton, extract_free_trial(page, kw)) == ("חצי שנה מתנה", "page")
+
+
+def test_pelephone_norton_falls_back_to_the_old_anchor():
+    from scrapers import content
+    page = 'כותרת אחרת\nחודש ראשון חינם\nואח"כ ב-7.90 ₪ לחודש'
+    assert content._scan_price(page, _pele_entry("נורטון")) == ("₪7.90", "חודש ראשון חינם")
