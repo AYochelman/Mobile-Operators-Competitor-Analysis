@@ -49,7 +49,11 @@ CONTENT_SERVICES = [
     # ── נורטון ─────────────────────────────────────────────────────────────
     {"service": "נורטון", "carrier": "pelephone",
      "url": "https://www.pelephone.co.il/ds/heb/content-products/pelephonecyber/",
-     "strategy": "keyword_scan", "price_keyword": "חודש ראשון חינם", "free_trial": "חודש ראשון חינם"},
+     "strategy": "keyword_scan",
+     # anchored on the card's heading, NOT on the benefit phrase: with the phrase as the anchor
+     # a changed benefit lost the price too. The old anchor stays as the fallback.
+     "price_keyword": ("הגנת סייבר מתקדמת", "חודש ראשון חינם"),
+     "free_trial": "חודש ראשון חינם", "trial_scan": True},
     {"service": "נורטון", "carrier": "hotmobile",
      "url": "https://www.hotmobile.co.il/Pages/Norton.aspx",
      "strategy": "keyword_scan", "price_keyword": "Norton", "free_trial": "50% הנחה לחודש למשך 4 חודשים",
@@ -135,6 +139,19 @@ def _extract_content_price(text, keyword=None, lookback=50):
     return None
 
 
+def _scan_price(text, entry):
+    """(price, keyword that located it). `price_keyword` may be a tuple of anchors tried in
+    order - the first one that yields a price wins, and the benefit is read around the same one."""
+    keywords = entry.get("price_keyword")
+    if not isinstance(keywords, (list, tuple)):
+        keywords = (keywords,)
+    for kw in keywords:
+        price = _extract_content_price(text, kw)
+        if price:
+            return price, kw
+    return None, keywords[0]
+
+
 def scrape_all_content():
     """Scrape all content services (eSIM שעון, סייבר, נורטון, שיר בהמתנה, תא קולי).
     Returns list of dicts: {service, carrier, price, free_trial, note, status}
@@ -153,9 +170,8 @@ def scrape_all_content():
             carrier    = entry["carrier"]
             note       = entry.get("note", "")
 
-            def _result(price, status, text=None):
-                detected = (content_trial.extract_free_trial(text, entry.get("price_keyword"))
-                            if text else None)
+            def _result(price, status, text=None, keyword=None):
+                detected = content_trial.extract_free_trial(text, keyword) if text else None
                 free_trial, source = content_trial.resolve_free_trial(entry, detected)
                 if text:
                     logger.info(f"Content trial {service}/{carrier}: page={detected!r} "
@@ -200,8 +216,8 @@ def scrape_all_content():
                     html = page.evaluate("() => document.documentElement.innerHTML")
                     stripped = re.sub(r'<[^>]+>', ' ', html)
                     stripped = re.sub(r'\s+', ' ', stripped)
-                    price = _extract_content_price(stripped, entry.get("price_keyword"))
-                    results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא", stripped))
+                    price, kw = _scan_price(stripped, entry)
+                    results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא", stripped, kw))
 
                 # ── keyword_scan (default) ────────────────────────────────
                 else:
@@ -219,8 +235,8 @@ def scrape_all_content():
                         """)
                         page.wait_for_timeout(2000)
                     body  = page.inner_text("body")
-                    price = _extract_content_price(body, entry.get("price_keyword"))
-                    results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא", body))
+                    price, kw = _scan_price(body, entry)
+                    results.append(_result(price or "לא נמצא", "נמצא" if price else "לא נמצא", body, kw))
 
                 logger.info(f"Content {service}/{carrier}: {results[-1]['price']}")
             except Exception as e:
@@ -267,9 +283,9 @@ def _pelephone_content_prices():
                             }""", faq_q)
                         page.wait_for_timeout(2000)
                     body = page.inner_text("body")
-                    price = _extract_content_price(body, e.get("price_keyword"))
+                    price, kw = _scan_price(body, e)
                     if price:
-                        detected = content_trial.extract_free_trial(body, e.get("price_keyword"))
+                        detected = content_trial.extract_free_trial(body, kw)
                         prices[e["service"]] = (price, detected, e)
                         logger.info(f"Content trial {e['service']}/pelephone (own session): "
                                     f"page={detected!r}")
