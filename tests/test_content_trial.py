@@ -53,6 +53,13 @@ def test_discount_period_is_never_cut_mid_word():
     assert extract_free_trial("50% הנחה לחודש הראשון") == "50% הנחה לחודש הראשון"
 
 
+def test_real_hotmobile_norton_page():
+    # hotmobile.co.il/Pages/Norton.aspx, read by the operator 2026-11-24
+    page = ("הצטרפו עכשיו במחיר של 10.90 ₪ לחודש ותהנו מהטבת הצטרפות "
+            "50% הנחה לחודש למשך 4 חודשים.")
+    assert extract_free_trial(page) == "50% הנחה לחודש למשך 4 חודשים"
+
+
 def test_real_wecom_page():
     assert extract_free_trial(WECOM_NORTON, "7.90") == \
         "חודש ראשון מתנה"
