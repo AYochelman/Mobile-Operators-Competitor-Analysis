@@ -5,6 +5,7 @@ import { carrierLabel } from '../data/carrierLabels'
 import { CARRIER_LOGOS, getCarrierColor } from '../components/moca/carrierMeta'
 import { CARRIER_HOME_URLS } from '../data/carrierHomeUrls'
 import { getCountriesForAbroadPlan } from '../data/abroadCountries'
+import { destKey } from '../data/destI18n'
 import { getAppsForPlan } from '../data/abroadApps'
 import { SITE_ORIGIN } from '../data/siteOrigin'
 import BoltMark from '../components/BoltMark'
@@ -172,6 +173,9 @@ const T = {
     roamSub: 'חבילות גלישה ושיחות לחו"ל על המספר הקיים - בלי להחליף סים.',
     roamSearch: 'חיפוש יעד (למשל יוון)…',
     countriesN: '{n} מדינות',
+    roamCount: '{n} מתוך {total} חבילות כוללות את היעד',
+    roamCountAll: 'כל {total} החבילות כוללות את היעד - רוב חבילות המפעילים תקפות בעשרות מדינות',
+    roamIncl: 'כולל {c}',
     appsN: 'גלישה חופשית ב-{n} אפליקציות',
     esimCross: 'טסים לחו"ל? כדאי להשוות גם eSIM גלובלי',
     esimCrossSub: 'חבילות eSIM ליותר מ-150 יעדים מכ-40 ספקים - שווה להשוות מול חבילת הנדידה של המפעיל.',
@@ -302,6 +306,9 @@ const T = {
     roamSub: 'Data & calls abroad on your existing number - no SIM swap.',
     roamSearch: 'Search a destination (e.g. Greece)…',
     countriesN: '{n} countries',
+    roamCount: '{n} of {total} packages cover this destination',
+    roamCountAll: 'All {total} packages cover this destination - most carrier packages are valid in dozens of countries',
+    roamIncl: 'Covers {c}',
     appsN: 'Free browsing in {n} apps',
     esimCross: 'Flying abroad? Compare global eSIMs too',
     esimCrossSub: 'eSIM plans for 150+ destinations from about 40 providers - worth comparing against your carrier’s roaming package.',
@@ -397,6 +404,7 @@ const CSS = `
 #mobile-app .price-promo{font-size:11px;color:var(--down);font-weight:700;white-space:nowrap}
 #mobile-app .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 #mobile-app .tag{font-size:10.5px;font-weight:700;background:var(--bg);border:1px solid var(--line);color:var(--sub);padding:3px 9px;border-radius:999px}
+#mobile-app .tag.ok{background:color-mix(in srgb,#4a7c3f,#fff 88%);border-color:color-mix(in srgb,#4a7c3f,#fff 55%);color:#3d6a33}
 #mobile-app .tag.warn{background:color-mix(in srgb,var(--warn),#fff 90%);border-color:color-mix(in srgb,var(--warn),#fff 55%);color:var(--warn)}
 #mobile-app .deal-bottom{display:flex;align-items:center;gap:8px;margin-top:11px}
 #mobile-app .get{flex:1;border:0;border-radius:11px;cursor:pointer;background:var(--c1);color:#fff;font:inherit;font-weight:800;font-size:13px;padding:10px 15px;transition:transform .12s,opacity .12s}
@@ -1084,21 +1092,35 @@ export default function MobileComparePage() {
   }, [filtered])
 
   // ── Roaming filter pipeline ──────────────────────────────────────────────
-  const roamList = useMemo(() => {
-    if (!abroad) return []
+  // The carriers spell the same country differently (ארה"ב / ארצות הברית,
+  // מצרים / מצריים...), so a typed destination is resolved to canonical keys
+  // (destKey) over every list first, then matched per plan by key.
+  const roamView = useMemo(() => {
+    if (!abroad) return { rows: [], total: 0, hit: null }
     let rows = abroad
     if (roamCarrier !== 'all') rows = rows.filter((p) => p.carrier === roamCarrier)
+    const total = rows.length
     const q = roamQ.trim()
+    let hit = null
     if (q) {
+      const ql = q.toLowerCase()
+      const keys = new Set()
+      for (const p of abroad) {
+        for (const c of (getCountriesForAbroadPlan(p)?.countries || [])) {
+          if (c.includes(q) || destKey(c).toLowerCase().includes(ql)) keys.add(destKey(c))
+        }
+      }
+      hit = new Map()
       rows = rows.filter((p) => {
+        const c = (getCountriesForAbroadPlan(p)?.countries || []).find((x) => keys.has(destKey(x)))
+        if (c) { hit.set(p, c); return true }
         if ((p.plan_name || '').includes(q)) return true
-        if ((p.extras || []).some((e) => e.includes(q))) return true
-        const cc = getCountriesForAbroadPlan(p)
-        return !!(cc && cc.countries && cc.countries.some((c) => c.includes(q)))
+        return (p.extras || []).some((e) => String(e).includes(q))
       })
     }
-    return [...rows].sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999))
+    return { rows: [...rows].sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999)), total, hit }
   }, [abroad, roamCarrier, roamQ])
+  const roamList = roamView.rows
 
   const roamCarriers = useMemo(() => {
     const seen = []
@@ -1332,8 +1354,15 @@ export default function MobileComparePage() {
                       })}
                     </div>
                   )}
+                  {roamView.hit && roamList.length > 0 && (
+                    <p role="status" aria-live="polite" style={{ fontSize: 13, color: 'var(--sub)', fontWeight: 700, margin: '0 0 12px' }}>
+                      {(roamList.length === roamView.total ? t.roamCountAll : t.roamCount)
+                        .replace('{n}', String(roamList.length)).replace('{total}', String(roamView.total))}
+                    </p>
+                  )}
                   {roamList.length ? roamList.map((p, i) => {
                     const cc = getCountriesForAbroadPlan(p)
+                    const hitC = roamView.hit?.get(p)
                     const apps = getAppsForPlan(p)
                     return (
                       <div className="deal" key={`${p.carrier}|${p.plan_name}|${i}`}>
@@ -1356,6 +1385,7 @@ export default function MobileComparePage() {
                         </div>
                         {(cc?.countries?.length || apps) && (
                           <div className="tags">
+                            {hitC && <span className="tag ok">{t.roamIncl.replace('{c}', lang === 'he' ? hitC : destKey(hitC))}</span>}
                             {cc?.countries?.length > 0 && <span className="tag">{t.countriesN.replace('{n}', String(cc.countries.length))}</span>}
                             {apps?.apps?.length > 0 && <span className="tag">{t.appsN.replace('{n}', String(apps.apps.length))}</span>}
                           </div>
