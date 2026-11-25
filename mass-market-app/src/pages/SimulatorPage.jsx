@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useLang } from '../hooks/useLanguage'
 import { useAgentDeskData } from '../hooks/useAgentDeskData'
-import { buildDraft, simulatePlan } from '../hooks/useSimulator'
+import { BUNDLED_SERVICES, buildDraft, servicePrices, simulatePlan } from '../hooks/useSimulator'
 import { CarrierChip, PageHeader } from '../components/moca'
 import { getCarrierName } from '../components/moca/carrierMeta'
 import { DOMESTIC_LABELS } from '../data/carrierLabels'
@@ -20,7 +20,23 @@ import Spinner from '../components/ui/Spinner'
  */
 
 const OURS_KEY = 'moca_sim_ours_carrier'
-const EMPTY = { price: '', gb: '', unlimited: false, promoPrice: '', promoMonths: '', abroadGb: '', network: 'none', minutesUnlimited: true }
+const EMPTY = { price: '', gb: '', unlimited: false, promoPrice: '', promoMonths: '', abroadGb: '', network: 'none', minutesUnlimited: true, voucher: '', freeApps: false, appsValue: '', countPerks: false, svc: {}, svcValue: {} }
+
+const SERVICE_LABELS = {
+  cyber: ['סייבר רשתי', 'Network cyber protection'],
+  watch: ['eSIM לשעון', 'Watch eSIM'],
+  song: ['שיר בהמתנה', 'Ring-back tone'],
+  antivirus: ['אנטי וירוס', 'Antivirus'],
+}
+
+const EDGE_LABELS = {
+  ...SERVICE_LABELS,
+  abroad: ['חו״ל', 'roaming'],
+  network: ['5G', '5G'],
+  minutes: ['דקות', 'minutes'],
+  voucher: ['שובר לציוד קצה', 'device voucher'],
+  apps: ['גלישה חינם באפליקציות', 'free app browsing'],
+}
 
 const ils = (n) => (Number.isFinite(n) ? `₪${(Math.round(n * 10) / 10).toLocaleString('en-US')}` : '-')
 const ilsR = (n) => (Number.isFinite(n) ? `₪${Math.round(n).toLocaleString('en-US')}` : '-')
@@ -91,7 +107,11 @@ function Results({ sim, ours, tt }) {
       <section className={`sim-card sim-verdict ${v.tone}`} role="status" aria-live="polite">
         <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--color-moca-dark)' }}>{tt(v.he, v.en)}</div>
         <div className="sim-tiles">
-          <div><small>{tt('עלות שנה ראשונה', 'First-year cost')}</small><b><Num>{ilsR(d.yearCost)}</Num></b></div>
+          <div>
+            <small>{d.perksCounted ? tt('עלות שנה ראשונה, אחרי הטבות', 'First-year cost, after perks') : tt('עלות שנה ראשונה', 'First-year cost')}</small>
+            <b><Num>{ilsR(d.yearCost)}</Num></b>
+            {d.perksCounted && <small>{tt('לפני הטבות', 'Before perks')} <Num>{ilsR(d.grossYearCost)}</Num></small>}
+          </div>
           <div><small>{tt('מקום בין החבילות המקבילות', 'Rank among comparable plans')}</small><b><Num>{sim.rank}</Num> {tt('מתוך', 'of')} <Num>{sim.rankOf}</Num></b></div>
           <div><small>{tt('זול יותר מ', 'Cheaper than')}</small><b>{sim.cheaperThanPct == null ? '-' : <><Num>{sim.cheaperThanPct}%</Num> {tt('מהשוק', 'of the market')}</>}</b></div>
           <div>
@@ -99,6 +119,21 @@ function Results({ sim, ours, tt }) {
             <b>{sim.targetMonthly == null ? '-' : <><Num>{ils(sim.targetMonthly)}</Num> {tt('לחודש', '/mo')}</>}</b>
           </div>
         </div>
+        {d.perksValue > 0 && (
+          <p className="sim-note">
+            {tt('שווי ההטבות בשנה הראשונה: ', 'Perks value over year one: ')}<Num style={{ fontWeight: 800 }}>{ilsR(d.perksValue)}</Num>
+            {' ('}
+            {[
+              d.voucherValue > 0 && tt(`שובר לציוד קצה ${ilsR(d.voucherValue)}`, `device voucher ${ilsR(d.voucherValue)}`),
+              d.appsMonthly > 0 && tt(`גלישה חינם באפליקציות ${ils(d.appsMonthly)} לחודש`, `free app browsing ${ils(d.appsMonthly)}/mo`),
+              ...d.services.filter((s) => s.monthly > 0).map((s) => tt(`${SERVICE_LABELS[s.id][0]} ${ils(s.monthly)} לחודש`, `${SERVICE_LABELS[s.id][1]} ${ils(s.monthly)}/mo`)),
+            ].filter(Boolean).join(' + ')}
+            {'). '}
+            {d.perksCounted
+              ? tt('השווי הופחת מעלות השנה הראשונה של החבילה החדשה. הטבות של מתחרים לא מתומחרות, ולכן ההשוואה נוטה לטובתנו.', 'It was deducted from the new plan\'s first-year cost. Competitors\' perks are not priced, so the comparison leans in our favour.')
+              : tt('השווי לא משוקלל בדירוג. אפשר להפעיל את השקלול בטופס.', 'It is not weighed into the ranking. You can switch that on in the form.')}
+          </p>
+        )}
         {gapToTarget != null && gapToTarget > 0.05 && sim.cheapestComparable && (
           <p className="sim-note">
             {tt(
@@ -136,7 +171,7 @@ function Results({ sim, ours, tt }) {
                       {edges.length > 0 && (
                         <span className="sim-edge">
                           {tt('היתרון שלנו: ', 'Our edge: ')}
-                          {edges.map((e) => e === 'abroad' ? tt('חו״ל', 'roaming') : e === 'network' ? '5G' : tt('דקות', 'minutes')).join(', ')}
+                          {edges.map((e) => tt(...EDGE_LABELS[e])).join(', ')}
                         </span>
                       )}
                     </span>
@@ -232,7 +267,10 @@ export default function SimulatorPage() {
   const [form, setForm] = useState(EMPTY)
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
 
-  const draft = useMemo(() => buildDraft(form), [form])
+  const setSvc = (group, id) => (e) => setForm((f) => ({ ...f, [group]: { ...f[group], [id]: e.target.type === 'checkbox' ? e.target.checked : e.target.value } }))
+
+  const svcPrices = useMemo(() => servicePrices(data?.content, ours), [data, ours])
+  const draft = useMemo(() => buildDraft(form, svcPrices), [form, svcPrices])
   const sim = useMemo(() => (data && draft ? simulatePlan(draft, data.domestic, ours, data.resellers) : null), [data, draft, ours])
   const carrierOptions = useMemo(
     () => Object.keys(DOMESTIC_LABELS).map((id) => ({ id, label: getCarrierName(id) })).sort((a, b) => a.label.localeCompare(b.label, 'he')),
@@ -289,12 +327,50 @@ export default function SimulatorPage() {
                   </select>
                 </Field>
                 <label className="sim-check"><input type="checkbox" checked={form.minutesUnlimited} onChange={set('minutesUnlimited')} /> {tt('דקות ללא הגבלה', 'Unlimited minutes')}</label>
+                <fieldset className="sim-perks">
+                  <legend>{tt('הטבות שוות כסף', 'Perks worth money')}</legend>
+                  <Field label={tt('שובר לרכישת ציוד קצה (₪)', 'Device purchase voucher (₪)')} hint={tt('סכום חד-פעמי', 'One-time amount')}>
+                    <input className="sim-input" type="number" inputMode="decimal" min="0" step="10" value={form.voucher} onChange={set('voucher')} placeholder="0" />
+                  </Field>
+                  <label className="sim-check"><input type="checkbox" checked={form.freeApps} onChange={set('freeApps')} /> {tt('גלישה חינם באפליקציות מובילות', 'Free browsing in leading apps')}</label>
+                  {form.freeApps && (
+                    <Field label={tt('שווי הגלישה באפליקציות (₪ לחודש)', 'App browsing value (₪ per month)')} hint={tt('הערכה שלכם. ריק = יוצג כיתרון בלי שווי כספי', 'Your estimate. Empty = shown as an edge with no money value')}>
+                      <input className="sim-input" type="number" inputMode="decimal" min="0" step="0.5" value={form.appsValue} onChange={set('appsValue')} placeholder="0" />
+                    </Field>
+                  )}
+                  <div className="sim-svc-title">{tt('שירותים ללא תשלום נוסף', 'Services at no extra charge')}</div>
+                  {BUNDLED_SERVICES.map((s) => {
+                    const sp = svcPrices[s.id] || {}
+                    const label = tt(...SERVICE_LABELS[s.id])
+                    return (
+                      <div key={s.id} className="sim-svc">
+                        <label className="sim-check"><input type="checkbox" checked={!!form.svc[s.id]} onChange={setSvc('svc', s.id)} /> {label}</label>
+                        {form.svc[s.id] && (
+                          <Field
+                            label={tt('שווי (₪ לחודש)', 'Value (₪ per month)')}
+                            hint={sp.suggested == null
+                              ? tt('אין מחיר שוק לשירות הזה, הזינו הערכה', 'No market price for this service, enter an estimate')
+                              : sp.ours != null
+                                ? tt(`ריק = המחיר שלנו היום, ${ils(sp.ours)}. חציון השוק ${ils(sp.median)}`, `Empty = our price today, ${ils(sp.ours)}. Market median ${ils(sp.median)}`)
+                                : tt(`ריק = חציון השוק, ${ils(sp.median)} (${sp.n} חברות)`, `Empty = market median, ${ils(sp.median)} (${sp.n} carriers)`)}
+                          >
+                            <input className="sim-input" type="number" inputMode="decimal" min="0" step="0.5" aria-label={`${label} - ${tt('שווי לחודש', 'value per month')}`}
+                              value={form.svcValue[s.id] ?? ''} onChange={setSvc('svcValue', s.id)} placeholder={sp.suggested != null ? String(sp.suggested) : '0'} />
+                          </Field>
+                        )}
+                      </div>
+                    )
+                  })}
+                  <label className="sim-check" style={{ marginBottom: 0, marginTop: 4 }}>
+                    <input type="checkbox" checked={form.countPerks} onChange={set('countPerks')} /> {tt('להפחית את שווי ההטבות מעלות השנה הראשונה', 'Deduct the perks value from the first-year cost')}
+                  </label>
+                </fieldset>
                 <button type="button" className="sim-link" onClick={() => setForm(EMPTY)} style={{ marginTop: 6 }}>{tt('ניקוי הטופס', 'Clear form')}</button>
               </Card>
               <p className="sim-foot">
                 {tt(
-                  `ההשוואה מול ${data.domestic.length} חבילות במחירון הרשמי, לפי עלות שנה ראשונה (חודשי מבצע במחיר המבצע). חבילות שיחות בלבד לא נכללות. הטבות שאינן מחיר ונפח מוצגות כיתרון, לא משוקללות בדירוג.`,
-                  `Compared with ${data.domestic.length} official rate-card plans on first-year cost (promo months at the promo price). Voice-only plans are excluded. Perks other than price and data are shown as an edge, not weighed into the ranking.`,
+                  `ההשוואה מול ${data.domestic.length} חבילות במחירון הרשמי, לפי עלות שנה ראשונה (חודשי מבצע במחיר המבצע). חבילות שיחות בלבד לא נכללות. הטבות שאינן מחיר ונפח מוצגות כיתרון, לא משוקללות בדירוג. הטבות שוות כסף (שובר, גלישה באפליקציות, שירותים ללא תשלום) מופחתות מהעלות רק אם בחרתם בכך.`,
+                  `Compared with ${data.domestic.length} official rate-card plans on first-year cost (promo months at the promo price). Voice-only plans are excluded. Perks other than price and data are shown as an edge, not weighed into the ranking. Perks worth money (voucher, app browsing, free services) are deducted from the cost only if you choose so.`,
                 )}
                 {data.updatedHours != null && data.updatedHours > 36 ? ' ' + tt(`שימו לב: הנתונים עודכנו לפני ${data.updatedHours} שעות.`, `Note: the data was updated ${data.updatedHours} hours ago.`) : ''}
               </p>
@@ -320,6 +396,12 @@ export default function SimulatorPage() {
         .sim-input:focus-visible, .sim-link:focus-visible { outline: 3px solid var(--color-moca-bolt); outline-offset: 1px; }
         .sim-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .sim-check { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--color-moca-text); margin: 0 0 12px; cursor: pointer; }
+        .sim-perks { border: 1px dashed var(--color-moca-border); border-radius: 10px; padding: 10px 11px 11px; margin: 2px 0 10px; min-width: 0; }
+        .sim-perks legend { font-size: 12px; font-weight: 800; color: var(--color-moca-dark); padding: 0 6px; }
+        .sim-perks .sim-check { align-items: flex-start; line-height: 1.35; }
+        .sim-perks .sim-check input { margin-top: 2px; flex: none; }
+        .sim-svc-title { font-size: 12px; font-weight: 700; color: var(--color-moca-sub); margin: 4px 0 8px; padding-top: 10px; border-top: 1px solid var(--color-moca-cream); }
+        .sim-svc .sim-check { margin-bottom: 8px; }
         .sim-err { font-size: 12px; color: #8f3520; margin: -4px 0 10px; }
         .sim-foot { font-size: 11.5px; line-height: 1.6; color: var(--color-moca-muted); margin: 10px 4px 0; }
         .sim-link { background: none; border: none; padding: 0; font: inherit; font-size: 12px; font-weight: 700; color: var(--color-moca-bolt); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }

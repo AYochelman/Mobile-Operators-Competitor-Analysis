@@ -17,15 +17,78 @@ import { firstYearCost } from './useAgentDeskData'
 const gbKey = (gb) => (gb === Infinity ? 1e6 : gb == null ? 0 : gb)
 const EPS = 0.01
 
-/** The draft as typed in the form → the normalized shape, or null when incomplete. */
-export function buildDraft({ price, promoPrice, promoMonths, gb, unlimited, abroadGb, network, minutesUnlimited }) {
+/**
+ * Add-on services a plan can bundle at no extra charge. `service` is the name
+ * in content_plans (the carriers sell them separately, so the market price is
+ * known); `re` finds the service in a competitor plan's benefit lines.
+ */
+export const BUNDLED_SERVICES = [
+  { id: 'cyber', service: 'סייבר', re: /סייבר/ },
+  { id: 'watch', service: 'eSIM שעון', re: /שעון/ },
+  { id: 'song', service: 'שיר בהמתנה', re: /שיר בהמתנה/ },
+  { id: 'antivirus', service: 'נורטון', re: /נורטון|אנטי.?וירוס|norton/i },
+]
+
+const median = (xs) => {
+  const s = [...xs].sort((a, b) => a - b)
+  return s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2
+}
+
+/**
+ * What each bundled service sells for today, per month:
+ * { id: { ours, median, n, suggested } } - `suggested` is our own price when
+ * our carrier sells the service, otherwise the market median; null when no
+ * carrier has a price.
+ */
+export function servicePrices(content, oursCarrier) {
+  const out = {}
+  for (const s of BUNDLED_SERVICES) {
+    const rows = (content || []).filter((r) => r && r.service === s.service)
+      .map((r) => ({ carrier: r.carrier, price: parseFloat(String(r.price ?? '').replace(/[^\d.]/g, '')) }))
+      .filter((r) => r.price > 0)
+    const ours = oursCarrier ? rows.find((r) => r.carrier === oursCarrier)?.price ?? null : null
+    const med = rows.length ? Math.round(median(rows.map((r) => r.price)) * 100) / 100 : null
+    out[s.id] = { ours, median: med, n: rows.length, suggested: ours ?? med }
+  }
+  return out
+}
+
+/**
+ * The draft as typed in the form → the normalized shape, or null when incomplete.
+ * `svcPrices` = servicePrices() - the value of a ticked service whose value
+ * field was left empty.
+ */
+export function buildDraft({ price, promoPrice, promoMonths, gb, unlimited, abroadGb, network, minutesUnlimited, voucher, freeApps, appsValue, countPerks, svc, svcValue }, svcPrices = {}) {
   const p = Number(price)
   if (!(p > 0)) return null
   const g = unlimited ? Infinity : Number(gb)
   if (!unlimited && !(g > 0)) return null
   const pp = Number(promoPrice) > 0 && Number(promoPrice) < p ? Number(promoPrice) : null
   const pm = pp && Number(promoMonths) > 0 ? Math.min(12, Math.round(Number(promoMonths))) : null
+  // Perks worth money: a one-time device voucher and free browsing in apps
+  // (valued per month by whoever fills the form). They lower the first-year
+  // cost ONLY when countPerks is on - the competitors' perks carry no money
+  // value in our data, so weighing ours is the product manager's call.
+  const grossYearCost = firstYearCost(p, pm ? pp : null, pm)
+  const voucherValue = Math.max(0, Number(voucher) || 0)
+  const appsMonthly = freeApps ? Math.max(0, Number(appsValue) || 0) : 0
+  const services = BUNDLED_SERVICES.filter((s) => svc?.[s.id]).map((s) => {
+    const typed = svcValue?.[s.id]
+    const monthly = typed === '' || typed == null ? svcPrices[s.id]?.suggested ?? 0 : Math.max(0, Number(typed) || 0)
+    return { id: s.id, monthly }
+  })
+  const servicesMonthly = services.reduce((sum, s) => sum + s.monthly, 0)
+  const perksValue = voucherValue + (appsMonthly + servicesMonthly) * 12
+  const perksCounted = !!countPerks && perksValue > 0
   return {
+    services,
+    servicesMonthly,
+    voucherValue,
+    freeApps: !!freeApps,
+    appsMonthly,
+    perksValue,
+    perksCounted,
+    grossYearCost,
     key: '__draft__',
     isDraft: true,
     source: 'draft',
@@ -34,7 +97,7 @@ export function buildDraft({ price, promoPrice, promoMonths, gb, unlimited, abro
     price: p,
     promoPrice: pm ? pp : null,
     promoMonths: pm,
-    yearCost: firstYearCost(p, pm ? pp : null, pm),
+    yearCost: perksCounted ? Math.max(0, grossYearCost - perksValue) : grossYearCost,
     gb: g,
     kind: g === Infinity ? 'unlimited' : 'data',
     minutes: minutesUnlimited ? Infinity : null,
@@ -59,6 +122,14 @@ function edgesOver(draft, other) {
   if (draft.abroadGb > (other.abroadGb || 0)) out.push('abroad')
   if (rank[draft.network] > rank[other.network || 'none']) out.push('network')
   if (draft.minutes === Infinity && other.minutes != null && other.minutes !== Infinity) out.push('minutes')
+  // Read from the competitor's published benefit lines; a plan that does not
+  // mention the perk is taken as not having it.
+  const text = (other.extras || []).join('\n')
+  if (draft.voucherValue > 0 && !/שובר/.test(text)) out.push('voucher')
+  if (draft.freeApps && !/אפליקציות/.test(text)) out.push('apps')
+  for (const s of draft.services || []) {
+    if (!BUNDLED_SERVICES.find((b) => b.id === s.id).re.test(text)) out.push(s.id)
+  }
   return out
 }
 
