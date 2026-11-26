@@ -164,7 +164,15 @@ def collect(max_minutes=None, sleep=time.sleep, clock=time.monotonic, keys=None)
     results = {}
     asked_once = False          # the first request of a run needs no waiting
     wait, last_status = 0, None
-    for key in (keys or ORDER):
+    if keys is None:
+        # Stalest first (never collected = stalest; ties keep ORDER). The first
+        # request of a run is the one that reliably passes - the budget refilled
+        # overnight - while the later ones can meet 429s until the deadline. With a
+        # fixed order the same source starved every run: breez_regional, always
+        # third, went uncollected 2026-11-22 .. 11-26 and froze all of Breeze.
+        ages = {k: age_hours(k) for k in ORDER}
+        keys = sorted(ORDER, key=lambda k: -(ages[k] if ages[k] is not None else float("inf")))
+    for key in keys:
         age = age_hours(key)
         if age is not None and age < FRESH_HOURS:
             results[key] = "fresh"
@@ -206,7 +214,29 @@ def collect(max_minutes=None, sleep=time.sleep, clock=time.monotonic, keys=None)
     for key, outcome in results.items():
         (logger.info if outcome == "fresh" or outcome.startswith("collected") else logger.warning)(
             f"Shopify catalog {key}: {outcome}")
+    _log_run(results)
     return results
+
+
+def _log_run(results):
+    """Append the run's outcome to CACHE_DIR/collect_log.jsonl. Flask's log only
+    reaches the watchdog console, so without this a source that keeps failing
+    leaves no trace of WHY (`python shopify_catalog.py status` prints the tail)."""
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(os.path.join(CACHE_DIR, "collect_log.jsonl"), "a", encoding="utf-8") as f:
+            f.write(json.dumps({"at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                                "results": results}, ensure_ascii=False) + "\n")
+    except OSError as exc:
+        logger.warning(f"Shopify catalog: could not write the run log: {exc}")
+
+
+def _log_tail(n=6):
+    try:
+        with open(os.path.join(CACHE_DIR, "collect_log.jsonl"), encoding="utf-8") as f:
+            return f.readlines()[-n:]
+    except OSError:
+        return []
 
 
 if __name__ == "__main__":
@@ -216,5 +246,10 @@ if __name__ == "__main__":
         for k in ORDER:
             a = age_hours(k)
             print(k, "never collected" if a is None else f"{a:.1f}h old", len(load(k, 10 ** 6) or []), "products")
+        tail = _log_tail()
+        if tail:
+            print("last runs:")
+            for line in tail:
+                print(" ", line.rstrip())
     else:
         print(json.dumps(collect(), ensure_ascii=False, indent=1))

@@ -184,6 +184,7 @@ _DEST_NORM = {
     "Macau": "\u05de\u05e7\u05d0\u05d5",  # Macau → מקאו
     "Madeira": "\u05de\u05d3\u05d9\u05d9\u05e8\u05d4",  # Madeira → מדיירה
     "Marie-Galante": "\u05de\u05e8\u05d9-\u05d2\u05dc\u05e0\u05d8",  # Marie-Galante → מרי-גלנט
+    "\u05de\u05d0\u05e8\u05d9-\u05d2\u05dc\u05d0\u05e0\u05d8": "\u05de\u05e8\u05d9-\u05d2\u05dc\u05e0\u05d8",  # מארי-גלאנט (7G Hebrew page title, 2026-11) → מרי-גלנט
     "Myanmar": "\u05de\u05d9\u05d0\u05e0\u05de\u05e8",  # Myanmar → מיאנמר
     "Myanmar (Burma)": "\u05de\u05d9\u05d0\u05e0\u05de\u05e8",  # Myanmar (Burma) → מיאנמר
     "North Macedonia": "\u05de\u05e7\u05d3\u05d5\u05e0\u05d9\u05d4 \u05d4\u05e6\u05e4\u05d5\u05e0\u05d9\u05ea",  # North Macedonia → מקדוניה הצפונית
@@ -194,6 +195,7 @@ _DEST_NORM = {
     "Saint Vincent and the Grenadines": "\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d4\u05d2\u05e8\u05d3\u05d9\u05e0\u05d9\u05dd",  # Saint Vincent and the Grenadines → סנט וינסנט והגרדינים
     "Scotland": "\u05e1\u05e7\u05d5\u05d8\u05dc\u05e0\u05d3",  # Scotland → סקוטלנד
     "Sint Eustatius": "\u05e1\u05d9\u05e0\u05d8 \u05d0\u05d5\u05e1\u05d8\u05d8\u05d9\u05d5\u05e1",  # Sint Eustatius → סינט אוסטטיוס
+    "\u05e1\u05e0\u05d8 \u05d0\u05d5\u05e1\u05d8\u05d8\u05d9\u05d5\u05e1": "\u05e1\u05d9\u05e0\u05d8 \u05d0\u05d5\u05e1\u05d8\u05d8\u05d9\u05d5\u05e1",  # סנט אוסטטיוס (7G Hebrew page title, 2026-11) → סינט אוסטטיוס
     "St. Martin": "\u05e1\u05df \u05de\u05e8\u05d8\u05df",  # St. Martin → סן מרטן
     "St. Vincent & Grenadines": "\u05e1\u05e0\u05d8 \u05d5\u05d9\u05e0\u05e1\u05e0\u05d8 \u05d5\u05d4\u05d2\u05e8\u05d3\u05d9\u05e0\u05d9\u05dd",  # St. Vincent & Grenadines → סנט וינסנט והגרדינים
     # ── SimTLV catalog spellings (2026-06-11) ──
