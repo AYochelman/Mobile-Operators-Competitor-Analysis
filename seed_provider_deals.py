@@ -235,15 +235,6 @@ DEALS = [
 
     # ══ COLD OUTREACH SENT — awaiting reply (2026-06-30 batch) ════════════════
     {
-        "provider_id": "esimplus", "display_name": "eSIM Plus", "category": "global",
-        "outreach_status": "contacted", "outreach_last_at": "2026-06-30",
-        "contact": "support.esim@appvillis.com", "program_network": "אין (הוצע להקים)",
-        "agreement_status": "none", "commission_pct": None,
-        "coupon_note": "פנייה קרה; אין תוכנית פומבית, הצענו להקים.",
-        "priority": "low", "next_actions": "מעקב.",
-        "notes": "Appvillis (ליטא). כבר ספק נסרק.",
-    },
-    {
         "provider_id": "esim70", "display_name": "eSIM70", "category": "global",
         "outreach_status": "not_contacted", "outreach_last_at": "2026-07-03",
         "contact": "support@esim70.com (לא תקין - bounce)", "program_network": "אין",

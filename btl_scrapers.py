@@ -7,7 +7,7 @@ landing, WeCom sim-data) and Pelephone's ClubDeal members club.
 
 Each source has its own scrape_* function; scrape() aggregates them with
 per-source isolation so one broken site doesn't block the rest. Called daily
-at 08:15 by app.scrape_resellers_job (alongside pelephon4u_scraper /
+at 08:15 by app.scrape_resellers_job (alongside
 pelephone_join_scraper), which diffs results against the previous scrape and
 feeds the morning digest's "מתחת לקו" section.
 

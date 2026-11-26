@@ -344,7 +344,6 @@ RESELLER_NAMES = {
     "rami_levy_landing":    "רמי לוי — דף נחיתה",
     "rami_levy_hever":      "רמי לוי — מועדון חבר",
     "rami_levy_cc":         "רמי לוי — הטבת אשראי",
-    "pelephon4u":           "פלאפון 4U",
     "pelephone_join":       "פלאפון Join",
     "pelephone_cellphone":  "פלאפון Deal",
     "pelephone_fb":         "פלאפון — קמפיין פייסבוק",

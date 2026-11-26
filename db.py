@@ -2114,13 +2114,12 @@ GLOBAL_PURGE_DEFAULTS = {
     "window_days":  30,    # baseline = rows/destinations seen in the last N days
 }
 # Per-country scrapers whose coverage fluctuates run-to-run (archive_snapshots
-# 2026-08-20..09-03 daily row counts: esimplus 33..582, holafly 509..1645,
+# 2026-08-20..09-03 daily row counts: holafly 509..1645,
 # alosim 1439..1705, besim 438..640, gomoworld 284..716). A row of theirs must be
 # unseen for a full week before it's eligible; the window guards do the rest.
 # Keys are the same knob names as GLOBAL_PURGE_DEFAULTS; {"enabled": False}
 # disables the purge for a carrier entirely (the report is still produced).
 GLOBAL_PURGE_OVERRIDES = {
-    "esimplus":  {"grace_hours": 168},
     "holafly":   {"grace_hours": 168},
     "alosim":    {"grace_hours": 168},
     "besim":     {"grace_hours": 168},
@@ -4031,9 +4030,6 @@ def save_reseller_plans(plans, db_path=None):
 # broke — seed-only sources (Facebook ads, login-gated clubs) are excluded so
 # they don't raise false staleness alarms.
 AUTO_SCRAPED_RESELLER_IDS = {
-    # "pelephon4u" removed 2026-07-26 — site 403 (Cloudways domain unmapped)
-    # since ~2026-07-12; module also dropped from RESELLER_SCRAPER_MODULES.
-    # Re-add both if pelephon4u.co.il returns.
     "pelephone_join",                          # legacy per-site modules
     "tiber", "zol_li", "kamaze",               # btl_scrapers — third-party sites
     "wecom_site", "rami_levy_landing",         # btl_scrapers — carrier pages

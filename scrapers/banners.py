@@ -741,7 +741,6 @@ GLOBAL_BANNER_URLS = {
     "bnesim":           "https://www.bnesim.com",
     "breez":            "https://breezesim.com",
     "bytesim":          "https://bytesim.com",
-    "esimplus":         "https://esimplus.me",
     "esimio":           "https://esim.io",
     "esim70":           "https://esim70.com",
     "esimgenius":       "https://esimgenius.ai",

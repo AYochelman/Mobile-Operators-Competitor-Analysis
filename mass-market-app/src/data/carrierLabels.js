@@ -69,7 +69,6 @@ export const GLOBAL_PROVIDERS_REGISTRY = [
   { id: 'bnesim',           label: 'BNESIM',       color: 'blue',    chartColor: '#1e3a8a', israeli: false },
   { id: 'breez',            label: 'Breeze',       color: 'cyan',    chartColor: '#06b6d4', israeli: false },
   { id: 'bytesim',          label: 'ByteSim',      color: 'emerald', chartColor: '#00b490', israeli: false },
-  { id: 'esimplus',         label: 'eSIM Plus',    color: 'blue',    chartColor: '#059669', israeli: false },
   { id: 'esimio',           label: 'eSIM.io',      color: 'blue',    chartColor: '#2563eb', israeli: false },
   { id: 'esimgenius',       label: 'eSIM Genius',  color: 'violet',  chartColor: '#8b5cf6', israeli: false },
   { id: 'esimax',           label: 'eSIM Max',     color: 'pink',    chartColor: '#b70a4d', israeli: true },
