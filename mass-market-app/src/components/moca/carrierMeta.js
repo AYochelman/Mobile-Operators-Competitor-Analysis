@@ -126,7 +126,6 @@ export const CARRIER_LOGOS = {
   bnesim:           '/logos/bnesim.png',
   seven_g:          '/logos/seven_g.png',
   bestconnect:      '/logos/bestconnect.png',
-  esimplus:         '/logos/esimplus.png',
 }
 
 export function getCarrierLogo(id) {

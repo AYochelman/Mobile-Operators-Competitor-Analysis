@@ -16,7 +16,6 @@ import {
   MAYA_GLOBAL, MAYA_OCEANIA,
   BESIM_REGION_MAP,
   BESTCONNECT_REGION_MAP,
-  ESIMPLUS_REGION_MAP,
   SEVEN_G_REGION_MAP,
   GIGSKY_REGION_MAP,
   ESIMGENIUS_REGION_MAP,
@@ -29,7 +28,7 @@ import {
 export const MULTI_COUNTRY_CARRIERS = new Set([
   'travelsim', 'xphone_global', 'simtlv', 'world8', 'airalo', 'airalo_regional',
   'pelephone_global', 'esimo', 'terminalesim', 'gomoworld', 'maya', 'besim',
-  'bestconnect', 'esimplus', 'seven_g', 'gigsky', 'esimgenius', 'esimax',
+  'bestconnect', 'seven_g', 'gigsky', 'esimgenius', 'esimax',
   'venterrasim', 'simzol',
 ])
 
@@ -93,7 +92,6 @@ export function getPlanCoverage(plan) {
     return BESIM_REGION_MAP[dest] || null
   }
   if (carrier === 'bestconnect') return BESTCONNECT_REGION_MAP[dest] || null
-  if (carrier === 'esimplus') return ESIMPLUS_REGION_MAP[dest] || null
   if (carrier === 'gigsky') {
     // Regional + global bundles expand to their coverage list. Per-country plans
     // and cruise labels ("קרוז - …") aren't keys → null → extras[0] equality /

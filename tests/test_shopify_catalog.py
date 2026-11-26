@@ -205,6 +205,26 @@ def test_collect_skips_what_is_already_fresh(monkeypatch):
     assert [e[1] for e in clock.events if e[0] == "get"] == ["breez_country", "breez_regional"]
 
 
+def test_collect_asks_for_the_stalest_source_first(monkeypatch):
+    # The first request of a run is the one that reliably passes, so it goes to the
+    # source that has waited longest - a fixed order starved breez_regional for days.
+    clock = _Clock()
+    _write("holafly", 6, HOLAFLY)
+    _write("breez_country", 7, BREEZ_COUNTRY)
+    _write("breez_regional", 100, BREEZ_REGIONAL)
+    monkeypatch.setattr(sc, "_get_page", _shop(clock, {k: [200] for k in sc.ORDER}))
+    sc.collect(sleep=clock.sleep, clock=clock.now)
+    assert [e[1] for e in clock.events if e[0] == "get"] == ["breez_regional", "breez_country", "holafly"]
+
+
+def test_collect_records_each_run(monkeypatch):
+    clock = _Clock()
+    monkeypatch.setattr(sc, "_get_page", _shop(clock, {k: [200] for k in sc.ORDER}))
+    out = sc.collect(sleep=clock.sleep, clock=clock.now)
+    tail = sc._log_tail()
+    assert len(tail) == 1 and json.loads(tail[0])["results"] == out
+
+
 def test_collect_follows_a_second_page(monkeypatch):
     clock = _Clock()
     pages = []

@@ -54,7 +54,6 @@ export const PROVIDER_LOGOS = {
   bnesim:           '/logos/bnesim.png',
   seven_g:          '/logos/seven_g.png',
   bestconnect:      '/logos/bestconnect.png',
-  esimplus:         '/logos/esimplus.png',
   // local Israeli tourist SIMs (guest portal, include_local feed)
   mobile019:        '/logos/019.png',
   partner:          '/logos/partner.png',

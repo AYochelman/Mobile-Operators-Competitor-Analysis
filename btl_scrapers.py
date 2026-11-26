@@ -7,7 +7,7 @@ landing, WeCom sim-data) and Pelephone's ClubDeal members club.
 
 Each source has its own scrape_* function; scrape() aggregates them with
 per-source isolation so one broken site doesn't block the rest. Called daily
-at 08:15 by app.scrape_resellers_job (alongside pelephon4u_scraper /
+at 08:15 by app.scrape_resellers_job (alongside
 pelephone_join_scraper), which diffs results against the previous scrape and
 feeds the morning digest's "מתחת לקו" section.
 
@@ -187,8 +187,17 @@ _ZOL_CARD = re.compile(
 )
 _ZOL_TITLE = re.compile(r"((?:סלולר\s*)?(?:דור 5\s*)?(?:5G|4G|משפחתי|TOP)[\w\s./-]{0,30}?(\d{2,4})GB[\w\s.\-–]{0,25}?)\s*(?:&nbsp|\d[\d,]{2,4} דק)")
 _ZOL_PRICE = re.compile(r"(\d{1,3}(?:\.\d{1,2})?)\s*₪ לחודש")
-_ZOL_SINGLE = re.compile(r"מנוי בודד\s*(\d{1,3}(?:\.\d{1,2})?)\s*₪")
+_ZOL_SINGLE = re.compile(r"מנוי (?:בודד|יחיד):?\s*(\d{1,3}(?:\.\d{1,2})?)\s*₪")
 _ZOL_COND = re.compile(r"בצירוף (\d) מנויים ומעלה")
+# Data allowance: "400GB" on the old cards, "עד 400 ג׳יגה גלישה" since ~2026-11-09
+_ZOL_GB = re.compile(r"(\d{2,4})\s*(?:GB|ג[׳'’]יגה)")
+# "בהצטרפות שני מנויים ומעלה: 27.5 ₪ בחודש [לכל מנוי]" (wording since ~2026-11-09)
+_ZOL_JOIN_DISC = re.compile(
+    r"(?:בהצטרפות|בצירוף) (\d|שני|שתי|שלושה|שלוש|ארבעה|ארבע) מנויים ומעלה:? "
+    r"(\d{1,3}(?:\.\d{1,2})?) ₪ [בל]חודש")
+_ZOL_COUNT_WORDS = {"שני": "2", "שתי": "2", "שלושה": "3", "שלוש": "3", "ארבעה": "4", "ארבע": "4"}
+# English card title right before "<N>GB <minutes> דק'" ("Total 5G Plus", "Classic Family Plus")
+_ZOL_EN_TITLE = re.compile(r"([A-Za-z][A-Za-z0-9+ ]{2,40}?)\s+\d{2,4}GB\s+[\d,]{3,6} דק")
 
 
 def scrape_zol_li() -> list[dict]:
@@ -201,26 +210,30 @@ def scrape_zol_li() -> list[dict]:
     #    למנוי (עלות חודשית של 30 ₪)"
     for m in _ZOL_CARD.finditer(text):
         details, pricing = m.group(1), m.group(2)
-        gbm = re.search(r"(\d{2,4})GB", details)
+        # Card title from the text just before the detail block
+        pre = text[max(0, m.start() - 280):m.start()]
+        gbm = _ZOL_GB.search(details) or _ZOL_GB.search(pre)
         base = _ZOL_PRICE.search(pricing)
         if not (gbm and base):
             continue
         gb = int(gbm.group(1))
         net = "5G" if ("5G" in details or "דור 5" in details) else "4G"
-        # Card title from the text just before the detail block
-        pre = text[max(0, m.start() - 280):m.start()]
         markers = re.findall(r"משפחתי TOP|5G Basic Family|מבצע זוגי", pre)
-        title = markers[-1] if markers else None
+        en_titles = _ZOL_EN_TITLE.findall(pre)
+        title = markers[-1] if markers else (en_titles[-1].strip() if en_titles else None)
 
         single = _ZOL_SINGLE.search(pricing)
         plain_disc = re.search(
             r"הנחה בצירוף (\d) מנויים ומעלה (\d{1,3}(?:\.\d{1,2})?) ₪ לחודש", pricing)
         paren_disc = re.search(
             r"בצירוף (\d) מנויים ומעלה:? הנחה של [\d.]+ ₪ למנוי \(עלות חודש\w*(?: של)? (\d{1,3}(?:\.\d{1,2})?) ₪\)", pricing)
+        join_disc = None if (plain_disc or paren_disc) else _ZOL_JOIN_DISC.search(pricing)
 
         extras = ["ערוץ משווקים — לא מופיע במחירון הרשמי של הוט מובייל"]
-        if plain_disc:
-            cond_n, price = plain_disc.group(1), float(plain_disc.group(2))
+        if plain_disc or join_disc:
+            disc = plain_disc or join_disc
+            cond_n = _ZOL_COUNT_WORDS.get(disc.group(1), disc.group(1))
+            price = float(disc.group(2))
             extras.append(f"{price} ₪ לקו בצירוף {cond_n} מנויים ומעלה")
             if single:
                 extras.append(f"מנוי בודד: {single.group(1)} ₪ לחודש")

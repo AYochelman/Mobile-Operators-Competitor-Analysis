@@ -69,7 +69,7 @@ def api_chat():
             'gomoworld': 'GoMoWorld', 'tasim': 'Tasim', 'maya': 'Maya Mobile',
             'bcengi': 'Bcengi', 'esim70': 'eSIM70', 'jetpack': 'Jetpack', 'breez': 'Breeze',
             'bytesim': 'ByteSim', 'besim': 'Besim', 'seven_g': '7G',
-            'bestconnect': 'Best Connect', 'esimplus': 'eSIM Plus', 'bnesim': 'BNESIM',
+            'bestconnect': 'Best Connect', 'bnesim': 'BNESIM',
             'yesim': 'Yesim', 'nomad': 'Nomad', 'ubigi': 'Ubigi', 'alosim': 'aloSIM',
             # USA tourist-plan operators (נוחתים בארה"ב) — mirror of USA_LABELS
             # in carrierLabels.js

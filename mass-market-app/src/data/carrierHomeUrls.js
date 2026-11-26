@@ -46,5 +46,4 @@ export const CARRIER_HOME_URLS = {
   besim:           'https://besim.co.il',
   seven_g:         'https://7g.app',
   bestconnect:     'https://bestconnect.online',
-  esimplus:        'https://esimplus.me',
 }

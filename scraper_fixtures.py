@@ -131,7 +131,6 @@ PROVIDERS: dict[str, dict] = {
     "besim_regions":     {"fn": "scrape_besim_regions",     "kwargs": _u("usd"),  "type": "global"},
     "seven_g_global":    {"fn": "scrape_seven_g_global",    "kwargs": _u("usd"),  "type": "global"},
     "bestconnect_global": {"fn": "scrape_bestconnect_global", "kwargs": _u("usd"), "type": "global"},
-    "esimplus_global":   {"fn": "scrape_esimplus_global",   "kwargs": _u("usd"),  "type": "global"},
 }
 
 

@@ -361,9 +361,6 @@ def _woo_store_fetch(products_url, label="Woo"):
 # ── Best Connect ──────────────────────────────────────────────────────────────
 
 
-# ── eSIM Plus ─────────────────────────────────────────────────────────────────
-
-
 # ─── Besim (https://besim.co.il) ────────────────────────────────────────
 # Israeli eSIM reseller. ~130 single-country pages + 19 regional/global bundles.
 # Every product page renders identical 3-line plan blocks: "<X>GB / תוקף N ימים / $price".
@@ -440,7 +437,6 @@ def scrape_all_global():
         ("scrape_besim_regions",        lambda: scrape_besim_regions(usd_rate=usd_rate)),
         ("scrape_seven_g_global",       lambda: scrape_seven_g_global(usd_rate=usd_rate)),
         ("scrape_bestconnect_global",   lambda: scrape_bestconnect_global(usd_rate=usd_rate)),
-        ("scrape_esimplus_global",      lambda: scrape_esimplus_global(usd_rate=usd_rate)),
     ]
 
     plans = []
@@ -867,14 +863,6 @@ from scrapers.bestconnect import (  # noqa: E402,F401
     _BC_REGIONAL_HEBREW,
     _fetch_bestconnect_catalog,
     scrape_bestconnect_global,
-)
-from scrapers.esimplus import (  # noqa: E402,F401
-    _ESIMPLUS_TO_SAILY,
-    ESIMPLUS_COUNTRY_SLUGS,
-    _ESIMPLUS_REGION_HEB,
-    _ESIMPLUS_PLAN_PREFIX,
-    _fetch_esimplus_country,
-    scrape_esimplus_global,
 )
 from scrapers.besim import (  # noqa: E402,F401
     BESIM_SLUG_TO_HEBREW,

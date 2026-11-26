@@ -164,9 +164,11 @@ def _parse_seven_g_page(html, usd_rate, eng_name, extras_region=None):
         if m:
             heb_name = _html_unescape(m.group(1)).strip()
 
-    # Parse plan blocks: N GB → M ימים → US$ → price (each plan appears twice)
-    seen = {}
-    i = 0
+    # Current markup (site rebuilt ~2026-11-25): one <label class="plan-opt"> per
+    # card. A card whose duration is a <select> (the Unlimited ladder) carries one
+    # plan per <option>. Fall back to the legacy text walk only when no card parses.
+    seen = _parse_seven_g_cards(html)
+    i = 0 if not seen else len(lines)
     while i < len(lines):
         gb_m = re.match(r"^(\d+(?:\.\d+)?)\s*GB$", lines[i], re.I)
         if gb_m and i + 2 < len(lines):
@@ -193,13 +195,74 @@ def _parse_seven_g_page(html, usd_rate, eng_name, extras_region=None):
 
     plans = []
     for (gb, days), usd in seen.items():
-        gb_label = int(gb) if gb == int(gb) else gb
+        if gb is None:
+            size_label = "ללא הגבלה"
+        else:
+            size_label = f"{int(gb) if gb == int(gb) else gb}GB"
         plans.append(core._make_global_plan(
-            "seven_g", f"{heb_name} – ‏{gb_label}GB – ‏{days} ימים",
+            "seven_g", f"{heb_name} – ‏{size_label} – ‏{days} ימים",
             round(usd * usd_rate, 2), "USD", usd,
             gb, days, extras=[extras_region if extras_region is not None else heb_name],
         ))
     return plans
+
+
+_SEVEN_G_CARD_RE = re.compile(r'<label class="plan-opt[^"]*"([^>]*)>(.*?)</label>', re.S)
+_SEVEN_G_OPTION_RE = re.compile(r"<option[^>]*>(.*?)</option>", re.S)
+
+
+def _seven_g_usd(fragment):
+    """Current USD price of a card's price span: the struck-through <s> list price is dropped."""
+    text = re.sub(r"<s>.*?</s>", "", fragment, flags=re.S)
+    # Tags become spaces: "$1.99</span>...5% בקרדיטים" must not read as $1.995
+    text = re.sub(r"<[^>]+>", " ", text)
+    m = re.search(r"\$\s*(\d+(?:\.\d+)?)", text)
+    return float(m.group(1)) if m else None
+
+
+def _parse_seven_g_cards(html):
+    """{(data_gb or None for unlimited, days): lowest USD price} from the plan cards."""
+    seen = {}
+
+    def _keep(gb, days, usd):
+        if days and usd is not None and usd > 0:
+            key = (gb, days)
+            if key not in seen or usd < seen[key]:
+                seen[key] = usd
+
+    for attrs, body in _SEVEN_G_CARD_RE.findall(html):
+        gb_m = re.search(r'class="plan-opt__gb"[^>]*>(.*?)</span>', body, re.S)
+        if not gb_m:
+            continue
+        size = re.sub(r"<[^>]+>", " ", gb_m.group(1))
+        size = _html_unescape(re.sub(r"\s+", " ", size)).strip()
+        num = re.search(r"(\d+(?:\.\d+)?)\s*(GB|MB)\b", size, re.I)
+        if num:
+            gb = float(num.group(1))
+            if num.group(2).upper() == "MB":
+                gb = gb / 1024
+        elif re.search(r"unlimited|ללא הגבלה", size, re.I):
+            gb = None
+        else:
+            continue
+        options = _SEVEN_G_OPTION_RE.findall(body)
+        if options:
+            for opt in options:
+                text = _html_unescape(re.sub(r"<!--.*?-->|<[^>]+>", "", opt, flags=re.S))
+                d = re.search(r"(\d+)\s*ימים", text)
+                p = re.search(r"\$\s*(\d+(?:\.\d+)?)", text)
+                if d and p:
+                    _keep(gb, int(d.group(1)), float(p.group(1)))
+            continue
+        days_m = re.search(r'data-days="(\d+)"', attrs)
+        if not days_m:
+            days_m = re.search(r'class="plan-opt__days[^"]*"[^>]*>\s*(\d+)\s*ימים', body)
+        # The price span nests a <span class="sr"> inside its <s>, so take the rest of
+        # the card and let _seven_g_usd drop the <s> block before reading the first $.
+        price_m = re.search(r'class="plan-opt__price"[^>]*>(.*)', body, re.S)
+        if days_m and price_m:
+            _keep(gb, int(days_m.group(1)), _seven_g_usd(price_m.group(1)))
+    return seen
 
 
 def _fetch_seven_g_destination(name, usd_rate):

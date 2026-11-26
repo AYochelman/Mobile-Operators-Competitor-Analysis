@@ -112,8 +112,6 @@ const TAB_LABELS_EN = {
 }
 
 const RESELLERS = [
-  { id: 'pelephon4u',     label: '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df \u05ea\u05e7\u05e9\u05d5\u05e8\u05ea \u05dc\u05de\u05e6\u05d8\u05e8\u05e4\u05d9\u05dd \u05d7\u05d3\u05e9\u05d9\u05dd', underlying: 'pelephone',
-    source_url: 'https://pelephon4u.co.il/' },
   { id: 'pelephone_join', label: '\u05e4\u05dc\u05d0\u05e4\u05d5\u05df Join (\u05de\u05d1\u05e6\u05e2\u05d9\u05dd)',          underlying: 'pelephone',
     source_url: 'https://pelephone-join.co.il/\u05e4\u05dc\u05d0\u05e4\u05d5\u05df-\u05de\u05d1\u05e6\u05e2\u05d9\u05dd/' },
   { id: 'cellcomshefamr', label: '\u05e1\u05dc\u05e7\u05d5\u05dd \u05e9\u05e4\u05e8\u05e2\u05dd',                   underlying: 'cellcom',

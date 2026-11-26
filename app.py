@@ -1211,7 +1211,6 @@ _GUEST_PROVIDER_META = {
     "bnesim":      {"label": "BNESIM",       "color": "#1e3a8a", "domain": "bnesim.com",       "url": "https://www.bnesim.com/plans/il/"},
     "seven_g":     {"label": "7G",           "color": "#e67e22", "domain": "7g.app",            "url": "https://7g.app"},
     "bestconnect": {"label": "Best Connect", "color": "#2d9cdb", "domain": "bestconnect.online", "url": "https://bestconnect.online"},
-    "esimplus":    {"label": "eSIM Plus",    "color": "#00b894", "domain": "esimplus.me",      "url": "https://esimplus.me/esim/israel"},
     # global eSIM carriers that also surface for ABROAD destinations (the Israel
     # feed didn't reach them, so they were missing — abroad needs every id the
     # feed can emit to have a label + domain, else the chip is bare + /go dead-ends).

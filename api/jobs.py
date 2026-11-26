@@ -70,7 +70,7 @@ _HISTORY_CARRIER_NAMES = {
     'seven_g': '7G',
     'bestconnect': 'Best Connect',
     'bnesim': 'BNESIM',
-    'esimplus': 'eSIM Plus',
+    'esimplus': 'eSIM Plus',   # retired 2026-11-26; kept so its preserved history stays named
     'bcengi': 'Bcengi',
     'yesim': 'Yesim', 'nomad': 'Nomad', 'ubigi': 'Ubigi', 'alosim': 'aloSIM',
 }
@@ -535,8 +535,7 @@ def scrape_news_job():
         logger.error(f"News scrape job failed: {e}", exc_info=True)
 
 
-# pelephon4u_scraper SILENCED 2026-07-26: pelephon4u.co.il returns 403 since
-# ~2026-07-12 (Cloudways domain unmapped). Re-add if the site comes back.
+# pelephon4u (pelephon4u.co.il, 403 since ~2026-07-12) was retired 2026-11-26.
 RESELLER_SCRAPER_MODULES = ("pelephone_join_scraper", "btl_scrapers", "fb_ads_scraper")
 
 
