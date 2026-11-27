@@ -2,7 +2,9 @@
 # Verifies the three runtime services and restarts whichever is down:
 #   - Flask (port 5000)  -> relaunches via flask_watchdog.bat
 #   - ngrok public EDGE  -> https://<reserved-domain>/api/ping must return {"ok":true};
-#                           recovers by recycling the MOCA-Ngrok scheduled task
+#                           recovers by recycling the MOCA-Ngrok scheduled task. Probed at
+#                           most hourly while healthy (each probe spends ngrok's monthly
+#                           request quota), see "Edge probe budget" below
 #   - Vite  (port 5173)  -> relaunches via vite_watchdog.bat
 # Sends a Telegram + email alert via alert.py if anything was restarted or failed.
 
@@ -161,20 +163,32 @@ function Invoke-EdgeProbe {
 }
 
 function Test-NgrokEdge {
-    # $true only when the PUBLIC url answers with {"ok":true}, i.e. Flask was reached
+    # Returns 'up' only when the PUBLIC url answers with {"ok":true}, i.e. Flask was reached
     # THROUGH the tunnel. Retries give a transient blip a chance to pass (no alert spam).
+    # Returns 'quota' when ngrok refuses because the account's MONTHLY usage limit is spent
+    # (ERR_NGROK_727, 2026-11-27): nothing on this box can fix that, so callers must not
+    # recycle the tunnel over it. Anything else is 'down'.
+    # Callers compare the result to 'up' - every one of these strings is truthy.
     param([int]$Attempts = 1, [int]$DelaySeconds = 10)
     for ($i = 1; $i -le $Attempts; $i++) {
         try {
             $body = Invoke-EdgeProbe
-            if ($body -match '"ok"\s*:\s*true') { return $true }
+            if ($body -match '"ok"\s*:\s*true') { return 'up' }
             Write-Log "ngrok edge probe ${i}/${Attempts}: HTTP 200 but body is not {""ok"":true}: $body"
         } catch {
-            Write-Log "ngrok edge probe ${i}/${Attempts}: $($_.Exception.Message)"
+            $msg = "$($_.Exception.Message)"
+            if ($msg -match 'ERR_NGROK_727|limit for the month') {
+                Write-Log "ngrok edge probe ${i}/${Attempts}: the ngrok account's monthly usage limit is spent (ERR_NGROK_727)"
+                return 'quota'
+            }
+            # ngrok's error pages are ~25 lines of HTML: keep the error code and a short head.
+            $code = if ($msg -match '(ERR_NGROK_\d+)') { " [$($Matches[1])]" } else { '' }
+            $flat = ($msg -replace '\s+', ' ')
+            Write-Log "ngrok edge probe ${i}/${Attempts}:$code $($flat.Substring(0, [Math]::Min(300, $flat.Length)))"
         }
         if ($i -lt $Attempts) { Start-Sleep -Seconds $DelaySeconds }
     }
-    return $false
+    return 'down'
 }
 
 function Get-NgrokWatchdogProcs {
@@ -233,16 +247,87 @@ function Invoke-NgrokRecycle {
     schtasks /run /tn $NgrokTask 2>&1 | Out-Null
 }
 
-if (Test-NgrokEdge -Attempts 3 -DelaySeconds 10) {
-    Write-Log "ngrok edge ($NgrokEdgeUrl): UP"
+# ---- Edge probe budget (2026-11-27) ----
+# Every edge probe is a real request through ngrok, and the free plan allows 20,000 a month.
+# Probing every 10 minutes cost 144 requests a day (~4,300 a month, about half of October's
+# total); on 2026-11-27 the account ran out and ngrok refused ALL traffic until the monthly
+# reset (ERR_NGROK_727), so the live site had no API at all. Now the edge is probed at most
+# once an hour while the last result was good, and every run only while something looks
+# wrong: the last probe failed, the MOCA-Ngrok task is not Running, or the watchdog log shows
+# a crash loop (both are local checks and cost nothing).
+# A spent quota is not an outage this box can fix: no recycle, one alert a day, an hourly
+# probe to notice the reset, and a recovery alert when traffic flows again.
+$EdgeProbeIntervalMinutes = 60
+$EdgeStateFile = Join-Path $ScriptDir "ngrok_edge.state"   # *.state is gitignored
+$StampFormat   = 'yyyy-MM-dd HH:mm:ss'
+
+function Read-EdgeState {
+    $s = @{ last_probe = ''; last_status = ''; quota_since = ''; quota_alert_day = '' }
+    if (Test-Path $EdgeStateFile) {
+        try {
+            $j = Get-Content $EdgeStateFile -Raw -ErrorAction Stop | ConvertFrom-Json
+            foreach ($k in @($s.Keys)) { if ($null -ne $j.$k) { $s[$k] = [string]$j.$k } }
+        } catch { Write-Log "ngrok edge state unreadable, starting fresh: $_" }
+    }
+    return $s
+}
+
+function Save-EdgeState {
+    param([hashtable]$State)
+    try { ($State | ConvertTo-Json) | Set-Content -Path $EdgeStateFile -Encoding UTF8 -ErrorAction Stop }
+    catch { Write-Log "ngrok edge state could not be saved: $_" }
+}
+
+function Register-NgrokQuota {
+    # Spent monthly quota: remember since when, and alert at most once per calendar day.
+    param([hashtable]$State)
+    $today = (Get-Date).ToString('yyyy-MM-dd')
+    if (-not $State.quota_since) { $State.quota_since = (Get-Date).ToString($StampFormat) }
+    Write-Log "ngrok edge: monthly usage limit spent since $($State.quota_since) -- NOT recycling (it cannot help); next probe in ~$EdgeProbeIntervalMinutes min"
+    if ($State.quota_alert_day -ne $today) {
+        $State.quota_alert_day = $today
+        [void]$results.Add(@{ status = 'failed'; name = 'ngrok monthly limit'; port = 443; reason = "the ngrok account's monthly usage limit is spent (ERR_NGROK_727, since $($State.quota_since)). ngrok refuses all traffic, so the live site has no API until the limit resets (date on dashboard.ngrok.com/billing). Recycling cannot help and is skipped; this alert repeats once a day." })
+    } else {
+        Write-Log "ngrok edge: monthly-limit alert already sent today"
+    }
+}
+
+$edgeState   = Read-EdgeState
+$taskState   = "$((Get-ScheduledTask -TaskName $NgrokTask -ErrorAction SilentlyContinue).State)"
+$crashHint   = Test-NgrokCrashLoop
+$lastProbeAt = $null
+if ($edgeState.last_probe) {
+    try { $lastProbeAt = [datetime]::ParseExact($edgeState.last_probe, $StampFormat, [System.Globalization.CultureInfo]::InvariantCulture) } catch {}
+}
+$probeReason = $null
+if (-not $lastProbeAt) { $probeReason = 'no previous probe' }
+elseif (((Get-Date) - $lastProbeAt).TotalMinutes -ge ($EdgeProbeIntervalMinutes - 2)) { $probeReason = 'hourly' }   # -2: the task starts a few seconds late
+elseif ($edgeState.last_status -eq 'down') { $probeReason = 'last probe failed' }
+elseif ($taskState -ne 'Running') { $probeReason = "task state '$taskState'" }
+elseif ($crashHint) { $probeReason = 'watchdog crash-loop lines' }
+
+if (-not $probeReason) {
+    Write-Log "ngrok edge: probe skipped (last result '$($edgeState.last_status)' at $($lastProbeAt.ToString('HH:mm')), next ~$($lastProbeAt.AddMinutes($EdgeProbeIntervalMinutes).ToString('HH:mm')); task Running, no crash loop)"
+} else {
+$edgeState.last_probe  = (Get-Date).ToString($StampFormat)
+$edge = Test-NgrokEdge -Attempts 3 -DelaySeconds 10
+$edgeState.last_status = $edge
+if ($edge -eq 'quota') {
+    Register-NgrokQuota $edgeState
+} elseif ($edge -eq 'up') {
+    Write-Log "ngrok edge ($NgrokEdgeUrl): UP (probe reason: $probeReason)"
+    if ($edgeState.quota_since) {
+        Write-Log "ngrok edge: monthly usage limit has reset -- traffic flows again (blocked since $($edgeState.quota_since))"
+        [void]$results.Add(@{ status = 'restarted'; name = "ngrok monthly limit reset, edge serving again (blocked since $($edgeState.quota_since))"; port = 443 })
+        $edgeState.quota_since = ''; $edgeState.quota_alert_day = ''
+    }
     # Hygiene: the edge being up does not mean the STATE is healthy. If the tunnel is
     # held by a stray (non-task) agent, the task's watchdog crash-loops on the single
     # free-tier session (endless exit-code-1 lines in ngrok_watchdog.log) and a future
     # zombie would survive a plain task recycle. Detect that from the watchdog LOG
     # (elevation-independent) and from the task state, then reconcile to a clean
     # task-owned agent.
-    $taskState = "$((Get-ScheduledTask -TaskName $NgrokTask -ErrorAction SilentlyContinue).State)"
-    $crashLoop = Test-NgrokCrashLoop
+    $crashLoop = $crashHint
     if ($crashLoop) {
         # Confirm the loop is CURRENT before recycling: a live relaunch loop appends a
         # new "ngrok exited" line every ~10s. Right after a recycle fixed things, the
@@ -256,16 +341,20 @@ if (Test-NgrokEdge -Attempts 3 -DelaySeconds 10) {
     if ($taskState -ne 'Running' -or $crashLoop) {
         Write-Log "ngrok hygiene: task state '$taskState', crash-loop=$crashLoop -- recycling to a single task-owned agent"
         Invoke-NgrokRecycle
-        if (Test-NgrokEdge -Attempts 6 -DelaySeconds 5) {
+        $after = Test-NgrokEdge -Attempts 6 -DelaySeconds 5
+        $edgeState.last_status = $after
+        if ($after -eq 'up') {
             Write-Log "ngrok hygiene recycle: SUCCESS (edge back up, task-owned)"
             [void]$results.Add(@{ status = 'restarted'; name = 'ngrok tunnel (hygiene recycle)'; port = 443 })
+        } elseif ($after -eq 'quota') {
+            Register-NgrokQuota $edgeState
         } else {
             Write-Log "ngrok hygiene recycle: FAILED (edge did not come back)"
             [void]$results.Add(@{ status = 'failed'; name = 'ngrok tunnel (hygiene recycle)'; port = 443; reason = 'edge did not come back after recycle; check ngrok_watchdog.log' })
         }
     }
 } else {
-    Write-Log "ngrok edge: DOWN (all probes failed)"
+    Write-Log "ngrok edge: DOWN (all probes failed; probe reason: $probeReason)"
     if (-not (Test-Port 5000)) {
         # Flask itself is dead locally - the edge cannot answer and recycling the tunnel
         # will not help. The Flask block above already tried to restart it (and alerts).
@@ -274,14 +363,20 @@ if (Test-NgrokEdge -Attempts 3 -DelaySeconds 10) {
     } else {
         Write-Log "ngrok edge: recycling scheduled task '$NgrokTask' (also clears zombie agents)"
         Invoke-NgrokRecycle
-        if (Test-NgrokEdge -Attempts 9 -DelaySeconds 5) {
+        $after = Test-NgrokEdge -Attempts 9 -DelaySeconds 5
+        $edgeState.last_status = $after
+        if ($after -eq 'up') {
             Write-Log "ngrok recycle: SUCCESS (edge is back up)"
             [void]$results.Add(@{ status = 'restarted'; name = 'ngrok tunnel'; port = 443 })
+        } elseif ($after -eq 'quota') {
+            Register-NgrokQuota $edgeState
         } else {
             Write-Log "ngrok recycle: FAILED (edge still down after task recycle)"
             [void]$results.Add(@{ status = 'failed'; name = 'ngrok tunnel'; port = 443; reason = 'edge still down after task recycle (agent version/auth/plan issue? check ngrok_watchdog.log)' })
         }
     }
+}
+Save-EdgeState $edgeState
 }
 
 # ---- Vite (5173) ----

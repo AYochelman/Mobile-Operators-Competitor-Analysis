@@ -144,12 +144,28 @@ export default function ProviderDealsPage() {
 
   useEffect(() => { load() }, [load])
 
-  // Auto-refresh: poll every 60s + refetch when the tab regains focus.
+  // Auto-refresh: poll every 60s while the tab is VISIBLE, and refetch when it comes back.
+  // A hidden tab used to keep polling around the clock: ~1,440 calls a day, each with a
+  // CORS preflight, all through ngrok's 20,000-a-month free quota - which ran out on
+  // 2026-11-27. visibilitychange covers switching tabs; focus covers returning from
+  // another window while this tab stayed visible.
   useEffect(() => {
-    const iv = setInterval(load, 60000)
-    const onFocus = () => load()
-    window.addEventListener('focus', onFocus)
-    return () => { clearInterval(iv); window.removeEventListener('focus', onFocus) }
+    const isVisible = () => document.visibilityState === 'visible'
+    const iv = setInterval(() => { if (isVisible()) load() }, 60000)
+    // Coming back usually fires BOTH events; one refetch is enough.
+    let lastReturn = 0
+    const onReturn = () => {
+      if (!isVisible() || Date.now() - lastReturn < 5000) return
+      lastReturn = Date.now()
+      load()
+    }
+    document.addEventListener('visibilitychange', onReturn)
+    window.addEventListener('focus', onReturn)
+    return () => {
+      clearInterval(iv)
+      document.removeEventListener('visibilitychange', onReturn)
+      window.removeEventListener('focus', onReturn)
+    }
   }, [load])
 
   // Re-render the "updated ago" label once a minute.
