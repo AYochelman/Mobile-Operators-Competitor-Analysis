@@ -169,7 +169,14 @@ if _extra_origins:
 # /banners/* included: the frontend blob-fetches banner screenshots (useApiImage,
 # to carry the ngrok-skip-browser-warning header past the interstitial) and a
 # cross-origin fetch() - unlike a plain <img> - is blocked without CORS headers.
-CORS(app, resources={
+# max_age (2026-11-27): every API call from the Netlify app carries Authorization and
+# ngrok-skip-browser-warning, so the browser sends an OPTIONS preflight first - and with
+# no Access-Control-Max-Age it re-asks for almost every call (Chrome's default cache is
+# 5 seconds). Each preflight is one more request through ngrok, whose free plan allows
+# 20,000 a month; the old access log showed about one OPTIONS per GET, and the account
+# ran out on 2026-11-27. 7200 s is Chrome's ceiling (Firefox honours up to a day).
+CORS_PREFLIGHT_MAX_AGE = 7200
+CORS(app, max_age=CORS_PREFLIGHT_MAX_AGE, resources={
     r"/api/*": {"origins": ALLOWED_ORIGINS, "supports_credentials": True},
     r"/banners/*": {"origins": ALLOWED_ORIGINS},
     # Time Machine banner snapshots are blob-fetched too (useApiImage) - same
